@@ -1,7 +1,7 @@
 # edge-cloud-infra
 code/scripts for provisioning per developer k8s cluster
 
-##installation of k8s on three nodes
+## installation of k8s on three nodes
 
 ### master node
 
