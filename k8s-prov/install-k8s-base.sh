@@ -27,12 +27,12 @@ tar xf go1.10.2.linux-amd64.tar.gz
 export PATH=`pwd`/go/bin:$PATH
 export GOPATH=/usr/local
 go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
-mkdir -p /var/lib/consul
-mkdir -p /usr/share/consul
-mkdir -p /etc/consul/conf.d
-curl -OL https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_linux_amd64.zip
-unzip consul_0.7.5_linux_amd64.zip
-mv consul /usr/local/bin/consul
-curl -OL https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_web_ui.zip
-unzip consul_0.7.5_web_ui.zip -d dist
-mv dist /usr/share/consul/ui
+#mkdir -p /var/lib/consul
+#mkdir -p /usr/share/consul
+#mkdir -p /etc/consul/conf.d
+#curl -OL https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_linux_amd64.zip
+#unzip consul_0.7.5_linux_amd64.zip
+#mv consul /usr/local/bin/consul
+#curl -OL https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_web_ui.zip
+#unzip consul_0.7.5_web_ui.zip -d dist
+#mv dist /usr/share/consul/ui

@@ -1,0 +1,317 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/mexosagent.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/destroy": {
+      "post": {
+        "operationId": "Destroy",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiProvisionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
+    "/v1/fqdn": {
+      "post": {
+        "operationId": "FQDN",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiFQDNResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiFQDNRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
+    "/v1/provision": {
+      "post": {
+        "operationId": "Provision",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiProvisionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiProvisionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
+    "/v1/proxy": {
+      "post": {
+        "operationId": "Proxy",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiProxyResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiProxyRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
+    "/v1/status": {
+      "post": {
+        "operationId": "Status",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiStatusResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiStatusRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiFQDN": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "apiFQDNRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "proxies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiFQDN"
+          }
+        }
+      }
+    },
+    "apiFQDNResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "apiProvision": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "flavor": {
+          "type": "string"
+        },
+        "network": {
+          "type": "string"
+        },
+        "fixedip": {
+          "type": "string"
+        },
+        "storage": {
+          "type": "string"
+        },
+        "zone": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        }
+      }
+    },
+    "apiProvisionRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "provisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiProvision"
+          }
+        }
+      }
+    },
+    "apiProvisionResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "apiProxy": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "apiProxyRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "proxies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiProxy"
+          }
+        }
+      }
+    },
+    "apiProxyResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "apiStatusRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "apiStatusResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "proxies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiProxy"
+          }
+        },
+        "provisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiProvision"
+          }
+        },
+        "fqdns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiFQDN"
+          }
+        }
+      }
+    }
+  }
+}

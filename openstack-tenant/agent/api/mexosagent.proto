@@ -1,0 +1,105 @@
+syntax = "proto3";
+package api;
+
+import "google/api/annotations.proto";
+
+service MexOSAgent {
+    rpc Provision(ProvisionRequest) returns (ProvisionResponse) {
+        option (google.api.http) = {
+            post: "/v1/provision",
+            body: "*"
+        };
+    }
+
+    rpc Destroy(ProvisionRequest) returns (ProvisionResponse) {
+        option (google.api.http) = {
+            post: "/v1/destroy",
+            body: "*"
+        };
+    }
+
+    rpc Proxy(ProxyRequest) returns (ProxyResponse) {
+        option (google.api.http) = {
+            post: "/v1/proxy",
+            body: "*"
+        };
+    }
+
+    rpc FQDN(FQDNRequest) returns (FQDNResponse) {
+        option (google.api.http) = {
+            post: "/v1/fqdn",
+            body: "*"
+        };
+    }
+
+    rpc Status(StatusRequest) returns (StatusResponse) {
+        option (google.api.http) = {
+            post: "/v1/status",
+            body: "*"
+        };
+    }
+}
+
+message Provision {
+    string name = 1;
+    string image = 2;
+    string flavor = 3;
+    string network = 4;
+    string fixedip = 5;
+    string storage = 6;
+    string zone = 7;
+    string tenant = 8;
+    string metadata = 9;
+    string region = 10;
+    string kind = 11;
+}
+
+message ProvisionRequest {
+    string message = 1;
+    repeated Provision provisions = 2;
+}
+
+message ProvisionResponse {
+    string message = 1;
+    string status = 2;
+}
+
+message StatusRequest {
+    string message = 1;
+}
+
+message StatusResponse {
+    string message = 1;
+    string status = 2;
+    repeated Proxy proxies = 3;
+    repeated Provision provisions = 4;
+    repeated FQDN fqdns = 5;
+}
+
+message Proxy {
+    string name = 1;
+}
+
+message ProxyRequest {
+    string message = 1;
+    repeated Proxy proxies = 2;
+}
+
+message ProxyResponse {
+    string message = 1;
+    string status = 2;
+}
+
+message FQDN {
+    string name = 1;
+}
+
+message FQDNRequest {
+    string message = 1;
+    repeated FQDN proxies = 2;
+}
+
+message FQDNResponse {
+    string message = 1;
+    string status = 2;
+}

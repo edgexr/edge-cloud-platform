@@ -11,11 +11,25 @@ the cloud-init feature that works, along with `config-drive` feature.
 
 The `mobiledgex.service` is installed into systemd so that the
 service will run at boot time to mount the config drive.
+This is done by doing
+
+```
+cp mobiledgex.service /etc/systemd/system/
+chmod 644 /etc/systemd/system/mobiledgex.service
+systemctl daemon-reload
+systemctl enable mobiledgex.service
+```
 
 The `userdata.txt` content is available under `config-drive` thus mounted.
 
-The script  `mobiledgex-init.sh` is install in /usr/local/bin/.  It is
-run by the `mobiledgex.service` at boot time. This script mounts the `config-drive`.
+The script  `mobiledgex-init.sh` is install in /usr/local/bin/.  
+
+```
+cp mobiledgex-init.sh /usr/local/bin
+```
+
+It is run by the `mobiledgex.service` at boot time. This script mounts the `config-drive`
+and uses the information from the drive to further customize the image.
 
 The contents of interest are:
 
