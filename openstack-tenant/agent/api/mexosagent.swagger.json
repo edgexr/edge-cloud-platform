@@ -41,32 +41,6 @@
         ]
       }
     },
-    "/v1/fqdn": {
-      "post": {
-        "operationId": "FQDN",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiFQDNResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiFQDNRequest"
-            }
-          }
-        ],
-        "tags": [
-          "MexOSAgent"
-        ]
-      }
-    },
     "/v1/provision": {
       "post": {
         "operationId": "Provision",
@@ -147,39 +121,6 @@
     }
   },
   "definitions": {
-    "apiFQDN": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "apiFQDNRequest": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "proxies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/apiFQDN"
-          }
-        }
-      }
-    },
-    "apiFQDNResponse": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        }
-      }
-    },
     "apiProvision": {
       "type": "object",
       "properties": {
@@ -248,6 +189,12 @@
       "properties": {
         "name": {
           "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
         }
       }
     },
@@ -303,12 +250,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/apiProvision"
-          }
-        },
-        "fqdns": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/apiFQDN"
           }
         }
       }

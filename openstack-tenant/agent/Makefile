@@ -6,9 +6,18 @@ API_FILES = api/mexosagent.pb.go api/mexosagent.pb.gw.go api/mexosagent.swagger.
 
 .PHONY: build api dep test race msan
 
+default: build docker-build docker-push
+
+docker-build:
+	docker build -t bobbae/mexosagent .
+
+docker-push:
+	docker push bobbae/mexosagent
+
 build: api dep ## Build mexosagent
+	go get ./...
 	@mkdir -p build
-	@go build -o build/${PROGRAM} .
+	@CGO_ENABLED=0 go build -o build/${PROGRAM} .
 
 dep: api ## Fetch dependencies
 	@go get ./...

@@ -25,13 +25,6 @@ service MexOSAgent {
         };
     }
 
-    rpc FQDN(FQDNRequest) returns (FQDNResponse) {
-        option (google.api.http) = {
-            post: "/v1/fqdn",
-            body: "*"
-        };
-    }
-
     rpc Status(StatusRequest) returns (StatusResponse) {
         option (google.api.http) = {
             post: "/v1/status",
@@ -73,11 +66,12 @@ message StatusResponse {
     string status = 2;
     repeated Proxy proxies = 3;
     repeated Provision provisions = 4;
-    repeated FQDN fqdns = 5;
 }
 
 message Proxy {
     string name = 1;
+    string origin = 2;
+    string path = 3;
 }
 
 message ProxyRequest {
@@ -90,16 +84,3 @@ message ProxyResponse {
     string status = 2;
 }
 
-message FQDN {
-    string name = 1;
-}
-
-message FQDNRequest {
-    string message = 1;
-    repeated FQDN proxies = 2;
-}
-
-message FQDNResponse {
-    string message = 1;
-    string status = 2;
-}

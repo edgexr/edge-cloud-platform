@@ -25,17 +25,17 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Provision struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Image                string   `protobuf:"bytes,2,opt,name=image" json:"image,omitempty"`
-	Flavor               string   `protobuf:"bytes,3,opt,name=flavor" json:"flavor,omitempty"`
-	Network              string   `protobuf:"bytes,4,opt,name=network" json:"network,omitempty"`
-	Fixedip              string   `protobuf:"bytes,5,opt,name=fixedip" json:"fixedip,omitempty"`
-	Storage              string   `protobuf:"bytes,6,opt,name=storage" json:"storage,omitempty"`
-	Zone                 string   `protobuf:"bytes,7,opt,name=zone" json:"zone,omitempty"`
-	Tenant               string   `protobuf:"bytes,8,opt,name=tenant" json:"tenant,omitempty"`
-	Metadata             string   `protobuf:"bytes,9,opt,name=metadata" json:"metadata,omitempty"`
-	Region               string   `protobuf:"bytes,10,opt,name=region" json:"region,omitempty"`
-	Kind                 string   `protobuf:"bytes,11,opt,name=kind" json:"kind,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Image                string   `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	Flavor               string   `protobuf:"bytes,3,opt,name=flavor,proto3" json:"flavor,omitempty"`
+	Network              string   `protobuf:"bytes,4,opt,name=network,proto3" json:"network,omitempty"`
+	Fixedip              string   `protobuf:"bytes,5,opt,name=fixedip,proto3" json:"fixedip,omitempty"`
+	Storage              string   `protobuf:"bytes,6,opt,name=storage,proto3" json:"storage,omitempty"`
+	Zone                 string   `protobuf:"bytes,7,opt,name=zone,proto3" json:"zone,omitempty"`
+	Tenant               string   `protobuf:"bytes,8,opt,name=tenant,proto3" json:"tenant,omitempty"`
+	Metadata             string   `protobuf:"bytes,9,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Region               string   `protobuf:"bytes,10,opt,name=region,proto3" json:"region,omitempty"`
+	Kind                 string   `protobuf:"bytes,11,opt,name=kind,proto3" json:"kind,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -45,7 +45,7 @@ func (m *Provision) Reset()         { *m = Provision{} }
 func (m *Provision) String() string { return proto.CompactTextString(m) }
 func (*Provision) ProtoMessage()    {}
 func (*Provision) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{0}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{0}
 }
 func (m *Provision) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Provision.Unmarshal(m, b)
@@ -143,8 +143,8 @@ func (m *Provision) GetKind() string {
 }
 
 type ProvisionRequest struct {
-	Message              string       `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Provisions           []*Provision `protobuf:"bytes,2,rep,name=provisions" json:"provisions,omitempty"`
+	Message              string       `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Provisions           []*Provision `protobuf:"bytes,2,rep,name=provisions,proto3" json:"provisions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -154,7 +154,7 @@ func (m *ProvisionRequest) Reset()         { *m = ProvisionRequest{} }
 func (m *ProvisionRequest) String() string { return proto.CompactTextString(m) }
 func (*ProvisionRequest) ProtoMessage()    {}
 func (*ProvisionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{1}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{1}
 }
 func (m *ProvisionRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProvisionRequest.Unmarshal(m, b)
@@ -189,8 +189,8 @@ func (m *ProvisionRequest) GetProvisions() []*Provision {
 }
 
 type ProvisionResponse struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Status               string   `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
+	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -200,7 +200,7 @@ func (m *ProvisionResponse) Reset()         { *m = ProvisionResponse{} }
 func (m *ProvisionResponse) String() string { return proto.CompactTextString(m) }
 func (*ProvisionResponse) ProtoMessage()    {}
 func (*ProvisionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{2}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{2}
 }
 func (m *ProvisionResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProvisionResponse.Unmarshal(m, b)
@@ -235,7 +235,7 @@ func (m *ProvisionResponse) GetStatus() string {
 }
 
 type StatusRequest struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -245,7 +245,7 @@ func (m *StatusRequest) Reset()         { *m = StatusRequest{} }
 func (m *StatusRequest) String() string { return proto.CompactTextString(m) }
 func (*StatusRequest) ProtoMessage()    {}
 func (*StatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{3}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{3}
 }
 func (m *StatusRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StatusRequest.Unmarshal(m, b)
@@ -273,11 +273,10 @@ func (m *StatusRequest) GetMessage() string {
 }
 
 type StatusResponse struct {
-	Message              string       `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Status               string       `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
-	Proxies              []*Proxy     `protobuf:"bytes,3,rep,name=proxies" json:"proxies,omitempty"`
-	Provisions           []*Provision `protobuf:"bytes,4,rep,name=provisions" json:"provisions,omitempty"`
-	Fqdns                []*FQDN      `protobuf:"bytes,5,rep,name=fqdns" json:"fqdns,omitempty"`
+	Message              string       `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Status               string       `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Proxies              []*Proxy     `protobuf:"bytes,3,rep,name=proxies,proto3" json:"proxies,omitempty"`
+	Provisions           []*Provision `protobuf:"bytes,4,rep,name=provisions,proto3" json:"provisions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -287,7 +286,7 @@ func (m *StatusResponse) Reset()         { *m = StatusResponse{} }
 func (m *StatusResponse) String() string { return proto.CompactTextString(m) }
 func (*StatusResponse) ProtoMessage()    {}
 func (*StatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{4}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{4}
 }
 func (m *StatusResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StatusResponse.Unmarshal(m, b)
@@ -335,15 +334,10 @@ func (m *StatusResponse) GetProvisions() []*Provision {
 	return nil
 }
 
-func (m *StatusResponse) GetFqdns() []*FQDN {
-	if m != nil {
-		return m.Fqdns
-	}
-	return nil
-}
-
 type Proxy struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Origin               string   `protobuf:"bytes,2,opt,name=origin,proto3" json:"origin,omitempty"`
+	Path                 string   `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -353,7 +347,7 @@ func (m *Proxy) Reset()         { *m = Proxy{} }
 func (m *Proxy) String() string { return proto.CompactTextString(m) }
 func (*Proxy) ProtoMessage()    {}
 func (*Proxy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{5}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{5}
 }
 func (m *Proxy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Proxy.Unmarshal(m, b)
@@ -380,9 +374,23 @@ func (m *Proxy) GetName() string {
 	return ""
 }
 
+func (m *Proxy) GetOrigin() string {
+	if m != nil {
+		return m.Origin
+	}
+	return ""
+}
+
+func (m *Proxy) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
 type ProxyRequest struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Proxies              []*Proxy `protobuf:"bytes,2,rep,name=proxies" json:"proxies,omitempty"`
+	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Proxies              []*Proxy `protobuf:"bytes,2,rep,name=proxies,proto3" json:"proxies,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -392,7 +400,7 @@ func (m *ProxyRequest) Reset()         { *m = ProxyRequest{} }
 func (m *ProxyRequest) String() string { return proto.CompactTextString(m) }
 func (*ProxyRequest) ProtoMessage()    {}
 func (*ProxyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{6}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{6}
 }
 func (m *ProxyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProxyRequest.Unmarshal(m, b)
@@ -427,8 +435,8 @@ func (m *ProxyRequest) GetProxies() []*Proxy {
 }
 
 type ProxyResponse struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Status               string   `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
+	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -438,7 +446,7 @@ func (m *ProxyResponse) Reset()         { *m = ProxyResponse{} }
 func (m *ProxyResponse) String() string { return proto.CompactTextString(m) }
 func (*ProxyResponse) ProtoMessage()    {}
 func (*ProxyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{7}
+	return fileDescriptor_mexosagent_f761e18608af2469, []int{7}
 }
 func (m *ProxyResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProxyResponse.Unmarshal(m, b)
@@ -472,136 +480,6 @@ func (m *ProxyResponse) GetStatus() string {
 	return ""
 }
 
-type FQDN struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *FQDN) Reset()         { *m = FQDN{} }
-func (m *FQDN) String() string { return proto.CompactTextString(m) }
-func (*FQDN) ProtoMessage()    {}
-func (*FQDN) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{8}
-}
-func (m *FQDN) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FQDN.Unmarshal(m, b)
-}
-func (m *FQDN) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FQDN.Marshal(b, m, deterministic)
-}
-func (dst *FQDN) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FQDN.Merge(dst, src)
-}
-func (m *FQDN) XXX_Size() int {
-	return xxx_messageInfo_FQDN.Size(m)
-}
-func (m *FQDN) XXX_DiscardUnknown() {
-	xxx_messageInfo_FQDN.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FQDN proto.InternalMessageInfo
-
-func (m *FQDN) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-type FQDNRequest struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Proxies              []*FQDN  `protobuf:"bytes,2,rep,name=proxies" json:"proxies,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *FQDNRequest) Reset()         { *m = FQDNRequest{} }
-func (m *FQDNRequest) String() string { return proto.CompactTextString(m) }
-func (*FQDNRequest) ProtoMessage()    {}
-func (*FQDNRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{9}
-}
-func (m *FQDNRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FQDNRequest.Unmarshal(m, b)
-}
-func (m *FQDNRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FQDNRequest.Marshal(b, m, deterministic)
-}
-func (dst *FQDNRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FQDNRequest.Merge(dst, src)
-}
-func (m *FQDNRequest) XXX_Size() int {
-	return xxx_messageInfo_FQDNRequest.Size(m)
-}
-func (m *FQDNRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_FQDNRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FQDNRequest proto.InternalMessageInfo
-
-func (m *FQDNRequest) GetMessage() string {
-	if m != nil {
-		return m.Message
-	}
-	return ""
-}
-
-func (m *FQDNRequest) GetProxies() []*FQDN {
-	if m != nil {
-		return m.Proxies
-	}
-	return nil
-}
-
-type FQDNResponse struct {
-	Message              string   `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
-	Status               string   `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *FQDNResponse) Reset()         { *m = FQDNResponse{} }
-func (m *FQDNResponse) String() string { return proto.CompactTextString(m) }
-func (*FQDNResponse) ProtoMessage()    {}
-func (*FQDNResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_mexosagent_1b81d1f25667b750, []int{10}
-}
-func (m *FQDNResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FQDNResponse.Unmarshal(m, b)
-}
-func (m *FQDNResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FQDNResponse.Marshal(b, m, deterministic)
-}
-func (dst *FQDNResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FQDNResponse.Merge(dst, src)
-}
-func (m *FQDNResponse) XXX_Size() int {
-	return xxx_messageInfo_FQDNResponse.Size(m)
-}
-func (m *FQDNResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_FQDNResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FQDNResponse proto.InternalMessageInfo
-
-func (m *FQDNResponse) GetMessage() string {
-	if m != nil {
-		return m.Message
-	}
-	return ""
-}
-
-func (m *FQDNResponse) GetStatus() string {
-	if m != nil {
-		return m.Status
-	}
-	return ""
-}
-
 func init() {
 	proto.RegisterType((*Provision)(nil), "api.Provision")
 	proto.RegisterType((*ProvisionRequest)(nil), "api.ProvisionRequest")
@@ -611,9 +489,6 @@ func init() {
 	proto.RegisterType((*Proxy)(nil), "api.Proxy")
 	proto.RegisterType((*ProxyRequest)(nil), "api.ProxyRequest")
 	proto.RegisterType((*ProxyResponse)(nil), "api.ProxyResponse")
-	proto.RegisterType((*FQDN)(nil), "api.FQDN")
-	proto.RegisterType((*FQDNRequest)(nil), "api.FQDNRequest")
-	proto.RegisterType((*FQDNResponse)(nil), "api.FQDNResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -624,13 +499,13 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for MexOSAgent service
-
+// MexOSAgentClient is the client API for MexOSAgent service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MexOSAgentClient interface {
 	Provision(ctx context.Context, in *ProvisionRequest, opts ...grpc.CallOption) (*ProvisionResponse, error)
 	Destroy(ctx context.Context, in *ProvisionRequest, opts ...grpc.CallOption) (*ProvisionResponse, error)
 	Proxy(ctx context.Context, in *ProxyRequest, opts ...grpc.CallOption) (*ProxyResponse, error)
-	FQDN(ctx context.Context, in *FQDNRequest, opts ...grpc.CallOption) (*FQDNResponse, error)
 	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
@@ -644,7 +519,7 @@ func NewMexOSAgentClient(cc *grpc.ClientConn) MexOSAgentClient {
 
 func (c *mexOSAgentClient) Provision(ctx context.Context, in *ProvisionRequest, opts ...grpc.CallOption) (*ProvisionResponse, error) {
 	out := new(ProvisionResponse)
-	err := grpc.Invoke(ctx, "/api.MexOSAgent/Provision", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/api.MexOSAgent/Provision", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -653,7 +528,7 @@ func (c *mexOSAgentClient) Provision(ctx context.Context, in *ProvisionRequest, 
 
 func (c *mexOSAgentClient) Destroy(ctx context.Context, in *ProvisionRequest, opts ...grpc.CallOption) (*ProvisionResponse, error) {
 	out := new(ProvisionResponse)
-	err := grpc.Invoke(ctx, "/api.MexOSAgent/Destroy", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/api.MexOSAgent/Destroy", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -662,16 +537,7 @@ func (c *mexOSAgentClient) Destroy(ctx context.Context, in *ProvisionRequest, op
 
 func (c *mexOSAgentClient) Proxy(ctx context.Context, in *ProxyRequest, opts ...grpc.CallOption) (*ProxyResponse, error) {
 	out := new(ProxyResponse)
-	err := grpc.Invoke(ctx, "/api.MexOSAgent/Proxy", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *mexOSAgentClient) FQDN(ctx context.Context, in *FQDNRequest, opts ...grpc.CallOption) (*FQDNResponse, error) {
-	out := new(FQDNResponse)
-	err := grpc.Invoke(ctx, "/api.MexOSAgent/FQDN", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/api.MexOSAgent/Proxy", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -680,20 +546,18 @@ func (c *mexOSAgentClient) FQDN(ctx context.Context, in *FQDNRequest, opts ...gr
 
 func (c *mexOSAgentClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
 	out := new(StatusResponse)
-	err := grpc.Invoke(ctx, "/api.MexOSAgent/Status", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/api.MexOSAgent/Status", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for MexOSAgent service
-
+// MexOSAgentServer is the server API for MexOSAgent service.
 type MexOSAgentServer interface {
 	Provision(context.Context, *ProvisionRequest) (*ProvisionResponse, error)
 	Destroy(context.Context, *ProvisionRequest) (*ProvisionResponse, error)
 	Proxy(context.Context, *ProxyRequest) (*ProxyResponse, error)
-	FQDN(context.Context, *FQDNRequest) (*FQDNResponse, error)
 	Status(context.Context, *StatusRequest) (*StatusResponse, error)
 }
 
@@ -755,24 +619,6 @@ func _MexOSAgent_Proxy_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MexOSAgent_FQDN_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FQDNRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MexOSAgentServer).FQDN(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.MexOSAgent/FQDN",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MexOSAgentServer).FQDN(ctx, req.(*FQDNRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MexOSAgent_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
@@ -808,10 +654,6 @@ var _MexOSAgent_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MexOSAgent_Proxy_Handler,
 		},
 		{
-			MethodName: "FQDN",
-			Handler:    _MexOSAgent_FQDN_Handler,
-		},
-		{
 			MethodName: "Status",
 			Handler:    _MexOSAgent_Status_Handler,
 		},
@@ -820,44 +662,41 @@ var _MexOSAgent_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/mexosagent.proto",
 }
 
-func init() { proto.RegisterFile("api/mexosagent.proto", fileDescriptor_mexosagent_1b81d1f25667b750) }
+func init() { proto.RegisterFile("api/mexosagent.proto", fileDescriptor_mexosagent_f761e18608af2469) }
 
-var fileDescriptor_mexosagent_1b81d1f25667b750 = []byte{
-	// 576 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0xcf, 0x6e, 0x13, 0x31,
-	0x10, 0xc6, 0x95, 0xff, 0xcd, 0xa4, 0x09, 0x89, 0x9b, 0x46, 0x56, 0x40, 0xa2, 0x32, 0x1c, 0x4a,
-	0x0f, 0x89, 0x28, 0xb7, 0x9e, 0x5a, 0x29, 0x20, 0x0e, 0x50, 0x4a, 0xca, 0x91, 0x8b, 0x51, 0x9c,
-	0x95, 0xd5, 0xae, 0xbd, 0x5d, 0xbb, 0x61, 0xcb, 0x91, 0x03, 0x57, 0x0e, 0x3c, 0x0d, 0xcf, 0xc1,
-	0x2b, 0xf0, 0x20, 0x68, 0x6c, 0x6f, 0xba, 0x8d, 0x0a, 0x11, 0xb9, 0xf9, 0x9b, 0x99, 0xfd, 0xcd,
-	0xb7, 0x33, 0xbb, 0x86, 0x3e, 0x4f, 0xe4, 0x38, 0x16, 0x99, 0x36, 0x3c, 0x12, 0xca, 0x8e, 0x92,
-	0x54, 0x5b, 0x4d, 0x2a, 0x3c, 0x91, 0xc3, 0x47, 0x91, 0xd6, 0xd1, 0xa5, 0x18, 0x63, 0x05, 0x57,
-	0x4a, 0x5b, 0x6e, 0xa5, 0x56, 0xc6, 0x97, 0xb0, 0xef, 0x65, 0x68, 0x9e, 0xa5, 0x7a, 0x21, 0x8d,
-	0xd4, 0x8a, 0x10, 0xa8, 0x2a, 0x1e, 0x0b, 0x5a, 0xda, 0x2b, 0xed, 0x37, 0xa7, 0xee, 0x4c, 0xfa,
-	0x50, 0x93, 0x31, 0x8f, 0x04, 0x2d, 0xbb, 0xa0, 0x17, 0x64, 0x00, 0xf5, 0xf9, 0x25, 0x5f, 0xe8,
-	0x94, 0x56, 0x5c, 0x38, 0x28, 0x42, 0xa1, 0xa1, 0x84, 0xfd, 0xac, 0xd3, 0x0b, 0x5a, 0x75, 0x89,
-	0x5c, 0x62, 0x66, 0x2e, 0x33, 0x31, 0x93, 0x09, 0xad, 0xf9, 0x4c, 0x90, 0x98, 0x31, 0x56, 0xa7,
-	0xd8, 0xa3, 0xee, 0x33, 0x41, 0xa2, 0x9f, 0x2f, 0x5a, 0x09, 0xda, 0xf0, 0x7e, 0xf0, 0x8c, 0x9d,
-	0xad, 0x50, 0x5c, 0x59, 0xba, 0xe5, 0x3b, 0x7b, 0x45, 0x86, 0xb0, 0x15, 0x0b, 0xcb, 0x67, 0xdc,
-	0x72, 0xda, 0x74, 0x99, 0xa5, 0xc6, 0x67, 0x52, 0x11, 0x49, 0xad, 0x28, 0xf8, 0x67, 0xbc, 0x42,
-	0xfe, 0x85, 0x54, 0x33, 0xda, 0xf2, 0x7c, 0x3c, 0xb3, 0x8f, 0xd0, 0x5d, 0x0e, 0x64, 0x2a, 0xae,
-	0xae, 0x85, 0xb1, 0xe8, 0x30, 0x16, 0x06, 0x67, 0x1b, 0x46, 0x93, 0x4b, 0x32, 0x02, 0x48, 0xf2,
-	0x6a, 0x43, 0xcb, 0x7b, 0x95, 0xfd, 0xd6, 0x61, 0x67, 0xc4, 0x13, 0x39, 0xba, 0x85, 0x14, 0x2a,
-	0xd8, 0x4b, 0xe8, 0x15, 0xe8, 0x26, 0xd1, 0xca, 0x88, 0x7f, 0xe0, 0x07, 0x50, 0x37, 0x96, 0xdb,
-	0x6b, 0x13, 0xa6, 0x1f, 0x14, 0x7b, 0x06, 0xed, 0x73, 0x77, 0x5a, 0xeb, 0x90, 0xfd, 0x2c, 0x41,
-	0x27, 0xaf, 0xdd, 0xb4, 0x1f, 0x79, 0x0a, 0x8d, 0x24, 0xd5, 0x99, 0x14, 0x86, 0x56, 0xdc, 0x3b,
-	0x42, 0xfe, 0x8e, 0xd9, 0xcd, 0x34, 0x4f, 0xad, 0x0c, 0xa3, 0xba, 0x6e, 0x18, 0xe4, 0x31, 0xd4,
-	0xe6, 0x57, 0x33, 0x65, 0x68, 0xcd, 0x95, 0x36, 0x5d, 0xe9, 0xab, 0xf7, 0x93, 0xd3, 0xa9, 0x8f,
-	0xb3, 0x87, 0x50, 0x73, 0x2d, 0xee, 0xfb, 0x30, 0xd9, 0x29, 0x6c, 0xfb, 0xfe, 0x6b, 0x97, 0x54,
-	0x70, 0x5f, 0xfe, 0xab, 0x7b, 0x76, 0x02, 0xed, 0xc0, 0xdb, 0x78, 0x2d, 0x43, 0xa8, 0xa2, 0xfd,
-	0x7b, 0xed, 0xbe, 0x81, 0x96, 0x7b, 0xb5, 0xb5, 0x6e, 0x9f, 0xac, 0xba, 0x2d, 0xcc, 0x65, 0x69,
-	0xf6, 0x18, 0xb6, 0x3d, 0x6d, 0x53, 0xaf, 0x87, 0xdf, 0x2a, 0x00, 0x6f, 0x45, 0xf6, 0xee, 0xfc,
-	0x04, 0x6f, 0x0c, 0xf2, 0xa1, 0x78, 0x0f, 0xec, 0xae, 0x2c, 0xcd, 0x7b, 0x1e, 0x0e, 0x56, 0xc3,
-	0xbe, 0x39, 0xa3, 0x5f, 0x7f, 0xfd, 0xfe, 0x51, 0x26, 0xac, 0x3d, 0x5e, 0x3c, 0x1f, 0x2f, 0xf7,
-	0x7b, 0x54, 0x3a, 0x20, 0x67, 0xd0, 0x98, 0x08, 0x63, 0x53, 0x7d, 0xf3, 0xbf, 0xcc, 0x81, 0x63,
-	0x76, 0x59, 0x0b, 0x99, 0x33, 0xcf, 0x40, 0xe2, 0x24, 0xff, 0x24, 0x7a, 0x85, 0x1d, 0x06, 0x16,
-	0x29, 0x86, 0x02, 0xa7, 0xef, 0x38, 0x1d, 0xd6, 0x0c, 0xde, 0x32, 0x47, 0x39, 0x0e, 0x8b, 0xea,
-	0xde, 0x8e, 0x36, 0x30, 0x7a, 0x85, 0x48, 0x40, 0xec, 0x38, 0x44, 0x9b, 0x6d, 0x21, 0x02, 0x3f,
-	0x4c, 0x24, 0xbc, 0x86, 0xba, 0xff, 0xab, 0x88, 0xef, 0x7a, 0xe7, 0x77, 0x1c, 0xee, 0xdc, 0x89,
-	0x05, 0xce, 0xae, 0xe3, 0x3c, 0x60, 0x80, 0x1c, 0xbf, 0x85, 0xa3, 0xd2, 0xc1, 0xa7, 0xba, 0xbb,
-	0x89, 0x5f, 0xfc, 0x09, 0x00, 0x00, 0xff, 0xff, 0x14, 0xb7, 0x3f, 0xf0, 0xc4, 0x05, 0x00, 0x00,
+var fileDescriptor_mexosagent_f761e18608af2469 = []byte{
+	// 523 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0xc1, 0x6e, 0x13, 0x31,
+	0x10, 0x86, 0xb5, 0x9b, 0x66, 0xd3, 0x4c, 0x48, 0x68, 0x4d, 0xba, 0xb2, 0x22, 0x0e, 0x95, 0xc5,
+	0xa1, 0xf4, 0x90, 0x88, 0x72, 0xeb, 0xad, 0x52, 0x11, 0x5c, 0x80, 0x2a, 0xe5, 0xc8, 0xc5, 0x28,
+	0xee, 0x62, 0xb5, 0x6b, 0x2f, 0xb6, 0x1b, 0xb6, 0x1c, 0x79, 0x01, 0x0e, 0x5c, 0x78, 0x20, 0xde,
+	0x80, 0x57, 0xe0, 0x41, 0x90, 0x3d, 0xde, 0xb0, 0x8d, 0x80, 0x88, 0xde, 0xe6, 0x9f, 0x19, 0x7f,
+	0x33, 0xfe, 0xe3, 0x0d, 0x8c, 0x79, 0x25, 0x67, 0xa5, 0xa8, 0xb5, 0xe5, 0x85, 0x50, 0x6e, 0x5a,
+	0x19, 0xed, 0x34, 0xe9, 0xf0, 0x4a, 0x4e, 0x1e, 0x16, 0x5a, 0x17, 0x57, 0x62, 0xe6, 0x3b, 0xb8,
+	0x52, 0xda, 0x71, 0x27, 0xb5, 0xb2, 0xd8, 0xc2, 0xbe, 0xa4, 0xd0, 0x3f, 0x33, 0x7a, 0x29, 0xad,
+	0xd4, 0x8a, 0x10, 0xd8, 0x52, 0xbc, 0x14, 0x34, 0xd9, 0x4f, 0x0e, 0xfa, 0xf3, 0x10, 0x93, 0x31,
+	0x74, 0x65, 0xc9, 0x0b, 0x41, 0xd3, 0x90, 0x44, 0x41, 0x72, 0xc8, 0x2e, 0xae, 0xf8, 0x52, 0x1b,
+	0xda, 0x09, 0xe9, 0xa8, 0x08, 0x85, 0x9e, 0x12, 0xee, 0xa3, 0x36, 0x97, 0x74, 0x2b, 0x14, 0x1a,
+	0xe9, 0x2b, 0x17, 0xb2, 0x16, 0x0b, 0x59, 0xd1, 0x2e, 0x56, 0xa2, 0xf4, 0x15, 0xeb, 0xb4, 0xf1,
+	0x33, 0x32, 0xac, 0x44, 0xe9, 0xf7, 0xf9, 0xa4, 0x95, 0xa0, 0x3d, 0xdc, 0xc7, 0xc7, 0x7e, 0xb2,
+	0x13, 0x8a, 0x2b, 0x47, 0xb7, 0x71, 0x32, 0x2a, 0x32, 0x81, 0xed, 0x52, 0x38, 0xbe, 0xe0, 0x8e,
+	0xd3, 0x7e, 0xa8, 0xac, 0xb4, 0x3f, 0x63, 0x44, 0x21, 0xb5, 0xa2, 0x80, 0x67, 0x50, 0x79, 0xfe,
+	0xa5, 0x54, 0x0b, 0x3a, 0x40, 0xbe, 0x8f, 0xd9, 0x5b, 0xd8, 0x59, 0x19, 0x32, 0x17, 0x1f, 0xae,
+	0x85, 0x75, 0x7e, 0xc3, 0x52, 0x58, 0xef, 0x6d, 0xb4, 0xa6, 0x91, 0x64, 0x0a, 0x50, 0x35, 0xdd,
+	0x96, 0xa6, 0xfb, 0x9d, 0x83, 0xc1, 0xd1, 0x68, 0xca, 0x2b, 0x39, 0xfd, 0x0d, 0x69, 0x75, 0xb0,
+	0x67, 0xb0, 0xdb, 0xa2, 0xdb, 0x4a, 0x2b, 0x2b, 0xfe, 0x81, 0xcf, 0x21, 0xb3, 0x8e, 0xbb, 0x6b,
+	0x1b, 0xdd, 0x8f, 0x8a, 0x3d, 0x86, 0xe1, 0x79, 0x88, 0x36, 0x6e, 0xc8, 0xbe, 0x25, 0x30, 0x6a,
+	0x7a, 0xef, 0x3a, 0x8f, 0x3c, 0x82, 0x5e, 0x65, 0x74, 0x2d, 0x85, 0xa5, 0x9d, 0x70, 0x47, 0x68,
+	0xee, 0x58, 0xdf, 0xcc, 0x9b, 0xd2, 0x9a, 0x19, 0x5b, 0x1b, 0xcd, 0x78, 0x0e, 0xdd, 0x40, 0xf8,
+	0xe3, 0xbb, 0xcb, 0x21, 0xd3, 0x46, 0x16, 0x52, 0x35, 0xab, 0xa0, 0xf2, 0xbd, 0x15, 0x77, 0xef,
+	0xe3, 0xbb, 0x0b, 0x31, 0x7b, 0x05, 0xf7, 0x70, 0x95, 0x8d, 0xbf, 0x57, 0xeb, 0x22, 0xe9, 0x5f,
+	0x2f, 0xc2, 0x4e, 0x60, 0x18, 0x79, 0x77, 0x75, 0xec, 0xe8, 0x7b, 0x0a, 0xf0, 0x52, 0xd4, 0xaf,
+	0xcf, 0x4f, 0xfc, 0x07, 0x49, 0xde, 0xb4, 0x3f, 0xb3, 0xbd, 0x35, 0x4f, 0x70, 0xeb, 0x49, 0xbe,
+	0x9e, 0xc6, 0xe1, 0x8c, 0x7e, 0xfe, 0xf1, 0xf3, 0x6b, 0x4a, 0xd8, 0x70, 0xb6, 0x7c, 0x32, 0x5b,
+	0xd9, 0x77, 0x9c, 0x1c, 0x92, 0x33, 0xe8, 0x9d, 0x0a, 0xeb, 0x8c, 0xbe, 0xf9, 0x5f, 0x66, 0x1e,
+	0x98, 0x3b, 0x6c, 0xe0, 0x99, 0x0b, 0x64, 0x78, 0xe2, 0x69, 0xf3, 0x93, 0xec, 0xb6, 0x7c, 0x89,
+	0x2c, 0xd2, 0x4e, 0x45, 0xce, 0x38, 0x70, 0x46, 0xac, 0x1f, 0x77, 0xab, 0x03, 0xe5, 0x05, 0x64,
+	0xf8, 0xe4, 0x08, 0x9e, 0xb9, 0xf5, 0x56, 0x27, 0x0f, 0x6e, 0xe5, 0x22, 0x68, 0x2f, 0x80, 0xee,
+	0x33, 0xf0, 0x20, 0xf4, 0xf0, 0x38, 0x39, 0x7c, 0x97, 0x85, 0xbf, 0xa9, 0xa7, 0xbf, 0x02, 0x00,
+	0x00, 0xff, 0xff, 0xae, 0x70, 0x04, 0x02, 0xe1, 0x04, 0x00, 0x00,
 }
