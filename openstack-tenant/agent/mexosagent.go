@@ -10,6 +10,13 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/server"
 )
 
+//Agent lives on a KVM inside cloudlet. It can talk with kubernetes cluster.
+//Agent needs to be on a node that has external network and internal network(s).
+//It can proxy traffic between networks and terminates TLS.
+//Each private subnet added requires additional routing table entry on the node.
+//Originally agent had provisioning code which initialized rudimentary kubernetes cluster.
+//It no longer has this function, which is pushed further out to the CRM side.
+//This is due to platform dependent issues, as well as to allow more automation.
 func main() {
 	fmt.Println(os.Args)
 	cert := flag.String("cert", "/var/www/.cache", "directory holding certificates and keys")

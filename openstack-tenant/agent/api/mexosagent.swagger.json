@@ -93,6 +93,32 @@
         ]
       }
     },
+    "/v1/route": {
+      "post": {
+        "operationId": "Route",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiRouteResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiRouteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
     "/v1/status": {
       "post": {
         "operationId": "Status",
@@ -213,6 +239,45 @@
       }
     },
     "apiProxyResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "apiRoute": {
+      "type": "object",
+      "properties": {
+        "subnet": {
+          "type": "string"
+        },
+        "gateway": {
+          "type": "string"
+        },
+        "dev": {
+          "type": "string"
+        }
+      }
+    },
+    "apiRouteRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiRoute"
+          }
+        }
+      }
+    },
+    "apiRouteResponse": {
       "type": "object",
       "properties": {
         "message": {

@@ -2,13 +2,18 @@ package mexosapi
 
 import (
 	"bufio"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
 	log "github.com/bobbae/logrus"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/limits"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/networks"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
@@ -80,12 +85,52 @@ func GetOSClient(region string) (*gophercloud.ServiceClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	insecure := os.Getenv("OS_INSECURE")
+	caCert := os.Getenv("OS_CACERT")
 
-	provider, err := openstack.AuthenticatedClient(authOpts)
-	if err != nil {
-		return nil, err
+	var provider *gophercloud.ProviderClient
+
+	if caCert != "" {
+		log.Debugf("CA CERT %s", caCert)
+		config := &tls.Config{}
+		if insecure != "" {
+			log.Debugf("insecure skip true")
+			config.InsecureSkipVerify = true
+		}
+		certpool := x509.NewCertPool()
+		pem, err := ioutil.ReadFile(caCert)
+		if err != nil {
+			log.Debugf("error %v", err)
+			log.Error("Unable to read specified CA certificate(s)")
+			return nil, err
+		}
+		ok := certpool.AppendCertsFromPEM(pem)
+		if !ok {
+			err = fmt.Errorf("Ill-formed CA certificate(s) PEM file")
+			log.Debugf("error %v", err)
+			return nil, err
+		}
+		config.RootCAs = certpool
+		transport := &http.Transport{TLSClientConfig: config, Proxy: http.ProxyFromEnvironment}
+		provider, err = openstack.NewClient(authOpts.IdentityEndpoint)
+		if err != nil {
+			log.Debugf("error %v", err)
+			return nil, err
+		}
+		provider.HTTPClient.Transport = transport
+		err = openstack.Authenticate(provider, authOpts)
+		if err != nil {
+			log.Debugf("authentication error %v", err)
+			return nil, err
+		}
+	} else {
+		provider, err = openstack.AuthenticatedClient(authOpts)
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	log.Debugf("attempt to get client handle for region %s", region)
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: region,
 	})
@@ -178,4 +223,13 @@ func DeleteServer(client *gophercloud.ServiceClient, id string) error {
 	}
 
 	return nil
+}
+
+func GetLimits(client *gophercloud.ServiceClient) (*limits.Limits, error) {
+	res, err := limits.Get(client, nil).Extract()
+
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

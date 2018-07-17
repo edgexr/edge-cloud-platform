@@ -25,6 +25,13 @@ service MexOSAgent {
         };
     }
 
+    rpc Route(RouteRequest) returns (RouteResponse){
+        option (google.api.http) = {
+            post: "/v1/route",
+            body: "*"
+        };
+    }
+
     rpc Status(StatusRequest) returns (StatusResponse) {
         option (google.api.http) = {
             post: "/v1/status",
@@ -80,6 +87,22 @@ message ProxyRequest {
 }
 
 message ProxyResponse {
+    string message = 1;
+    string status = 2;
+}
+
+message Route {
+	string subnet = 1;
+	string gateway = 2;
+	string dev = 3;
+}
+
+message RouteRequest {
+    string message = 1;
+    repeated Route routes = 2;
+}
+
+message RouteResponse {
     string message = 1;
     string status = 2;
 }

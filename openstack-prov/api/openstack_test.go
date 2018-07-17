@@ -2,20 +2,25 @@ package mexosapi
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	log "github.com/bobbae/logrus"
 )
+
+var myRegion string
 
 func TestInit(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 }
 
 func TestInternOSEnvAAABBB(t *testing.T) {
-	err := InternOSEnv("os.env")
+	home := os.Getenv("HOME")
+	err := InternOSEnv(home + "/os.env")
 	if err != nil {
 		t.Errorf("cannot intern OS env %v", err)
 	}
+	myRegion = os.Getenv("OS_REGION_NAME")
 }
 
 func TestGetOSClient(t *testing.T) {
@@ -23,7 +28,7 @@ func TestGetOSClient(t *testing.T) {
 		Region  string
 		Success bool
 	}{
-		{"RegionOne", true},
+		{myRegion, true},
 		{"RegionTwo", false},
 	}
 
@@ -31,17 +36,34 @@ func TestGetOSClient(t *testing.T) {
 		client, err := GetOSClient(entry.Region)
 		if err != nil {
 			log.Println(entry, err)
+			t.Errorf("failed to get Openstack client, %v", err)
 		} else {
 			log.Println("got client handle", client)
 		}
 		if entry.Success && err != nil {
-			t.Errorf("cannot get env for %v", entry)
+			t.Errorf("err %v, entry %v", err, entry)
 		}
 	}
 }
 
+func TestGetLimits(t *testing.T) {
+	client, err := GetOSClient(myRegion)
+	if err != nil {
+		t.Errorf("cannot get client, %v", err)
+		return
+	}
+
+	limits, err := GetLimits(client)
+
+	if err != nil {
+		t.Errorf("can't get limits, %v", err)
+	}
+
+	log.Println("limits", limits)
+}
+
 func TestListServers(t *testing.T) {
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return
@@ -57,7 +79,7 @@ func TestListServers(t *testing.T) {
 }
 
 func TestListImages(t *testing.T) {
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return
@@ -73,7 +95,7 @@ func TestListImages(t *testing.T) {
 }
 
 func TestListFlavors(t *testing.T) {
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return
@@ -89,7 +111,7 @@ func TestListFlavors(t *testing.T) {
 }
 
 func TestListNetworks(t *testing.T) {
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return
@@ -109,7 +131,7 @@ func TestCreateServerAAA(t *testing.T) {
 	True = true
 	False = false
 
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return
@@ -171,7 +193,7 @@ func TestCreateServerAAA(t *testing.T) {
 	}{
 		{
 			NovaArgs{
-				"RegionOne",
+				myRegion,
 				"nova", // zone: not internal.
 				"tenant-1",
 				"test-1",
@@ -187,7 +209,7 @@ func TestCreateServerAAA(t *testing.T) {
 		},
 		{
 			NovaArgs{
-				"RegionOne",
+				myRegion,
 				"nova", // zone: not internal.
 				"tenant-1",
 				"test-2",
@@ -203,7 +225,7 @@ func TestCreateServerAAA(t *testing.T) {
 		},
 		{
 			NovaArgs{
-				"RegionOne",
+				myRegion,
 				"nova", // zone: not internal.
 				"tenant-1",
 				"test-3",
@@ -256,7 +278,7 @@ func TestCreateServerAAA(t *testing.T) {
 }
 
 func TestDeleteServerBBB(t *testing.T) {
-	client, err := GetOSClient("RegionOne")
+	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
 		return

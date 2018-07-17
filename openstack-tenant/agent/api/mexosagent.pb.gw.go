@@ -67,6 +67,19 @@ func request_MexOSAgent_Proxy_0(ctx context.Context, marshaler runtime.Marshaler
 
 }
 
+func request_MexOSAgent_Route_0(ctx context.Context, marshaler runtime.Marshaler, client MexOSAgentClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RouteRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.Route(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
 func request_MexOSAgent_Status_0(ctx context.Context, marshaler runtime.Marshaler, client MexOSAgentClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq StatusRequest
 	var metadata runtime.ServerMetadata
@@ -90,14 +103,14 @@ func RegisterMexOSAgentHandlerFromEndpoint(ctx context.Context, mux *runtime.Ser
 	defer func() {
 		if err != nil {
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 			return
 		}
 		go func() {
 			<-ctx.Done()
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 		}()
 	}()
@@ -111,8 +124,8 @@ func RegisterMexOSAgentHandler(ctx context.Context, mux *runtime.ServeMux, conn 
 	return RegisterMexOSAgentHandlerClient(ctx, mux, NewMexOSAgentClient(conn))
 }
 
-// RegisterMexOSAgentHandlerClient registers the http handlers for service MexOSAgent
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "MexOSAgentClient".
+// RegisterMexOSAgentHandler registers the http handlers for service MexOSAgent to "mux".
+// The handlers forward requests to the grpc endpoint over the given implementation of "MexOSAgentClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "MexOSAgentClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "MexOSAgentClient" to call the correct interceptors.
@@ -205,6 +218,35 @@ func RegisterMexOSAgentHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 
 	})
 
+	mux.Handle("POST", pattern_MexOSAgent_Route_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		if cn, ok := w.(http.CloseNotifier); ok {
+			go func(done <-chan struct{}, closed <-chan bool) {
+				select {
+				case <-done:
+				case <-closed:
+					cancel()
+				}
+			}(ctx.Done(), cn.CloseNotify())
+		}
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MexOSAgent_Route_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_MexOSAgent_Route_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_MexOSAgent_Status_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -244,6 +286,8 @@ var (
 
 	pattern_MexOSAgent_Proxy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "proxy"}, ""))
 
+	pattern_MexOSAgent_Route_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "route"}, ""))
+
 	pattern_MexOSAgent_Status_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "status"}, ""))
 )
 
@@ -253,6 +297,8 @@ var (
 	forward_MexOSAgent_Destroy_0 = runtime.ForwardResponseMessage
 
 	forward_MexOSAgent_Proxy_0 = runtime.ForwardResponseMessage
+
+	forward_MexOSAgent_Route_0 = runtime.ForwardResponseMessage
 
 	forward_MexOSAgent_Status_0 = runtime.ForwardResponseMessage
 )
