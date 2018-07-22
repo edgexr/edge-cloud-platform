@@ -37,7 +37,7 @@ type ConfigData struct {
 //Config holds k8sopenstack specific config data
 var Config ConfigData
 
-func init() {
+func Initialize() {
 	if err := initConfig(); err != nil {
 		log.Fatalf("cannot init configuration, %v", err)
 	}

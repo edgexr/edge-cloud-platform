@@ -14,13 +14,39 @@ var agentName = ""
 
 func TestCreateMEXAgent(t *testing.T) {
 	guid := xid.New()
-	agentName := "mex-test-" + guid.String()
-	err := CreateMEXKVM(agentName, roleAgent, "10.101.102.3/24", "notags", tenant)
+	agentName = "mex-agent-test-" + guid.String()
+
+	// XXX 10.101.X.X/24 is not used. Just place-holder for now.
+	// id 1 is not used either. DHCP is used.
+	err := CreateMEXKVM(agentName, roleAgent, "external-ip,external-network-shared,10.101.X.X/24,dhcp", roleAgent, tenant, 1)
+	//XXX use roleAgent as tags, for now
+
 	if err != nil {
 		t.Errorf("can't create kvm, %v", err)
 		return
 	}
 	fmt.Println("created kvm")
+}
+
+func TestDestroyMEXAgent(t *testing.T) {
+	if agentName == "" {
+		sl, err := ListServers()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		for _, s := range sl {
+			if strings.HasPrefix(s.Name, "mex-agent-test-") {
+				agentName = s.Name
+			}
+		}
+	}
+
+	err := DestroyMEXKVM(agentName, roleAgent)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 }
 
 var roleMaster = "k8s-master" //installs k8s master
@@ -32,7 +58,7 @@ func TestCreateKubernetesMaster(t *testing.T) {
 	guid := xid.New()
 	masterName := "mex-" + roleMaster + "-" + guid.String()
 	//Master always has X.X.X.2
-	err := CreateMEXKVM(masterName, roleMaster, "10.101.102.2/24", test1Tags, tenant)
+	err := CreateMEXKVM(masterName, roleMaster, "priv-subnet,mex-k8s-net1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
 		t.Errorf("can't create kubernetes master node, %v", err)
 		return
@@ -46,7 +72,7 @@ var node1Name = ""
 func TestCreateKubernetesNode1(t *testing.T) {
 	guid := xid.New()
 	node1Name := "mex-" + roleNode1 + "-" + guid.String()
-	err := CreateMEXKVM(node1Name, roleNode1, "10.101.102.11/24", test1Tags, tenant)
+	err := CreateMEXKVM(node1Name, roleNode1, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 1, %v", err)
 	}
@@ -59,7 +85,7 @@ var node2Name = ""
 func TestCreateKubernetesNode2(t *testing.T) {
 	guid := xid.New()
 	node2Name := "mex-" + roleNode2 + "-" + guid.String()
-	err := CreateMEXKVM(node2Name, roleNode2, "10.101.102.12/24", test1Tags, tenant)
+	err := CreateMEXKVM(node2Name, roleNode2, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 2)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 2, %v", err)
 	}

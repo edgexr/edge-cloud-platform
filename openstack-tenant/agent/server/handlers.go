@@ -22,10 +22,14 @@ import (
 //Server for GRPC
 type Server struct{}
 
-var proxyMap map[string]string
+var proxyMap = make(map[string]string)
+
+var supportProvisioning = false
 
 func init() {
-	proxyMap = make(map[string]string)
+	if supportProvisioning {
+		k8sopenstack.Initialize()
+	}
 }
 
 //Provision a kubernetes cluster on openstack for the given Tenant
@@ -83,7 +87,7 @@ func (srv *Server) Proxy(ctx context.Context, req *api.ProxyRequest) (res *api.P
 			}
 		}
 	} else {
-		//TODO list
+		//TODO list,del
 		res := &api.ProxyResponse{
 			Message: fmt.Sprintf("Error, invalid request %s", req.Message),
 		}
@@ -99,6 +103,10 @@ func (srv *Server) Proxy(ctx context.Context, req *api.ProxyRequest) (res *api.P
 
 func addOrigin(path, origin string) error {
 	log.Debugf("addOrigin path %s origin %s", path, origin)
+
+	if val, ok := proxyMap[path]; ok {
+		return fmt.Errorf("Path %s exists for %s", path, val)
+	}
 
 	originURL, err := url.Parse(origin)
 	if err != nil {
@@ -125,6 +133,8 @@ func addOrigin(path, origin string) error {
 	})
 
 	proxyMap[path] = origin
+	//TODO: store in database
+
 	return nil
 }
 

@@ -30,7 +30,7 @@ The agent runs on a node with sufficient access to the Internet and the internal
 The agent is deployed as a docker container image.  Pull the image on the agent node:
 
 ```
-docker pull bobbae/mexosagent
+docker pull mobiledgex/mexosagent
 ```
 
 Some preparations are needed.  The agent needs proper CA issued certificates as it runs `https` service as well as `grpc` and `rest api`.  See the README.md under `acme` directory for more information. The `https` service is reverse proxy for the internal services hosted inside kubernetes clusters in the private network. The `TLS` is terminated at the proxy. This allows for simpler certificate management. Only one certificate is needed for the reverse proxy. The rest of the origin services can run without `TLS` and securely.  
@@ -54,7 +54,7 @@ $ ls -a k8sopenstack/
 The agent can then be run as:
 
 ```
-docker run --rm --name proxy -v `pwd`/certs:/var/www/.cache -v /etc/ssl/certs:/etc/ssl/certs -v `pwd`/k8sopenstack:/k8sopenstack --network host -e MEX_K8SOS_ENV=/k8sopenstack/.k8sopenstack.os.env -e MEX_K8SOS_CONFIG=/k8sopenstack/.k8sopenstack.toml -e MEX_K8SOS_USERDATA=/k8sopenstack/.k8sopenstack.userdata --name agent1.medge.gq  bobbae/mexosagent   -debug
+docker run --rm --name proxy -v `pwd`/certs:/var/www/.cache -v /etc/ssl/certs:/etc/ssl/certs -v `pwd`/k8sopenstack:/k8sopenstack --network host -e MEX_K8SOS_ENV=/k8sopenstack/.k8sopenstack.os.env -e MEX_K8SOS_CONFIG=/k8sopenstack/.k8sopenstack.toml -e MEX_K8SOS_USERDATA=/k8sopenstack/.k8sopenstack.userdata --name agent1.medge.gq  mobiledgex/mexosagent   -debug
 ```
 
 The environment variables `MEX_K8SOS_ENV`, `MEX_K8SOS_CONFIG` and `MEX_K8SOS_USERDATA` are used for provisioning API.

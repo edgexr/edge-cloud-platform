@@ -469,8 +469,15 @@ func RemoveRouterSubnet(routerName, subnetName string) error {
 }
 
 //ListSubnets returns a list of subnets available
-func ListSubnets() ([]Subnet, error) {
-	out, err := sh.Command("openstack", "subnet", "list", "-f", "json").Output()
+func ListSubnets(netName string) ([]Subnet, error) {
+	var err error
+	var out []byte
+
+	if netName != "" {
+		out, err = sh.Command("openstack", "subnet", "list", "--network", netName, "-f", "json").Output()
+	} else {
+		out, err = sh.Command("openstack", "subnet", "list", "-f", "json").Output()
+	}
 	if err != nil {
 		err = fmt.Errorf("can't get a list of subnets, %v", err)
 		return nil, err
@@ -692,4 +699,19 @@ func GetRouterDetailInterfaces(rd *RouterDetail) ([]RouterInterface, error) {
 	}
 
 	return interfaces, nil
+}
+
+func SetServerProperty(name, property string) error {
+	if name == "" {
+		return fmt.Errorf("empty name")
+	}
+	if property == "" {
+		return fmt.Errorf("empty property")
+	}
+
+	out, err := sh.Command("openstack", "server", "set", "--property", property, name).Output()
+	if err != nil {
+		return fmt.Errorf("can't set property %s on server %s, %s, %v", property, name, out, err)
+	}
+	return nil
 }

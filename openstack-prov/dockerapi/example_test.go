@@ -1,11 +1,29 @@
-package dockerapi
+package mexdocker
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/fsouza/go-dockerclient"
 )
+
+func TestListContainers(t *testing.T) {
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cl, err := client.ListContainers(docker.ListContainersOptions{All: true})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	for _, c := range cl {
+		fmt.Println(c)
+	}
+}
 
 func TestListImages(t *testing.T) {
 	client, err := docker.NewClientFromEnv()
@@ -30,6 +48,9 @@ func TestListImages(t *testing.T) {
 
 var containerID = ""
 
+var containerImage = "mobiledgex/mexosagent"
+var containerName = "mexosagent"
+
 func TestCreateContainer(t *testing.T) {
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
@@ -42,15 +63,29 @@ func TestCreateContainer(t *testing.T) {
 	config.AttachStdout = true
 	config.AttachStderr = true
 	config.Tty = true
-	config.Image = "busybox"
-	config.Cmd = []string{"sh"}
+	config.OpenStdin = true
+	config.Cmd = []string{"--issue", "-d", "yourdomain.gq", "--dns", "dns_cf"}
+
+	cfEmail := os.Getenv("CF_USER")
+	cfKey := os.Getenv("CF_KEY")
+
+	config.Env = []string{"CF_Email=" + cfEmail, "CF_Key=" + cfKey}
 
 	netConfig := &docker.NetworkingConfig{}
 
 	hostConfig := &docker.HostConfig{}
+	hostConfig.NetworkMode = "host"
 	hostConfig.AutoRemove = true
 
-	opts := docker.CreateContainerOptions{Config: config, NetworkingConfig: netConfig, HostConfig: hostConfig}
+	//config.Image = "mobiledgex/mexosagent"
+	config.Image = containerImage
+
+	home := os.Getenv("HOME")
+	certDir := home + "/.mobiledgex/certs" //+ FQDN
+
+	hostConfig.Binds = []string{certDir + ":/var/www/.cache", "/etc/ssl/certs:/etc/ssl/certs"}
+
+	opts := docker.CreateContainerOptions{Name: containerName, Config: config, NetworkingConfig: netConfig, HostConfig: hostConfig}
 	container, err := client.CreateContainer(opts)
 	if err != nil {
 		t.Error(err)
@@ -59,7 +94,7 @@ func TestCreateContainer(t *testing.T) {
 
 	containerID = container.ID
 
-	fmt.Println("created container", container)
+	fmt.Println("created container", containerID, container)
 }
 
 func TestStartContainer(t *testing.T) {
@@ -69,10 +104,31 @@ func TestStartContainer(t *testing.T) {
 		return
 	}
 
-	err = client.StartContainer(containerID, nil)
-	if err != nil {
-		t.Error(err)
-		return
+	if containerID != "" {
+		err = client.StartContainer(containerID, nil)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	} else {
+		cl, err := client.ListContainers(docker.ListContainersOptions{All: true})
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		for _, c := range cl {
+			for _, n := range c.Names {
+				if strings.Index(n, containerName) >= 0 {
+					fmt.Println("starting ", n)
+					err = client.StartContainer(c.ID, nil)
+					if err != nil {
+						t.Error(err)
+						return
+					}
+				}
+			}
+		}
 	}
 
 	fmt.Println("started container", containerID)

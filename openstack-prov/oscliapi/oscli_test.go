@@ -2,6 +2,7 @@ package oscli
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	log "github.com/bobbae/logrus"
@@ -224,7 +225,7 @@ func TestAddRouterSubnet(t *testing.T) {
 }
 
 func TestListSubnets(t *testing.T) {
-	subnets, err := ListSubnets()
+	subnets, err := ListSubnets("") //list all
 	if err != nil {
 		t.Errorf("can't list subnets, %v", err)
 		return
@@ -383,4 +384,13 @@ func TestGetExternalGateway(t *testing.T) {
 	}
 
 	fmt.Println("external gateway for", testExternalNetwork, eg)
+}
+
+func TestSetServerProperty(t *testing.T) {
+	nm := os.Getenv("MEX_TEST_MN")
+
+	err := SetServerProperty(nm, "mex-flavor=x1.medium")
+	if err != nil {
+		t.Error(err)
+	}
 }
