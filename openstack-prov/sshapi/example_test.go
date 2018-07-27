@@ -7,9 +7,14 @@ import (
 	"testing"
 )
 
+var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
+
 var testTarget = "" //TODO use FQDN reserved for testing
 
 func TestSSH(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	//auth := ssh.Auth{Passwords: []string{"pass"}}
 
 	home := os.Getenv("HOME")

@@ -10,11 +10,16 @@ import (
 
 var myRegion string
 
+var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
+
 func TestInit(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 }
 
 func TestInternOSEnvAAABBB(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	home := os.Getenv("HOME")
 	err := InternOSEnv(home + "/os.env")
 	if err != nil {
@@ -24,6 +29,9 @@ func TestInternOSEnvAAABBB(t *testing.T) {
 }
 
 func TestGetOSClient(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	tables := []struct {
 		Region  string
 		Success bool
@@ -47,6 +55,9 @@ func TestGetOSClient(t *testing.T) {
 }
 
 func TestGetLimits(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
@@ -63,6 +74,9 @@ func TestGetLimits(t *testing.T) {
 }
 
 func TestListServers(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
@@ -79,6 +93,9 @@ func TestListServers(t *testing.T) {
 }
 
 func TestListImages(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
@@ -95,6 +112,9 @@ func TestListImages(t *testing.T) {
 }
 
 func TestListFlavors(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
@@ -111,6 +131,9 @@ func TestListFlavors(t *testing.T) {
 }
 
 func TestListNetworks(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)
@@ -127,6 +150,9 @@ func TestListNetworks(t *testing.T) {
 }
 
 func TestCreateServerAAA(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	var True, False bool
 	True = true
 	False = false
@@ -278,6 +304,9 @@ func TestCreateServerAAA(t *testing.T) {
 }
 
 func TestDeleteServerBBB(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := GetOSClient(myRegion)
 	if err != nil {
 		t.Errorf("cannot get client, %v", err)

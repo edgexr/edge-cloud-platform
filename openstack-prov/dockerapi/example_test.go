@@ -9,7 +9,12 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
+
 func TestListContainers(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Error(err)
@@ -26,6 +31,9 @@ func TestListContainers(t *testing.T) {
 }
 
 func TestListImages(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Error(err)
@@ -52,6 +60,9 @@ var containerImage = "mobiledgex/mexosagent"
 var containerName = "mexosagent"
 
 func TestCreateContainer(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Error(err)
@@ -98,6 +109,9 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestStartContainer(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Error(err)
@@ -135,6 +149,9 @@ func TestStartContainer(t *testing.T) {
 }
 
 func TestStopContainer(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Error(err)

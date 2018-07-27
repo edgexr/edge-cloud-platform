@@ -1,23 +1,35 @@
 package k8sopenstack
 
 import (
+	"os"
 	"testing"
 
 	log "github.com/bobbae/logrus"
 	mexosagent "github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
 )
 
+var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
+
 func TestInit(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	log.SetLevel(log.DebugLevel)
 }
 
 func TestInitOSEnv(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	if err := initOSEnv(); err != nil {
 		t.Errorf("initOSEnv error, %v", err)
 	}
 }
 
 func TestInitConfig(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	if err := initConfig(); err != nil {
 		t.Errorf("initConfig error, %v", err)
 	}
@@ -26,6 +38,9 @@ func TestInitConfig(t *testing.T) {
 }
 
 func TestReadUserData(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	dat, err := readUserData()
 	if err != nil {
 		t.Errorf("readUserData error, %v", err)
@@ -34,6 +49,9 @@ func TestReadUserData(t *testing.T) {
 }
 
 func TestCreateKubernetesCluster(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	req := mexosagent.Provision{
 		Name:   "test-1",
 		Tenant: "tenant-1",
@@ -45,6 +63,9 @@ func TestCreateKubernetesCluster(t *testing.T) {
 }
 
 func TestDeleteKubernetesCluster(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	req := mexosagent.Provision{
 		Name:   "test-1",
 		Tenant: "tenant-1",

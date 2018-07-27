@@ -3,9 +3,12 @@ package oscli
 import (
 	"fmt"
 	"github.com/rs/xid"
+	"os"
 	"strings"
 	"testing"
 )
+
+var mexTestInfra1 = os.Getenv("MEX_TEST_INFRA")
 
 var tenant = "test-tenant"
 
@@ -13,6 +16,9 @@ var roleAgent = "mex-agent-node" //installs docker
 var agentName = ""
 
 func TestCreateMEXAgent(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	guid := xid.New()
 	agentName = "mex-agent-test-" + guid.String()
 
@@ -29,6 +35,9 @@ func TestCreateMEXAgent(t *testing.T) {
 }
 
 func TestDestroyMEXAgent(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	if agentName == "" {
 		sl, err := ListServers()
 		if err != nil {
@@ -55,6 +64,9 @@ var masterName = ""
 var test1Tags = "test-1"
 
 func TestCreateKubernetesMaster(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	guid := xid.New()
 	masterName := "mex-" + roleMaster + "-" + guid.String()
 	//Master always has X.X.X.2
@@ -70,6 +82,9 @@ var roleNode1 = "k8s-node" //installs kubectl
 var node1Name = ""
 
 func TestCreateKubernetesNode1(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	guid := xid.New()
 	node1Name := "mex-" + roleNode1 + "-" + guid.String()
 	err := CreateMEXKVM(node1Name, roleNode1, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 1)
@@ -83,6 +98,9 @@ var roleNode2 = "k8s-node"
 var node2Name = ""
 
 func TestCreateKubernetesNode2(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	guid := xid.New()
 	node2Name := "mex-" + roleNode2 + "-" + guid.String()
 	err := CreateMEXKVM(node2Name, roleNode2, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 2)
@@ -93,6 +111,9 @@ func TestCreateKubernetesNode2(t *testing.T) {
 }
 
 func TestDeleteAgent(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	err := DeleteServer(agentName)
 	if err != nil {
 		t.Errorf("can't delete agent kvm")
@@ -103,6 +124,9 @@ func TestDeleteAgent(t *testing.T) {
 }
 
 func TestDeleteAgentByRole(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	sl, err := ListServers()
 	if err != nil {
 		t.Errorf("can't get list of servers, %v", err)
@@ -138,6 +162,9 @@ func TestDeleteAgentByRole(t *testing.T) {
 
 //delete all nodes before master
 func TestDestroyKubernetesNode1(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	err := DestroyMEXKVM(node1Name, roleNode1)
 	if err != nil {
 		t.Errorf("can't destroy %s, %v", node1Name, err)
@@ -146,6 +173,9 @@ func TestDestroyKubernetesNode1(t *testing.T) {
 }
 
 func TestDestroyKubernetesNode2(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	err := DestroyMEXKVM(node2Name, roleNode2)
 	if err != nil {
 		t.Errorf("can't destroy %s, %v", node2Name, err)
@@ -154,6 +184,9 @@ func TestDestroyKubernetesNode2(t *testing.T) {
 }
 
 func TestDestroyKubernetesMaster(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	err := DestroyMEXKVM(masterName, roleMaster)
 	if err != nil {
 		t.Errorf("can't destroy %s, %v", masterName, err)
@@ -162,6 +195,9 @@ func TestDestroyKubernetesMaster(t *testing.T) {
 }
 
 func TestDestroyKubernetesByTags(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	sl, err := ListServers()
 	if err != nil {
 		t.Errorf("can't get list of servers, %v", err)
@@ -197,6 +233,9 @@ func TestDestroyKubernetesByTags(t *testing.T) {
 }
 
 func TestDestroyKubernetesByTenant(t *testing.T) {
+	if mexTestInfra1 == "" {
+		return
+	}
 	sl, err := ListServers()
 	if err != nil {
 		t.Errorf("can't get list of servers, %v", err)

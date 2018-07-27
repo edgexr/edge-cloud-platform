@@ -9,9 +9,14 @@ import (
 	log "github.com/bobbae/logrus"
 )
 
+var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
+
 var user, key, domain string
 
 func TestInit(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	log.SetLevel(log.DebugLevel)
 
 	user = os.Getenv("CF_USER")
@@ -34,6 +39,9 @@ func TestInit(t *testing.T) {
 }
 
 func TestGetAPI(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	api, err := GetAPI()
 	if err != nil {
 		t.Errorf("cannot get API %v", err)
@@ -45,6 +53,9 @@ func TestGetAPI(t *testing.T) {
 }
 
 func TestGetDNSRecords(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	recs, err := GetDNSRecords(domain)
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
@@ -56,6 +67,9 @@ func TestGetDNSRecords(t *testing.T) {
 }
 
 func TestCreateDNSRecord(t *testing.T) {
+	if mexTestInfra == "" {
+		return
+	}
 	cname := "name-test-1"
 	err := CreateDNSRecord(domain, cname, "cname", domain, 1, false)
 	if err != nil {
