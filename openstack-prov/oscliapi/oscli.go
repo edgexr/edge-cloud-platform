@@ -93,27 +93,27 @@ type NetworkDetail struct {
 	IPv6AddressScope        string `json:"ipv6_address_scope"`
 	DNSDomain               string `json:"dns_domain"`
 	IsVLANTransparent       string `json:"is_vlan_transparent"`
-	RevisionNumber          int    `json:"revision_number"`
-	PortSecurityEnabled     bool   `json:"port_security_enabled"`
 	ProviderNetworkType     string `json:"provider:network_type"`
 	External                string `json:"router:external"`
 	AvailabilityZoneHints   string `json:"availability_zone_hints"`
 	AvailabilityZones       string `json:"availability_zones"`
 	Segments                string `json:"segments"`
 	IPv4AddressScope        string `json:"ipv4_address_scope"`
-	Shared                  bool   `json:"shared"`
 	ProjectID               string `json:"project_id"`
 	Status                  string `json:"status"`
 	Subnets                 string `json:"subnets"`
 	Description             string `json:"description"`
 	Tags                    string `json:"tags"`
 	UpdatedAt               string `json:"updated_at"`
-	IsDefault               bool   `json:"is_default"`
 	ProviderSegmentationID  string `json:"provider:segmentation_id"`
 	QOSPolicyID             string `json:"qos_policy_id"`
 	AdminStateUp            string `json:"admin_state_up"`
 	CreatedAt               string `json:"created_at"`
+	RevisionNumber          int    `json:"revision_number"`
 	MTU                     int    `json:"mtu"`
+	PortSecurityEnabled     bool   `json:"port_security_enabled"`
+	Shared                  bool   `json:"shared"`
+	IsDefault               bool   `json:"is_default"`
 }
 
 // Flavor is used with 'openstack flavor list'
@@ -405,20 +405,22 @@ func DeleteNetwork(name string) error {
 	return nil
 }
 
+//NeutronErrorDetail holds neturon error
 type NeutronErrorDetail struct {
 	Message string `json:"message"`
 	Type    string `json:"type"`
 	Detail  string `json:"detail"`
 }
 
+//NeutronErrorType container for the NeutronErrorDetail
 type NeutronErrorType struct {
 	NeutronError NeutronErrorDetail
 }
 
 //CreateSubnet creates a subnet within a network. A subnet is assigned ranges. Optionally DHCP can be enabled.
 func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
-	dhcpFlag := ""
-	if dhcpEnable == true {
+	var dhcpFlag string
+	if dhcpEnable {
 		dhcpFlag = "--dhcp"
 	} else {
 		dhcpFlag = "--no-dhcp"
@@ -434,14 +436,14 @@ func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEna
 		nerr := &NeutronErrorType{}
 		if ix := strings.Index(string(out), `{"NeutronError":`); ix > 0 {
 			neutronErr := out[ix:]
-			if jerr := json.Unmarshal([]byte(neutronErr), nerr); jerr != nil {
-				err = fmt.Errorf("can't create subnet %s, %s, %v, error while parsing neutron error %v", subnetName, out, err, jerr)
+			if jerr := json.Unmarshal(neutronErr, nerr); jerr != nil {
+				err = fmt.Errorf("can't create subnet %s, %s, %v, error while parsing neutron error, %v", subnetName, out, err, jerr)
 				return err
 			}
 			if strings.Index(nerr.NeutronError.Message, "overlap") > 0 {
-				sd, err := GetSubnetDetail(subnetName)
-				if err != nil {
-					return fmt.Errorf("cannot get subnet detail for %s, while fixing overlap error", subnetName)
+				sd, serr := GetSubnetDetail(subnetName)
+				if serr != nil {
+					return fmt.Errorf("cannot get subnet detail for %s, while fixing overlap error, %v", subnetName, serr)
 				}
 				log.Debugln("create subnet, existing subnet detail", sd)
 
@@ -773,6 +775,7 @@ func GetRouterDetailInterfaces(rd *RouterDetail) ([]RouterInterface, error) {
 	return interfaces, nil
 }
 
+//SetServerProperty sets properties for the server
 func SetServerProperty(name, property string) error {
 	if name == "" {
 		return fmt.Errorf("empty name")

@@ -88,10 +88,5 @@ func RunACME(dn, certDir string) error {
 		time.Sleep(10 * time.Second)
 	}
 
-	err = client.StopContainer(container.ID, 1)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return client.StopContainer(container.ID, 1)
 }

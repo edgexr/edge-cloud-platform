@@ -98,11 +98,11 @@ func GetOSClient(region string) (*gophercloud.ServiceClient, error) {
 			config.InsecureSkipVerify = true
 		}
 		certpool := x509.NewCertPool()
-		pem, err := ioutil.ReadFile(caCert)
-		if err != nil {
-			log.Debugf("error %v", err)
+		pem, pemerr := ioutil.ReadFile(caCert)
+		if pemerr != nil {
+			log.Debugf("cannot read error %v", caCert, pemerr)
 			log.Error("Unable to read specified CA certificate(s)")
-			return nil, err
+			return nil, pemerr
 		}
 		ok := certpool.AppendCertsFromPEM(pem)
 		if !ok {
@@ -151,6 +151,10 @@ func ListServers(client *gophercloud.ServiceClient, args *NovaListArgs) ([]serve
 	}
 
 	actual, err := servers.ExtractServers(allPages)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugln("servers", actual)
 	return actual, nil
 }
 
@@ -163,6 +167,10 @@ func ListImages(client *gophercloud.ServiceClient, args *ImageListArgs) ([]image
 	}
 
 	actual, err := images.ExtractImages(allPages)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugln("images", actual)
 	return actual, nil
 }
 
@@ -175,6 +183,10 @@ func ListNetworks(client *gophercloud.ServiceClient) ([]networks.Network, error)
 	}
 
 	actual, err := networks.ExtractNetworks(allPages)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugln("networks", actual)
 	return actual, nil
 }
 
@@ -187,6 +199,10 @@ func ListFlavors(client *gophercloud.ServiceClient) ([]flavors.Flavor, error) {
 	}
 
 	actual, err := flavors.ExtractFlavors(allPages)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugln("flavors", actual)
 	return actual, nil
 }
 
@@ -208,11 +224,7 @@ func CreateServer(client *gophercloud.ServiceClient, args *NovaArgs) error {
 		},
 	}).Extract()
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // DeleteServer deletes a server identified by `id`.
@@ -225,6 +237,7 @@ func DeleteServer(client *gophercloud.ServiceClient, id string) error {
 	return nil
 }
 
+//GetLimits returns platform project limits
 func GetLimits(client *gophercloud.ServiceClient) (*limits.Limits, error) {
 	res, err := limits.Get(client, nil).Extract()
 

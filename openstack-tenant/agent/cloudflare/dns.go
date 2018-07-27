@@ -142,10 +142,5 @@ func DeleteDNSRecord(zone, recordID string) error {
 		return err
 	}
 
-	err = api.DeleteDNSRecord(zoneID, recordID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return api.DeleteDNSRecord(zoneID, recordID)
 }

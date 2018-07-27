@@ -133,7 +133,7 @@ func TestStartContainer(t *testing.T) {
 
 		for _, c := range cl {
 			for _, n := range c.Names {
-				if strings.Index(n, containerName) >= 0 {
+				if strings.Contains(n, containerName) {
 					fmt.Println("starting ", n)
 					err = client.StartContainer(c.ID, nil)
 					if err != nil {

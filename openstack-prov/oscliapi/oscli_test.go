@@ -140,7 +140,7 @@ func TestGetServerDetails(t *testing.T) {
 	}
 	fmt.Println("server", sd)
 
-	sd, err = GetServerDetails(testServerName + "xxx")
+	_, err = GetServerDetails(testServerName + "xxx")
 	if err == nil {
 		t.Errorf("should have failed")
 		return

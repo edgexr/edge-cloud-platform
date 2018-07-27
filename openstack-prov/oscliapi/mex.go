@@ -19,15 +19,21 @@ var eMEXDir = os.Getenv("MEX_DIR")
 var defaultImage = "mobiledgex-16.04-2"
 var defaultFlavor = "m4.large"
 
+const (
+	k8smasterRole = "k8s-master"
+	k8snodeRole   = "k8s-node"
+)
+
 //For netspec components
 //  netType,netName,netCIDR,netOptions
 const (
-	NET_TYPE = 0
-	NET_NAME = 1
-	NET_CIDR = 2
-	NET_OPT  = 3
+	NetTypeVal = 0
+	NetNameVal = 1
+	NetCIDRVal = 2
+	NetOptVal  = 3
 )
 
+//NetSpecInfo has basic layout for netspec
 type NetSpecInfo struct {
 	Kind, Name, CIDR, Options string
 	Extra                     []string
@@ -130,10 +136,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 	mexRouter := GetMEXExternalRouter()
 	netID := GetMEXExternalNetwork() //do we really want to default to ext?
 	skipk8s := "yes"
-	masterIP := ""
-	privRouterIP := ""
-	privNet := ""
-	edgeProxy := ""
+	var masterIP, privRouterIP, privNet, edgeProxy string
 
 	var err error
 
@@ -149,7 +152,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		return fmt.Errorf("can't parse netSpec %s, %v", netSpec, err)
 	}
 
-	if role == "k8s-master" || role == "k8s-node" {
+	if role == k8smasterRole || role == k8snodeRole {
 		skipk8s = "no"
 		// XXX if there was nothing set up on the cloudlet, we may have to ask the operator
 		//  the initial external network which has connection to internet.
@@ -185,10 +188,10 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		//   Use tag as part of name
 
 		sn := ni.Name + "-subnet-" + tags
-		snd, err := GetSubnetDetail(sn)
-		if err != nil {
-			if role == "k8s-node" {
-				return fmt.Errorf("subnet %s does not exist, %v", sn, err)
+		snd, snderr := GetSubnetDetail(sn)
+		if snderr != nil {
+			if role == k8snodeRole {
+				return fmt.Errorf("subnet %s does not exist, %v", sn, snderr)
 			}
 			// k8s-master will create one
 		}
@@ -197,7 +200,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			log.Warningln("subnet", sn, "does not exist")
 		}
 
-		if role == "k8s-master" {
+		if role == k8smasterRole {
 			sits := strings.Split(ni.CIDR, "/")
 			if len(sits) < 2 {
 				return fmt.Errorf("invalid CIDR , no net mask")
@@ -208,7 +211,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			if len(its) != 4 {
 				return fmt.Errorf("invalid CIDR spec %v", ni)
 			}
-			if strings.Index(sits[0], "X") < 0 {
+			if !strings.Contains(sits[0], "X") {
 				return fmt.Errorf("missing marker in CIDR spec %v", ni)
 			}
 			octno := 0
@@ -230,9 +233,9 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 				return fmt.Errorf("net CIDR, we want octno to be 2 for now")
 			}
 
-			sns, err := ListSubnets(ni.Name)
-			if err != nil {
-				return fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, err)
+			sns, snserr := ListSubnets(ni.Name)
+			if snserr != nil {
+				return fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, snserr)
 			}
 
 			//XXX because controller does not want to have any idea about existing network conditions
@@ -247,9 +250,9 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 				// TODO validate the prefix of the subnet name based on net-name
 				//   to make sure it belongs here
 				sna := s.Subnet
-				ipa, _, err := net.ParseCIDR(sna)
-				if err != nil {
-					return fmt.Errorf("while iterating subnets, can't parse %s, %v", sna, err)
+				ipa, _, ipaerr := net.ParseCIDR(sna)
+				if ipaerr != nil {
+					return fmt.Errorf("while iterating subnets, can't parse %s, %v", sna, ipaerr)
 				}
 
 				v4a := ipa.To4()
@@ -290,9 +293,9 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			if len(sits) < 2 {
 				return fmt.Errorf("invalid subnet CIDR %s, no net mask", snd.CIDR)
 			}
-			ipa, _, err := net.ParseCIDR(snd.CIDR)
-			if err != nil {
-				return fmt.Errorf("can't parse subnet CIDR %s, %v", snd.CIDR, err)
+			ipa, _, ipaerr := net.ParseCIDR(snd.CIDR)
+			if ipaerr != nil {
+				return fmt.Errorf("can't parse subnet CIDR %s, %v", snd.CIDR, ipaerr)
 			}
 
 			v4a := ipa.To4()
@@ -302,9 +305,9 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		}
 		log.Debugln("computed cidr", role, ni)
 
-		ipv4Addr, _, err := net.ParseCIDR(ni.CIDR)
-		if err != nil {
-			return fmt.Errorf("can't parse %s, %v", ni.CIDR, err)
+		ipv4Addr, _, iperr := net.ParseCIDR(ni.CIDR)
+		if iperr != nil {
+			return fmt.Errorf("can't parse %s, %v", ni.CIDR, iperr)
 		}
 		v4 := ipv4Addr.To4()
 
@@ -316,7 +319,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		ipaddr := net.IPv4(v4[0], v4[1], v4[2], v4[3])
 		log.Debugln(role, ipaddr)
 
-		if role == "k8s-master" {
+		if role == k8smasterRole {
 			if snd == nil {
 				log.Debugln("creating subnet", sn)
 				err = CreateSubnet(ni.CIDR, GetMEXNetwork(), edgeProxy, sn, false)
@@ -357,15 +360,15 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		}
 		log.Debugln(edgeProxy)
 
-		rd, err := GetRouterDetail(mexRouter)
-		if err != nil {
-			return fmt.Errorf("can't get router detail for %s, %v", mexRouter, err)
+		rd, rderr := GetRouterDetail(mexRouter)
+		if rderr != nil {
+			return fmt.Errorf("can't get router detail for %s, %v", mexRouter, rderr)
 		}
 
 		log.Debugln(rd)
-		reg, err := GetRouterDetailExternalGateway(rd)
-		if err != nil {
-			return fmt.Errorf("can't get router detail external gateway, %v", err)
+		reg, regerr := GetRouterDetailExternalGateway(rd)
+		if regerr != nil {
+			return fmt.Errorf("can't get router detail external gateway, %v", regerr)
 		}
 		if len(reg.ExternalFixedIPs) < 1 {
 			return fmt.Errorf("can't get external fixed ips list from router detail external gateway")
@@ -427,7 +430,7 @@ func DestroyMEXKVM(name, role string) error {
 		return fmt.Errorf("can't delete %s, %v", name, err)
 	}
 
-	if role == "k8s-master" {
+	if role == k8smasterRole {
 		sn := "subnet-" + name
 		rn := GetMEXExternalRouter()
 
@@ -450,6 +453,7 @@ func DestroyMEXKVM(name, role string) error {
 	return nil
 }
 
+//ParseNetSpec decodes netspec string
 func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 	ni := &NetSpecInfo{}
 	if netSpec == "" {
@@ -462,24 +466,24 @@ func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 		return nil, fmt.Errorf("malformed net spec, insufficient items")
 	}
 
-	ni.Kind = items[NET_TYPE]
-	ni.Name = items[NET_NAME]
-	ni.CIDR = items[NET_CIDR]
+	ni.Kind = items[NetTypeVal]
+	ni.Name = items[NetNameVal]
+	ni.CIDR = items[NetCIDRVal]
 
 	if len(items) == 4 {
-		ni.Options = items[NET_OPT]
+		ni.Options = items[NetOptVal]
 	}
 	if len(items) > 5 {
-		ni.Extra = items[NET_OPT+1:]
+		ni.Extra = items[NetOptVal+1:]
 	}
 
-	switch items[NET_TYPE] {
+	switch items[NetTypeVal] {
 	case "priv-subnet":
 		return ni, nil
 	case "external-ip":
 		return ni, nil
 	default:
-		log.Errorln("invalid NET_TYPE", items[NET_TYPE])
+		log.Errorln("invalid NetTypeVal", items[NetTypeVal])
 	}
 	return nil, fmt.Errorf("unsupported netspec type")
 }

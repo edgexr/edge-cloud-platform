@@ -68,7 +68,7 @@ func TestCreateKubernetesMaster(t *testing.T) {
 		return
 	}
 	guid := xid.New()
-	masterName := "mex-" + roleMaster + "-" + guid.String()
+	masterName = "mex-" + roleMaster + "-" + guid.String()
 	//Master always has X.X.X.2
 	err := CreateMEXKVM(masterName, roleMaster, "priv-subnet,mex-k8s-net1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
@@ -86,7 +86,7 @@ func TestCreateKubernetesNode1(t *testing.T) {
 		return
 	}
 	guid := xid.New()
-	node1Name := "mex-" + roleNode1 + "-" + guid.String()
+	node1Name = "mex-" + roleNode1 + "-" + guid.String()
 	err := CreateMEXKVM(node1Name, roleNode1, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 1, %v", err)
@@ -102,7 +102,7 @@ func TestCreateKubernetesNode2(t *testing.T) {
 		return
 	}
 	guid := xid.New()
-	node2Name := "mex-" + roleNode2 + "-" + guid.String()
+	node2Name = "mex-" + roleNode2 + "-" + guid.String()
 	err := CreateMEXKVM(node2Name, roleNode2, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 2)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 2, %v", err)
@@ -143,8 +143,8 @@ func TestDeleteAgentByRole(t *testing.T) {
 			props := strings.Split(prop, ",")
 			for _, p := range props {
 				kv := strings.Split(p, "=")
-				if strings.Index(kv[0], "role") >= 0 { // extra space in front
-					if strings.Index(kv[1], roleAgent) >= 0 { // single quotes
+				if strings.Contains(kv[0], "role") { // extra space in front
+					if strings.Contains(kv[1], roleAgent) { // single quotes
 						err := DeleteServer(s.Name)
 						if err != nil {
 							t.Errorf("can't delete %s, %v", s.Name, err)
@@ -217,8 +217,8 @@ func TestDestroyKubernetesByTags(t *testing.T) {
 			props := strings.Split(prop, ",")
 			for _, p := range props {
 				kv := strings.Split(p, "=")
-				if strings.Index(kv[0], "tags") >= 0 { // extra space in front
-					if strings.Index(kv[1], test1Tags) >= 0 { // single quotes
+				if strings.Contains(kv[0], "tags") { // extra space in front
+					if strings.Contains(kv[1], test1Tags) { // single quotes
 						err := DeleteServer(s.Name)
 						if err != nil {
 							t.Errorf("can't delete %s, %v", s.Name, err)
@@ -255,8 +255,8 @@ func TestDestroyKubernetesByTenant(t *testing.T) {
 			props := strings.Split(prop, ",")
 			for _, p := range props {
 				kv := strings.Split(p, "=")
-				if strings.Index(kv[0], "tenant") >= 0 { // extra space in front
-					if strings.Index(kv[1], tenant) >= 0 { // single quotes
+				if strings.Contains(kv[0], "tenant") { // extra space in front
+					if strings.Contains(kv[1], tenant) { // single quotes
 						err := DeleteServer(s.Name)
 						if err != nil {
 							t.Errorf("can't delete %s, %v", s.Name, err)

@@ -37,6 +37,7 @@ type ConfigData struct {
 //Config holds k8sopenstack specific config data
 var Config ConfigData
 
+//Initialize sets up config and env
 func Initialize() {
 	if err := initConfig(); err != nil {
 		log.Fatalf("cannot init configuration, %v", err)
@@ -124,8 +125,7 @@ func readUserData() ([]byte, error) {
 //CreateKubernetesCluster creates a kubernetes cluster inside VM instances which
 //are hosted by Openstack.
 func CreateKubernetesCluster(req *mexosagent.Provision) error {
-	var True bool
-	True = true
+	var True = true
 
 	log.Debugln("request to create kubernetes cluster on openstack", req)
 

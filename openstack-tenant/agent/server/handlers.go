@@ -78,9 +78,9 @@ func (srv *Server) Proxy(ctx context.Context, req *api.ProxyRequest) (res *api.P
 	if req.Message == "add" {
 		//TODO layer 4 proxy
 		for _, p := range req.Proxies {
-			err := addOrigin(p.Path, p.Origin)
+			err = addOrigin(p.Path, p.Origin)
 			if err != nil {
-				res := &api.ProxyResponse{
+				res = &api.ProxyResponse{
 					Message: fmt.Sprintf("Error, cannot add proxy %s %s, %v", p.Path, p.Origin, err),
 				}
 				return res, err
@@ -88,7 +88,7 @@ func (srv *Server) Proxy(ctx context.Context, req *api.ProxyRequest) (res *api.P
 		}
 	} else {
 		//TODO list,del
-		res := &api.ProxyResponse{
+		res = &api.ProxyResponse{
 			Message: fmt.Sprintf("Error, invalid request %s", req.Message),
 		}
 		return res, err
@@ -147,36 +147,37 @@ func (srv *Server) Status(ctx context.Context, req *api.StatusRequest) (res *api
 	return res, nil
 }
 
+//Route directs requests to paths to be serviced
 func (srv *Server) Route(ctx context.Context, req *api.RouteRequest) (res *api.RouteResponse, err error) {
 	if len(req.Routes) < 1 {
 		return nil, fmt.Errorf("missing Route definitions")
 	}
 	if req.Message == "add" {
 		for _, r := range req.Routes {
-			err := addRoute(r.Subnet, r.Gateway, r.Dev)
+			err = addRoute(r.Subnet, r.Gateway, r.Dev)
 			if err != nil {
-				res := &api.RouteResponse{
+				res = &api.RouteResponse{
 					Message: fmt.Sprintf("Error, cannot add Route %s %s %s, %v", r.Subnet, r.Gateway, r.Dev, err),
 				}
 				return res, err
 			}
 		}
 	} else if req.Message == "list" {
-		rl, err := listRoutes()
-		if err != nil {
-			res := &api.RouteResponse{
+		rl, rerr := listRoutes()
+		if rerr != nil {
+			res = &api.RouteResponse{
 				Message: fmt.Sprintf("Error, cannot list route, %v", err),
 			}
-			return res, err
+			return res, rerr
 		}
 
-		res := &api.RouteResponse{
+		res = &api.RouteResponse{
 			Message: rl,
 		}
 		return res, nil
 	} else {
 		//TODO list
-		res := &api.RouteResponse{
+		res = &api.RouteResponse{
 			Message: fmt.Sprintf("Error, invalid request %s", req.Message),
 		}
 		return res, err
