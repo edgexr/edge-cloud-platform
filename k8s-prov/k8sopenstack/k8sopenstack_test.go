@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
 	mexosagent "github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
+	log "github.com/sirupsen/logrus"
 )
 
 var mexTestInfra = os.Getenv("MEX_TEST_INFRA")

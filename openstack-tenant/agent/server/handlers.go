@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codeskyblue/go-sh"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/k8sopenstack"
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -94,7 +94,6 @@ func (srv *Server) Proxy(ctx context.Context, req *api.ProxyRequest) (res *api.P
 		res = &api.ProxyResponse{Message: req.Message, Status: fmt.Sprintf("%v", proxyMap)}
 		return res, nil
 	} else if req.Message == "delete" {
-		return res, err
 		if len(req.Proxies) < 1 {
 			res = &api.ProxyResponse{Message: fmt.Sprintf("Error, missing proxies"), Status: "Error"}
 			return res, fmt.Errorf("missing proxy definitions")
@@ -249,13 +248,6 @@ func (srv *Server) Route(ctx context.Context, req *api.RouteRequest) (res *api.R
 		}
 		return res, nil
 	}
-
-	res = &api.RouteResponse{
-		Message: req.Message,
-		Status:  "OK",
-	}
-
-	return res, nil
 }
 
 func addRoute(subnet, gateway, dev string) error {

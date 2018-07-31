@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codeskyblue/go-sh"
+	log "github.com/sirupsen/logrus"
 )
 
 // There are issues with x509 certfication and token retrieval when using ../api

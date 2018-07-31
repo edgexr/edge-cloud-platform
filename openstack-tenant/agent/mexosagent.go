@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/server"
+	log "github.com/sirupsen/logrus"
 )
 
 //Agent lives on a KVM inside cloudlet. It can talk with kubernetes cluster.
