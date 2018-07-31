@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 var myRegion string

@@ -51,7 +51,7 @@ clean: ## Clean compiled binaries
 	@rm -f build/${PROGRAM}
 
 realclean: ## Clean compiled binaries and all generated files
-	@rm -f ${PROGRAM}
+	@rm -f build/${PROGRAM}
 	@rm -f ${API_FILES}
 
 test: dep ## Run tests

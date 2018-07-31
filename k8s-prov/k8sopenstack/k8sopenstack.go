@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	toml "github.com/bobbae/go-toml"
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 	mexosapi "github.com/mobiledgex/edge-cloud-infra/openstack-prov/api"
 	mexosagent "github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
+	toml "github.com/pelletier/go-toml"
 )
 
 //DefaultSettings contains default parameters for use with a Openstack installation

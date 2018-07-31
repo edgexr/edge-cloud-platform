@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	log "gitlab.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 // These are platform specific custom vars

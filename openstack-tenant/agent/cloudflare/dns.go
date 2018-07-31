@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 	cloudflare "github.com/cloudflare/cloudflare-go"
 )
 

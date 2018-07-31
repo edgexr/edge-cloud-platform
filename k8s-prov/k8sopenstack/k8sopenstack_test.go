@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 	mexosagent "github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
 )
 

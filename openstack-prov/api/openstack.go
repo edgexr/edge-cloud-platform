@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/limits"

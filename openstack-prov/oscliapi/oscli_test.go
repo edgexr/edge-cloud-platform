@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	log "github.com/bobbae/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 var mexTestInfra2 = os.Getenv("MEX_TEST_INFRA")
