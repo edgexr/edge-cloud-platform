@@ -305,7 +305,9 @@ func CreateServer(opts *ServerOpt) error {
 		"server", "create",
 		"--config-drive", "true", //XXX always
 		"--image", opts.Image, "--flavor", opts.Flavor,
-		"--user-data", opts.UserData,
+	}
+	if opts.UserData != "" {
+		args = append(args, "--user-data", opts.UserData)
 	}
 
 	for _, p := range opts.Properties {
@@ -596,15 +598,30 @@ func GetRouterDetail(routerName string) (*RouterDetail, error) {
 	return routerDetail, nil
 }
 
-//CreateImage snapshots running service into a qcow2 image
-func CreateImage(serverName, imageName string) error {
-	log.Debugln("creating image", serverName, imageName)
-	out, err := sh.Command("openstack", "image", "create", serverName, "--name", imageName).Output()
+//CreateServerImage snapshots running service into a qcow2 image
+func CreateServerImage(serverName, imageName string) error {
+	log.Debugln("creating image snapshot from server", serverName, imageName)
+	out, err := sh.Command("openstack", "server", "image", "create", serverName, "--name", imageName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't create image from %s into %s, %s, %v", serverName, imageName, out, err)
 		return err
 	}
 
+	return nil
+}
+
+//CreateImage puts images into glance
+func CreateImage(imageName, qcowFile string) error {
+	log.Debugln("creating image in glance", imageName, qcowFile)
+	out, err := sh.Command("openstack", "image", "create",
+		imageName,
+		"--disk-format", "qcow2",
+		"--container-format", "bare",
+		"--file", qcowFile).Output()
+	if err != nil {
+		err = fmt.Errorf("can't create image in glace, %s, %s, %s, %v", imageName, qcowFile, out, err)
+		return err
+	}
 	return nil
 }
 

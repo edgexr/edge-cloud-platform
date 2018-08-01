@@ -28,6 +28,7 @@ func main() {
 	if *debug {
 		log.SetLevel(log.DebugLevel)
 	}
+	//XXX TODO make logrus use a log daemon to log to remote server
 	log.Debugf("starting HTTP Server at %s", *restAddress)
 	go func() {
 		err := server.ListenAndServeREST(*restAddress, *grpcAddress)
