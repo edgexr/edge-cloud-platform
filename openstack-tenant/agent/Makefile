@@ -9,7 +9,7 @@ API_FILES = api/mexosagent.pb.go api/mexosagent.pb.gw.go api/mexosagent.swagger.
 default: build docker-build docker-push
 
 docker-build:
-	docker build -t mobiledgex/mexosagent .
+	./docker-build.sh
 
 # docker login first!
 docker-push:
