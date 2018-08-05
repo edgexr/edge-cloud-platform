@@ -54,7 +54,7 @@ func init() {
 	if eMEXUserData == "" {
 		eMEXUserData = eMEXDir + "/userdata.txt"
 	}
-	Debug("mex init environment", "MEX_LARGE_IMAGE", eMEXLargeImageName, "MEX_LARGE_FLAVOR",
+	log.DebugLog(log.DebugLevelMexos, "mex init environment", "MEX_LARGE_IMAGE", eMEXLargeImageName, "MEX_LARGE_FLAVOR",
 		eMEXLargeFlavor, "MEX_USERDATA", eMEXUserData, "MEX_DIR", eMEXDir)
 }
 
@@ -70,7 +70,7 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	}
 	sd, err := GetServerDetails(name)
 	if err == nil {
-		Debug("warning, server already exists", "name", sd.Name, "server detail", sd)
+		log.DebugLog(log.DebugLevelMexos, "warning, server already exists", "name", sd.Name, "server detail", sd)
 		return nil
 	}
 	if netID == "" {
@@ -113,10 +113,10 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	props = append(props, "tags="+tags)
 	props = append(props, "tenant="+tenant)
 	opts.Properties = props
-	Debug("create flavor MEX KVM", "server opts", opts)
+	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "server opts", opts)
 	err = CreateServer(opts)
 	if err != nil {
-		Debug("error creating flavor MEX KVM", "server opts", opts)
+		log.DebugLog(log.DebugLevelMexos, "error creating flavor MEX KVM", "server opts", opts)
 		return fmt.Errorf("can't create server, opts %v, %v", opts, err)
 	}
 	return nil
@@ -125,7 +125,7 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 //CreateMEXKVM is easier way to create a MEX app capable KVM
 //  role can be k8s-master, k8s-node, or something else
 func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
-	Debug("createMEXKVM", "name", name, "role", role, "netSpec", netSpec,
+	log.DebugLog(log.DebugLevelMexos, "createMEXKVM", "name", name, "role", role, "netSpec", netSpec,
 		"tags", tags, "tenant", tenant, "id", id)
 	mexRouter := GetMEXExternalRouter()
 	netID := GetMEXExternalNetwork() //do we really want to default to ext?
@@ -178,7 +178,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			// k8s-master will create one
 		}
 		if snd == nil {
-			Debug("warning, subnet does not exist, will create one, as k8s master", "subnet name", sn)
+			log.DebugLog(log.DebugLevelMexos, "warning, subnet does not exist, will create one, as k8s master", "subnet name", sn)
 		}
 		if role == k8smasterRole {
 			sits := strings.Split(ni.CIDR, "/")
@@ -239,26 +239,27 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 				return fmt.Errorf("k8s-master id is too big")
 			}
 			if snd == nil {
-				Debug("no subnet for this cluster exists, ok")
+				log.DebugLog(log.DebugLevelMexos, "no subnet for this cluster exists, ok")
 				maxoct++
+				ni.CIDR = fmt.Sprintf("%s.%s.%d.%d/%s", its[0], its[1], maxoct, id, sits[1])
 			} else {
-				Debug("subnet for this cluster existed", "subnet detail", snd)
+				log.DebugLog(log.DebugLevelMexos, "subnet for this cluster existed", "subnet detail", snd)
+				ni.CIDR = snd.CIDR
 			}
-			ni.CIDR = fmt.Sprintf("%s.%s.%d.%d/%s", its[0], its[1], maxoct, id, sits[1])
-			Debug("allocated CIDR", "cidr", ni.CIDR)
+			log.DebugLog(log.DebugLevelMexos, "allocated CIDR", "cidr", ni.CIDR)
 		} else {
 			if snd == nil {
-				Debug("error, subnet not found; this should not happen!", "name", sn)
+				log.DebugLog(log.DebugLevelMexos, "error, subnet not found; this should not happen!", "name", sn)
 				// should not happen
 				return fmt.Errorf("subnet %s not found", sn)
 			}
 			id = id + eMEXSubnetSeed
-			Debug("starting third octet at", "id", id)
+			log.DebugLog(log.DebugLevelMexos, "starting third octet at", "id", id)
 			// worker nodes start at 100+id.
 			// there may be many masters... allow for upto 100!
 			//leave some space at end
 			if id > eMEXSubnetLimit {
-				Debug("error k8s-node is is too big", "id", id)
+				log.DebugLog(log.DebugLevelMexos, "error k8s-node is is too big", "id", id)
 				return fmt.Errorf("k8s-node id is too big")
 			}
 			sits := strings.Split(ni.CIDR, "/")
@@ -283,7 +284,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 					return fmt.Errorf("can't get subnet detail, %s, %v", sn.Name, err)
 				}
 				if sd.CIDR == ni.CIDR {
-					Debug("subnet exists with the same CIDR, find another range", "CIDR", sd.CIDR)
+					log.DebugLog(log.DebugLevelMexos, "subnet exists with the same CIDR, find another range", "CIDR", sd.CIDR)
 					cidr, err := getNewSubnetRange(id, v4a, sits, sl)
 					if err != nil {
 						return fmt.Errorf("failed to get a new subnet range, %v", err)
@@ -292,7 +293,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 				}
 			}
 		}
-		Debug("computed CIDR", "ni", ni, "role", role)
+		log.DebugLog(log.DebugLevelMexos, "computed CIDR", "ni", ni, "role", role)
 		ipv4Addr, _, iperr := net.ParseCIDR(ni.CIDR)
 		if iperr != nil {
 			return fmt.Errorf("can't parse %s, %v", ni.CIDR, iperr)
@@ -302,10 +303,10 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		gatewayIP := net.IPv4(v4[0], v4[1], v4[2], byte(1))
 		edgeProxy = gatewayIP.String()
 		ipaddr := net.IPv4(v4[0], v4[1], v4[2], v4[3])
-		Debug("allocated ip addr", "role", role, "ipaddr", ipaddr)
+		log.DebugLog(log.DebugLevelMexos, "allocated ip addr", "role", role, "ipaddr", ipaddr)
 		if role == k8smasterRole {
 			if snd == nil {
-				Debug("k8s master, no existing subnet, creating subnet", "name", sn)
+				log.DebugLog(log.DebugLevelMexos, "k8s master, no existing subnet, creating subnet", "name", sn)
 				err = CreateSubnet(ni.CIDR, GetMEXNetwork(), edgeProxy, sn, false)
 				if err != nil {
 					return err
@@ -316,33 +317,34 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 					return fmt.Errorf("cannot add router %s to subnet %s, %v", mexRouter, sn, err)
 				}
 			} else {
-				Debug("will not create subnet since it exists", "name", snd)
+				log.DebugLog(log.DebugLevelMexos, "will not create subnet since it exists", "name", snd)
 			}
+			ipaddr = net.IPv4(v4[0], v4[1], v4[2], byte(2))
 		}
 		//XXX need to tell agent to add route for the cidr
 		//+1 because gatway is at .1
 		//master node num is 1
 		//so, master node will always have .2
-		netID = GetMEXNetwork() + ",v4-fixed-ip=" + ipaddr.String()
 		//XXX master always at X.X.X.2
-		ipaddr = net.IPv4(v4[0], v4[1], v4[2], byte(2))
-		masterIP = ipaddr.String()
-		Debug("k8s master ip addr", "netID", netID, "ipaddr", ipaddr, "masterip", masterIP)
+		netID = GetMEXNetwork() + ",v4-fixed-ip=" + ipaddr.String()
+		masteripaddr := net.IPv4(v4[0], v4[1], v4[2], byte(2))
+		masterIP = masteripaddr.String()
+		log.DebugLog(log.DebugLevelMexos, "k8s master ip addr", "netID", netID, "ipaddr", ipaddr, "masterip", masterIP)
 	} else {
 		// NOT k8s case
 		// for now just agent stuff.
-		Debug("create mex kvm, plain kvm, not kubernetes case")
+		log.DebugLog(log.DebugLevelMexos, "create mex kvm, plain kvm, not kubernetes case")
 		edgeProxy, err = GetExternalGateway(netID)
 		if err != nil {
 			return fmt.Errorf("can't get external gateway for %s, %v", netID, err)
 		}
-		Debug("external gateway", "external gateway, edgeproxy", edgeProxy)
+		log.DebugLog(log.DebugLevelMexos, "external gateway", "external gateway, edgeproxy", edgeProxy)
 
 		rd, rderr := GetRouterDetail(mexRouter)
 		if rderr != nil {
 			return fmt.Errorf("can't get router detail for %s, %v", mexRouter, rderr)
 		}
-		Debug("router detail", "detail", rd)
+		log.DebugLog(log.DebugLevelMexos, "router detail", "detail", rd)
 		reg, regerr := GetRouterDetailExternalGateway(rd)
 		if regerr != nil {
 			return fmt.Errorf("can't get router detail external gateway, %v", regerr)
@@ -351,7 +353,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			return fmt.Errorf("can't get external fixed ips list from router detail external gateway")
 		}
 		fip := reg.ExternalFixedIPs[0]
-		Debug("external fixed ips", "ips", fip)
+		log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
 		// router IP for the private network to the external side, which
 		//  also knows about the private side. Only needed for agent gw node.
 		privRouterIP = fip.IPAddress
@@ -367,7 +369,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		//XXX empty privNet  avoids adding initial route to the privRouterIP. privRouterIP is still needed.
 		//   for adding routes later.
 	}
-	Debug("creating a new kvm", "name", name, "skipk8s", skipk8s, "masterip", masterIP,
+	log.DebugLog(log.DebugLevelMexos, "creating a new kvm", "name", name, "skipk8s", skipk8s, "masterip", masterIP,
 		"privnet", privNet, "privrouterip", privRouterIP, "tags", tags, "tenant", tenant)
 	err = CreateFlavorMEXVM(name,
 		eMEXLargeImageName,
@@ -384,10 +386,10 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		tenant,
 	)
 	if err != nil {
-		Debug("error creating mex kvm", "error", err)
+		log.DebugLog(log.DebugLevelMexos, "error creating mex kvm", "error", err)
 		return err
 	}
-	Debug("ok done creating mex kvm", "name", name)
+	log.DebugLog(log.DebugLevelMexos, "ok done creating mex kvm", "name", name)
 	return nil
 }
 
@@ -416,7 +418,7 @@ func getNewSubnetRange(id int, v4a []byte, sits []string, sl []Subnet) (*string,
 //  first remove router from subnet which was created for it. Then remove subnet before
 //  deleting server KVM instance.
 func DestroyMEXKVM(name, role string) error {
-	Debug("delete mex kvm server", "name", name, "role", role)
+	log.DebugLog(log.DebugLevelMexos, "delete mex kvm server", "name", name, "role", role)
 	err := DeleteServer(name)
 	if err != nil {
 		return fmt.Errorf("can't delete %s, %v", name, err)
@@ -425,7 +427,7 @@ func DestroyMEXKVM(name, role string) error {
 		sn := "subnet-" + name
 		rn := GetMEXExternalRouter()
 
-		Debug("removing router from subnet", "router", rn, "subnet", sn)
+		log.DebugLog(log.DebugLevelMexos, "removing router from subnet", "router", rn, "subnet", sn)
 		err := RemoveRouterSubnet(rn, sn)
 		if err != nil {
 			return fmt.Errorf("can't remove router %s from subnet %s, %v", rn, sn, err)
@@ -434,7 +436,7 @@ func DestroyMEXKVM(name, role string) error {
 		//XXX This may not work until all nodes are removed, since
 		//   IP addresses are allocated out of this subnet
 		//   All nodes should be deleted first.
-		Debug("deleting subnet", "name", sn)
+		log.DebugLog(log.DebugLevelMexos, "deleting subnet", "name", sn)
 		err = DeleteSubnet(sn)
 		if err != nil {
 			return fmt.Errorf("can't delete subnet %s, %v", sn, err)
@@ -468,11 +470,7 @@ func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 	case "external-ip":
 		return ni, nil
 	default:
-		Debug("error, invalid NetTypeVal", "net-type-val", items[NetTypeVal])
+		log.DebugLog(log.DebugLevelMexos, "error, invalid NetTypeVal", "net-type-val", items[NetTypeVal])
 	}
 	return nil, fmt.Errorf("unsupported netspec type")
-}
-
-func Debug(msg string, keysAndValues ...interface{}) {
-	log.DebugLog(log.DebugLevelMexos, msg, keysAndValues...)
 }

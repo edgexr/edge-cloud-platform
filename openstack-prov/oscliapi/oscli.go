@@ -8,6 +8,7 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // There are issues with x509 certfication and token retrieval when using ../api
@@ -221,7 +222,7 @@ func GetLimits() ([]Limit, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	Debug("get limits", "limits", limits)
+	log.DebugLog(log.DebugLevelMexos, "get limits", "limits", limits)
 	return limits, nil
 }
 
@@ -238,7 +239,7 @@ func ListServers() ([]Server, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	Debug("list servers", "servers", servers)
+	log.DebugLog(log.DebugLevelMexos, "list servers", "servers", servers)
 	return servers, nil
 }
 
@@ -255,7 +256,7 @@ func ListImages() ([]Image, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	Debug("list images", "images", images)
+	log.DebugLog(log.DebugLevelMexos, "list images", "images", images)
 	return images, nil
 }
 
@@ -272,7 +273,7 @@ func ListNetworks() ([]Network, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	Debug("list networks", "networks", networks)
+	log.DebugLog(log.DebugLevelMexos, "list networks", "networks", networks)
 	return networks, nil
 }
 
@@ -289,7 +290,7 @@ func ListFlavors() ([]Flavor, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	Debug("list flavors", flavors)
+	log.DebugLog(log.DebugLevelMexos, "list flavors", flavors)
 	return flavors, nil
 }
 
@@ -317,7 +318,7 @@ func CreateServer(opts *ServerOpt) error {
 	for i, v := range args {
 		iargs[i] = v
 	}
-	Debug("openstack create server", "opts", opts, "iargs", iargs)
+	log.DebugLog(log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
 	out, err := sh.Command("openstack", iargs...).Output()
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
@@ -346,20 +347,20 @@ func GetServerDetails(name string) (*ServerDetail, error) {
 			active = true
 			break
 		}
-		Debug("wait for server to become ACTIVE", "server detail", srvDetail)
+		log.DebugLog(log.DebugLevelMexos, "wait for server to become ACTIVE", "server detail", srvDetail)
 		time.Sleep(30 * time.Second)
 	}
 	if !active {
 		return nil, fmt.Errorf("while getting server detail, waited but server %s is too slow getting to active state", name)
 	}
-	Debug("server detail", "server detail", srvDetail)
+	log.DebugLog(log.DebugLevelMexos, "server detail", "server detail", srvDetail)
 	return srvDetail, nil
 }
 
 //DeleteServer destroys a KVM instance
 //  sometimes it is not possible to destroy. Like most things in Openstack, try again.
 func DeleteServer(id string) error {
-	Debug("deleting server", "id", id)
+	log.DebugLog(log.DebugLevelMexos, "deleting server", "id", id)
 	out, err := sh.Command("openstack", "server", "delete", id).Output()
 	if err != nil {
 		err = fmt.Errorf("can't delete server %s, %s, %v", id, out, err)
@@ -370,7 +371,7 @@ func DeleteServer(id string) error {
 
 // CreateNetwork creates a network with a name.
 func CreateNetwork(name string) error {
-	Debug("creating network", "network", name)
+	log.DebugLog(log.DebugLevelMexos, "creating network", "network", name)
 	out, err := sh.Command("openstack", "network", "create", name).Output()
 	if err != nil {
 		err = fmt.Errorf("can't create network %s, %s, %v", name, out, err)
@@ -382,7 +383,7 @@ func CreateNetwork(name string) error {
 //DeleteNetwork destroys a named network
 //  Sometimes it will fail. Openstack will refuse if there are resources attached.
 func DeleteNetwork(name string) error {
-	Debug("deleting network", "network", name)
+	log.DebugLog(log.DebugLevelMexos, "deleting network", "network", name)
 	out, err := sh.Command("openstack", "network", "delete", name).Output()
 	if err != nil {
 		err = fmt.Errorf("can't delete network %s, %s, %v", name, out, err)
@@ -430,11 +431,11 @@ func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEna
 				if serr != nil {
 					return fmt.Errorf("cannot get subnet detail for %s, while fixing overlap error, %v", subnetName, serr)
 				}
-				Debug("create subnet, existing subnet detail", "subnet detail", sd)
+				log.DebugLog(log.DebugLevelMexos, "create subnet, existing subnet detail", "subnet detail", sd)
 
 				//XXX do more validation
 
-				Debug("create subnet, reusing existing subnet", "result", out, "error", err)
+				log.DebugLog(log.DebugLevelMexos, "create subnet, reusing existing subnet", "result", out, "error", err)
 				return nil
 			}
 		}
@@ -446,7 +447,7 @@ func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEna
 
 //DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
 func DeleteSubnet(subnetName string) error {
-	Debug("deleting subnet", "name", subnetName)
+	log.DebugLog(log.DebugLevelMexos, "deleting subnet", "name", subnetName)
 	out, err := sh.Command("openstack", "subnet", "delete", subnetName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't delete subnet %s, %s, %v", subnetName, out, err)
@@ -457,7 +458,7 @@ func DeleteSubnet(subnetName string) error {
 
 //CreateRouter creates new router. A router can be attached to network and subnets.
 func CreateRouter(routerName string) error {
-	Debug("creating router", "name", routerName)
+	log.DebugLog(log.DebugLevelMexos, "creating router", "name", routerName)
 	out, err := sh.Command("openstack", "router", "create", routerName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't create router %s, %s, %v", routerName, out, err)
@@ -468,7 +469,7 @@ func CreateRouter(routerName string) error {
 
 //DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
 func DeleteRouter(routerName string) error {
-	Debug("deleting router", "name", routerName)
+	log.DebugLog(log.DebugLevelMexos, "deleting router", "name", routerName)
 	out, err := sh.Command("openstack", "router", "delete", routerName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't delete router %s, %s, %v", routerName, out, err)
@@ -481,7 +482,7 @@ func DeleteRouter(routerName string) error {
 // a real external network. This is intended only for routing to external network for now. No internal routers.
 // Sometimes, oftentimes, it will fail if the network is not external.
 func SetRouter(routerName, networkName string) error {
-	Debug("setting router to network", "router", routerName, "network", networkName)
+	log.DebugLog(log.DebugLevelMexos, "setting router to network", "router", routerName, "network", networkName)
 	out, err := sh.Command("openstack", "router", "set", routerName, "--external-gateway", networkName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't set router %s to %s, %s, %v", routerName, networkName, out, err)
@@ -492,7 +493,7 @@ func SetRouter(routerName, networkName string) error {
 
 //AddRouterSubnet will connect subnet to another network, possibly external, via a router
 func AddRouterSubnet(routerName, subnetName string) error {
-	Debug("adding router to subnet", "router", routerName, "network", subnetName)
+	log.DebugLog(log.DebugLevelMexos, "adding router to subnet", "router", routerName, "network", subnetName)
 	out, err := sh.Command("openstack", "router", "add", "subnet", routerName, subnetName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't add router %s to subnet %s, %s, %v", routerName, subnetName, out, err)
@@ -504,7 +505,7 @@ func AddRouterSubnet(routerName, subnetName string) error {
 //RemoveRouterSubnet is useful to remove the router from the subnet before deletion. Otherwise subnet cannot
 //  be deleted.
 func RemoveRouterSubnet(routerName, subnetName string) error {
-	Debug("removing router from subnet", "router", routerName, "subnet", subnetName)
+	log.DebugLog(log.DebugLevelMexos, "removing router from subnet", "router", routerName, "subnet", subnetName)
 	out, err := sh.Command("openstack", "router", "remove", "subnet", routerName, subnetName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't remove router %s from subnet %s, %s, %v", routerName, subnetName, out, err)
@@ -533,7 +534,7 @@ func ListSubnets(netName string) ([]Subnet, error) {
 		err = fmt.Errorf("can't unmarshal subnets, %v", err)
 		return nil, err
 	}
-	Debug("list subnets", "subnets", subnets)
+	log.DebugLog(log.DebugLevelMexos, "list subnets", "subnets", subnets)
 	return subnets, nil
 }
 
@@ -550,7 +551,7 @@ func ListRouters() ([]Router, error) {
 		err = fmt.Errorf("can't unmarshal routers, %v", err)
 		return nil, err
 	}
-	Debug("list routers", "routers", routers)
+	log.DebugLog(log.DebugLevelMexos, "list routers", "routers", routers)
 	return routers, nil
 }
 
@@ -567,13 +568,13 @@ func GetRouterDetail(routerName string) (*RouterDetail, error) {
 		err = fmt.Errorf("can't unmarshal router detail, %v", err)
 		return nil, err
 	}
-	Debug("router detail", "router detail", routerDetail)
+	log.DebugLog(log.DebugLevelMexos, "router detail", "router detail", routerDetail)
 	return routerDetail, nil
 }
 
 //CreateServerImage snapshots running service into a qcow2 image
 func CreateServerImage(serverName, imageName string) error {
-	Debug("creating image snapshot from server", "server", serverName, "image", imageName)
+	log.DebugLog(log.DebugLevelMexos, "creating image snapshot from server", "server", serverName, "image", imageName)
 	out, err := sh.Command("openstack", "server", "image", "create", serverName, "--name", imageName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't create image from %s into %s, %s, %v", serverName, imageName, out, err)
@@ -584,7 +585,7 @@ func CreateServerImage(serverName, imageName string) error {
 
 //CreateImage puts images into glance
 func CreateImage(imageName, qcowFile string) error {
-	Debug("creating image in glance", "image", imageName, "qcow", qcowFile)
+	log.DebugLog(log.DebugLevelMexos, "creating image in glance", "image", imageName, "qcow", qcowFile)
 	out, err := sh.Command("openstack", "image", "create",
 		imageName,
 		"--disk-format", "qcow2",
@@ -602,7 +603,7 @@ func CreateImage(imageName, qcowFile string) error {
 // or whatever.
 // This can take a while, transferring all the data.
 func SaveImage(saveName, imageName string) error {
-	Debug("saving image", "save name", saveName, "image name", imageName)
+	log.DebugLog(log.DebugLevelMexos, "saving image", "save name", saveName, "image name", imageName)
 	out, err := sh.Command("openstack", "image", "save", "--file", saveName, imageName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't save image from %s to file %s, %s, %v", imageName, saveName, out, err)
@@ -615,7 +616,7 @@ func SaveImage(saveName, imageName string) error {
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
 func DeleteImage(imageName string) error {
-	Debug("deleting image", "name", imageName)
+	log.DebugLog(log.DebugLevelMexos, "deleting image", "name", imageName)
 	out, err := sh.Command("openstack", "image", "delete", imageName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't delete image %s, %s, %v", imageName, out, err)
@@ -638,7 +639,7 @@ func GetSubnetDetail(subnetName string) (*SubnetDetail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal subnet detail, %v", err)
 	}
-	Debug("get subnet detail", "subnet detail", subnetDetail)
+	log.DebugLog(log.DebugLevelMexos, "get subnet detail", "subnet detail", subnetDetail)
 	return subnetDetail, nil
 }
 
@@ -654,7 +655,7 @@ func GetNetworkDetail(networkName string) (*NetworkDetail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal network detail, %v", err)
 	}
-	Debug("get network detail", "network detail", networkDetail)
+	log.DebugLog(log.DebugLevelMexos, "get network detail", "network detail", networkDetail)
 	return networkDetail, nil
 }
 
@@ -688,7 +689,7 @@ func GetExternalGateway(extNetName string) (string, error) {
 	if sd.GatewayIP == "" {
 		return "", fmt.Errorf("cannot get external network's gateway IP")
 	}
-	Debug("get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
+	log.DebugLog(log.DebugLevelMexos, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
 	return sd.GatewayIP, nil
 }
 
@@ -710,7 +711,7 @@ func GetNextSubnetRange(subnetName string) (string, error) {
 	suffix := sd.CIDR[i:]
 	v4 := ipv4Net.IP.To4()
 	ipnew := net.IPv4(v4[0], v4[1], v4[2]+1, v4[3])
-	Debug("get next subnet range", "new ip range", ipnew, "suffix", suffix)
+	log.DebugLog(log.DebugLevelMexos, "get next subnet range", "new ip range", ipnew, "suffix", suffix)
 	return ipnew.String() + suffix, nil
 }
 
@@ -728,7 +729,7 @@ func GetRouterDetailExternalGateway(rd *RouterDetail) (*ExternalGateway, error) 
 	if err != nil {
 		return nil, fmt.Errorf("can't get unmarshal external gateway info, %v", err)
 	}
-	Debug("get router detail external gateway", "external gateway", externalGateway)
+	log.DebugLog(log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
 	return externalGateway, nil
 }
 
@@ -743,7 +744,7 @@ func GetRouterDetailInterfaces(rd *RouterDetail) ([]RouterInterface, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal router detail interfaces")
 	}
-	Debug("get router detail interfaces", "interfaces", interfaces)
+	log.DebugLog(log.DebugLevelMexos, "get router detail interfaces", "interfaces", interfaces)
 	return interfaces, nil
 }
 
@@ -759,6 +760,6 @@ func SetServerProperty(name, property string) error {
 	if err != nil {
 		return fmt.Errorf("can't set property %s on server %s, %s, %v", property, name, out, err)
 	}
-	Debug("set server property", "name", name, "property", property)
+	log.DebugLog(log.DebugLevelMexos, "set server property", "name", name, "property", property)
 	return nil
 }

@@ -122,9 +122,10 @@ var router *httprouter.Router
 
 func addOrigin(path, origin string) error {
 	log.Debugf("addOrigin path %s origin %s", path, origin)
-	if val, ok := proxyMap[path]; ok {
-		log.Debugln("already exists", path)
-		return fmt.Errorf("Path %s exists for %s", path, val)
+	val, ok := proxyMap[path]
+	if ok {
+		log.Debugln("already exists, will replace", path, val, origin)
+		//return fmt.Errorf("Path %s exists for %s", path, val)
 	}
 	originURL, err := url.Parse(origin)
 	reverseProxy := httputil.NewSingleHostReverseProxy(originURL)
@@ -138,9 +139,24 @@ func addOrigin(path, origin string) error {
 	}
 	reverseProxy.Director = func(req *http.Request) {
 		log.Debugln("director", req)
-		if _, ok := proxyMap[path]; !ok {
-			return //XXX no way to really delete route
+		val, ok := proxyMap[path]
+		if !ok {
+			log.Debugln("no proxy path for", path)
+			return
 		}
+		if val != "" {
+			if strings.HasPrefix(val, "DELETED-") {
+				log.Debugln("proxy path deleted", val)
+				return
+			}
+		}
+		// TODO make proxmap[] -> struct { algo, []paths} for load-balancing
+		//   distance, latency based routing
+		//   additional header injection for bearer token
+		//   short-circuit for misbehaving services, requires monitoring
+		//   gather stats for metering, performance measurement
+		//   caching static content
+		//   dynamic service discovery
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Origin-Host", originURL.Host)
 		req.URL.Scheme = originURL.Scheme
@@ -150,15 +166,18 @@ func addOrigin(path, origin string) error {
 		if strings.HasSuffix(proxyPath, "/") && len(proxyPath) > 1 {
 			proxyPath = proxyPath[:len(proxyPath)-1]
 		}
-		log.Debugln("req.URL.Path", req.URL.Path, "=>", proxyPath)
+		log.Debugln("req", req, "origin", originURL, req.URL.Path, "=>", proxyPath)
 		req.URL.Path = proxyPath
 	}
-	router.Handle("GET", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		reverseProxy.ServeHTTP(w, r)
-	})
-	router.Handle("POST", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		reverseProxy.ServeHTTP(w, r)
-	})
+	if !ok {
+		// router panics if we add handlers again, reuse handlers for the same paths.
+		router.Handle("GET", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+			reverseProxy.ServeHTTP(w, r)
+		})
+		router.Handle("POST", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+			reverseProxy.ServeHTTP(w, r)
+		})
+	}
 	proxyMap[path] = origin //TODO: store in database
 	return nil
 }
@@ -174,9 +193,22 @@ func singleJoiningSlash(a, b string) string {
 	}
 	return a + b
 }
+
 func delOrigin(path, origin string) error {
 	log.Debugln("delete proxy", path, origin)
-	delete(proxyMap, path)
+	//delete(proxyMap, path)
+	// if router == nil {
+	// 	log.Debugln("no router")
+	// 	return fmt.Errorf("No router")
+	// }
+	// router.Handle("GET", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	// 	http.Error(w, "missing key", http.StatusNotFound)
+	// })
+	// router.Handle("POST", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	// 	http.Error(w, "missing key", http.StatusNotFound)
+	// })
+	//replace not delete
+	proxyMap[path] = "DELETED-" + origin
 	return nil
 }
 
@@ -284,3 +316,5 @@ func GetNewRouter() *httprouter.Router {
 	router = httprouter.New()
 	return router
 }
+
+//TODO add tcpproxy. instantiate docker tcpproxy for port pairs as requested for L4 rev proxy
