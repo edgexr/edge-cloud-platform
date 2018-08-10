@@ -160,7 +160,8 @@ type SubnetDetail struct {
 // In openstack  router is virtually created to connect different subnets
 //  and possible to external networks.
 type Router struct {
-	Name, ID, Status, State, HA, Project, Distributed string
+	Name, ID, Status, State, Project string
+	HA, Distributed                  bool
 }
 
 //RouterDetail lists more info per router
@@ -175,14 +176,14 @@ type RouterDetail struct {
 	AdminStateUp          string `json:"admin_state_up"`
 	CreatedAt             string `json:"created_at"`
 	Tags                  string `json:"tags"`
-	Distributed           string `json:"distributed"`
 	UpdatedAt             string `json:"updated_at"`
 	InterfacesInfo        string `json:"interfaces_info"`
 	ProjectID             string `json:"project_id"`
 	FlavorID              string `json:"flavor_id"`
-	RevisionNumber        int    `json:"revision_number"`
 	Routes                string `json:"routes"`
-	HA                    string `json:"ha"`
+	Distributed           bool   `json:"distributed"`
+	HA                    bool   `json:"ha"`
+	RevisionNumber        int    `json:"revision_number"`
 }
 
 //ExternalGateway details the info inside RouterDetail. The ExternalGatewayInfo is
