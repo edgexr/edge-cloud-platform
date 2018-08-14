@@ -1,4 +1,4 @@
-FROM mobiledgex/build AS build
+FROM registry.mobiledgex.net:5000/mobiledgex/build AS build
 
 WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra/
 COPY . .
@@ -9,6 +9,7 @@ WORKDIR /go/src/github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent
 RUN go get -d -v ./...
 RUN go install -v ./...
 RUN ls -l /go/bin
+
 FROM alpine:latest
 
 COPY --from=build /go/bin/agent /usr/local/bin/mexosagent
