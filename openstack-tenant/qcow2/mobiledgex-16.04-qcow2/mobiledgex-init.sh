@@ -11,7 +11,7 @@ mount `blkid -t LABEL="config-2" -odevice` $MCONF
 skipinit=`cat $MCONF/openstack/latest/meta_data.json |jq .meta.skipinit | sed -e 's/"//'g`
 if [ "$skipinit" != "yes" ]; then
 	echo mobiledgex initialization >> /tmp/mobiledgex.log
-	echo nameserver 8.8.8.8 > /etc/resolv.conf
+	#echo nameserver 1.1.1.1 > /etc/resolv.conf
 	ipaddress=`cat $MCONF/openstack/latest/network_data.json |jq .networks[0].ip_address | sed -e 's/"//'g` 
 	nettype=`cat $MCONF/openstack/latest/network_data.json |jq .networks[0].type | sed -e 's/"//'g` 
 	if [ "$nettype" = "ipv4_dhcp" ]; then

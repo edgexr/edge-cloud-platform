@@ -347,27 +347,31 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		log.DebugLog(log.DebugLevelMexos, "router detail", "detail", rd)
 		reg, regerr := GetRouterDetailExternalGateway(rd)
 		if regerr != nil {
-			return fmt.Errorf("can't get router detail external gateway, %v", regerr)
+			//return fmt.Errorf("can't get router detail external gateway, %v", regerr)
+			log.DebugLog(log.DebugLevelMexos, "can't get router detail, not fatal")
 		}
-		if len(reg.ExternalFixedIPs) < 1 {
-			return fmt.Errorf("can't get external fixed ips list from router detail external gateway")
+		if len(reg.ExternalFixedIPs) > 0 {
+			fip := reg.ExternalFixedIPs[0]
+			log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
+			// router IP for the private network to the external side, which
+			//  also knows about the private side. Only needed for agent gw node.
+			privRouterIP = fip.IPAddress
+			//XXX CIDR is not real, but a pattern like 10.101.X.X.  marginally useful for now. may change later.
+			//_, _, err = net.ParseCIDR(ni.CIDR)
+			//if err != nil {
+			//	return fmt.Errorf("can't parse CIDR %v, %v", ni, err)
+			//}
+			//XXX ni.Options DHCP case should trigger registration of the DNS name based on dynamic IP from DHCP server.
+			//   Especially on cloudlets like GDDT where they force DHCP on external network.
+			//privNet = ni.CIDR
+			privNet = ""
+			//XXX empty privNet  avoids adding initial route to the privRouterIP. privRouterIP is still needed.
+			//   for adding routes later.
+		} else {
+			log.DebugLog(log.DebugLevelMexos, "can't get external fixed ips list from router detail external gateway, not fatal")
+			privRouterIP = ""
+			privNet = ""
 		}
-		fip := reg.ExternalFixedIPs[0]
-		log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
-		// router IP for the private network to the external side, which
-		//  also knows about the private side. Only needed for agent gw node.
-		privRouterIP = fip.IPAddress
-		//XXX CIDR is not real, but a pattern like 10.101.X.X.  marginally useful for now. may change later.
-		//_, _, err = net.ParseCIDR(ni.CIDR)
-		//if err != nil {
-		//	return fmt.Errorf("can't parse CIDR %v, %v", ni, err)
-		//}
-		//XXX ni.Options DHCP case should trigger registration of the DNS name based on dynamic IP from DHCP server.
-		//   Especially on cloudlets like GDDT where they force DHCP on external network.
-		//privNet = ni.CIDR
-		privNet = ""
-		//XXX empty privNet  avoids adding initial route to the privRouterIP. privRouterIP is still needed.
-		//   for adding routes later.
 	}
 	log.DebugLog(log.DebugLevelMexos, "creating a new kvm", "name", name, "skipk8s", skipk8s, "masterip", masterIP,
 		"privnet", privNet, "privrouterip", privRouterIP, "tags", tags, "tenant", tenant)
