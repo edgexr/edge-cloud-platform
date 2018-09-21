@@ -350,7 +350,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 			//return fmt.Errorf("can't get router detail external gateway, %v", regerr)
 			log.DebugLog(log.DebugLevelMexos, "can't get router detail, not fatal")
 		}
-		if len(reg.ExternalFixedIPs) > 0 {
+		if reg != nil && len(reg.ExternalFixedIPs) > 0 {
 			fip := reg.ExternalFixedIPs[0]
 			log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
 			// router IP for the private network to the external side, which

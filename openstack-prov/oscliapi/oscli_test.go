@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
-	log "github.com/sirupsen/logrus"
+	//log "github.com/sirupsen/logrus"
 )
 
 var mexTestInfra2 = os.Getenv("MEX_TEST_INFRA")
@@ -31,7 +30,7 @@ func TestInit(t *testing.T) {
 	if mexTestInfra2 == "" {
 		return
 	}
-	log.SetLevel(log.DebugLevel)
+	//log.SetLevel(log.DebugLevel)
 }
 
 func TestGetLimits(t *testing.T) {
@@ -161,7 +160,7 @@ func TestDeleteServer(t *testing.T) {
 		t.Errorf("name mismatch")
 	}
 
-	log.Debugln("delete server %s %s", sd.Name, sd.ID)
+	//log.Debugln("delete server %s %s", sd.Name, sd.ID)
 
 	err = DeleteServer(sd.ID)
 	if err != nil {
