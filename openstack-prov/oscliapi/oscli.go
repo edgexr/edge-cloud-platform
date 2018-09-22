@@ -764,3 +764,12 @@ func SetServerProperty(name, property string) error {
 	log.DebugLog(log.DebugLevelMexos, "set server property", "name", name, "property", property)
 	return nil
 }
+
+func AddSecurityRule(name string, port int) error {
+	portStr := fmt.Sprintf("%d", port)
+	out, err := sh.Command("openstack", "security", "group", "rule", "create", "--proto", "tcp", "--dst-port", portStr, name).Output()
+	if err != nil {
+		return fmt.Errorf("can't add security group rule for port %d to %s,%s,%v", port, name, out, err)
+	}
+	return nil
+}
