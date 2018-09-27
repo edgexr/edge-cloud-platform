@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: cluster
+resource: azure-centralus-rg-1
+metadata:
+  name: andycluster
+  tags: andycluster-tag
+  kind: mex-aks-cluster
+  tenant: andytenant
+  operator: azure
+  region: centralus
+  zone: centralus
+  location: centralus
+  project:
+  resourcegroup: andyclustergroup
+spec:
+  flags:
+  flavor:
+  key: aks-andycluster
+  dockerregistry: registry.mobiledgex.net:5000
+  rootlb:
+  networkscheme:
+  

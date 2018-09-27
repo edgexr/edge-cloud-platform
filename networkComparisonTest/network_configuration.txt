@@ -1,0 +1,36 @@
+running on azure 40.113.219.126
+----------------------------------
+root     11670 11648  0 Sep19 ?        00:00:01 /usr/bin/python3 ./server_docker.py
+root     23890     1  0 02:27 ?        00:00:00 /usr/bin/python3 ./server_vm.py
+root      9566  9549  0 Sep25 ?        00:00:22 iperf -s -u -p 2011 -l 1000
+root     15445 15426  0 Sep25 ?        00:00:59 iperf -s -p 2013 -w 10M
+root     29740 26271  0 Sep25 pts/0    00:00:17 iperf -s -p 2010 -u -l 1000
+root     29759 26652  0 Sep25 pts/5    00:00:41 iperf -s -p 2012 -w 10M
+
+docker images
+REPOSITORY                                            TAG                 IMAGE ID            CREATED             SIZE
+iperfandy16                                           latest              eb65ce9fd685        2 days ago          156MB
+registry.mobiledgex.net:5000/mobiledgex/latency       latest              7d2b0ec8ad94        8 days ago          923MB
+
+docker container ls
+CONTAINER ID        IMAGE                                                        COMMAND                  CREATED             STATUS              PORTS                    NAMES
+12d514cac029        eb65ce9fd685                                                 "iperf -s -p 2013 -w…"   2 days ago          Up 2 days           0.0.0.0:2013->2013/tcp   admiring_khorana
+1d735558c630        eb65ce9fd685                                                 "iperf -s -u -p 2011…"   2 days ago          Up 2 days           0.0.0.0:2011->2011/udp   happy_liskov
+c2053b3cfc4e        7d2b0ec8ad94                                                 "./server_docker.py"     8 days ago          Up 8 days           0.0.0.0:2014->2014/udp   silly_almeida
+
+docker run -p 2013:2013/tcp eb65ce9fd685 -s -p 2013 -w 10M
+docker run -p 2011:2011/udp eb65ce9fd685 -s -u -p 2011 -l 1000
+docker run -d -p 2014:2014/udp 7d2b0ec8ad94
+
+kubernetes config
+--------------------
+kubectl create -f iperfudpapp.yaml
+kubectl create -f iperfapp.yaml
+kubectl create -f andysimapp.yaml 
+
+kubectl get services
+NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
+iperfapp-service       LoadBalancer   10.0.89.226    23.99.250.40     2011:32524/TCP   2d
+iperfudpapp-service    LoadBalancer   10.0.180.109   40.122.36.17     2011:30503/UDP   2d
+latencyapp-service     LoadBalancer   10.0.0.132     40.122.69.206    2014:32403/UDP   2d
+

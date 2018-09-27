@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iperfudpapp-service
+  labels:
+    run: iperfudpapp
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 2011
+    targetPort: 2011
+    protocol: UDP
+    name: udp2011
+  selector:
+    run: iperfudpapp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iperfudpapp-deployment
+spec:
+  selector:
+    matchLabels:
+      run: iperfudpapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: iperfudpapp
+    spec:
+      volumes:
+      imagePullSecrets: 
+      - name: mexreg-secret
+      containers:
+      - name: iperfudpapp
+        image: registry.mobiledgex.net:5000/mobiledgex/iperfandy16
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 2011 
+        args:
+         - "-s"
+         - "-p"
+         - "2011"
+         - "-u"
+         - "-l"
+         - "1000"
+
