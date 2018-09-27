@@ -3,6 +3,13 @@ This was used to compare normal process, docker, and kubernetes network performa
 
 It will generate log files and graphs.
 
+This main directory contains pngs of graphs for 1 minute, 5 minutes, 10 minutes, and 30 minutes of data collection.
+Also contains a network diagram and network configuration info.
+
+The data directory contains the data and log files for each run.
+The scripts directory contains scripts that were used.
+The configFiles directory contains docker and kubernetes config files.
+
 python3 iperf_save_vmdockerk8s.py -h
 usage: iperf_save_vmdockerk8s.py [-h] [--latency] [--udp] [--tcp]
                                  [--minutes MINUTES]
