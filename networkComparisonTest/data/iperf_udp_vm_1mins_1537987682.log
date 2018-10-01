@@ -1,0 +1,11 @@
+------------------------------------------------------------
+Client connecting to 40.113.219.126, UDP port 2010
+Sending 1000 byte datagrams
+UDP buffer size:  208 KByte (default)
+------------------------------------------------------------
+[  3] local 10.10.0.11 port 58163 connected with 40.113.219.126 port 2010
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-60.0 sec  7.50 MBytes  1.05 Mbits/sec
+[  3] Sent 7866 datagrams
+[  3] Server Report:
+[  3]  0.0-60.0 sec  7.50 MBytes  1.05 Mbits/sec   0.098 ms    0/ 7866 (0%)
