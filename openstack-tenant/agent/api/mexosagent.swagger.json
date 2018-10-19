@@ -41,6 +41,32 @@
         ]
       }
     },
+    "/v1/nginx": {
+      "post": {
+        "operationId": "Nginx",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiNginxResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNginxRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
     "/v1/provision": {
       "post": {
         "operationId": "Provision",
@@ -147,6 +173,63 @@
     }
   },
   "definitions": {
+    "apiNginxPort": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "external": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string"
+        },
+        "mexproto": {
+          "type": "string"
+        },
+        "remoteip": {
+          "type": "string"
+        },
+        "internal": {
+          "type": "string"
+        }
+      }
+    },
+    "apiNginxRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiNginxPort"
+          }
+        }
+      }
+    },
+    "apiNginxResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
     "apiProvision": {
       "type": "object",
       "properties": {

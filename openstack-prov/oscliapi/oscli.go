@@ -765,9 +765,9 @@ func SetServerProperty(name, property string) error {
 	return nil
 }
 
-func AddSecurityRule(name string, port int) error {
+func AddSecurityRuleCIDR(cidr string, proto string, name string, port int) error {
 	portStr := fmt.Sprintf("%d", port)
-	out, err := sh.Command("openstack", "security", "group", "rule", "create", "--proto", "tcp", "--dst-port", portStr, name).Output()
+	out, err := sh.Command("openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", portStr, "--ingress", name).Output()
 	if err != nil {
 		return fmt.Errorf("can't add security group rule for port %d to %s,%s,%v", port, name, out, err)
 	}

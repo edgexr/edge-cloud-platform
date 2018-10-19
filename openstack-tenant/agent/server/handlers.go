@@ -1,11 +1,16 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/julienschmidt/httprouter"
@@ -318,3 +323,325 @@ func GetNewRouter() *httprouter.Router {
 }
 
 //TODO add tcpproxy. instantiate docker tcpproxy for port pairs as requested for L4 rev proxy
+
+func (srv *Server) Nginx(ctx context.Context, req *api.NginxRequest) (res *api.NginxResponse, err error) {
+	log.Debugln("req", req)
+	if req.Message == "add" {
+		if len(req.Ports) < 1 {
+			res = &api.NginxResponse{Message: fmt.Sprintf("Error, missing ports"), Status: "Error"}
+			return res, fmt.Errorf("missing ports definitions")
+		}
+		aerr := CreateNginx(req.Name, req.Ports)
+		if aerr != nil {
+			res = &api.NginxResponse{Message: fmt.Sprintf("Error, cannot create Nginx, name %s, ports %v", req.Name, req.Ports), Status: "Error"}
+			return res, aerr
+		}
+	} else if req.Message == "list" {
+		names, err := ListNginx()
+		if err != nil {
+			res = &api.NginxResponse{Message: fmt.Sprintf("cannot get list of nginx instances, %v", err), Status: "Error"}
+			return res, err
+		}
+		res = &api.NginxResponse{Message: req.Message, Status: fmt.Sprintf("%v", names)}
+		return res, nil
+	} else if req.Message == "delete" {
+		berr := DeleteNginx(req.Name)
+		if berr != nil {
+			res = &api.NginxResponse{Message: fmt.Sprintf("Error, cannot delete Nginx, name %s, ports %v", req.Name, req.Ports), Status: "Error"}
+			return res, berr
+		}
+	} else {
+		//TODO
+		res = &api.NginxResponse{Message: fmt.Sprintf("Error, invalid request %s", req.Message), Status: "Error"}
+		return res, fmt.Errorf("invalid request")
+	}
+
+	res = &api.NginxResponse{
+		Message: "OK",
+	}
+	return res, nil
+}
+
+func fileExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func CreateNginx(name string, ports []*api.NginxPort) error {
+	log.Debugln("create nginx", name, ports)
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Debugln("can't get cwd", err)
+		return err
+	}
+	dir := pwd + "/nginx/" + name
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Debugln("can't create dir", dir, err)
+		return err
+	}
+	if !fileExists(pwd + "/cert.pem") {
+		log.Debugln("cert.pem does not exist")
+		return fmt.Errorf("while creating nginx %s, cert.pem does not exist", name)
+	}
+	if !fileExists(pwd + "/key.pem") {
+		log.Debugln("key.pem does not exist")
+		return fmt.Errorf("while creating nginx %s, key.pem does not exist", name)
+		return err
+	}
+	errlogFile := dir + "/err.log"
+	f, err := os.Create(errlogFile)
+	if err != nil {
+		log.Debugln("while creating nginx proxy can't create err.log", name)
+		return err
+	}
+	f.Close()
+	nconfName := dir + "/nginx.conf"
+	_, err = createNginxConf(nconfName, name, ports)
+	if err != nil {
+		log.Debugln("while creating nginx proxy can't create conf", name)
+		return err
+	}
+	log.Debugln("create nginx conf", nconfName)
+	defaultConf := dir + "/default.conf"
+	_, err = createNginxDefaultConf(defaultConf, name, ports)
+	if err != nil {
+		log.Debugln("while creating nginx proxy, can't create default conf", name)
+		return err
+	}
+	out, err := sh.Command("docker", "run", "-d", "--rm", "--net=host", "--name", name, "-v", defaultConf+":/etc/nginx/conf.d/default.conf", "-v", dir+":/var/www/.cache", "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd+"/cert.pem:/etc/ssl/certs/server.crt", "-v", pwd+"/key.pem:/etc/ssl/certs/server.key", "-v", errlogFile+":/var/log/nginx/error.log", "-v", nconfName+":/etc/nginx/nginx.conf", "nginx").CombinedOutput()
+
+	if err != nil {
+		return fmt.Errorf("can't create nginx container %s, %s, %v", name, out, err)
+	}
+	log.Debugln("created nginx container", name)
+	return nil
+}
+
+var nginxConfTmpl = `
+user  nginx;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+{{if .L7 -}}
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;
+    keepalive_timeout  65;
+    include /etc/nginx/conf.d/*.conf;
+    {{- range .HTTPSpec}}
+    server {
+ 	listen {{.Port}} ssl;
+	ssl_certificate        /etc/ssl/certs/server.crt;
+	ssl_certificate_key    /etc/ssl/certs/server.key;
+	location {{.Path}} {
+		proxy_pass http://{{.Origin}};
+	}
+    }
+    {{- end}}
+}
+{{- end}}
+
+{{if .L4 -}}
+stream {
+	{{- range .TCPSpec}}
+	server {
+		listen {{.Port}};
+		proxy_pass {{.Origin}};
+	}
+	{{- end}}
+	{{- range .UDPSpec}}
+	server {
+		listen {{.Port}} udp;
+		proxy_pass {{.Origin}};
+	}
+	{{- end}}
+}
+{{- end}}
+`
+
+type ProxySpec struct {
+	Name     string
+	Instance string
+	L4, L7   bool
+	HTTPSpec []*HTTPSpecDetail
+	UDPSpec  []*UDPSpecDetail
+	TCPSpec  []*TCPSpecDetail
+}
+
+type HTTPSpecDetail struct {
+	Port   string
+	Path   string
+	Origin string
+}
+
+type TCPSpecDetail struct {
+	Port   string
+	Origin string
+}
+
+type UDPSpecDetail struct {
+	Port   string
+	Origin string
+}
+
+func createNginxConf(confname, name string, ports []*api.NginxPort) (*string, error) {
+	log.Debugln("create nginx conf", confname, name, ports)
+	ps, err := createNginxProxySpec(name, ports)
+	if err != nil {
+		return nil, err
+	}
+	tmpl, err := template.New("nginxconf").Parse(nginxConfTmpl)
+	if err != nil {
+		return nil, err
+	}
+	var outbuffer bytes.Buffer
+	err = tmpl.Execute(&outbuffer, ps)
+	if err != nil {
+		return nil, err
+	}
+	confbytes := outbuffer.Bytes()
+	err = writeFile(confname, confbytes)
+	if err != nil {
+		return nil, err
+	}
+	confstr := string(confbytes)
+	return &confstr, nil
+}
+
+var nginxDefaultConfTmpl = `
+server {
+    listen       {{.Port}};
+    server_name  {{.Name}};
+    ssl_certificate        /etc/ssl/certs/server.crt;
+    ssl_certificate_key    /etc/ssl/certs/server.key;
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+}
+`
+
+type DefaultConf struct {
+	Name, Port string
+}
+
+func createNginxDefaultConf(confname, name string, ports []*api.NginxPort) (*string, error) {
+	log.Debugln("create nginx default conf", confname, name, ports)
+	port := GetNginxDefaultPort()
+	if port == "" {
+		return nil, fmt.Errorf("cannot reserve nginx http port")
+	}
+	dc := &DefaultConf{Port: port, Name: name}
+	tmpl, err := template.New("defaultnginxconf").Parse(nginxDefaultConfTmpl)
+	if err != nil {
+		return nil, err
+	}
+	var outbuffer bytes.Buffer
+	err = tmpl.Execute(&outbuffer, dc)
+	if err != nil {
+		return nil, err
+	}
+	confbytes := outbuffer.Bytes()
+	err = writeFile(confname, confbytes)
+	if err != nil {
+		return nil, err
+	}
+	confstr := string(confbytes)
+	return &confstr, nil
+}
+
+var nginxDefaultPortStart = 64333 //XXX
+var nginxDefaultPortMax = 64933   //XXX
+
+func GetNginxDefaultPort() string {
+	timeout := time.Second
+	for i := nginxDefaultPortStart; i < nginxDefaultPortMax; i++ {
+		port := fmt.Sprintf("%d", i)
+		conn, err := net.DialTimeout("tcp", ":"+port, timeout)
+		if conn != nil {
+			conn.Close()
+			log.Debugln("being used", port)
+			continue
+		}
+		if err != nil {
+			if strings.Contains(err.Error(), "connection refused") {
+				log.Debugln("using nginx http port", port)
+				return port
+			}
+			log.Debugln("unexpect dial error", err)
+		}
+	}
+	log.Debugln("no ports available in range", nginxDefaultPortStart, nginxDefaultPortMax)
+	return ""
+}
+
+func createNginxProxySpec(name string, ports []*api.NginxPort) (*ProxySpec, error) {
+	ps := &ProxySpec{Name: name}
+	for _, p := range ports {
+		switch p.Mexproto {
+		case "LProtoHTTP":
+			ps.L7 = true
+			hsd := &HTTPSpecDetail{Port: p.External, Path: p.Path, Origin: p.Origin}
+			ps.HTTPSpec = append(ps.HTTPSpec, hsd)
+		case "LProtoTCP":
+			ps.L4 = true
+			tsd := &TCPSpecDetail{Port: p.External, Origin: p.Origin}
+			ps.TCPSpec = append(ps.TCPSpec, tsd)
+		case "LProtoUDP":
+			ps.L4 = true
+			usd := &UDPSpecDetail{Port: p.External, Origin: p.Origin}
+			ps.UDPSpec = append(ps.UDPSpec, usd)
+		default:
+			return nil, fmt.Errorf("cannot create nginx conf, invalid  mexproto %s", p.Mexproto)
+		}
+	}
+	return ps, nil
+}
+
+func writeFile(confname string, confbytes []byte) error {
+	f, err := os.Create(confname)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(confbytes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteNginx(name string) error {
+	out, err := sh.Command("docker", "kill", name).Output()
+	if err != nil {
+		return fmt.Errorf("can't kill nginx container %s, %s, %v", name, out, err)
+	}
+	log.Debugln("deleted nginx container", name)
+	return nil
+}
+
+func ListNginx() ([]string, error) {
+	out, err := sh.Command("docker", "ps", "--format", "'{{.Names}}'").Output()
+	if err != nil {
+		return nil, fmt.Errorf("can't list nginx container %s, %v", out, err)
+	}
+	outstr := string(out)
+	log.Debugln("list of nginx containers", outstr)
+	names := strings.Split(outstr, "\n")
+	return names, nil
+}

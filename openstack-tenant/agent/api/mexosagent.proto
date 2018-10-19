@@ -38,6 +38,13 @@ service MexOSAgent {
             body: "*"
         };
     }
+
+    rpc Nginx(NginxRequest) returns (NginxResponse) {
+        option (google.api.http) = {
+            post: "/v1/nginx",
+            body: "*"
+        };
+    }
 }
 
 message Provision {
@@ -84,6 +91,28 @@ message Proxy {
 message ProxyRequest {
     string message = 1;
     repeated Proxy proxies = 2;
+}
+
+message NginxPort {
+    string name = 1;
+    string origin = 2;
+    string path = 3;
+    string external = 4;
+    string protocol = 5;
+    string mexproto = 6;
+    string remoteip = 7;
+    string internal = 8;
+}
+
+message NginxRequest {
+    string message = 1;
+    string name = 2;
+    repeated NginxPort ports = 3;
+}
+
+message NginxResponse {
+    string message = 1;
+    string status = 2;
 }
 
 message ProxyResponse {

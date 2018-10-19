@@ -254,7 +254,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 				return fmt.Errorf("subnet %s not found", sn)
 			}
 			id = id + eMEXSubnetSeed
-			log.DebugLog(log.DebugLevelMexos, "starting third octet at", "id", id)
+			log.DebugLog(log.DebugLevelMexos, "node id", "id", id)
 			// worker nodes start at 100+id.
 			// there may be many masters... allow for upto 100!
 			//leave some space at end

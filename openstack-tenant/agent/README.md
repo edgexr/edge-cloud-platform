@@ -123,3 +123,26 @@ curl https://agent1.medge.gq/test2
 The origin server is hosted in kubernetes which exposes the service. The service itself may be behind kubernetes internal load balancer which can direct traffic to multiple instances of app deployment (pods).  If there is a service running on the origin URL, in this case `http://10.101.101.202:8081`, the response from the origin will be returned to the requester.
 
 
+### Nginx reverse proxy
+
+Nginx container based L7 and L4 proxy support is available at v1/nginx.
+
+For example,
+
+```
+curl http://hawkins.mex-gddt.mobiledgex.net:18889/v1/nginx -d '{"message":"add","name":"test1","ports":[{"mexproto":"LProtoHTTP","external":"8888","internal":"8888","origin":"127.0.0.1:8888","path":"/hello"},{"mexproto":"LProtoTCP","external":"7777","origin":"127.0.0.1:777"},{"mexproto":"LProtoUDP","external":"6666","origin":"127.0.0.1:6666"}]}'
+```
+
+adds one HTTP proxy which is terminated at port 8888 on the rootLB TLS. Users will access the service at https://example.com:8888. It also adds TCP proxy at 7777 and UDP proxy at 6666.
+
+```
+curl http://hawkins.mex-gddt.mobiledgex.net:18889/v1/nginx -d '{"message":"list"}'
+```
+
+Lists  currently available nginx proxy container instances.
+
+```
+curl http://hawkins.mex-gddt.mobiledgex.net:18889/v1/nginx -d '{"message":"delete","name":"test1"}'
+```
+
+Deletes the nginx proxy instance named tested1.
