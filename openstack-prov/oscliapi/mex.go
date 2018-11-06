@@ -12,13 +12,12 @@ import (
 // These are platform specific custom vars
 
 var eMEXLargeImageName = os.Getenv("MEX_LARGE_IMAGE") // "mobiledgex-16.04-2"
-var eMEXLargeFlavor = os.Getenv("MEX_LARGE_FLAVOR")   // "m4.large"
 var eMEXUserData = os.Getenv("MEX_USERDATA")          // "/home/bob/userdata.txt"
 var eMEXDir = os.Getenv("MEX_DIR")
 var eMEXSubnetSeed = 100  // XXX
 var eMEXSubnetLimit = 250 // XXX
 var defaultImage = "mobiledgex-16.04-2"
-var defaultFlavor = "m4.large"
+var defaultFlavor = "x1.medium"
 
 const (
 	k8smasterRole = "k8s-master"
@@ -44,9 +43,6 @@ func init() {
 	if eMEXLargeImageName == "" {
 		eMEXLargeImageName = defaultImage
 	}
-	if eMEXLargeFlavor == "" {
-		eMEXLargeFlavor = defaultFlavor
-	}
 	hm := os.Getenv("HOME")
 	if eMEXDir == "" {
 		eMEXDir = hm + "/.mobiledgex"
@@ -54,8 +50,7 @@ func init() {
 	if eMEXUserData == "" {
 		eMEXUserData = eMEXDir + "/userdata.txt"
 	}
-	log.DebugLog(log.DebugLevelMexos, "mex init environment", "MEX_LARGE_IMAGE", eMEXLargeImageName, "MEX_LARGE_FLAVOR",
-		eMEXLargeFlavor, "MEX_USERDATA", eMEXUserData, "MEX_DIR", eMEXDir)
+	log.DebugLog(log.DebugLevelMexos, "mex init environment", "MEX_LARGE_IMAGE", eMEXLargeImageName, "MEX_USERDATA", eMEXUserData, "MEX_DIR", eMEXDir)
 }
 
 //CreateFlavorMEXVM creates basic KVM for mobiledgex applications
@@ -81,9 +76,8 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 		image = eMEXLargeImageName
 	}
 	if flavor == "" {
-		flavor = eMEXLargeFlavor
+		return fmt.Errorf("Missing platform flavor")
 	}
-
 	if userdata == "" {
 		userdata = eMEXUserData
 	}
@@ -113,13 +107,24 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	props = append(props, "tags="+tags)
 	props = append(props, "tenant="+tenant)
 	opts.Properties = props
-	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "server opts", opts)
+	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor, "server opts", opts)
 	err = CreateServer(opts)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "error creating flavor MEX KVM", "server opts", opts)
 		return fmt.Errorf("can't create server, opts %v, %v", opts, err)
 	}
 	return nil
+}
+
+func GetFlavorTag(tags string) (string, error) {
+	for _, t := range strings.Split(tags, ",") {
+		if strings.HasPrefix(t, "m4.") { // XXX platform specific
+			return t, nil
+		}
+	}
+	//flavor not specified, use default
+	log.DebugLog(log.DebugLevelMexos, "no flavor in tags, using default flavor", "default flavor", defaultFlavor)
+	return defaultFlavor, nil
 }
 
 //CreateMEXKVM is easier way to create a MEX app capable KVM
@@ -375,9 +380,13 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "creating a new kvm", "name", name, "skipk8s", skipk8s, "masterip", masterIP,
 		"privnet", privNet, "privrouterip", privRouterIP, "tags", tags, "tenant", tenant)
+	platformFlavor, err := GetFlavorTag(tags)
+	if err != nil {
+		return fmt.Errorf("cannot get flavor from tags '%s'", tags)
+	}
 	err = CreateFlavorMEXVM(name,
 		eMEXLargeImageName,
-		eMEXLargeFlavor,
+		platformFlavor,
 		netID, // either external-net or internal-net,v4-fixed-ip=X.X.X.X
 		eMEXUserData,
 		role, // k8s-master,k8s-node,something else

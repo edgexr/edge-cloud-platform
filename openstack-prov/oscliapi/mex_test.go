@@ -2,7 +2,7 @@ package oscli
 
 import (
 	"fmt"
-	"github.com/rs/xid"
+	//"github.com/rs/xid"
 	"os"
 	"strings"
 	"testing"
@@ -19,8 +19,9 @@ func TestCreateMEXAgent(t *testing.T) {
 	if mexTestInfra1 == "" {
 		return
 	}
-	guid := xid.New()
-	agentName = "mex-agent-test-" + guid.String()
+	//guid := xid.New()
+	//agentName = "mex-agent-test-" + guid.String()
+	agentName = "mex-agent-test-1"
 
 	// XXX 10.101.X.X/24 is not used. Just place-holder for now.
 	// id 1 is not used either. DHCP is used.
@@ -67,8 +68,9 @@ func TestCreateKubernetesMaster(t *testing.T) {
 	if mexTestInfra1 == "" {
 		return
 	}
-	guid := xid.New()
-	masterName = "mex-" + roleMaster + "-" + guid.String()
+	//guid := xid.New()
+	//masterName = "mex-" + roleMaster + "-" + guid.String()
+	masterName = "mex-" + roleMaster + "-1"
 	//Master always has X.X.X.2
 	err := CreateMEXKVM(masterName, roleMaster, "priv-subnet,mex-k8s-net1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
@@ -85,8 +87,9 @@ func TestCreateKubernetesNode1(t *testing.T) {
 	if mexTestInfra1 == "" {
 		return
 	}
-	guid := xid.New()
-	node1Name = "mex-" + roleNode1 + "-" + guid.String()
+	//guid := xid.New()
+	//node1Name = "mex-" + roleNode1 + "-" + guid.String()
+	node1Name = "mex-" + roleNode1 + "-1"
 	err := CreateMEXKVM(node1Name, roleNode1, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 1)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 1, %v", err)
@@ -101,8 +104,9 @@ func TestCreateKubernetesNode2(t *testing.T) {
 	if mexTestInfra1 == "" {
 		return
 	}
-	guid := xid.New()
-	node2Name = "mex-" + roleNode2 + "-" + guid.String()
+	//guid := xid.New()
+	//node2Name = "mex-" + roleNode2 + "-" + guid.String()
+	node2Name = "mex-" + roleNode2 + "-1"
 	err := CreateMEXKVM(node2Name, roleNode2, "priv-subnet,mex-k8s-net-1,10.101.X.0/24", test1Tags, tenant, 2)
 	if err != nil {
 		t.Errorf("can't create kubernetes node 2, %v", err)
