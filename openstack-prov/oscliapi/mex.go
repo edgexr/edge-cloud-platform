@@ -18,6 +18,7 @@ var eMEXSubnetSeed = 100  // XXX
 var eMEXSubnetLimit = 250 // XXX
 var defaultImage = "mobiledgex-16.04-2"
 var defaultFlavor = "x1.medium"
+var defaultKVMFlavor = "m4.large"
 
 const (
 	k8smasterRole = "k8s-master"
@@ -123,8 +124,8 @@ func GetFlavorTag(tags string) (string, error) {
 		}
 	}
 	//flavor not specified, use default
-	log.DebugLog(log.DebugLevelMexos, "no flavor in tags, using default flavor", "default flavor", defaultFlavor)
-	return defaultFlavor, nil
+	log.DebugLog(log.DebugLevelMexos, "no flavor in tags, using default flavor", "default kvm flavor", defaultKVMFlavor)
+	return defaultKVMFlavor, nil
 }
 
 //CreateMEXKVM is easier way to create a MEX app capable KVM
