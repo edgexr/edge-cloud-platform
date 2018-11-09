@@ -14,7 +14,7 @@ echo "Master IP $MASTERIP"
 echo "My IP Address: $MYIP"
 sudo apt install -y python
 #nohup consul agent -server -bootstrap-expect=1 -data-dir=/tmp/consul -node=`hostname` -bind=$MYIP -syslog -config-dir=/etc/consul/conf.d  &
-kubeadm init --apiserver-advertise-address=$MYIP --pod-network-cidr=10.244.0.0/16
+kubeadm init --apiserver-advertise-address=$MYIP --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=all
 #export KUBECONFIG=/etc/kubernetes/admin.conf
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config

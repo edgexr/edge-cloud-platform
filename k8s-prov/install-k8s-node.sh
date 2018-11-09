@@ -44,6 +44,6 @@ done
 JOIN=`cat k8s-join-cmd`
 echo got join cmd
 cat k8s-join-cmd
-echo running $JOIN --ignore-preflight-errors=cri
-$JOIN --ignore-preflight-errors=cri
+echo running $JOIN --ignore-preflight-errors=all
+$JOIN --ignore-preflight-errors=all
 echo done running join
