@@ -10,9 +10,8 @@ import (
 )
 
 // These are platform specific custom vars
-
-var eMEXLargeImageName = os.Getenv("MEX_LARGE_IMAGE") // "mobiledgex-16.04-2"
-var eMEXUserData = os.Getenv("MEX_USERDATA")          // "/home/bob/userdata.txt"
+var eMEXImageName = os.Getenv("MEX_OS_IMAGE") // "mobiledgex-16.04-2"
+var eMEXUserData = os.Getenv("MEX_USERDATA")  // "/home/bob/userdata.txt"
 var eMEXDir = os.Getenv("MEX_DIR")
 var eMEXSubnetSeed = 100  // XXX
 var eMEXSubnetLimit = 250 // XXX
@@ -41,8 +40,8 @@ type NetSpecInfo struct {
 }
 
 func init() {
-	if eMEXLargeImageName == "" {
-		eMEXLargeImageName = defaultImage
+	if eMEXImageName == "" {
+		eMEXImageName = defaultImage
 	}
 	hm := os.Getenv("HOME")
 	if eMEXDir == "" {
@@ -51,7 +50,7 @@ func init() {
 	if eMEXUserData == "" {
 		eMEXUserData = eMEXDir + "/userdata.txt"
 	}
-	log.DebugLog(log.DebugLevelMexos, "mex init environment", "MEX_LARGE_IMAGE", eMEXLargeImageName, "MEX_USERDATA", eMEXUserData, "MEX_DIR", eMEXDir)
+	log.DebugLog(log.DebugLevelMexos, "mex init environment", "MEX_LARGE_IMAGE", eMEXImageName, "MEX_USERDATA", eMEXUserData, "MEX_DIR", eMEXDir)
 }
 
 //CreateFlavorMEXVM creates basic KVM for mobiledgex applications
@@ -74,7 +73,7 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	}
 
 	if image == "" {
-		image = eMEXLargeImageName
+		image = eMEXImageName
 	}
 	if flavor == "" {
 		return fmt.Errorf("Missing platform flavor")
@@ -117,20 +116,19 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	return nil
 }
 
-func GetFlavorTag(tags string) (string, error) {
-	for _, t := range strings.Split(tags, ",") {
-		if strings.HasPrefix(t, "m4.") { // XXX platform specific
-			return t, nil
+func getNameTag(name string) string {
+	if strings.Index(name, "-") > 0 {
+		ix := strings.LastIndex(name, "-")
+		if len(name) > (ix + 1) {
+			return name[ix+1:]
 		}
 	}
-	//flavor not specified, use default
-	log.DebugLog(log.DebugLevelMexos, "no flavor in tags, using default flavor", "default kvm flavor", defaultKVMFlavor)
-	return defaultKVMFlavor, nil
+	return name
 }
 
 //CreateMEXKVM is easier way to create a MEX app capable KVM
 //  role can be k8s-master, k8s-node, or something else
-func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
+func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, platformFlavor string) error {
 	log.DebugLog(log.DebugLevelMexos, "createMEXKVM", "name", name, "role", role, "netSpec", netSpec,
 		"tags", tags, "tenant", tenant, "id", id)
 	mexRouter := GetMEXExternalRouter()
@@ -175,7 +173,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 		}
 		//XXX openstack bug - subnet does not take tags but description field can be used to tag stuff
 		//   Use tag as part of name
-		sn := ni.Name + "-subnet-" + tags
+		sn := ni.Name + "-subnet-" + getNameTag(name)
 		snd, snderr := GetSubnetDetail(sn)
 		if snderr != nil {
 			if role == k8snodeRole {
@@ -381,12 +379,11 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "creating a new kvm", "name", name, "skipk8s", skipk8s, "masterip", masterIP,
 		"privnet", privNet, "privrouterip", privRouterIP, "tags", tags, "tenant", tenant)
-	platformFlavor, err := GetFlavorTag(tags)
 	if err != nil {
 		return fmt.Errorf("cannot get flavor from tags '%s'", tags)
 	}
 	err = CreateFlavorMEXVM(name,
-		eMEXLargeImageName,
+		eMEXImageName,
 		platformFlavor,
 		netID, // either external-net or internal-net,v4-fixed-ip=X.X.X.X
 		eMEXUserData,
@@ -438,7 +435,7 @@ func DestroyMEXKVM(name, role string) error {
 		return fmt.Errorf("can't delete %s, %v", name, err)
 	}
 	if role == k8smasterRole {
-		sn := "subnet-" + name
+		sn := "subnet-" + getNameTag(name)
 		rn := GetMEXExternalRouter()
 
 		log.DebugLog(log.DebugLevelMexos, "removing router from subnet", "router", rn, "subnet", sn)
