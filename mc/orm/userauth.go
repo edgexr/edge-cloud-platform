@@ -6,12 +6,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
 	"time"
 	"unicode/utf8"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -22,6 +26,18 @@ var PasswordMaxLength = 4096
 var PasshashIter = 10000
 var PasshashKeyBytes = 32
 var PasshashSaltBytes = 8
+
+var Jwks vault.JWKS
+
+func InitVault(addr string) {
+	// roleID and secretID could also come from RAM disk.
+	// assume env vars for now.
+	roleID := os.Getenv("VAULT_ROLE_ID")
+	secretID := os.Getenv("VAULT_SECRET_ID")
+
+	Jwks.Init(addr, "mcorm", roleID, secretID)
+	Jwks.GoUpdate()
+}
 
 func ValidPassword(pw string) error {
 	if utf8.RuneCountInString(pw) < PasswordMinLength {
@@ -62,6 +78,15 @@ type UserClaims struct {
 	jwt.StandardClaims
 	Username string `json:"username"`
 	UserID   int64  `json:"id"`
+	Kid      int    `json:"kid"`
+}
+
+func (u *UserClaims) GetKid() int {
+	return u.Kid
+}
+
+func (u *UserClaims) SetKid(kid int) {
+	u.Kid = kid
 }
 
 func GenerateCookie(user *User) (string, error) {
@@ -74,12 +99,7 @@ func GenerateCookie(user *User) (string, error) {
 		Username: user.Name,
 		UserID:   user.ID,
 	}
-	tok := jwt.NewWithClaims(jwt.SigningMethodRS256, &claims)
-	signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKey))
-	if err != nil {
-		return "", err
-	}
-	cookie, err := tok.SignedString(signKey)
+	cookie, err := Jwks.GenerateCookie(&claims)
 	return cookie, err
 }
 
@@ -104,6 +124,30 @@ func getClaims(c echo.Context) (*UserClaims, error) {
 		return nil, echo.ErrUnauthorized
 	}
 	return claims, nil
+}
+
+func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		auth := c.Request().Header.Get(echo.HeaderAuthorization)
+		scheme := "Bearer"
+		l := len(scheme)
+		if len(auth) <= len(scheme) || !strings.HasPrefix(auth, scheme) {
+			return fmt.Errorf("no token found for Authorization Bearer")
+		}
+		cookie := auth[l+1:]
+
+		claims := UserClaims{}
+		token, err := Jwks.VerifyCookie(cookie, &claims)
+		if err == nil && token.Valid {
+			c.Set("user", token)
+			return next(c)
+		}
+		return &echo.HTTPError{
+			Code:     http.StatusUnauthorized,
+			Message:  "invalid or expired jwt",
+			Internal: err,
+		}
+	}
 }
 
 // RBAC model for Casbin (see https://vicarie.in/posts/generalized-authz.html
@@ -153,9 +197,3 @@ g = _, _
 	// for users and orgs.
 	return ioutil.WriteFile(filename, data, 0644)
 }
-
-// temporarily hardcode the keys here, later we can get them via config file
-// or perhaps from secrets repo like Vault
-var privateKey = `***REMOVED***`
-
-var publicKey = `***REMOVED***`
