@@ -3,29 +3,37 @@ package dmecommon
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
 
-// temporarily hardcode the keys here, later we can get them via config file
-// or perhaps from the controller
-var dmePrivateKey = `***REMOVED***`
+var Jwks vault.JWKS
 
-var dmePublicKey = `***REMOVED***`
+func InitVault(addr string) {
+	// roleID and secretID could also come from RAM disk.
+	// assume env vars for now.
+	roleID := os.Getenv("VAULT_ROLE_ID")
+	secretID := os.Getenv("VAULT_SECRET_ID")
+
+	Jwks.Init(addr, "dme", roleID, secretID)
+	Jwks.GoUpdate()
+}
 
 type CookieKey struct {
 	PeerIP  string `json:"peerip,omitempty"`
 	DevName string `json:"devname,omitempty"`
 	AppName string `json:"appname,omitempty"`
 	AppVers string `json:"appvers,omitempty"`
+	Kid     int    `json:"kid,omitempty"`
 }
 
 type dmeClaims struct {
@@ -35,20 +43,18 @@ type dmeClaims struct {
 
 type ctxCookieKey struct{}
 
+func (d *dmeClaims) GetKid() int {
+	return d.Key.Kid
+}
+
+func (d *dmeClaims) SetKid(kid int) {
+	d.Key.Kid = kid
+}
+
 // returns Peer IP or Error
 func VerifyCookie(cookie string) (*CookieKey, error) {
-	if cookie == "" {
-		log.DebugLog(log.DebugLevelDmereq, "missing cookie VerifyCookie")
-		return nil, fmt.Errorf("missing cookie")
-	}
 	claims := dmeClaims{}
-	pubKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(dmePublicKey))
-	if err != nil {
-		return nil, err
-	}
-	_, err = jwt.ParseWithClaims(cookie, &claims, func(token *jwt.Token) (verifykey interface{}, err error) {
-		return pubKey, nil
-	})
+	token, err := Jwks.VerifyCookie(cookie, &claims)
 	if err != nil {
 		log.InfoLog("error in verifycookie", "cookie", cookie, "err", err)
 		return nil, err
@@ -57,12 +63,10 @@ func VerifyCookie(cookie string) (*CookieKey, error) {
 		log.InfoLog("no key parsed", "cookie", cookie, "err", err)
 		return nil, errors.New("No Key data in cookie")
 	}
-
-	if claims.ExpiresAt < time.Now().Unix() || claims.IssuedAt > time.Now().Unix() {
-		log.InfoLog("cookie is expired", "cookie", cookie, "claims", claims)
-		return nil, errors.New("Expired cookie")
+	if !token.Valid {
+		log.InfoLog("cookie is invalid or expired", "cookie", cookie, "claims", claims)
+		return nil, errors.New("invalid or expired cookie")
 	}
-
 	log.DebugLog(log.DebugLevelDmereq, "verified cookie", "cookie", cookie, "expires", claims.ExpiresAt)
 	return claims.Key, nil
 }
@@ -91,12 +95,7 @@ func GenerateCookie(key *CookieKey, ctx context.Context) (string, error) {
 		Key: key,
 	}
 
-	tok := jwt.NewWithClaims(jwt.SigningMethodRS256, &claims)
-	signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(dmePrivateKey))
-	if err != nil {
-		return "", err
-	}
-	cookie, err := tok.SignedString(signKey)
+	cookie, err := Jwks.GenerateCookie(&claims)
 	log.DebugLog(log.DebugLevelDmereq, "generated cookie", "key", key, "cookie", cookie, "err", err)
 	return cookie, err
 }
@@ -135,6 +134,9 @@ func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 }
 
 func NewCookieContext(ctx context.Context, ckey *CookieKey) context.Context {
+	if ckey == nil {
+		return ctx
+	}
 	return context.WithValue(ctx, ctxCookieKey{}, ckey)
 }
 
