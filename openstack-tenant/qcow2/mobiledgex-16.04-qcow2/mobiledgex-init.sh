@@ -11,7 +11,6 @@ mount `blkid -t LABEL="config-2" -odevice` $MCONF
 skipinit=`cat $MCONF/openstack/latest/meta_data.json |jq .meta.skipinit | sed -e 's/"//'g`
 if [ "$skipinit" != "yes" ]; then
 	echo mobiledgex initialization >> /tmp/mobiledgex.log
-	#echo nameserver 1.1.1.1 > /etc/resolv.conf
 	ipaddress=`cat $MCONF/openstack/latest/network_data.json |jq .networks[0].ip_address | sed -e 's/"//'g` 
 	nettype=`cat $MCONF/openstack/latest/network_data.json |jq .networks[0].type | sed -e 's/"//'g` 
 	if [ "$nettype" = "ipv4_dhcp" ]; then
@@ -38,26 +37,33 @@ if [ "$skipinit" != "yes" ]; then
 	grep -v 127.0.1.1 /etc/hosts > /tmp/hosts
 	echo 127.0.1.1 `hostname` >> /tmp/hosts
 	cp /tmp/hosts /etc/hosts
+	dig google.com| grep 'status: NOERROR'
+	if [ $? -ne 0 ]; then
+	    echo add 1.1.1.1 as nameserver >> /tmp/mobiledgex.log
+	    echo nameserver 1.1.1.1 > /etc/resolv.conf
+	fi
 	skipk8s=`cat $MCONF/openstack/latest/meta_data.json |jq .meta.skipk8s | sed -e 's/"//'g`
 	if [ "$role" = "mex-agent-node" ]; then
 		echo "initializing mex agent node" >> /tmp/mobiledgex.log
-		/home/mobiledgex/k8s/install-k8s-base.sh >> /tmp/mobiledgex.log
+		/root/install-k8s-base.sh >> /tmp/mobiledgex.log
 		chmod a+rw /var/run/docker.sock
+		curl -s -o /tmp/helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz
+		tar xvf /tmp/helm.tar.gz
+		mv linux-arm64/helm /usr/local/bin/
+		chmod a+rx /usr/local/bin/helm
 	else 
 		if [ "$skipk8s" != "yes" ]; then
 			echo doing k8s init >> /tmp/mobiledgex.log
+			/root/install-k8s-base.sh >> /tmp/mobiledgex.log
+			echo k8s-base installed >> /tmp/mobiledgex.log
 			masteraddr=`cat $MCONF/openstack/latest/meta_data.json |jq .meta.k8smaster | sed -e 's/"//'g`
 			if [ "$role" = "k8s-master" ]; then
 				echo k8s-master init >> /tmp/mobiledgex.log
-				/home/mobiledgex/k8s/install-k8s-base.sh >> /tmp/mobiledgex.log
-				echo k8s-base installed >> /tmp/mobiledgex.log
-				/home/mobiledgex/k8s/install-k8s-master.sh ens3 $masteraddr $ipaddress >> /tmp/mobiledgex.log
+				/root/install-k8s-master.sh ens3 $masteraddr $ipaddress >> /tmp/mobiledgex.log
 				echo k8s-master installed >> /tmp/mobiledgex.log
 			elif [ "$role" = "k8s-node" ]; then
 				echo k8s-node init >> /tmp/mobiledgex.log
-				/home/mobiledgex/k8s/install-k8s-base.sh >> /tmp/mobiledgex.log
-				echo k8s-base installed >> /tmp/mobiledgex.log
-				/home/mobiledgex/k8s/install-k8s-node.sh  ens3 $masteraddr $ipaddress >> /tmp/mobiledgex.log
+				/root/install-k8s-node.sh  ens3 $masteraddr $ipaddress >> /tmp/mobiledgex.log
 				echo k8s-node installed >> /tmp/mobiledgex.log
 			else
 				echo "role is " $role " and not k8s" >> /tmp/mobiledgex.log

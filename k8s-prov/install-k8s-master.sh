@@ -36,9 +36,9 @@ cat /tmp/k8s-join-cmd
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
-mkdir -p /home/bob/.kube
-sudo cp -i /etc/kubernetes/admin.conf /home/bob/.kube/config
-sudo chown bob:bob /home/bob/.kube/config
+mkdir -p /root/.kube
+sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config
+sudo chown root:root /root/.kube/config
 cd /tmp
 echo running simple http server at :8000
 python -m SimpleHTTPServer 
