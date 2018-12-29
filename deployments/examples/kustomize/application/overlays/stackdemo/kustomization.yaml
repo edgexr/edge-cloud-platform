@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Kustomization
+bases:
+- ../../base/docker-swarm/stackdemo
+#patchesStrategicMerge:
+#- stackdemo.yaml
+
+

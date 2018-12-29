@@ -27,7 +27,10 @@ TODO: establish a private docker repo. Automate push and pull and relaunch.
 
 The agent runs on a node with sufficient access to the Internet and the internal network in which kubernetes cluster and containers are hosted.  The openstack network has to be setup properly for this.  An instance of openstack router has to be created and directed to route between the public and private network.  Typically a private network is created for the kubernetes cluster which is isolated from the internet.  The traffic from the private network has to be NAT'ed and routed via a router.
 
-The agent is deployed as a docker container image.  Pull the image on the agent node:
+The agent is deployed as a docker container image. *NOTE THAT WE NO LONGER DEPLOY AGENT AS DOCKER. WE USE SERVICES. SEE BELOW*
+
+Pull the image on the agent node:
+
 
 ```
 docker pull mobiledgex/mexosagent

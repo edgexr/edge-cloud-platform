@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  web:
+    image: registry.mobiledgex.net:5000/stackdemo
+    build: .
+    ports:
+      - "8000:8000"
+  redis:
+    image: redis:alpine

@@ -391,7 +391,6 @@ func CreateNginx(name string, ports []*api.NginxPort) error {
 	if !fileExists(pwd + "/key.pem") {
 		log.Debugln("key.pem does not exist")
 		return fmt.Errorf("while creating nginx %s, key.pem does not exist", name)
-		return err
 	}
 	errlogFile := dir + "/err.log"
 	f, err := os.Create(errlogFile)

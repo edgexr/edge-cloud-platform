@@ -1,0 +1,28 @@
+apiVersion: v1
+name: {{.Name}}
+kind: platform
+resource: {{.Resource.Group}}
+metadata:
+  kind: {{.Operator.Kind}}
+  name: {{.Cluster.Name}}.{{.Operator.Name}}.{{.Network.DNSZone}}
+  tags: {{.Cluster.Name}}.{{.Operator.Name}}.{{.Network.DNSZone}}-tag
+  tenant: {{.Cluster.Name}}.{{.Operator.Name}}.{{.Network.DNSZone}}-tenant
+  region: {{.Cluster.Region}}
+  zone: {{.Cluster.Zone}}
+  location: {{.Cluster.Location}}
+  openrc: {{.Environment.OpenRC}}
+  dnszone: {{.Network.DNSZone}}
+  operator: gddt
+spec:
+  flags: force
+  flavor: x1.medium
+  rootlb: {{.Cluster.Name}}.{{.Operator.Name}}.{{.Network.DNSZone}}
+  key: {{.Name}}
+  dockerregistry: {{.Registry.Docker}}
+  externalnetwork: {{.Network.External}}
+  networkscheme: {{.Network.Scheme}}
+  externalrouter: {{.Network.Router}}
+  options: {{.Network.Options}}
+  agent: 
+    image: {{.Agent.Image}}
+    status: {{.Agent.Status}}

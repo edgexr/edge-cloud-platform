@@ -1,0 +1,20 @@
+apiVersion: v1
+name: sunnydale
+metadata:
+  name: azure
+kind: values
+resource: azure
+values:
+  name: centralus-test
+  cluster:
+    name: centralus-test
+    location: centralus
+    region: centralus
+    zone: centralus
+  network:
+    holepunch: 22223
+  registry:
+    update: centralus-test
+  environment:
+    openrc: 
+    mexenv: https://vault.mobiledgex.net/v1/secret/data/cloudlet/openstack/mexenv.json

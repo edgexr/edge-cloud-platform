@@ -52,5 +52,5 @@ func ListenAndServeREST(restAddress, grpcAddress string) error {
 		return fmt.Errorf("could not register REST service: %s", err)
 	}
 
-	return http.ListenAndServe(restAddress, mux)
+	return http.ListenAndServe(restAddress, mux) //TODO TLS
 }

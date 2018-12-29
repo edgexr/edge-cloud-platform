@@ -1,0 +1,7 @@
+# this is a dummy. no kustomize for docker-compose
+apiVersion: v1
+kind: Kustomization
+#resources:
+#- docker-compose.yml
+
+

@@ -1,7 +1,7 @@
 #!/bin/sh
 # must be run as root
 #  on all nodes
-
+set -x
 if [ $# -lt 3 ]; then
 	echo "Insufficient arguments"
 	echo "Need interface-name master-ip my-ip"
@@ -32,18 +32,20 @@ echo "My IP Address: $MYIP"
 #	sleep 7
 #	JOIN=`consul kv get join-cmd`
 #done
-echo wait...
+echo installing k8s node, wait...
 sleep 60
 cd /tmp
-wget http://$MASTERIP:8000/k8s-join-cmd
+echo waiting for join-cmd
+#wget http://$MASTERIP:8000/k8s-join-cmd
+scp -i /etc/mobiledgex/id_rsa_mex $MASTERIP:/tmp/k8s-join-cmd .
 while [ $? -ne 0 ]; do
-	echo waiting for join-cmd
 	sleep 7
-	wget http://$MASTERIP:8000/k8s-join-cmd
+	#wget http://$MASTERIP:8000/k8s-join-cmd
+	sudo scp -i /etc/mobiledgex/id_rsa_mex ubuntu@$MASTERIP:/tmp/k8s-join-cmd .
 done
-JOIN=`cat k8s-join-cmd`
 echo got join cmd
+JOIN=`cat /tmp/k8s-join-cmd`
 cat k8s-join-cmd
 echo running $JOIN --ignore-preflight-errors=all
 $JOIN --ignore-preflight-errors=all
-echo done running join
+echo finished running join
