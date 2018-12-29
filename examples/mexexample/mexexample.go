@@ -11,7 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/example/mexexample/server"
+	"github.com/mobiledgex/edge-cloud-infra/examples/mexexample/server"
 )
 
 var sigChan chan os.Signal

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/example/mexexample/api"
+	"github.com/mobiledgex/edge-cloud-infra/examples/mexexample/api"
 	"golang.org/x/net/context"
 )
 

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/example/mexexample/api"
+	"github.com/mobiledgex/edge-cloud-infra/examples/mexexample/api"
 )
 
 func ListenAndServeGRPC(address string) error {
