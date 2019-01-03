@@ -250,11 +250,6 @@ func mexDeleteClusterKubernetes(mf *Manifest) error {
 			if rerr != nil {
 				log.DebugLog(log.DebugLevelMexos, "error can't remove file", "name", kconfname, "error", rerr)
 			}
-			kconfname += "-proxy"
-			rerr = os.Remove(kconfname)
-			if rerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "error can't remove file", "name", kconfname, "error", rerr)
-			}
 		}
 	}
 	if !serverDeleted {

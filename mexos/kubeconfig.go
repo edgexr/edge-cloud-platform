@@ -13,10 +13,6 @@ import (
 
 func GetLocalKconfName(mf *Manifest) string {
 	kconf := fmt.Sprintf("%s/%s", MEXDir(), GetKconfName(mf))
-	if mf.Metadata.Operator != "gcp" &&
-		mf.Metadata.Operator != "azure" {
-		return kconf + "-proxy"
-	}
 	return kconf
 }
 
@@ -150,24 +146,17 @@ func ProcessKubeconfig(mf *Manifest, rootLB *MEXRootLB, name string, port int, d
 	if len(kc.Clusters) < 1 {
 		return fmt.Errorf("insufficient clusters info in kubeconfig %s", name)
 	}
-	//kconfname := fmt.Sprintf("%s.kubeconfig", name[strings.LastIndex(name, "-")+1:])
 	kconfname := GetLocalKconfName(mf)
 	log.DebugLog(log.DebugLevelMexos, "writing local kubeconfig file", "name", kconfname)
-	err = ioutil.WriteFile(kconfname, dat, 0666)
-	if err != nil {
-		return fmt.Errorf("can't write kubeconfig name %s filename %s,%v", name, kconfname, err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "wrote kubeconfig", "file", kconfname)
 	kc.Clusters[0].Cluster.Server = fmt.Sprintf("http://%s:%d", rootLB.Name, port)
 	dat, err = yaml.Marshal(kc)
 	if err != nil {
 		return fmt.Errorf("can't marshal kubeconfig proxy edit %s, %v", name, err)
 	}
-	kconfname = kconfname + "-proxy"
 	err = ioutil.WriteFile(kconfname, dat, 0666)
 	if err != nil {
-		return fmt.Errorf("can't write kubeconfig proxy %s, %v", kconfname, err)
+		return fmt.Errorf("can't write kubeconfig file %s, %v", kconfname, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "kubeconfig-proxy file saved", "file", kconfname)
+	log.DebugLog(log.DebugLevelMexos, "kubeconfig file saved", "file", kconfname)
 	return nil
 }
