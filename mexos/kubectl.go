@@ -16,13 +16,21 @@ import (
 
 func CreateDockerRegistrySecret(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
-	kconf, err := GetKconf(mf, false)
+	rootLB, err := getRootLB(mf.Spec.RootLB)
 	if err != nil {
-		return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
+		return err
 	}
-	out, err := sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+mf.Values.Registry.Docker, "--docker-username=mobiledgex", "--docker-password="+mexEnv(mf, "MEX_DOCKER_REG_PASS"), "--docker-email=docker@mobiledgex.com", "--kubeconfig="+kconf).CombinedOutput()
+	if rootLB == nil {
+		return fmt.Errorf("failed to create docker registry secret, rootLB is null")
+	}
+	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
 	if err != nil {
-		if !strings.Contains(string(out), "AlreadyExists") {
+		return fmt.Errorf("can't get ssh client, %v", err)
+	}
+	cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", mf.Values.Registry.Docker, mexEnv(mf, "MEX_DOCKER_REG_PASS"), GetKconfName(mf))
+	out, err := client.Output(cmd)
+	if err != nil {
+		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
 		} else {
 			log.DebugLog(log.DebugLevelMexos, "warning, docker registry secret already exists.")
@@ -34,9 +42,9 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 
 func runKubectlCreateApp(mf *Manifest, kubeManifest string) error {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
-	if err := CreateDockerRegistrySecret(mf); err != nil {
-		return err
-	}
+	//if err := CreateDockerRegistrySecret(mf); err != nil {
+	//	return err
+	//}
 	kfile := mf.Metadata.Name + ".yaml"
 	if err := writeKubeManifest(kubeManifest, kfile); err != nil {
 		return err

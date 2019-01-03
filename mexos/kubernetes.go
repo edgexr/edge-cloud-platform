@@ -33,9 +33,9 @@ func CreateKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
 	if mexEnv(mf, "MEX_DOCKER_REG_PASS") == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
-	if err := CreateDockerRegistrySecret(mf); err != nil {
-		return err
-	}
+	//if err := CreateDockerRegistrySecret(mf); err != nil {
+	//	return err
+	//}
 	cmd = fmt.Sprintf("cat <<'EOF'> %s.yaml \n%s\nEOF", mf.Metadata.Name, kubeManifest)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
