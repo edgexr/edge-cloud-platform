@@ -120,9 +120,9 @@ config:
   kind:
   source:
   detail:
-    resources: "{{.Config.Resources}}"
+    resources: {{.Config.Resources}}
     deployment: {{.Config.Deployment}}
-    manifest: "{{.Config.Manifest}}"
+    manifest: {{.Config.Manifest}}
     template: {{.Config.Template}}
     base: {{.Config.Base}}
     overlay: {{.Config.Overlay}}
@@ -253,11 +253,11 @@ func fillAppTemplate(rootLB *MEXRootLB, appInst *edgeproto.AppInst, app *edgepro
 		NetworkScheme: vp.Network.Scheme, //XXX "external-ip," + GetMEXExternalNetwork(rootLB.PlatConf),
 		Config: templateConfig{
 			Deployment: app.Deployment, //vp.Application.Deployment
-			Resources:  config.Resources,
-			Manifest:   app.DeploymentManifest, //XXX vp.Application.Manifest,controller passes entire YAML
-			Template:   vp.Application.Template,
-			Base:       vp.Application.Base,
-			Overlay:    vp.Application.Overlay,
+			//Resources:  config.Resources,
+			//Manifest:   app.DeploymentManifest, //XXX vp.Application.Manifest,controller passes entire YAML
+			Template: vp.Application.Template,
+			Base:     vp.Application.Base,
+			Overlay:  vp.Application.Overlay,
 		},
 		SpecPorts: vp.Application.Ports,
 		Command:   strings.Split(app.Command, " "),
@@ -266,6 +266,9 @@ func fillAppTemplate(rootLB *MEXRootLB, appInst *edgeproto.AppInst, app *edgepro
 	if err != nil {
 		return nil, err
 	}
+	//XXX these are passed in unmarshallable format from controller. it can contain entire YAML content
+	mf.Config.ConfigDetail.Resources = config.Resources
+	mf.Config.ConfigDetail.Manifest = app.DeploymentManifest
 	switch appDeploymentType {
 	case cloudcommon.AppDeploymentTypeKubernetes:
 	case cloudcommon.AppDeploymentTypeDockerSwarm:

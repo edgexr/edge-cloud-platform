@@ -307,7 +307,7 @@ func GetKubeManifest(mf *Manifest) (string, error) {
 	mani := mf.Config.ConfigDetail.Manifest
 	//XXX controlling pass full yaml text in parameter of another yaml
 	log.DebugLog(log.DebugLevelMexos, "getting kubernetes manifest", "base", base, "manifest", mani)
-	if !strings.Contains(mani, "://") {
+	if !strings.HasPrefix(mani, "apiVersion: v1") {
 		fn := fmt.Sprintf("%s/%s", base, mani)
 		log.DebugLog(log.DebugLevelMexos, "getting manifest file", "uri", fn)
 		res, err := GetURIFile(mf, fn)
