@@ -8,12 +8,12 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-func AddNginxProxy(mf *Manifest, rootLBName, name, ipaddr string, ports []PortDetail) error {
-	log.DebugLog(log.DebugLevelMexos, "add nginx proxy", "name", name, "ports", ports)
+func AddNginxProxy(mf *Manifest, rootLBName, name, ipaddr string, ports []PortDetail, network string) error {
+	log.DebugLog(log.DebugLevelMexos, "add nginx proxy", "name", name, "network", network, "ports", ports)
 
 	request := gorequest.New()
 	npURI := fmt.Sprintf("http://%s:%s/v1/nginx", rootLBName, mf.Values.Agent.Port)
-	pl, err := FormNginxProxyRequest(ports, ipaddr, name)
+	pl, err := FormNginxProxyRequest(ports, ipaddr, name, network)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot form nginx proxy request")
 		return err
@@ -31,7 +31,7 @@ func AddNginxProxy(mf *Manifest, rootLBName, name, ipaddr string, ports []PortDe
 	return fmt.Errorf("cannot add nginx proxy, resp %v", resp)
 }
 
-func FormNginxProxyRequest(ports []PortDetail, ipaddr string, name string) (*string, error) {
+func FormNginxProxyRequest(ports []PortDetail, ipaddr string, name string, network string) (*string, error) {
 	portstrs := []string{}
 	for _, p := range ports {
 		switch p.MexProto {
@@ -60,7 +60,11 @@ func FormNginxProxyRequest(ports []PortDetail, ipaddr string, name string) (*str
 		}
 
 	}
-	pl := fmt.Sprintf(`{ "message":"add", "name": "%s" , "ports": %s }`, name, "["+portspec+"]")
+	pl := fmt.Sprintf(`{ "message":"add", "name": "%s", "network": "%s", "ports": %s }`, name, network, "["+portspec+"]")
+	if network != "" {
+
+	}
+
 	return &pl, nil
 }
 

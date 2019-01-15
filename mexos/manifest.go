@@ -8,14 +8,23 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/azure"
+	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/gcloud"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+// IsLocalDIND returns true if the cloudlet is a local DIND deploy
+func IsLocalDIND(mf *Manifest) bool {
+	return mf.Values.Operator.Kind == "localdind"
+}
+
 //MEXClusterCreateManifest creates a cluster
 func MEXClusterCreateManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "creating cluster via manifest")
+	if IsLocalDIND(mf) {
+		return localCreateDIND(mf)
+	}
 	switch mf.Metadata.Operator {
 	case "gcp":
 		return gcloudCreateGKE(mf)
@@ -47,6 +56,9 @@ func MEXAddFlavor(mf *Manifest) error {
 //MEXClusterRemoveManifest removes a cluster
 func MEXClusterRemoveManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "removing cluster")
+	if IsLocalDIND(mf) {
+		return dind.DeleteDINDCluster(mf.Metadata.Name)
+	}
 	switch mf.Metadata.Operator {
 	case "gcp":
 		return gcloud.DeleteGKECluster(mf.Metadata.Name)
@@ -144,6 +156,24 @@ func MEXAppCreateAppManifest(mf *Manifest) error {
 		}
 	}
 	//TODO values.application.template
+
+	if IsLocalDIND(mf) {
+		masteraddr := dind.GetMasterAddr()
+		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
+
+		if err = AddNginxProxy(mf, "localhost", mf.Metadata.Name, masteraddr, mf.Spec.Ports, dind.GetDockerNetworkName(mf.Values.Cluster.Name)); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
+			return err
+		}
+		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
+		err := runKubectlCreateApp(mf, kubeManifest)
+		if err != nil {
+			log.DebugLog(log.DebugLevelMexos, "error creating dind app", "mf", mf)
+			return err
+		}
+		return nil
+	}
+
 	switch mf.Metadata.Operator {
 	case "gcp":
 		fallthrough
@@ -180,6 +210,23 @@ func MEXAppDeleteAppManifest(mf *Manifest) error {
 	kubeManifest, err := GetKubeManifest(mf)
 	if err != nil {
 		return err
+	}
+	if IsLocalDIND(mf) {
+		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
+		err := runKubectlDeleteApp(mf, kubeManifest)
+		if err != nil {
+			return err
+		}
+
+		log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
+
+		if err = DeleteNginxProxy(mf, "localhost", mf.Metadata.Name); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", mf.Metadata.Name)
+			return err
+		}
+
+		return nil
+
 	}
 	switch mf.Metadata.Operator {
 	case "gcp":

@@ -31,9 +31,12 @@ func main() {
 	//XXX TODO make logrus use a log daemon to log to remote server
 	log.Debugf("starting HTTP Server at %s", *restAddress)
 	go func() {
-		err := server.ListenAndServeREST(*restAddress, *grpcAddress)
-		if err != nil {
-			log.Fatalf("cannot run HTTP server, %v", err)
+		if *proxyAddress != "" {
+			log.Debugf("starting Proxy server at %s", *proxyAddress)
+			err := http.ListenAndServeTLS(*proxyAddress, *cert+"/cert.pem", *cert+"/key.pem", server.GetNewRouter())
+			if err != nil {
+				log.Fatalf("cannot run proxy server, %v", err)
+			}
 		}
 	}()
 	log.Debugf("starting GRPC Server at %s", *grpcAddress)
@@ -42,6 +45,8 @@ func main() {
 			log.Fatalf("cannot run GRPC server, %v", err)
 		}
 	}()
-	log.Debugf("starting Proxy server at %s", *proxyAddress)
-	log.Fatal(http.ListenAndServeTLS(*proxyAddress, *cert+"/cert.pem", *cert+"/key.pem", server.GetNewRouter()))
+	err := server.ListenAndServeREST(*restAddress, *grpcAddress)
+	if err != nil {
+		log.Fatalf("cannot run HTTP server, %v", err)
+	}
 }

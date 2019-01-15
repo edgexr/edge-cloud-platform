@@ -39,7 +39,7 @@ func AddProxySecurityRules(rootLB *MEXRootLB, mf *Manifest, masteraddr string) e
 		}
 	}
 	if len(mf.Spec.Ports) > 0 {
-		if err := AddNginxProxy(mf, rootLB.Name, mf.Metadata.Name, masteraddr, mf.Spec.Ports); err != nil {
+		if err := AddNginxProxy(mf, rootLB.Name, mf.Metadata.Name, masteraddr, mf.Spec.Ports, ""); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
 			return err
 		}

@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -15,7 +17,10 @@ import (
 var dnsRegisterRetryDelay time.Duration = 3 * time.Second
 
 func createAppDNS(mf *Manifest, kconf string) error {
-	if mf.Metadata.Operator != "gcp" && mf.Metadata.Operator != "azure" {
+
+	log.DebugLog(log.DebugLevelMexos, "createAppDNS")
+
+	if mf.Metadata.Operator != "gcp" && mf.Metadata.Operator != "azure" && !IsLocalDIND(mf) {
 		return fmt.Errorf("error, invalid code path")
 	}
 	if err := CheckCredentialsCF(mf); err != nil {
@@ -47,7 +52,18 @@ func createAppDNS(mf *Manifest, kconf string) error {
 	}
 	fqdnBase := uri2fqdn(mf.Spec.URI)
 	for _, sn := range serviceNames {
-		externalIP, err := getSvcExternalIP(sn, kconf)
+		// for the DIND case we need to patch the service here
+		externalIP := ""
+		if IsLocalDIND(mf) {
+			addr := dind.GetMasterAddr()
+			err = KubePatchServiceLocal(sn, addr)
+			if err != nil {
+				return err
+			}
+			externalIP, err = dind.GetLocalAddr()
+		} else {
+			externalIP, err = getSvcExternalIP(sn, kconf)
+		}
 		if err != nil {
 			return err
 		}
@@ -115,6 +131,21 @@ func deleteAppDNS(mf *Manifest, kconf string) error {
 			}
 		}
 		log.DebugLog(log.DebugLevelMexos, "deleted DNS name", "name", fqdn)
+	}
+	return nil
+}
+
+// KubePatchServiceLocal updates the service to have the given external ip.  This is done locally and not thru
+// an ssh client
+func KubePatchServiceLocal(servicename string, ipaddr string) error {
+	log.DebugLog(log.DebugLevelMexos, "KubePatchServiceLocal", "servicename", servicename, "ipaddr", ipaddr)
+
+	ips := fmt.Sprintf(`{"spec":{"externalIPs":["%s"]}}'`, ipaddr)
+	log.DebugLog(log.DebugLevelMexos, "KubePatchServiceLocal", "servicename", servicename, "ipaddr", ipaddr, "ipspec", ips)
+
+	_, err := exec.Command("kubectl", "patch", "svc", servicename, "-p", ips).Output()
+	if err != nil {
+		return fmt.Errorf("error patching for kubernetes service ip: %s, name: %s, err: %v", ipaddr, servicename, err)
 	}
 	return nil
 }

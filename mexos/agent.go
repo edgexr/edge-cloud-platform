@@ -6,8 +6,15 @@ import (
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+func runLocalMexAgent() error {
+	log.DebugLog(log.DebugLevelMexos, "run local mexosagent")
+	var localMexos process.MexAgentLocal
+	return localMexos.Start("/tmp/mexosagent.log")
+}
 
 //RunMEXAgentManifest runs the MEX agent on the RootLB. It first registers FQDN to cloudflare domain registry if not already registered.
 //   It then obtains certficiates from Letsencrypt, if not done yet.  Then it runs the docker instance of MEX agent
@@ -15,6 +22,10 @@ import (
 //   It uses MEX private docker repository.  If an instance is running already, we don't start another one.
 func RunMEXAgentManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "run mex agent")
+
+	if IsLocalDIND(mf) {
+		return runLocalMexAgent()
+	}
 	fqdn := mf.Spec.RootLB
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(fqdn) {

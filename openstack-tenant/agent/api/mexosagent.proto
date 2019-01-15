@@ -107,7 +107,8 @@ message NginxPort {
 message NginxRequest {
     string message = 1;
     string name = 2;
-    repeated NginxPort ports = 3;
+    string network = 3;
+    repeated NginxPort ports = 4;
 }
 
 message NginxResponse {

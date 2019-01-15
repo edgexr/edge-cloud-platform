@@ -325,13 +325,13 @@ func GetNewRouter() *httprouter.Router {
 //TODO add tcpproxy. instantiate docker tcpproxy for port pairs as requested for L4 rev proxy
 
 func (srv *Server) Nginx(ctx context.Context, req *api.NginxRequest) (res *api.NginxResponse, err error) {
-	log.Debugln("req", req)
+	log.Debugln("Received Nginx request", "name", req.Name, "network", req.Network, "ports", req.Ports)
 	if req.Message == "add" {
 		if len(req.Ports) < 1 {
 			res = &api.NginxResponse{Message: fmt.Sprintf("Error, missing ports"), Status: "Error"}
 			return res, fmt.Errorf("missing ports definitions")
 		}
-		aerr := CreateNginx(req.Name, req.Ports)
+		aerr := CreateNginx(req.Name, req.Network, req.Ports)
 		if aerr != nil {
 			res = &api.NginxResponse{Message: fmt.Sprintf("Error, cannot create Nginx, name %s, ports %v", req.Name, req.Ports), Status: "Error"}
 			return res, aerr
@@ -371,7 +371,9 @@ func fileExists(name string) bool {
 	return true
 }
 
-func CreateNginx(name string, ports []*api.NginxPort) error {
+// CreateNginx creates an nginx container with the specified name and optional network
+// with the specified ports
+func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 	log.Debugln("create nginx", name, ports)
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -384,14 +386,25 @@ func CreateNginx(name string, ports []*api.NginxPort) error {
 		log.Debugln("can't create dir", dir, err)
 		return err
 	}
-	if !fileExists(pwd + "/cert.pem") {
-		log.Debugln("cert.pem does not exist")
-		return fmt.Errorf("while creating nginx %s, cert.pem does not exist", name)
+
+	// certs are needed only for L7, for which we have a path
+	useTLS := false
+	for _, p := range ports {
+		if p.Path != "" {
+			useTLS = true
+		}
 	}
-	if !fileExists(pwd + "/key.pem") {
-		log.Debugln("key.pem does not exist")
-		return fmt.Errorf("while creating nginx %s, key.pem does not exist", name)
+	if useTLS {
+		if !fileExists(pwd + "/cert.pem") {
+			log.Debugln("cert.pem does not exist")
+			return fmt.Errorf("while creating nginx %s, cert.pem does not exist", name)
+		}
+		if !fileExists(pwd + "/key.pem") {
+			log.Debugln("key.pem does not exist")
+			return fmt.Errorf("while creating nginx %s, key.pem does not exist", name)
+		}
 	}
+
 	errlogFile := dir + "/err.log"
 	f, err := os.Create(errlogFile)
 	if err != nil {
@@ -412,7 +425,21 @@ func CreateNginx(name string, ports []*api.NginxPort) error {
 		log.Debugln("while creating nginx proxy, can't create default conf", name)
 		return err
 	}
-	out, err := sh.Command("docker", "run", "-d", "--rm", "--net=host", "--name", name, "-v", defaultConf+":/etc/nginx/conf.d/default.conf", "-v", dir+":/var/www/.cache", "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd+"/cert.pem:/etc/ssl/certs/server.crt", "-v", pwd+"/key.pem:/etc/ssl/certs/server.key", "-v", errlogFile+":/var/log/nginx/error.log", "-v", nconfName+":/etc/nginx/nginx.conf", "nginx").CombinedOutput()
+
+	cmdArgs := []string{"run", "-d", "--rm", "--name", name}
+	if network == "" {
+		// when runnning in DIND it cannot use host mode and so must expose the ports
+		cmdArgs = append(cmdArgs, "--network", network)
+		for _, p := range ports {
+			pstr := fmt.Sprintf("%s:%s", p.External, p.External)
+			cmdArgs = append(cmdArgs, "-p", pstr)
+		}
+	} else {
+		cmdArgs = append(cmdArgs, "--net=host")
+	}
+	cmdArgs = append(cmdArgs, []string{"-v", defaultConf + ":/etc/nginx/conf.d/default.conf", "-v", dir + ":/var/www/.cache", "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd + "/cert.pem:/etc/ssl/certs/server.crt", "-v", pwd + "/key.pem:/etc/ssl/certs/server.key", "-v", errlogFile + ":/var/log/nginx/error.log", "-v", nconfName + ":/etc/nginx/nginx.conf", "nginx"}...)
+	fmt.Printf("Nginx command args %+v\n", cmdArgs)
+	out, err := sh.Command("docker", cmdArgs).CombinedOutput()
 
 	if err != nil {
 		return fmt.Errorf("can't create nginx container %s, %s, %v", name, out, err)

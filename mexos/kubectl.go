@@ -23,12 +23,23 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 	if rootLB == nil {
 		return fmt.Errorf("failed to create docker registry secret, rootLB is null")
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
-	if err != nil {
-		return fmt.Errorf("can't get ssh client, %v", err)
+
+	var out string
+	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
+	if IsLocalDIND(mf) {
+		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally for DIND")
+		var o []byte
+		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+mf.Values.Registry.Docker, "--docker-username=mobiledgex", "--docker-password="+mexEnv(mf, "MEX_DOCKER_REG_PASS"), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
+		out = string(o)
+	} else {
+		client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+		if err != nil {
+			return fmt.Errorf("can't get ssh client, %v", err)
+		}
+		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", mf.Values.Registry.Docker, mexEnv(mf, "MEX_DOCKER_REG_PASS"), GetKconfName(mf))
+
+		out, err = client.Output(cmd)
 	}
-	cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", mf.Values.Registry.Docker, mexEnv(mf, "MEX_DOCKER_REG_PASS"), GetKconfName(mf))
-	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
@@ -66,7 +77,7 @@ func runKubectlCreateApp(mf *Manifest, kubeManifest string) error {
 }
 
 func getSvcExternalIP(name string, kconf string) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name)
+	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name, "kconf", kconf)
 	externalIP := ""
 	var out []byte
 	var err error
@@ -85,9 +96,12 @@ func getSvcExternalIP(name string, kconf string) (string, error) {
 		for _, item := range svcs.Items {
 			log.DebugLog(log.DebugLevelMexos, "svc item", "item", item, "name", name)
 			if item.Metadata.Name != name {
+				log.DebugLog(log.DebugLevelMexos, "service name mismatch", "name", name, "item.Metadata.Name", item.Metadata.Name)
 				continue
 			}
 			for _, ingress := range item.Status.LoadBalancer.Ingresses {
+				log.DebugLog(log.DebugLevelMexos, "found ingress ip", "ingress.IP", ingress.IP, "item.Metadata.Name", item.Metadata.Name)
+
 				if ingress.IP != "" {
 					externalIP = ingress.IP
 					log.DebugLog(log.DebugLevelMexos, "got externaIP for app", "externalIP", externalIP)
