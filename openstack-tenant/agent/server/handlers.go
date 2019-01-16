@@ -374,7 +374,7 @@ func fileExists(name string) bool {
 // CreateNginx creates an nginx container with the specified name and optional network
 // with the specified ports
 func CreateNginx(name string, network string, ports []*api.NginxPort) error {
-	log.Debugln("create nginx", name, ports)
+	log.Debugln("create nginx", "name", name, "network", network, "ports", ports)
 	pwd, err := os.Getwd()
 	if err != nil {
 		log.Debugln("can't get cwd", err)
@@ -427,7 +427,7 @@ func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 	}
 
 	cmdArgs := []string{"run", "-d", "--rm", "--name", name}
-	if network == "" {
+	if network != "" {
 		// when runnning in DIND it cannot use host mode and so must expose the ports
 		cmdArgs = append(cmdArgs, "--network", network)
 		for _, p := range ports {

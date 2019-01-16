@@ -1,5 +1,5 @@
 
-all: build 
+all: build install-dind 
 
 linux: build-linux
 
@@ -8,3 +8,8 @@ build:
 
 build-linux:
 	make -C ./openstack-tenant/agent/ linux
+
+install-dind:
+	./install-dind.sh
+
+
