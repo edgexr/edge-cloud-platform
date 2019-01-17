@@ -26,8 +26,9 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 
 	var out string
 	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
-	if IsLocalDIND(mf) {
-		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally for DIND")
+
+	if IsLocalDIND(mf) || mf.Metadata.Operator == "gcp" || mf.Metadata.Operator == "azure" {
+		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally non OpenStack case")
 		var o []byte
 		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+mf.Values.Registry.Docker, "--docker-username=mobiledgex", "--docker-password="+mexEnv(mf, "MEX_DOCKER_REG_PASS"), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
 		out = string(o)

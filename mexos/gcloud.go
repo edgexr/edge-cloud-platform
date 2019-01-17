@@ -38,7 +38,6 @@ func gcloudCreateGKE(mf *Manifest) error {
 	if err = copyFile(defaultKubeconfig(), kconf); err != nil {
 		return fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
 	}
-	log.DebugLog(log.
-		DebugLevelMexos, "created gke", "name", mf.Spec.Key)
-	return nil
+	log.DebugLog(log.DebugLevelMexos, "created gke", "name", mf.Spec.Key)
+	return CreateDockerRegistrySecret(mf)
 }

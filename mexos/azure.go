@@ -32,5 +32,5 @@ func azureCreateAKS(mf *Manifest) error {
 		return fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "created aks", "name", mf.Spec.Key)
-	return nil
+	return CreateDockerRegistrySecret(mf)
 }
