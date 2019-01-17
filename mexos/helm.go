@@ -30,7 +30,7 @@ func DeleteHelmAppManifest(mf *Manifest) error {
 	if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
 	}
-	cmd := fmt.Sprintf("%s helm delete %s", kp.kubeconfig, mf.Metadata.Name)
+	cmd := fmt.Sprintf("%s helm delete --purge %s", kp.kubeconfig, mf.Metadata.Name)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deleting helm chart, %s, %s, %v", cmd, out, err)
@@ -57,12 +57,33 @@ func CreateHelmAppManifest(mf *Manifest) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "will launch app into cluster", "kubeconfig", kp.kubeconfig, "ipaddr", kp.ipaddr)
 
-	cmd := fmt.Sprintf("%s helm init --wait", kp.kubeconfig)
+	// install helm if it's not installed yet
+	cmd := fmt.Sprintf("%s helm version", kp.kubeconfig)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("error initializing tiller for app, %s, %s, %v", cmd, out, err)
+		log.DebugLog(log.DebugLevelMexos, "installing helm into cluster", "kubeconfig", kp.kubeconfig, "ipaddr", kp.ipaddr)
+
+		// Add service account for tiller
+		cmd := fmt.Sprintf("%s kubectl create serviceaccount --namespace kube-system tiller", kp.kubeconfig)
+		out, err := kp.client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("error creating tiller service account, %s, %s, %v", cmd, out, err)
+		}
+		log.DebugLog(log.DebugLevelMexos, "setting serice acct", "kubeconfig", kp.kubeconfig, "ipaddr", kp.ipaddr)
+
+		cmd = fmt.Sprintf("%s kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller", kp.kubeconfig)
+		out, err = kp.client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("error creating role binding, %s, %s, %v", cmd, out, err)
+		}
+
+		cmd = fmt.Sprintf("%s helm init --wait --service-account tiller", kp.kubeconfig)
+		out, err = kp.client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("error initializing tiller for app, %s, %s, %v", cmd, out, err)
+		}
+		log.DebugLog(log.DebugLevelMexos, "helm tiller initialized")
 	}
-	log.DebugLog(log.DebugLevelMexos, "helm tiller initialized")
 
 	cmd = fmt.Sprintf("%s helm install %s --name %s", kp.kubeconfig, mf.Spec.Image, mf.Metadata.Name)
 	out, err = kp.client.Output(cmd)
