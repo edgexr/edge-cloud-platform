@@ -76,7 +76,7 @@ func GetClusterFlavor(flavor string) (*ClusterFlavor, error) {
 	log.DebugLog(log.DebugLevelMexos, "get cluster flavor details", "cluster flavor", flavor)
 	for _, af := range AvailableClusterFlavors {
 		if af.Name == flavor {
-			log.DebugLog(log.DebugLevelMexos, "using cluster flavor", "cluster flavor", af)
+			//log.DebugLog(log.DebugLevelMexos, "using cluster flavor", "cluster flavor", af)
 			return af, nil
 		}
 	}

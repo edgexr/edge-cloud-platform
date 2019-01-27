@@ -17,6 +17,7 @@ import (
 func ListenAndServeGRPC(address string) error {
 	opts := []grpc.ServerOption{}
 	grpcServer := grpc.NewServer(opts...)
+	//s := api.MexOSAgentServer{}
 	s := Server{}
 	api.RegisterMexOSAgentServer(grpcServer, &s)
 
@@ -31,6 +32,8 @@ func ListenAndServeGRPC(address string) error {
 func headerMatcher(headerName string) (string, bool) {
 	return strings.ToLower(headerName), true
 }
+
+//TODO need a separate service that monitors mexosagent and revives it
 
 //ListenAndServeREST serves HTTP/REST API via GRPC mux
 func ListenAndServeREST(restAddress, grpcAddress string) error {

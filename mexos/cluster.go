@@ -3,7 +3,6 @@ package mexos
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -73,7 +72,7 @@ type ClusterMasterFlavor struct {
 //mexCreateClusterKubernetes creates a cluster of nodes. It can take a while, so call from a goroutine.
 func mexCreateClusterKubernetes(mf *Manifest) error {
 	//func mexCreateClusterKubernetes(mf *Manifest) (*string, error) {
-	log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster metadata", mf.Metadata, "spec", mf.Spec)
+	//log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster metadata", mf.Metadata, "spec", mf.Spec)
 	rootLB, err := getRootLB(mf.Spec.RootLB)
 	if err != nil {
 		return err
@@ -215,7 +214,11 @@ func mexDeleteClusterKubernetes(mf *Manifest) error {
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "looking for server", "name", name, "servers", srvs)
+	// clname, err := FindClusterWithKey(mf, mf.Spec.Key)
+	// if err != nil {
+	// 	return fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
+	// }
+	//log.DebugLog(log.DebugLevelMexos, "looking for server", "name", name, "servers", srvs)
 	force := strings.Contains(mf.Spec.Flags, "force")
 	serverDeleted := false
 	for _, s := range srvs {
@@ -245,11 +248,11 @@ func mexDeleteClusterKubernetes(mf *Manifest) error {
 			}
 			serverDeleted = true
 			//kconfname := fmt.Sprintf("%s.kubeconfig", s.Name[strings.LastIndex(s.Name, "-")+1:])
-			kconfname := GetLocalKconfName(mf)
-			rerr := os.Remove(kconfname)
-			if rerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "error can't remove file", "name", kconfname, "error", rerr)
-			}
+			// kconfname := GetLocalKconfName(mf)
+			// rerr := os.Remove(kconfname)
+			// if rerr != nil {
+			// 	log.DebugLog(log.DebugLevelMexos, "error can't remove file", "name", kconfname, "error", rerr)
+			// }
 		}
 	}
 	if !serverDeleted {
@@ -271,37 +274,17 @@ func mexDeleteClusterKubernetes(mf *Manifest) error {
 			}
 			err = DeleteSubnet(mf, s.Name)
 			if err != nil {
-				log.DebugLog(log.DebugLevelMexos, "warning, error while deleting subnet", "error", err)
+				log.DebugLog(log.DebugLevelMexos, "warning, problems deleting subnet", "error", err)
 			}
 			break
 		}
 	}
 	//XXX tell agent to remove the route
 	//XXX remove kubectl proxy instance
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
-	if err != nil {
-		return err
-	}
-	cmd := "sudo ps wwh -C kubectl -o pid,args"
-	out, err := client.Output(cmd)
-	if err != nil || out == "" {
-		return nil // no kubectl running
-	}
-	lines := strings.Split(out, "\n")
-	for _, ln := range lines {
-		pidnum := parseKCPid(ln, mf.Spec.Key)
-		if pidnum == 0 {
-			continue
-		}
-		cmd = fmt.Sprintf("sudo kill -9 %d", pidnum)
-		out, err = client.Output(cmd)
-		if err != nil {
-			log.InfoLog("error killing kubectl proxy", "command", cmd, "out", out, "error", err)
-		} else {
-			log.DebugLog(log.DebugLevelMexos, "killed kubectl proxy", "line", ln, "cmd", cmd)
-		}
-		return nil
-	}
+	// if err = DeleteNginxKCProxy(mf, rootLB.Name, clname); err != nil {
+	// 	log.DebugLog(log.DebugLevelMexos, "warning,cannot clean nginx kubectl proxy", "error", err)
+	// 	//return err
+	// }
 	return nil
 }
 
@@ -333,7 +316,7 @@ func IsClusterReady(mf *Manifest, rootLB *MEXRootLB) (bool, error) {
 	}
 	log.DebugLog(log.DebugLevelMexos, "checking master k8s node for available nodes", "ipaddr", ipaddr)
 	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes -o json", sshOpts[0], sshOpts[1], sshOpts[2], sshUser, ipaddr)
-	log.DebugLog(log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
+	//log.DebugLog(log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "error checking for kubernetes nodes", "out", out, "err", err)
@@ -361,7 +344,7 @@ func IsClusterReady(mf *Manifest, rootLB *MEXRootLB) (bool, error) {
 
 //FindClusterWithKey finds cluster given a key string
 func FindClusterWithKey(mf *Manifest, key string) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key)
+	//log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key)
 	if key == "" {
 		return "", fmt.Errorf("empty key")
 	}
@@ -371,7 +354,7 @@ func FindClusterWithKey(mf *Manifest, key string) (string, error) {
 	}
 	for _, s := range srvs {
 		if s.Status == "ACTIVE" && strings.HasSuffix(s.Name, key) && strings.HasPrefix(s.Name, "mex-k8s-master") {
-			log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key, "found", s.Name)
+			//log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key, "found", s.Name)
 			return s.Name, nil
 		}
 	}

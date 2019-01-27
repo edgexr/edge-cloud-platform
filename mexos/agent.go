@@ -86,13 +86,17 @@ func RunMEXAgentManifest(mf *Manifest) error {
 		return fmt.Errorf("can't acquire certificate for %s, %v", rootLB.Name, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "acquired certificates from letsencrypt", "name", rootLB.Name)
+	err = GetHTPassword(mf, rootLB)
+	if err != nil {
+		return fmt.Errorf("can't download htpassword %v", err)
+	}
 	//return RunMEXOSAgentContainer(mf, rootLB)
 	return RunMEXOSAgentService(mf, rootLB)
 }
 
 func RunMEXOSAgentService(mf *Manifest, rootLB *MEXRootLB) error {
 	//TODO check if agent is running before restarting again.
-	log.DebugLog(log.DebugLevelMexos, "will run new mexosagent service")
+	log.DebugLog(log.DebugLevelMexos, "run mexosagent service")
 	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
 	if err != nil {
 		return err
@@ -104,6 +108,7 @@ func RunMEXOSAgentService(mf *Manifest, rootLB *MEXRootLB) error {
 		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "copying new mexosagent service")
+	//TODO name should come from mf.Values and allow versioning
 	for _, dest := range []struct{ path, name string }{
 		{"/usr/local/bin", "mexosagent"},
 		{"/lib/systemd/system", "mexosagent.service"},

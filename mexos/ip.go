@@ -42,7 +42,7 @@ func GetAllowedClientCIDR() string {
 //GetServerIPAddr gets the server IP
 func GetServerIPAddr(mf *Manifest, networkName, serverName string) (string, error) {
 	//TODO: mexosagent cache
-	log.DebugLog(log.DebugLevelMexos, "get server ip addr", "networkname", networkName, "servername", serverName)
+	//log.DebugLog(log.DebugLevelMexos, "get server ip addr", "networkname", networkName, "servername", serverName)
 	//sd, err := GetServerDetails(rootLB)
 	sd, err := GetServerDetails(mf, serverName)
 	if err != nil {
@@ -76,13 +76,13 @@ func GetServerIPAddr(mf *Manifest, networkName, serverName string) (string, erro
 		return "", fmt.Errorf("invalid network name in server detail address, %s", sd.Addresses)
 	}
 	addr := its[1]
-	log.DebugLog(log.DebugLevelMexos, "got server ip addr", "ipaddr", addr, "netname", networkName, "servername", serverName)
+	//log.DebugLog(log.DebugLevelMexos, "got server ip addr", "ipaddr", addr, "netname", networkName, "servername", serverName)
 	return addr, nil
 }
 
 //FindNodeIP finds IP for the given node
 func FindNodeIP(mf *Manifest, name string) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "find node ip", "name", name)
+	//log.DebugLog(log.DebugLevelMexos, "find node ip", "name", name)
 	if name == "" {
 		return "", fmt.Errorf("empty name")
 	}
@@ -96,7 +96,7 @@ func FindNodeIP(mf *Manifest, name string) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("can't get IP for %s, %v", s.Name, err)
 			}
-			log.DebugLog(log.DebugLevelMexos, "found node ip", "name", name, "ipaddr", ipaddr)
+			//log.DebugLog(log.DebugLevelMexos, "found node ip", "name", name, "ipaddr", ipaddr)
 			return ipaddr, nil
 		}
 	}

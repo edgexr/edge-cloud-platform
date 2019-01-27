@@ -125,11 +125,13 @@ func CopyKubeConfig(mf *Manifest, rootLB *MEXRootLB, name string) error {
 	if err != nil {
 		return fmt.Errorf("can't cat %s, %s, %v", kconfname, out, err)
 	}
-	port, serr := StartKubectlProxy(mf, rootLB, kconfname)
-	if serr != nil {
-		return serr
-	}
-	return ProcessKubeconfig(mf, rootLB, name, port, []byte(out))
+	//TODO generate per proxy password and record in vault
+	//port, serr := StartKubectlProxy(mf, rootLB, name, kconfname)
+	//if serr != nil {
+	//	return serr
+	//}
+	//return ProcessKubeconfig(mf, rootLB, name, port, []byte(out))
+	return nil
 }
 
 //ProcessKubeconfig validates kubeconfig and saves it and creates a copy for proxy access
@@ -148,7 +150,8 @@ func ProcessKubeconfig(mf *Manifest, rootLB *MEXRootLB, name string, port int, d
 	}
 	kconfname := GetLocalKconfName(mf)
 	log.DebugLog(log.DebugLevelMexos, "writing local kubeconfig file", "name", kconfname)
-	kc.Clusters[0].Cluster.Server = fmt.Sprintf("http://%s:%d", rootLB.Name, port)
+	//TODO per cluster password has to come from vault
+	kc.Clusters[0].Cluster.Server = fmt.Sprintf("https://testuser314159:testpassword271828@%s:%d", rootLB.Name, port)
 	dat, err = yaml.Marshal(kc)
 	if err != nil {
 		return fmt.Errorf("can't marshal kubeconfig proxy edit %s, %v", name, err)

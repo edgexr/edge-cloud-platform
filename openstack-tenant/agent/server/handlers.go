@@ -8,11 +8,12 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/codeskyblue/go-sh"
+	sh "github.com/codeskyblue/go-sh"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/k8sopenstack"
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
@@ -26,6 +27,9 @@ import (
 type Server struct{}
 
 var proxyMap = make(map[string]string)
+
+const lbproxySuffix = "-nginx-lbproxy"
+const kcproxySuffix = "-nginx-kcproxy"
 
 var supportProvisioning = false
 
@@ -220,7 +224,7 @@ func delOrigin(path, origin string) error {
 //Status returns status information of the kubernetes cluster on openstack for a given tenant
 func (srv *Server) Status(ctx context.Context, req *api.StatusRequest) (res *api.StatusResponse, err error) {
 	res = &api.StatusResponse{
-		Message: "OK",
+		Message: "OK, version January, 2019",
 	}
 
 	return res, nil
@@ -327,6 +331,7 @@ func GetNewRouter() *httprouter.Router {
 func (srv *Server) Nginx(ctx context.Context, req *api.NginxRequest) (res *api.NginxResponse, err error) {
 	log.Debugln("Received Nginx request", "name", req.Name, "network", req.Network, "ports", req.Ports)
 	if req.Message == "add" {
+		//TODO more req.XXX validation
 		if len(req.Ports) < 1 {
 			res = &api.NginxResponse{Message: fmt.Sprintf("Error, missing ports"), Status: "Error"}
 			return res, fmt.Errorf("missing ports definitions")
@@ -380,6 +385,7 @@ func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 		log.Debugln("can't get cwd", err)
 		return err
 	}
+	name = name + lbproxySuffix
 	dir := pwd + "/nginx/" + name
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
@@ -427,6 +433,7 @@ func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 	}
 
 	cmdArgs := []string{"run", "-d", "--rm", "--name", name}
+	//TODO fix bad network handling
 	if network != "" {
 		// when runnning in DIND it cannot use host mode and so must expose the ports
 		cmdArgs = append(cmdArgs, "--network", network)
@@ -438,7 +445,6 @@ func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 		cmdArgs = append(cmdArgs, "--net=host")
 	}
 	cmdArgs = append(cmdArgs, []string{"-v", defaultConf + ":/etc/nginx/conf.d/default.conf", "-v", dir + ":/var/www/.cache", "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd + "/cert.pem:/etc/ssl/certs/server.crt", "-v", pwd + "/key.pem:/etc/ssl/certs/server.key", "-v", errlogFile + ":/var/log/nginx/error.log", "-v", nconfName + ":/etc/nginx/nginx.conf", "nginx"}...)
-	fmt.Printf("Nginx command args %+v\n", cmdArgs)
 	out, err := sh.Command("docker", cmdArgs).CombinedOutput()
 
 	if err != nil {
@@ -573,7 +579,7 @@ func createNginxDefaultConf(confname, name string, ports []*api.NginxPort) (*str
 		return nil, fmt.Errorf("cannot reserve nginx http port")
 	}
 	dc := &DefaultConf{Port: port, Name: name}
-	tmpl, err := template.New("defaultnginxconf").Parse(nginxDefaultConfTmpl)
+	tmpl, err := template.New("defaultnginxconf").Parse(nginxDefaultConfTmpl) //TODO consider removing this
 	if err != nil {
 		return nil, err
 	}
@@ -653,6 +659,8 @@ func writeFile(confname string, confbytes []byte) error {
 }
 
 func DeleteNginx(name string) error {
+	log.Debugln("deleting nginx containers", name)
+	name = name + lbproxySuffix
 	out, err := sh.Command("docker", "kill", name).Output()
 	if err != nil {
 		return fmt.Errorf("can't kill nginx container %s, %s, %v", name, out, err)
@@ -662,12 +670,189 @@ func DeleteNginx(name string) error {
 }
 
 func ListNginx() ([]string, error) {
-	out, err := sh.Command("docker", "ps", "--format", "'{{.Names}}'").Output()
+	log.Debugln("listing nginx containers")
+	out, err := sh.Command("docker", "ps", "--filter", "name="+lbproxySuffix, "--format", "'{{.Names}}'").Output() //TODO filter on name pattern
 	if err != nil {
-		return nil, fmt.Errorf("can't list nginx container %s, %v", out, err)
+		return nil, fmt.Errorf("can't list nginx containers, %s, %v", out, err)
 	}
 	outstr := string(out)
 	log.Debugln("list of nginx containers", outstr)
 	names := strings.Split(outstr, "\n")
 	return names, nil
+}
+
+func (srv *Server) NginxKCP(ctx context.Context, req *api.NginxKCPRequest) (res *api.NginxKCPResponse, err error) {
+	log.Debugln("Received Nginx KCP request", "name", req.Name, "port", req.Port)
+	if req.Message == "add" {
+		if req.Name == "" {
+			res = &api.NginxKCPResponse{Message: fmt.Sprintf("Error, missing name"), Status: "Error"}
+			return res, fmt.Errorf("missing name")
+		}
+		if req.Port == "" {
+			res = &api.NginxKCPResponse{Message: fmt.Sprintf("Error, missing port"), Status: "Error"}
+			return res, fmt.Errorf("missing port")
+		}
+		aerr := CreateNginxKCP(req.Name, req.Port)
+		if aerr != nil {
+			res = &api.NginxKCPResponse{Message: fmt.Sprintf("Error, cannot create Nginx KCP, name %s, port %s", req.Name, req.Port), Status: "Error"}
+			return res, aerr
+		}
+	} else if req.Message == "list" {
+		names, err := ListNginxKCP()
+		if err != nil {
+			res = &api.NginxKCPResponse{Message: fmt.Sprintf("cannot get list of nginx KCP instances, %v", err), Status: "Error"}
+			return res, err
+		}
+		res = &api.NginxKCPResponse{Message: req.Message, Status: fmt.Sprintf("%v", names)}
+		return res, nil
+	} else if req.Message == "delete" {
+		berr := DeleteNginxKCP(req.Name)
+		if berr != nil {
+			res = &api.NginxKCPResponse{Message: fmt.Sprintf("Error, cannot delete Nginx KCP, name %s, port %s", req.Name, req.Port), Status: "Error"}
+			return res, berr
+		}
+	} else {
+		//TODO
+		res = &api.NginxKCPResponse{Message: fmt.Sprintf("Error, invalid request %s", req.Message), Status: "Error"}
+		return res, fmt.Errorf("invalid request")
+	}
+
+	res = &api.NginxKCPResponse{
+		Message: "OK",
+	}
+	return res, nil
+}
+
+func CreateNginxKCP(name string, port string) error {
+	log.Debugln("create nginx kubectl proxy", "name", name, "port", port)
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Debugln("can't get cwd", err)
+		return err
+	}
+	name = name + kcproxySuffix
+	dir := pwd + "/nginx/" + name
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Debugln("can't create dir", dir, err)
+		return err
+	}
+
+	if !fileExists(pwd + "/cert.pem") {
+		log.Debugln("cert.pem does not exist")
+		return fmt.Errorf("while creating nginx kubectl proxy %s, cert.pem does not exist", name)
+	}
+	if !fileExists(pwd + "/key.pem") {
+		log.Debugln("key.pem does not exist")
+		return fmt.Errorf("while creating nginx kubectl proxy %s, key.pem does not exist", name)
+	}
+	htpasswdFn := "/nginx.htpasswd"
+	nginxHTPasswd := pwd + htpasswdFn
+	if !fileExists(nginxHTPasswd) {
+		nginxHTPasswd = "/home/ubuntu" + htpasswdFn
+		if !fileExists(nginxHTPasswd) {
+			return fmt.Errorf("no htpasswd file")
+		}
+	}
+	//TODO generate htpasswd file with contents from vault per cluster
+	nconfName := dir + "/nginx.conf"
+	portnum, err := strconv.Atoi(port)
+	if err != nil {
+		log.Debugln("invalid port", port)
+		return err
+	}
+	_, err = createNginxKCPConf(nconfName, name, portnum)
+	if err != nil {
+		log.Debugln("while creating nginx proxy, can't create conf", name)
+		return err
+	}
+	log.Debugln("created nginx conf", nconfName)
+
+	cmdArgs := []string{"run", "-d", "--rm", "--net", "host", "--name", name}
+	cmdArgs = append(cmdArgs, []string{"-v", dir + ":/var/www/.cache", "-v", nginxHTPasswd + ":/etc/nginx/conf.d" + htpasswdFn, "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd + "/cert.pem:/etc/nginx/conf.d/cert.pem", "-v", pwd + "/key.pem:/etc/nginx/conf.d/key.pem", "-v", dir + ":/var/log/nginx", "-v", nconfName + ":/etc/nginx/nginx.conf", "nginx:alpine"}...)
+	log.Debugln("cmdArgs", cmdArgs)
+	//XXX nginx:alpine for htpasswd to work
+	out, err := sh.Command("docker", cmdArgs).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("can't create nginx kubectl proxy container %s, %s, %v", name, out, err)
+	}
+	//TODO check vitality of the created container instance
+	log.Debugln("created nginx kubectl proxy container", name)
+	return nil
+}
+
+func DeleteNginxKCP(name string) error {
+	name = name + kcproxySuffix
+	log.Debugln("deleting nginx kubectl proxy container", name)
+	out, err := sh.Command("docker", "kill", name).Output()
+	if err != nil {
+		return fmt.Errorf("can't kill nginx kubectl proxy container %s, %s, %v", name, out, err)
+	}
+	log.Debugln("deleted nginx kubectl proxy container", name)
+	return nil
+}
+
+func ListNginxKCP() ([]string, error) {
+	log.Debugln("listing nginx kubectl proxy containers")
+	out, err := sh.Command("docker", "ps", "--filter", "name="+kcproxySuffix, "--format", "'{{.Names}}'").Output() //TODO filter on name pattern
+	if err != nil {
+		return nil, fmt.Errorf("can't list nginx KCP containers, %s, %v", out, err)
+	}
+	outstr := string(out)
+	log.Debugln("list of nginx kubectl proxy containers", outstr)
+	names := strings.Split(outstr, "\n")
+	return names, nil
+}
+
+var nginxKCPConfTmpl = `
+worker_processes 2;
+
+events {
+    worker_connections  100;
+}
+
+error_log  /var/log/nginx/error.log debug;
+
+http {
+  server {
+    listen {{.Port}} ssl;
+    server_name {{.Name}};
+
+    ssl_certificate /etc/nginx/conf.d/cert.pem;
+    ssl_certificate_key /etc/nginx/conf.d/key.pem;
+
+    auth_basic "restricted";
+    auth_basic_user_file /etc/nginx/conf.d/nginx.htpasswd;
+
+    location / {
+	proxy_pass http://127.0.0.1:{{.PortKCP}}/;
+    }
+  }
+}
+`
+
+type nginxKCPSpec struct {
+	Name    string
+	Port    int
+	PortKCP int
+}
+
+func createNginxKCPConf(confname, name string, port int) (*string, error) {
+	log.Debugln("create nginx kubectl proxy conf", confname, name, port)
+	tmpl, err := template.New("nginxconf").Parse(nginxKCPConfTmpl)
+	if err != nil {
+		return nil, err
+	}
+	var outbuffer bytes.Buffer
+	err = tmpl.Execute(&outbuffer, &nginxKCPSpec{Name: name, Port: port, PortKCP: port - 1})
+	if err != nil {
+		return nil, err
+	}
+	confbytes := outbuffer.Bytes()
+	err = writeFile(confname, confbytes)
+	if err != nil {
+		return nil, err
+	}
+	confstr := string(confbytes)
+	return &confstr, nil
 }

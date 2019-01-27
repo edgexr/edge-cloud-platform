@@ -14,6 +14,31 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+func RunKubectl(mf *Manifest, params string) (*string, error) {
+	log.DebugLog(log.DebugLevelMexos, "run kubectl", "params", params)
+	rootLB, err := getRootLB(mf.Spec.RootLB)
+	if err != nil {
+		return nil, err
+	}
+	if rootLB == nil {
+		return nil, fmt.Errorf("failed to create docker registry secret, rootLB is null")
+	}
+	//name, err := FindClusterWithKey(mf, mf.Spec.Key)
+	//if err != nil {
+	//	return nil, fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
+	//}
+	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	if err != nil {
+		return nil, fmt.Errorf("can't get ssh client, %v", err)
+	}
+	cmd := fmt.Sprintf("kubectl --kubeconfig %s.kubeconfig %s", rootLB.Name, params)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("kubectl failed, %v, %s", err, out)
+	}
+	return &out, nil
+}
+
 func CreateDockerRegistrySecret(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
 	rootLB, err := getRootLB(mf.Spec.RootLB)
@@ -25,8 +50,8 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 	}
 
 	var out string
-	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
-
+	//log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
+	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
 	if IsLocalDIND(mf) || mf.Metadata.Operator == "gcp" || mf.Metadata.Operator == "azure" {
 		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally non OpenStack case")
 		var o []byte

@@ -2,16 +2,18 @@ package mexos
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+var kcproxySuffix = "-kcproxy"
+
 //StartKubectlProxy starts kubectl proxy on the rootLB to handle kubectl commands remotely.
 //  To be called after copying over the kubeconfig file from cluster to rootLB.
-func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, kubeconfig string) (int, error) {
-	log.DebugLog(log.DebugLevelMexos, "start kubectl proxy", "kubeconfig", kubeconfig)
+func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, name, kubeconfig string) (int, error) {
+	log.DebugLog(log.DebugLevelMexos, "start kubectl proxy", "name", name, "kubeconfig", kubeconfig)
 	if rootLB == nil {
 		return 0, fmt.Errorf("cannot kubectl proxy, rootLB is null")
 	}
@@ -22,52 +24,53 @@ func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, kubeconfig string) (int,
 	if err != nil {
 		return 0, err
 	}
-	maxPort := 8000
-	cmd := "sudo ps wwh -C kubectl -o args"
+	//TODO check /home/ubuntu/.docker-pass file
+	cmd := fmt.Sprintf("echo %s | docker login -u mobiledgex --password-stdin %s", mexEnv(mf, "MEX_DOCKER_REG_PASS"), mf.Spec.DockerRegistry)
 	out, err := client.Output(cmd)
-	if err == nil && out != "" {
-		lines := strings.Split(out, "\n")
-		for _, ln := range lines {
-			portnum := parseKCPort(ln)
-			if portnum > maxPort {
-				maxPort = portnum
-			}
-		}
-	}
-	maxPort++
-	log.DebugLog(log.DebugLevelMexos, "port for kubectl proxy", "maxport", maxPort)
-	cmd = fmt.Sprintf("kubectl proxy  --port %d --accept-hosts='.*' --address='0.0.0.0' --kubeconfig=%s ", maxPort, kubeconfig)
-	//Use .Start() because we don't want to hang
-	cl1, cl2, err := client.Start(cmd)
 	if err != nil {
-		return 0, fmt.Errorf("error running kubectl proxy, %s,  %v", cmd, err)
+		return 0, fmt.Errorf("can't docker login, %s, %v", out, err)
 	}
-	cl1.Close() //nolint
-	cl2.Close() //nolint
-	err = AddSecurityRuleCIDR(mf, GetAllowedClientCIDR(), "tcp", GetMEXSecurityRule(mf), maxPort)
-	log.DebugLog(log.DebugLevelMexos, "adding external ingress security rule for kubeproxy", "port", maxPort)
+	cmd = fmt.Sprintf("docker pull registry.mobiledgex.net:5000/mobiledgex/mobiledgex")
+	res, err := client.Output(cmd)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, error while adding external ingress security rule for kubeproxy", "error", err, "port", maxPort)
+		return 0, fmt.Errorf("cannot pull mobiledgex image, %v, %s", err, res)
 	}
-
-	cmd = "sudo ps wwh -C kubectl -o args"
-	for i := 0; i < 5; i++ {
-		//verify
-		out, outerr := client.Output(cmd)
-		if outerr == nil {
-			if out == "" {
-				continue
-			}
-			lines := strings.Split(out, "\n")
-			for _, ln := range lines {
-				if parseKCPort(ln) == maxPort {
-					log.DebugLog(log.DebugLevelMexos, "kubectl confirmed running with port", "port", maxPort)
-				}
-			}
-			return maxPort, nil
-		}
-		log.DebugLog(log.DebugLevelMexos, "waiting for kubectl proxy...")
-		time.Sleep(3 * time.Second)
+	//TODO verify existence of kubeconfig file
+	containerName := name + kcproxySuffix
+	cmd = fmt.Sprintf("docker run --net host  -d --rm -it -v /home:/home --name %s registry.mobiledgex.net:5000/mobiledgex/mobiledgex kubectl proxy --port 0 --accept-hosts '^127.0.0.1$' --address 127.0.0.1 --kubeconfig /home/ubuntu/%s", containerName, kubeconfig)
+	res, err = client.Output(cmd)
+	if err != nil {
+		return 0, fmt.Errorf("error running kubectl proxy, %s,  %v, %s", cmd, err, res)
 	}
-	return 0, fmt.Errorf("timeout error verifying kubectl proxy")
+	res, err = client.Output(fmt.Sprintf("docker logs %s", containerName))
+	if err != nil {
+		return 0, fmt.Errorf("cannot get logs for container %s", containerName)
+	}
+	items := strings.Split(res, " ")
+	if len(items) < 5 {
+		return 0, fmt.Errorf("insufficient address info in log output, %s", res)
+	}
+	addr := items[4]
+	addr = strings.TrimSpace(addr)
+	items = strings.Split(addr, ":")
+	if len(items) < 2 {
+		return 0, fmt.Errorf("cannot get port from %s", addr)
+	}
+	port := items[1]
+	portnum, aerr := strconv.Atoi(port)
+	if aerr != nil {
+		return 0, fmt.Errorf("cannot convert port %v, %s", aerr, port)
+	}
+	log.DebugLog(log.DebugLevelMexos, "adding external ingress security rule for kubeproxy", "port", port)
+	err = AddSecurityRuleCIDR(mf, GetAllowedClientCIDR(), "tcp", GetMEXSecurityRule(mf), portnum+1) //XXX
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "warning, error while adding external ingress security rule for kubeproxy", "error", err, "port", port)
+	}
+	portnum++
+	//TODO delete security rule when kubectl proxy container deleted
+	if err := AddNginxKubectlProxy(mf, rootLB.Name, name, portnum); err != nil {
+		return 0, fmt.Errorf("cannot add nginx kubectl proxy, %v", err)
+	}
+	log.DebugLog(log.DebugLevelMexos, "nginx kubectl proxy", "port", portnum)
+	return portnum, nil
 }

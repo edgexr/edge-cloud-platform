@@ -27,12 +27,14 @@ var applicationOps = map[string]func(*mexos.Manifest) error{
 }
 
 var openstackOps = map[string]func(*mexos.Manifest) error{}
+var kubectlOps = map[string]func(*mexos.Manifest) error{}
 
 var categories = map[string]map[string]func(*mexos.Manifest) error{
 	"cluster":     clusterOps,
 	"platform":    platformOps,
 	"application": applicationOps,
 	"openstack":   openstackOps,
+	"kubectl":     kubectlOps,
 }
 
 var mainflag = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -124,11 +126,23 @@ func callOps(mf *mexos.Manifest, kind string, ops ...string) error {
 		for i, v := range ops {
 			vs[i] = v
 		}
-		out, err := sh.Command("openstack", vs...).Output()
+		out, err := sh.Command(kind, vs...).Output()
 		if err != nil {
-			return fmt.Errorf("error, openstack %v, %v", ops, err)
+			return fmt.Errorf("error, %s %v, %v, %s", kind, ops, err, out)
 		}
 		fmt.Println(string(out))
+		return nil
+	}
+	if kind == "kubectl" {
+		vs := ""
+		for _, v := range ops {
+			vs = vs + v + " "
+		}
+		out, err := mexos.RunKubectl(mf, vs)
+		if err != nil {
+			return fmt.Errorf("error, %s %v, %v", kind, ops, err)
+		}
+		fmt.Println(string(*out))
 		return nil
 	}
 	if _, ok := categories[kind]; !ok {

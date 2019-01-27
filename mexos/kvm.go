@@ -185,7 +185,8 @@ func CreateFlavorMEXVM(mf *Manifest, name, image, flavor, netID, userdata, role,
 		props = append(props, "update="+mf.Values.Registry.Update)
 	}
 	opts.Properties = props
-	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor, "server opts", opts)
+	//log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor, "server opts", opts)
+	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor)
 	err = CreateServer(mf, opts)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "error creating flavor MEX KVM", "server opts", opts)
@@ -317,7 +318,8 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 				maxoct++
 				ni.CIDR = fmt.Sprintf("%s.%s.%d.%d/%s", its[0], its[1], maxoct, id, sits[1])
 			} else {
-				log.DebugLog(log.DebugLevelMexos, "subnet for this cluster existed", "subnet detail", snd)
+				//log.DebugLog(log.DebugLevelMexos, "subnet for this cluster existed", "subnet detail", snd)
+				log.DebugLog(log.DebugLevelMexos, "subnet for this cluster existed", "name", snd.Name)
 				ni.CIDR = snd.CIDR
 			}
 			log.DebugLog(log.DebugLevelMexos, "allocated CIDR", "cidr", ni.CIDR)
@@ -391,7 +393,8 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 					return fmt.Errorf("cannot add router %s to subnet %s, %v", mexRouter, sn, err)
 				}
 			} else {
-				log.DebugLog(log.DebugLevelMexos, "will not create subnet since it exists", "name", snd)
+				//log.DebugLog(log.DebugLevelMexos, "will not create subnet since it exists", "name", snd)
+				log.DebugLog(log.DebugLevelMexos, "will not create subnet since it exists", "name", snd.Name)
 			}
 			ipaddr = net.IPv4(v4[0], v4[1], v4[2], byte(2))
 		}

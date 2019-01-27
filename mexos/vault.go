@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/mobiledgex/edge-cloud/log"
 )
 
 func GetVaultData(url string) ([]byte, error) {
@@ -94,7 +93,7 @@ func InternVaultEnv(mf *Manifest) error {
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "vault env var map", "vault env map", mf.Values.VaultEnvMap)
+	//log.DebugLog(log.DebugLevelMexos, "vault env var map", "vault env map", mf.Values.VaultEnvMap)
 	return nil
 }
 
@@ -137,7 +136,7 @@ func GetVaultEnv(mf *Manifest, uri string) error {
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "about to intern vault env", "mf", mf)
+	//log.DebugLog(log.DebugLevelMexos, "about to intern vault env", "mf", mf)
 	if err := InternVaultEnv(mf); err != nil {
 		return err
 	}

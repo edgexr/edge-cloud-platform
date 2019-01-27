@@ -61,9 +61,9 @@ var rootLBPorts = []int{
 	18889, //mexosagent HTTP server
 	18888, //mexosagent GRPC server
 	443,   //mexosagent reverse proxy HTTPS
-	8001,  //kubectl proxy
-	6443,  //kubernetes control
-	8000,  //mex k8s join token server
+	//8001,  //kubectl proxy
+	6443, //kubernetes control
+	//8000,  //mex k8s join token server
 }
 
 //TODO more than one kubectl proxy, one per hosted  cluster

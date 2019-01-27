@@ -272,6 +272,9 @@ func FillManifestValues(mf *Manifest, kind, base string) error {
 	base = GetDefaultRegistryBase(mf, base)
 	var uri string
 	switch kind {
+	case "kubectl":
+		kind = "platform"
+		fallthrough
 	case "openstack":
 		kind = "platform"
 		fallthrough

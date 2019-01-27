@@ -32,16 +32,16 @@ func CheckVals(vals interface{}) error {
 		return nil
 	}
 	for i := 0; i < m.NumField(); i++ {
-		n := m.Type().Field(i).Name
+		//n := m.Type().Field(i).Name
 		t := m.Type().Field(i).Type
 		v := m.Field(i).Interface()
-		log.DebugLog(log.DebugLevelMexos, "checkvals", "name", n, "type", m.Type(), "field type", t, "value", v)
+		//log.DebugLog(log.DebugLevelMexos, "checkvals", "name", n, "type", m.Type(), "field type", t, "value", v)
 		if t.String() == "[]mexos.PortDetail" { // XXX skip ports, TODO check !nil and validate
 			continue
 		}
 		if t.String() == "string" {
 			if v == "" {
-				log.DebugLog(log.DebugLevelMexos, "checkvals, warning, empty field", "name", n, "type", m.Type(), "field type", t, "value", v)
+				//log.DebugLog(log.DebugLevelMexos, "checkvals, warning, empty field", "name", n, "type", m.Type(), "field type", t, "value", v)
 			}
 			//log.DebugLog(log.DebugLevelMexos, "ok", "name", n, "type", t, "value", v)
 		} else {

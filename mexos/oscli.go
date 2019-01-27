@@ -23,7 +23,7 @@ func ListServers(mf *Manifest) ([]OSServer, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.DebugLog(log.DebugLevelMexos, "list servers", "servers", servers)
+	//log.DebugLog(log.DebugLevelMexos, "list servers", "servers", servers)
 	return servers, nil
 }
 
@@ -102,7 +102,7 @@ func CreateServer(mf *Manifest, opts *OSServerOpt) error {
 	for i, v := range args {
 		iargs[i] = v
 	}
-	log.DebugLog(log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
+	//log.DebugLog(log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
 	out, err := sh.Command("openstack", iargs...).Output()
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
@@ -137,7 +137,7 @@ func GetServerDetails(mf *Manifest, name string) (*OSServerDetail, error) {
 	if !active {
 		return nil, fmt.Errorf("while getting server detail, waited but server %s is too slow getting to active state", name)
 	}
-	log.DebugLog(log.DebugLevelMexos, "server detail", "server detail", srvDetail)
+	//log.DebugLog(log.DebugLevelMexos, "server detail", "server detail", srvDetail)
 	return srvDetail, nil
 }
 
@@ -306,7 +306,7 @@ func ListSubnets(mf *Manifest, netName string) ([]OSSubnet, error) {
 		err = fmt.Errorf("can't unmarshal subnets, %v", err)
 		return nil, err
 	}
-	log.DebugLog(log.DebugLevelMexos, "list subnets", "subnets", subnets)
+	//log.DebugLog(log.DebugLevelMexos, "list subnets", "subnets", subnets)
 	return subnets, nil
 }
 
@@ -340,7 +340,7 @@ func GetRouterDetail(mf *Manifest, routerName string) (*OSRouterDetail, error) {
 		err = fmt.Errorf("can't unmarshal router detail, %v", err)
 		return nil, err
 	}
-	log.DebugLog(log.DebugLevelMexos, "router detail", "router detail", routerDetail)
+	//log.DebugLog(log.DebugLevelMexos, "router detail", "router detail", routerDetail)
 	return routerDetail, nil
 }
 
@@ -411,7 +411,7 @@ func GetSubnetDetail(mf *Manifest, subnetName string) (*OSSubnetDetail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal subnet detail, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "get subnet detail", "subnet detail", subnetDetail)
+	//log.DebugLog(log.DebugLevelMexos, "get subnet detail", "subnet detail", subnetDetail)
 	return subnetDetail, nil
 }
 

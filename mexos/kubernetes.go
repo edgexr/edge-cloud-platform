@@ -36,6 +36,7 @@ func CreateKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
 	//if err := CreateDockerRegistrySecret(mf); err != nil {
 	//	return err
 	//}
+	//TODO do not create yaml file but use remote yaml file over https
 	cmd = fmt.Sprintf("cat <<'EOF'> %s.yaml \n%s\nEOF", mf.Metadata.Name, kubeManifest)
 	out, err := kp.client.Output(cmd)
 	if err != nil {

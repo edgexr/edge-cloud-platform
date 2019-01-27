@@ -79,7 +79,7 @@ func GetRouterDetailExternalGateway(mf *Manifest, rd *OSRouterDetail) (*OSExtern
 	if err != nil {
 		return nil, fmt.Errorf("can't get unmarshal external gateway info, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
+	//log.DebugLog(log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
 	return externalGateway, nil
 }
 

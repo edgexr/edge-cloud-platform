@@ -45,6 +45,13 @@ service MexOSAgent {
             body: "*"
         };
     }
+
+    rpc NginxKCP(NginxKCPRequest) returns (NginxKCPResponse) {
+        option (google.api.http) = {
+            post: "/v1/nginx-kcp",
+            body: "*"
+        };
+    }
 }
 
 message Provision {
@@ -112,6 +119,17 @@ message NginxRequest {
 }
 
 message NginxResponse {
+    string message = 1;
+    string status = 2;
+}
+
+message NginxKCPRequest {
+    string message = 1;
+    string name = 2;
+    string port = 3;
+}
+
+message NginxKCPResponse {
     string message = 1;
     string status = 2;
 }

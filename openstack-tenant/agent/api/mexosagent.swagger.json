@@ -20,7 +20,7 @@
         "operationId": "Destroy",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiProvisionResponse"
             }
@@ -46,7 +46,7 @@
         "operationId": "Nginx",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiNginxResponse"
             }
@@ -67,12 +67,38 @@
         ]
       }
     },
+    "/v1/nginx-kcp": {
+      "post": {
+        "operationId": "NginxKCP",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/apiNginxKCPResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiNginxKCPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MexOSAgent"
+        ]
+      }
+    },
     "/v1/provision": {
       "post": {
         "operationId": "Provision",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiProvisionResponse"
             }
@@ -98,7 +124,7 @@
         "operationId": "Proxy",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiProxyResponse"
             }
@@ -124,7 +150,7 @@
         "operationId": "Route",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiRouteResponse"
             }
@@ -150,7 +176,7 @@
         "operationId": "Status",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/apiStatusResponse"
             }
@@ -173,6 +199,31 @@
     }
   },
   "definitions": {
+    "apiNginxKCPRequest": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        }
+      }
+    },
+    "apiNginxKCPResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
     "apiNginxPort": {
       "type": "object",
       "properties": {
@@ -209,6 +260,9 @@
           "type": "string"
         },
         "name": {
+          "type": "string"
+        },
+        "network": {
           "type": "string"
         },
         "ports": {
