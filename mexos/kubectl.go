@@ -9,6 +9,8 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -89,9 +91,9 @@ func runKubectlCreateApp(mf *Manifest, kubeManifest string) error {
 	if err != nil {
 		return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
 	}
-	out, err := sh.Command("kubectl", "create", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
+	out, err := sh.Command("kubectl", "create", "-f", kfile, "--kubeconfig="+kconf).Output()
 	if err != nil {
-		return fmt.Errorf("error creating app, %s, %v, %v, %s", out, err, mf, kubeManifest)
+		return fmt.Errorf("error creating app, %s, %v, %v", out, err, mf)
 	}
 	err = createAppDNS(mf, kconf)
 	if err != nil {
@@ -162,6 +164,12 @@ func getSvcNames(name string, kconf string) ([]string, error) {
 }
 
 func runKubectlDeleteApp(mf *Manifest, kubeManifest string) error {
+	if err := CheckCredentialsCF(mf); err != nil {
+		return err
+	}
+	if err := cloudflare.InitAPI(mexEnv(mf, "MEX_CF_USER"), mexEnv(mf, "MEX_CF_KEY")); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
+	}
 	kconf, err := GetKconf(mf, false)
 	if err != nil {
 		return fmt.Errorf("error deleting app due to kconf missing,  %v, %v", mf, err)
@@ -172,13 +180,35 @@ func runKubectlDeleteApp(mf *Manifest, kubeManifest string) error {
 		return err
 	}
 	defer os.Remove(kfile)
+	serviceNames, err := getSvcNames(mf.Metadata.Name, kconf)
+	if err != nil {
+		return err
+	}
+	if len(serviceNames) < 1 {
+		return fmt.Errorf("no service names starting with %s", mf.Metadata.Name)
+	}
 	out, err := sh.Command("kubectl", "delete", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error deleting app, %s, %v, %v", out, mf, err)
 	}
-	err = deleteAppDNS(mf, kconf)
+	if mf.Metadata.DNSZone == "" {
+		return fmt.Errorf("missing dns zone, metadata %v", mf.Metadata)
+	}
+	fqdnBase := uri2fqdn(mf.Spec.URI)
+	dr, err := cloudflare.GetDNSRecords(mf.Metadata.DNSZone)
 	if err != nil {
-		return fmt.Errorf("error deleting dns entry for app, %v, %v", err, mf)
+		return fmt.Errorf("cannot get dns records for %s, %v", mf.Metadata.DNSZone, err)
+	}
+	for _, sn := range serviceNames {
+		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
+		for _, d := range dr {
+			if d.Type == "A" && d.Name == fqdn {
+				if err := cloudflare.DeleteDNSRecord(mf.Metadata.DNSZone, d.ID); err != nil {
+					return fmt.Errorf("cannot delete DNS record, %v", d)
+				}
+				log.DebugLog(log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
+			}
+		}
 	}
 	return nil
 }

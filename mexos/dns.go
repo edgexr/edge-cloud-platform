@@ -150,13 +150,6 @@ func KubePatchServiceLocal(servicename string, ipaddr string) error {
 	return nil
 }
 
-// TODO: This function and createAppDNS share a lot of duplicate code,
-// but are subtly different. It'd be good to consolidate and remove
-// duplicate code and highlight what the different use cases are,
-// since it's not clear when to use one or the other.
-// This should be easier to consolidate now that kubeParam can issue
-// commands locally for DIND or other cases.
-// Same for KubeDeleteDNSRecords and deleteAppDNS.
 func KubeAddDNSRecords(rootLB *MEXRootLB, mf *Manifest, kp *kubeParam) error {
 	log.DebugLog(log.DebugLevelMexos, "adding dns records for kubenernets app", "name", mf.Metadata.Name)
 	rootLBIPaddr, err := GetServerIPAddr(mf, mf.Values.Network.External, rootLB.Name)

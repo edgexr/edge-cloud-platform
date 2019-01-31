@@ -159,23 +159,14 @@ func MEXAppCreateAppManifest(mf *Manifest) error {
 
 	if IsLocalDIND(mf) {
 		masteraddr := dind.GetMasterAddr()
+		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
 
-		if len(mf.Spec.Ports) > 0 {
-			log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind", "ports", mf.Spec.Ports)
-			if err = AddNginxProxy(mf, "localhost", mf.Metadata.Name, masteraddr, mf.Spec.Ports, dind.GetDockerNetworkName(mf.Values.Cluster.Name)); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
-				return err
-			}
+		if err = AddNginxProxy(mf, "localhost", mf.Metadata.Name, masteraddr, mf.Spec.Ports, dind.GetDockerNetworkName(mf.Values.Cluster.Name)); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
+			return err
 		}
 		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
-		var err error
-		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			err = runKubectlCreateApp(mf, kubeManifest)
-		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			err = CreateHelmAppManifest(mf)
-		} else {
-			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
-		}
+		err := runKubectlCreateApp(mf, kubeManifest)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error creating dind app", "mf", mf)
 			return err
@@ -222,25 +213,18 @@ func MEXAppDeleteAppManifest(mf *Manifest) error {
 	}
 	if IsLocalDIND(mf) {
 		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
-		var err error
-		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			err = runKubectlDeleteApp(mf, kubeManifest)
-		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			err = DeleteHelmAppManifest(mf)
-		} else {
-			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
-		}
+		err := runKubectlDeleteApp(mf, kubeManifest)
 		if err != nil {
 			return err
 		}
 
-		if len(mf.Spec.Ports) > 0 {
-			log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
-			if err = DeleteNginxProxy(mf, "localhost", mf.Metadata.Name); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", mf.Metadata.Name)
-				return err
-			}
+		log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
+
+		if err = DeleteNginxProxy(mf, "localhost", mf.Metadata.Name); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", mf.Metadata.Name)
+			return err
 		}
+
 		return nil
 
 	}
