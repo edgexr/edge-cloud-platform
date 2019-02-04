@@ -2,6 +2,7 @@ package mexos
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -22,14 +23,26 @@ func DeleteHelmAppManifest(mf *Manifest) error {
 	if err != nil {
 		return err
 	}
-	// remove DNS entries
-	if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+	if IsLocalDIND(mf) {
+		// remove DNS entries
+		kconf, err := GetKconf(mf, false)
+		if err != nil {
+			return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
+		}
+		if err = deleteAppDNS(mf, kconf); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		}
+	} else {
+		// remove DNS entries
+		if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		}
+		// remove Security rules
+		if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
+		}
 	}
-	// remove Security rules
-	if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
-	}
+
 	cmd := fmt.Sprintf("%s helm delete --purge %s", kp.kubeconfig, mf.Metadata.Name)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
@@ -85,22 +98,43 @@ func CreateHelmAppManifest(mf *Manifest) error {
 		log.DebugLog(log.DebugLevelMexos, "helm tiller initialized")
 	}
 
-	cmd = fmt.Sprintf("%s helm install %s --name %s", kp.kubeconfig, mf.Spec.Image, mf.Metadata.Name)
+	helmOpts := ""
+	// XXX This gets helm's prometheus able to query kubelet metrics.
+	// This can be removed once Lev passes in an option in the yaml to
+	// set the helm command line options.
+	prom, err := regexp.MatchString("prometheus", mf.Metadata.Name)
+	if err == nil && prom {
+		log.DebugLog(log.DebugLevelMexos, "setting helm prometheus option")
+		helmOpts = "--set kubelet.serviceMonitor.https=true"
+	}
+	cmd = fmt.Sprintf("%s helm install %s --name %s %s", kp.kubeconfig, mf.Spec.Image, mf.Metadata.Name, helmOpts)
 	out, err = kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying helm chart, %s, %s, %v", cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied helm chart")
-	// Add security rules
-	if err = AddProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
-		return err
-	}
-	log.DebugLog(log.DebugLevelMexos, "add spec ports", "ports", mf.Spec.Ports)
-	// Add DNS Zone
-	if err = KubeAddDNSRecords(rootLB, mf, kp); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
-		return err
+	if IsLocalDIND(mf) {
+		kconf, err := GetKconf(mf, false)
+		if err != nil {
+			return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
+		}
+		// Add DNS Zone
+		if err = createAppDNS(mf, kconf); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
+			return err
+		}
+	} else {
+		// Add security rules
+		if err = AddProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
+			return err
+		}
+		log.DebugLog(log.DebugLevelMexos, "add spec ports", "ports", mf.Spec.Ports)
+		// Add DNS Zone
+		if err = KubeAddDNSRecords(rootLB, mf, kp); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
+			return err
+		}
 	}
 	return nil
 }
