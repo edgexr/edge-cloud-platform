@@ -49,6 +49,10 @@ func CreateKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
 		return fmt.Errorf("error deploying kubernetes app, %s, %v", out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied kubernetes manifest")
+	// we might not be exposing ports
+	if len(mf.Spec.Ports) < 1 {
+		return nil
+	}
 	// Add security rules
 	if err = AddProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
@@ -227,14 +231,16 @@ func DeleteKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
 	if err != nil {
 		return err
 	}
-	// Clean up security rules and nginx proxy
-	if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
-	}
-	// Clean up DNS entries
-	if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
-		return err
+	if len(mf.Spec.Ports) > 0 {
+		// Clean up security rules and nginx proxy
+		if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
+		}
+		// Clean up DNS entries
+		if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
+			return err
+		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "deleted deployment", "name", mf.Metadata.Name)
 	return nil

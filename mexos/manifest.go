@@ -138,6 +138,15 @@ func MEXPlatformCleanManifest(mf *Manifest) error {
 	return nil
 }
 
+// Valid manifests are either v1, or apps/v1
+func kubeManifestValidApiVersion(kubeManifest string) bool {
+	if !strings.HasPrefix(kubeManifest, "apiVersion: v1") &&
+		!strings.HasPrefix(kubeManifest, "apiVersion: apps/v1") {
+		return false
+	}
+	return true
+}
+
 //MEXAppCreateAppManifest creates app instances on the cluster platform
 func MEXAppCreateAppManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "create app from manifest")
@@ -150,7 +159,7 @@ func MEXAppCreateAppManifest(mf *Manifest) error {
 		if err != nil {
 			return err
 		}
-		if !strings.HasPrefix(kubeManifest, "apiVersion: v1") {
+		if !kubeManifestValidApiVersion(kubeManifest) {
 			log.DebugLog(log.DebugLevelMexos, "bad apiVersion at beginning kubemanifest")
 			return fmt.Errorf("bad apiversion at beginning of kube manifest")
 		}
@@ -374,7 +383,7 @@ func GetKubeManifest(mf *Manifest) (string, error) {
 	deployment := mf.Config.ConfigDetail.Deployment
 	//XXX controlling pass full yaml text in parameter of another yaml
 	log.DebugLog(log.DebugLevelMexos, "getting kubernetes manifest", "base", base, "manifest", mani)
-	if deployment != cloudcommon.AppDeploymentTypeHelm && !strings.HasPrefix(mani, "apiVersion: v1") {
+	if deployment != cloudcommon.AppDeploymentTypeHelm && !kubeManifestValidApiVersion(mani) {
 		fn := fmt.Sprintf("%s/%s", base, mani)
 		log.DebugLog(log.DebugLevelMexos, "getting manifest file", "uri", fn)
 		res, err := GetURIFile(mf, fn)
