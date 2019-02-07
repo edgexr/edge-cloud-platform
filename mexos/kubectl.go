@@ -9,58 +9,49 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func RunKubectl(mf *Manifest, params string) (*string, error) {
+/*
+func RunKubectl(clusterInst *edgeproto.ClusterInst, params string, rootLBName string) (*string, error) {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl", "params", params)
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return nil, err
-	}
-	if rootLB == nil {
-		return nil, fmt.Errorf("failed to create docker registry secret, rootLB is null")
-	}
+
 	//name, err := FindClusterWithKey(mf, mf.Spec.Key)
 	//if err != nil {
 	//	return nil, fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
 	//}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return nil, fmt.Errorf("can't get ssh client, %v", err)
 	}
-	cmd := fmt.Sprintf("kubectl --kubeconfig %s.kubeconfig %s", rootLB.Name, params)
+	cmd := fmt.Sprintf("kubectl --kubeconfig %s.kubeconfig %s", rootLBName, params)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("kubectl failed, %v, %s", err, out)
 	}
 	return &out, nil
 }
-
-func CreateDockerRegistrySecret(mf *Manifest) error {
+*/
+func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
-	}
-	if rootLB == nil {
-		return fmt.Errorf("failed to create docker registry secret, rootLB is null")
-	}
 
 	var out string
-	//log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
+	var err error
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
-	if IsLocalDIND(mf) || mf.Metadata.Operator == "gcp" || mf.Metadata.Operator == "azure" {
-		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally non OpenStack case")
+	if rootLBName == "" {
+		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally, no rootLB")
 		var o []byte
-		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+mf.Values.Registry.Docker, "--docker-username=mobiledgex", "--docker-password="+mexEnv(mf, "MEX_DOCKER_REG_PASS"), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
+		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+GetCloudletDockerRegistry(), "--docker-username=mobiledgex", "--docker-password="+GetCloudletDockerPass(), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
 		out = string(o)
 	} else {
-		client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+		client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 		if err != nil {
 			return fmt.Errorf("can't get ssh client, %v", err)
 		}
-		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", mf.Values.Registry.Docker, mexEnv(mf, "MEX_DOCKER_REG_PASS"), GetKconfName(mf))
+		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", GetCloudletDockerRegistry(), GetCloudletDockerPass(), GetKconfName(clusterInst))
 
 		out, err = client.Output(cmd)
 	}
@@ -75,27 +66,27 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 	return nil
 }
 
-func runKubectlCreateApp(mf *Manifest, kubeManifest string) error {
+func runKubectlCreateApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, kubeManifest string) error {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
-	//if err := CreateDockerRegistrySecret(mf); err != nil {
-	//	return err
-	//}
-	kfile := mf.Metadata.Name + ".yaml"
+
+	appName := NormalizeName(appInst.Key.AppKey.Name)
+
+	kfile := appName + ".yaml"
 	if err := writeKubeManifest(kubeManifest, kfile); err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
-	kconf, err := GetKconf(mf, false)
+	kconf, err := GetKconf(clusterInst, false)
 	if err != nil {
-		return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
+		return fmt.Errorf("error creating app due to kconf missing, %v, %v", clusterInst, err)
 	}
-	out, err := sh.Command("kubectl", "create", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
+	out, err := sh.Command("kubectl", "create", "-f", kfile, "--kubeconfig="+kconf).Output()
 	if err != nil {
-		return fmt.Errorf("error creating app, %s, %v, %v, %s", out, err, mf, kubeManifest)
+		return fmt.Errorf("error creating app, %s, %v, %v", out, appName, err)
 	}
-	err = createAppDNS(mf, kconf)
+	err = createAppDNS(kconf, appInst.Uri, appName)
 	if err != nil {
-		return fmt.Errorf("error creating dns entry for app, %v, %v", err, mf)
+		return fmt.Errorf("error creating dns entry for app, %v, %v", appName, err)
 	}
 	return nil
 }
@@ -161,24 +152,50 @@ func getSvcNames(name string, kconf string) ([]string, error) {
 	return serviceNames, nil
 }
 
-func runKubectlDeleteApp(mf *Manifest, kubeManifest string) error {
-	kconf, err := GetKconf(mf, false)
-	if err != nil {
-		return fmt.Errorf("error deleting app due to kconf missing,  %v, %v", mf, err)
+func runKubectlDeleteApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, kubeManifest string) error {
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	kfile := mf.Metadata.Name + ".yaml"
+
+	appName := NormalizeName(appInst.Key.AppKey.Name)
+
+	kconf, err := GetKconf(clusterInst, false)
+	if err != nil {
+		return fmt.Errorf("error deleting app due to kconf missing,  %v, %v", clusterInst, err)
+	}
+	kfile := appName + ".yaml"
 	err = writeKubeManifest(kubeManifest, kfile)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
+	serviceNames, err := getSvcNames(appName, kconf)
+	if err != nil {
+		return err
+	}
+	if len(serviceNames) < 1 {
+		return fmt.Errorf("no service names starting with %s", appName)
+	}
 	out, err := sh.Command("kubectl", "delete", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error deleting app, %s, %v, %v", out, mf, err)
+		return fmt.Errorf("error deleting app, %s, %v, %v", out, appName, err)
 	}
-	err = deleteAppDNS(mf, kconf)
+
+	fqdnBase := uri2fqdn(appInst.Uri)
+	dr, err := cloudflare.GetDNSRecords(GetCloudletDNSZone())
 	if err != nil {
-		return fmt.Errorf("error deleting dns entry for app, %v, %v", err, mf)
+		return fmt.Errorf("cannot get dns records for %s, %v", GetCloudletDNSZone(), err)
+	}
+	for _, sn := range serviceNames {
+		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
+		for _, d := range dr {
+			if d.Type == "A" && d.Name == fqdn {
+				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), d.ID); err != nil {
+					return fmt.Errorf("cannot delete DNS record, %v", d)
+				}
+				log.DebugLog(log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
+			}
+		}
 	}
 	return nil
 }

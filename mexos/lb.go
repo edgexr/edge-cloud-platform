@@ -9,7 +9,7 @@ import (
 )
 
 //LBAddRoute adds a route to LB
-func LBAddRoute(mf *Manifest, rootLBName, extNet, name string) error {
+func LBAddRoute(rootLBName, extNet, name string) error {
 	if rootLBName == "" {
 		return fmt.Errorf("empty rootLB")
 	}
@@ -19,7 +19,7 @@ func LBAddRoute(mf *Manifest, rootLBName, extNet, name string) error {
 	if extNet == "" {
 		return fmt.Errorf("empty external network")
 	}
-	ap, err := LBGetRoute(mf, rootLBName, name)
+	ap, err := LBGetRoute(rootLBName, name)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func LBAddRoute(mf *Manifest, rootLBName, extNet, name string) error {
 		return fmt.Errorf("expected 2 addresses, got %d", len(ap))
 	}
 	cmd := fmt.Sprintf("sudo ip route add %s via %s dev ens3", ap[0], ap[1])
-	client, err := GetSSHClient(mf, rootLBName, extNet, sshUser)
+	client, err := GetSSHClient(rootLBName, extNet, sshUser)
 	if err != nil {
 		return err
 	}
@@ -43,8 +43,8 @@ func LBAddRoute(mf *Manifest, rootLBName, extNet, name string) error {
 }
 
 //LBRemoveRoute removes route for LB
-func LBRemoveRoute(mf *Manifest, rootLB, extNet, name string) error {
-	ap, err := LBGetRoute(mf, rootLB, name)
+func LBRemoveRoute(rootLB, extNet, name string) error {
+	ap, err := LBGetRoute(rootLB, name)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func LBRemoveRoute(mf *Manifest, rootLB, extNet, name string) error {
 		return fmt.Errorf("expected 2 addresses, got %d", len(ap))
 	}
 	cmd := fmt.Sprintf("sudo ip route delete %s via %s dev ens3", ap[0], ap[1])
-	client, err := GetSSHClient(mf, rootLB, extNet, sshUser)
+	client, err := GetSSHClient(rootLB, extNet, sshUser)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func LBRemoveRoute(mf *Manifest, rootLB, extNet, name string) error {
 }
 
 //LBGetRoute returns route of LB
-func LBGetRoute(mf *Manifest, rootLB, name string) ([]string, error) {
-	cidr, err := GetInternalCIDR(mf, name)
+func LBGetRoute(rootLB, name string) ([]string, error) {
+	cidr, err := GetInternalCIDR(name)
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +77,12 @@ func LBGetRoute(mf *Manifest, rootLB, name string) ([]string, error) {
 	}
 	v4 := ipn.IP.To4()
 	dn := fmt.Sprintf("%d.%d.%d.0/24", v4[0], v4[1], v4[2])
-	rn := GetMEXExternalRouter(mf)
-	rd, err := GetRouterDetail(mf, rn)
+	rn := GetCloudletExternalRouter()
+	rd, err := GetRouterDetail(rn)
 	if err != nil {
 		return nil, fmt.Errorf("can't get router detail for %s, %v", rn, err)
 	}
-	reg, err := GetRouterDetailExternalGateway(mf, rd)
+	reg, err := GetRouterDetailExternalGateway(rd)
 	if err != nil {
 		return nil, fmt.Errorf("can't get router detail external gateway, %v", err)
 	}

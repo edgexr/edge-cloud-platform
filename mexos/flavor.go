@@ -62,16 +62,6 @@ var AvailableClusterFlavors = []*ClusterFlavor{
 	},
 }
 
-func AddFlavorManifest(mf *Manifest) error {
-	_, err := GetClusterFlavor(mf.Spec.Flavor)
-	if err != nil {
-		return err
-	}
-	// Adding flavors in platforms cannot be done dynamically. For example, x1.xlarge cannot be
-	// implemented in currently DT cloudlets. Controller can learn what flavors available. Not create new ones.
-	return nil
-}
-
 func GetClusterFlavor(flavor string) (*ClusterFlavor, error) {
 	log.DebugLog(log.DebugLevelMexos, "get cluster flavor details", "cluster flavor", flavor)
 	for _, af := range AvailableClusterFlavors {

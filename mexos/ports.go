@@ -8,15 +8,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func addPorts(mf *Manifest, appInst *edgeproto.AppInst) error {
-	for ii, _ := range appInst.MappedPorts {
+func GetPortDetail(appInst *edgeproto.AppInst) ([]PortDetail, error) {
+	ports := make([]PortDetail, 0)
+	for ii := range appInst.MappedPorts {
 		port := &appInst.MappedPorts[ii]
-		if mf.Spec.Ports == nil {
-			mf.Spec.Ports = make([]PortDetail, 0)
-		}
 		mexproto, ok := dme.LProto_name[int32(port.Proto)]
 		if !ok {
-			return fmt.Errorf("invalid LProto %d", port.Proto)
+			return nil, fmt.Errorf("invalid LProto %d", port.Proto)
 		}
 		proto := "UDP"
 		if port.Proto != dme.LProto_LProtoUDP {
@@ -30,7 +28,7 @@ func addPorts(mf *Manifest, appInst *edgeproto.AppInst) error {
 			PublicPort:   int(port.PublicPort),
 			PublicPath:   port.PublicPath,
 		}
-		mf.Spec.Ports = append(mf.Spec.Ports, p)
+		ports = append(ports, p)
 	}
-	return nil
+	return ports, nil
 }

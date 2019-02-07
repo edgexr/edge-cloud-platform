@@ -15,7 +15,7 @@ var sshUser = "ubuntu"
 func CopySSHCredential(mf *Manifest, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
 	log.DebugLog(log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	addr, err := GetServerIPAddr(mf, networkName, serverName)
+	addr, err := GetServerIPAddr(networkName, serverName)
 	if err != nil {
 		return err
 	}
@@ -28,9 +28,9 @@ func CopySSHCredential(mf *Manifest, serverName, networkName, userName string) e
 }
 
 //GetSSHClient returns ssh client handle for the server
-func GetSSHClient(mf *Manifest, serverName, networkName, userName string) (ssh.Client, error) {
+func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) {
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
-	addr, err := GetServerIPAddr(mf, networkName, serverName)
+	addr, err := GetServerIPAddr(networkName, serverName)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func GetSSHClient(mf *Manifest, serverName, networkName, userName string) (ssh.C
 	return client, nil
 }
 
-func GetSSHClientIP(mf *Manifest, ipaddr, userName string) (ssh.Client, error) {
+func GetSSHClientIP(ipaddr, userName string) (ssh.Client, error) {
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
 	client, err := ssh.NewNativeClient(userName, ipaddr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, &auth, nil)
 	if err != nil {
@@ -51,9 +51,9 @@ func GetSSHClientIP(mf *Manifest, ipaddr, userName string) (ssh.Client, error) {
 	return client, nil
 }
 
-func SetupSSHUser(mf *Manifest, rootLB *MEXRootLB, user string) error {
+func SetupSSHUser(rootLB *MEXRootLB, user string) error {
 	log.DebugLog(log.DebugLevelMexos, "setting up ssh user", "user", user)
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, user)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), user)
 	if err != nil {
 		return err
 	}

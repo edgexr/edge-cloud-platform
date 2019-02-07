@@ -3,21 +3,13 @@ package mexos
 import (
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-//MEXClusterCreateClustInst calls MEXClusterCreate with a manifest created from the template
-func MEXClusterCreateClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst) error {
-	//XXX trigger off clusterInst or flavor to pick the right template: mex, aks, gke
-	mf, err := FillClusterTemplateClustInst(rootLB, clusterInst)
-	if err != nil {
-		return err
-	}
-	fixValuesInst(mf, rootLB)
-	return MEXClusterCreateManifest(mf)
-}
-
+/*
 //MEXClusterRemoveClustInst calls MEXClusterRemove with a manifest created from the template
 func MEXClusterRemoveClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst) error {
 	mf, err := FillClusterTemplateClustInst(rootLB, clusterInst)
@@ -27,7 +19,8 @@ func MEXClusterRemoveClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.Cluster
 	fixValuesInst(mf, rootLB)
 	return MEXClusterRemoveManifest(mf)
 }
-
+*/
+/*
 func FillClusterTemplateClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst) (*Manifest, error) {
 	log.DebugLog(log.DebugLevelMexos, "fill cluster template manifest cluster inst", "clustinst", clusterInst)
 	if clusterInst.Key.ClusterKey.Name == "" {
@@ -49,54 +42,11 @@ func FillClusterTemplateClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.Clus
 		Kind:          vp.Cluster.Kind, //"kubernetes",
 		ResourceGroup: clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name,
 		Flavor:        clusterInst.Flavor.Name,
-		DNSZone:       vp.Network.DNSZone, //"mobiledgex.net",
+		DNSZone:       GetCloudletDNSZone(),
 		RootLB:        rootLB.Name,
-		Region:        vp.Cluster.Region,   //us-west1
-		Zone:          vp.Cluster.Zone,     //us-west1a
-		Location:      vp.Cluster.Location, // us-west
-		NetworkScheme: vp.Network.Scheme,   //"priv-subnet,mex-k8s-net-1,10.101.X.0/24",
+		NetworkScheme: GetCloudletNetworkScheme(),
 		Swarm:         vp.Cluster.Swarm,
 	}
-
-	// // if these env variables are not set, fall back to the
-	// // existing defaults based on deployment type(operator name)
-	// data.Region = os.Getenv("CLOUDLET_REGION")
-	// data.Zone = os.Getenv("CLOUDLET_ZONE")
-	// data.Location = os.Getenv("CLOUDLET_LOCATION")
-
-	// switch clusterInst.Key.CloudletKey.OperatorKey.Name {
-	// case "gcp":
-	// 	if data.Region == "" {
-	// 		data.Region = "us-west1"
-	// 	}
-	// 	if data.Zone == "" {
-	// 		data.Zone = "us-west1-a"
-	// 	}
-	// 	if data.Location == "" {
-	// 		data.Location = "us-west"
-	// 	}
-	// 	data.Project = "still-entity-201400" // XXX
-	// case "azure":
-	// 	if data.Region == "" {
-	// 		data.Region = "centralus"
-	// 	}
-	// 	if data.Zone == "" {
-	// 		data.Zone = "centralus"
-	// 	}
-	// 	if data.Location == "" {
-	// 		data.Location = "centralus"
-	// 	}
-	// default:
-	// 	if data.Region == "" {
-	// 		data.Region = "eu-central-1"
-	// 	}
-	// 	if data.Zone == "" {
-	// 		data.Zone = "eu-central-1c"
-	// 	}
-	// 	if data.Location == "" {
-	// 		data.Location = "buckhorn"
-	// 	}
-	// }
 
 	mf, err := templateUnmarshal(&data, yamlMEXCluster)
 	if err != nil {
@@ -104,8 +54,9 @@ func FillClusterTemplateClustInst(rootLB *MEXRootLB, clusterInst *edgeproto.Clus
 	}
 	fixValuesInst(mf, rootLB)
 	return mf, nil
-}
+} */
 
+/* this function never actually did anything
 func MEXAddFlavorClusterInst(rootLB *MEXRootLB, flavor *edgeproto.ClusterFlavor) error {
 	log.DebugLog(log.DebugLevelMexos, "adding cluster inst flavor", "flavor", flavor)
 
@@ -123,11 +74,9 @@ func MEXAddFlavorClusterInst(rootLB *MEXRootLB, flavor *edgeproto.ClusterFlavor)
 		Flags:         flavor.Key.Name + "-flags",
 		NumNodes:      int(flavor.NumNodes),
 		NumMasters:    int(flavor.NumMasters),
-		NetworkScheme: vp.Network.Scheme,
-		MasterFlavor:  flavor.MasterFlavor.Name,
+		NetworkScheme: GetCloudletNetworkScheme(),
 		NodeFlavor:    flavor.NodeFlavor.Name,
 		StorageSpec:   "default", //XXX
-		Topology:      "type-1",  //XXX
 	}
 	mf, err := templateUnmarshal(&data, yamlMEXFlavor)
 	if err != nil {
@@ -136,31 +85,125 @@ func MEXAddFlavorClusterInst(rootLB *MEXRootLB, flavor *edgeproto.ClusterFlavor)
 	fixValuesInst(mf, rootLB)
 	return MEXAddFlavor(mf)
 }
-
-//MEXAppCreateAppInst creates app inst with templated manifest
-func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, app *edgeproto.App) error {
-	log.DebugLog(log.DebugLevelMexos, "mex create app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
-	mf, err := fillAppTemplate(rootLB, appInst, app, clusterInst)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "fillAppTemplate error", "error", err)
-		return err
-	}
-	fixValuesInst(mf, rootLB)
-	return MEXAppCreateAppManifest(mf)
-}
+*/
 
 //MEXAppDeleteAppInst deletes app with templated manifest
-func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, app *edgeproto.App) error {
-	log.DebugLog(log.DebugLevelMexos, "mex delete app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
-	mf, err := fillAppTemplate(rootLB, appInst, app, clusterInst)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "fillAppTemplate error", "error", err)
-		return err
+func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	log.DebugLog(log.DebugLevelMexos, "mex create app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
+
+	appDeploymentType := app.Deployment
+	clusterName := clusterInst.Key.ClusterKey.Name
+	appName := NormalizeName(app.Key.Name)
+	operatorName := NormalizeName(appInst.Key.CloudletKey.OperatorKey.Name)
+
+	//TODO values.application.template
+
+	if IsLocalDIND() {
+		masteraddr := dind.GetMasterAddr()
+		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
+
+		portDetail, err := GetPortDetail(appInst)
+		if err != nil {
+			log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "appInst", appInst, "err", err)
+			return err
+		}
+		if err := AddNginxProxy("localhost", appName, masteraddr, portDetail, dind.GetDockerNetworkName(clusterName)); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", appName, "ports", appInst.MappedPorts)
+			return err
+		}
+		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
+		err = runKubectlCreateApp(clusterInst, appInst, app.DeploymentManifest)
+		if err != nil {
+			log.DebugLog(log.DebugLevelMexos, "error creating dind app")
+			return err
+		}
+		return nil
 	}
-	fixValuesInst(mf, rootLB)
-	return MEXAppDeleteAppManifest(mf)
+
+	switch operatorName {
+	case cloudcommon.OperatorGCP:
+		fallthrough
+	case cloudcommon.OperatorAzure:
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			return runKubectlCreateApp(clusterInst, appInst, app.DeploymentManifest)
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
+			return fmt.Errorf("not yet supported")
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			return fmt.Errorf("not yet supported")
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeDockerSwarm {
+			return fmt.Errorf("not yet supported")
+		}
+		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
+	default:
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			return CreateKubernetesAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			return CreateHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+		}
+		//TODO -- support these later
+		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
+		//	return CreateQCOW2AppManifest(mf)  TODO: support this later
+		//else if appDeploymentType == cloudcommon.AppDeploymentTypeDockerSwarm {
+		//	return CreateDockerSwarmAppManifest(mf)
+		//}
+		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
+	}
 }
 
+func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	log.DebugLog(log.DebugLevelMexos, "mex delete app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
+	appDeploymentType := app.Deployment
+	operatorName := NormalizeName(appInst.Key.CloudletKey.OperatorKey.Name)
+	appName := NormalizeName(app.Key.Name)
+
+	if IsLocalDIND() {
+		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
+		err := runKubectlDeleteApp(clusterInst, appInst, app.DeploymentManifest)
+		if err != nil {
+			return err
+		}
+
+		log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
+
+		if err = DeleteNginxProxy("localhost", appName); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName)
+			return err
+		}
+
+		return nil
+
+	}
+	switch operatorName {
+	case cloudcommon.OperatorGCP:
+		fallthrough
+	case cloudcommon.OperatorAzure:
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			return runKubectlDeleteApp(clusterInst, appInst, app.DeploymentManifest)
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
+			return fmt.Errorf("not yet supported")
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			return fmt.Errorf("not yet supported")
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeDockerSwarm {
+			return fmt.Errorf("not yet supported")
+		}
+		return fmt.Errorf("unknown image type %s", appDeploymentType)
+	default:
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			return DeleteKubernetesAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			return DeleteHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+		}
+		//TODO
+		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
+		//	return DeleteQCOW2AppManifest(mf)
+		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeDockerSwarm {
+		//	return DeleteDockerSwarmAppManifest(mf)
+		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
+	}
+}
+
+/*
 func fixValuesInst(mf *Manifest, rootLB *MEXRootLB) error {
 	if mf.Values.Kind == "" {
 		mf.Values = rootLB.PlatConf.Values
@@ -169,4 +212,4 @@ func fixValuesInst(mf *Manifest, rootLB *MEXRootLB) error {
 		log.DebugLog(log.DebugLevelMexos, "warning, missing mf values")
 	}
 	return nil
-}
+}*/

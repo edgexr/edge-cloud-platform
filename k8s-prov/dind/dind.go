@@ -36,7 +36,7 @@ func GetDockerNetworkName(clusterName string) string {
 }
 
 //CreateDINDCluster creates kubernetes cluster on local mac
-func CreateDINDCluster(group, name string) error {
+func CreateDINDCluster(name string) error {
 	os.Setenv("DIND_LABEL", name)
 	os.Setenv("CLUSTER_ID", getClusterID())
 	log.DebugLog(log.DebugLevelMexos, "CreateDINDCluster via dind-cluster-v1.13.sh", "name", name, "clusterid", getClusterID())

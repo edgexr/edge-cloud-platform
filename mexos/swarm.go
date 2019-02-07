@@ -1,26 +1,18 @@
 package mexos
 
-import (
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/ghodss/yaml"
-	"github.com/mobiledgex/edge-cloud/log"
-)
-
-func CreateDockerSwarm(mf *Manifest, rootLB *MEXRootLB) error {
+/*
+func CreateDockerSwarm(clusterName, rootLBName) error {
 	//TODO independent swarm cluster without k8s
-	log.DebugLog(log.DebugLevelMexos, "creating docker swarm", "name", mf.Metadata.Swarm)
-	name, err := FindClusterWithKey(mf, mf.Spec.Key)
+	log.DebugLog(log.DebugLevelMexos, "creating docker swarm", "name", clusterName)
+	name, err := FindClusterWithKey(clusterName)
 	if err != nil {
 		return err
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
 	}
-	masteraddr, err := FindNodeIP(mf, name)
+	masteraddr, err := FindNodeIP(name)
 	if err != nil {
 		return err
 	}
@@ -69,6 +61,7 @@ func CreateDockerSwarm(mf *Manifest, rootLB *MEXRootLB) error {
 	return nil
 }
 
+
 //TODO make it support full docker-compose file spec.
 
 type DockerService struct {
@@ -81,6 +74,7 @@ type DockerCompose struct {
 	Version  string                   `json:"version"`
 	Services map[string]DockerService `json:"services"`
 }
+
 
 func CreateDockerSwarmAppManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "create docker-swarm app")
@@ -95,15 +89,15 @@ func CreateDockerSwarmAppManifest(mf *Manifest) error {
 	if err != nil {
 		return fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
 	}
-	masteraddr, err := FindNodeIP(mf, name)
+	masteraddr, err := FindNodeIP(name)
 	if err != nil {
 		return err
 	}
 	var cmd string
-	if mexEnv(mf, "MEX_DOCKER_REG_PASS") == "" {
+	if GetCloudletDockerPass() == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return err
 	}
@@ -199,15 +193,15 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 	if err != nil {
 		return fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
 	}
-	masteraddr, err := FindNodeIP(mf, name)
+	masteraddr, err := FindNodeIP(name)
 	if err != nil {
 		return err
 	}
 	var cmd string
-	if mexEnv(mf, "MEX_DOCKER_REG_PASS") == "" {
+	if GetCloudletDockerPass() == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return err
 	}
@@ -236,7 +230,7 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "removing proxy and security rules", "name", mf.Metadata.Name)
-	if err = DeleteProxySecurityRules(rootLB, mf, masteraddr); err != nil {
+	if err = DeleteProxySecurityRules(rootLB, mf, masteraddr, appInst); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
 		return err
 	}
@@ -244,3 +238,4 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 	// TODO add custom DNS entries per app service endpoints
 	return nil
 }
+*/

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -55,22 +56,23 @@ func NormalizeName(name string) string {
 	return util.K8SSanitize(name) // XXX
 }
 
-func SeedDockerSecret(mf *Manifest, rootLB *MEXRootLB) error {
+func SeedDockerSecret(clusterName, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "seed docker secret")
-	name, err := FindClusterWithKey(mf, mf.Spec.Key)
+
+	master, err := FindClusterMaster(clusterName)
 	if err != nil {
 		return err
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
 	}
-	masteraddr, err := FindNodeIP(mf, name)
+	masteraddr, err := FindNodeIP(master)
 	if err != nil {
 		return err
 	}
 	var out string
-	cmd := fmt.Sprintf("echo %s > .docker-pass", mexEnv(mf, "MEX_DOCKER_REG_PASS"))
+	cmd := fmt.Sprintf("echo %s > .docker-pass", GetCloudletDockerPass())
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("can't store docker password, %s, %v", out, err)
@@ -82,27 +84,31 @@ func SeedDockerSecret(mf *Manifest, rootLB *MEXRootLB) error {
 		return fmt.Errorf("can't copy docker password to k8s-master, %s, %v", out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "copied over docker password")
-	cmd = fmt.Sprintf("ssh -o %s -o %s -i id_rsa_mex %s 'cat .docker-pass| docker login -u mobiledgex --password-stdin %s'", sshOpts[0], sshOpts[1], masteraddr, mf.Values.Registry.Docker)
+	cmd = fmt.Sprintf("ssh -o %s -o %s -i id_rsa_mex %s 'cat .docker-pass| docker login -u mobiledgex --password-stdin %s'", sshOpts[0], sshOpts[1], masteraddr, GetCloudletDockerRegistry())
 	//TODO allow different docker registry as specified in the manifest
 	out, err = client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("can't docker login on k8s-master to %s, %s, %v", mf.Values.Registry.Docker, out, err)
+		return fmt.Errorf("can't docker login on k8s-master to %s, %s, %v", GetCloudletDockerRegistry(), out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "docker login ok")
 	return nil
 }
 
-func GetHTPassword(mf *Manifest, rootLB *MEXRootLB) error {
+func GetHTPassword(rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "get htpasswd")
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
 	}
-	cmd := fmt.Sprintf("scp -o %s -o %s -i id_rsa_mex mobiledgex@%s:files-repo/mobiledgex/%s .", sshOpts[0], sshOpts[1], mf.Values.Registry.Name, HTPasswdFile)
+	cmd := fmt.Sprintf("scp -o %s -o %s -i id_rsa_mex mobiledgex@%s:files-repo/mobiledgex/%s .", sshOpts[0], sshOpts[1], GetCloudletRegistryFileServer(), HTPasswdFile)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("can't get htpasswd file, %v, %s", err, out)
 	}
 	log.DebugLog(log.DebugLevelMexos, "downloaded htpasswd")
 	return nil
+}
+
+func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
+	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }

@@ -2,9 +2,9 @@ package mexos
 
 //MetadataDetail has metadata
 type MetadataDetail struct {
-	Name          string `json:"name"`
-	Tags          string `json:"tags"`
-	Tenant        string `json:"tenant"`
+	Name string `json:"name"`
+	Tags string `json:"tags"`
+	//	Tenant        string `json:"tenant"`
 	Region        string `json:"region"`
 	Zone          string `json:"zone"`
 	Location      string `json:"location"`
@@ -70,25 +70,26 @@ type PortDetail struct {
 
 //SpecDetail holds spec block
 type SpecDetail struct {
-	Flavor          string           `json:"flavor"` // appInst flavor?
-	FlavorDetail    FlavorDetailInfo `json:"flavordetail"`
-	Flags           string           `json:"flags"`
-	RootLB          string           `json:"rootlb"`
-	Image           string           `json:"image"`
-	ImageFlavor     string           `json:"imageflavor"`
-	ImageType       string           `json:"imagetype"`
-	DockerRegistry  string           `json:"dockerregistry"`
-	ExternalNetwork string           `json:"externalnetwork"`
-	ExternalRouter  string           `json:"externalrouter"`
-	Options         string           `json:"options"`
-	ProxyPath       string           `json:"proxypath"`
-	Ports           []PortDetail     `json:"ports"`
-	Command         []string         `json:"command"`
-	IPAccess        string           `json:"ipaccess"`
-	URI             string           `json:"uri"`
-	Key             string           `json:"key"`
-	NetworkScheme   string           `json:"networkscheme"`
-	Agent           AgentDetail      `json:"agent"`
+	Flavor         string           `json:"flavor"` // appInst flavor?
+	FlavorDetail   FlavorDetailInfo `json:"flavordetail"`
+	Flags          string           `json:"flags"`
+	RootLB         string           `json:"rootlb"`
+	Image          string           `json:"image"`
+	ImageFlavor    string           `json:"imageflavor"`
+	ImageType      string           `json:"imagetype"`
+	DockerRegistry string           `json:"dockerregistry"`
+	//	ExternalNetwork string           `json:"externalnetwork"`
+	//	ExternalRouter  string           `json:"externalrouter"`
+	Options   string       `json:"options"`
+	ProxyPath string       `json:"proxypath"`
+	Ports     []PortDetail `json:"ports"`
+	Command   []string     `json:"command"`
+
+	IPAccess      string `json:"ipaccess"`
+	URI           string `json:"uri"`
+	Key           string `json:"key"`
+	NetworkScheme string `json:"networkscheme"`
+	//	Agent         AgentDetail `json:"agent"`
 }
 
 type AppInstConfigDetail struct {
@@ -132,7 +133,6 @@ type ClusterValue struct {
 	Zone     string `json:"zone"`
 	Region   string `json:"region"`
 	Location string `json:"location"`
-	OSImage  string `json:"osimage"`
 	Tenant   string `json:"tenant"`
 	Swarm    string `json:"swarm"`
 }
@@ -161,7 +161,6 @@ type NetworkValue struct {
 
 type OperatorValue struct {
 	Name string `json:"name"`
-	Kind string `json:"kind"`
 }
 
 type RegistryValue struct {
@@ -176,18 +175,17 @@ type ResourceValue struct {
 }
 
 type ValueDetail struct {
-	Name        string           `json:"name"`
-	Kind        string           `json:"kind"`
-	Base        string           `json:"base"`
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+	//	Base        string           `json:"base"`
 	Application AppValue         `json:"application"`
 	Agent       AgentValue       `json:"agent"`
 	Cluster     ClusterValue     `json:"cluster"`
+	Operator    OperatorValue    `json:"operator"`
 	Network     NetworkValue     `json:"network"`
 	Registry    RegistryValue    `json:"registry"`
-	Operator    OperatorValue    `json:"operator"`
 	Resource    ResourceValue    `json:"resource"`
 	Environment EnvironmentValue `json:"environment"`
-	VaultEnvMap map[string]string
 }
 
 type EnvData struct {

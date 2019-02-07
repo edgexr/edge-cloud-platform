@@ -6,20 +6,24 @@ import (
 	"strings"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // TODO service to periodically clean up the leftover rules
 
-func AddProxySecurityRules(rootLB *MEXRootLB, mf *Manifest, masteraddr string) error {
-	// rootLBIPaddr, err := GetServerIPAddr(mf, mf.Values.Network.External, rootLB.Name)
-	// if err != nil {
-	// 	log.DebugLog(log.DebugLevelMexos, "cannot get rootlb IP address", "error", err)
-	// 	return fmt.Errorf("cannot deploy kubernetes app, cannot get rootlb IP")
-	// }
-	sr := GetMEXSecurityRule(mf)
+func AddProxySecurityRules(rootLB *MEXRootLB, masteraddr string, appInst *edgeproto.AppInst) error {
+
+	name := NormalizeName(appInst.Key.AppKey.Name)
+
+	ports, err := GetPortDetail(appInst)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "err", err)
+		return err
+	}
+	sr := GetCloudletSecurityRule()
 	allowedClientCIDR := GetAllowedClientCIDR()
-	for _, port := range mf.Spec.Ports {
+	for _, port := range ports {
 		for _, sec := range []struct {
 			addr string
 			port int
@@ -33,35 +37,38 @@ func AddProxySecurityRules(rootLB *MEXRootLB, mf *Manifest, masteraddr string) e
 			// 		log.DebugLog(log.DebugLevelMexos, "warning, error while adding security rule", "cidr", addr, "securityrule", sr, "port", port, "proto", proto)
 			// 	}
 			// }(sec.addr, sec.port, port.Proto)
-			if err := AddSecurityRuleCIDR(mf, sec.addr, strings.ToLower(port.Proto), sr, sec.port); err != nil {
+			if err := AddSecurityRuleCIDR(sec.addr, strings.ToLower(port.Proto), sr, sec.port); err != nil {
 				log.DebugLog(log.DebugLevelMexos, "warning, error while adding security rule", "addr", sec.addr, "port", sec.port, "proto", port.Proto)
 			}
 		}
 	}
-	if len(mf.Spec.Ports) > 0 {
-		if err := AddNginxProxy(mf, rootLB.Name, mf.Metadata.Name, masteraddr, mf.Spec.Ports, ""); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
+	if len(ports) > 0 {
+		if err := AddNginxProxy(rootLB.Name, name, masteraddr, ports, ""); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", name)
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "added nginx proxy", "name", mf.Metadata.Name, "ports", mf.Spec.Ports)
+	log.DebugLog(log.DebugLevelMexos, "added nginx proxy", "name", name, "ports", appInst.MappedPorts)
 	return nil
 }
 
-func DeleteProxySecurityRules(rootLB *MEXRootLB, mf *Manifest, ipaddr string) error {
-	log.DebugLog(log.DebugLevelMexos, "delete spec ports", "ports", mf.Spec.Ports)
-	err := DeleteNginxProxy(mf, rootLB.Name, mf.Metadata.Name)
+func DeleteProxySecurityRules(rootLB *MEXRootLB, ipaddr string, appInst *edgeproto.AppInst) error {
+	appName := NormalizeName(appInst.Key.AppKey.Name)
+
+	log.DebugLog(log.DebugLevelMexos, "delete proxy rules", "name", appName)
+	err := DeleteNginxProxy(rootLB.Name, appName)
+
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
+		log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "rootlb", rootLB.Name, "error", err)
 	}
-	if err := DeleteSecurityRule(mf, ipaddr); err != nil {
+	if err := DeleteSecurityRule(ipaddr); err != nil {
 		return err
 	}
 	// TODO - implement the clean up of security rules
 	return nil
 }
 
-func AddSecurityRuleCIDR(mf *Manifest, cidr string, proto string, name string, port int) error {
+func AddSecurityRuleCIDR(cidr string, proto string, name string, port int) error {
 	portStr := fmt.Sprintf("%d", port)
 	out, err := sh.Command("openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", portStr, "--ingress", name).Output()
 	if err != nil {
@@ -78,7 +85,7 @@ type SecurityRule struct {
 	Proto     string `json:"IP Protocol"`
 }
 
-func DeleteSecurityRule(mf *Manifest, sip string) error {
+func DeleteSecurityRule(sip string) error {
 	sr := []SecurityRule{}
 	dat, err := sh.Command("openstack", "security", "group", "rule", "list", "-f", "json").Output()
 	if err != nil {

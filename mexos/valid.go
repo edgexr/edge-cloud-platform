@@ -2,7 +2,6 @@ package mexos
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
@@ -52,13 +51,6 @@ func CheckVals(vals interface{}) error {
 	}
 	validMEXOSEnv = true
 	return nil
-}
-
-func IsValidMEXOSEnv() bool {
-	if os.Getenv("MEX_CF_KEY") == "" { // XXX
-		return false
-	}
-	return validMEXOSEnv
 }
 
 //ValidateNetSpec parses and validates the netSpec

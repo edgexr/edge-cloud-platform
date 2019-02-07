@@ -10,8 +10,8 @@ import (
 var defaultPrivateNetRange = "10.101.X.0/24"
 
 //GetInternalIP returns IP of the server
-func GetInternalIP(mf *Manifest, name string) (string, error) {
-	sd, err := GetServerDetails(mf, name)
+func GetInternalIP(name string) (string, error) {
+	sd, err := GetServerDetails(name)
 	if err != nil {
 		return "", err
 	}
@@ -23,8 +23,8 @@ func GetInternalIP(mf *Manifest, name string) (string, error) {
 }
 
 //GetInternalCIDR returns CIDR of server
-func GetInternalCIDR(mf *Manifest, name string) (string, error) {
-	addr, err := GetInternalIP(mf, name)
+func GetInternalCIDR(name string) (string, error) {
+	addr, err := GetInternalIP(name)
 	if err != nil {
 		return "", err
 	}
@@ -40,11 +40,11 @@ func GetAllowedClientCIDR() string {
 //XXX allow creating more than one LB
 
 //GetServerIPAddr gets the server IP
-func GetServerIPAddr(mf *Manifest, networkName, serverName string) (string, error) {
+func GetServerIPAddr(networkName, serverName string) (string, error) {
 	//TODO: mexosagent cache
 	//log.DebugLog(log.DebugLevelMexos, "get server ip addr", "networkname", networkName, "servername", serverName)
 	//sd, err := GetServerDetails(rootLB)
-	sd, err := GetServerDetails(mf, serverName)
+	sd, err := GetServerDetails(serverName)
 	if err != nil {
 		return "", err
 	}
@@ -81,18 +81,18 @@ func GetServerIPAddr(mf *Manifest, networkName, serverName string) (string, erro
 }
 
 //FindNodeIP finds IP for the given node
-func FindNodeIP(mf *Manifest, name string) (string, error) {
+func FindNodeIP(name string) (string, error) {
 	//log.DebugLog(log.DebugLevelMexos, "find node ip", "name", name)
 	if name == "" {
 		return "", fmt.Errorf("empty name")
 	}
-	srvs, err := ListServers(mf)
+	srvs, err := ListServers()
 	if err != nil {
 		return "", err
 	}
 	for _, s := range srvs {
 		if s.Status == "ACTIVE" && s.Name == name {
-			ipaddr, err := GetInternalIP(mf, s.Name)
+			ipaddr, err := GetInternalIP(s.Name)
 			if err != nil {
 				return "", fmt.Errorf("can't get IP for %s, %v", s.Name, err)
 			}

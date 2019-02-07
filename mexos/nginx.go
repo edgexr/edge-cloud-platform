@@ -8,11 +8,11 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-func AddNginxProxy(mf *Manifest, rootLBName, name, ipaddr string, ports []PortDetail, network string) error {
+func AddNginxProxy(rootLBName, name, ipaddr string, ports []PortDetail, network string) error {
 	log.DebugLog(log.DebugLevelMexos, "add nginx proxy", "name", name, "network", network, "ports", ports)
 
 	request := gorequest.New()
-	npURI := fmt.Sprintf("http://%s:%s/v1/nginx", rootLBName, mf.Values.Agent.Port)
+	npURI := fmt.Sprintf("http://%s:%s/v1/nginx", rootLBName, GetCloudletMexosAgentPort())
 	pl, err := FormNginxProxyRequest(ports, ipaddr, name, network)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot form nginx proxy request")
@@ -73,10 +73,10 @@ func FormNginxProxyRequest(ports []PortDetail, ipaddr string, name string, netwo
 	return &pl, nil
 }
 
-func DeleteNginxProxy(mf *Manifest, rootLBName, name string) error {
+func DeleteNginxProxy(rootLBName, name string) error {
 	log.DebugLog(log.DebugLevelMexos, "delete nginx proxy", "name", name)
 	request := gorequest.New()
-	npURI := fmt.Sprintf("http://%s:%s/v1/nginx", rootLBName, mf.Values.Agent.Port)
+	npURI := fmt.Sprintf("http://%s:%s/v1/nginx", rootLBName, GetCloudletMexosAgentPort())
 	pl := fmt.Sprintf(`{"message":"delete","name":"%s"}`, name)
 	log.DebugLog(log.DebugLevelMexos, "nginx proxy delete request post", "request", pl)
 	resp, body, errs := request.Post(npURI).Set("Content-Type", "application/json").Send(pl).End()
@@ -91,10 +91,10 @@ func DeleteNginxProxy(mf *Manifest, rootLBName, name string) error {
 	return fmt.Errorf("cannot delete nginx proxy, resp %v", resp)
 }
 
-func AddNginxKubectlProxy(mf *Manifest, rootLBName, name string, portnum int) error {
+func AddNginxKubectlProxy(rootLBName, name string, portnum int) error {
 	log.DebugLog(log.DebugLevelMexos, "add nginx kubectl proxy", "name", name)
 	request := gorequest.New()
-	npURI := fmt.Sprintf("http://%s:%s/v1/nginx-kcp", rootLBName, mf.Values.Agent.Port)
+	npURI := fmt.Sprintf("http://%s:%s/v1/nginx-kcp", rootLBName, GetCloudletMexosAgentPort())
 	pl, err := FormNginxKCProxyRequest(name, portnum)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot form nginx kubectl proxy request")
@@ -113,9 +113,9 @@ func AddNginxKubectlProxy(mf *Manifest, rootLBName, name string, portnum int) er
 	return fmt.Errorf("cannot add nginx kubectl proxy, resp %v", resp)
 }
 
-func DeleteNginxKCProxy(mf *Manifest, rootLBName, name string) error {
+func DeleteNginxKCProxy(rootLBName, name string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting nginx kubectl proxy", "name", name)
-	client, err := GetSSHClient(mf, rootLBName, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func DeleteNginxKCProxy(mf *Manifest, rootLBName, name string) error {
 		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete container", "name", name+kcproxySuffix, "error", err, "out", out)
 	}
 	request := gorequest.New()
-	npURI := fmt.Sprintf("http://%s:%s/v1/nginx-kcp", rootLBName, mf.Values.Agent.Port)
+	npURI := fmt.Sprintf("http://%s:%s/v1/nginx-kcp", rootLBName, GetCloudletMexosAgentPort())
 	pl := fmt.Sprintf(`{"message":"delete","name":"%s"}`, name)
 	log.DebugLog(log.DebugLevelMexos, "nginx kubectl proxy delete request post", "request", pl)
 	resp, body, errs := request.Post(npURI).Set("Content-Type", "application/json").Send(pl).End()

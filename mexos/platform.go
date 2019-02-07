@@ -1,11 +1,6 @@
 package mexos
 
-import (
-	"fmt"
-
-	"github.com/mobiledgex/edge-cloud/log"
-)
-
+/*
 func setPlatConfManifest(mf *Manifest) error {
 	rootLB, err := getRootLB(mf.Spec.RootLB)
 	if err != nil {
@@ -18,6 +13,7 @@ func setPlatConfManifest(mf *Manifest) error {
 	return nil
 }
 
+
 func setPlatConf(rootLB *MEXRootLB, mf *Manifest) {
 	log.DebugLog(log.DebugLevelMexos, "rootlb platconf set")
 	if rootLB == nil {
@@ -25,3 +21,4 @@ func setPlatConf(rootLB *MEXRootLB, mf *Manifest) {
 	}
 	rootLB.PlatConf = mf
 }
+*/

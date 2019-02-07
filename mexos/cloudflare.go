@@ -1,11 +1,6 @@
 package mexos
 
-import (
-	"fmt"
-
-	"github.com/mobiledgex/edge-cloud/log"
-)
-
+/*
 //CheckCredentialsCF checks for Cloudflare
 func CheckCredentialsCF(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "check for cloudflare credentials")
@@ -16,3 +11,4 @@ func CheckCredentialsCF(mf *Manifest) error {
 	}
 	return nil
 }
+*/

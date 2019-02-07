@@ -5,39 +5,39 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/gcloud"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var GCPDefaultProjectID = "still-entity-201400" // XXX
-
-func gcloudCreateGKE(mf *Manifest) error {
+func gcloudCreateGKE(clusterInst *edgeproto.ClusterInst) error {
 	var err error
-	if mf.Metadata.Project == "" {
-		log.DebugLog(log.DebugLevelMexos, "warning, empty gcp project ID, using default", "default", GCPDefaultProjectID)
-	}
-	if err = gcloud.SetProject(mf.Metadata.Project); err != nil {
+	project := GetCloudletGCPProject()
+	zone := GetCloudletGCPZone()
+	clusterName := clusterInst.Key.ClusterKey.Name
+
+	if err = gcloud.SetProject(project); err != nil {
 		return err
 	}
-	if err = gcloud.SetZone(mf.Metadata.Zone); err != nil {
+	if err = gcloud.SetZone(zone); err != nil {
 		return err
 	}
-	if err = gcloud.CreateGKECluster(mf.Metadata.Name); err != nil {
+	if err = gcloud.CreateGKECluster(clusterName); err != nil {
 		return err
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done
 	time.Sleep(3 * time.Second)
 	saveKubeconfig()
-	if err = gcloud.GetGKECredentials(mf.Metadata.Name); err != nil {
+	if err = gcloud.GetGKECredentials(clusterName); err != nil {
 		return err
 	}
-	kconf, err := GetKconf(mf, false) //XXX
+	kconf, err := GetKconf(clusterInst, false) //XXX
 	if err != nil {
-		return fmt.Errorf("cannot get kconf, %v, %v, %v", mf, kconf, err)
+		return fmt.Errorf("cannot get kconf, %v, %v", clusterInst, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "warning, using default config") //XXX
 	if err = copyFile(defaultKubeconfig(), kconf); err != nil {
 		return fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "created gke", "name", mf.Spec.Key)
-	return CreateDockerRegistrySecret(mf)
+	log.DebugLog(log.DebugLevelMexos, "created gke", "name", clusterName)
+	return CreateDockerRegistrySecret(clusterInst, "")
 }

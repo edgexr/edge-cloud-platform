@@ -13,8 +13,8 @@ import (
 //  network information. Using that it further gets subnet information. Inside that subnet information
 //  there should be gateway IP if the network is set up correctly.
 // Not to be confused with GetRouterDetailExternalGateway.
-func GetExternalGateway(mf *Manifest, extNetName string) (string, error) {
-	nd, err := GetNetworkDetail(mf, extNetName)
+func GetExternalGateway(extNetName string) (string, error) {
+	nd, err := GetNetworkDetail(extNetName)
 	if err != nil {
 		return "", fmt.Errorf("can't get details for external network %s, %v", extNetName, err)
 	}
@@ -31,7 +31,7 @@ func GetExternalGateway(mf *Manifest, extNetName string) (string, error) {
 		return "", fmt.Errorf("no subnets for %s", extNetName)
 	}
 	//XXX just use first subnet -- may not work in all cases, but there is no tagging done rightly yet
-	sd, err := GetSubnetDetail(mf, subnets[0])
+	sd, err := GetSubnetDetail(subnets[0])
 	if err != nil {
 		return "", fmt.Errorf("cannot get details for subnet %s, %v", subnets[0], err)
 	}
@@ -46,7 +46,7 @@ func GetExternalGateway(mf *Manifest, extNetName string) (string, error) {
 //GetNextSubnetRange will find the CIDR for the next range of subnet that can be created. For example,
 // if the subnet detail we get has 10.101.101.0/24 then the next one can be 10.101.102.0/24
 func GetNextSubnetRange(mf *Manifest, subnetName string) (string, error) {
-	sd, err := GetSubnetDetail(mf, subnetName)
+	sd, err := GetSubnetDetail(subnetName)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +70,7 @@ func GetNextSubnetRange(mf *Manifest, subnetName string) (string, error) {
 // accessible from private networks to route packets to the external network.
 // The GetExternalGateway gets the gateway for the outside network.   This is
 // for the packets to be routed out to the external network, i.e. internet.
-func GetRouterDetailExternalGateway(mf *Manifest, rd *OSRouterDetail) (*OSExternalGateway, error) {
+func GetRouterDetailExternalGateway(rd *OSRouterDetail) (*OSExternalGateway, error) {
 	if rd.ExternalGatewayInfo == "" {
 		return nil, fmt.Errorf("empty external gateway info")
 	}
@@ -85,7 +85,7 @@ func GetRouterDetailExternalGateway(mf *Manifest, rd *OSRouterDetail) (*OSExtern
 
 // GetRouterDetailInterfaces gets the list of interfaces on the router. For example, each private
 // subnet connected to the router will be listed here with own interface definition.
-func GetRouterDetailInterfaces(mf *Manifest, rd *OSRouterDetail) ([]OSRouterInterface, error) {
+func GetRouterDetailInterfaces(rd *OSRouterDetail) ([]OSRouterInterface, error) {
 	if rd.InterfacesInfo == "" {
 		return nil, fmt.Errorf("missing interfaces info in router details")
 	}

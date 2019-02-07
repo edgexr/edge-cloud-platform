@@ -31,40 +31,37 @@ func checkPEMFile(fn string) error {
 }
 
 //AcquireCertificates obtains certficates from Letsencrypt over ACME. It should be used carefully. The API calls have quota.
-func AcquireCertificates(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
+func AcquireCertificates(rootLB *MEXRootLB, fqdn string) error {
 	log.DebugLog(log.DebugLevelMexos, "acquiring certificates for FQDN", "FQDN", fqdn)
 	if rootLB == nil {
 		return fmt.Errorf("cannot acquire certs, rootLB is null")
 	}
-	if mf.Values.Network.External == "" {
-		return fmt.Errorf("acquire certificate, missing external network in manifest")
-	}
-	if cerr := CheckCredentialsCF(mf); cerr != nil {
-		return cerr
+	if GetCloudletExternalNetwork() == "" {
+		return fmt.Errorf("acquire certificate, missing external network ")
 	}
 	kf := PrivateSSHKey()
-	srcfile := fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s/fullchain.cer", mf.Values.Registry.Name, fqdn)
+	srcfile := fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s/fullchain.cer", GetCloudletRegistryFileServer(), fqdn)
 	dkey := fmt.Sprintf("%s/%s.key", fqdn, fqdn)
 	certfile := "cert.pem"
 	keyfile := "key.pem"
-	log.DebugLog(log.DebugLevelMexos, "trying to get cached cert files")
-	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, certfile).Output()
+	log.DebugLog(log.DebugLevelMexos, "trying to get cached cert files", "srcfile", srcfile)
+	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, certfile).CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, failed to get cached cert file", "src", srcfile, "cert", certfile, "error", err, "out", out)
 	} else if checkPEMFile(certfile) == nil {
-		srcfile = fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s", mf.Values.Registry.Name, dkey)
+		srcfile = fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s", GetCloudletRegistryFileServer(), dkey)
 		out, err = sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, keyfile).Output()
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, failed to get cached key file", "src", srcfile, "cert", certfile, "error", err, "out", out)
 		} else if checkPEMFile(keyfile) == nil {
 			//because Letsencrypt complains if we get certs repeated for the same fqdn
 			log.DebugLog(log.DebugLevelMexos, "got cached certs from registry", "FQDN", fqdn)
-			addr, ierr := GetServerIPAddr(mf, mf.Values.Network.External, fqdn) //XXX should just use fqdn but paranoid
+			addr, ierr := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn) //XXX should just use fqdn but paranoid
 			if ierr != nil {
 				log.DebugLog(log.DebugLevelMexos, "failed to get server ip addr", "FQDN", fqdn, "error", ierr)
 				return ierr
 			}
-			client, err := GetSSHClient(mf, fqdn, mf.Values.Network.External, sshUser)
+			client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), sshUser)
 			if err != nil {
 				return fmt.Errorf("can't get ssh client for cert, %v", err)
 			}
@@ -83,7 +80,7 @@ func AcquireCertificates(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
 		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "did not get cached cert and key files, will try to acquire new cert")
-	client, err := GetSSHClient(mf, fqdn, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for acme.sh, %v", err)
 	}
@@ -93,7 +90,9 @@ func AcquireCertificates(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
 	if err == nil {
 		return nil
 	}
-	cmd = fmt.Sprintf("docker run --rm -e CF_Key=%s -e CF_Email=%s -v `pwd`:/acme.sh --net=host neilpang/acme.sh --issue -d %s --dns dns_cf", mexEnv(mf, "MEX_CF_KEY"), mexEnv(mf, "MEX_CF_USER"), fqdn)
+	cmd = fmt.Sprintf("docker run --rm -e CF_Key=%s -e CF_Email=%s -v `pwd`:/acme.sh --net=host neilpang/acme.sh --issue -d %s --dns dns_cf", GetCloudletCFKey(), GetCloudletCFUser(), fqdn)
+	log.DebugLog(log.DebugLevelMexos, "running acme.sh to get cert", "cmd", cmd)
+
 	res, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error running acme.sh docker, %s, %v", res, err)
@@ -125,7 +124,7 @@ func AcquireCertificates(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
 			return fmt.Errorf("cannot copy %s to /root, %v, %s", d.dest, err, out)
 		}
 	}
-	cmd = fmt.Sprintf("scp -o %s -o %s -i id_rsa_mex -r %s mobiledgex@%s:files-repo/certs", sshOpts[0], sshOpts[1], fqdn, mf.Values.Registry.Name) // XXX
+	cmd = fmt.Sprintf("scp -o %s -o %s -i id_rsa_mex -r %s mobiledgex@%s:files-repo/certs", sshOpts[0], sshOpts[1], fqdn, GetCloudletRegistryFileServer()) // XXX
 	res, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to upload certs for %s, %v, %v", fqdn, err, res)
