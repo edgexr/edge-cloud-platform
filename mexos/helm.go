@@ -2,6 +2,7 @@ package mexos
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -10,21 +11,33 @@ import (
 func DeleteHelmAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, kubeManifest string, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	log.DebugLog(log.DebugLevelMexos, "delete kubernetes helm app")
 
-	clusterName := clusterInst.Key.ClusterKey.Name
 	appName := NormalizeName(app.Key.Name)
+	clusterName := clusterInst.Key.ClusterKey.Name
 
+	var err error
+	if rootLB == nil {
+		return fmt.Errorf("cannot delete helm app, rootLB is null")
+	}
 	kp, err := ValidateKubernetesParameters(clusterInst, rootLB, clusterName)
 	if err != nil {
 		return err
 	}
-	// remove DNS entries
-	if err = KubeDeleteDNSRecords(rootLB, kp, appInst.Uri, appName); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+	if CloudletIsLocalDIND() {
+		// remove DNS entries
+		if err = deleteAppDNS(kp, appInst.Uri, appName); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		}
+	} else {
+		// remove DNS entries
+		if err = KubeDeleteDNSRecords(rootLB, kp, appInst.Uri, appName); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		}
+		// remove Security rules
+		if err = DeleteProxySecurityRules(rootLB, kp.ipaddr, appInst); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
+		}
 	}
-	// remove Security rules
-	if err = DeleteProxySecurityRules(rootLB, kp.ipaddr, appInst); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
-	}
+
 	cmd := fmt.Sprintf("%s helm delete --purge %s", kp.kubeconfig, appName)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
@@ -40,7 +53,11 @@ func CreateHelmAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, ku
 	clusterName := clusterInst.Key.ClusterKey.Name
 	appName := NormalizeName(app.Key.Name)
 	appImage := app.ImagePath
+	var err error
 
+	if rootLB == nil {
+		return fmt.Errorf("cannot create helm app, rootLB is null")
+	}
 	kp, err := ValidateKubernetesParameters(clusterInst, rootLB, clusterName)
 	if err != nil {
 		return err
@@ -75,21 +92,39 @@ func CreateHelmAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, ku
 		log.DebugLog(log.DebugLevelMexos, "helm tiller initialized")
 	}
 
-	cmd = fmt.Sprintf("%s helm install %s --name %s", kp.kubeconfig, appImage, appName)
+	helmOpts := ""
+	// XXX This gets helm's prometheus able to query kubelet metrics.
+	// This can be removed once Lev passes in an option in the yaml to
+	// set the helm command line options.
+	prom, err := regexp.MatchString("prometheus", appName)
+	if err == nil && prom {
+		log.DebugLog(log.DebugLevelMexos, "setting helm prometheus option")
+		helmOpts = "--set kubelet.serviceMonitor.https=true"
+	}
+	cmd = fmt.Sprintf("%s helm install %s --name %s %s", kp.kubeconfig, appImage, appName, helmOpts)
 	out, err = kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying helm chart, %s, %s, %v", cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied helm chart")
-	// Add security rules
-	if err = AddProxySecurityRules(rootLB, kp.ipaddr, appInst); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
-		return err
-	}
-
-	if err = KubeAddDNSRecords(rootLB, kp, appInst.Uri, appName); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
-		return err
+	if CloudletIsLocalDIND() {
+		// Add DNS Zone
+		if err = createAppDNS(kp, appInst.Uri, appName); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
+			return err
+		}
+	} else {
+		// Add security rules
+		if err = AddProxySecurityRules(rootLB, kp.ipaddr, appInst); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
+			return err
+		}
+		log.DebugLog(log.DebugLevelMexos, "done AddProxySecurityRules", "app", app)
+		// Add DNS Zone
+		if err = KubeAddDNSRecords(rootLB, kp, appInst.Uri, appName); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
+			return err
+		}
 	}
 	return nil
 }

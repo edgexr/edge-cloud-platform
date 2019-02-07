@@ -364,10 +364,10 @@ func FindClusterMaster(key string) (string, error) {
 	return "", fmt.Errorf("key %s not found", key)
 }
 
-//MEXClusterCreateInst creates a cluster
+//MEXClusterCreateInst creates a cluster.  This was formerly MEXClusterCreateManifest
 func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "rootLBName", rootLBName)
-	if IsLocalDIND() {
+	if CloudletIsLocalDIND() {
 		return localCreateDIND(clusterInst)
 	}
 	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
@@ -378,7 +378,6 @@ func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 	case cloudcommon.OperatorAzure:
 		return azureCreateAKS(clusterInst)
 	default:
-		//guid, err := mexCreateClusterKubernetes(mf)
 		err := mexCreateClusterKubernetes(clusterInst, rootLBName)
 		if err != nil {
 			return fmt.Errorf("can't create cluster, %v", err)
@@ -389,12 +388,13 @@ func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 	}
 }
 
+//MEXClusterRemoveClustInst removes a cluster.  This was formerly MEXClusterRemoveManifest
 func MEXClusterRemoveClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "removing cluster")
 
 	clusterName := clusterInst.Key.ClusterKey.Name
 
-	if IsLocalDIND() {
+	if CloudletIsLocalDIND() {
 		return dind.DeleteDINDCluster(clusterName)
 	}
 	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)

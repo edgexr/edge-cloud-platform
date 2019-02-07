@@ -137,8 +137,15 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 	return nil
 }
 
-func IsLocalDIND() bool {
+func CloudletIsLocalDIND() bool {
 	return CloudletInfra.CloudletKind == cloudcommon.CloudletKindDIND
+}
+
+// returns true if kubectl can be run directly from the CRM rather than SSH jump thru LB
+func CloudletIsDirectKubectlAccess() bool {
+	return CloudletInfra.CloudletKind == cloudcommon.CloudletKindDIND ||
+		CloudletInfra.CloudletKind == cloudcommon.CloudletKindAzure ||
+		CloudletInfra.CloudletKind == cloudcommon.CloudletKindGCP
 }
 
 func GetCloudletKind() string {

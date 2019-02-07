@@ -24,7 +24,7 @@ func runLocalMexAgent() error {
 func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 	log.DebugLog(log.DebugLevelMexos, "run mex agent")
 
-	if IsLocalDIND() {
+	if CloudletIsLocalDIND() {
 		return runLocalMexAgent()
 	}
 	fqdn := rootLBName
@@ -52,9 +52,6 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 	if rootLB == nil {
 		return fmt.Errorf("cannot run mex agent manifest, rootLB is null")
 	}
-	//if mf.Spec.ExternalNetwork == "" {
-	//	return fmt.Errorf("missing external network")
-	//}
 	if GetCloudletOSImage() == "" {
 		return fmt.Errorf("missing agent image")
 	}
