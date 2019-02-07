@@ -107,15 +107,8 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	//TODO allow more net types
 	//TODO validate CIDR, etc.
 
-	// this does nothing currently
-	err = ValidateTenant(tenantName)
-
-	if err != nil {
-		return fmt.Errorf("can't validate tenant, %v", err)
-	}
-	err = ValidateTags(tags)
-	if err != nil {
-		return fmt.Errorf("invalid tag, %v", err)
+	if tags == "" {
+		return fmt.Errorf("invalid tags")
 	}
 	tags += "," + cf.PlatformFlavor
 	//TODO add whole manifest yaml->json into stringified property of the kvm instance for later

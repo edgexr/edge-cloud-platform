@@ -12,7 +12,7 @@ var kcproxySuffix = "-kcproxy"
 
 //StartKubectlProxy starts kubectl proxy on the rootLB to handle kubectl commands remotely.
 //  To be called after copying over the kubeconfig file from cluster to rootLB.
-func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, name, kubeconfig string) (int, error) {
+func StartKubectlProxy(rootLB *MEXRootLB, name, kubeconfig string) (int, error) {
 	log.DebugLog(log.DebugLevelMexos, "start kubectl proxy", "name", name, "kubeconfig", kubeconfig)
 	if rootLB == nil {
 		return 0, fmt.Errorf("cannot kubectl proxy, rootLB is null")
@@ -25,7 +25,7 @@ func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, name, kubeconfig string)
 		return 0, err
 	}
 	//TODO check /home/ubuntu/.docker-pass file
-	cmd := fmt.Sprintf("echo %s | docker login -u mobiledgex --password-stdin %s", GetCloudletDockerPass(), mf.Spec.DockerRegistry)
+	cmd := fmt.Sprintf("echo %s | docker login -u mobiledgex --password-stdin %s", GetCloudletDockerPass(), GetCloudletDockerRegistry())
 	out, err := client.Output(cmd)
 	if err != nil {
 		return 0, fmt.Errorf("can't docker login, %s, %v", out, err)

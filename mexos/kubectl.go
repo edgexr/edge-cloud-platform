@@ -15,26 +15,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-/*
-func RunKubectl(clusterInst *edgeproto.ClusterInst, params string, rootLBName string) (*string, error) {
-	log.DebugLog(log.DebugLevelMexos, "run kubectl", "params", params)
-
-	//name, err := FindClusterWithKey(mf, mf.Spec.Key)
-	//if err != nil {
-	//	return nil, fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
-	//}
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
-	if err != nil {
-		return nil, fmt.Errorf("can't get ssh client, %v", err)
-	}
-	cmd := fmt.Sprintf("kubectl --kubeconfig %s.kubeconfig %s", rootLBName, params)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("kubectl failed, %v, %s", err, out)
-	}
-	return &out, nil
-}
-*/
 func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
 

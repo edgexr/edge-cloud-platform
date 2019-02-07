@@ -135,35 +135,3 @@ func CopyKubeConfig(clusterInst *edgeproto.ClusterInst, rootLBName, name string)
 	//return ProcessKubeconfig(mf, rootLB, name, port, []byte(out))
 	return nil
 }
-
-/*
-//ProcessKubeconfig validates kubeconfig and saves it and creates a copy for proxy access
-func ProcessKubeconfig(mf *Manifest, rootLB *MEXRootLB, name string, port int, dat []byte) error {
-	log.DebugLog(log.DebugLevelMexos, "process kubeconfig file", "name", name)
-	if rootLB == nil {
-		return fmt.Errorf("cannot process kubeconfig, rootLB is null")
-	}
-	kc := &clusterKubeconfig{}
-	err := yaml.Unmarshal(dat, kc)
-	if err != nil {
-		return fmt.Errorf("can't unmarshal kubeconfig %s, %v", name, err)
-	}
-	if len(kc.Clusters) < 1 {
-		return fmt.Errorf("insufficient clusters info in kubeconfig %s", name)
-	}
-	kconfname := GetLocalKconfName(mf)
-	log.DebugLog(log.DebugLevelMexos, "writing local kubeconfig file", "name", kconfname)
-	//TODO per cluster password has to come from vault
-	kc.Clusters[0].Cluster.Server = fmt.Sprintf("https://testuser314159:testpassword271828@%s:%d", rootLB.Name, port)
-	dat, err = yaml.Marshal(kc)
-	if err != nil {
-		return fmt.Errorf("can't marshal kubeconfig proxy edit %s, %v", name, err)
-	}
-	err = ioutil.WriteFile(kconfname, dat, 0666)
-	if err != nil {
-		return fmt.Errorf("can't write kubeconfig file %s, %v", kconfname, err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "kubeconfig file saved", "file", kconfname)
-	return nil
-}
-*/

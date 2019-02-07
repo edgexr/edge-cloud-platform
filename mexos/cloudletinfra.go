@@ -116,7 +116,7 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 		}
 
 	case cloudcommon.CloudletKindGCP:
-		CloudletInfra.GcpProperties.Project = os.Getenv("MEX_GCP_LOCATION")
+		CloudletInfra.GcpProperties.Project = os.Getenv("MEX_GCP_PROJECT")
 		if CloudletInfra.GcpProperties.Project == "" {
 			//default
 			CloudletInfra.OpenstackProperties.OSImageName = "still-entity-201400"
@@ -171,7 +171,7 @@ func GetCloudletExternalNetwork() string {
 
 // Utility functions that used to be within manifest.
 //GetCloudletNetwork returns default MEX network, internal and prepped
-func GetCloudletNetwork() string {
+func GetCloudletMexNetwork() string {
 	//TODO validate existence and status
 	return CloudletInfra.OpenstackProperties.OSMexNetwork
 }

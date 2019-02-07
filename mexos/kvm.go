@@ -3,14 +3,16 @@ package mexos
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
-	"time"
 
-	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+type NetSpecInfo struct {
+	Kind, Name, CIDR, Options string
+	Extra                     []string
+}
 
 func GetK8sNodeNameSuffix(clusterInst *edgeproto.ClusterInst) string {
 	cloudletName := clusterInst.Key.CloudletKey.Name
@@ -18,6 +20,7 @@ func GetK8sNodeNameSuffix(clusterInst *edgeproto.ClusterInst) string {
 	return NormalizeName(cloudletName + "-" + clusterName)
 }
 
+/* TODO: Fix for swarm
 //CreateQCOW2AppManifest creates qcow2 app
 func CreateQCOW2AppManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "create qcow2 vm based app")
@@ -121,6 +124,9 @@ func CreateQCOW2AppManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "created openstack kvm server", "opts", opts)
 	return nil
 }
+*/
+
+/*
 
 func DeleteQCOW2AppManifest(mf *Manifest) error {
 	if mf.Metadata.Name == "" {
@@ -131,6 +137,7 @@ func DeleteQCOW2AppManifest(mf *Manifest) error {
 	}
 	return nil
 }
+*/
 
 //CreateFlavorMEXVM creates basic KVM for mobiledgex applications
 //  with proper initial bootstrap scripts installed on the base image that understands
@@ -187,17 +194,18 @@ func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, sk
 	props = append(props, "tenant="+tenant)
 
 	/* TODO: holepunch has not been used anywhere but need to investigate if we will want this
-	if GetCloudletExternalNetwork().HolePunch != "" {
-		props = append(props, "holepunch="+GetCloudletExternalNetwork().HolePunch)
-	}
+	   if GetCloudletHolePunch() != "" {
+	   	props = append(props, "holepunch="+GetCloudletHolePunch()
+	   }
 	*/
 
 	/* TODO: update has code for it in the init scripts, but has not been used because the cloudlet-specific files
-	are not present on the registry and nobody knew this existed.  This is for Venky to study.
-	if mf.Values.Registry.Update != "" {
-		props = append(props, "update="+mf.Values.Registry.Update)
-	}
+	   are not present on the registry and nobody knew this existed.  This is for Venky to study.
+	   if mf.Values.Registry.Update != "" {
+	   	props = append(props, "update="+mf.Values.Registry.Update)
+	   }
 	*/
+
 	opts.Properties = props
 	//log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor, "server opts", opts)
 	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor)
@@ -257,8 +265,8 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, clusterInst 
 		if ni.CIDR == "" {
 			return fmt.Errorf("missing CIDR spec in %v", ni)
 		}
-		if ni.Name != GetCloudletNetwork() { //XXX for now
-			return fmt.Errorf("netspec net name %s not equal to default MEX net %s", ni.Name, GetCloudletNetwork())
+		if ni.Name != GetCloudletMexNetwork() { //XXX for now
+			return fmt.Errorf("netspec net name %s not equal to default MEX net %s", ni.Name, GetCloudletMexNetwork())
 		}
 		//XXX openstack bug - subnet does not take tags but description field can be used to tag stuff
 		//   Use tag as part of name
@@ -402,7 +410,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, clusterInst 
 		if role == k8smasterRole {
 			if snd == nil {
 				log.DebugLog(log.DebugLevelMexos, "k8s master, no existing subnet, creating subnet", "name", sn)
-				err = CreateSubnet(ni.CIDR, GetCloudletNetwork(), edgeProxy, sn, false)
+				err = CreateSubnet(ni.CIDR, GetCloudletMexNetwork(), edgeProxy, sn, false)
 				if err != nil {
 					return err
 				}
@@ -422,7 +430,7 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, clusterInst 
 		//master node num is 1
 		//so, master node will always have .2
 		//XXX master always at X.X.X.2
-		netID = GetCloudletNetwork() + ",v4-fixed-ip=" + ipaddr.String()
+		netID = GetCloudletMexNetwork() + ",v4-fixed-ip=" + ipaddr.String()
 		masteripaddr := net.IPv4(v4[0], v4[1], v4[2], byte(2))
 		masterIP = masteripaddr.String()
 		log.DebugLog(log.DebugLevelMexos, "k8s master ip addr", "netID", netID, "ipaddr", ipaddr, "masterip", masterIP)

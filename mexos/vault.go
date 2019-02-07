@@ -12,6 +12,23 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+type EnvData struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type VaultDataDetail struct {
+	Env []EnvData `json:"env"`
+}
+
+type VaultData struct {
+	Detail VaultDataDetail `json:"data"`
+}
+
+type VaultResponse struct {
+	Data VaultData `json:"data"`
+}
+
 func GetVaultData(url string) ([]byte, error) {
 	vault_token := os.Getenv("VAULT_TOKEN")
 	if vault_token == "" {

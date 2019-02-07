@@ -202,14 +202,3 @@ func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
 	}
 }
-
-/*
-func fixValuesInst(mf *Manifest, rootLB *MEXRootLB) error {
-	if mf.Values.Kind == "" {
-		mf.Values = rootLB.PlatConf.Values
-	}
-	if mf.Values.Kind == "" {
-		log.DebugLog(log.DebugLevelMexos, "warning, missing mf values")
-	}
-	return nil
-}*/

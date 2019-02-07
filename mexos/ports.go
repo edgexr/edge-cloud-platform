@@ -8,6 +8,15 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
+type PortDetail struct {
+	Name         string `json:"name"`
+	MexProto     string `json:"mexproto"`
+	Proto        string `json:"proto"`
+	InternalPort int    `json:"internalport"`
+	PublicPort   int    `json:"publicport"`
+	PublicPath   string `json:"publicpath"`
+}
+
 func GetPortDetail(appInst *edgeproto.AppInst) ([]PortDetail, error) {
 	ports := make([]PortDetail, 0)
 	for ii := range appInst.MappedPorts {

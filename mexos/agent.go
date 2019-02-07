@@ -40,7 +40,7 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 			if err != nil {
 				return fmt.Errorf("cannot find rootlb %s", fqdn)
 			}
-			//return RunMEXOSAgentContainer(mf, rootLB)
+			//return RunMEXOSAgentContainer(rootLB)
 			return RunMEXOSAgentService(rootLB)
 		}
 	}
@@ -131,7 +131,7 @@ func RunMEXOSAgentService(rootLB *MEXRootLB) error {
 	return nil
 }
 
-func RunMEXOSAgentContainer(mf *Manifest, rootLB *MEXRootLB) error {
+func RunMEXOSAgentContainer(rootLB *MEXRootLB) error {
 	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return err
@@ -151,12 +151,9 @@ func RunMEXOSAgentContainer(mf *Manifest, rootLB *MEXRootLB) error {
 		return fmt.Errorf("can't store docker pass, %s, %v", out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "seeded docker registry password")
-	dockerinstanceName := fmt.Sprintf("%s-%s", mf.Metadata.Name, rootLB.Name)
-	if mf.Spec.DockerRegistry == "" {
-		log.DebugLog(log.DebugLevelMexos, "warning, empty docker registry spec, using default.")
-		mf.Spec.DockerRegistry = GetCloudletDockerRegistry()
-	}
-	cmd = fmt.Sprintf("cat .docker-pass| docker login -u mobiledgex --password-stdin %s", mf.Spec.DockerRegistry)
+	dockerinstanceName := fmt.Sprintf("%s-%s", "mexos", rootLB.Name)
+
+	cmd = fmt.Sprintf("cat .docker-pass| docker login -u mobiledgex --password-stdin %s", GetCloudletDockerRegistry())
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error docker login at %s, %s, %s, %v", rootLB.Name, cmd, out, err)
@@ -177,19 +174,6 @@ func RunMEXOSAgentContainer(mf *Manifest, rootLB *MEXRootLB) error {
 	return nil
 }
 
-/*
-//UpdateMEXAgentManifest upgrades the mex agent
-func UpdateMEXAgentManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "update mex agent")
-	err := RemoveMEXAgentManifest(mf)
-	if err != nil {
-		return err
-	}
-	// Force pulling a potentially newer docker image
-	return RunMEXAgentManifest(mf)
-}
-*/
-
 //RunMEXAgentCloudletKey calls MEXPlatformInit with templated manifest
 func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string) error {
 
@@ -204,46 +188,3 @@ func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string) error {
 	}
 	return RunMEXAgent(rootLBName, &clk)
 }
-
-/*
-//RemoveMEXAgentManifest deletes mex agent docker instance
-func RemoveMEXAgentManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "deleting mex agent")
-	//XXX we are deleting server kvm!!!
-	err := DeleteServer(mf.Spec.RootLB)
-	force := strings.Contains(mf.Spec.Flags, "force")
-	if err != nil {
-		if !force {
-			return err
-		}
-		log.DebugLog(log.DebugLevelMexos, "forced to continue, deleting mex agent error", "error", err, "rootLB", mf.Spec.RootLB)
-	}
-	log.DebugLog(log.DebugLevelMexos, "removed rootlb", "name", mf.Spec.RootLB)
-	sip, err := GetServerIPAddr(GetCloudletExternalNetwork(), mf.Spec.RootLB)
-	if err := DeleteSecurityRule(sip); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rule", "error", err, "server ip", sip)
-	}
-	if mf.Metadata.DNSZone == "" {
-		return fmt.Errorf("missing dns zone in manifest, metadata %v", mf.Metadata)
-	}
-	if cerr := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); cerr != nil {
-		return fmt.Errorf("cannot init cloudflare api, %v", cerr)
-	}
-	recs, derr := cloudflare.GetDNSRecords(mf.Metadata.DNSZone)
-	fqdn := mf.Spec.RootLB
-	if derr != nil {
-		return fmt.Errorf("can not get dns records for %s, %v", fqdn, derr)
-	}
-	for _, rec := range recs {
-		if rec.Type == "A" && rec.Name == fqdn {
-			err = cloudflare.DeleteDNSRecord(mf.Metadata.DNSZone, rec.ID)
-			if err != nil {
-				return fmt.Errorf("cannot delete dns record id %s Zone %s, %v", rec.ID, mf.Metadata.DNSZone, err)
-			}
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "removed DNS A record", "FQDN", fqdn)
-	//TODO remove mex-k8s  internal nets and router
-	return nil
-}
-*/

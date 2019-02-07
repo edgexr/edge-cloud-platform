@@ -154,7 +154,7 @@ type KAPINodes struct {
 	//TODO metadata
 }
 
-/*
+/* TODO: fix for swarm
 func GetKubernetesNodes(mf *Manifest, rootLB *MEXRootLB) ([]KubernetesNode, error) {
 	log.DebugLog(log.DebugLevelMexos, "getting kubernetes nodes")
 	clusterName := clusterInst.Key.ClusterKey.Name

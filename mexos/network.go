@@ -45,7 +45,7 @@ func GetExternalGateway(extNetName string) (string, error) {
 
 //GetNextSubnetRange will find the CIDR for the next range of subnet that can be created. For example,
 // if the subnet detail we get has 10.101.101.0/24 then the next one can be 10.101.102.0/24
-func GetNextSubnetRange(mf *Manifest, subnetName string) (string, error) {
+func GetNextSubnetRange(subnetName string) (string, error) {
 	sd, err := GetSubnetDetail(subnetName)
 	if err != nil {
 		return "", err
