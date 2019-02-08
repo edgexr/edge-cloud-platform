@@ -29,12 +29,23 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 			log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "appInst", appInst, "err", err)
 			return err
 		}
-		if err := AddNginxProxy("localhost", appName, masteraddr, portDetail, dind.GetDockerNetworkName(clusterName)); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", appName, "ports", appInst.MappedPorts)
-			return err
+
+		if len(portDetail) > 0 {
+			log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind", "ports", portDetail)
+			if err := AddNginxProxy("localhost", appName, masteraddr, portDetail, dind.GetDockerNetworkName(clusterName)); err != nil {
+				log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", appName, "ports", portDetail)
+				return err
+			}
 		}
+
 		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
-		err = runKubectlCreateApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			err = runKubectlCreateApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			err = CreateHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+		} else {
+			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
+		}
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error creating dind app")
 			return err
@@ -81,21 +92,34 @@ func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 
 	if CloudletIsLocalDIND() {
 		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
-		err := runKubectlDeleteApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+
+		var err error
+		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
+			err = runKubectlDeleteApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
+			err = DeleteHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+		} else {
+			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
+		}
 		if err != nil {
 			return err
 		}
 
 		log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
-
-		if err = DeleteNginxProxy("localhost", appName); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName)
+		portDetail, err := GetPortDetail(appInst)
+		if err != nil {
+			log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "appInst", appInst, "err", err)
 			return err
 		}
-
+		if len(portDetail) > 0 {
+			if err = DeleteNginxProxy("localhost", appName); err != nil {
+				log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName)
+				return err
+			}
+		}
 		return nil
-
 	}
+
 	switch operatorName {
 	case cloudcommon.OperatorGCP:
 		fallthrough

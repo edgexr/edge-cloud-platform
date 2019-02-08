@@ -72,6 +72,19 @@ func ValidateKubernetesParameters(clusterInst *edgeproto.ClusterInst, rootLB *ME
 	log.DebugLog(log.DebugLevelMexos, "validate kubernetes parameters rootLB", "cluster", clustName)
 	clusterName := clusterInst.Key.ClusterKey.Name
 
+	if CloudletIsDirectKubectlAccess() {
+		// No ssh jump host (rootlb) but kconf configures how to
+		// talk to remote kubernetes cluster.  This includes DIND, AKS, GCP
+		kconf, err := GetKconf(clusterInst, true)
+		if err != nil {
+			return nil, fmt.Errorf("kconf missing, %v, %v", clustName, err)
+		}
+		kp := kubeParam{
+			kubeconfig: fmt.Sprintf("KUBECONFIG=%s", kconf),
+			client:     &sshLocal{},
+		}
+		return &kp, nil
+	}
 	if rootLB == nil {
 		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is null")
 	}

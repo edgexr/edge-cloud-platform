@@ -27,7 +27,6 @@ func GetLocalAddr() (string, error) {
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
 	return localAddr.IP.String(), nil
 }
 
@@ -36,23 +35,30 @@ func GetDockerNetworkName(clusterName string) string {
 }
 
 //CreateDINDCluster creates kubernetes cluster on local mac
-func CreateDINDCluster(name string) error {
-	os.Setenv("DIND_LABEL", name)
+func CreateDINDCluster(clusterName, kconfName string) error {
+
+	os.Setenv("DIND_LABEL", clusterName)
 	os.Setenv("CLUSTER_ID", getClusterID())
-	log.DebugLog(log.DebugLevelMexos, "CreateDINDCluster via dind-cluster-v1.13.sh", "name", name, "clusterid", getClusterID())
+	log.DebugLog(log.DebugLevelMexos, "CreateDINDCluster via dind-cluster-v1.13.sh", "name", clusterName, "clusterid", getClusterID())
 
 	out, err := sh.Command("dind-cluster-v1.13.sh", "up").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ERROR creating Dind Cluster: [%s] %v", out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "Finished CreateDINDCluster", "name", name)
+	log.DebugLog(log.DebugLevelMexos, "Finished CreateDINDCluster", "name", clusterName)
 
 	//now set the k8s config
-	out, err = sh.Command("kubectl", "config", "use-context", "dind-"+name+"-"+getClusterID()).CombinedOutput()
+	out, err = sh.Command("kubectl", "config", "use-context", "dind-"+clusterName+"-"+getClusterID()).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ERROR setting kube config context: [%s] %v", out, err)
 	}
-
+	//copy kubeconfig locally
+	log.DebugLog(log.DebugLevelMexos, "locally copying kubeconfig", "kconfName", kconfName)
+	home := os.Getenv("HOME")
+	out, err = sh.Command("cp", home+"/.kube/config", home+"/.kube/"+kconfName).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s %v", out, err)
+	}
 	return nil
 }
 

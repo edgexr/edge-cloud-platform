@@ -15,7 +15,8 @@ func localCreateDIND(clusterInst *edgeproto.ClusterInst) error {
 	clusterName := clusterInst.Key.ClusterKey.Name
 	log.DebugLog(log.DebugLevelMexos, "creating local dind cluster", "clusterName", clusterName)
 
-	if err = dind.CreateDINDCluster(clusterName); err != nil {
+	kconfName := GetKconfName(clusterInst)
+	if err = dind.CreateDINDCluster(clusterName, kconfName); err != nil {
 		return err
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done

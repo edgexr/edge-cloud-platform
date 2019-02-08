@@ -62,11 +62,6 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 			return fmt.Errorf("Env variable MEXENV_URL not set")
 		}
 
-		openRcURL = os.Getenv("OPENRC_URL")
-		if openRcURL == "" {
-			return fmt.Errorf("Env variable OPENRC_URL not set")
-		}
-
 		err := InternVaultEnv(openRcURL, mexEnvURL, CloudletInfra)
 		if err != nil {
 			return fmt.Errorf("failed to InternVaultEnv: %v", err)
@@ -88,6 +83,10 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 
 	switch CloudletInfra.CloudletKind {
 	case cloudcommon.CloudletKindOpenStack:
+		openRcURL = os.Getenv("OPENRC_URL")
+		if openRcURL == "" {
+			return fmt.Errorf("Env variable OPENRC_URL not set")
+		}
 
 		CloudletInfra.OpenstackProperties.OSExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
 		if CloudletInfra.OpenstackProperties.OSExternalNetworkName == "" {

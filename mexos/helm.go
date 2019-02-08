@@ -52,7 +52,7 @@ func CreateHelmAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, ku
 
 	clusterName := clusterInst.Key.ClusterKey.Name
 	appName := NormalizeName(app.Key.Name)
-	appImage := app.ImagePath
+	appImage := NormalizeName(app.ImagePath)
 	var err error
 
 	if rootLB == nil {
