@@ -50,9 +50,13 @@ func createAppDNS(kp *kubeParam, uri string, name string) error {
 		externalIP := ""
 		if CloudletIsLocalDIND() {
 			addr := dind.GetMasterAddr()
-			err = KubePatchServiceLocal(sn, addr)
-			if err != nil {
-				return err
+			if len(svc.Spec.ExternalIPs) > 0 && svc.Spec.ExternalIPs[0] == addr {
+				log.DebugLog(log.DebugLevelMexos, "external IP already present in DIND, no patch required", "addr", addr)
+			} else {
+				err = KubePatchServiceLocal(sn, addr)
+				if err != nil {
+					return err
+				}
 			}
 			externalIP, err = dind.GetLocalAddr()
 		} else {
@@ -62,23 +66,31 @@ func createAppDNS(kp *kubeParam, uri string, name string) error {
 			return err
 		}
 		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
+		recordMatch := false
 		for _, rec := range recs {
 			if rec.Type == "A" && rec.Name == fqdn {
-				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
-					return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
+				if rec.Content == externalIP {
+					log.DebugLog(log.DebugLevelMexos, "DNS record already correct", "fqdn", fqdn, "addr", externalIP)
+					recordMatch = true
+				} else {
+					if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
+						return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
+					}
 				}
-				log.DebugLog(log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
 			}
 		}
-		if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", externalIP, 1, false); err != nil {
-			return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, externalIP, err)
+		if !recordMatch {
+			if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", externalIP, 1, false); err != nil {
+				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, externalIP, err)
+			}
+
+			//log.DebugLog(log.DebugLevelMexos, "waiting for DNS record to be created on cloudflare...")
+			//err = WaitforDNSRegistration(fqdn)
+			//if err != nil {
+			//	return err
+			//}
+			log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", externalIP)
 		}
-		//log.DebugLog(log.DebugLevelMexos, "waiting for DNS record to be created on cloudflare...")
-		//err = WaitforDNSRegistration(fqdn)
-		//if err != nil {
-		//	return err
-		//}
-		log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", externalIP)
 	}
 	return nil
 }
@@ -128,13 +140,13 @@ func deleteAppDNS(kp *kubeParam, uri string, name string) error {
 // KubePatchServiceLocal updates the service to have the given external ip.  This is done locally and not thru
 // an ssh client
 func KubePatchServiceLocal(servicename string, ipaddr string) error {
-	log.DebugLog(log.DebugLevelMexos, "KubePatchServiceLocal", "servicename", servicename, "ipaddr", ipaddr)
 
 	ips := fmt.Sprintf(`{"spec":{"externalIPs":["%s"]}}'`, ipaddr)
 	log.DebugLog(log.DebugLevelMexos, "KubePatchServiceLocal", "servicename", servicename, "ipaddr", ipaddr, "ipspec", ips)
 
-	_, err := exec.Command("kubectl", "patch", "svc", servicename, "-p", ips).Output()
+	out, err := exec.Command("kubectl", "patch", "svc", servicename, "-p", ips).CombinedOutput()
 	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "patch svc failed", "servicename", servicename, "out", out, "err", err)
 		return fmt.Errorf("error patching for kubernetes service ip: %s, name: %s, err: %v", ipaddr, servicename, err)
 	}
 	return nil

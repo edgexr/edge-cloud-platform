@@ -30,7 +30,6 @@ func GetKconf(clusterInst *edgeproto.ClusterInst, createIfMissing bool) (string,
 
 	log.DebugLog(log.DebugLevelMexos, "get kubeconfig name", "name", name)
 	if createIfMissing { // XXX
-		log.DebugLog(log.DebugLevelMexos, "warning, creating missing kubeconfig", "name", name)
 		if _, err := os.Stat(name); os.IsNotExist(err) {
 			// if kubeconfig does not exist, optionally create it.  It is possible it was
 			// created on a different container or we had a restart of the container
