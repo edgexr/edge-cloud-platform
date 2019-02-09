@@ -9,6 +9,10 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
+	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
+}
+
 func azureCreateAKS(clusterInst *edgeproto.ClusterInst) error {
 	var err error
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
@@ -26,10 +30,8 @@ func azureCreateAKS(clusterInst *edgeproto.ClusterInst) error {
 	if err = azure.GetAKSCredentials(resourceGroup, clusterName); err != nil {
 		return err
 	}
-	kconf, err := GetKconf(clusterInst, false) // XXX
-	if err != nil {
-		return fmt.Errorf("cannot get kconf, %v, %v, %v", clusterInst, kconf, err)
-	}
+	kconf := GetKconfName(clusterInst) // XXX
+
 	log.DebugLog(log.DebugLevelMexos, "warning, using default config") //XXX
 	//XXX watch out for multiple cluster contexts
 	if err = copyFile(defaultKubeconfig(), kconf); err != nil {

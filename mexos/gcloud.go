@@ -30,10 +30,8 @@ func gcloudCreateGKE(clusterInst *edgeproto.ClusterInst) error {
 	if err = gcloud.GetGKECredentials(clusterName); err != nil {
 		return err
 	}
-	kconf, err := GetKconf(clusterInst, false) //XXX
-	if err != nil {
-		return fmt.Errorf("cannot get kconf, %v, %v", clusterInst, err)
-	}
+	kconf := GetKconfName(clusterInst) //XXX
+
 	log.DebugLog(log.DebugLevelMexos, "warning, using default config") //XXX
 	if err = copyFile(defaultKubeconfig(), kconf); err != nil {
 		return fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)

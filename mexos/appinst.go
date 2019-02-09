@@ -14,11 +14,12 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 	log.DebugLog(log.DebugLevelMexos, "mex create app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
 
 	appDeploymentType := app.Deployment
-	clusterName := clusterInst.Key.ClusterKey.Name
-	appName := NormalizeName(app.Key.Name)
-	operatorName := NormalizeName(appInst.Key.CloudletKey.OperatorKey.Name)
-
-	//TODO values.application.template
+	var kubeNames KubeNames
+	err := GetKubeNames(clusterInst, app, appInst, &kubeNames)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "GetKubeNames failed")
+		return err
+	}
 
 	if CloudletIsLocalDIND() {
 		masteraddr := dind.GetMasterAddr()
@@ -32,17 +33,17 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 
 		if len(portDetail) > 0 {
 			log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind", "ports", portDetail)
-			if err := AddNginxProxy("localhost", appName, masteraddr, portDetail, dind.GetDockerNetworkName(clusterName)); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", appName, "ports", portDetail)
+			if err := AddNginxProxy("localhost", kubeNames.appName, masteraddr, portDetail, dind.GetDockerNetworkName(kubeNames.clusterName)); err != nil {
+				log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "appName", kubeNames.appName, "ports", portDetail)
 				return err
 			}
 		}
 
 		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			err = runKubectlCreateApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+			err = runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			err = CreateHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			err = CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest)
 		} else {
 			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
 		}
@@ -53,12 +54,12 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return nil
 	}
 
-	switch operatorName {
+	switch kubeNames.operatorName {
 	case cloudcommon.OperatorGCP:
 		fallthrough
 	case cloudcommon.OperatorAzure:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return runKubectlCreateApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+			return runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
 			return fmt.Errorf("not yet supported")
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
@@ -69,10 +70,10 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
 	default:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return CreateKubernetesAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			return CreateKubernetesAppInst(rootLB, &kubeNames, clusterInst, appInst, app.DeploymentManifest)
 
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			return CreateHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			return CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest)
 		}
 		//TODO -- support these later
 		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
@@ -87,17 +88,21 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	log.DebugLog(log.DebugLevelMexos, "mex delete app inst", "rootlb", rootLB.Name, "clusterinst", clusterInst, "appinst", appInst)
 	appDeploymentType := app.Deployment
-	operatorName := NormalizeName(appInst.Key.CloudletKey.OperatorKey.Name)
-	appName := NormalizeName(app.Key.Name)
+	var kubeNames KubeNames
+	err := GetKubeNames(clusterInst, app, appInst, &kubeNames)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "GetKubeNames failed")
+		return err
+	}
 
 	if CloudletIsLocalDIND() {
 		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
 
 		var err error
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			err = runKubectlDeleteApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+			err = runKubectlDeleteApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			err = DeleteHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			err = DeleteHelmAppInst(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else {
 			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
 		}
@@ -112,20 +117,20 @@ func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 			return err
 		}
 		if len(portDetail) > 0 {
-			if err = DeleteNginxProxy("localhost", appName); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName)
+			if err = DeleteNginxProxy("localhost", kubeNames.appName); err != nil {
+				log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", kubeNames.appName)
 				return err
 			}
 		}
 		return nil
 	}
 
-	switch operatorName {
+	switch kubeNames.operatorName {
 	case cloudcommon.OperatorGCP:
 		fallthrough
 	case cloudcommon.OperatorAzure:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return runKubectlDeleteApp(clusterInst, appInst, rootLB, app.DeploymentManifest)
+			return runKubectlDeleteApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
 			return fmt.Errorf("not yet supported")
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
@@ -136,9 +141,9 @@ func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return fmt.Errorf("unknown image type %s", appDeploymentType)
 	default:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return DeleteKubernetesAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			return DeleteKubernetesAppInst(rootLB, &kubeNames, clusterInst)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			return DeleteHelmAppInst(rootLB, clusterInst, app.DeploymentManifest, app, appInst)
+			return DeleteHelmAppInst(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		}
 		//TODO
 		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {

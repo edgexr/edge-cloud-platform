@@ -12,9 +12,7 @@ import (
 
 // TODO service to periodically clean up the leftover rules
 
-func AddProxySecurityRules(rootLB *MEXRootLB, masteraddr string, appInst *edgeproto.AppInst) error {
-
-	name := NormalizeName(appInst.Key.AppKey.Name)
+func AddProxySecurityRules(rootLB *MEXRootLB, masteraddr string, appName string, appInst *edgeproto.AppInst) error {
 
 	ports, err := GetPortDetail(appInst)
 	if err != nil {
@@ -43,17 +41,16 @@ func AddProxySecurityRules(rootLB *MEXRootLB, masteraddr string, appInst *edgepr
 		}
 	}
 	if len(ports) > 0 {
-		if err := AddNginxProxy(rootLB.Name, name, masteraddr, ports, ""); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "name", name)
+		if err := AddNginxProxy(rootLB.Name, appName, masteraddr, ports, ""); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "appName", appName)
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "added nginx proxy", "name", name, "ports", appInst.MappedPorts)
+	log.DebugLog(log.DebugLevelMexos, "added nginx proxy", "appName", appName, "ports", appInst.MappedPorts)
 	return nil
 }
 
-func DeleteProxySecurityRules(rootLB *MEXRootLB, ipaddr string, appInst *edgeproto.AppInst) error {
-	appName := NormalizeName(appInst.Key.AppKey.Name)
+func DeleteProxySecurityRules(rootLB *MEXRootLB, ipaddr string, appName string) error {
 
 	log.DebugLog(log.DebugLevelMexos, "delete proxy rules", "name", appName)
 	err := DeleteNginxProxy(rootLB.Name, appName)

@@ -46,8 +46,9 @@ func ListImages() ([]OSImage, error) {
 
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
 func ListNetworks() ([]OSNetwork, error) {
-	out, err := sh.Command("openstack", "network", "list", "-f", "json").Output()
+	out, err := sh.Command("openstack", "network", "list", "-f", "json").CombinedOutput()
 	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "network list failed", "out", out)
 		err = fmt.Errorf("cannot get network list, %v", err)
 		return nil, err
 	}
@@ -168,7 +169,7 @@ func CreateNetwork(name string) error {
 
 //DeleteNetwork destroys a named network
 //  Sometimes it will fail. Openstack will refuse if there are resources attached.
-func DeleteNetwork( name string) error {
+func DeleteNetwork(name string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting network", "network", name)
 	out, err := sh.Command("openstack", "network", "delete", name).CombinedOutput()
 	if err != nil {
@@ -242,7 +243,7 @@ func CreateRouter(routerName string) error {
 }
 
 //DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
-func DeleteRouter( routerName string) error {
+func DeleteRouter(routerName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting router", "name", routerName)
 	out, err := sh.Command("openstack", "router", "delete", routerName).Output()
 	if err != nil {
@@ -358,7 +359,7 @@ func CreateServerImage(serverName, imageName string) error {
 }
 
 //CreateImage puts images into glance
-func CreateImage( imageName, qcowFile string) error {
+func CreateImage(imageName, qcowFile string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating image in glance", "image", imageName, "qcow", qcowFile)
 	out, err := sh.Command("openstack", "image", "create",
 		imageName,
@@ -376,7 +377,7 @@ func CreateImage( imageName, qcowFile string) error {
 // It will then save that into a local file. The image transfer happens from glance into your own laptop
 // or whatever.
 // This can take a while, transferring all the data.
-func SaveImage( saveName, imageName string) error {
+func SaveImage(saveName, imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "saving image", "save name", saveName, "image name", imageName)
 	out, err := sh.Command("openstack", "image", "save", "--file", saveName, imageName).Output()
 	if err != nil {
@@ -389,7 +390,7 @@ func SaveImage( saveName, imageName string) error {
 //DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
-func DeleteImage( imageName string) error {
+func DeleteImage(imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting image", "name", imageName)
 	out, err := sh.Command("openstack", "image", "delete", imageName).Output()
 	if err != nil {

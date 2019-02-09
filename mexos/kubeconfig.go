@@ -23,38 +23,37 @@ func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
 		GetCloudletDNSZone())
 }
 
-func GetKconf(clusterInst *edgeproto.ClusterInst, createIfMissing bool) (string, error) {
+func GetKconf(clusterInst *edgeproto.ClusterInst) (string, error) {
 	name := GetLocalKconfName(clusterInst)
 	operatorName := clusterInst.Key.CloudletKey.OperatorKey.Name
 	clusterName := clusterInst.Key.ClusterKey.Name
 
 	log.DebugLog(log.DebugLevelMexos, "get kubeconfig name", "name", name)
-	if createIfMissing { // XXX
-		if _, err := os.Stat(name); os.IsNotExist(err) {
-			// if kubeconfig does not exist, optionally create it.  It is possible it was
-			// created on a different container or we had a restart of the container
-			log.DebugLog(log.DebugLevelMexos, "creating missing kconf file", "name", name)
-			switch operatorName {
-			case cloudcommon.OperatorGCP:
-				if err = gcloud.GetGKECredentials(clusterName); err != nil {
-					return "", fmt.Errorf("unable to get GKE credentials %v", err)
-				}
-				if err = copyFile(defaultKubeconfig(), name); err != nil {
-					return "", fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
-				}
-			case cloudcommon.OperatorAzure:
-				rg := GetResourceGroupForCluster(clusterInst)
-				if err = azure.GetAKSCredentials(rg, clusterName); err != nil {
-					return "", fmt.Errorf("unable to get AKS credentials %v", err)
-				}
-				if err = copyFile(defaultKubeconfig(), name); err != nil {
-					return "", fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
-				}
-			default:
-				log.DebugLog(log.DebugLevelMexos, "warning, not creating missing kubeconfig for operator", "operator", operatorName)
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		// if kubeconfig does not exist, optionally create it.  It is possible it was
+		// created on a different container or we had a restart of the container
+		log.DebugLog(log.DebugLevelMexos, "creating missing kconf file", "name", name)
+		switch operatorName {
+		case cloudcommon.OperatorGCP:
+			if err = gcloud.GetGKECredentials(clusterName); err != nil {
+				return "", fmt.Errorf("unable to get GKE credentials %v", err)
 			}
+			if err = copyFile(defaultKubeconfig(), name); err != nil {
+				return "", fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
+			}
+		case cloudcommon.OperatorAzure:
+			rg := GetResourceGroupForCluster(clusterInst)
+			if err = azure.GetAKSCredentials(rg, clusterName); err != nil {
+				return "", fmt.Errorf("unable to get AKS credentials %v", err)
+			}
+			if err = copyFile(defaultKubeconfig(), name); err != nil {
+				return "", fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
+			}
+		default:
+			log.DebugLog(log.DebugLevelMexos, "warning, not creating missing kubeconfig for operator", "operator", operatorName)
 		}
 	}
+
 	return name, nil
 }
 

@@ -22,10 +22,8 @@ func localCreateDIND(clusterInst *edgeproto.ClusterInst) error {
 	//race condition exists where the config file is not ready until just after the cluster create is done
 	time.Sleep(3 * time.Second)
 
-	kconf, err := GetKconf(clusterInst, false) // XXX
-	if err != nil {
-		return fmt.Errorf("cannot get kconf, %v, %v", kconf, err)
-	}
+	kconf := GetKconfName(clusterInst) // XXX
+
 	log.DebugLog(log.DebugLevelMexos, "warning, using default config") //XXX
 	//XXX watch out for multiple cluster contexts
 	if err = copyFile(defaultKubeconfig(), kconf); err != nil {

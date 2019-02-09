@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -107,8 +106,4 @@ func GetHTPassword(rootLBName string) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "downloaded htpasswd")
 	return nil
-}
-
-func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
-	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }

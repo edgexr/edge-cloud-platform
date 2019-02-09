@@ -46,19 +46,17 @@ func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName s
 	return nil
 }
 
-func runKubectlCreateApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, rootLB *MEXRootLB, kubeManifest string) error {
+func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
 
-	appName := NormalizeName(appInst.Key.AppKey.Name)
-	clusterName := clusterInst.Key.ClusterKey.Name
-	kfile := appName + ".yaml"
+	kfile := kubeNames.appName + ".yaml"
 
 	if err := writeKubeManifest(kubeManifest, kfile); err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
 
-	kp, err := ValidateKubernetesParameters(clusterInst, rootLB, clusterName)
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -72,11 +70,11 @@ func runKubectlCreateApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.
 			cmd = fmt.Sprintf("%s kubectl delete -f %s", kp.kubeconfig, kfile)
 			out, undoerr := kp.client.Output(cmd)
 			if undoerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "undo kubectl create app failed", "name", appName, "out", out, "err", undoerr)
+				log.DebugLog(log.DebugLevelMexos, "undo kubectl create app failed", "kubeNames", kubeNames, "out", out, "err", undoerr)
 			}
 		}
 	}()
-	err = createAppDNS(kp, appInst.Uri, appName)
+	err = createAppDNS(kp, kubeNames.appURI, kubeNames.appName)
 	if err != nil {
 		return fmt.Errorf("error creating dns entry for app, %v", err)
 	}
@@ -136,15 +134,13 @@ func getServices(kp *kubeParam) ([]v1.Service, error) {
 	return svcs.Items, nil
 }
 
-func runKubectlDeleteApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, rootLB *MEXRootLB, kubeManifest string) error {
-	appName := NormalizeName(appInst.Key.AppKey.Name)
-	clusterName := clusterInst.Key.ClusterKey.Name
+func runKubectlDeleteApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
 
-	kp, err := ValidateKubernetesParameters(clusterInst, rootLB, clusterName)
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
-	kfile := appName + ".yaml"
+	kfile := kubeNames.appName + ".yaml"
 	err = writeKubeManifest(kubeManifest, kfile)
 	if err != nil {
 		return err
@@ -155,9 +151,9 @@ func runKubectlDeleteApp(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.
 	if err != nil {
 		return fmt.Errorf("error deleting app, %s, %v", out, err)
 	}
-	err = deleteAppDNS(kp, appInst.Uri, appName)
+	err = deleteAppDNS(kp, kubeNames.appURI, kubeNames.appName)
 	if err != nil {
-		return fmt.Errorf("error deleting dns entry for app, %v, %v", appInst, err)
+		return fmt.Errorf("error deleting dns entry for app, %v, %v", kubeNames.appName, err)
 	}
 	return nil
 }

@@ -148,7 +148,6 @@ func CheckPlatformEnv(platformType string) error {
 }
 
 func GetVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.CloudletInfraProperties) error {
-
 	if err := InternVaultEnv(openrc, mexenv, cloudletInfra); err != nil {
 		return err
 	}

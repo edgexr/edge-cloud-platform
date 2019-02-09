@@ -17,6 +17,25 @@ import (
 var CloudletInfra *edgeproto.CloudletInfraProperties
 var CloudletInfraCommon *edgeproto.CloudletInfraCommon
 
+//this is possible actions and optional parameters
+var actionChoices = map[string]string{
+	"CLOUDLET_KIND": "procname",
+	"stop":          "procname",
+	"status":        "procname",
+	"ctrlapi":       "procname",
+	"ctrlcli":       "procname",
+	"ctrlinfo":      "procname",
+	"dmeapi":        "procname",
+	"deploy":        "",
+	"cleanup":       "",
+	"fetchlogs":     "",
+	"createcluster": "",
+	"deletecluster": "",
+	"gencerts":      "",
+	"cleancerts":    "",
+	"sleep":         "seconds",
+}
+
 func InitializeCloudletInfra(fakecloudlet bool) error {
 	log.DebugLog(log.DebugLevelMexos, "InitializeCloudletInfra called")
 

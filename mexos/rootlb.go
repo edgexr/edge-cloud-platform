@@ -11,7 +11,6 @@ import (
 //MEXRootLB has rootLB data
 type MEXRootLB struct {
 	Name string
-	//	PlatConf *Manifest
 }
 
 var MEXRootLBMap = make(map[string]*MEXRootLB)
