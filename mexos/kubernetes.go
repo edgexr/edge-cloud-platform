@@ -3,6 +3,7 @@ package mexos
 import (
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/nanobox-io/golang-ssh"
@@ -122,10 +123,18 @@ func DeleteKubernetesAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterIn
 	if err = DeleteProxySecurityRules(rootLB, kp.ipaddr, appInst); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", appName, "rootlb", rootLB.Name, "error", err)
 	}
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
+	}
 	// Clean up DNS entries
 	if err = KubeDeleteDNSRecords(rootLB, kp, appInst.Uri, appName); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", appName, "rootlb", rootLB.Name, "error", err)
 		return err
+	}
+	cmd := fmt.Sprintf("%s kubectl delete -f %s.yaml", kp.kubeconfig, appName)
+	out, err := kp.client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("error deleting kuberknetes app, %s, %s, %s, %v", appName, cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "deleted deployment", "name", appName)
 	return nil

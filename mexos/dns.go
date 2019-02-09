@@ -167,11 +167,14 @@ func KubeAddDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name string
 		log.DebugLog(log.DebugLevelMexos, "cannot get rootlb IP address", "error", err)
 		return fmt.Errorf("cannot deploy kubernetes app, cannot get rootlb IP")
 	}
+
 	svcs, err := getServices(kp)
 	if err != nil {
 		return err
 	}
-
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
+	}
 	recs, err := cloudflare.GetDNSRecords(GetCloudletDNSZone())
 	if err != nil {
 		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), err)
@@ -225,6 +228,9 @@ func KubeDeleteDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name str
 	if err != nil {
 		return err
 	}
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
+	}
 	recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone())
 	if derr != nil {
 		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
@@ -252,12 +258,6 @@ func KubeDeleteDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name str
 			}
 		}
 	}
-	cmd = fmt.Sprintf("%s kubectl delete -f %s.yaml", kp.kubeconfig, name)
-	out, err = kp.client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("error deleting kuberknetes app, %s, %s, %s, %v", name, cmd, out, err)
-	}
-
 	return nil
 }
 
