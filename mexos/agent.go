@@ -27,6 +27,10 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 	if CloudletIsLocalDIND() {
 		return runLocalMexAgent()
 	}
+	if CloudletIsPublicCloud() {
+		log.DebugLog(log.DebugLevelMexos, "skip mex agent for public cloud") //TODO: maybe later we will actually have agent on public cloud
+		return nil
+	}
 	fqdn := rootLBName
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(fqdn) {

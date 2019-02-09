@@ -108,10 +108,12 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 			return fmt.Errorf("Env variable MEX_AZURE_LOCATION not set")
 		}
 
-		CloudletInfra.OpenstackProperties.OSImageName = os.Getenv("MEX_OS_IMAGE")
-		if CloudletInfra.OpenstackProperties.OSImageName == "" {
-			CloudletInfra.OpenstackProperties.OSImageName = "mobiledgex"
+		/** resource group currently derived from cloudletname + cluster name
+		CloudletInfra.AzureProperties.ResourceGroup = os.Getenv("MEX_AZURE_RESOURCE_GROUP")
+		if CloudletInfra.AzureProperties.ResourceGroup == "" {
+			return fmt.Errorf("Env variable MEX_AZURE_RESOURCE_GROUP not set")
 		}
+		*/
 
 	case cloudcommon.CloudletKindGCP:
 		CloudletInfra.GcpProperties.Project = os.Getenv("MEX_GCP_PROJECT")
@@ -137,6 +139,10 @@ func InitializeCloudletInfra(fakecloudlet bool) error {
 
 func CloudletIsLocalDIND() bool {
 	return CloudletInfra.CloudletKind == cloudcommon.CloudletKindDIND
+}
+
+func CloudletIsPublicCloud() bool {
+	return (CloudletInfra.CloudletKind == cloudcommon.CloudletKindAzure) || (CloudletInfra.CloudletKind == cloudcommon.CloudletKindGCP)
 }
 
 // returns true if kubectl can be run directly from the CRM rather than SSH jump thru LB
