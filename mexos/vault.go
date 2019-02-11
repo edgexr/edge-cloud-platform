@@ -8,7 +8,26 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
+
+type EnvData struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type VaultDataDetail struct {
+	Env []EnvData `json:"env"`
+}
+
+type VaultData struct {
+	Detail VaultDataDetail `json:"data"`
+}
+
+type VaultResponse struct {
+	Data VaultData `json:"data"`
+}
 
 func GetVaultData(url string) ([]byte, error) {
 	vault_token := os.Getenv("VAULT_TOKEN")
@@ -69,10 +88,9 @@ func internEnv(envs []EnvData) error {
 	return nil
 }
 
-func InternVaultEnv(mf *Manifest) error {
-	//log.DebugLog(log.DebugLevelMexos, "interning vault env var")
-	mf.Values.VaultEnvMap = make(map[string]string)
-	for _, u := range []string{mf.Values.Environment.OpenRC, mf.Values.Environment.MexEnv} {
+func InternVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.CloudletInfraProperties) error {
+	log.DebugLog(log.DebugLevelMexos, "interning vault", "openrc", openrc, "mexenv", mexenv)
+	for _, u := range []string{openrc, mexenv} {
 		if u == "" {
 			continue
 		}
@@ -84,8 +102,10 @@ func InternVaultEnv(mf *Manifest) error {
 		if err != nil {
 			return err
 		}
-		for _, e := range vr.Data.Detail.Env {
-			mf.Values.VaultEnvMap[e.Name] = e.Value
+		if u == openrc {
+			for _, e := range vr.Data.Detail.Env {
+				cloudletInfra.OpenstackProperties.OpenRcVars[e.Name] = e.Value
+			}
 		}
 		//log.DebugLog(log.DebugLevelMexos, "interning vault data", "data", vr)
 		err = internEnv(vr.Data.Detail.Env)
@@ -106,10 +126,10 @@ func CheckPlatformEnv(platformType string) error {
 	// 	name   string
 	// 	getter func() string
 	// }{
-	// 	{"MEX_EXT_NETWORK", GetMEXExternalNetwork},
-	// 	{"MEX_EXT_ROUTER", GetMEXExternalRouter},
-	// 	{"MEX_NETWORK", GetMEXNetwork},
-	// 	{"MEX_SECURITY_RULE", GetMEXSecurityRule},
+	// 	{"MEX_EXT_NETWORK", GetCloudletExternalNetwork},
+	// 	{"MEX_EXT_ROUTER", GetCloudletExternalRouter},
+	// 	{"MEX_NETWORK", GetCloudletNetwork},
+	// 	{"MEX_SECURITY_RULE", GetCloudletSecurityRule},
 	// } {
 	// 	ev := os.Getenv(n.name)
 	// 	if ev == "" {
@@ -127,21 +147,9 @@ func CheckPlatformEnv(platformType string) error {
 	return nil
 }
 
-func GetVaultEnv(mf *Manifest, uri string) error {
-	dat, err := GetURIFile(mf, mf.Base+"/"+uri)
-	if err != nil {
+func GetVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.CloudletInfraProperties) error {
+	if err := InternVaultEnv(openrc, mexenv, cloudletInfra); err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(dat, mf)
-	if err != nil {
-		return err
-	}
-	//log.DebugLog(log.DebugLevelMexos, "about to intern vault env", "mf", mf)
-	if err := InternVaultEnv(mf); err != nil {
-		return err
-	}
-	if err := CheckPlatformEnv(mf.Values.Operator.Kind); err != nil {
-		return err
-	}
-	return err
+	return nil
 }

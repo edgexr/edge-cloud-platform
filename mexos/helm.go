@@ -4,46 +4,38 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func DeleteHelmAppManifest(mf *Manifest) error {
+func DeleteHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
 	log.DebugLog(log.DebugLevelMexos, "delete kubernetes helm app")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
-	}
+
+	var err error
 	if rootLB == nil {
 		return fmt.Errorf("cannot delete helm app, rootLB is null")
 	}
-	if err = ValidateCommon(mf); err != nil {
-		return err
-	}
-	kp, err := ValidateKubernetesParameters(mf, rootLB, mf.Spec.Key)
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
-	if IsLocalDIND(mf) {
+	if CloudletIsLocalDIND() {
 		// remove DNS entries
-		kconf, err := GetKconf(mf, false)
-		if err != nil {
-			return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
-		}
-		if err = deleteAppDNS(mf, kconf); err != nil {
+		if err = deleteAppDNS(kp, kubeNames.appURI, kubeNames.appName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
 		}
 	} else {
 		// remove DNS entries
-		if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
+		if err = KubeDeleteDNSRecords(rootLB, kp, kubeNames.appURI, kubeNames.appName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
 		}
 		// remove Security rules
-		if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+		if err = DeleteProxySecurityRules(rootLB, kp.ipaddr, kubeNames.appName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rules", "error", err)
 		}
 	}
 
-	cmd := fmt.Sprintf("%s helm delete --purge %s", kp.kubeconfig, mf.Metadata.Name)
+	cmd := fmt.Sprintf("%s helm delete --purge %s", kp.kubeconfig, kubeNames.appName)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deleting helm chart, %s, %s, %v", cmd, out, err)
@@ -52,19 +44,15 @@ func DeleteHelmAppManifest(mf *Manifest) error {
 	return nil
 }
 
-func CreateHelmAppManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "create kubernetes helm app")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
-	}
+func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgeproto.AppInst, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
+	log.DebugLog(log.DebugLevelMexos, "create kubernetes helm app", "clusterInst", clusterInst, "kubeNames", kubeNames)
+
+	var err error
+
 	if rootLB == nil {
 		return fmt.Errorf("cannot create helm app, rootLB is null")
 	}
-	if err = ValidateCommon(mf); err != nil {
-		return err
-	}
-	kp, err := ValidateKubernetesParameters(mf, rootLB, mf.Spec.Key)
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -102,36 +90,32 @@ func CreateHelmAppManifest(mf *Manifest) error {
 	// XXX This gets helm's prometheus able to query kubelet metrics.
 	// This can be removed once Lev passes in an option in the yaml to
 	// set the helm command line options.
-	prom, err := regexp.MatchString("prometheus", mf.Metadata.Name)
+	prom, err := regexp.MatchString("prometheus", kubeNames.appName)
 	if err == nil && prom {
 		log.DebugLog(log.DebugLevelMexos, "setting helm prometheus option")
 		helmOpts = "--set kubelet.serviceMonitor.https=true"
 	}
-	cmd = fmt.Sprintf("%s helm install %s --name %s %s", kp.kubeconfig, mf.Spec.Image, mf.Metadata.Name, helmOpts)
+	cmd = fmt.Sprintf("%s helm install %s --name %s %s", kp.kubeconfig, kubeNames.appImage, kubeNames.appName, helmOpts)
 	out, err = kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying helm chart, %s, %s, %v", cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied helm chart")
-	if IsLocalDIND(mf) {
-		kconf, err := GetKconf(mf, false)
-		if err != nil {
-			return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
-		}
+	if CloudletIsLocalDIND() {
 		// Add DNS Zone
-		if err = createAppDNS(mf, kconf); err != nil {
+		if err = createAppDNS(kp, kubeNames.appURI, kubeNames.appName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 			return err
 		}
 	} else {
 		// Add security rules
-		if err = AddProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+		if err = AddProxySecurityRules(rootLB, kp.ipaddr, kubeNames.appName, appInst); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
 			return err
 		}
-		log.DebugLog(log.DebugLevelMexos, "add spec ports", "ports", mf.Spec.Ports)
+		log.DebugLog(log.DebugLevelMexos, "done AddProxySecurityRules", "kubeNames.appName", kubeNames.appName)
 		// Add DNS Zone
-		if err = KubeAddDNSRecords(rootLB, mf, kp); err != nil {
+		if err = KubeAddDNSRecords(rootLB, kp, appInst.Uri, kubeNames.appName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 			return err
 		}

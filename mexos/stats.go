@@ -9,8 +9,8 @@ import (
 )
 
 //GetLimits is used to retrieve tenant level platform stats
-func GetLimits(mf *Manifest) ([]OSLimit, error) {
-	log.DebugLog(log.DebugLevelMexos, "GetLimits", "mf value name", mf.Values.Name)
+func GetLimits() ([]OSLimit, error) {
+	log.DebugLog(log.DebugLevelMexos, "GetLimits")
 	//err := sh.Command("openstack", "limits", "show", "--absolute", "-f", "json", sh.Dir("/tmp")).WriteStdout("os-out.txt")
 	out, err := sh.Command("openstack", "limits", "show", "--absolute", "-f", "json", sh.Dir("/tmp")).Output()
 	if err != nil {

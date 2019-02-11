@@ -3,14 +3,24 @@ package mexos
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
-	"time"
 
-	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+type NetSpecInfo struct {
+	Kind, Name, CIDR, Options string
+	Extra                     []string
+}
+
+func GetK8sNodeNameSuffix(clusterInst *edgeproto.ClusterInst) string {
+	cloudletName := clusterInst.Key.CloudletKey.Name
+	clusterName := clusterInst.Key.ClusterKey.Name
+	return NormalizeName(cloudletName + "-" + clusterName)
+}
+
+/* TODO: Fix for swarm
 //CreateQCOW2AppManifest creates qcow2 app
 func CreateQCOW2AppManifest(mf *Manifest) error {
 	log.DebugLog(log.DebugLevelMexos, "create qcow2 vm based app")
@@ -107,23 +117,27 @@ func CreateQCOW2AppManifest(mf *Manifest) error {
 	//TODO properties
 	//TODO userdata
 	log.DebugLog(log.DebugLevelMexos, "calling create openstack kvm server", "opts", opts)
-	err = CreateServer(mf, opts)
+	err = CreateServer(opts)
 	if err != nil {
 		return fmt.Errorf("can't create openstack kvm server instance %v, %v", opts, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "created openstack kvm server", "opts", opts)
 	return nil
 }
+*/
+
+/*
 
 func DeleteQCOW2AppManifest(mf *Manifest) error {
 	if mf.Metadata.Name == "" {
 		return fmt.Errorf("missing name, no openstack kvm to delete")
 	}
-	if err := DeleteServer(mf, mf.Metadata.Name); err != nil {
+	if err := DeleteServer(mf.Metadata.Name); err != nil {
 		return fmt.Errorf("cannot delete openstack kvm %s, %v", mf.Metadata.Name, err)
 	}
 	return nil
 }
+*/
 
 //CreateFlavorMEXVM creates basic KVM for mobiledgex applications
 //  with proper initial bootstrap scripts installed on the base image that understands
@@ -131,11 +145,11 @@ func DeleteQCOW2AppManifest(mf *Manifest) error {
 // Roles can be any string but special ones are k8s-master and k8s-node.
 //  To avoid running bootstrap setup for creating kubernets cluster, set skipk8s to true.
 // For more detailed information please read `mobiledgex-init.sh`
-func CreateFlavorMEXVM(mf *Manifest, name, image, flavor, netID, userdata, role, edgeproxy, skipk8s, k8smaster, privatenet, privaterouter, tags, tenant string) error {
+func CreateFlavorMEXVM(name, image, flavor, netID, userdata, role, edgeproxy, skipk8s, k8smaster, privatenet, privaterouter, tags, tenant string) error {
 	if name == "" {
 		return fmt.Errorf("name required")
 	}
-	sd, err := GetServerDetails(mf, name)
+	sd, err := GetServerDetails(name)
 	if err == nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, server already exists", "name", sd.Name, "server detail", sd)
 		return nil
@@ -145,13 +159,13 @@ func CreateFlavorMEXVM(mf *Manifest, name, image, flavor, netID, userdata, role,
 	}
 
 	if image == "" {
-		image = GetMEXImageName(mf)
+		image = GetCloudletOSImage()
 	}
 	if flavor == "" {
 		return fmt.Errorf("Missing platform flavor")
 	}
 	if userdata == "" {
-		userdata = GetMEXUserData(mf)
+		userdata = GetCloudletUserData()
 	}
 	opts := &OSServerOpt{
 		Name:     name,
@@ -178,16 +192,24 @@ func CreateFlavorMEXVM(mf *Manifest, name, image, flavor, netID, userdata, role,
 	props = append(props, "privaterouter="+privaterouter)
 	props = append(props, "tags="+tags)
 	props = append(props, "tenant="+tenant)
-	if mf.Values.Network.HolePunch != "" {
-		props = append(props, "holepunch="+mf.Values.Network.HolePunch)
-	}
-	if mf.Values.Registry.Update != "" {
-		props = append(props, "update="+mf.Values.Registry.Update)
-	}
+
+	/* TODO: holepunch has not been used anywhere but need to investigate if we will want this
+	   if GetCloudletHolePunch() != "" {
+	   	props = append(props, "holepunch="+GetCloudletHolePunch()
+	   }
+	*/
+
+	/* TODO: update has code for it in the init scripts, but has not been used because the cloudlet-specific files
+	   are not present on the registry and nobody knew this existed.  This is for Venky to study.
+	   if mf.Values.Registry.Update != "" {
+	   	props = append(props, "update="+mf.Values.Registry.Update)
+	   }
+	*/
+
 	opts.Properties = props
 	//log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor, "server opts", opts)
 	log.DebugLog(log.DebugLevelMexos, "create flavor MEX KVM", "flavor", flavor)
-	err = CreateServer(mf, opts)
+	err = CreateServer(opts)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "error creating flavor MEX KVM", "server opts", opts)
 		return fmt.Errorf("can't create server, opts %v, %v", opts, err)
@@ -197,13 +219,18 @@ func CreateFlavorMEXVM(mf *Manifest, name, image, flavor, netID, userdata, role,
 
 //CreateMEXKVM is easier way to create a MEX app capable KVM
 //  role can be k8s-master, k8s-node, or something else
-func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int, platformFlavor string) error {
+func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, clusterInst *edgeproto.ClusterInst, platformFlavor string) error {
 	log.DebugLog(log.DebugLevelMexos, "createMEXKVM",
 		"name", name, "role", role, "netSpec", netSpec,
 		"tags", tags, "tenant", tenant, "id", id)
-	mexRouter := GetMEXExternalRouter(mf)
-	netID := GetMEXExternalNetwork(mf) //do we really want to default to ext?
+	mexRouter := GetCloudletExternalRouter()
+	netID := GetCloudletExternalNetwork() //do we really want to default to ext?
 	skipk8s := "yes"
+	nameSuffix := ""
+	if clusterInst != nil {
+		nameSuffix = GetK8sNodeNameSuffix(clusterInst)
+	}
+
 	var masterIP, privRouterIP, privNet, edgeProxy string
 	var err error
 	//if role == "mex-agent-node" docker will be installed automatically
@@ -238,14 +265,14 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 		if ni.CIDR == "" {
 			return fmt.Errorf("missing CIDR spec in %v", ni)
 		}
-		if ni.Name != GetMEXNetwork(mf) { //XXX for now
-			return fmt.Errorf("netspec net name %s not equal to default MEX net %s", ni.Name, GetMEXNetwork(mf))
+		if ni.Name != GetCloudletMexNetwork() { //XXX for now
+			return fmt.Errorf("netspec net name %s not equal to default MEX net %s", ni.Name, GetCloudletMexNetwork())
 		}
 		//XXX openstack bug - subnet does not take tags but description field can be used to tag stuff
 		//   Use tag as part of name
-		sn := ni.Name + "-subnet-" + mf.Values.Cluster.Name
+		sn := ni.Name + "-subnet-" + nameSuffix
 		log.DebugLog(log.DebugLevelMexos, "using subnet name", "subnet", sn)
-		snd, snderr := GetSubnetDetail(mf, sn)
+		snd, snderr := GetSubnetDetail(sn)
 		if snderr != nil {
 			if role == k8snodeRole {
 				return fmt.Errorf("subnet %s does not exist, %v", sn, snderr)
@@ -283,7 +310,7 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 			if octno != 2 {
 				return fmt.Errorf("net CIDR, we want octno to be 2 for now")
 			}
-			sns, snserr := ListSubnets(mf, ni.Name)
+			sns, snserr := ListSubnets(ni.Name)
 			if snserr != nil {
 				return fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, snserr)
 			}
@@ -350,18 +377,18 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 			ni.CIDR = fmt.Sprintf("%d.%d.%d.%d/%s", v4a[0], v4a[1], v4a[2], id, sits[1])
 			// we can have up to 150 nodes of workers per subnet.
 			// change these values as needed.
-			sl, err := ListSubnets(mf, ni.Name)
+			sl, err := ListSubnets(ni.Name)
 			if err != nil {
 				return fmt.Errorf("can't get a list of subnets, %v", err)
 			}
 			for _, sn := range sl {
-				sd, err := GetSubnetDetail(mf, sn.ID)
+				sd, err := GetSubnetDetail(sn.ID)
 				if err != nil {
 					return fmt.Errorf("can't get subnet detail, %s, %v", sn.Name, err)
 				}
 				if sd.CIDR == ni.CIDR {
 					log.DebugLog(log.DebugLevelMexos, "subnet exists with the same CIDR, find another range", "CIDR", sd.CIDR)
-					cidr, err := getNewSubnetRange(mf, id, v4a, sits, sl)
+					cidr, err := getNewSubnetRange(id, v4a, sits, sl)
 					if err != nil {
 						return fmt.Errorf("failed to get a new subnet range, %v", err)
 					}
@@ -383,12 +410,12 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 		if role == k8smasterRole {
 			if snd == nil {
 				log.DebugLog(log.DebugLevelMexos, "k8s master, no existing subnet, creating subnet", "name", sn)
-				err = CreateSubnet(mf, ni.CIDR, GetMEXNetwork(mf), edgeProxy, sn, false)
+				err = CreateSubnet(ni.CIDR, GetCloudletMexNetwork(), edgeProxy, sn, false)
 				if err != nil {
 					return err
 				}
 				//TODO: consider adding tags to subnet
-				err = AddRouterSubnet(mf, mexRouter, sn)
+				err = AddRouterSubnet(mexRouter, sn)
 				if err != nil {
 					return fmt.Errorf("cannot add router %s to subnet %s, %v", mexRouter, sn, err)
 				}
@@ -403,7 +430,7 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 		//master node num is 1
 		//so, master node will always have .2
 		//XXX master always at X.X.X.2
-		netID = GetMEXNetwork(mf) + ",v4-fixed-ip=" + ipaddr.String()
+		netID = GetCloudletMexNetwork() + ",v4-fixed-ip=" + ipaddr.String()
 		masteripaddr := net.IPv4(v4[0], v4[1], v4[2], byte(2))
 		masterIP = masteripaddr.String()
 		log.DebugLog(log.DebugLevelMexos, "k8s master ip addr", "netID", netID, "ipaddr", ipaddr, "masterip", masterIP)
@@ -411,18 +438,18 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 		// NOT k8s case
 		// for now just agent stuff.
 		log.DebugLog(log.DebugLevelMexos, "create mex kvm, plain kvm, not kubernetes case")
-		edgeProxy, err = GetExternalGateway(mf, netID)
+		edgeProxy, err = GetExternalGateway(netID)
 		if err != nil {
 			return fmt.Errorf("can't get external gateway for %s, %v", netID, err)
 		}
 		log.DebugLog(log.DebugLevelMexos, "external gateway", "external gateway, edgeproxy", edgeProxy)
 
-		rd, rderr := GetRouterDetail(mf, mexRouter)
+		rd, rderr := GetRouterDetail(mexRouter)
 		if rderr != nil {
 			return fmt.Errorf("can't get router detail for %s, %v", mexRouter, rderr)
 		}
 		log.DebugLog(log.DebugLevelMexos, "router detail", "detail", rd)
-		reg, regerr := GetRouterDetailExternalGateway(mf, rd)
+		reg, regerr := GetRouterDetailExternalGateway(rd)
 		if regerr != nil {
 			//return fmt.Errorf("can't get router detail external gateway, %v", regerr)
 			log.DebugLog(log.DebugLevelMexos, "can't get router detail, not fatal")
@@ -455,11 +482,11 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 	if err != nil {
 		return fmt.Errorf("cannot get flavor from tags '%s'", tags)
 	}
-	err = CreateFlavorMEXVM(mf, name,
-		GetMEXImageName(mf),
+	err = CreateFlavorMEXVM(name,
+		GetCloudletOSImage(),
 		platformFlavor,
 		netID, // either external-net or internal-net,v4-fixed-ip=X.X.X.X
-		GetMEXUserData(mf),
+		GetCloudletUserData(),
 		role, // k8s-master,k8s-node,something else
 		edgeProxy,
 		skipk8s,  // if yes, skip
@@ -477,13 +504,13 @@ func CreateMEXKVM(mf *Manifest, name, role, netSpec, tags, tenant string, id int
 	return nil
 }
 
-func getNewSubnetRange(mf *Manifest, id int, v4a []byte, sits []string, sl []OSSubnet) (*string, error) {
+func getNewSubnetRange(id int, v4a []byte, sits []string, sl []OSSubnet) (*string, error) {
 	var cidr string
 	for newID := id + 1; newID < MEXSubnetLimit; newID++ {
 		cidr = fmt.Sprintf("%d.%d.%d.%d/%s", v4a[0], v4a[1], v4a[2], newID, sits[1])
 		found := false
 		for _, snn := range sl {
-			sdd, err := GetSubnetDetail(mf, snn.ID)
+			sdd, err := GetSubnetDetail(snn.ID)
 			if err != nil {
 				return nil, fmt.Errorf("cannot get subnet detail %s, %v", snn.Name, err)
 			}
@@ -501,20 +528,20 @@ func getNewSubnetRange(mf *Manifest, id int, v4a []byte, sits []string, sl []OSS
 //DestroyMEXKVM deletes the MEX KVM instance. If server instance is k8s-master,
 //  first remove router from subnet which was created for it. Then remove subnet before
 //  deleting server KVM instance.
-func DestroyMEXKVM(mf *Manifest, name, role string) error {
+func DestroyMEXKVM(name, role, clusterName string) error {
 	//TODO send shutdown command to running VM. Left undone so we insteadi optionally
 	// send ssh shutdown manually before deleting the KVM instance via API or mexctl.
 	log.DebugLog(log.DebugLevelMexos, "delete mex kvm server", "name", name, "role", role)
-	err := DeleteServer(mf, name)
+	err := DeleteServer(name)
 	if err != nil {
 		return fmt.Errorf("can't delete %s, %v", name, err)
 	}
 	if role == k8smasterRole {
-		sn := "subnet-" + mf.Values.Cluster.Name
-		rn := GetMEXExternalRouter(mf)
+		sn := "subnet-" + clusterName
+		rn := GetCloudletExternalRouter()
 
 		log.DebugLog(log.DebugLevelMexos, "removing router from subnet", "router", rn, "subnet", sn)
-		err := RemoveRouterSubnet(mf, rn, sn)
+		err := RemoveRouterSubnet(rn, sn)
 		if err != nil {
 			return fmt.Errorf("can't remove subnet %s from router %s, %v", sn, rn, err)
 		}
@@ -523,7 +550,7 @@ func DestroyMEXKVM(mf *Manifest, name, role string) error {
 		//   IP addresses are allocated out of this subnet
 		//   All nodes should be deleted first.
 		log.DebugLog(log.DebugLevelMexos, "deleting subnet", "name", sn)
-		err = DeleteSubnet(mf, sn)
+		err = DeleteSubnet(sn)
 		if err != nil {
 			return fmt.Errorf("can't delete subnet %s, %v", sn, err)
 		}

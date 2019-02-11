@@ -61,26 +61,23 @@ func uri2fqdn(uri string) string {
 }
 
 //ActivateFQDNA updates and ensures FQDN is registered properly
-func ActivateFQDNA(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
+func ActivateFQDNA(rootLB *MEXRootLB, fqdn string) error {
 	if rootLB == nil {
 		return fmt.Errorf("cannot activate certs, rootLB is null")
 	}
 
-	if mf.Values.Network.External == "" {
+	if GetCloudletExternalNetwork() == "" {
 		return fmt.Errorf("activate fqdn A record, missing external network in manifest")
 	}
-	if err := CheckCredentialsCF(mf); err != nil {
-		return err
-	}
-	if err := cloudflare.InitAPI(mexEnv(mf, "MEX_CF_USER"), mexEnv(mf, "MEX_CF_KEY")); err != nil {
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "getting dns record for zone", "DNSZone", mf.Metadata.DNSZone)
-	dr, err := cloudflare.GetDNSRecords(mf.Metadata.DNSZone)
+	log.DebugLog(log.DebugLevelMexos, "getting dns record for zone", "DNSZone", GetCloudletDNSZone())
+	dr, err := cloudflare.GetDNSRecords(GetCloudletDNSZone())
 	if err != nil {
 		return fmt.Errorf("cannot get dns records for %s, %v", fqdn, err)
 	}
-	addr, err := GetServerIPAddr(mf, mf.Values.Network.External, fqdn)
+	addr, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
 	for _, d := range dr {
 		if d.Type == "A" && d.Name == fqdn {
 			if d.Content == addr {
@@ -88,7 +85,7 @@ func ActivateFQDNA(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
 				return nil
 			}
 			log.DebugLog(log.DebugLevelMexos, "cloudflare A record has different address, it will be overwritten", "existing", d, "addr", addr)
-			if err = cloudflare.DeleteDNSRecord(mf.Metadata.DNSZone, d.ID); err != nil {
+			if err = cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), d.ID); err != nil {
 				return fmt.Errorf("can't delete DNS record for %s, %v", fqdn, err)
 			}
 			break
@@ -98,7 +95,7 @@ func ActivateFQDNA(mf *Manifest, rootLB *MEXRootLB, fqdn string) error {
 		log.DebugLog(log.DebugLevelMexos, "error while talking to cloudflare", "error", err)
 		return err
 	}
-	if err := cloudflare.CreateDNSRecord(mf.Metadata.DNSZone, fqdn, "A", addr, 1, false); err != nil {
+	if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", addr, 1, false); err != nil {
 		return fmt.Errorf("can't create DNS record for %s, %v", fqdn, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "waiting for cloudflare...")

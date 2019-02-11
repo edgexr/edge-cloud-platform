@@ -12,20 +12,20 @@ var kcproxySuffix = "-kcproxy"
 
 //StartKubectlProxy starts kubectl proxy on the rootLB to handle kubectl commands remotely.
 //  To be called after copying over the kubeconfig file from cluster to rootLB.
-func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, name, kubeconfig string) (int, error) {
+func StartKubectlProxy(rootLB *MEXRootLB, name, kubeconfig string) (int, error) {
 	log.DebugLog(log.DebugLevelMexos, "start kubectl proxy", "name", name, "kubeconfig", kubeconfig)
 	if rootLB == nil {
 		return 0, fmt.Errorf("cannot kubectl proxy, rootLB is null")
 	}
-	if mf.Values.Network.External == "" {
+	if GetCloudletExternalNetwork() == "" {
 		return 0, fmt.Errorf("start kubectl proxy, missing external network in platform config")
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return 0, err
 	}
 	//TODO check /home/ubuntu/.docker-pass file
-	cmd := fmt.Sprintf("echo %s | docker login -u mobiledgex --password-stdin %s", mexEnv(mf, "MEX_DOCKER_REG_PASS"), mf.Spec.DockerRegistry)
+	cmd := fmt.Sprintf("echo %s | docker login -u mobiledgex --password-stdin %s", GetCloudletDockerPass(), GetCloudletDockerRegistry())
 	out, err := client.Output(cmd)
 	if err != nil {
 		return 0, fmt.Errorf("can't docker login, %s, %v", out, err)
@@ -62,13 +62,13 @@ func StartKubectlProxy(mf *Manifest, rootLB *MEXRootLB, name, kubeconfig string)
 		return 0, fmt.Errorf("cannot convert port %v, %s", aerr, port)
 	}
 	log.DebugLog(log.DebugLevelMexos, "adding external ingress security rule for kubeproxy", "port", port)
-	err = AddSecurityRuleCIDR(mf, GetAllowedClientCIDR(), "tcp", GetMEXSecurityRule(mf), portnum+1) //XXX
+	err = AddSecurityRuleCIDR(GetAllowedClientCIDR(), "tcp", GetCloudletSecurityRule(), portnum+1) //XXX
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, error while adding external ingress security rule for kubeproxy", "error", err, "port", port)
 	}
 	portnum++
 	//TODO delete security rule when kubectl proxy container deleted
-	if err := AddNginxKubectlProxy(mf, rootLB.Name, name, portnum); err != nil {
+	if err := AddNginxKubectlProxy(rootLB.Name, name, portnum); err != nil {
 		return 0, fmt.Errorf("cannot add nginx kubectl proxy, %v", err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "nginx kubectl proxy", "port", portnum)

@@ -1,66 +1,87 @@
 package mexos
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/nanobox-io/golang-ssh"
 )
 
-//CreateKubernetesAppManifest instantiates a new kubernetes deployment
-func CreateKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
-	log.DebugLog(log.DebugLevelMexos, "create kubernetes app")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
+type KubeNames struct {
+	appName      string
+	appURI       string
+	appImage     string
+	clusterName  string
+	operatorName string
+	kconfName    string
+}
+
+// GetKubeNames udpates kubeNames with normalized strings for the included clusterinst, app, and appisnt
+func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, kubeNames *KubeNames) (err error) {
+	if clusterInst == nil {
+		return fmt.Errorf("nil cluster inst")
 	}
+	if app == nil {
+		return fmt.Errorf("nil app")
+	}
+	if appInst == nil {
+		return fmt.Errorf("nil app inst")
+	}
+	kubeNames.clusterName = clusterInst.Key.ClusterKey.Name
+	kubeNames.appName = NormalizeName(app.Key.Name)
+	kubeNames.appURI = appInst.Uri
+	kubeNames.appImage = NormalizeName(app.ImagePath)
+	kubeNames.operatorName = NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
+	kubeNames.kconfName = GetKconfName(clusterInst)
+	return nil
+
+}
+
+//CreateKubernetesAppInst instantiates a new kubernetes deployment
+func CreateKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, kubeManifest string) error {
+	log.DebugLog(log.DebugLevelMexos, "create kubernetes app")
+
 	if rootLB == nil {
 		return fmt.Errorf("cannot create kubernetes app manifest, rootLB is null")
 	}
-	if err = ValidateCommon(mf); err != nil {
-		return err
-	}
-	if mf.Spec.URI == "" { //XXX TODO register to the DNS registry for public IP app,controller needs to tell us which kind of app
+	if appInst.Uri == "" {
 		return fmt.Errorf("empty app URI")
 	}
-	kp, err := ValidateKubernetesParameters(mf, rootLB, mf.Spec.Key)
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "will launch app into cluster", "kubeconfig", kp.kubeconfig, "ipaddr", kp.ipaddr)
 	var cmd string
-	if mexEnv(mf, "MEX_DOCKER_REG_PASS") == "" {
+	if GetCloudletDockerPass() == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
 	//if err := CreateDockerRegistrySecret(mf); err != nil {
 	//	return err
 	//}
 	//TODO do not create yaml file but use remote yaml file over https
-	cmd = fmt.Sprintf("cat <<'EOF'> %s.yaml \n%s\nEOF", mf.Metadata.Name, kubeManifest)
+	cmd = fmt.Sprintf("cat <<'EOF'> %s.yaml \n%s\nEOF", kubeNames.appName, kubeManifest)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error writing KubeManifest, %s, %s, %v", cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "wrote kubernetes manifest file")
-	cmd = fmt.Sprintf("%s kubectl create -f %s.yaml", kp.kubeconfig, mf.Metadata.Name)
+	cmd = fmt.Sprintf("%s kubectl create -f %s.yaml", kp.kubeconfig, kubeNames.appName)
 	out, err = kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying kubernetes app, %s, %v", out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied kubernetes manifest")
-	// we might not be exposing ports
-	if len(mf.Spec.Ports) < 1 {
-		return nil
-	}
 	// Add security rules
-	if err = AddProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
+	if err = AddProxySecurityRules(rootLB, kp.ipaddr, kubeNames.appName, appInst); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, added spec ports", "ports", mf.Spec.Ports)
+	log.DebugLog(log.DebugLevelMexos, "ok, added ports", "ports", appInst.MappedPorts)
 	// Add DNS Zone
-	if err = KubeAddDNSRecords(rootLB, mf, kp); err != nil {
+	if err = KubeAddDNSRecords(rootLB, kp, appInst.Uri, kubeNames.appName); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 		return err
 	}
@@ -74,175 +95,70 @@ type kubeParam struct {
 }
 
 //ValidateKubernetesParameters checks the kubernetes parameters and kubeconfig settings
-func ValidateKubernetesParameters(mf *Manifest, rootLB *MEXRootLB, clustName string) (*kubeParam, error) {
-	log.DebugLog(log.DebugLevelMexos, "validate kubernetes parameters rootLB", "cluster", clustName)
+func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst) (*kubeParam, error) {
+	log.DebugLog(log.DebugLevelMexos, "validate kubernetes parameters", "kubeNames", kubeNames)
+
+	if CloudletIsDirectKubectlAccess() {
+		// No ssh jump host (rootlb) but kconf configures how to
+		// talk to remote kubernetes cluster.  This includes DIND, AKS, GCP
+		kconf, err := GetKconf(clusterInst)
+		if err != nil {
+			return nil, fmt.Errorf("kconf missing, %v, %v", kubeNames.clusterName, err)
+		}
+		kp := kubeParam{
+			kubeconfig: fmt.Sprintf("KUBECONFIG=%s", kconf),
+			client:     &sshLocal{},
+		}
+		return &kp, nil
+	}
 	if rootLB == nil {
 		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is null")
 	}
-	if rootLB.PlatConf == nil {
-		return nil, fmt.Errorf("validate kubernetes parameters, missing platform config")
-	}
-	if mf.Values.Network.External == "" {
+	if GetCloudletExternalNetwork() == "" {
 		return nil, fmt.Errorf("validate kubernetes parameters, missing external network in platform config")
 	}
-	if IsLocalDIND(mf) {
-		return &kubeParam{client: &sshLocal{}}, nil
-	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return nil, err
 	}
-	name, err := FindClusterWithKey(mf, clustName)
+	master, err := FindClusterMaster(kubeNames.clusterName)
 	if err != nil {
-		return nil, fmt.Errorf("can't find cluster with key %s, %v", clustName, err)
+		return nil, fmt.Errorf("can't find cluster with key %s, %v", kubeNames.clusterName, err)
 	}
-	ipaddr, err := FindNodeIP(mf, name)
+	ipaddr, err := FindNodeIP(master)
 	if err != nil {
 		return nil, err
 	}
 	//kubeconfig := fmt.Sprintf("KUBECONFIG=%s.kubeconfig", name[strings.LastIndex(name, "-")+1:])
-	kubeconfig := fmt.Sprintf("KUBECONFIG=%s", GetKconfName(mf))
+	kubeconfig := fmt.Sprintf("KUBECONFIG=%s", kubeNames.kconfName)
 	return &kubeParam{kubeconfig, client, ipaddr}, nil
 }
 
-//KubernetesApplyManifest does `apply` on the manifest yaml
-func KubernetesApplyManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "apply kubernetes manifest")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
+func DeleteKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst) error {
+	log.DebugLog(log.DebugLevelMexos, "delete kubernetes app")
+
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
 		return err
 	}
-	if rootLB == nil {
-		return fmt.Errorf("cannot apply kubernetes manifest, rootLB is null")
+	// Clean up security rules and nginx proxy
+	if err = DeleteProxySecurityRules(rootLB, kp.ipaddr, kubeNames.appName); err != nil {
+		log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", kubeNames.appName, "rootlb", rootLB.Name, "error", err)
 	}
-	if mf.Metadata.Name == "" {
-		return fmt.Errorf("missing name")
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	kp, err := ValidateKubernetesParameters(mf, rootLB, mf.Spec.Key)
-	if err != nil {
+	// Clean up DNS entries
+	if err = KubeDeleteDNSRecords(rootLB, kp, kubeNames.appURI, kubeNames.appName); err != nil {
+		log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", kubeNames.appName, "rootlb", rootLB.Name, "error", err)
 		return err
 	}
-	kubeManifest := mf.Config.ConfigDetail.Manifest
-	cmd := fmt.Sprintf("cat <<'EOF'> %s \n%s\nEOF", mf.Metadata.Name, kubeManifest)
+	cmd := fmt.Sprintf("%s kubectl delete -f %s.yaml", kp.kubeconfig, kubeNames.appName)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("error writing deployment, %s, %s, %v", cmd, out, err)
+		return fmt.Errorf("error deleting kuberknetes app, %s, %s, %s, %v", kubeNames.appName, cmd, out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "wrote deployment file")
-	cmd = fmt.Sprintf("%s kubectl apply -f %s", kp.kubeconfig, mf.Metadata.Name)
-	out, err = kp.client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("error applying kubernetes manifest, %s, %s, %v", cmd, out, err)
-	}
-	return nil
-}
-
-//CreateKubernetesNamespaceManifest creates a new namespace in kubernetes
-func CreateKubernetesNamespaceManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "create kubernetes namespace")
-	err := KubernetesApplyManifest(mf)
-	if err != nil {
-		return fmt.Errorf("error applying kubernetes namespace manifest, %v", err)
-	}
-	return nil
-}
-
-//TODO DeleteKubernetesNamespace
-
-//TODO allow configmap creation from files
-
-//SetKubernetesConfigmapValues sets a key-value in kubernetes configmap
-// func SetKubernetesConfigmapValues(rootLBName string, clustername string, configname string, keyvalues ...string) error {
-// 	log.DebugLog(log.DebugLevelMexos, "set configmap values", "rootlbname", rootLBName, "clustername", clustername, "configname", configname)
-// 	rootLB, err := getRootLB(rootLBName)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if rootLB == nil {
-// 		return fmt.Errorf("cannot set kubeconfig map values, rootLB is null")
-// 	}
-// 	kp, err := ValidateKubernetesParameters(mf, rootLB, clustername)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	//TODO support namespace
-// 	cmd := fmt.Sprintf("%s kubectl create configmap %s ", kp.kubeconfig, configname)
-// 	for _, kv := range keyvalues {
-// 		items := strings.Split(kv, "=")
-// 		if len(items) != 2 {
-// 			return fmt.Errorf("malformed key=value pair, %s", kv)
-// 		}
-// 		cmd = cmd + " --from-literal=" + kv
-// 	}
-// 	out, err := kp.client.Output(cmd)
-// 	if err != nil {
-// 		return fmt.Errorf("error setting key/values to  kubernetes configmap, %s, %s, %v", cmd, out, err)
-// 	}
-// 	return nil
-// }
-
-//TODO
-//func GetKubernetesConfigmapValues(rootLB, clustername, configname string) (map[string]string, error) {
-//}
-
-//GetKubernetesConfigmapYAML returns yaml reprentation of the key-values
-// func GetKubernetesConfigmapYAML(rootLBName string, clustername, configname string) (string, error) {
-// 	log.DebugLog(log.DebugLevelMexos, "get kubernetes configmap", "rootlbname", rootLBName, "clustername", clustername, "configname", configname)
-// 	rootLB, err := getRootLB(rootLBName)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	if rootLB == nil {
-// 		return "", fmt.Errorf("cannot get kubeconfigmap yaml, rootLB is null")
-// 	}
-// 	kp, err := ValidateKubernetesParameters(mf, rootLB, clustername)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	//TODO support namespace
-// 	cmd := fmt.Sprintf("%s kubectl get configmap %s -o yaml", kp.kubeconfig, configname)
-// 	out, err := kp.client.Output(cmd)
-// 	if err != nil {
-// 		return "", fmt.Errorf("error getting configmap yaml, %s, %s, %v", cmd, out, err)
-// 	}
-// 	return out, nil
-// }
-
-func DeleteKubernetesAppManifest(mf *Manifest, kubeManifest string) error {
-	log.DebugLog(log.DebugLevelMexos, "delete kubernetes app")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
-	}
-	if rootLB == nil {
-		return fmt.Errorf("cannot remove kubernetes app manifest, rootLB is null")
-	}
-	if mf.Spec.URI == "" { //XXX TODO register to the DNS registry for public IP app,controller needs to tell us which kind of app
-		return fmt.Errorf("empty app URI")
-	}
-	//TODO: support other URI: file://, nfs://, ftp://, git://, or embedded as base64 string
-	//if !strings.Contains(mf.Spec.Flavor, "kubernetes") {
-	//	return fmt.Errorf("unsupported kubernetes flavor %s", mf.Spec.Flavor)
-	//}
-	if err = ValidateCommon(mf); err != nil {
-		return err
-	}
-	kp, err := ValidateKubernetesParameters(mf, rootLB, mf.Spec.Key)
-	if err != nil {
-		return err
-	}
-	if len(mf.Spec.Ports) > 0 {
-		// Clean up security rules and nginx proxy
-		if err = DeleteProxySecurityRules(rootLB, mf, kp.ipaddr); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
-		}
-		// Clean up DNS entries
-		if err = KubeDeleteDNSRecords(rootLB, mf, kp); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", mf.Metadata.Name, "rootlb", rootLB.Name, "error", err)
-			return err
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "deleted deployment", "name", mf.Metadata.Name)
+	log.DebugLog(log.DebugLevelMexos, "deleted deployment", "name", kubeNames.appName)
 	return nil
 }
 
@@ -282,17 +198,20 @@ type KAPINodes struct {
 	//TODO metadata
 }
 
+/* TODO: fix for swarm
 func GetKubernetesNodes(mf *Manifest, rootLB *MEXRootLB) ([]KubernetesNode, error) {
 	log.DebugLog(log.DebugLevelMexos, "getting kubernetes nodes")
-	name, err := FindClusterWithKey(mf, mf.Spec.Key)
+	clusterName := clusterInst.Key.ClusterKey.Name
+
+	master, err := FindClusterMaster(clusterName)
 	if err != nil {
 		return nil, fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
 	}
-	ipaddr, err := FindNodeIP(mf, name)
+	ipaddr, err := FindNodeIP(master)
 	if err != nil {
 		return nil, err
 	}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return nil, fmt.Errorf("can't get ssh client for getting kubernetes nodes, %v", err)
 	}
@@ -334,3 +253,4 @@ func GetKubernetesNodes(mf *Manifest, rootLB *MEXRootLB) ([]KubernetesNode, erro
 	}
 	return kl, nil
 }
+*/

@@ -11,7 +11,7 @@ import (
 )
 
 //ListServers returns list of servers, KVM instances, running on the system
-func ListServers(mf *Manifest) ([]OSServer, error) {
+func ListServers() ([]OSServer, error) {
 	out, err := sh.Command("openstack", "server", "list", "-f", "json").Output()
 	if err != nil {
 		err = fmt.Errorf("cannot get server list, %v", err)
@@ -28,7 +28,7 @@ func ListServers(mf *Manifest) ([]OSServer, error) {
 }
 
 //ListImages lists avilable images in glance
-func ListImages(mf *Manifest) ([]OSImage, error) {
+func ListImages() ([]OSImage, error) {
 	out, err := sh.Command("openstack", "image", "list", "-f", "json").Output()
 	if err != nil {
 		err = fmt.Errorf("cannot get image list, %v", err)
@@ -45,9 +45,10 @@ func ListImages(mf *Manifest) ([]OSImage, error) {
 }
 
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
-func ListNetworks(mf *Manifest) ([]OSNetwork, error) {
-	out, err := sh.Command("openstack", "network", "list", "-f", "json").Output()
+func ListNetworks() ([]OSNetwork, error) {
+	out, err := sh.Command("openstack", "network", "list", "-f", "json").CombinedOutput()
 	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "network list failed", "out", out)
 		err = fmt.Errorf("cannot get network list, %v", err)
 		return nil, err
 	}
@@ -62,7 +63,7 @@ func ListNetworks(mf *Manifest) ([]OSNetwork, error) {
 }
 
 //ListFlavors lists flavors known to the platform. These vary. On Buckhorn cloudlet the are m4. prefixed.
-func ListFlavors(mf *Manifest) ([]OSFlavor, error) {
+func ListFlavors() ([]OSFlavor, error) {
 	out, err := sh.Command("openstack", "flavor", "list", "-f", "json").Output()
 	if err != nil {
 		err = fmt.Errorf("cannot get flavor list, %v", err)
@@ -79,7 +80,7 @@ func ListFlavors(mf *Manifest) ([]OSFlavor, error) {
 }
 
 //CreateServer instantiates a new server instance, which is a KVM instance based on a qcow2 image from glance
-func CreateServer(mf *Manifest, opts *OSServerOpt) error {
+func CreateServer(opts *OSServerOpt) error {
 	args := []string{
 		"server", "create",
 		"--config-drive", "true", //XXX always
@@ -102,8 +103,10 @@ func CreateServer(mf *Manifest, opts *OSServerOpt) error {
 	for i, v := range args {
 		iargs[i] = v
 	}
+	log.DebugLog(log.DebugLevelMexos, "creating server with args", "iargs", iargs)
+
 	//log.DebugLog(log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
-	out, err := sh.Command("openstack", iargs...).Output()
+	out, err := sh.Command("openstack", iargs...).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
 		return err
@@ -112,7 +115,7 @@ func CreateServer(mf *Manifest, opts *OSServerOpt) error {
 }
 
 // GetServerDetails returns details of the KVM instance
-func GetServerDetails(mf *Manifest, name string) (*OSServerDetail, error) {
+func GetServerDetails(name string) (*OSServerDetail, error) {
 	active := false
 	srvDetail := &OSServerDetail{}
 	for i := 0; i < 10; i++ {
@@ -143,9 +146,9 @@ func GetServerDetails(mf *Manifest, name string) (*OSServerDetail, error) {
 
 //DeleteServer destroys a KVM instance
 //  sometimes it is not possible to destroy. Like most things in Openstack, try again.
-func DeleteServer(mf *Manifest, id string) error {
+func DeleteServer(id string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting server", "id", id)
-	out, err := sh.Command("openstack", "server", "delete", id).Output()
+	out, err := sh.Command("openstack", "server", "delete", id).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("can't delete server %s, %s, %v", id, out, err)
 		return err
@@ -154,7 +157,7 @@ func DeleteServer(mf *Manifest, id string) error {
 }
 
 // CreateNetwork creates a network with a name.
-func CreateNetwork(mf *Manifest, name string) error {
+func CreateNetwork(name string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating network", "network", name)
 	out, err := sh.Command("openstack", "network", "create", name).Output()
 	if err != nil {
@@ -166,9 +169,9 @@ func CreateNetwork(mf *Manifest, name string) error {
 
 //DeleteNetwork destroys a named network
 //  Sometimes it will fail. Openstack will refuse if there are resources attached.
-func DeleteNetwork(mf *Manifest, name string) error {
+func DeleteNetwork(name string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting network", "network", name)
-	out, err := sh.Command("openstack", "network", "delete", name).Output()
+	out, err := sh.Command("openstack", "network", "delete", name).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("can't delete network %s, %s, %v", name, out, err)
 		return err
@@ -177,7 +180,7 @@ func DeleteNetwork(mf *Manifest, name string) error {
 }
 
 //CreateSubnet creates a subnet within a network. A subnet is assigned ranges. Optionally DHCP can be enabled.
-func CreateSubnet(mf *Manifest, netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
+func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
 	var dhcpFlag string
 	if dhcpEnable {
 		dhcpFlag = "--dhcp"
@@ -199,7 +202,7 @@ func CreateSubnet(mf *Manifest, netRange, networkName, gatewayAddr, subnetName s
 				return err
 			}
 			if strings.Index(nerr.NeutronError.Message, "overlap") > 0 {
-				sd, serr := GetSubnetDetail(mf, subnetName)
+				sd, serr := GetSubnetDetail(subnetName)
 				if serr != nil {
 					return fmt.Errorf("cannot get subnet detail for %s, while fixing overlap error, %v", subnetName, serr)
 				}
@@ -218,7 +221,7 @@ func CreateSubnet(mf *Manifest, netRange, networkName, gatewayAddr, subnetName s
 }
 
 //DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
-func DeleteSubnet(mf *Manifest, subnetName string) error {
+func DeleteSubnet(subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting subnet", "name", subnetName)
 	out, err := sh.Command("openstack", "subnet", "delete", subnetName).Output()
 	if err != nil {
@@ -229,7 +232,7 @@ func DeleteSubnet(mf *Manifest, subnetName string) error {
 }
 
 //CreateRouter creates new router. A router can be attached to network and subnets.
-func CreateRouter(mf *Manifest, routerName string) error {
+func CreateRouter(routerName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating router", "name", routerName)
 	out, err := sh.Command("openstack", "router", "create", routerName).Output()
 	if err != nil {
@@ -240,7 +243,7 @@ func CreateRouter(mf *Manifest, routerName string) error {
 }
 
 //DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
-func DeleteRouter(mf *Manifest, routerName string) error {
+func DeleteRouter(routerName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting router", "name", routerName)
 	out, err := sh.Command("openstack", "router", "delete", routerName).Output()
 	if err != nil {
@@ -253,9 +256,9 @@ func DeleteRouter(mf *Manifest, routerName string) error {
 //SetRouter assigns the router to a particular network. The network needs to be attached to
 // a real external network. This is intended only for routing to external network for now. No internal routers.
 // Sometimes, oftentimes, it will fail if the network is not external.
-func SetRouter(mf *Manifest, routerName, networkName string) error {
+func SetRouter(routerName, networkName string) error {
 	log.DebugLog(log.DebugLevelMexos, "setting router to network", "router", routerName, "network", networkName)
-	out, err := sh.Command("openstack", "router", "set", routerName, "--external-gateway", networkName).Output()
+	out, err := sh.Command("openstack", "router", "set", routerName, "--external-gateway", networkName).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("can't set router %s to %s, %s, %v", routerName, networkName, out, err)
 		return err
@@ -264,9 +267,9 @@ func SetRouter(mf *Manifest, routerName, networkName string) error {
 }
 
 //AddRouterSubnet will connect subnet to another network, possibly external, via a router
-func AddRouterSubnet(mf *Manifest, routerName, subnetName string) error {
+func AddRouterSubnet(routerName, subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "adding router to subnet", "router", routerName, "network", subnetName)
-	out, err := sh.Command("openstack", "router", "add", "subnet", routerName, subnetName).Output()
+	out, err := sh.Command("openstack", "router", "add", "subnet", routerName, subnetName).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("can't add router %s to subnet %s, %s, %v", routerName, subnetName, out, err)
 		return err
@@ -276,9 +279,9 @@ func AddRouterSubnet(mf *Manifest, routerName, subnetName string) error {
 
 //RemoveRouterSubnet is useful to remove the router from the subnet before deletion. Otherwise subnet cannot
 //  be deleted.
-func RemoveRouterSubnet(mf *Manifest, routerName, subnetName string) error {
+func RemoveRouterSubnet(routerName, subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "removing subnet from router", "router", routerName, "subnet", subnetName)
-	out, err := sh.Command("openstack", "router", "remove", "subnet", routerName, subnetName).Output()
+	out, err := sh.Command("openstack", "router", "remove", "subnet", routerName, subnetName).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("can't remove router %s from subnet %s, %s, %v", routerName, subnetName, out, err)
 		return err
@@ -287,7 +290,7 @@ func RemoveRouterSubnet(mf *Manifest, routerName, subnetName string) error {
 }
 
 //ListSubnets returns a list of subnets available
-func ListSubnets(mf *Manifest, netName string) ([]OSSubnet, error) {
+func ListSubnets(netName string) ([]OSSubnet, error) {
 	var err error
 	var out []byte
 
@@ -311,7 +314,7 @@ func ListSubnets(mf *Manifest, netName string) ([]OSSubnet, error) {
 }
 
 //ListRouters returns a list of routers available
-func ListRouters(mf *Manifest) ([]OSRouter, error) {
+func ListRouters() ([]OSRouter, error) {
 	out, err := sh.Command("openstack", "router", "list", "-f", "json").Output()
 	if err != nil {
 		err = fmt.Errorf("can't get a list of routers, %s, %v", out, err)
@@ -328,7 +331,7 @@ func ListRouters(mf *Manifest) ([]OSRouter, error) {
 }
 
 //GetRouterDetail returns details per router
-func GetRouterDetail(mf *Manifest, routerName string) (*OSRouterDetail, error) {
+func GetRouterDetail(routerName string) (*OSRouterDetail, error) {
 	out, err := sh.Command("openstack", "router", "show", "-f", "json", routerName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't get router details for %s, %s, %v", routerName, out, err)
@@ -345,7 +348,7 @@ func GetRouterDetail(mf *Manifest, routerName string) (*OSRouterDetail, error) {
 }
 
 //CreateServerImage snapshots running service into a qcow2 image
-func CreateServerImage(mf *Manifest, serverName, imageName string) error {
+func CreateServerImage(serverName, imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating image snapshot from server", "server", serverName, "image", imageName)
 	out, err := sh.Command("openstack", "server", "image", "create", serverName, "--name", imageName).Output()
 	if err != nil {
@@ -356,7 +359,7 @@ func CreateServerImage(mf *Manifest, serverName, imageName string) error {
 }
 
 //CreateImage puts images into glance
-func CreateImage(mf *Manifest, imageName, qcowFile string) error {
+func CreateImage(imageName, qcowFile string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating image in glance", "image", imageName, "qcow", qcowFile)
 	out, err := sh.Command("openstack", "image", "create",
 		imageName,
@@ -374,7 +377,7 @@ func CreateImage(mf *Manifest, imageName, qcowFile string) error {
 // It will then save that into a local file. The image transfer happens from glance into your own laptop
 // or whatever.
 // This can take a while, transferring all the data.
-func SaveImage(mf *Manifest, saveName, imageName string) error {
+func SaveImage(saveName, imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "saving image", "save name", saveName, "image name", imageName)
 	out, err := sh.Command("openstack", "image", "save", "--file", saveName, imageName).Output()
 	if err != nil {
@@ -387,7 +390,7 @@ func SaveImage(mf *Manifest, saveName, imageName string) error {
 //DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
-func DeleteImage(mf *Manifest, imageName string) error {
+func DeleteImage(imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting image", "name", imageName)
 	out, err := sh.Command("openstack", "image", "delete", imageName).Output()
 	if err != nil {
@@ -400,7 +403,7 @@ func DeleteImage(mf *Manifest, imageName string) error {
 //GetSubnetDetail returns details for the subnet. This is useful when getting router/gateway
 //  IP for a given subnet.  The gateway info is used for creating a server.
 //  Also useful in general, like other `detail` functions, to get the ID map for the name of subnet.
-func GetSubnetDetail(mf *Manifest, subnetName string) (*OSSubnetDetail, error) {
+func GetSubnetDetail(subnetName string) (*OSSubnetDetail, error) {
 	out, err := sh.Command("openstack", "subnet", "show", "-f", "json", subnetName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't get subnet details for %s, %s, %v", subnetName, out, err)
@@ -416,7 +419,7 @@ func GetSubnetDetail(mf *Manifest, subnetName string) (*OSSubnetDetail, error) {
 }
 
 //GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
-func GetNetworkDetail(mf *Manifest, networkName string) (*OSNetworkDetail, error) {
+func GetNetworkDetail(networkName string) (*OSNetworkDetail, error) {
 	out, err := sh.Command("openstack", "network", "show", "-f", "json", networkName).Output()
 	if err != nil {
 		err = fmt.Errorf("can't get details for network %s, %s, %v", networkName, out, err)
@@ -432,7 +435,7 @@ func GetNetworkDetail(mf *Manifest, networkName string) (*OSNetworkDetail, error
 }
 
 //SetServerProperty sets properties for the server
-func SetServerProperty(mf *Manifest, name, property string) error {
+func SetServerProperty(name, property string) error {
 	if name == "" {
 		return fmt.Errorf("empty name")
 	}

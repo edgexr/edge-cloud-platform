@@ -9,59 +9,30 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"k8s.io/api/core/v1"
 )
 
-func RunKubectl(mf *Manifest, params string) (*string, error) {
-	log.DebugLog(log.DebugLevelMexos, "run kubectl", "params", params)
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return nil, err
-	}
-	if rootLB == nil {
-		return nil, fmt.Errorf("failed to create docker registry secret, rootLB is null")
-	}
-	//name, err := FindClusterWithKey(mf, mf.Spec.Key)
-	//if err != nil {
-	//	return nil, fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
-	//}
-	client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
-	if err != nil {
-		return nil, fmt.Errorf("can't get ssh client, %v", err)
-	}
-	cmd := fmt.Sprintf("kubectl --kubeconfig %s.kubeconfig %s", rootLB.Name, params)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("kubectl failed, %v, %s", err, out)
-	}
-	return &out, nil
-}
-
-func CreateDockerRegistrySecret(mf *Manifest) error {
+func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
-	rootLB, err := getRootLB(mf.Spec.RootLB)
-	if err != nil {
-		return err
-	}
-	if rootLB == nil {
-		return fmt.Errorf("failed to create docker registry secret, rootLB is null")
-	}
 
 	var out string
-	//log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "mf", mf)
-	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
-	if IsLocalDIND(mf) || mf.Metadata.Operator == "gcp" || mf.Metadata.Operator == "azure" {
-		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally non OpenStack case")
+	var err error
+
+	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubrnetes cluster")
+
+	if CloudletIsDirectKubectlAccess() {
+		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally")
 		var o []byte
-		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+mf.Values.Registry.Docker, "--docker-username=mobiledgex", "--docker-password="+mexEnv(mf, "MEX_DOCKER_REG_PASS"), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
+		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+GetCloudletDockerRegistry(), "--docker-username=mobiledgex", "--docker-password="+GetCloudletDockerPass(), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
 		out = string(o)
 	} else {
-		client, err := GetSSHClient(mf, rootLB.Name, mf.Values.Network.External, sshUser)
+		client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 		if err != nil {
 			return fmt.Errorf("can't get ssh client, %v", err)
 		}
-		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", mf.Values.Registry.Docker, mexEnv(mf, "MEX_DOCKER_REG_PASS"), GetKconfName(mf))
-
+		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", GetCloudletDockerRegistry(), GetCloudletDockerPass(), GetKconfName(clusterInst))
 		out, err = client.Output(cmd)
 	}
 	if err != nil {
@@ -75,57 +46,64 @@ func CreateDockerRegistrySecret(mf *Manifest) error {
 	return nil
 }
 
-func runKubectlCreateApp(mf *Manifest, kubeManifest string) error {
+func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
-	//if err := CreateDockerRegistrySecret(mf); err != nil {
-	//	return err
-	//}
-	kfile := mf.Metadata.Name + ".yaml"
+
+	kfile := kubeNames.appName + ".yaml"
+
 	if err := writeKubeManifest(kubeManifest, kfile); err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
-	kconf, err := GetKconf(mf, false)
+
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
-		return fmt.Errorf("error creating app due to kconf missing, %v, %v", mf, err)
+		return err
 	}
-	out, err := sh.Command("kubectl", "create", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
+	cmd := fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, kfile)
+	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("error creating app, %s, %v, %v, %s", out, err, mf, kubeManifest)
+		return fmt.Errorf("error creating app, %s, %v, %s", out, err, kubeManifest)
 	}
-	err = createAppDNS(mf, kconf)
+	defer func() {
+		if err != nil {
+			cmd = fmt.Sprintf("%s kubectl delete -f %s", kp.kubeconfig, kfile)
+			out, undoerr := kp.client.Output(cmd)
+			if undoerr != nil {
+				log.DebugLog(log.DebugLevelMexos, "undo kubectl create app failed", "kubeNames", kubeNames, "out", out, "err", undoerr)
+			}
+		}
+	}()
+	err = createAppDNS(kp, kubeNames.appURI, kubeNames.appName)
 	if err != nil {
-		return fmt.Errorf("error creating dns entry for app, %v, %v", err, mf)
+		return fmt.Errorf("error creating dns entry for app, %v", err)
 	}
 	return nil
 }
 
-func getSvcExternalIP(name string, kconf string) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name, "kconf", kconf)
+func getSvcExternalIP(name string, kp *kubeParam) (string, error) {
+	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name, "kp", kp)
 	externalIP := ""
-	var out []byte
-	var err error
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
-		out, err = sh.Command("kubectl", "get", "svc", "--kubeconfig="+kconf, "-o", "json").Output()
+		cmd := fmt.Sprintf("%s kubectl get svc -o json", kp.kubeconfig)
+		out, err := kp.client.Output(cmd)
 		if err != nil {
 			return "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
 		}
-		svcs := &svcItems{}
-		err = json.Unmarshal(out, svcs)
+		svcs, err := getServices(kp)
 		if err != nil {
-			return "", fmt.Errorf("error unmarshalling svc json, %v", err)
+			return "", err
 		}
 		log.DebugLog(log.DebugLevelMexos, "getting externalIP, examine list of services", "name", name, "svcs", svcs)
-		for _, item := range svcs.Items {
-			log.DebugLog(log.DebugLevelMexos, "svc item", "item", item, "name", name)
-			if item.Metadata.Name != name {
-				log.DebugLog(log.DebugLevelMexos, "service name mismatch", "name", name, "item.Metadata.Name", item.Metadata.Name)
+		for _, svc := range svcs {
+			log.DebugLog(log.DebugLevelMexos, "svc item", "item", svc, "name", name)
+			if svc.ObjectMeta.Name != name {
+				log.DebugLog(log.DebugLevelMexos, "service name mismatch", "name", name, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
 				continue
 			}
-			for _, ingress := range item.Status.LoadBalancer.Ingresses {
-				log.DebugLog(log.DebugLevelMexos, "found ingress ip", "ingress.IP", ingress.IP, "item.Metadata.Name", item.Metadata.Name)
-
+			for _, ingress := range svc.Status.LoadBalancer.Ingress {
+				log.DebugLog(log.DebugLevelMexos, "found ingress ip", "ingress.IP", ingress.IP, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
 				if ingress.IP != "" {
 					externalIP = ingress.IP
 					log.DebugLog(log.DebugLevelMexos, "got externaIP for app", "externalIP", externalIP)
@@ -141,44 +119,41 @@ func getSvcExternalIP(name string, kconf string) (string, error) {
 	return externalIP, nil
 }
 
-func getSvcNames(name string, kconf string) ([]string, error) {
-	out, err := sh.Command("kubectl", "get", "svc", "--kubeconfig="+kconf, "-o", "json").Output()
+func getServices(kp *kubeParam) ([]v1.Service, error) {
+	cmd := fmt.Sprintf("%s kubectl get svc -o json", kp.kubeconfig)
+	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
+		return nil, fmt.Errorf("can not get list of services, %s, %v", out, err)
 	}
-	svcs := &svcItems{}
-	err = json.Unmarshal(out, svcs)
+	svcs := svcItems{}
+	err = json.Unmarshal([]byte(out), &svcs)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling svc json, %v", err)
+		log.DebugLog(log.DebugLevelMexos, "cannot unmarshal svc json", "out", out, "err", err)
+		return nil, fmt.Errorf("cannot unmarshal svc json, %s", err.Error())
 	}
-	var serviceNames []string
-	for _, item := range svcs.Items {
-		if strings.HasPrefix(item.Metadata.Name, name) {
-			serviceNames = append(serviceNames, item.Metadata.Name)
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "service names", "names", serviceNames)
-	return serviceNames, nil
+	return svcs.Items, nil
 }
 
-func runKubectlDeleteApp(mf *Manifest, kubeManifest string) error {
-	kconf, err := GetKconf(mf, false)
+func runKubectlDeleteApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
+
+	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
-		return fmt.Errorf("error deleting app due to kconf missing,  %v, %v", mf, err)
+		return err
 	}
-	kfile := mf.Metadata.Name + ".yaml"
+	kfile := kubeNames.appName + ".yaml"
 	err = writeKubeManifest(kubeManifest, kfile)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
-	out, err := sh.Command("kubectl", "delete", "-f", kfile, "--kubeconfig="+kconf).CombinedOutput()
+	cmd := fmt.Sprintf("%s kubectl delete -f %s", kp.kubeconfig, kfile)
+	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("error deleting app, %s, %v, %v", out, mf, err)
+		return fmt.Errorf("error deleting app, %s, %v", out, err)
 	}
-	err = deleteAppDNS(mf, kconf)
+	err = deleteAppDNS(kp, kubeNames.appURI, kubeNames.appName)
 	if err != nil {
-		return fmt.Errorf("error deleting dns entry for app, %v, %v", err, mf)
+		return fmt.Errorf("error deleting dns entry for app, %v, %v", kubeNames.appName, err)
 	}
 	return nil
 }

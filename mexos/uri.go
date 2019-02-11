@@ -23,13 +23,13 @@ func validateDomain(uri string) error {
 	return fmt.Errorf("URI %s is not a valid domain name", uri)
 }
 
-func GetURIFile(mf *Manifest, uri string) ([]byte, error) {
+func GetURIFile(uri string) ([]byte, error) {
 	log.DebugLog(log.DebugLevelMexos, "attempt to get uri file", "uri", uri)
 	// if _, err := url.ParseRequestURI(uri); err != nil {
 	// 	return nil, err
 	// }
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		res, err := GetHTTPFile(mf, uri)
+		res, err := GetHTTPFile(uri)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error getting http uri file", "uri", uri, "error", err)
 			return nil, err
@@ -37,7 +37,7 @@ func GetURIFile(mf *Manifest, uri string) ([]byte, error) {
 		return res, nil
 	}
 	if strings.HasPrefix(uri, "scp://") {
-		res, err := GetSCPFile(mf, uri)
+		res, err := GetSCPFile(uri)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error getting scp uri file", "uri", uri, "error", err)
 			return nil, err
@@ -59,7 +59,7 @@ func GetURIFile(mf *Manifest, uri string) ([]byte, error) {
 	return res, nil
 }
 
-func GetHTTPFile(mf *Manifest, uri string) ([]byte, error) {
+func GetHTTPFile(uri string) ([]byte, error) {
 	log.DebugLog(log.DebugLevelMexos, "attempt to get http uri file", "uri", uri)
 	resp, err := http.Get(uri)
 	if err != nil {
@@ -76,7 +76,7 @@ func GetHTTPFile(mf *Manifest, uri string) ([]byte, error) {
 	return nil, fmt.Errorf("http status not OK, %v", resp.StatusCode)
 }
 
-func GetSCPFile(mf *Manifest, uri string) ([]byte, error) {
+func GetSCPFile(uri string) ([]byte, error) {
 	log.DebugLog(log.DebugLevelMexos, "attempt to get scp uri file", "uri", uri)
 	part1 := strings.Replace(uri, "scp://", "mobiledgex@", -1)
 	slashindex := strings.Index(part1, "/")
@@ -94,7 +94,7 @@ func GetSCPFile(mf *Manifest, uri string) ([]byte, error) {
 	return sh.Command("ssh", "-o", sshOpts[0], "-o", sshOpts[1], "-i", PrivateSSHKey(), addr, "cat", fn).Output()
 }
 
-// func CopyURIFile(mf *Manifest, uri string, fn string) error {
+// func CopyURIFile(uri string, fn string) error {
 // 	res, err := GetURIFile(mf, uri)
 // 	if err != nil {
 // 		return err
