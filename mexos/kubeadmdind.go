@@ -15,7 +15,7 @@ func localCreateDIND(clusterInst *edgeproto.ClusterInst) error {
 	clusterName := clusterInst.Key.ClusterKey.Name
 	log.DebugLog(log.DebugLevelMexos, "creating local dind cluster", "clusterName", clusterName)
 
-	kconfName := GetKconfName(clusterInst)
+	kconfName := GetLocalKconfName(clusterInst)
 	if err = dind.CreateDINDCluster(clusterName, kconfName); err != nil {
 		return err
 	}

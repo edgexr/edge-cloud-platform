@@ -55,7 +55,7 @@ func CreateDINDCluster(clusterName, kconfName string) error {
 	//copy kubeconfig locally
 	log.DebugLog(log.DebugLevelMexos, "locally copying kubeconfig", "kconfName", kconfName)
 	home := os.Getenv("HOME")
-	out, err = sh.Command("cp", home+"/.kube/config", home+"/.kube/"+kconfName).CombinedOutput()
+	out, err = sh.Command("cp", home+"/.kube/config", kconfName).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s %v", out, err)
 	}
