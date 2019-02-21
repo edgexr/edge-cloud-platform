@@ -438,13 +438,18 @@ func CreateNginx(name string, network string, ports []*api.NginxPort) error {
 		// when runnning in DIND it cannot use host mode and so must expose the ports
 		cmdArgs = append(cmdArgs, "--network", network)
 		for _, p := range ports {
-			pstr := fmt.Sprintf("%s:%s", p.External, p.External)
+			proto := "tcp"
+			if p.Mexproto == "LProtoUDP" {
+				proto = "udp"
+			}
+			pstr := fmt.Sprintf("%s:%s/%s", p.External, p.External, proto)
 			cmdArgs = append(cmdArgs, "-p", pstr)
 		}
 	} else {
 		cmdArgs = append(cmdArgs, "--net=host")
 	}
 	cmdArgs = append(cmdArgs, []string{"-v", defaultConf + ":/etc/nginx/conf.d/default.conf", "-v", dir + ":/var/www/.cache", "-v", "/etc/ssl/certs:/etc/ssl/certs", "-v", pwd + "/cert.pem:/etc/ssl/certs/server.crt", "-v", pwd + "/key.pem:/etc/ssl/certs/server.key", "-v", errlogFile + ":/var/log/nginx/error.log", "-v", nconfName + ":/etc/nginx/nginx.conf", "nginx"}...)
+	log.Debugln("Nginx docker command:", cmdArgs)
 	out, err := sh.Command("docker", cmdArgs).CombinedOutput()
 
 	if err != nil {
