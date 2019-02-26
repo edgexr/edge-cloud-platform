@@ -2,8 +2,9 @@ package mexos
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -44,7 +45,17 @@ func DeleteHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edg
 	return nil
 }
 
-func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgeproto.AppInst, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
+// concatenate files with a ',' and prepend '-f'
+// Example: ["foo.yaml", "bar.yaml", "foobar.yaml"] ---> "-f foo.yaml,bar.yaml,foobar.yaml"
+func getHelmYamlOpt(ymls []string) string {
+	// empty string
+	if len(ymls) == 0 {
+		return ""
+	}
+	return "-f " + strings.Join(ymls, ",")
+}
+
+func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgeproto.AppInst, clusterInst *edgeproto.ClusterInst, kubeManifest string, configs []*edgeproto.ConfigFile) error {
 	log.DebugLog(log.DebugLevelMexos, "create kubernetes helm app", "clusterInst", clusterInst, "kubeNames", kubeNames)
 
 	var err error
@@ -86,15 +97,19 @@ func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgepro
 		log.DebugLog(log.DebugLevelMexos, "helm tiller initialized")
 	}
 
-	helmOpts := ""
-	// XXX This gets helm's prometheus able to query kubelet metrics.
-	// This can be removed once Lev passes in an option in the yaml to
-	// set the helm command line options.
-	prom, err := regexp.MatchString("prometheus", kubeNames.appName)
-	if err == nil && prom {
-		log.DebugLog(log.DebugLevelMexos, "setting helm prometheus option")
-		helmOpts = "--set kubelet.serviceMonitor.https=true"
+	// Walk the Configs in the App and generate the yaml files from the helm customization ones
+	var ymls []string
+	for _, v := range configs {
+		if v.Kind == cloudcommon.AppConfigHemYaml {
+			file, err := WriteConfigFile(kp, kubeNames.appName, v.Config, v.Kind)
+			if err != nil {
+				return err
+			}
+			ymls = append(ymls, file)
+		}
 	}
+	helmOpts := getHelmYamlOpt(ymls)
+	log.DebugLog(log.DebugLevelMexos, "Helm options", "helmOpts", helmOpts)
 	cmd = fmt.Sprintf("%s helm install %s --name %s %s", kp.kubeconfig, kubeNames.appImage, kubeNames.appName, helmOpts)
 	out, err = kp.client.Output(cmd)
 	if err != nil {

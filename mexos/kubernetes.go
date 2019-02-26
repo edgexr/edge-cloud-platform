@@ -58,18 +58,12 @@ func CreateKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterIns
 	if GetCloudletDockerPass() == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
-	//if err := CreateDockerRegistrySecret(mf); err != nil {
-	//	return err
-	//}
-	//TODO do not create yaml file but use remote yaml file over https
-	cmd = fmt.Sprintf("cat <<'EOF'> %s.yaml \n%s\nEOF", kubeNames.appName, kubeManifest)
-	out, err := kp.client.Output(cmd)
+	file, err := WriteConfigFile(kp, kubeNames.appName, kubeManifest, "K8s Deployment")
 	if err != nil {
-		return fmt.Errorf("error writing KubeManifest, %s, %s, %v", cmd, out, err)
+		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "wrote kubernetes manifest file")
-	cmd = fmt.Sprintf("%s kubectl create -f %s.yaml", kp.kubeconfig, kubeNames.appName)
-	out, err = kp.client.Output(cmd)
+	cmd = fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, file)
+	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying kubernetes app, %s, %v", out, err)
 	}

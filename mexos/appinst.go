@@ -43,7 +43,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
 			err = runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			err = CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest)
+			err = CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest, app.Configs)
 		} else {
 			err = fmt.Errorf("invalid deployment type %s for dind", appDeploymentType)
 		}
@@ -73,7 +73,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 			return CreateKubernetesAppInst(rootLB, &kubeNames, clusterInst, appInst, app.DeploymentManifest)
 
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
-			return CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest)
+			return CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest, app.Configs)
 		}
 		//TODO -- support these later
 		//} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {

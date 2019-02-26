@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -33,6 +34,24 @@ func copyFile(src string, dst string) error {
 		return err
 	}
 	return nil
+}
+
+// This is a function to get the file given a manifest
+// Currently it creates a file locally on the rootLB but copying Manifest into a file
+// TODO do not create yaml file but use remote yaml file over https
+func WriteConfigFile(kp *kubeParam, appName string, kubeManifest string, kind string) (string, error) {
+	file := appName + ".yaml"
+	mf, err := cloudcommon.GetDeploymentManifest(kubeManifest)
+	if err != nil {
+		return "", err
+	}
+	cmd := fmt.Sprintf("cat <<'EOF'> %s \n%s\nEOF", file, mf)
+	out, err := kp.client.Output(cmd)
+	if err != nil {
+		return "", fmt.Errorf("error writing %s manifest, %s, %s, %v", kind, cmd, out, err)
+	}
+	log.DebugLog(log.DebugLevelMexos, "wrote manifest file", "kind", kind)
+	return file, nil
 }
 
 func writeKubeManifest(kubeManifest string, filename string) error {
