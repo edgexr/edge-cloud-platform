@@ -1,0 +1,40 @@
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+def closeToExpiry = ''
+properties([parameters([
+    string(name: 'HOSTNAMES',
+           defaultValue: 'registry.mobiledgex.net:5000 vault.mobiledgex.net')
+])])
+
+node {
+    stage('Checkout') {
+        git branch: 'master',
+            url: 'git@github.com:mobiledgex/edge-cloud-infra.git'
+    }
+    stage('Check') {
+        closeToExpiry = sh label: 'check expiry',
+                            returnStdout: true,
+                            script: '''#!/bin/bash
+OUT=
+for HOSTNAME in $HOSTNAMES; do
+    EXP=$( monitoring/certs/cert-expiry.sh "$HOSTNAME" )
+    echo "$HOSTNAME: cert expiry: $EXP days" >&2
+    if [[ "$EXP" -lt 28 ]]; then
+        OUT="${OUT}- $HOSTNAME   $EXP days|"
+    fi
+done
+echo $OUT
+                        '''
+        if (closeToExpiry?.trim()) {
+            JSONArray attachments = new JSONArray();
+            JSONObject attachment = new JSONObject();
+
+            attachment.put('title', 'Certs close to expiry')
+            attachment.put('text', closeToExpiry.replace("|", "\n"));
+            attachment.put('color', '#ff0000')
+            attachments.add(attachment)
+            slackSend channel: "#devops", color: 'warning', attachments: attachments.toString()
+        }
+    }
+}
