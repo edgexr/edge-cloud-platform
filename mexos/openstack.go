@@ -60,7 +60,7 @@ type OSNetworkDetail struct {
 	ProviderPhysicalNetwork string `json:"provider:physical_network"`
 	IPv6AddressScope        string `json:"ipv6_address_scope"`
 	DNSDomain               string `json:"dns_domain"`
-	IsVLANTransparent       string `json:"is_vlan_transparent"`
+	IsVLANTransparent       bool   `json:"is_vlan_transparent"`
 	ProviderNetworkType     string `json:"provider:network_type"`
 	External                string `json:"router:external"`
 	AvailabilityZoneHints   string `json:"availability_zone_hints"`
@@ -73,7 +73,7 @@ type OSNetworkDetail struct {
 	Description             string `json:"description"`
 	Tags                    string `json:"tags"`
 	UpdatedAt               string `json:"updated_at"`
-	ProviderSegmentationID  string `json:"provider:segmentation_id"`
+	ProviderSegmentationID  int    `json:"provider:segmentation_id"`
 	QOSPolicyID             string `json:"qos_policy_id"`
 	AdminStateUp            string `json:"admin_state_up"`
 	CreatedAt               string `json:"created_at"`
