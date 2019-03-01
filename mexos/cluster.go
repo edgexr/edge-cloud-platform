@@ -193,6 +193,9 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	if err := CreateDockerRegistrySecret(clusterInst, rootLBName); err != nil {
 		return err
 	}
+	if err := CreateClusterConfigMap(clusterInst, rootLBName); err != nil {
+		return err
+	}
 	//return &guid, nil
 	return nil
 }

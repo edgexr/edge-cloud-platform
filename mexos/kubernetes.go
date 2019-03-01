@@ -88,10 +88,36 @@ type kubeParam struct {
 	ipaddr     string
 }
 
+func getClusterSSHClient(rootLBName string) (ssh.Client, error) {
+	if CloudletIsDirectKubectlAccess() {
+		// No ssh jump host (rootlb) but kconf configures how to
+		// talk to remote kubernetes cluster.  This includes DIND, AKS, GCP
+		return &sshLocal{}, nil
+	}
+	if rootLBName == "" {
+		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is empty")
+	}
+	if GetCloudletExternalNetwork() == "" {
+		return nil, fmt.Errorf("validate kubernetes parameters, missing external network in platform config")
+	}
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
 //ValidateKubernetesParameters checks the kubernetes parameters and kubeconfig settings
 func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst) (*kubeParam, error) {
 	log.DebugLog(log.DebugLevelMexos, "validate kubernetes parameters", "kubeNames", kubeNames)
 
+	if rootLB == nil {
+		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is null")
+	}
+	client, err := getClusterSSHClient(rootLB.Name)
+	if err != nil {
+		return nil, err
+	}
 	if CloudletIsDirectKubectlAccess() {
 		// No ssh jump host (rootlb) but kconf configures how to
 		// talk to remote kubernetes cluster.  This includes DIND, AKS, GCP
@@ -101,19 +127,12 @@ func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clust
 		}
 		kp := kubeParam{
 			kubeconfig: fmt.Sprintf("KUBECONFIG=%s", kconf),
-			client:     &sshLocal{},
+			client:     client,
 		}
 		return &kp, nil
 	}
-	if rootLB == nil {
-		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is null")
-	}
 	if GetCloudletExternalNetwork() == "" {
 		return nil, fmt.Errorf("validate kubernetes parameters, missing external network in platform config")
-	}
-	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
-	if err != nil {
-		return nil, err
 	}
 	master, err := FindClusterMaster(kubeNames.clusterName)
 	if err != nil {
@@ -123,7 +142,6 @@ func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clust
 	if err != nil {
 		return nil, err
 	}
-	//kubeconfig := fmt.Sprintf("KUBECONFIG=%s.kubeconfig", name[strings.LastIndex(name, "-")+1:])
 	kubeconfig := fmt.Sprintf("KUBECONFIG=%s", kubeNames.kconfName)
 	return &kubeParam{kubeconfig, client, ipaddr}, nil
 }

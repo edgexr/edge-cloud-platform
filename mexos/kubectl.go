@@ -8,33 +8,25 @@ import (
 	"strings"
 	"time"
 
-	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"k8s.io/api/core/v1"
 )
 
 func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
-	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes")
-
 	var out string
-	var err error
 
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubrnetes cluster")
 
-	if CloudletIsDirectKubectlAccess() {
-		log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret locally")
-		var o []byte
-		o, err = sh.Command("kubectl", "create", "secret", "docker-registry", "mexregistrysecret", "--docker-server="+GetCloudletDockerRegistry(), "--docker-username=mobiledgex", "--docker-password="+GetCloudletDockerPass(), "--docker-email=mobiledgex@mobiledgex.com").CombinedOutput()
-		out = string(o)
-	} else {
-		client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
-		if err != nil {
-			return fmt.Errorf("can't get ssh client, %v", err)
-		}
-		cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret --docker-server=%s --docker-username=mobiledgex --docker-password=%s --docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", GetCloudletDockerRegistry(), GetCloudletDockerPass(), GetKconfName(clusterInst))
-		out, err = client.Output(cmd)
+	client, err := getClusterSSHClient(rootLBName)
+	if err != nil {
+		return err
 	}
+	cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret "+
+		"--docker-server=%s --docker-username=mobiledgex --docker-password=%s "+
+		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
+		GetCloudletDockerRegistry(), GetCloudletDockerPass(), GetKconfName(clusterInst))
+	out, err = client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
@@ -43,6 +35,35 @@ func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName s
 		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "ok, created mexregistrysecret")
+	return nil
+}
+
+// ConfigMap of cluster instance details such as cluster name, cloudlet name, and operator name
+func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+	var out string
+
+	log.DebugLog(log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
+
+	client, err := getClusterSSHClient(rootLBName)
+	if err != nil {
+		return err
+	}
+	cmd := fmt.Sprintf("kubectl create configmap cluster-info "+
+		"--from-literal=ClusterName=%s "+
+		"--from-literal=CloudletName=%s "+
+		"--from-literal=OperatorName=%s --kubeconfig=%s",
+		clusterInst.Key.ClusterKey.Name, clusterInst.Key.CloudletKey.Name,
+		clusterInst.Key.CloudletKey.OperatorKey.Name, GetKconfName(clusterInst))
+
+	out, err = client.Output(cmd)
+	if err != nil {
+		if !strings.Contains(out, "AlreadyExists") {
+			return fmt.Errorf("can't add cluster ConfigMap, %s, %v", out, err)
+		} else {
+			log.DebugLog(log.DebugLevelMexos, "warning, Cluster ConfigMap already exists.")
+		}
+	}
+	log.DebugLog(log.DebugLevelMexos, "ok, created cluster-info configmap")
 	return nil
 }
 

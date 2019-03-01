@@ -35,6 +35,10 @@ func localCreateDIND(clusterInst *edgeproto.ClusterInst) error {
 	if err != nil {
 		return fmt.Errorf("cannot create mexreg secret for: %s, err: %v", clusterName, err)
 	}
+	err = CreateClusterConfigMap(clusterInst, "")
+	if err != nil {
+		return fmt.Errorf("cannot create ConfigMap for: %s, err: %v", clusterName, err)
+	}
 
 	return nil
 }

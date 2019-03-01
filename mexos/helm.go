@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -100,7 +99,7 @@ func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgepro
 	// Walk the Configs in the App and generate the yaml files from the helm customization ones
 	var ymls []string
 	for _, v := range configs {
-		if v.Kind == cloudcommon.AppConfigHemYaml {
+		if v.Kind == AppConfigHemYaml {
 			file, err := WriteConfigFile(kp, kubeNames.appName, v.Config, v.Kind)
 			if err != nil {
 				return err
