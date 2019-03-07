@@ -10,21 +10,18 @@ import (
 var defaultPrivateNetRange = "10.101.X.0/24"
 
 //GetInternalIP returns IP of the server
-func GetInternalIP(name string) (string, error) {
-	sd, err := GetServerDetails(name)
-	if err != nil {
-		return "", err
+func GetInternalIP(name string, srvs []OSServer) (string, error) {
+	for _, s := range srvs {
+		if s.Name == name {
+			return s.GetServerInternalIP()
+		}
 	}
-	its := strings.Split(sd.Addresses, "=")
-	if len(its) != 2 {
-		return "", fmt.Errorf("GetInternalIP: can't parse server detail addresses, %v, %v", sd, err)
-	}
-	return its[1], nil
+	return "", fmt.Errorf("No internal IP found for %s", name)
 }
 
 //GetInternalCIDR returns CIDR of server
-func GetInternalCIDR(name string) (string, error) {
-	addr, err := GetInternalIP(name)
+func GetInternalCIDR(name string, srvs []OSServer) (string, error) {
+	addr, err := GetInternalIP(name, srvs)
 	if err != nil {
 		return "", err
 	}
@@ -37,13 +34,19 @@ func GetAllowedClientCIDR() string {
 	return "0.0.0.0/0"
 }
 
-//XXX allow creating more than one LB
-
 //GetServerIPAddr gets the server IP
+//TODO: consider replacing this function with GetServerNetworkIP, however that function
+// requires some rework to use in all cases
 func GetServerIPAddr(networkName, serverName string) (string, error) {
-	//TODO: mexosagent cache
-	//log.DebugLog(log.DebugLevelMexos, "get server ip addr", "networkname", networkName, "servername", serverName)
-	//sd, err := GetServerDetails(rootLB)
+
+	// if this is a root lb, look it up and get the IP if we have it cached
+	rootLB, err := getRootLB(serverName)
+	if err == nil && rootLB != nil {
+		if rootLB.IP != "" {
+			log.DebugLog(log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
+			return rootLB.IP, nil
+		}
+	}
 	sd, err := GetServerDetails(serverName)
 	if err != nil {
 		return "", err
@@ -81,18 +84,15 @@ func GetServerIPAddr(networkName, serverName string) (string, error) {
 }
 
 //FindNodeIP finds IP for the given node
-func FindNodeIP(name string) (string, error) {
+func FindNodeIP(name string, srvs []OSServer) (string, error) {
 	//log.DebugLog(log.DebugLevelMexos, "find node ip", "name", name)
 	if name == "" {
 		return "", fmt.Errorf("empty name")
 	}
-	srvs, err := ListServers()
-	if err != nil {
-		return "", err
-	}
+
 	for _, s := range srvs {
 		if s.Status == "ACTIVE" && s.Name == name {
-			ipaddr, err := GetInternalIP(s.Name)
+			ipaddr, err := s.GetServerInternalIP()
 			if err != nil {
 				return "", fmt.Errorf("can't get IP for %s, %v", s.Name, err)
 			}

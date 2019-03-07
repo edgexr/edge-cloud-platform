@@ -15,17 +15,17 @@ import (
 
 var dnsRegisterRetryDelay time.Duration = 3 * time.Second
 
-func createAppDNS(kp *kubeParam, uri string, name string) error {
+func createAppDNS(kp *kubeParam, kubeNames *KubeNames) error {
 
 	log.DebugLog(log.DebugLevelMexos, "createAppDNS")
 
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	if uri == "" {
+	if kubeNames.appURI == "" {
 		return fmt.Errorf("URI not specified")
 	}
-	err := validateDomain(uri)
+	err := validateDomain(kubeNames.appURI)
 	if err != nil {
 		return err
 	}
@@ -34,15 +34,15 @@ func createAppDNS(kp *kubeParam, uri string, name string) error {
 		return err
 	}
 	if len(svcs) < 1 {
-		return fmt.Errorf("no load balancer services for %s", name)
+		return fmt.Errorf("no load balancer services for %s", kubeNames.appURI)
 	}
-	recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone())
-	if derr != nil {
-		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), err)
-	}
-	fqdnBase := uri2fqdn(uri)
+
+	fqdnBase := uri2fqdn(kubeNames.appURI)
 	for _, svc := range svcs {
 		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
+			continue
+		}
+		if !kubeNames.containsService(svc.Name) {
 			continue
 		}
 		sn := svc.ObjectMeta.Name
@@ -66,44 +66,24 @@ func createAppDNS(kp *kubeParam, uri string, name string) error {
 			return err
 		}
 		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
-		recordMatch := false
-		for _, rec := range recs {
-			if rec.Type == "A" && rec.Name == fqdn {
-				if rec.Content == externalIP {
-					log.DebugLog(log.DebugLevelMexos, "DNS record already correct", "fqdn", fqdn, "addr", externalIP)
-					recordMatch = true
-				} else {
-					if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
-						return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
-					}
-				}
-			}
-		}
-		if !recordMatch {
-			if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", externalIP, 1, false); err != nil {
-				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, externalIP, err)
-			}
 
-			//log.DebugLog(log.DebugLevelMexos, "waiting for DNS record to be created on cloudflare...")
-			//err = WaitforDNSRegistration(fqdn)
-			//if err != nil {
-			//	return err
-			//}
-			log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", externalIP)
+		if err := cloudflare.CreateOrUpdateDNSRecord(GetCloudletDNSZone(), fqdn, "A", externalIP, 1, false); err != nil {
+			return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, externalIP, err)
 		}
+		log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", externalIP)
 	}
 	return nil
 }
 
-func deleteAppDNS(kp *kubeParam, uri string, name string) error {
+func deleteAppDNS(kp *kubeParam, kubeNames *KubeNames) error {
 
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	if uri == "" {
+	if kubeNames.appURI == "" {
 		return fmt.Errorf("URI not specified")
 	}
-	err := validateDomain(uri)
+	err := validateDomain(kubeNames.appURI)
 	if err != nil {
 		return err
 	}
@@ -114,17 +94,20 @@ func deleteAppDNS(kp *kubeParam, uri string, name string) error {
 	if len(svcs) < 1 {
 		return fmt.Errorf("no services in cluster")
 	}
-	recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone())
-	if derr != nil {
-		return fmt.Errorf("cannot get dns records for dns zone %s, error %v", GetCloudletDNSZone(), err)
-	}
-	fqdnBase := uri2fqdn(uri)
+	fqdnBase := uri2fqdn(kubeNames.appURI)
 	for _, svc := range svcs {
 		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			continue
 		}
+		if !kubeNames.containsService(svc.Name) {
+			continue
+		}
 		sn := svc.ObjectMeta.Name
 		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
+		recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone(), fqdn)
+		if derr != nil {
+			return fmt.Errorf("cannot get dns records for dns zone %s, error %v", GetCloudletDNSZone(), err)
+		}
 		for _, rec := range recs {
 			if rec.Type == "A" && rec.Name == fqdn {
 				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
@@ -160,8 +143,8 @@ func KubePatchServiceLocal(servicename string, ipaddr string) error {
 // commands locally for DIND or other cases.
 // Same for KubeDeleteDNSRecords and deleteAppDNS.
 
-func KubeAddDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name string) error {
-	log.DebugLog(log.DebugLevelMexos, "adding dns records for kubenernets app", "name", name)
+func KubePatchSvcAddDNSRecords(rootLB *MEXRootLB, kp *kubeParam, kubeNames *KubeNames) error {
+	log.DebugLog(log.DebugLevelMexos, "patching service and adding dns records for kubenernets app", "name", kubeNames.appName)
 	rootLBIPaddr, err := GetServerIPAddr(GetCloudletExternalNetwork(), rootLB.Name)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot get rootlb IP address", "error", err)
@@ -169,24 +152,25 @@ func KubeAddDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name string
 	}
 
 	svcs, err := getServices(kp)
+	log.DebugLog(log.DebugLevelMexos, "got kubernetes services", "services", svcs)
+
 	if err != nil {
 		return err
 	}
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	recs, err := cloudflare.GetDNSRecords(GetCloudletDNSZone())
-	if err != nil {
-		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "number of cloudflare dns recs", "dns recs count", len(recs))
-	fqdnBase := uri2fqdn(uri)
-	log.DebugLog(log.DebugLevelMexos, "kubernetes services", "services", svcs)
+	fqdnBase := uri2fqdn(kubeNames.appURI)
 	processed := 0
 	for _, svc := range svcs {
 		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			continue
 		}
+		if !kubeNames.containsService(svc.Name) {
+			continue
+		}
+		log.DebugLog(log.DebugLevelMexos, "patching service", "svc", svc)
+
 		cmd := fmt.Sprintf(`%s kubectl patch svc %s -p '{"spec":{"externalIPs":["%s"]}}'`, kp.kubeconfig, svc.ObjectMeta.Name, kp.ipaddr)
 		out, err := kp.client.Output(cmd)
 		if err != nil {
@@ -194,27 +178,20 @@ func KubeAddDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name string
 		}
 		log.DebugLog(log.DebugLevelMexos, "patched externalIPs on service", "service", svc.ObjectMeta.Name, "externalIPs", kp.ipaddr)
 		fqdn := cloudcommon.ServiceFQDN(svc.ObjectMeta.Name, fqdnBase)
-		for _, rec := range recs {
-			if rec.Type == "A" && rec.Name == fqdn {
-				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
-					return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
-				}
-				log.DebugLog(log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
-			}
-		}
-		if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", rootLBIPaddr, 1, false); err != nil {
+
+		if err := cloudflare.CreateOrUpdateDNSRecord(GetCloudletDNSZone(), fqdn, "A", rootLBIPaddr, 1, false); err != nil {
 			return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, rootLBIPaddr, err)
 		}
 		processed++
 		log.DebugLog(log.DebugLevelMexos, "created DNS record", "name", fqdn, "addr", rootLBIPaddr)
 	}
 	if processed == 0 {
-		return fmt.Errorf("cannot patch service, %s not found", name)
+		return fmt.Errorf("cannot patch service, %s not found", kubeNames.appName)
 	}
 	return nil
 }
 
-func KubeDeleteDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name string) error {
+func KubeDeleteDNSRecords(rootLB *MEXRootLB, kp *kubeParam, kubeNames *KubeNames) error {
 	//TODO before removing dns records, especially for the purpose of creating
 	// a dns entry that was there before, to overwrite, we need to check
 	// if the user really wants to. For example, if the cluster naming was in error,
@@ -231,24 +208,21 @@ func KubeDeleteDNSRecords(rootLB *MEXRootLB, kp *kubeParam, uri string, name str
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone())
-	if derr != nil {
-		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
-	}
-	fqdnBase := uri2fqdn(uri)
+
+	fqdnBase := uri2fqdn(kubeNames.appURI)
 	//FIXME use k8s manifest file to delete the whole services and deployments
 	for _, svc := range svcs {
 		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			continue
 		}
-		// cmd := fmt.Sprintf("%s kubectl delete service %s", kp.kubeconfig, svc.ObjectMeta.Name)
-		// out, err := kp.client.Output(cmd)
-		// if err != nil {
-		// 	log.DebugLog(log.DebugLevelMexos, "error deleting kubernetes service", "name", svc.ObjectMeta.Name, "cmd", cmd, "out", out, "err", err)
-		// } else {
-		// 	log.DebugLog(log.DebugLevelMexos, "deleted service", "name", svc.ObjectMeta.Name)
-		// }
+		if !kubeNames.containsService(svc.Name) {
+			continue
+		}
 		fqdn := cloudcommon.ServiceFQDN(svc.ObjectMeta.Name, fqdnBase)
+		recs, derr := cloudflare.GetDNSRecords(GetCloudletDNSZone(), fqdn)
+		if derr != nil {
+			return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
+		}
 		for _, rec := range recs {
 			if rec.Type == "A" && rec.Name == fqdn {
 				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {

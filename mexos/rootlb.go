@@ -11,6 +11,7 @@ import (
 //MEXRootLB has rootLB data
 type MEXRootLB struct {
 	Name string
+	IP   string
 }
 
 var MEXRootLBMap = make(map[string]*MEXRootLB)

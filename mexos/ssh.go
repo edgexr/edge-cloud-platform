@@ -30,10 +30,13 @@ func CopySSHCredential(serverName, networkName, userName string) error {
 //GetSSHClient returns ssh client handle for the server
 func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) {
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
+	log.DebugLog(log.DebugLevelMexos, "GetSSHClient", "serverName", serverName)
+
 	addr, err := GetServerIPAddr(networkName, serverName)
 	if err != nil {
 		return nil, err
 	}
+
 	client, err := ssh.NewNativeClient(userName, addr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, &auth, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get ssh client for server %s on network %s, %v", serverName, networkName, err)

@@ -67,7 +67,11 @@ func LBRemoveRoute(rootLB, extNet, name string) error {
 
 //LBGetRoute returns route of LB
 func LBGetRoute(rootLB, name string) ([]string, error) {
-	cidr, err := GetInternalCIDR(name)
+	srvs, err := ListServers()
+	if err != nil {
+		return nil, err
+	}
+	cidr, err := GetInternalCIDR(name, srvs)
 	if err != nil {
 		return nil, err
 	}

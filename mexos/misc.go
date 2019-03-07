@@ -41,6 +41,8 @@ func copyFile(src string, dst string) error {
 // TODO do not create yaml file but use remote yaml file over https
 func WriteConfigFile(kp *kubeParam, appName string, kubeManifest string, kind string) (string, error) {
 	file := appName + ".yaml"
+	log.DebugLog(log.DebugLevelMexos, "write manifest file", "kind", kind)
+
 	mf, err := cloudcommon.GetDeploymentManifest(kubeManifest)
 	if err != nil {
 		return "", err
@@ -77,7 +79,11 @@ func NormalizeName(name string) string {
 func SeedDockerSecret(clusterName, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "seed docker secret")
 
-	master, err := FindClusterMaster(clusterName)
+	srvs, err := ListServers()
+	if err != nil {
+		return err
+	}
+	master, err := FindClusterMaster(clusterName, srvs)
 	if err != nil {
 		return err
 	}
@@ -85,7 +91,7 @@ func SeedDockerSecret(clusterName, rootLBName string) error {
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
 	}
-	masteraddr, err := FindNodeIP(master)
+	masteraddr, err := FindNodeIP(master, srvs)
 	if err != nil {
 		return err
 	}

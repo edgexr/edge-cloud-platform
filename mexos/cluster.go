@@ -305,11 +305,16 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 		log.DebugLog(log.DebugLevelMexos, "invalid cluster flavor, can't check if cluster is ready")
 		return false, err
 	}
-	master, err := FindClusterMaster(nameSuffix)
+	srvs, err := ListServers()
+
+	master, err := FindClusterMaster(nameSuffix, srvs)
 	if err != nil {
 		return false, fmt.Errorf("can't find cluster with name %s, %v", nameSuffix, err)
 	}
-	ipaddr, err := FindNodeIP(master)
+	if err != nil {
+		return false, err
+	}
+	ipaddr, err := FindNodeIP(master, srvs)
 	if err != nil {
 		return false, err
 	}
@@ -341,7 +346,7 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 	}
 	log.DebugLog(log.DebugLevelMexos, "cluster nodes", "numnodes", cf.NumNodes, "nummasters", cf.NumMasterNodes)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
-	if err := CopyKubeConfig(clusterInst, rootLBName, master); err != nil {
+	if err := CopyKubeConfig(clusterInst, rootLBName, master, srvs); err != nil {
 		return false, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "cluster ready.")
@@ -349,14 +354,10 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 }
 
 //FindClusterWithKey finds cluster given a key string
-func FindClusterMaster(key string) (string, error) {
+func FindClusterMaster(key string, srvs []OSServer) (string, error) {
 	//log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key)
 	if key == "" {
 		return "", fmt.Errorf("empty key")
-	}
-	srvs, err := ListServers()
-	if err != nil {
-		return "", err
 	}
 	for _, s := range srvs {
 		if s.Status == "ACTIVE" && strings.HasSuffix(s.Name, key) && strings.HasPrefix(s.Name, "mex-k8s-master") {

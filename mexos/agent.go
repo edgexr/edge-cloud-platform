@@ -44,6 +44,12 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 			if err != nil {
 				return fmt.Errorf("cannot find rootlb %s", fqdn)
 			}
+			extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
+			if err != nil {
+				return fmt.Errorf("cannot get rootLB IP %sv", err)
+			}
+			log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
+			rootLB.IP = extIP
 			//return RunMEXOSAgentContainer(rootLB)
 			return RunMEXOSAgentService(rootLB)
 		}
@@ -65,6 +71,13 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 		log.DebugLog(log.DebugLevelMexos, "can't enable agent", "name", rootLB.Name)
 		return fmt.Errorf("Failed to enable root LB %v", err)
 	}
+	extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
+	if err != nil {
+		return fmt.Errorf("cannot get rootLB IP %sv", err)
+	}
+	log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
+	rootLB.IP = extIP
+
 	err = WaitForRootLB(rootLB)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)

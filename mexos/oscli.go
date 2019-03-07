@@ -10,9 +10,28 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+func TimedOpenStackCommand(name string, a ...string) ([]byte, error) {
+	parmstr := ""
+	start := time.Now()
+
+	for _, a := range a {
+		parmstr += a + " "
+	}
+	log.DebugLog(log.DebugLevelMexos, "OpenStack Command Start", "name", name, "parms", parmstr)
+	out, err := sh.Command(name, a).CombinedOutput()
+	if err != nil {
+		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", out, "elapsed time", time.Since(start))
+		return nil, err
+	}
+	log.DebugLog(log.DebugLevelMexos, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
+	return out, nil
+
+}
+
 //ListServers returns list of servers, KVM instances, running on the system
 func ListServers() ([]OSServer, error) {
-	out, err := sh.Command("openstack", "server", "list", "-f", "json").Output()
+	out, err := TimedOpenStackCommand("openstack", "server", "list", "-f", "json")
+
 	if err != nil {
 		err = fmt.Errorf("cannot get server list, %v", err)
 		return nil, err
@@ -23,13 +42,12 @@ func ListServers() ([]OSServer, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	//log.DebugLog(log.DebugLevelMexos, "list servers", "servers", servers)
 	return servers, nil
 }
 
 //ListImages lists avilable images in glance
 func ListImages() ([]OSImage, error) {
-	out, err := sh.Command("openstack", "image", "list", "-f", "json").Output()
+	out, err := TimedOpenStackCommand("openstack", "image", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get image list, %v", err)
 		return nil, err
@@ -46,7 +64,7 @@ func ListImages() ([]OSImage, error) {
 
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
 func ListNetworks() ([]OSNetwork, error) {
-	out, err := sh.Command("openstack", "network", "list", "-f", "json").CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "network", "list", "-f", "json")
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "network list failed", "out", out)
 		err = fmt.Errorf("cannot get network list, %v", err)
@@ -64,7 +82,7 @@ func ListNetworks() ([]OSNetwork, error) {
 
 //ListFlavors lists flavors known to the platform. These vary. On Buckhorn cloudlet the are m4. prefixed.
 func ListFlavors() ([]OSFlavor, error) {
-	out, err := sh.Command("openstack", "flavor", "list", "-f", "json").Output()
+	out, err := TimedOpenStackCommand("openstack", "flavor", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get flavor list, %v", err)
 		return nil, err
@@ -99,14 +117,14 @@ func CreateServer(opts *OSServerOpt) error {
 	}
 	args = append(args, opts.Name)
 	//TODO additional args
-	iargs := make([]interface{}, len(args))
+	iargs := make([]string, len(args))
 	for i, v := range args {
 		iargs[i] = v
 	}
 	log.DebugLog(log.DebugLevelMexos, "creating server with args", "iargs", iargs)
 
 	//log.DebugLog(log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
-	out, err := sh.Command("openstack", iargs...).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", iargs...)
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
 		return err
@@ -119,7 +137,7 @@ func GetServerDetails(name string) (*OSServerDetail, error) {
 	active := false
 	srvDetail := &OSServerDetail{}
 	for i := 0; i < 10; i++ {
-		out, err := sh.Command("openstack", "server", "show", "-f", "json", name).Output()
+		out, err := TimedOpenStackCommand("openstack", "server", "show", "-f", "json", name)
 		if err != nil {
 			err = fmt.Errorf("can't show server %s, %s, %v", name, out, err)
 			return nil, err
@@ -148,7 +166,7 @@ func GetServerDetails(name string) (*OSServerDetail, error) {
 //  sometimes it is not possible to destroy. Like most things in Openstack, try again.
 func DeleteServer(id string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting server", "id", id)
-	out, err := sh.Command("openstack", "server", "delete", id).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "server", "delete", id)
 	if err != nil {
 		err = fmt.Errorf("can't delete server %s, %s, %v", id, out, err)
 		return err
@@ -159,7 +177,7 @@ func DeleteServer(id string) error {
 // CreateNetwork creates a network with a name.
 func CreateNetwork(name string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating network", "network", name)
-	out, err := sh.Command("openstack", "network", "create", name).Output()
+	out, err := TimedOpenStackCommand("openstack", "network", "create", name)
 	if err != nil {
 		err = fmt.Errorf("can't create network %s, %s, %v", name, out, err)
 		return err
@@ -171,7 +189,7 @@ func CreateNetwork(name string) error {
 //  Sometimes it will fail. Openstack will refuse if there are resources attached.
 func DeleteNetwork(name string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting network", "network", name)
-	out, err := sh.Command("openstack", "network", "delete", name).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "network", "delete", name)
 	if err != nil {
 		err = fmt.Errorf("can't delete network %s, %s, %v", name, out, err)
 		return err
@@ -187,12 +205,12 @@ func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEna
 	} else {
 		dhcpFlag = "--no-dhcp"
 	}
-	out, err := sh.Command("openstack", "subnet", "create",
+	out, err := TimedOpenStackCommand("openstack", "subnet", "create",
 		"--subnet-range", netRange, // e.g. 10.101.101.0/24
 		"--network", networkName, // mex-k8s-net-1
 		dhcpFlag,
 		"--gateway", gatewayAddr, // e.g. 10.101.101.1
-		subnetName).CombinedOutput() // e.g. mex-k8s-subnet-1
+		subnetName) // e.g. mex-k8s-subnet-1
 	if err != nil {
 		nerr := &NeutronErrorType{}
 		if ix := strings.Index(string(out), `{"NeutronError":`); ix > 0 {
@@ -223,7 +241,7 @@ func CreateSubnet(netRange, networkName, gatewayAddr, subnetName string, dhcpEna
 //DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
 func DeleteSubnet(subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting subnet", "name", subnetName)
-	out, err := sh.Command("openstack", "subnet", "delete", subnetName).Output()
+	out, err := TimedOpenStackCommand("openstack", "subnet", "delete", subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't delete subnet %s, %s, %v", subnetName, out, err)
 		return err
@@ -234,7 +252,7 @@ func DeleteSubnet(subnetName string) error {
 //CreateRouter creates new router. A router can be attached to network and subnets.
 func CreateRouter(routerName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating router", "name", routerName)
-	out, err := sh.Command("openstack", "router", "create", routerName).Output()
+	out, err := TimedOpenStackCommand("openstack", "router", "create", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't create router %s, %s, %v", routerName, out, err)
 		return err
@@ -245,7 +263,7 @@ func CreateRouter(routerName string) error {
 //DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
 func DeleteRouter(routerName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting router", "name", routerName)
-	out, err := sh.Command("openstack", "router", "delete", routerName).Output()
+	out, err := TimedOpenStackCommand("openstack", "router", "delete", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't delete router %s, %s, %v", routerName, out, err)
 		return err
@@ -258,7 +276,7 @@ func DeleteRouter(routerName string) error {
 // Sometimes, oftentimes, it will fail if the network is not external.
 func SetRouter(routerName, networkName string) error {
 	log.DebugLog(log.DebugLevelMexos, "setting router to network", "router", routerName, "network", networkName)
-	out, err := sh.Command("openstack", "router", "set", routerName, "--external-gateway", networkName).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "router", "set", routerName, "--external-gateway", networkName)
 	if err != nil {
 		err = fmt.Errorf("can't set router %s to %s, %s, %v", routerName, networkName, out, err)
 		return err
@@ -269,7 +287,7 @@ func SetRouter(routerName, networkName string) error {
 //AddRouterSubnet will connect subnet to another network, possibly external, via a router
 func AddRouterSubnet(routerName, subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "adding router to subnet", "router", routerName, "network", subnetName)
-	out, err := sh.Command("openstack", "router", "add", "subnet", routerName, subnetName).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "router", "add", "subnet", routerName, subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't add router %s to subnet %s, %s, %v", routerName, subnetName, out, err)
 		return err
@@ -281,7 +299,7 @@ func AddRouterSubnet(routerName, subnetName string) error {
 //  be deleted.
 func RemoveRouterSubnet(routerName, subnetName string) error {
 	log.DebugLog(log.DebugLevelMexos, "removing subnet from router", "router", routerName, "subnet", subnetName)
-	out, err := sh.Command("openstack", "router", "remove", "subnet", routerName, subnetName).CombinedOutput()
+	out, err := TimedOpenStackCommand("openstack", "router", "remove", "subnet", routerName, subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't remove router %s from subnet %s, %s, %v", routerName, subnetName, out, err)
 		return err
@@ -293,11 +311,10 @@ func RemoveRouterSubnet(routerName, subnetName string) error {
 func ListSubnets(netName string) ([]OSSubnet, error) {
 	var err error
 	var out []byte
-
 	if netName != "" {
-		out, err = sh.Command("openstack", "subnet", "list", "--network", netName, "-f", "json").Output()
+		out, err = TimedOpenStackCommand("openstack", "subnet", "list", "--network", netName, "-f", "json")
 	} else {
-		out, err = sh.Command("openstack", "subnet", "list", "-f", "json").Output()
+		out, err = TimedOpenStackCommand("openstack", "subnet", "list", "-f", "json")
 	}
 	if err != nil {
 		err = fmt.Errorf("can't get a list of subnets, %v", err)
@@ -315,7 +332,7 @@ func ListSubnets(netName string) ([]OSSubnet, error) {
 
 //ListRouters returns a list of routers available
 func ListRouters() ([]OSRouter, error) {
-	out, err := sh.Command("openstack", "router", "list", "-f", "json").Output()
+	out, err := TimedOpenStackCommand("openstack", "router", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("can't get a list of routers, %s, %v", out, err)
 		return nil, err
@@ -332,7 +349,7 @@ func ListRouters() ([]OSRouter, error) {
 
 //GetRouterDetail returns details per router
 func GetRouterDetail(routerName string) (*OSRouterDetail, error) {
-	out, err := sh.Command("openstack", "router", "show", "-f", "json", routerName).Output()
+	out, err := TimedOpenStackCommand("openstack", "router", "show", "-f", "json", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't get router details for %s, %s, %v", routerName, out, err)
 		return nil, err
@@ -350,7 +367,7 @@ func GetRouterDetail(routerName string) (*OSRouterDetail, error) {
 //CreateServerImage snapshots running service into a qcow2 image
 func CreateServerImage(serverName, imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating image snapshot from server", "server", serverName, "image", imageName)
-	out, err := sh.Command("openstack", "server", "image", "create", serverName, "--name", imageName).Output()
+	out, err := TimedOpenStackCommand("openstack", "server", "image", "create", serverName, "--name", imageName)
 	if err != nil {
 		err = fmt.Errorf("can't create image from %s into %s, %s, %v", serverName, imageName, out, err)
 		return err
@@ -361,11 +378,11 @@ func CreateServerImage(serverName, imageName string) error {
 //CreateImage puts images into glance
 func CreateImage(imageName, qcowFile string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating image in glance", "image", imageName, "qcow", qcowFile)
-	out, err := sh.Command("openstack", "image", "create",
+	out, err := TimedOpenStackCommand("openstack", "image", "create",
 		imageName,
 		"--disk-format", "qcow2",
 		"--container-format", "bare",
-		"--file", qcowFile).Output()
+		"--file", qcowFile)
 	if err != nil {
 		err = fmt.Errorf("can't create image in glace, %s, %s, %s, %v", imageName, qcowFile, out, err)
 		return err
@@ -379,7 +396,7 @@ func CreateImage(imageName, qcowFile string) error {
 // This can take a while, transferring all the data.
 func SaveImage(saveName, imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "saving image", "save name", saveName, "image name", imageName)
-	out, err := sh.Command("openstack", "image", "save", "--file", saveName, imageName).Output()
+	out, err := TimedOpenStackCommand("openstack", "image", "save", "--file", saveName, imageName)
 	if err != nil {
 		err = fmt.Errorf("can't save image from %s to file %s, %s, %v", imageName, saveName, out, err)
 		return err
@@ -392,7 +409,7 @@ func SaveImage(saveName, imageName string) error {
 // again.
 func DeleteImage(imageName string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting image", "name", imageName)
-	out, err := sh.Command("openstack", "image", "delete", imageName).Output()
+	out, err := TimedOpenStackCommand("openstack", "image", "delete", imageName)
 	if err != nil {
 		err = fmt.Errorf("can't delete image %s, %s, %v", imageName, out, err)
 		return err
@@ -404,7 +421,7 @@ func DeleteImage(imageName string) error {
 //  IP for a given subnet.  The gateway info is used for creating a server.
 //  Also useful in general, like other `detail` functions, to get the ID map for the name of subnet.
 func GetSubnetDetail(subnetName string) (*OSSubnetDetail, error) {
-	out, err := sh.Command("openstack", "subnet", "show", "-f", "json", subnetName).Output()
+	out, err := TimedOpenStackCommand("openstack", "subnet", "show", "-f", "json", subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't get subnet details for %s, %s, %v", subnetName, out, err)
 		return nil, err
@@ -420,7 +437,7 @@ func GetSubnetDetail(subnetName string) (*OSSubnetDetail, error) {
 
 //GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
 func GetNetworkDetail(networkName string) (*OSNetworkDetail, error) {
-	out, err := sh.Command("openstack", "network", "show", "-f", "json", networkName).Output()
+	out, err := TimedOpenStackCommand("openstack", "network", "show", "-f", "json", networkName)
 	if err != nil {
 		err = fmt.Errorf("can't get details for network %s, %s, %v", networkName, out, err)
 		return nil, err
@@ -442,7 +459,7 @@ func SetServerProperty(name, property string) error {
 	if property == "" {
 		return fmt.Errorf("empty property")
 	}
-	out, err := sh.Command("openstack", "server", "set", "--property", property, name).Output()
+	out, err := TimedOpenStackCommand("openstack", "server", "set", "--property", property, name)
 	if err != nil {
 		return fmt.Errorf("can't set property %s on server %s, %s, %v", property, name, out, err)
 	}

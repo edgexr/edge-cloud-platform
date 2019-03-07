@@ -98,10 +98,10 @@ type clusterKubeconfig struct {
 }
 
 //CopyKubeConfig copies over kubeconfig from the cluster
-func CopyKubeConfig(clusterInst *edgeproto.ClusterInst, rootLBName, name string) error {
+func CopyKubeConfig(clusterInst *edgeproto.ClusterInst, rootLBName, name string, srvs []OSServer) error {
 	log.DebugLog(log.DebugLevelMexos, "copying kubeconfig", "name", name)
 
-	ipaddr, err := FindNodeIP(name)
+	ipaddr, err := FindNodeIP(name, srvs)
 	if err != nil {
 		return err
 	}

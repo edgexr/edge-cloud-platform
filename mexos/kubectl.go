@@ -95,7 +95,7 @@ func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *e
 			}
 		}
 	}()
-	err = createAppDNS(kp, kubeNames.appURI, kubeNames.appName)
+	err = createAppDNS(kp, kubeNames)
 	if err != nil {
 		return fmt.Errorf("error creating dns entry for app, %v", err)
 	}
@@ -141,6 +141,8 @@ func getSvcExternalIP(name string, kp *kubeParam) (string, error) {
 }
 
 func getServices(kp *kubeParam) ([]v1.Service, error) {
+	log.DebugLog(log.DebugLevelMexos, "running kubectl get svc", "kubeconfig", kp.kubeconfig)
+
 	cmd := fmt.Sprintf("%s kubectl get svc -o json", kp.kubeconfig)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
@@ -172,7 +174,7 @@ func runKubectlDeleteApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *e
 	if err != nil {
 		return fmt.Errorf("error deleting app, %s, %v", out, err)
 	}
-	err = deleteAppDNS(kp, kubeNames.appURI, kubeNames.appName)
+	err = deleteAppDNS(kp, kubeNames)
 	if err != nil {
 		return fmt.Errorf("error deleting dns entry for app, %v, %v", kubeNames.appName, err)
 	}

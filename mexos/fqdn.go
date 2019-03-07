@@ -73,7 +73,7 @@ func ActivateFQDNA(rootLB *MEXRootLB, fqdn string) error {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "getting dns record for zone", "DNSZone", GetCloudletDNSZone())
-	dr, err := cloudflare.GetDNSRecords(GetCloudletDNSZone())
+	dr, err := cloudflare.GetDNSRecords(GetCloudletDNSZone(), fqdn)
 	if err != nil {
 		return fmt.Errorf("cannot get dns records for %s, %v", fqdn, err)
 	}

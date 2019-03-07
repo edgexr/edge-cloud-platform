@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/nanobox-io/golang-ssh"
+	"k8s.io/api/core/v1"
 )
 
 type KubeNames struct {
@@ -16,6 +18,16 @@ type KubeNames struct {
 	clusterName  string
 	operatorName string
 	kconfName    string
+	serviceNames []string
+}
+
+func (k *KubeNames) containsService(svc string) bool {
+	for _, s := range k.serviceNames {
+		if s == svc {
+			return true
+		}
+	}
+	return false
 }
 
 // GetKubeNames udpates kubeNames with normalized strings for the included clusterinst, app, and appisnt
@@ -35,6 +47,23 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.appImage = NormalizeName(app.ImagePath)
 	kubeNames.operatorName = NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
 	kubeNames.kconfName = GetKconfName(clusterInst)
+
+	//get service names from the yaml
+	if app.Deployment == cloudcommon.AppDeploymentTypeKubernetes {
+		objs, _, err := cloudcommon.DecodeK8SYaml(app.DeploymentManifest)
+		if err != nil {
+			return fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
+		}
+		for _, o := range objs {
+			log.DebugLog(log.DebugLevelMexos, "k8s obj", "obj", o)
+			ksvc, ok := o.(*v1.Service)
+			if !ok {
+				continue
+			}
+			svcName := ksvc.ObjectMeta.Name
+			kubeNames.serviceNames = append(kubeNames.serviceNames, svcName)
+		}
+	}
 	return nil
 
 }
@@ -58,27 +87,24 @@ func CreateKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterIns
 	if GetCloudletDockerPass() == "" {
 		return fmt.Errorf("empty docker registry password environment variable")
 	}
+	log.DebugLog(log.DebugLevelMexos, "writing config file", "kubeManifest", kubeManifest)
 	file, err := WriteConfigFile(kp, kubeNames.appName, kubeManifest, "K8s Deployment")
 	if err != nil {
 		return err
 	}
+	log.DebugLog(log.DebugLevelMexos, "running kubectl create ", "file", file)
 	cmd = fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, file)
+
 	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying kubernetes app, %s, %v", out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "applied kubernetes manifest")
-	// Add security rules
-	if err = AddProxySecurityRules(rootLB, kp.ipaddr, kubeNames.appName, appInst); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
-		return err
+	log.DebugLog(log.DebugLevelMexos, "done kubectl create")
+	err = AddProxySecurityRulesAndPatchDNS(rootLB, kp, kubeNames, appInst)
+	if err != nil {
+		return fmt.Errorf("CreateKubernetesAppInst error: %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, added ports", "ports", appInst.MappedPorts)
-	// Add DNS Zone
-	if err = KubeAddDNSRecords(rootLB, kp, appInst.Uri, kubeNames.appName); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
-		return err
-	}
+
 	return nil
 }
 
@@ -134,11 +160,16 @@ func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clust
 	if GetCloudletExternalNetwork() == "" {
 		return nil, fmt.Errorf("validate kubernetes parameters, missing external network in platform config")
 	}
-	master, err := FindClusterMaster(kubeNames.clusterName)
+	srvs, err := ListServers()
+	if err != nil {
+		return nil, fmt.Errorf("error getting server list: %v", err)
+
+	}
+	master, err := FindClusterMaster(kubeNames.clusterName, srvs)
 	if err != nil {
 		return nil, fmt.Errorf("can't find cluster with key %s, %v", kubeNames.clusterName, err)
 	}
-	ipaddr, err := FindNodeIP(master)
+	ipaddr, err := FindNodeIP(master, srvs)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +178,7 @@ func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clust
 }
 
 func DeleteKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst) error {
-	log.DebugLog(log.DebugLevelMexos, "delete kubernetes app")
+	log.DebugLog(log.DebugLevelMexos, "delete kubernetes app", "kubeNames", kubeNames)
 
 	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
 	if err != nil {
@@ -161,7 +192,7 @@ func DeleteKubernetesAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterIns
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
 	// Clean up DNS entries
-	if err = KubeDeleteDNSRecords(rootLB, kp, kubeNames.appURI, kubeNames.appName); err != nil {
+	if err = KubeDeleteDNSRecords(rootLB, kp, kubeNames); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", kubeNames.appName, "rootlb", rootLB.Name, "error", err)
 		return err
 	}
