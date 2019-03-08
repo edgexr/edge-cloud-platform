@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	cloudflare "github.com/cloudflare/cloudflare-go"
-	log "github.com/sirupsen/logrus"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var cfUser, cfAPIKey string
@@ -49,7 +49,10 @@ func GetAPI() (*cloudflare.API, error) {
 }
 
 //GetDNSRecords returns a list of DNS records for the given domain name. Error returned otherewise.
-func GetDNSRecords(zone string) ([]cloudflare.DNSRecord, error) {
+// if name is provided, that is used as a filter
+func GetDNSRecords(zone string, name string) ([]cloudflare.DNSRecord, error) {
+	log.DebugLog(log.DebugLevelMexos, "GetDNSRecords", "name", name)
+
 	if zone == "" {
 		return nil, fmt.Errorf("missing domain zone")
 	}
@@ -64,15 +67,83 @@ func GetDNSRecords(zone string) ([]cloudflare.DNSRecord, error) {
 		return nil, err
 	}
 
-	records, err := api.DNSRecords(zoneID, cloudflare.DNSRecord{})
+	queryRecord := cloudflare.DNSRecord{}
+	if name != "" {
+		queryRecord.Name = name
+	}
+
+	records, err := api.DNSRecords(zoneID, queryRecord)
 	if err != nil {
 		return nil, err
 	}
 	return records, nil
 }
 
+//CreateOrUpdateDNSRecord changes the existing record if found, or adds a new one
+func CreateOrUpdateDNSRecord(zone, name, rtype, content string, ttl int, proxy bool) error {
+
+	log.DebugLog(log.DebugLevelMexos, "CreateOrUpdateDNSRecord", "name", name, "content", content)
+
+	api, err := GetAPI()
+	if err != nil {
+		return err
+	}
+
+	zoneID, err := api.ZoneIDByName(zone)
+	if err != nil {
+		return err
+	}
+
+	queryRecord := cloudflare.DNSRecord{
+		Name: strings.ToLower(name),
+		Type: strings.ToUpper(rtype),
+	}
+	records, err := api.DNSRecords(zoneID, queryRecord)
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, r := range records {
+		found = true
+		if r.Content == content {
+			log.DebugLog(log.DebugLevelMexos, "CreateOrUpdateDNSRecord existing record matches", "name", name, "content", content)
+		} else {
+			log.DebugLog(log.DebugLevelMexos, "CreateOrUpdateDNSRecord updating", "name", name, "content", content)
+
+			updateRecord := cloudflare.DNSRecord{
+				Name:    strings.ToLower(name),
+				Type:    strings.ToUpper(rtype),
+				Content: content,
+				TTL:     ttl,
+				Proxied: proxy,
+			}
+			err := api.UpdateDNSRecord(zoneID, r.ID, updateRecord)
+			if err != nil {
+				return fmt.Errorf("cannot update DNS record for zone %s name %s, %v", zone, name, err)
+			}
+		}
+	}
+	if !found {
+		addRecord := cloudflare.DNSRecord{
+			Name:    strings.ToLower(name),
+			Type:    strings.ToUpper(rtype),
+			Content: content,
+			TTL:     ttl,
+			Proxied: false,
+		}
+		_, err := api.CreateDNSRecord(zoneID, addRecord)
+		if err != nil {
+			return fmt.Errorf("cannot create DNS record for zone %s, %v", zone, err)
+		}
+	}
+	return nil
+
+}
+
 //CreateDNSRecord creates a new DNS record for the zone
 func CreateDNSRecord(zone, name, rtype, content string, ttl int, proxy bool) error {
+	log.DebugLog(log.DebugLevelMexos, "CreateDNSRecord", "name", name, "content", content)
+
 	if zone == "" {
 		return fmt.Errorf("missing zone")
 	}
@@ -112,12 +183,10 @@ func CreateDNSRecord(zone, name, rtype, content string, ttl int, proxy bool) err
 		Proxied: proxy,
 	}
 
-	resp, err := api.CreateDNSRecord(zoneID, record)
+	_, err = api.CreateDNSRecord(zoneID, record)
 	if err != nil {
 		return fmt.Errorf("cannot create DNS record for zone %s, %v", zone, err)
 	}
-
-	log.Debugf("create DNS record returns response, %v", resp)
 
 	return nil
 }
