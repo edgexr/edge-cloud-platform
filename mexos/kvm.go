@@ -382,12 +382,8 @@ func CreateMEXKVM(name, role, netSpec, tags, tenant string, id int, clusterInst 
 				return fmt.Errorf("can't get a list of subnets, %v", err)
 			}
 			for _, sn := range sl {
-				sd, err := GetSubnetDetail(sn.ID)
-				if err != nil {
-					return fmt.Errorf("can't get subnet detail, %s, %v", sn.Name, err)
-				}
-				if sd.CIDR == ni.CIDR {
-					log.DebugLog(log.DebugLevelMexos, "subnet exists with the same CIDR, find another range", "CIDR", sd.CIDR)
+				if sn.Subnet == ni.CIDR {
+					log.DebugLog(log.DebugLevelMexos, "subnet exists with the same CIDR, find another range", "CIDR", ni.CIDR)
 					cidr, err := getNewSubnetRange(id, v4a, sits, sl)
 					if err != nil {
 						return fmt.Errorf("failed to get a new subnet range, %v", err)
@@ -510,11 +506,7 @@ func getNewSubnetRange(id int, v4a []byte, sits []string, sl []OSSubnet) (*strin
 		cidr = fmt.Sprintf("%d.%d.%d.%d/%s", v4a[0], v4a[1], v4a[2], newID, sits[1])
 		found := false
 		for _, snn := range sl {
-			sdd, err := GetSubnetDetail(snn.ID)
-			if err != nil {
-				return nil, fmt.Errorf("cannot get subnet detail %s, %v", snn.Name, err)
-			}
-			if sdd.CIDR == cidr {
+			if snn.Subnet == cidr {
 				found = true
 			}
 		}

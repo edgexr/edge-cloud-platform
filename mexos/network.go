@@ -3,7 +3,6 @@ package mexos
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud/log"
@@ -41,28 +40,6 @@ func GetExternalGateway(extNetName string) (string, error) {
 	}
 	log.DebugLog(log.DebugLevelMexos, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
 	return sd.GatewayIP, nil
-}
-
-//GetNextSubnetRange will find the CIDR for the next range of subnet that can be created. For example,
-// if the subnet detail we get has 10.101.101.0/24 then the next one can be 10.101.102.0/24
-func GetNextSubnetRange(subnetName string) (string, error) {
-	sd, err := GetSubnetDetail(subnetName)
-	if err != nil {
-		return "", err
-	}
-	if sd.CIDR == "" {
-		return "", fmt.Errorf("missing CIDR in subnet %s", subnetName)
-	}
-	_, ipv4Net, err := net.ParseCIDR(sd.CIDR)
-	if err != nil {
-		return "", fmt.Errorf("can't parse CIDR %s, %v", sd.CIDR, err)
-	}
-	i := strings.Index(sd.CIDR, "/")
-	suffix := sd.CIDR[i:]
-	v4 := ipv4Net.IP.To4()
-	ipnew := net.IPv4(v4[0], v4[1], v4[2]+1, v4[3])
-	log.DebugLog(log.DebugLevelMexos, "get next subnet range", "new ip range", ipnew, "suffix", suffix)
-	return ipnew.String() + suffix, nil
 }
 
 //GetRouterDetailExternalGateway is different than GetExternalGateway.  This function gets
