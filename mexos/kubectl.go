@@ -67,12 +67,17 @@ func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName strin
 	return nil
 }
 
-func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
+func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string, configs []*edgeproto.ConfigFile) error {
 	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
 
 	kfile := kubeNames.appName + ".yaml"
 
-	if err := writeKubeManifest(kubeManifest, kfile); err != nil {
+	mf, err := MergeEnvVars(kubeManifest, configs)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "failed to merge env vars", "error", err)
+	}
+
+	if err := writeKubeManifest(mf, kfile); err != nil {
 		return err
 	}
 	defer os.Remove(kfile)
@@ -84,7 +89,7 @@ func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *e
 	cmd := fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, kfile)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
-		return fmt.Errorf("error creating app, %s, %v, %s", out, err, kubeManifest)
+		return fmt.Errorf("error creating app, %s, %v, %s", out, err, mf)
 	}
 	defer func() {
 		if err != nil {

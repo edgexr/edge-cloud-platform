@@ -41,7 +41,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 
 		log.DebugLog(log.DebugLevelMexos, "call runKubectlCreateApp for dind")
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			err = runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
+			err = runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest, app.Configs)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
 			err = CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest, app.Configs)
 		} else {
@@ -59,7 +59,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		fallthrough
 	case cloudcommon.OperatorAzure:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest)
+			return runKubectlCreateApp(rootLB, &kubeNames, clusterInst, app.DeploymentManifest, app.Configs)
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeKVM {
 			return fmt.Errorf("not yet supported")
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
@@ -70,7 +70,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return fmt.Errorf("unknown deployment type %s", appDeploymentType)
 	default:
 		if appDeploymentType == cloudcommon.AppDeploymentTypeKubernetes {
-			return CreateKubernetesAppInst(rootLB, &kubeNames, clusterInst, appInst, app.DeploymentManifest)
+			return CreateKubernetesAppInst(rootLB, &kubeNames, clusterInst, appInst, app.DeploymentManifest, app.Configs)
 
 		} else if appDeploymentType == cloudcommon.AppDeploymentTypeHelm {
 			return CreateHelmAppInst(rootLB, &kubeNames, appInst, clusterInst, app.DeploymentManifest, app.Configs)

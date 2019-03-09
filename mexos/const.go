@@ -22,5 +22,5 @@ const (
 // 'Kind' strings for edgeproto.App.ConfigFile type
 const (
 	AppConfigHemYaml = "hemlCustomizationYaml"
-	AppConfigK8sYaml = "k8sConfigurationYaml"
+	AppConfigEnvYaml = "envVarsYaml"
 )
