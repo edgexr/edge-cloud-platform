@@ -5,35 +5,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-// TODO service to periodically clean up the leftover rules
-
-func AddProxySecurityRules(rootLB *MEXRootLB, masteraddr string, appName string, appInst *edgeproto.AppInst) error {
-
-	ports, err := GetPortDetail(appInst)
-	log.DebugLog(log.DebugLevelMexos, "AddProxySecurityRules", "port", ports)
-
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "err", err)
-		return err
-	}
+func AddSecurityRules(ports []PortDetail) error {
 	sr := GetCloudletSecurityRule()
 	allowedClientCIDR := GetAllowedClientCIDR()
 	for _, port := range ports {
+		//todo: distinguish already-exists errors from others
 		if err := AddSecurityRuleCIDR(allowedClientCIDR, strings.ToLower(port.Proto), sr, port.PublicPort); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, error while adding security rule", "addr", allowedClientCIDR, "port", port.PublicPort)
 		}
 	}
-	if len(ports) > 0 {
-		if err := AddNginxProxy(rootLB.Name, appName, masteraddr, ports, ""); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "appName", appName)
-			return err
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "added nginx proxy", "appName", appName, "ports", appInst.MappedPorts)
 	return nil
 }
 
