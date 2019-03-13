@@ -20,7 +20,7 @@ func TimedOpenStackCommand(name string, a ...string) ([]byte, error) {
 	log.DebugLog(log.DebugLevelMexos, "OpenStack Command Start", "name", name, "parms", parmstr)
 	out, err := sh.Command(name, a).CombinedOutput()
 	if err != nil {
-		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", out, "elapsed time", time.Since(start))
+		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
 		return nil, err
 	}
 	log.DebugLog(log.DebugLevelMexos, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
@@ -465,4 +465,44 @@ func SetServerProperty(name, property string) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "set server property", "name", name, "property", property)
 	return nil
+}
+
+// createHeatStack creates a stack with the given template
+func createHeatStack(templateFile string, stackName string) error {
+	log.DebugLog(log.DebugLevelMexos, "create heat stack", "template", templateFile, "stackName", stackName)
+	_, err := TimedOpenStackCommand("openstack", "stack", "create", "--template", templateFile, stackName)
+	if err != nil {
+		return fmt.Errorf("error creating heat stack: %s -- %v", templateFile, err)
+	}
+	return nil
+}
+
+// deleteHeatStack delete a stack with the given name
+func deleteHeatStack(stackName string) error {
+	log.DebugLog(log.DebugLevelMexos, "delete heat stack", "stackName", stackName)
+	out, err := TimedOpenStackCommand("openstack", "stack", "delete", stackName)
+	if err != nil {
+		if strings.Contains("Stack not found", string(out)) {
+			log.DebugLog(log.DebugLevelMexos, "stack not found")
+			return nil
+		}
+		log.InfoLog("stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
+		return fmt.Errorf("stack deletion failed: %s -- %v", stackName, err)
+	}
+	return nil
+}
+
+// getHeatStackDetail gets details of the provided stack
+func getHeatStackDetail(stackName string) (*OSHeatStackDetail, error) {
+	out, err := TimedOpenStackCommand("openstack", "stack", "show", "-f", "json", stackName)
+	if err != nil {
+		err = fmt.Errorf("can't get stack details for %s, %s, %v", stackName, out, err)
+		return nil, err
+	}
+	stackDetail := &OSHeatStackDetail{}
+	err = json.Unmarshal(out, stackDetail)
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal stack detail, %v", err)
+	}
+	return stackDetail, nil
 }

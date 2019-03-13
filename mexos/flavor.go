@@ -6,10 +6,11 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+// TODO: All of this needs to be taken from the controller config
 //AvailableClusterFlavors lists currently available flavors
 var AvailableClusterFlavors = []*ClusterFlavor{
 	&ClusterFlavor{
-		Name:           "x1.tiny",
+		Name:           "x1.small",
 		Kind:           "mex-cluster-flavor",
 		PlatformFlavor: "m4.small",
 		Status:         "active",
@@ -18,11 +19,11 @@ var AvailableClusterFlavors = []*ClusterFlavor{
 		Topology:       "type-1",
 		NetworkSpec:    "priv-subnet,mex-k8s-net-1," + defaultPrivateNetRange,
 		StorageSpec:    "default",
-		NodeFlavor:     ClusterNodeFlavor{Name: "k8s-tiny", Type: "k8s-node"},
-		MasterFlavor:   ClusterMasterFlavor{Name: "k8s-tiny", Type: "k8s-master"},
+		NodeFlavor:     ClusterNodeFlavor{Name: "m4.small", Type: "k8s-node"},
+		MasterFlavor:   ClusterMasterFlavor{Name: "m4.small", Type: "k8s-master"},
 	},
 	&ClusterFlavor{
-		Name:           "x1.small",
+		Name:           "x1.medium",
 		Kind:           "mex-cluster-flavor",
 		PlatformFlavor: "m4.medium",
 		Status:         "active",
@@ -31,11 +32,11 @@ var AvailableClusterFlavors = []*ClusterFlavor{
 		Topology:       "type-1",
 		NetworkSpec:    "priv-subnet,mex-k8s-net-1," + defaultPrivateNetRange,
 		StorageSpec:    "default",
-		NodeFlavor:     ClusterNodeFlavor{Name: "k8s-small", Type: "k8s-node"},
-		MasterFlavor:   ClusterMasterFlavor{Name: "k8s-small", Type: "k8s-master"},
+		NodeFlavor:     ClusterNodeFlavor{Name: "m4.medium", Type: "k8s-node"},
+		MasterFlavor:   ClusterMasterFlavor{Name: "m4.medium", Type: "k8s-master"},
 	},
 	&ClusterFlavor{
-		Name:           "x1.medium",
+		Name:           "x1.large",
 		Kind:           "mex-cluster-flavor",
 		PlatformFlavor: "m4.large",
 		Status:         "active",
@@ -44,21 +45,8 @@ var AvailableClusterFlavors = []*ClusterFlavor{
 		Topology:       "type-1",
 		NetworkSpec:    "priv-subnet,mex-k8s-net-1," + defaultPrivateNetRange,
 		StorageSpec:    "default",
-		NodeFlavor:     ClusterNodeFlavor{Name: "k8s-medium", Type: "k8s-node"},
-		MasterFlavor:   ClusterMasterFlavor{Name: "k8s-medium", Type: "k8s-master"},
-	},
-	&ClusterFlavor{
-		Name:           "x1.large",
-		Kind:           "mex-cluster-flavor",
-		PlatformFlavor: "m4.xlarge",
-		Status:         "active",
-		NumNodes:       2,
-		NumMasterNodes: 1,
-		Topology:       "type-1",
-		NetworkSpec:    "priv-subnet,mex-k8s-net-1," + defaultPrivateNetRange,
-		StorageSpec:    "default",
-		NodeFlavor:     ClusterNodeFlavor{Name: "k8s-large", Type: "k8s-node"},
-		MasterFlavor:   ClusterMasterFlavor{Name: "k8s-large", Type: "k8s-master"},
+		NodeFlavor:     ClusterNodeFlavor{Name: "m4.large", Type: "k8s-node"},
+		MasterFlavor:   ClusterMasterFlavor{Name: "m4.large", Type: "k8s-master"},
 	},
 }
 

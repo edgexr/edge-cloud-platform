@@ -9,6 +9,71 @@ import (
 
 var defaultPrivateNetRange = "10.101.X.0/24"
 
+type NetSpecInfo struct {
+	Kind, Name, CIDR, Options string
+	NetworkAddress            string
+	NetmaskBits               string
+	Octets                    []string
+	DelimiterOctet            int // this is the X
+	Extra                     []string
+}
+
+//ParseNetSpec decodes netspec string
+//TODO: IPv6
+func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
+	ni := &NetSpecInfo{}
+	if netSpec == "" {
+		return nil, fmt.Errorf("empty netspec")
+	}
+	log.DebugLog(log.DebugLevelMexos, "parsing netspec", "netspec", netSpec)
+	items := strings.Split(netSpec, ",")
+	if len(items) < 3 {
+		return nil, fmt.Errorf("malformed net spec, insufficient items %v", items)
+	}
+	ni.Kind = items[NetTypeVal]
+	ni.Name = items[NetNameVal]
+	ni.CIDR = items[NetCIDRVal]
+	if len(items) == 4 {
+		ni.Options = items[NetOptVal]
+	}
+	if len(items) > 4 {
+		ni.Extra = items[NetOptVal+1:]
+	}
+
+	sits := strings.Split(ni.CIDR, "/")
+	if len(sits) < 2 {
+		return nil, fmt.Errorf("invalid CIDR, no net mask")
+	}
+	ni.NetworkAddress = sits[0]
+	ni.NetmaskBits = sits[1]
+
+	ni.Octets = strings.Split(ni.NetworkAddress, ".")
+	for i, it := range ni.Octets {
+		if it == "X" {
+			ni.DelimiterOctet = i
+		}
+	}
+	if len(ni.Octets) != 4 {
+		log.DebugLog(log.DebugLevelMexos, "invalid network address, wrong number of octets", items[NetTypeVal])
+		return nil, fmt.Errorf("invalid network address structure")
+	}
+	if ni.DelimiterOctet != 2 {
+		log.DebugLog(log.DebugLevelMexos, "invalid network address, third octet must be X", items[NetTypeVal])
+		return nil, fmt.Errorf("invalid network address delimiter")
+	}
+
+	switch items[NetTypeVal] {
+	case "priv-subnet":
+	case "external-ip":
+	default:
+		log.DebugLog(log.DebugLevelMexos, "error, invalid NetTypeVal", "net-type-val", items[NetTypeVal])
+		return nil, fmt.Errorf("unsupported netspec type")
+	}
+
+	log.DebugLog(log.DebugLevelMexos, "netspec info", "ni", ni, "items", items)
+	return ni, nil
+}
+
 //GetInternalIP returns IP of the server
 func GetInternalIP(name string, srvs []OSServer) (string, error) {
 	for _, s := range srvs {

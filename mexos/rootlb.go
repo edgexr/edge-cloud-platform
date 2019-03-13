@@ -45,10 +45,10 @@ func getRootLB(name string) (*MEXRootLB, error) {
 
 var rootLBPorts = []int{
 	18889, //mexosagent HTTP server
-	18888, //mexosagent GRPC server
-	443,   //mexosagent reverse proxy HTTPS
+	//18888, //mexosagent GRPC server
+	//443, //mexosagent reverse proxy HTTPS
 	//8001,  //kubectl proxy
-	6443, //kubernetes control
+	//6443, //kubernetes control
 	//8000,  //mex k8s join token server
 }
 
@@ -120,15 +120,8 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey) error {
 		//privateNetCIDR := strings.Replace(defaultPrivateNetRange, "X", "0", 1)
 		allowedClientCIDR := GetAllowedClientCIDR()
 		for _, p := range rootLBPorts {
-			// for _, cidr := range []string{rootLBIPaddr + "/32", privateNetCIDR, allowedClientCIDR} {
-			// 	go func(cidr string) {
-			// 		err := AddSecurityRuleCIDR(mf, cidr, "tcp", ruleName, p)
-			// 		if err != nil {
-			// 			log.DebugLog(log.DebugLevelMexos, "warning, error while adding security rule", "error", err, "cidr", cidr, "rulename", ruleName, "port", p)
-			// 		}
-			// 	}(cidr)
-			// }
-			if err := AddSecurityRuleCIDR(allowedClientCIDR, "tcp", ruleName, p); err != nil {
+			portString := fmt.Sprintf("%d", p)
+			if err := AddSecurityRuleCIDR(allowedClientCIDR, "tcp", ruleName, portString); err != nil {
 				log.DebugLog(log.DebugLevelMexos, "warning, cannot add security rule", "error", err, "cidr", allowedClientCIDR, "port", p, "rule", ruleName)
 			}
 		}
@@ -139,6 +132,7 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey) error {
 		log.DebugLog(log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
 	}
 	log.DebugLog(log.DebugLevelMexos, "done enabling rootlb", "name", rootLB.Name)
+
 	return nil
 }
 
@@ -176,5 +170,6 @@ func WaitForRootLB(rootLB *MEXRootLB) error {
 		return fmt.Errorf("while creating cluster, timeout waiting for RootLB")
 	}
 	log.DebugLog(log.DebugLevelMexos, "done waiting for rootlb", "name", rootLB.Name)
+
 	return nil
 }

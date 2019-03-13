@@ -205,3 +205,13 @@ type NeutronErrorDetail struct {
 type NeutronErrorType struct {
 	NeutronError NeutronErrorDetail
 }
+
+type OSHeatStackDetail struct {
+	ID                string            `json:"id"`
+	Parent            string            `json:"parent"`
+	Description       string            `json:"description"`
+	Parameters        map[string]string `json:"parameters"`
+	StackStatusReason string            `json:"stack_status_reason"`
+	StackName         string            `json:"stack_name"`
+	StackStatus       string            `json:"stack_status"`
+}

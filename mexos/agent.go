@@ -50,6 +50,11 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 			}
 			log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
 			rootLB.IP = extIP
+			// now ensure the rootLB can reach all the internal networks
+			err = LBAddRouteAndSecRules(rootLB.Name)
+			if err != nil {
+				return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
+			}
 			//return RunMEXOSAgentContainer(rootLB)
 			return RunMEXOSAgentService(rootLB)
 		}
@@ -98,6 +103,11 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 	err = GetHTPassword(rootLB.Name)
 	if err != nil {
 		return fmt.Errorf("can't download htpassword %v", err)
+	}
+	// now ensure the rootLB can reach all the internal networks
+	err = LBAddRouteAndSecRules(rootLB.Name)
+	if err != nil {
+		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
 	}
 	//return RunMEXOSAgentContainer(mf, rootLB)
 	return RunMEXOSAgentService(rootLB)

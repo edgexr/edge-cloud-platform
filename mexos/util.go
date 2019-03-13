@@ -18,7 +18,7 @@ func AddProxySecurityRulesAndPatchDNS(rootLB *MEXRootLB, kp *kubeParam, kubeName
 		return err
 	}
 	go func() {
-		err = AddNginxProxy(rootLB.Name, kp.ipaddr, kubeNames.appName, ports, "")
+		err = AddNginxProxy(rootLB.Name, kubeNames.appName, kp.ipaddr, ports, "")
 		if err == nil {
 			proxychan <- ""
 		} else {
@@ -48,7 +48,7 @@ func AddProxySecurityRulesAndPatchDNS(rootLB *MEXRootLB, kp *kubeParam, kubeName
 	if proxyerr != "" || secerr != "" || dnserr != "" {
 		if proxyerr == "" {
 			// delete the nginx proxy if it worked but something else failed because it can cause subequent attempts to fail
-			// cleanup of security rules and DNS is not as important
+			// cleanup of security rules and DNS we should do but not as important
 			err := DeleteNginxProxy(rootLB.Name, kubeNames.appName)
 			if err != nil {
 				log.InfoLog("cleanup nginx proxy Failed", "err", err)

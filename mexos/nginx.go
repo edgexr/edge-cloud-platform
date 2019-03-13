@@ -8,6 +8,8 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+var kcproxySuffix = "-kcproxy"
+
 func AddNginxProxy(rootLBName, name, ipaddr string, ports []PortDetail, network string) error {
 	log.DebugLog(log.DebugLevelMexos, "add nginx proxy", "name", name, "network", network, "ports", ports)
 
@@ -18,7 +20,7 @@ func AddNginxProxy(rootLBName, name, ipaddr string, ports []PortDetail, network 
 		log.DebugLog(log.DebugLevelMexos, "cannot form nginx proxy request")
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "nginx proxy add request post", "request", *pl)
+	log.DebugLog(log.DebugLevelMexos, "nginx proxy add request post", "uri", npURI, "request", *pl)
 	resp, body, errs := request.Post(npURI).Set("Content-Type", "application/json").Send(pl).End()
 	if errs != nil {
 		return fmt.Errorf("error, can't request nginx proxy add, %v", errs)

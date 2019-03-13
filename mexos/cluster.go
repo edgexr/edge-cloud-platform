@@ -79,88 +79,14 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 
 	log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster", clusterInst)
 
-	nameSuffix := GetK8sNodeNameSuffix(clusterInst)
 	flavorName := clusterInst.Flavor.Name
-	tenantName := GetCloudletTenant()
 	clusterName := clusterInst.Key.ClusterKey.Name
 
 	if flavorName == "" {
 		return fmt.Errorf("empty cluster flavor")
 	}
-	cf, err := GetClusterFlavor(flavorName)
+	err := heatCreateClusterKubernetes(clusterInst)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "invalid platform flavor, can't create cluster")
-		return err
-	}
-	//TODO more than one networks
-	netScheme := GetCloudletNetworkScheme()
-	if netScheme == "" {
-		return fmt.Errorf("empty network spec")
-	}
-	if !strings.HasPrefix(netScheme, "priv-subnet") {
-		return fmt.Errorf("unsupported netSpec kind %s", netScheme)
-		// XXX for now
-	}
-
-	//tags are derived from the cluster name currently
-	tags := clusterInst.Key.ClusterKey.Name + "-tag"
-	//TODO allow more net types
-	//TODO validate CIDR, etc.
-
-	if tags == "" {
-		return fmt.Errorf("invalid tags")
-	}
-	tags += "," + cf.PlatformFlavor
-	//TODO add whole manifest yaml->json into stringified property of the kvm instance for later
-	//XXX should check for quota, permissions, access control, etc. here
-	//guid := xid.New().String()
-	//kvmname := fmt.Sprintf("%s-1-%s-%s", "mex-k8s-master", mf.Metadata.Name, guid)
-	kvmname := fmt.Sprintf("%s-1-%s", "mex-k8s-master", nameSuffix)
-	sd, err := GetServerDetails(kvmname)
-	if err == nil {
-		if sd.Name == kvmname {
-			log.DebugLog(log.DebugLevelMexos, "k8s master exists", "kvmname", kvmname)
-			return nil
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "proceed to create k8s master kvm", "kvmname", kvmname, "netspec", netScheme, "tags", tags, "flavor", flavorName)
-	err = CreateMEXKVM(kvmname,
-		"k8s-master",
-		netScheme,
-		tags,
-		tenantName,
-		1,
-		clusterInst,
-		cf.PlatformFlavor,
-	)
-	if err != nil {
-		return fmt.Errorf("can't create k8s master, %v", err)
-	}
-	for i := 1; i <= cf.NumNodes; i++ {
-		//construct node name
-		//kvmnodename := fmt.Sprintf("%s-%d-%s-%s", "mex-k8s-node", i, mf.Metadata.Name, guid)
-		kvmnodename := fmt.Sprintf("%s-%d-%s", "mex-k8s-node", i, nameSuffix)
-		err = CreateMEXKVM(kvmnodename,
-			"k8s-node",
-			netScheme,
-			tags,
-			tenantName,
-			i,
-			clusterInst,
-			cf.PlatformFlavor,
-		)
-		if err != nil {
-			return fmt.Errorf("can't create k8s node, %v", err)
-		}
-	}
-	if GetCloudletExternalNetwork() == "" {
-		return fmt.Errorf("missing external network in platform config")
-	}
-	if err = LBAddRoute(rootLBName, GetCloudletExternalNetwork(), kvmname); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add route on rootlb", "error", err)
-		//return err
-	}
-	if err = SetServerProperty(kvmname, "mex-flavor="+flavorName); err != nil {
 		return err
 	}
 	ready := false
@@ -182,117 +108,19 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	if err := SeedDockerSecret(clusterName, rootLBName); err != nil {
 		return err
 	}
-	/* TODO: Swarm is not integrated with the controller, needs work here.
-	if mf.Metadata.Swarm != "" {
-		log.DebugLog(log.DebugLevelMexos, "metadata swarm is set, creating docker swarm", "swarm")
-		if err := CreateDockerSwarm(clusterName, rootLBName); err != nil {
-			return err
-		}
-	}
-	*/
 	if err := CreateDockerRegistrySecret(clusterInst, rootLBName); err != nil {
 		return err
 	}
 	if err := CreateClusterConfigMap(clusterInst, rootLBName); err != nil {
 		return err
 	}
-	//return &guid, nil
 	return nil
 }
 
 //mexDeleteClusterKubernetes deletes kubernetes cluster
-func mexDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+func mexDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	nameSuffix := GetK8sNodeNameSuffix(clusterInst)
-
-	rootLB, err := getRootLB(rootLBName)
-	if err != nil {
-		return err
-	}
-	if rootLB == nil {
-		return fmt.Errorf("can't delete kubernetes cluster, rootLB is null")
-	}
-
-	if nameSuffix == "" {
-		log.DebugLog(log.DebugLevelMexos, "error, empty name")
-		return fmt.Errorf("empty name")
-	}
-	srvs, err := ListServers()
-	if err != nil {
-		return err
-	}
-	// clname, err := FindClusterWithKey(mf, mf.Spec.Key)
-	// if err != nil {
-	// 	return fmt.Errorf("can't find cluster with key %s, %v", mf.Spec.Key, err)
-	// }
-	//log.DebugLog(log.DebugLevelMexos, "looking for server", "name", name, "servers", srvs)
-	force := true // TODO: consider a way to specify this
-	serverDeleted := false
-	for _, s := range srvs {
-		if strings.Contains(s.Name, nameSuffix) {
-			if !strings.HasPrefix(s.Name, "mex-k8s-") {
-				continue
-			}
-			if strings.Contains(s.Name, "mex-k8s-master") {
-				err = LBRemoveRoute(rootLB.Name, GetCloudletExternalNetwork(), s.Name)
-				if err != nil {
-					if !force {
-						err = fmt.Errorf("failed to remove route for %s, %v", s.Name, err)
-						log.DebugLog(log.DebugLevelMexos, "failed to remove route", "name", s.Name, "error", err)
-						return err
-					}
-					log.DebugLog(log.DebugLevelMexos, "forced to continue, failed to remove route ", "name", s.Name, "error", err)
-				}
-			}
-			log.DebugLog(log.DebugLevelMexos, "delete kubernetes server", "name", s.Name)
-			err = DeleteServer(s.Name)
-			if err != nil {
-				if !force {
-					log.DebugLog(log.DebugLevelMexos, "delete server fail", "error", err)
-					return err
-				}
-				log.DebugLog(log.DebugLevelMexos, "forced to continue, error while deleting server", "server", s.Name, "error", err)
-			}
-			serverDeleted = true
-			//kconfname := fmt.Sprintf("%s.kubeconfig", s.Name[strings.LastIndex(s.Name, "-")+1:])
-			// kconfname := GetLocalKconfName(mf)
-			// rerr := os.Remove(kconfname)
-			// if rerr != nil {
-			// 	log.DebugLog(log.DebugLevelMexos, "error can't remove file", "name", kconfname, "error", rerr)
-			// }
-		}
-	}
-	if !serverDeleted {
-		log.DebugLog(log.DebugLevelMexos, "server not found", "name", nameSuffix)
-		return fmt.Errorf("no server with name %s", nameSuffix)
-	}
-	sns, err := ListSubnets("")
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "can't list subnets", "error", err)
-		return err
-	}
-	rn := GetCloudletExternalRouter() //XXX for now
-	for _, s := range sns {
-		if strings.Contains(s.Name, nameSuffix) {
-			rerr := RemoveRouterSubnet(rn, s.Name)
-			if rerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "not fatal, continue, can't remove router from subnet", "error", rerr)
-				//return rerr
-			}
-			err = DeleteSubnet(s.Name)
-			if err != nil {
-				log.DebugLog(log.DebugLevelMexos, "warning, problems deleting subnet", "error", err)
-			}
-			break
-		}
-	}
-	//XXX tell agent to remove the route
-	//XXX remove kubectl proxy instance
-	// if err = DeleteNginxKCProxy(mf, rootLB.Name, clname); err != nil {
-	// 	log.DebugLog(log.DebugLevelMexos, "warning,cannot clean nginx kubectl proxy", "error", err)
-	// 	//return err
-	// }
-	return nil
+	return heatDeleteClusterKubernetes(clusterInst)
 }
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active
@@ -383,8 +211,20 @@ func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 		return azureCreateAKS(clusterInst)
 	default:
 		err := mexCreateClusterKubernetes(clusterInst, rootLBName)
+
 		if err != nil {
+			log.DebugLog(log.DebugLevelMexos, "error in mexCreateClusterKubernetes", "err", err)
+			if GetCleanupOnFailure() {
+				log.DebugLog(log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
+				delerr := mexDeleteClusterKubernetes(clusterInst)
+				if delerr != nil {
+					log.DebugLog(log.DebugLevelMexos, "fail to cleanup cluster")
+				}
+			} else {
+				log.DebugLog(log.DebugLevelMexos, "skipping cleanup on failure")
+			}
 			return fmt.Errorf("can't create cluster, %v", err)
+
 		}
 		//log.DebugLog(log.DebugLevelMexos, "new guid", "guid", *guid)
 		log.DebugLog(log.DebugLevelMexos, "created kubernetes cluster")
@@ -410,7 +250,7 @@ func MEXClusterRemoveClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 		resourceGroup := GetResourceGroupForCluster(clusterInst)
 		return azure.DeleteAKSCluster(resourceGroup)
 	default:
-		if err := mexDeleteClusterKubernetes(clusterInst, rootLBName); err != nil {
+		if err := heatDeleteClusterKubernetes(clusterInst); err != nil {
 			return fmt.Errorf("can't remove cluster, %v", err)
 		}
 		return nil

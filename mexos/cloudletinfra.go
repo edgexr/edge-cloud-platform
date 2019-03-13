@@ -8,6 +8,7 @@ package mexos
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -16,7 +17,6 @@ import (
 
 var CloudletInfra *edgeproto.CloudletInfraProperties
 var CloudletInfraCommon *edgeproto.CloudletInfraCommon
-
 
 func InitializeCloudletInfra(fakecloudlet bool) error {
 	log.DebugLog(log.DebugLevelMexos, "InitializeCloudletInfra called")
@@ -204,6 +204,17 @@ func GetCloudletCFUser() string {
 
 func GetCloudletDockerPass() string {
 	return CloudletInfraCommon.DockerRegPass
+}
+
+// GetCleanupOnFailure should be true unless we want to debug the failure, in which case
+// this env var can be set to no.  We could consider making this configurable at the controller
+// but really is only needed for debugging
+func GetCleanupOnFailure() bool {
+	cleanup := os.Getenv("CLEANUP_ON_FAILURE")
+	if strings.ToLower(cleanup) == "no" || strings.ToLower(cleanup) == "false" {
+		return false
+	}
+	return true
 }
 
 // These not in the proto file yet because they may not change for a while
