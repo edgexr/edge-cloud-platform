@@ -1,0 +1,12 @@
+version: '3'
+services:
+  influxdb:
+    build: .
+    image: "registry.mobiledgex.net:5000/mobiledgex/influxdb:v1.0.0"
+    network_mode: "host"
+    volumes:
+     - influxdb-storage:/data
+    restart: unless-stopped
+
+volumes:
+  influxdb-storage:
