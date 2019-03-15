@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -30,6 +31,8 @@ type ClusterParams struct {
 	MasterIP       string
 	Nodes          []ClusterNode
 }
+
+var clusterCreateLock sync.Mutex
 
 var k8sClusterTemplate = `
 heat_template_version: 2016-10-14
@@ -181,6 +184,13 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst) (*ClusterParams, error
 }
 
 func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
+
+	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
+	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
+	// So we will do this one at a time.   It will slightly slow down the creation of the second cluster, but the heat
+	// stack create time is relatively quick compared to the k8s startup which can be done in parallel
+	clusterCreateLock.Lock()
+	defer clusterCreateLock.Unlock()
 
 	cp, err := getClusterParams(clusterInst)
 	if err != nil {
