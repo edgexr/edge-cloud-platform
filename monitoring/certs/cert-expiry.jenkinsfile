@@ -4,7 +4,7 @@ import net.sf.json.JSONObject;
 def closeToExpiry = ''
 properties([parameters([
     string(name: 'HOSTNAMES',
-           defaultValue: 'registry.mobiledgex.net:5000 vault.mobiledgex.net')
+           defaultValue: 'artifactory.mobiledgex.net container-registry.mobiledgex.net docker.mobiledgex.net registry.mobiledgex.net registry.mobiledgex.net:5000 vault.mobiledgex.net')
 ])])
 
 node {
