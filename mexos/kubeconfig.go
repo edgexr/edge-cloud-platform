@@ -42,6 +42,9 @@ func GetKconf(clusterInst *edgeproto.ClusterInst) (string, error) {
 				return "", fmt.Errorf("can't copy %s, %v", defaultKubeconfig(), err)
 			}
 		case cloudcommon.OperatorAzure:
+			if err = AzureLogin(); err != nil {
+				return "", err
+			}
 			rg := GetResourceGroupForCluster(clusterInst)
 			if err = azure.GetAKSCredentials(rg, clusterName); err != nil {
 				return "", fmt.Errorf("unable to get AKS credentials %v", err)

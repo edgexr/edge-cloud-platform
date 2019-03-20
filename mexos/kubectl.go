@@ -87,6 +87,7 @@ func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *e
 		return err
 	}
 	cmd := fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, kfile)
+	log.DebugLog(log.DebugLevelMexos, "running kubectl", "cmd", cmd)
 	out, err := kp.client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error creating app, %s, %v, %s", out, err, mf)

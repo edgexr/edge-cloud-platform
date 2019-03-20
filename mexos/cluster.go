@@ -248,6 +248,9 @@ func MEXClusterRemoveClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 		return gcloud.DeleteGKECluster(clusterInst.Key.ClusterKey.Name)
 	case cloudcommon.OperatorAzure:
 		resourceGroup := GetResourceGroupForCluster(clusterInst)
+		if err := AzureLogin(); err != nil {
+			return err
+		}
 		return azure.DeleteAKSCluster(resourceGroup)
 	default:
 		if err := heatDeleteClusterKubernetes(clusterInst); err != nil {

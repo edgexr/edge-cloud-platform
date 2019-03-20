@@ -4,10 +4,21 @@ import (
 	"fmt"
 	"time"
 
+	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/azure"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+// AzureLogin logs into azure
+func AzureLogin() error {
+	log.DebugLog(log.DebugLevelMexos, "doing azure login")
+	out, err := sh.Command("az", "login", "--username", GetCloudletAzureUserName(), "--password", GetCloudletAzurePassword()).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("Login Failed: %s %v", out, err)
+	}
+	return nil
+}
 
 func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
@@ -18,6 +29,9 @@ func azureCreateAKS(clusterInst *edgeproto.ClusterInst) error {
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	clusterName := clusterInst.Key.ClusterKey.Name
 	location := GetCloudletAzureLocation()
+	if err = AzureLogin(); err != nil {
+		return err
+	}
 	if err = azure.CreateResourceGroup(resourceGroup, location); err != nil {
 		return err
 	}
