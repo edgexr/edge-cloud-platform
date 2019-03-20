@@ -48,7 +48,7 @@ func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName strin
 	if err != nil {
 		return err
 	}
-	cmd := fmt.Sprintf("kubectl create configmap cluster-info "+
+	cmd := fmt.Sprintf("kubectl create configmap mexcluster-info "+
 		"--from-literal=ClusterName=%s "+
 		"--from-literal=CloudletName=%s "+
 		"--from-literal=OperatorName=%s --kubeconfig=%s",
@@ -63,7 +63,7 @@ func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName strin
 			log.DebugLog(log.DebugLevelMexos, "warning, Cluster ConfigMap already exists.")
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, created cluster-info configmap")
+	log.DebugLog(log.DebugLevelMexos, "ok, created mexcluster-info configmap")
 	return nil
 }
 

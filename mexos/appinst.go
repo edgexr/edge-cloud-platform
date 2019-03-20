@@ -22,7 +22,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 	}
 
 	if CloudletIsLocalDIND() {
-		masteraddr := dind.GetMasterAddr()
+		masteraddr := dind.GetMasterAddr(kubeNames.clusterName)
 		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
 
 		portDetail, err := GetPortDetail(appInst)
