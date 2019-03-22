@@ -17,6 +17,10 @@ func AddProxySecurityRulesAndPatchDNS(rootLB *MEXRootLB, kp *kubeParam, kubeName
 	if err != nil {
 		return err
 	}
+	if len(ports) == 0 {
+		log.DebugLog(log.DebugLevelMexos, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.appName)
+		return nil
+	}
 	go func() {
 		err = AddNginxProxy(rootLB.Name, kubeNames.appName, kp.ipaddr, ports, "")
 		if err == nil {
