@@ -183,7 +183,7 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 
 //FindClusterWithKey finds cluster given a key string
 func FindClusterMaster(key string, srvs []OSServer) (string, error) {
-	//log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key)
+	log.DebugLog(log.DebugLevelMexos, "FindClusterMaster", "key", key)
 	if key == "" {
 		return "", fmt.Errorf("empty key")
 	}

@@ -15,13 +15,14 @@ import (
 )
 
 type KubeNames struct {
-	appName      string
-	appURI       string
-	appImage     string
-	clusterName  string
-	operatorName string
-	kconfName    string
-	serviceNames []string
+	appName           string
+	appURI            string
+	appImage          string
+	clusterName       string
+	k8sNodeNameSuffix string
+	operatorName      string
+	kconfName         string
+	serviceNames      []string
 }
 
 func (k *KubeNames) containsService(svc string) bool {
@@ -45,6 +46,7 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		return fmt.Errorf("nil app inst")
 	}
 	kubeNames.clusterName = clusterInst.Key.ClusterKey.Name
+	kubeNames.k8sNodeNameSuffix = GetK8sNodeNameSuffix(clusterInst)
 	kubeNames.appName = NormalizeName(app.Key.Name)
 	kubeNames.appURI = appInst.Uri
 	kubeNames.appImage = NormalizeName(app.ImagePath)
@@ -238,9 +240,9 @@ func ValidateKubernetesParameters(rootLB *MEXRootLB, kubeNames *KubeNames, clust
 		return nil, fmt.Errorf("error getting server list: %v", err)
 
 	}
-	master, err := FindClusterMaster(kubeNames.clusterName, srvs)
+	master, err := FindClusterMaster(kubeNames.k8sNodeNameSuffix, srvs)
 	if err != nil {
-		return nil, fmt.Errorf("can't find cluster with key %s, %v", kubeNames.clusterName, err)
+		return nil, fmt.Errorf("can't find cluster with key %s, %v", kubeNames.k8sNodeNameSuffix, err)
 	}
 	ipaddr, err := FindNodeIP(master, srvs)
 	if err != nil {
