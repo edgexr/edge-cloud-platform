@@ -16,8 +16,11 @@ func CreateResourceGroup(group, location string) error {
 }
 
 //CreateAKSCluster creates kubernetes cluster on azure
-func CreateAKSCluster(group, name string) error {
-	out, err := sh.Command("az", "aks", "create", "--resource-group", group, "--name", name, "--generate-ssh-keys").CombinedOutput()
+func CreateAKSCluster(group, name, vm_size, num_nodes string) error {
+	out, err := sh.Command("az", "aks", "create", "--resource-group", group,
+		"--name", name, "--generate-ssh-keys",
+		"--node-vm-size", vm_size,
+		"--node-count", num_nodes).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s %v", out, err)
 	}

@@ -1,28 +1,30 @@
 package mexos
 
 import (
-	"encoding/json"
-	"fmt"
-
-	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 //GetLimits is used to retrieve tenant level platform stats
-func GetLimits() ([]OSLimit, error) {
-	log.DebugLog(log.DebugLevelMexos, "GetLimits")
-	//err := sh.Command("openstack", "limits", "show", "--absolute", "-f", "json", sh.Dir("/tmp")).WriteStdout("os-out.txt")
-	out, err := sh.Command("openstack", "limits", "show", "--absolute", "-f", "json", sh.Dir("/tmp")).Output()
-	if err != nil {
-		err = fmt.Errorf("cannot get limits from openstack, %v", err)
-		return nil, err
+func GetLimits(info *edgeproto.CloudletInfo) error {
+	switch GetCloudletKind() {
+	case cloudcommon.CloudletKindOpenStack:
+		err := OSGetLimits(info)
+		if err != nil {
+			return err
+		}
+	case cloudcommon.CloudletKindAzure:
+		err := AzureGetLimits(info)
+		if err != nil {
+			return err
+		}
+	default:
+		// todo: we could try to get this from the local machine
+		log.DebugLog(log.DebugLevelMexos, "GetLimits (hardcoded)")
+		info.OsMaxVcores = 8
+		info.OsMaxRam = 16
+		info.OsMaxVolGb = 500
 	}
-	var limits []OSLimit
-	err = json.Unmarshal(out, &limits)
-	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %v", err)
-		return nil, err
-	}
-	log.DebugLog(log.DebugLevelMexos, "get limits", "limits", limits)
-	return limits, nil
+	return nil
 }
