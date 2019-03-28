@@ -523,9 +523,9 @@ func OSGetLimits(info *edgeproto.CloudletInfo) error {
 		return err
 	}
 	for _, l := range limits {
-		if l.Name == "maxTotalCores" {
+		if l.Name == "maxTotalRAMSize" {
 			info.OsMaxRam = uint64(l.Value)
-		} else if l.Name == "maxTotalRAMSize" {
+		} else if l.Name == "maxTotalCores" {
 			info.OsMaxVcores = uint64(l.Value)
 		} else if l.Name == "maxTotalVolumeGigabytes" {
 			info.OsMaxVolGb = uint64(l.Value)
