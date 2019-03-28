@@ -48,7 +48,7 @@ func createAppDNS(kp *kubeParam, kubeNames *KubeNames) error {
 		sn := svc.ObjectMeta.Name
 		// for the DIND case we need to patch the service here
 		externalIP := ""
-		if CloudletIsLocalDIND() {
+		if CloudletIsDIND() {
 			addr := dind.GetMasterAddr(kubeNames.clusterName)
 			if len(svc.Spec.ExternalIPs) > 0 && svc.Spec.ExternalIPs[0] == addr {
 				log.DebugLog(log.DebugLevelMexos, "external IP already present in DIND, no patch required", "addr", addr)
@@ -58,7 +58,7 @@ func createAppDNS(kp *kubeParam, kubeNames *KubeNames) error {
 					return err
 				}
 			}
-			externalIP, err = dind.GetLocalAddr()
+			externalIP, err = dind.GetDINDServiceIP(CloudletInfra.CloudletKind)
 		} else {
 			externalIP, err = getSvcExternalIP(sn, kp)
 		}

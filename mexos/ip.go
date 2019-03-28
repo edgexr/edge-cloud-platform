@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -104,6 +105,9 @@ func GetAllowedClientCIDR() string {
 // requires some rework to use in all cases
 func GetServerIPAddr(networkName, serverName string) (string, error) {
 
+	if CloudletIsDIND() {
+		return dind.GetDINDServiceIP(CloudletInfra.CloudletKind)
+	}
 	// if this is a root lb, look it up and get the IP if we have it cached
 	rootLB, err := getRootLB(serverName)
 	if err == nil && rootLB != nil {

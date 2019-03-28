@@ -4,10 +4,10 @@ Wants=network.target
 After=network.target
 
 [Service]
-ExecStart=/bin/bash -ce "exec /usr/local/bin/mexosagent -debug -cert /home/ubuntu >> /var/log/mexosagent.log 2>&1"
+ExecStart=/bin/bash -ce "exec /usr/local/bin/mexosagent -debug -proxy '' -cert /home/ubuntu >> /var/log/mexosagent.log 2>&1"
 WorkingDirectory=/root
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
-Alias=mexosagent.service
+Alias=mexosagent

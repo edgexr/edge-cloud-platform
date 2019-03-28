@@ -80,7 +80,7 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster", clusterInst)
 
 	flavorName := clusterInst.Flavor.Name
-	clusterName := clusterInst.Key.ClusterKey.Name
+	clusterNameSuffix := GetK8sNodeNameSuffix(clusterInst)
 
 	if flavorName == "" {
 		return fmt.Errorf("empty cluster flavor")
@@ -105,7 +105,7 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	if !ready {
 		return fmt.Errorf("cluster not ready (yet)")
 	}
-	if err := SeedDockerSecret(clusterName, rootLBName); err != nil {
+	if err := SeedDockerSecret(clusterNameSuffix, rootLBName); err != nil {
 		return err
 	}
 	if err := CreateDockerRegistrySecret(clusterInst, rootLBName); err != nil {
@@ -199,7 +199,7 @@ func FindClusterMaster(key string, srvs []OSServer) (string, error) {
 //MEXClusterCreateInst creates a cluster.  This was formerly MEXClusterCreateManifest
 func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "rootLBName", rootLBName)
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		return localCreateDIND(clusterInst)
 	}
 	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
@@ -238,7 +238,7 @@ func MEXClusterRemoveClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 
 	clusterName := clusterInst.Key.ClusterKey.Name
 
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		return dind.DeleteDINDCluster(clusterName)
 	}
 	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)

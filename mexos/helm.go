@@ -19,7 +19,7 @@ func DeleteHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edg
 	if err != nil {
 		return err
 	}
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		// remove DNS entries
 		if err = deleteAppDNS(kp, kubeNames); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
@@ -115,7 +115,7 @@ func CreateHelmAppInst(rootLB *MEXRootLB, kubeNames *KubeNames, appInst *edgepro
 		return fmt.Errorf("error deploying helm chart, %s, %s, %v", cmd, out, err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "applied helm chart")
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		// Add DNS Zone
 		if err = createAppDNS(kp, kubeNames); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)

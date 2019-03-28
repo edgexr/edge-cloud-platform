@@ -31,14 +31,8 @@ func checkPEMFile(fn string) error {
 }
 
 //AcquireCertificates obtains certficates from Letsencrypt over ACME. It should be used carefully. The API calls have quota.
-func AcquireCertificates(rootLB *MEXRootLB, fqdn string) error {
+func AcquireCertificates(fqdn string) error {
 	log.DebugLog(log.DebugLevelMexos, "acquiring certificates for FQDN", "FQDN", fqdn)
-	if rootLB == nil {
-		return fmt.Errorf("cannot acquire certs, rootLB is null")
-	}
-	if GetCloudletExternalNetwork() == "" {
-		return fmt.Errorf("acquire certificate, missing external network ")
-	}
 	kf := PrivateSSHKey()
 	srcfile := fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s/fullchain.cer", GetCloudletRegistryFileServer(), fqdn)
 	dkey := fmt.Sprintf("%s/%s.key", fqdn, fqdn)

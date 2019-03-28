@@ -61,14 +61,7 @@ func uri2fqdn(uri string) string {
 }
 
 //ActivateFQDNA updates and ensures FQDN is registered properly
-func ActivateFQDNA(rootLB *MEXRootLB, fqdn string) error {
-	if rootLB == nil {
-		return fmt.Errorf("cannot activate certs, rootLB is null")
-	}
-
-	if GetCloudletExternalNetwork() == "" {
-		return fmt.Errorf("activate fqdn A record, missing external network in manifest")
-	}
+func ActivateFQDNA(fqdn string) error {
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}

@@ -76,14 +76,14 @@ func NormalizeName(name string) string {
 	return util.K8SSanitize(name) // XXX
 }
 
-func SeedDockerSecret(clusterName, rootLBName string) error {
+func SeedDockerSecret(clusterNameSuffix, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "seed docker secret")
 
 	srvs, err := ListServers()
 	if err != nil {
 		return err
 	}
-	master, err := FindClusterMaster(clusterName, srvs)
+	master, err := FindClusterMaster(clusterNameSuffix, srvs)
 	if err != nil {
 		return err
 	}

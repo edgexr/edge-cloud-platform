@@ -21,7 +21,7 @@ func MEXAppCreateAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return err
 	}
 
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		masteraddr := dind.GetMasterAddr(kubeNames.clusterName)
 		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
 
@@ -95,7 +95,7 @@ func MEXAppDeleteAppInst(rootLB *MEXRootLB, clusterInst *edgeproto.ClusterInst, 
 		return err
 	}
 
-	if CloudletIsLocalDIND() {
+	if CloudletIsDIND() {
 		log.DebugLog(log.DebugLevelMexos, "run kubectl delete app for dind")
 
 		var err error
