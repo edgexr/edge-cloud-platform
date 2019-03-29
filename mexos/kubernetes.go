@@ -27,7 +27,7 @@ type KubeNames struct {
 
 func (k *KubeNames) containsService(svc string) bool {
 	for _, s := range k.serviceNames {
-		if s == svc {
+		if strings.HasPrefix(svc, s) {
 			return true
 		}
 	}
@@ -68,6 +68,9 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 			svcName := ksvc.ObjectMeta.Name
 			kubeNames.serviceNames = append(kubeNames.serviceNames, svcName)
 		}
+	} else if app.Deployment == cloudcommon.AppDeploymentTypeHelm {
+		// for helm chart just make sure it's the same prefix
+		kubeNames.serviceNames = append(kubeNames.serviceNames, kubeNames.appName)
 	}
 	return nil
 
