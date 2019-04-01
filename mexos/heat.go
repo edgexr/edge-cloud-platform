@@ -126,7 +126,7 @@ resources:
 `
 
 //GetClusterParams fills template parameters for the cluster
-func getClusterParams(clusterInst *edgeproto.ClusterInst) (*ClusterParams, error) {
+func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) (*ClusterParams, error) {
 	ni, err := ParseNetSpec(GetCloudletNetworkScheme())
 	if err != nil {
 		return nil, err
@@ -166,15 +166,10 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst) (*ClusterParams, error
 	cp.MEXRouterName = GetCloudletExternalRouter()
 	cp.MEXNetworkName = GetCloudletMexNetwork()
 	cp.ImageName = GetCloudletOSImage()
-	flavorName := clusterInst.Flavor.Name
 
-	cf, err := GetClusterFlavor(flavorName)
-	if err != nil {
-		return nil, err
-	}
-	cp.MasterFlavor = cf.MasterFlavor.Name
-	cp.NodeFlavor = cf.NodeFlavor.Name
-	for i := 1; i <= cf.NumNodes; i++ {
+	cp.MasterFlavor = clusterInst.MasterFlavor
+	cp.NodeFlavor = clusterInst.NodeFlavor
+	for i := uint32(1); i <= flavor.NumNodes; i++ {
 		nn := fmt.Sprintf("mex-k8s-node-%d", i)
 		nip := fmt.Sprintf("%s.%d", nodeIPPrefix, i+100)
 		cn := ClusterNode{NodeName: nn, NodeIP: nip}
@@ -183,7 +178,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst) (*ClusterParams, error
 	return &cp, nil
 }
 
-func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
+func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
 
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
 	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
@@ -192,7 +187,7 @@ func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
 	clusterCreateLock.Lock()
 	defer clusterCreateLock.Unlock()
 
-	cp, err := getClusterParams(clusterInst)
+	cp, err := getClusterParams(clusterInst, flavor)
 	if err != nil {
 		return err
 	}

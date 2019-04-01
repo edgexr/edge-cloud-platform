@@ -269,6 +269,3 @@ func GetCloudletSecurityRule() string {
 func GetCloudletMexosAgentPort() string {
 	return "18889"
 }
-func GetCloudletRootLBFlavor() string {
-	return "x1.medium"
-}

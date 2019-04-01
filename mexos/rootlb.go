@@ -56,7 +56,7 @@ var rootLBPorts = []int{
 
 //EnableRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
 //  It also sets up first basic network router and subnet, ready for running first MEX agent.
-func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey) error {
+func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey, platformFlavor string) error {
 	log.DebugLog(log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name)
 	if rootLB == nil {
 		return fmt.Errorf("cannot enable rootLB, rootLB is null")
@@ -86,12 +86,6 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey) error {
 		//if strings.Contains(mf.Spec.Options, "dhcp") {  TODO
 		netspec = netspec + ",dhcp"
 		//}
-		flavor := GetCloudletRootLBFlavor()
-		cf, err := GetClusterFlavor(flavor)
-		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "invalid platform flavor, can't create rootLB")
-			return fmt.Errorf("cannot create rootLB invalid platform flavor %v", err)
-		}
 
 		tags := cloudletKey.Name + "-tag"
 
@@ -103,7 +97,7 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey) error {
 			GetCloudletTenant(),
 			1,
 			nil, // cluster not needed for rootlb
-			cf.PlatformFlavor,
+			platformFlavor,
 		)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error while creating mex kvm", "error", err)

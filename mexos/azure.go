@@ -24,6 +24,13 @@ type AZLimit struct {
 	Name         AZName
 }
 
+type AZFlavor struct {
+	Disk  int
+	Name  string
+	RAM   int
+	VCPUs int
+}
+
 // AzureLogin logs into azure
 func AzureLogin() error {
 	log.DebugLog(log.DebugLevelMexos, "doing azure login")
@@ -38,24 +45,20 @@ func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }
 
-func azureCreateAKS(clusterInst *edgeproto.ClusterInst) error {
+func azureCreateAKS(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
 	var err error
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	clusterName := clusterInst.Key.ClusterKey.Name
 	location := GetCloudletAzureLocation()
-	cf, err := GetClusterFlavor(clusterInst.Flavor.Name)
-	if err != nil {
-		return err
-	}
 	if err = AzureLogin(); err != nil {
 		return err
 	}
 	if err = azure.CreateResourceGroup(resourceGroup, location); err != nil {
 		return err
 	}
-	num_nodes := fmt.Sprintf("%d", cf.NumNodes)
+	num_nodes := fmt.Sprintf("%d", flavor.NumNodes)
 	if err = azure.CreateAKSCluster(resourceGroup, clusterName,
-		cf.NodeFlavor.Name, num_nodes); err != nil {
+		clusterInst.NodeFlavor, num_nodes); err != nil {
 		return err
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done
@@ -102,6 +105,35 @@ func AzureGetLimits(info *edgeproto.CloudletInfo) error {
 			info.OsMaxVolGb = uint64(500 * vcpus)
 			break
 		}
+	}
+
+	/*
+	 * We will not support all Azure flavors, only selected ones:
+	 * https://azure.microsoft.com/en-in/pricing/details/virtual-machines/series/
+	 */
+	var vmsizes []AZFlavor
+	out, err = sh.Command("az", "vm", "list-sizes",
+		"--location", GetCloudletAzureLocation(),
+		"--query", "[].{"+
+			"Name:name,"+
+			"VCPUs:numberOfCores,"+
+			"RAM:memoryInMb, Disk:resourceDiskSizeInMb"+
+			"}[?starts_with(Name,'Standard_DS')]|[?ends_with(Name,'v2')]",
+		sh.Dir("/tmp")).CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("cannot get vm-sizes from azure, %s %v", out, err)
+		return err
+	}
+	err = json.Unmarshal(out, &vmsizes)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return err
+	}
+	for _, f := range vmsizes {
+		info.Flavors = append(
+			info.Flavors,
+			&edgeproto.FlavorInfo{f.Name, uint64(f.VCPUs), uint64(f.RAM), uint64(f.Disk)},
+		)
 	}
 
 	return nil

@@ -94,7 +94,6 @@ func ListFlavors() ([]OSFlavor, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.DebugLog(log.DebugLevelMexos, "list flavors", flavors)
 	return flavors, nil
 }
 
@@ -510,7 +509,7 @@ func getHeatStackDetail(stackName string) (*OSHeatStackDetail, error) {
 
 // Get resource limits
 func OSGetLimits(info *edgeproto.CloudletInfo) error {
-	log.DebugLog(log.DebugLevelMexos, "GetLimits (Openstack)")
+	log.DebugLog(log.DebugLevelMexos, "GetLimits (Openstack) - Resources info & Supported flavors")
 	var limits []OSLimit
 	out, err := TimedOpenStackCommand("openstack", "limits", "show", "--absolute", "-f", "json")
 	if err != nil {
@@ -530,6 +529,19 @@ func OSGetLimits(info *edgeproto.CloudletInfo) error {
 		} else if l.Name == "maxTotalVolumeGigabytes" {
 			info.OsMaxVolGb = uint64(l.Value)
 		}
+	}
+
+	var osflavors []OSFlavor
+	osflavors, err1 := ListFlavors()
+	if err1 != nil {
+		err = fmt.Errorf("cannot get flavor list from openstack, %v", err1)
+		return err
+	}
+	for _, f := range osflavors {
+		info.Flavors = append(
+			info.Flavors,
+			&edgeproto.FlavorInfo{f.Name, uint64(f.VCPUs), uint64(f.RAM), uint64(f.Disk)},
+		)
 	}
 
 	return nil

@@ -49,7 +49,7 @@ func runLocalMexAgent() error {
 //   It then obtains certficiates from Letsencrypt, if not done yet.  Then it runs the docker instance of MEX agent
 //   on the RootLB. It can be told to manually pull image from docker repository.  This allows upgrading with new image.
 //   It uses MEX private docker repository.  If an instance is running already, we don't start another one.
-func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
+func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platformFlavor string) error {
 	log.DebugLog(log.DebugLevelMexos, "run mex agent")
 
 	if CloudletIsDIND() {
@@ -109,7 +109,7 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey) error {
 		return fmt.Errorf("missing agent image")
 	}
 	log.DebugLog(log.DebugLevelMexos, "record platform config")
-	err = EnableRootLB(rootLB, cloudletKey)
+	err = EnableRootLB(rootLB, cloudletKey, platformFlavor)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "can't enable agent", "name", rootLB.Name)
 		return fmt.Errorf("Failed to enable root LB %v", err)
@@ -239,7 +239,7 @@ func RunMEXOSAgentContainer(rootLB *MEXRootLB) error {
 }
 
 //RunMEXAgentCloudletKey calls MEXPlatformInit with templated manifest
-func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string) error {
+func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string, platformFlavor string) error {
 
 	clk := edgeproto.CloudletKey{}
 	err := json.Unmarshal([]byte(cloudletKeyStr), &clk)
@@ -250,5 +250,5 @@ func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string) error {
 	if clk.Name == "" || clk.OperatorKey.Name == "" {
 		return fmt.Errorf("invalid cloudletkeystr %s", cloudletKeyStr)
 	}
-	return RunMEXAgent(rootLBName, &clk)
+	return RunMEXAgent(rootLBName, &clk, platformFlavor)
 }

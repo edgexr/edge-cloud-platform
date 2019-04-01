@@ -75,7 +75,7 @@ type ClusterMasterFlavor struct {
 }
 
 //mexCreateClusterKubernetes creates a cluster of nodes. It can take a while, so call from a goroutine.
-func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName string, flavor *edgeproto.ClusterFlavor) error {
 
 	log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster", clusterInst)
 
@@ -85,13 +85,13 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	if flavorName == "" {
 		return fmt.Errorf("empty cluster flavor")
 	}
-	err := heatCreateClusterKubernetes(clusterInst)
+	err := heatCreateClusterKubernetes(clusterInst, flavor)
 	if err != nil {
 		return err
 	}
 	ready := false
 	for i := 0; i < 10; i++ {
-		ready, err = IsClusterReady(clusterInst, flavorName, rootLBName)
+		ready, err = IsClusterReady(clusterInst, flavorName, rootLBName, flavor)
 		if err != nil {
 			return err
 		}
@@ -124,15 +124,10 @@ func mexDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
 }
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active
-func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName string) (bool, error) {
+func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName string, flavor *edgeproto.ClusterFlavor) (bool, error) {
 	log.DebugLog(log.DebugLevelMexos, "checking if cluster is ready")
 
 	nameSuffix := GetK8sNodeNameSuffix(clusterInst)
-	cf, err := GetClusterFlavor(flavorName)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "invalid cluster flavor, can't check if cluster is ready")
-		return false, err
-	}
 	srvs, err := ListServers()
 
 	master, err := FindClusterMaster(nameSuffix, srvs)
@@ -167,12 +162,12 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 		return false, fmt.Errorf("failed to json unmarshal kubectl get nodes output, %v, %v", err, out)
 	}
 	log.DebugLog(log.DebugLevelMexos, "kubectl reports nodes", "numnodes", len(gitems.Items))
-	if len(gitems.Items) < (cf.NumNodes + cf.NumMasterNodes) {
+	if uint32(len(gitems.Items)) < (flavor.NumNodes + flavor.NumMasters) {
 		//log.DebugLog(log.DebugLevelMexos, "kubernetes cluster not ready", "log", out)
 		log.DebugLog(log.DebugLevelMexos, "kubernetes cluster not ready", "len items", len(gitems.Items))
 		return false, nil
 	}
-	log.DebugLog(log.DebugLevelMexos, "cluster nodes", "numnodes", cf.NumNodes, "nummasters", cf.NumMasterNodes)
+	log.DebugLog(log.DebugLevelMexos, "cluster nodes", "numnodes", flavor.NumNodes, "nummasters", flavor.NumMasters)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
 	if err := CopyKubeConfig(clusterInst, rootLBName, master, srvs); err != nil {
 		return false, fmt.Errorf("kubeconfig copy failed, %v", err)
@@ -197,7 +192,7 @@ func FindClusterMaster(key string, srvs []OSServer) (string, error) {
 }
 
 //MEXClusterCreateInst creates a cluster.  This was formerly MEXClusterCreateManifest
-func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string, flavor *edgeproto.ClusterFlavor) error {
 	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	if CloudletIsDIND() {
 		return localCreateDIND(clusterInst)
@@ -208,9 +203,9 @@ func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName st
 	case cloudcommon.OperatorGCP:
 		return gcloudCreateGKE(clusterInst)
 	case cloudcommon.OperatorAzure:
-		return azureCreateAKS(clusterInst)
+		return azureCreateAKS(clusterInst, flavor)
 	default:
-		err := mexCreateClusterKubernetes(clusterInst, rootLBName)
+		err := mexCreateClusterKubernetes(clusterInst, rootLBName, flavor)
 
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error in mexCreateClusterKubernetes", "err", err)
