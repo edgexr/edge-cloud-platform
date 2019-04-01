@@ -7,12 +7,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func GetK8sNodeNameSuffix(clusterInst *edgeproto.ClusterInst) string {
-	cloudletName := clusterInst.Key.CloudletKey.Name
-	clusterName := clusterInst.Key.ClusterKey.Name
-	return NormalizeName(cloudletName + "-" + clusterName)
-}
-
 /* TODO: Fix for swarm
 //CreateQCOW2AppManifest creates qcow2 app
 func CreateQCOW2AppManifest(mf *Manifest) error {

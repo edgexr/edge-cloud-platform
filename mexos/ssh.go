@@ -9,7 +9,7 @@ import (
 )
 
 var sshOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}
-var sshUser = "ubuntu"
+var SSHUser = "ubuntu"
 
 //CopySSHCredential copies over the ssh credential for mex to LB
 func CopySSHCredential(serverName, networkName, userName string) error {
@@ -20,7 +20,7 @@ func CopySSHCredential(serverName, networkName, userName string) error {
 		return err
 	}
 	kf := PrivateSSHKey()
-	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, kf, sshUser+"@"+addr+":").Output()
+	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, kf, userName+"@"+addr+":").Output()
 	if err != nil {
 		return fmt.Errorf("can't copy %s to %s, %s, %v", kf, addr, out, err)
 	}

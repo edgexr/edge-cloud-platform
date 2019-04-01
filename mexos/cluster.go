@@ -6,10 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/azure"
-	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
-	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/gcloud"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -74,24 +71,42 @@ type ClusterMasterFlavor struct {
 	Name string
 }
 
-//mexCreateClusterKubernetes creates a cluster of nodes. It can take a while, so call from a goroutine.
-func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName string, flavor *edgeproto.ClusterFlavor) error {
+func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) (reterr error) {
+	// clean-up func
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		log.DebugLog(log.DebugLevelMexos, "error in mexCreateClusterKubernetes", "err", reterr)
+		if GetCleanupOnFailure() {
+			log.DebugLog(log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
+			delerr := DeleteCluster(clusterInst)
+			if delerr != nil {
+				log.DebugLog(log.DebugLevelMexos, "fail to cleanup cluster")
+			}
+		} else {
+			log.DebugLog(log.DebugLevelMexos, "skipping cleanup on failure")
+		}
+	}()
 
-	log.DebugLog(log.DebugLevelMexos, "create kubernetes cluster", "cluster", clusterInst)
+	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "rootLBName", rootLBName)
 
 	flavorName := clusterInst.Flavor.Name
-	clusterNameSuffix := GetK8sNodeNameSuffix(clusterInst)
-
 	if flavorName == "" {
 		return fmt.Errorf("empty cluster flavor")
 	}
-	err := heatCreateClusterKubernetes(clusterInst, flavor)
+
+	err := HeatCreateClusterKubernetes(clusterInst, flavor)
 	if err != nil {
 		return err
 	}
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	if err != nil {
+		return fmt.Errorf("can't get rootLB client, %v", err)
+	}
 	ready := false
 	for i := 0; i < 10; i++ {
-		ready, err = IsClusterReady(clusterInst, flavorName, rootLBName, flavor)
+		ready, err = IsClusterReady(clusterInst, flavor, rootLBName)
 		if err != nil {
 			return err
 		}
@@ -105,29 +120,30 @@ func mexCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, rootLBName s
 	if !ready {
 		return fmt.Errorf("cluster not ready (yet)")
 	}
-	if err := SeedDockerSecret(clusterNameSuffix, rootLBName); err != nil {
+	if err := SeedDockerSecret(client, clusterInst); err != nil {
 		return err
 	}
-	if err := CreateDockerRegistrySecret(clusterInst, rootLBName); err != nil {
+	if err := CreateDockerRegistrySecret(client, clusterInst); err != nil {
 		return err
 	}
-	if err := CreateClusterConfigMap(clusterInst, rootLBName); err != nil {
+	if err := CreateClusterConfigMap(client, clusterInst); err != nil {
 		return err
 	}
+	log.DebugLog(log.DebugLevelMexos, "created kubernetes cluster")
 	return nil
 }
 
 //mexDeleteClusterKubernetes deletes kubernetes cluster
-func mexDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
+func DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	return heatDeleteClusterKubernetes(clusterInst)
+	return HeatDeleteClusterKubernetes(clusterInst)
 }
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active
-func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName string, flavor *edgeproto.ClusterFlavor) (bool, error) {
+func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor, rootLBName string) (bool, error) {
 	log.DebugLog(log.DebugLevelMexos, "checking if cluster is ready")
 
-	nameSuffix := GetK8sNodeNameSuffix(clusterInst)
+	nameSuffix := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
 	srvs, err := ListServers()
 
 	master, err := FindClusterMaster(nameSuffix, srvs)
@@ -137,19 +153,17 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 	if err != nil {
 		return false, err
 	}
+
 	ipaddr, err := FindNodeIP(master, srvs)
 	if err != nil {
 		return false, err
 	}
-	if GetCloudletExternalNetwork() == "" {
-		return false, fmt.Errorf("is cluster ready, missing external network in platform config")
-	}
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return false, fmt.Errorf("can't get ssh client for cluser ready check, %v", err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "checking master k8s node for available nodes", "ipaddr", ipaddr)
-	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes -o json", sshOpts[0], sshOpts[1], sshOpts[2], sshUser, ipaddr)
+	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes -o json", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, ipaddr)
 	//log.DebugLog(log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -169,7 +183,7 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, flavorName, rootLBName s
 	}
 	log.DebugLog(log.DebugLevelMexos, "cluster nodes", "numnodes", flavor.NumNodes, "nummasters", flavor.NumMasters)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
-	if err := CopyKubeConfig(clusterInst, rootLBName, master, srvs); err != nil {
+	if err := CopyKubeConfig(client, clusterInst, rootLBName, ipaddr); err != nil {
 		return false, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	log.DebugLog(log.DebugLevelMexos, "cluster ready.")
@@ -189,68 +203,4 @@ func FindClusterMaster(key string, srvs []OSServer) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("key %s not found", key)
-}
-
-//MEXClusterCreateInst creates a cluster.  This was formerly MEXClusterCreateManifest
-func MEXClusterCreateClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string, flavor *edgeproto.ClusterFlavor) error {
-	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "rootLBName", rootLBName)
-	if CloudletIsDIND() {
-		return localCreateDIND(clusterInst)
-	}
-	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
-
-	switch operatorName {
-	case cloudcommon.OperatorGCP:
-		return gcloudCreateGKE(clusterInst)
-	case cloudcommon.OperatorAzure:
-		return azureCreateAKS(clusterInst, flavor)
-	default:
-		err := mexCreateClusterKubernetes(clusterInst, rootLBName, flavor)
-
-		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error in mexCreateClusterKubernetes", "err", err)
-			if GetCleanupOnFailure() {
-				log.DebugLog(log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
-				delerr := mexDeleteClusterKubernetes(clusterInst)
-				if delerr != nil {
-					log.DebugLog(log.DebugLevelMexos, "fail to cleanup cluster")
-				}
-			} else {
-				log.DebugLog(log.DebugLevelMexos, "skipping cleanup on failure")
-			}
-			return fmt.Errorf("can't create cluster, %v", err)
-
-		}
-		//log.DebugLog(log.DebugLevelMexos, "new guid", "guid", *guid)
-		log.DebugLog(log.DebugLevelMexos, "created kubernetes cluster")
-		return nil
-	}
-}
-
-//MEXClusterRemoveClustInst removes a cluster.  This was formerly MEXClusterRemoveManifest
-func MEXClusterRemoveClustInst(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
-	log.DebugLog(log.DebugLevelMexos, "removing cluster")
-
-	clusterName := clusterInst.Key.ClusterKey.Name
-
-	if CloudletIsDIND() {
-		return dind.DeleteDINDCluster(clusterName)
-	}
-	operatorName := NormalizeName(clusterInst.Key.CloudletKey.OperatorKey.Name)
-
-	switch operatorName {
-	case cloudcommon.OperatorGCP:
-		return gcloud.DeleteGKECluster(clusterInst.Key.ClusterKey.Name)
-	case cloudcommon.OperatorAzure:
-		resourceGroup := GetResourceGroupForCluster(clusterInst)
-		if err := AzureLogin(); err != nil {
-			return err
-		}
-		return azure.DeleteAKSCluster(resourceGroup)
-	default:
-		if err := heatDeleteClusterKubernetes(clusterInst); err != nil {
-			return fmt.Errorf("can't remove cluster, %v", err)
-		}
-		return nil
-	}
 }

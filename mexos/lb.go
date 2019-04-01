@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // LBAddRouteAndSecRules adds an external route and sec rules
-func LBAddRouteAndSecRules(rootLBName string) error {
+func LBAddRouteAndSecRules(client pc.PlatformClient, rootLBName string) error {
 	log.DebugLog(log.DebugLevelMexos, "Adding route to reach internal networks", "rootLBName", rootLBName)
 
 	if rootLBName == "" {
@@ -36,7 +37,6 @@ func LBAddRouteAndSecRules(rootLBName string) error {
 		return fmt.Errorf("Unexpected fixed ips for mex router %v", fip)
 	}
 	cmd := fmt.Sprintf("sudo ip route add %s via %s dev ens3", subnet, fip[0].IPAddress)
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
 	if err != nil {
 		return err
 	}

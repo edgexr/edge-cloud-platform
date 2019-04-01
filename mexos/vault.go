@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -88,7 +87,7 @@ func internEnv(envs []EnvData) error {
 	return nil
 }
 
-func InternVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.CloudletInfraProperties) error {
+func InternVaultEnv(openrc string, mexenv string) error {
 	log.DebugLog(log.DebugLevelMexos, "interning vault", "openrc", openrc, "mexenv", mexenv)
 	for _, u := range []string{openrc, mexenv} {
 		if u == "" {
@@ -104,7 +103,7 @@ func InternVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.Cloud
 		}
 		if u == openrc {
 			for _, e := range vr.Data.Detail.Env {
-				cloudletInfra.OpenstackProperties.OpenRcVars[e.Name] = e.Value
+				OpenstackProps.OpenRcVars[e.Name] = e.Value
 			}
 		}
 		//log.DebugLog(log.DebugLevelMexos, "interning vault data", "data", vr)
@@ -147,8 +146,8 @@ func CheckPlatformEnv(platformType string) error {
 	return nil
 }
 
-func GetVaultEnv(openrc string, mexenv string, cloudletInfra *edgeproto.CloudletInfraProperties) error {
-	if err := InternVaultEnv(openrc, mexenv, cloudletInfra); err != nil {
+func GetVaultEnv(openrc string, mexenv string) error {
+	if err := InternVaultEnv(openrc, mexenv); err != nil {
 		return err
 	}
 	return nil

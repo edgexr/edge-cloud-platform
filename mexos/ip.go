@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/k8s-prov/dind"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -104,10 +105,6 @@ func GetAllowedClientCIDR() string {
 //TODO: consider replacing this function with GetServerNetworkIP, however that function
 // requires some rework to use in all cases
 func GetServerIPAddr(networkName, serverName string) (string, error) {
-
-	if CloudletIsDIND() {
-		return dind.GetDINDServiceIP(CloudletInfra.CloudletKind)
-	}
 	// if this is a root lb, look it up and get the IP if we have it cached
 	rootLB, err := getRootLB(serverName)
 	if err == nil && rootLB != nil {
@@ -170,4 +167,20 @@ func FindNodeIP(name string, srvs []OSServer) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("node %s, ip not found", name)
+}
+
+// GetMasterIP gets the IP address of the cluster's master node.
+func GetMasterIP(clusterInst *edgeproto.ClusterInst, networkName string) (string, error) {
+	log.DebugLog(log.DebugLevelMexos, "get master IP", "cluster", clusterInst.Key.ClusterKey.Name)
+	srvs, err := ListServers()
+	if err != nil {
+		return "", fmt.Errorf("error getting server list: %v", err)
+
+	}
+	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	master, err := FindClusterMaster(nodeNameSuffix, srvs)
+	if err != nil {
+		return "", fmt.Errorf("can't find cluster with key %s, %v", nodeNameSuffix, err)
+	}
+	return FindNodeIP(master, srvs)
 }

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -162,7 +163,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.Clus
 		return nil, fmt.Errorf("cannot find free subnet cidr")
 	}
 
-	cp.ClusterName = GetK8sNodeNameSuffix(clusterInst)
+	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(clusterInst)
 	cp.MEXRouterName = GetCloudletExternalRouter()
 	cp.MEXNetworkName = GetCloudletMexNetwork()
 	cp.ImageName = GetCloudletOSImage()
@@ -178,7 +179,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.Clus
 	return &cp, nil
 }
 
-func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
+func HeatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
 
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
 	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
@@ -253,9 +254,9 @@ func heatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edg
 }
 
 // HeatDeleteClusterKubernetes deletes the cluster resources
-func heatDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
+func HeatDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
 
-	clusterName := GetK8sNodeNameSuffix(clusterInst)
+	clusterName := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
 	log.DebugLog(log.DebugLevelMexos, "deleting heat stack for cluster", "stackName", clusterName)
 	deleteHeatStack(clusterName)
 	for {

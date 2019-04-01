@@ -10,202 +10,76 @@ import (
 	"os"
 	"strings"
 
-	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var CloudletInfra *edgeproto.CloudletInfraProperties
-var CloudletInfraCommon *edgeproto.CloudletInfraCommon
+var CloudletInfraCommon edgeproto.CloudletInfraCommon
+var OpenstackProps edgeproto.OpenStackProperties
 
-func InitializeCloudletInfra(fakecloudlet bool) error {
-	log.DebugLog(log.DebugLevelMexos, "InitializeCloudletInfra called")
-
-	CloudletInfra = new(edgeproto.CloudletInfraProperties)
-	CloudletInfra.OpenstackProperties = new(edgeproto.OpenStackProperties)
-	CloudletInfra.OpenstackProperties.OpenRcVars = make(map[string]string)
-	CloudletInfra.AzureProperties = new(edgeproto.AzureProperties)
-	CloudletInfra.GcpProperties = new(edgeproto.GcpProperties)
-	CloudletInfraCommon = new(edgeproto.CloudletInfraCommon)
-
-	var openRcURL string
-	var mexEnvURL string
-
-	if fakecloudlet {
-		CloudletInfra.CloudletKind = cloudcommon.CloudletKindFake
-	} else {
-
-		CloudletInfra.CloudletKind = os.Getenv("CLOUDLET_KIND")
-		if CloudletInfra.CloudletKind == "" {
-			return fmt.Errorf("Env variable CLOUDLET_KIND not set")
-		}
-		mexEnvURL = os.Getenv("MEXENV_URL")
-		if mexEnvURL == "" {
-			return fmt.Errorf("Env variable MEXENV_URL not set")
-		}
-		openRcURL = os.Getenv("OPENRC_URL")
-		err := InternVaultEnv(openRcURL, mexEnvURL, CloudletInfra)
-		if err != nil {
-			return fmt.Errorf("failed to InternVaultEnv: %v", err)
-		}
-		CloudletInfraCommon.CFKey = os.Getenv("MEX_CF_KEY")
-		if CloudletInfraCommon.CFKey == "" {
-			return fmt.Errorf("Env variable MEX_CF_KEY not set")
-		}
-		CloudletInfraCommon.CFUser = os.Getenv("MEX_CF_USER")
-		if CloudletInfraCommon.CFKey == "" {
-			return fmt.Errorf("Env variable MEX_CF_USER not set")
-		}
-		CloudletInfraCommon.DockerRegPass = os.Getenv("MEX_DOCKER_REG_PASS")
-		if CloudletInfraCommon.DockerRegPass == "" {
-			return fmt.Errorf("Env variable MEX_DOCKER_REG_PASS not set")
-		}
+func InitInfraCommon() error {
+	mexEnvURL := os.Getenv("MEXENV_URL")
+	if mexEnvURL == "" {
+		return fmt.Errorf("Env variable MEXENV_URL not set")
 	}
-
-	switch CloudletInfra.CloudletKind {
-	case cloudcommon.CloudletKindOpenStack:
-
-		if openRcURL == "" {
-			return fmt.Errorf("Env variable OPENRC_URL not set")
-		}
-
-		CloudletInfra.OpenstackProperties.OSExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
-		if CloudletInfra.OpenstackProperties.OSExternalNetworkName == "" {
-			CloudletInfra.OpenstackProperties.OSExternalNetworkName = "external-network-shared"
-		}
-
-		CloudletInfra.OpenstackProperties.OSImageName = os.Getenv("MEX_OS_IMAGE")
-		if CloudletInfra.OpenstackProperties.OSImageName == "" {
-			CloudletInfra.OpenstackProperties.OSImageName = "mobiledgex"
-		}
-
-		// defaulting some value
-		CloudletInfra.OpenstackProperties.OSExternalRouterName = "mex-k8s-router-1"
-		CloudletInfra.OpenstackProperties.OSMexNetwork = "mex-k8s-net-1"
-		CloudletInfraCommon.NetworkScheme = "priv-subnet,mex-k8s-net-1,10.101.X.0/24"
-
-	case cloudcommon.CloudletKindAzure:
-		CloudletInfra.AzureProperties.Location = os.Getenv("MEX_AZURE_LOCATION")
-		if CloudletInfra.AzureProperties.Location == "" {
-			return fmt.Errorf("Env variable MEX_AZURE_LOCATION not set")
-		}
-		CloudletInfra.AzureProperties.UserName = os.Getenv("MEX_AZURE_USER")
-		if CloudletInfra.AzureProperties.UserName == "" {
-			return fmt.Errorf("Env variable MEX_AZURE_USER not set, check contents of MEXENV_URL")
-		}
-		CloudletInfra.AzureProperties.Password = os.Getenv("MEX_AZURE_PASS")
-		if CloudletInfra.AzureProperties.Password == "" {
-			return fmt.Errorf("Env variable MEX_AZURE_PASS not set, check contents of MEXENV_URL")
-		}
-
-	case cloudcommon.CloudletKindGCP:
-		CloudletInfra.GcpProperties.Project = os.Getenv("MEX_GCP_PROJECT")
-		if CloudletInfra.GcpProperties.Project == "" {
-			//default
-			CloudletInfra.OpenstackProperties.OSImageName = "still-entity-201400"
-		}
-		CloudletInfra.GcpProperties.Zone = os.Getenv("MEX_GCP_ZONE")
-		if CloudletInfra.GcpProperties.Zone == "" {
-			return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
-		}
-
-	case cloudcommon.CloudletKindDIND:
-		CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
-		if CloudletInfraCommon.NetworkScheme == "" {
-			CloudletInfraCommon.NetworkScheme = cloudcommon.NetworkSchemePrivateIP
-		}
-		if CloudletInfraCommon.NetworkScheme != cloudcommon.NetworkSchemePrivateIP &&
-			CloudletInfraCommon.NetworkScheme != cloudcommon.NetworkSchemePublicIP {
-			return fmt.Errorf("Insupported network scheme for DIND: %s", CloudletInfraCommon.NetworkScheme)
-		}
+	openRcURL := os.Getenv("OPENRC_URL")
+	err := InternVaultEnv(openRcURL, mexEnvURL)
+	if err != nil {
+		return fmt.Errorf("failed to InternVaultEnv: %v", err)
 	}
-	// not supported yet but soon
-	CloudletInfra.MexosContainerImageName = "not-supported"
-
+	CloudletInfraCommon.CFKey = os.Getenv("MEX_CF_KEY")
+	if CloudletInfraCommon.CFKey == "" {
+		return fmt.Errorf("Env variable MEX_CF_KEY not set")
+	}
+	CloudletInfraCommon.CFUser = os.Getenv("MEX_CF_USER")
+	if CloudletInfraCommon.CFKey == "" {
+		return fmt.Errorf("Env variable MEX_CF_USER not set")
+	}
+	CloudletInfraCommon.DockerRegPass = os.Getenv("MEX_DOCKER_REG_PASS")
+	if CloudletInfraCommon.DockerRegPass == "" {
+		return fmt.Errorf("Env variable MEX_DOCKER_REG_PASS not set")
+	}
 	CloudletInfraCommon.DNSZone = "mobiledgex.net"
 	CloudletInfraCommon.DockerRegistry = "registry.mobiledgex.net:5000"
 	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
-
-	log.DebugLog(log.DebugLevelMexos, "InitializeCloudletInfra done", "CloudletInfra", CloudletInfra)
 	return nil
 }
 
-func CloudletIsDIND() bool {
-	return CloudletInfra.CloudletKind == cloudcommon.CloudletKindDIND
-}
+func InitOpenstackProps() error {
+	OpenstackProps.OpenRcVars = make(map[string]string)
 
-func GetLocalOperatingSystem() (string, error) {
-	out, err := sh.Command("uname", "-a").Output()
-	if err != nil {
-		return "", err
+	OpenstackProps.OSExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
+	if OpenstackProps.OSExternalNetworkName == "" {
+		OpenstackProps.OSExternalNetworkName = "external-network-shared"
 	}
-	if strings.HasPrefix(string(out), "Linux") {
-		return cloudcommon.OperatingSystemLinux, nil
+
+	OpenstackProps.OSImageName = os.Getenv("MEX_OS_IMAGE")
+	if OpenstackProps.OSImageName == "" {
+		OpenstackProps.OSImageName = "mobiledgex"
 	}
-	if strings.HasPrefix(string(out), "Darwin") {
-		return cloudcommon.OperatingSystemMac, nil
-	}
-	return "", fmt.Errorf("Unsupported OS Type")
-}
 
-func CloudletIsOpenStack() bool {
-	return CloudletInfra.CloudletKind == cloudcommon.CloudletKindOpenStack
-}
-
-func CloudletIsPublicCloud() bool {
-	return (CloudletInfra.CloudletKind == cloudcommon.CloudletKindAzure) || (CloudletInfra.CloudletKind == cloudcommon.CloudletKindGCP)
-}
-
-// returns true if kubectl can be run directly from the CRM rather than SSH jump thru LB
-func CloudletIsDirectKubectlAccess() bool {
-	return CloudletIsPublicCloud() || CloudletIsDIND()
-}
-
-func GetCloudletKind() string {
-	return CloudletInfra.CloudletKind
-}
-
-func GetCloudletAzureLocation() string {
-	return CloudletInfra.AzureProperties.Location
-}
-
-func GetCloudletAzureUserName() string {
-	return CloudletInfra.AzureProperties.UserName
-}
-
-func GetCloudletAzurePassword() string {
-	return CloudletInfra.AzureProperties.Password
-}
-
-func GetCloudletGCPProject() string {
-	// default for now
-	return CloudletInfra.GcpProperties.Project
-}
-
-func GetCloudletGCPZone() string {
-	// default for now
-	return CloudletInfra.GcpProperties.Zone
+	// defaulting some value
+	OpenstackProps.OSExternalRouterName = "mex-k8s-router-1"
+	OpenstackProps.OSMexNetwork = "mex-k8s-net-1"
+	return nil
 }
 
 //GetCloudletExternalRouter returns default MEX external router name
 func GetCloudletExternalRouter() string {
 	//TODO validate existence and status
-	return CloudletInfra.OpenstackProperties.OSExternalRouterName
+	return OpenstackProps.OSExternalRouterName
 }
 
 func GetCloudletExternalNetwork() string {
-	if CloudletIsOpenStack() {
-		return CloudletInfra.OpenstackProperties.OSExternalNetworkName
-	}
-	return ""
+	// this will be unset if platform is not openstack
+	// because InitOpenstackProps() will not have been called.
+	return OpenstackProps.OSExternalNetworkName
 }
 
 // Utility functions that used to be within manifest.
 //GetCloudletNetwork returns default MEX network, internal and prepped
 func GetCloudletMexNetwork() string {
 	//TODO validate existence and status
-	return CloudletInfra.OpenstackProperties.OSMexNetwork
+	return OpenstackProps.OSMexNetwork
 }
 
 func GetCloudletDNSZone() string {
@@ -217,11 +91,12 @@ func GetCloudletNetworkScheme() string {
 }
 
 func GetCloudletOSImage() string {
-	return CloudletInfra.OpenstackProperties.OSImageName
+	return OpenstackProps.OSImageName
 }
 
 func GetCloudletAgentContainerImage() string {
-	return CloudletInfra.MexosContainerImageName
+	return "unused - unnecessary?"
+	//return CloudletInfra.MexosContainerImageName
 }
 
 // todo: CRM supports only 1 registry
@@ -245,9 +120,9 @@ func GetCloudletDockerPass() string {
 	return CloudletInfraCommon.DockerRegPass
 }
 
-// GetCleanupOnFailure should be true unless we want to debug the failure, in which case
-// this env var can be set to no.  We could consider making this configurable at the controller
-// but really is only needed for debugging
+// GetCleanupOnFailure should be true unless we want to debug the failure,
+// in which case this env var can be set to no.  We could consider making
+// this configurable at the controller but really is only needed for debugging.
 func GetCleanupOnFailure() bool {
 	cleanup := os.Getenv("CLEANUP_ON_FAILURE")
 	if strings.ToLower(cleanup) == "no" || strings.ToLower(cleanup) == "false" {

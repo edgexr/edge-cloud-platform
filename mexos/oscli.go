@@ -531,10 +531,9 @@ func OSGetLimits(info *edgeproto.CloudletInfo) error {
 		}
 	}
 
-	var osflavors []OSFlavor
-	osflavors, err1 := ListFlavors()
-	if err1 != nil {
-		err = fmt.Errorf("cannot get flavor list from openstack, %v", err1)
+	osflavors, err := ListFlavors()
+	if err != nil {
+		err = fmt.Errorf("cannot get flavor list from openstack, %v", err)
 		return err
 	}
 	for _, f := range osflavors {
@@ -543,6 +542,5 @@ func OSGetLimits(info *edgeproto.CloudletInfo) error {
 			&edgeproto.FlavorInfo{f.Name, uint64(f.VCPUs), uint64(f.RAM), uint64(f.Disk)},
 		)
 	}
-
 	return nil
 }

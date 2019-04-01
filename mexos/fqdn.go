@@ -61,7 +61,7 @@ func uri2fqdn(uri string) string {
 }
 
 //ActivateFQDNA updates and ensures FQDN is registered properly
-func ActivateFQDNA(fqdn string) error {
+func ActivateFQDNA(fqdn, addr string) error {
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
@@ -70,7 +70,6 @@ func ActivateFQDNA(fqdn string) error {
 	if err != nil {
 		return fmt.Errorf("cannot get dns records for %s, %v", fqdn, err)
 	}
-	addr, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
 	for _, d := range dr {
 		if d.Type == "A" && d.Name == fqdn {
 			if d.Content == addr {

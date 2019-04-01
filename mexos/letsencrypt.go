@@ -1,6 +1,8 @@
 package mexos
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -12,21 +14,52 @@ import (
 
 //TODO acme.sh seems to leave out _acme domains. We need to clean up periodically
 
-func checkPEMFile(fn string) error {
+func getPEMContent(fn string) ([]byte, error) {
 	content, err := ioutil.ReadFile(fn)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "can't read downloaded pem file", "name", fn, "error", err)
-		return fmt.Errorf("can't read downloaded pem file %s, %v", fn, err)
+		return nil, fmt.Errorf("can't read downloaded pem file %s, %v", fn, err)
 	}
 	contstr := string(content)
 	if strings.Contains(contstr, "404 Not Found") {
 		log.DebugLog(log.DebugLevelMexos, "404 not found in pem file", "name", fn)
-		return fmt.Errorf("registry does not have the pem file %s", fn)
+		return nil, fmt.Errorf("registry does not have the pem file %s", fn)
 	}
 	if !strings.HasPrefix(contstr, "-----BEGIN") {
 		log.DebugLog(log.DebugLevelMexos, "does not look like pem file", "name", fn)
-		return fmt.Errorf("does not look like pem file %s", fn)
+		return nil, fmt.Errorf("does not look like pem file %s", fn)
 	}
+	return content, nil
+}
+
+func checkPEMFile(fn string) error {
+	_, err := getPEMContent(fn)
+	return err
+}
+
+func checkPEMCert(fn, fqdn string) error {
+	content, err := getPEMContent(fn)
+	if err != nil {
+		return err
+	}
+	block, _ := pem.Decode(content)
+	if block == nil {
+		log.DebugLog(log.DebugLevelMexos, "decode pem failed", "name", fn, "err", err)
+		return fmt.Errorf("decode pem cert %s failed", fn)
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "parse cert failed", "name", fn, "err", err)
+		return fmt.Errorf("failed to parse certificate %s, %s", fn, err.Error())
+	}
+	// Validate cert. Unfortunately, cert.Verify() returns
+	// "x509: certificate signed by unknown authority" for the
+	// lets encrypt cert, so just check expiration date.
+	now := time.Now()
+	if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
+		return fmt.Errorf("certificate expired for %s", fqdn)
+	}
+	log.DebugLog(log.DebugLevelMexos, "cert valid", "name", fn, "fqdn", fqdn)
 	return nil
 }
 
@@ -42,7 +75,7 @@ func AcquireCertificates(fqdn string) error {
 	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, certfile).CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, failed to get cached cert file", "src", srcfile, "cert", certfile, "error", err, "out", out)
-	} else if checkPEMFile(certfile) == nil {
+	} else if checkPEMCert(certfile, fqdn) == nil {
 		srcfile = fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s", GetCloudletRegistryFileServer(), dkey)
 		out, err = sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, keyfile).Output()
 		if err != nil {
@@ -55,12 +88,12 @@ func AcquireCertificates(fqdn string) error {
 				log.DebugLog(log.DebugLevelMexos, "failed to get server ip addr", "FQDN", fqdn, "error", ierr)
 				return ierr
 			}
-			client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), sshUser)
+			client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), SSHUser)
 			if err != nil {
 				return fmt.Errorf("can't get ssh client for cert, %v", err)
 			}
 			for _, fn := range []string{certfile, keyfile} {
-				out, oerr := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, fn, sshUser+"@"+addr+":").CombinedOutput()
+				out, oerr := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, fn, SSHUser+"@"+addr+":").CombinedOutput()
 				if oerr != nil {
 					return fmt.Errorf("cannot copy %s to %s, %v, %v", fn, addr, oerr, string(out))
 				}
@@ -74,7 +107,7 @@ func AcquireCertificates(fqdn string) error {
 		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "did not get cached cert and key files, will try to acquire new cert")
-	client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), sshUser)
+	client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for acme.sh, %v", err)
 	}

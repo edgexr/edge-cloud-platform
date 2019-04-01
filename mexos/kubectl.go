@@ -3,30 +3,28 @@ package mexos
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
 	var out string
 
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubrnetes cluster")
 
-	client, err := getClusterSSHClient(rootLBName)
-	if err != nil {
-		return err
-	}
 	cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret "+
 		"--docker-server=%s --docker-username=mobiledgex --docker-password=%s "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
-		GetCloudletDockerRegistry(), GetCloudletDockerPass(), GetKconfName(clusterInst))
-	out, err = client.Output(cmd)
+		GetCloudletDockerRegistry(), GetCloudletDockerPass(),
+		k8smgmt.GetKconfName(clusterInst))
+	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
@@ -39,23 +37,20 @@ func CreateDockerRegistrySecret(clusterInst *edgeproto.ClusterInst, rootLBName s
 }
 
 // ConfigMap of cluster instance details such as cluster name, cloudlet name, and operator name
-func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName string) error {
+func CreateClusterConfigMap(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
 	var out string
 
 	log.DebugLog(log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
 
-	client, err := getClusterSSHClient(rootLBName)
-	if err != nil {
-		return err
-	}
 	cmd := fmt.Sprintf("kubectl create configmap mexcluster-info "+
 		"--from-literal=ClusterName=%s "+
 		"--from-literal=CloudletName=%s "+
 		"--from-literal=OperatorName=%s --kubeconfig=%s",
 		clusterInst.Key.ClusterKey.Name, clusterInst.Key.CloudletKey.Name,
-		clusterInst.Key.CloudletKey.OperatorKey.Name, GetKconfName(clusterInst))
+		clusterInst.Key.CloudletKey.OperatorKey.Name,
+		k8smgmt.GetKconfName(clusterInst))
 
-	out, err = client.Output(cmd)
+	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add cluster ConfigMap, %s, %v", out, err)
@@ -67,58 +62,17 @@ func CreateClusterConfigMap(clusterInst *edgeproto.ClusterInst, rootLBName strin
 	return nil
 }
 
-func runKubectlCreateApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string, configs []*edgeproto.ConfigFile) error {
-	log.DebugLog(log.DebugLevelMexos, "run kubectl create app", "kubeManifest", kubeManifest)
-
-	kfile := kubeNames.appName + ".yaml"
-
-	mf, err := MergeEnvVars(kubeManifest, configs)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "failed to merge env vars", "error", err)
-	}
-
-	if err := writeKubeManifest(mf, kfile); err != nil {
-		return err
-	}
-	defer os.Remove(kfile)
-
-	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
-	if err != nil {
-		return err
-	}
-	cmd := fmt.Sprintf("%s kubectl create -f %s", kp.kubeconfig, kfile)
-	log.DebugLog(log.DebugLevelMexos, "running kubectl", "cmd", cmd)
-	out, err := kp.client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("error creating app, %s, %v, %s", out, err, mf)
-	}
-	defer func() {
-		if err != nil {
-			cmd = fmt.Sprintf("%s kubectl delete -f %s", kp.kubeconfig, kfile)
-			out, undoerr := kp.client.Output(cmd)
-			if undoerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "undo kubectl create app failed", "kubeNames", kubeNames, "out", out, "err", undoerr)
-			}
-		}
-	}()
-	err = createAppDNS(kp, kubeNames)
-	if err != nil {
-		return fmt.Errorf("error creating dns entry for app, %v", err)
-	}
-	return nil
-}
-
-func getSvcExternalIP(name string, kp *kubeParam) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name, "kp", kp)
+func GetSvcExternalIP(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
+	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name)
 	externalIP := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
-		cmd := fmt.Sprintf("%s kubectl get svc -o json", kp.kubeconfig)
-		out, err := kp.client.Output(cmd)
+		cmd := fmt.Sprintf("%s kubectl get svc -o json", kubeNames.KconfEnv)
+		out, err := client.Output(cmd)
 		if err != nil {
 			return "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
 		}
-		svcs, err := getServices(kp)
+		svcs, err := GetServices(client, kubeNames)
 		if err != nil {
 			return "", err
 		}
@@ -146,11 +100,11 @@ func getSvcExternalIP(name string, kp *kubeParam) (string, error) {
 	return externalIP, nil
 }
 
-func getServices(kp *kubeParam) ([]v1.Service, error) {
-	log.DebugLog(log.DebugLevelMexos, "running kubectl get svc", "kubeconfig", kp.kubeconfig)
+func GetServices(client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Service, error) {
+	log.DebugLog(log.DebugLevelMexos, "get services", "kconf", names.KconfName)
 
-	cmd := fmt.Sprintf("%s kubectl get svc -o json", kp.kubeconfig)
-	out, err := kp.client.Output(cmd)
+	cmd := fmt.Sprintf("%s kubectl get svc -o json", names.KconfEnv)
+	out, err := client.Output(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("can not get list of services, %s, %v", out, err)
 	}
@@ -163,34 +117,12 @@ func getServices(kp *kubeParam) ([]v1.Service, error) {
 	return svcs.Items, nil
 }
 
-func runKubectlDeleteApp(rootLB *MEXRootLB, kubeNames *KubeNames, clusterInst *edgeproto.ClusterInst, kubeManifest string) error {
-
-	kp, err := ValidateKubernetesParameters(rootLB, kubeNames, clusterInst)
+func BackupKubeconfig(client pc.PlatformClient) {
+	kc := DefaultKubeconfig()
+	cmd := fmt.Sprintf("mv %s %s.save", kc, kc)
+	out, err := client.Output(cmd)
 	if err != nil {
-		return err
-	}
-	kfile := kubeNames.appName + ".yaml"
-	err = writeKubeManifest(kubeManifest, kfile)
-	if err != nil {
-		return err
-	}
-	defer os.Remove(kfile)
-	cmd := fmt.Sprintf("%s kubectl delete -f %s", kp.kubeconfig, kfile)
-	out, err := kp.client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("error deleting app, %s, %v", out, err)
-	}
-	err = deleteAppDNS(kp, kubeNames)
-	if err != nil {
-		return fmt.Errorf("error deleting dns entry for app, %v, %v", kubeNames.appName, err)
-	}
-	return nil
-}
-
-func saveKubeconfig() {
-	kc := defaultKubeconfig()
-	if err := os.Rename(kc, kc+".save"); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "can't rename", "name", kc, "error", err)
+		log.DebugLog(log.DebugLevelMexos, "can't rename", "name", kc, "err", err, "out", out)
 	}
 }
 

@@ -10,6 +10,10 @@ import (
 
 var kcproxySuffix = "-kcproxy"
 
+// TODO: It'd be better to change mexosagent to have a local cli, that way
+// it can be configured via PlatformClient the same way everything else is
+// configured, we don't need to pass in rootLBName or rootLBIP, and we don't
+// need to reserve ports 18888/18889 on the rootLB for the mexosagent.
 func AddNginxProxy(rootLBName, name, ipaddr string, ports []PortDetail, network string) error {
 	log.DebugLog(log.DebugLevelMexos, "add nginx proxy", "name", name, "network", network, "ports", ports)
 
@@ -117,7 +121,7 @@ func AddNginxKubectlProxy(rootLBName, name string, portnum int) error {
 
 func DeleteNginxKCProxy(rootLBName, name string) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting nginx kubectl proxy", "name", name)
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), sshUser)
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return err
 	}

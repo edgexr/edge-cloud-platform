@@ -18,9 +18,3 @@ const (
 	NetCIDRVal = 2
 	NetOptVal  = 3
 )
-
-// 'Kind' strings for edgeproto.App.ConfigFile type
-const (
-	AppConfigHemYaml = "hemlCustomizationYaml"
-	AppConfigEnvYaml = "envVarsYaml"
-)

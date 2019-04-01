@@ -3,21 +3,19 @@ package mexos
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"strings"
 
 	valid "github.com/asaskevich/govalidator"
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func runLocalMexAgent() error {
-	os, err := GetLocalOperatingSystem()
-	if err != nil {
-		return err
-	}
+func RunLocalMexAgent() error {
+	os := runtime.GOOS
 	log.DebugLog(log.DebugLevelMexos, "runLocalMexAgent", "os", os)
 
 	// It is currently assumed that Mac will run this as just a local process and linux will run as a service.  Mac env
@@ -25,10 +23,10 @@ func runLocalMexAgent() error {
 	// could change in future, in which case we will need another setting to determine how to run the process.  Also, we should
 	// eventually be running this as a container in either case which will change this.
 	switch os {
-	case cloudcommon.OperatingSystemMac:
+	case "darwin":
 		var localMexos process.MexAgentLocal
 		return localMexos.Start("/tmp/mexosagent.log")
-	case cloudcommon.OperatingSystemLinux:
+	case "linux":
 		out, err := sh.Command("sudo", "service", "mexosagent", "start").CombinedOutput()
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error in mexosagent start", "out", string(out), "err", err)
@@ -51,24 +49,6 @@ func runLocalMexAgent() error {
 //   It uses MEX private docker repository.  If an instance is running already, we don't start another one.
 func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platformFlavor string) error {
 	log.DebugLog(log.DebugLevelMexos, "run mex agent")
-
-	if CloudletIsDIND() {
-		if err := runLocalMexAgent(); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error in runLocalMexAgent", "err", err)
-		}
-		if GetCloudletNetworkScheme() == cloudcommon.NetworkSchemePublicIP {
-			if err := ActivateFQDNA(rootLBName); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "error in ActivateFQDNA", "err", err)
-				return err
-			}
-		}
-		log.DebugLog(log.DebugLevelMexos, "done setup mexosagent for  dind")
-		return nil
-	}
-	if CloudletIsPublicCloud() {
-		log.DebugLog(log.DebugLevelMexos, "skip mex agent for public cloud") //TODO: maybe later we will actually have agent on public cloud
-		return nil
-	}
 	fqdn := rootLBName
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(fqdn) {
@@ -82,19 +62,29 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platform
 			if err != nil {
 				return fmt.Errorf("cannot find rootlb %s", fqdn)
 			}
+			// client can only be captured if rootLB VM is present
+			client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+			if err != nil {
+				return err
+			}
 			extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
 			if err != nil {
 				return fmt.Errorf("cannot get rootLB IP %sv", err)
 			}
 			log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
 			rootLB.IP = extIP
+			// recheck certs in case they expired
+			err = AcquireCertificates(rootLBName) //fqdn name may be different than rootLB.Name
+			if err != nil {
+				return fmt.Errorf("can't acquire certificate for %s, %v", rootLB.Name, err)
+			}
 			// now ensure the rootLB can reach all the internal networks
-			err = LBAddRouteAndSecRules(rootLB.Name)
+			err = LBAddRouteAndSecRules(client, rootLBName)
 			if err != nil {
 				return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
 			}
 			//return RunMEXOSAgentContainer(rootLB)
-			return RunMEXOSAgentService(rootLB.Name)
+			return RunMEXOSAgentService(client)
 		}
 	}
 	log.DebugLog(log.DebugLevelMexos, "about to create mex agent", "fqdn", fqdn)
@@ -114,6 +104,11 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platform
 		log.DebugLog(log.DebugLevelMexos, "can't enable agent", "name", rootLB.Name)
 		return fmt.Errorf("Failed to enable root LB %v", err)
 	}
+	// client can only be created once EnableRootLB has created the VM
+	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	if err != nil {
+		return err
+	}
 	extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
@@ -126,10 +121,10 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platform
 		log.DebugLog(log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
-	if err := SetupSSHUser(rootLB, sshUser); err != nil {
+	if err := SetupSSHUser(rootLB, SSHUser); err != nil {
 		return err
 	}
-	if err = ActivateFQDNA(rootLB.Name); err != nil {
+	if err = ActivateFQDNA(rootLB.Name, extIP); err != nil {
 		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "FQDN A record activated", "name", rootLB.Name)
@@ -143,21 +138,18 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platform
 		return fmt.Errorf("can't download htpassword %v", err)
 	}
 	// now ensure the rootLB can reach all the internal networks
-	err = LBAddRouteAndSecRules(rootLB.Name)
+	err = LBAddRouteAndSecRules(client, rootLB.Name)
 	if err != nil {
 		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
 	}
 	//return RunMEXOSAgentContainer(mf, rootLB)
-	return RunMEXOSAgentService(rootLB.Name)
+	return RunMEXOSAgentService(client)
 }
 
-func RunMEXOSAgentService(rootLBName string) error {
+func RunMEXOSAgentService(client pc.PlatformClient) error {
 	//TODO check if agent is running before restarting again.
 	log.DebugLog(log.DebugLevelMexos, "run mexosagent service")
-	client, err := getClusterSSHClient(rootLBName)
-	if err != nil {
-		return err
-	}
+
 	for _, act := range []string{"stop", "disable"} {
 		out, err := client.Output("sudo systemctl " + act + " mexosagent.service")
 		if err != nil {
@@ -195,11 +187,8 @@ func RunMEXOSAgentService(rootLBName string) error {
 	return nil
 }
 
-func RunMEXOSAgentContainer(rootLB *MEXRootLB) error {
-	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), sshUser)
-	if err != nil {
-		return err
-	}
+// XXX This function isn't called anymore - can it be deleted?
+func RunMEXOSAgentContainer(client pc.PlatformClient, rootLB *MEXRootLB) error {
 	//XXX rewrite this with --format {{.Names}}
 	cmd := fmt.Sprintf("docker ps --filter ancestor=%s --format {{.Names}}", GetCloudletAgentContainerImage())
 	out, err := client.Output(cmd)
