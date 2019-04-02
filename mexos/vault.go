@@ -101,11 +101,6 @@ func InternVaultEnv(openrc string, mexenv string) error {
 		if err != nil {
 			return err
 		}
-		if u == openrc {
-			for _, e := range vr.Data.Detail.Env {
-				OpenstackProps.OpenRcVars[e.Name] = e.Value
-			}
-		}
 		//log.DebugLog(log.DebugLevelMexos, "interning vault data", "data", vr)
 		err = internEnv(vr.Data.Detail.Env)
 		if err != nil {
