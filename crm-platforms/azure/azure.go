@@ -69,6 +69,9 @@ type AZFlavor struct {
 
 func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	log.DebugLog(log.DebugLevelMexos, "GetLimits (Azure)")
+	if err := s.AzureLogin(); err != nil {
+		return err
+	}
 
 	var limits []AZLimit
 	out, err := sh.Command("az", "vm", "list-usage", "--location", s.props.Location, sh.Dir("/tmp")).CombinedOutput()
