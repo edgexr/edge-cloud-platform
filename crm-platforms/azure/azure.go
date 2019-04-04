@@ -123,7 +123,12 @@ func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	for _, f := range vmsizes {
 		info.Flavors = append(
 			info.Flavors,
-			&edgeproto.FlavorInfo{f.Name, uint64(f.VCPUs), uint64(f.RAM), uint64(f.Disk)},
+			&edgeproto.FlavorInfo{
+				Name:  f.Name,
+				Vcpus: uint64(f.VCPUs),
+				Ram:   uint64(f.RAM),
+				Disk:  uint64(f.Disk),
+			},
 		)
 	}
 	return nil

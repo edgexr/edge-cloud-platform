@@ -58,7 +58,7 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "done setup mexosagent for  dind")
+	log.DebugLog(log.DebugLevelMexos, "done setup mexosagent for mexdind")
 	return nil
 }
 

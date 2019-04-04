@@ -56,7 +56,8 @@ func TestGetDNSRecords(t *testing.T) {
 	if mexTestInfra == "" {
 		return
 	}
-	recs, err := GetDNSRecords(domain)
+	// XXX not sure if domain is zone or name, but guessing zone
+	recs, err := GetDNSRecords(domain, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}
@@ -82,7 +83,7 @@ func TestCreateDNSRecord(t *testing.T) {
 		t.Errorf("should have failed")
 	}
 
-	recs, err := GetDNSRecords(domain)
+	recs, err := GetDNSRecords(domain, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}

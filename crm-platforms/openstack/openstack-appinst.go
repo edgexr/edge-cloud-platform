@@ -91,5 +91,4 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
-	return nil
 }

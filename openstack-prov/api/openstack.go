@@ -100,7 +100,7 @@ func GetOSClient(region string) (*gophercloud.ServiceClient, error) {
 		certpool := x509.NewCertPool()
 		pem, pemerr := ioutil.ReadFile(caCert)
 		if pemerr != nil {
-			log.Debugf("cannot read error %v", caCert, pemerr)
+			log.Debugf("cannot read error %v %v", caCert, pemerr)
 			log.Error("Unable to read specified CA certificate(s)")
 			return nil, pemerr
 		}
