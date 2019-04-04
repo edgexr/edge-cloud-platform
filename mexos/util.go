@@ -53,14 +53,6 @@ func AddProxySecurityRulesAndPatchDNS(client pc.PlatformClient, kubeNames *k8smg
 	dnserr := <-dnschan
 
 	if proxyerr != "" || secerr != "" || dnserr != "" {
-		if proxyerr == "" {
-			// delete the nginx proxy if it worked but something else failed because it can cause subequent attempts to fail
-			// cleanup of security rules and DNS we should do but not as important
-			err := DeleteNginxProxy(rootLBName, kubeNames.AppName)
-			if err != nil {
-				log.InfoLog("cleanup nginx proxy Failed", "err", err)
-			}
-		}
 		return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error -- proxyerr: %v secerr: %v dnserr: %v", proxyerr, secerr, dnserr)
 	}
 	return nil

@@ -663,12 +663,18 @@ func writeFile(confname string, confbytes []byte) error {
 	return nil
 }
 
+// TODO: This function and many others seem unused and redundant nearly identical functions for LB and KCP
 func DeleteNginx(name string) error {
-	log.Debugln("deleting nginx containers", name)
+
+	log.Debugln("deleting nginx LB containers", name)
 	name = name + lbproxySuffix
-	out, err := sh.Command("docker", "kill", name).Output()
+	out, err := sh.Command("docker", "kill", name).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("can't kill nginx container %s, %s, %v", name, out, err)
+		if strings.Contains(string(out), "No such container") {
+			log.Debugln("nginx LB container already gone", name)
+		} else {
+			return fmt.Errorf("can't kill nginx LB container %s, %s, %v", name, out, err)
+		}
 	}
 	log.Debugln("deleted nginx container", name)
 	return nil
@@ -788,8 +794,16 @@ func CreateNginxKCP(name string, port string) error {
 
 func DeleteNginxKCP(name string) error {
 	name = name + kcproxySuffix
-	log.Debugln("deleting nginx kubectl proxy container", name)
-	out, err := sh.Command("docker", "kill", name).Output()
+	log.Debugln("deleting nginx kubectl KCP container", name)
+	out, err := sh.Command("docker", "kill", name).CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(out), "No such container") {
+			log.Debugln("nginx KC container already gone", name)
+		} else {
+			return fmt.Errorf("can't kill nginx KC container %s, %s, %v", name, out, err)
+		}
+	}
+
 	if err != nil {
 		return fmt.Errorf("can't kill nginx kubectl proxy container %s, %s, %v", name, out, err)
 	}

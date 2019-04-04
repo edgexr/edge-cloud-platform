@@ -76,7 +76,6 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	// Clean up DNS entries
 	if err := mexos.DeleteAppDNS(client, names); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
-		return err
 	}
 
 	switch deployment := app.Deployment; deployment {
