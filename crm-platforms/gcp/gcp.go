@@ -112,10 +112,10 @@ func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 		info.Flavors = append(
 			info.Flavors,
 			&edgeproto.FlavorInfo{
-				m.Name,
-				uint64(m.GuestCPUs),
-				uint64(m.MemoryMb),
-				uint64(disk),
+				Name:  m.Name,
+				Vcpus: uint64(m.GuestCPUs),
+				Ram:   uint64(m.MemoryMb),
+				Disk:  uint64(disk),
 			},
 		)
 	}
