@@ -74,7 +74,16 @@ func AcquireCertificates(fqdn string) error {
 	log.DebugLog(log.DebugLevelMexos, "trying to get cached cert files", "srcfile", srcfile)
 	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, certfile).CombinedOutput()
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, failed to get cached cert file", "src", srcfile, "cert", certfile, "error", err, "out", out)
+		log.DebugLog(log.DebugLevelMexos, "Failed to get cached cert file", "src", srcfile, "cert", certfile, "error", err, "out", string(out))
+		if strings.Contains(string(out), "No such file or directory") {
+			log.DebugLog(log.DebugLevelMexos, "Cert file not found, continuing")
+		} else {
+			// perhaps permission problem or other error.  Do not continue as this may be a problem
+			// which will cause us to  exhaust our letsencrypt API limits
+			log.InfoLog("Unexpected error attempting to get cached cert", "registry", GetCloudletRegistryFileServer(), "out", string(out))
+			return fmt.Errorf("Unable to SCP to registry: %s, %v", GetCloudletRegistryFileServer(), err)
+		}
+
 	} else if checkPEMCert(certfile, fqdn) == nil {
 		srcfile = fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s", GetCloudletRegistryFileServer(), dkey)
 		out, err = sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, srcfile, keyfile).Output()
