@@ -151,7 +151,7 @@ func WaitForRootLB(rootLB *MEXRootLB) error {
 	running := false
 	for i := 0; i < 10; i++ {
 		log.DebugLog(log.DebugLevelMexos, "waiting for rootlb...")
-		_, err := client.Output("sudo grep 'all done' /var/log/mobiledgex.log") //XXX beware of use of word done
+		_, err := client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
 		if err == nil {
 			log.DebugLog(log.DebugLevelMexos, "rootlb is running", "name", rootLB.Name)
 			running = true

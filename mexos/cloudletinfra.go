@@ -16,6 +16,9 @@ import (
 var CloudletInfraCommon edgeproto.CloudletInfraCommon
 var OpenstackProps edgeproto.OpenStackProperties
 
+var MEXInfraVersion = "v2.0.0" //Stratus
+var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
+
 func InitInfraCommon() error {
 	mexEnvURL := os.Getenv("MEXENV_URL")
 	if mexEnvURL == "" {
@@ -54,7 +57,7 @@ func InitOpenstackProps() error {
 
 	OpenstackProps.OSImageName = os.Getenv("MEX_OS_IMAGE")
 	if OpenstackProps.OSImageName == "" {
-		OpenstackProps.OSImageName = "mobiledgex"
+		OpenstackProps.OSImageName = defaultOSImageName
 	}
 
 	// defaulting some value

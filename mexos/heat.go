@@ -168,6 +168,12 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.Clus
 	cp.MEXNetworkName = GetCloudletMexNetwork()
 	cp.ImageName = GetCloudletOSImage()
 
+	if clusterInst.MasterFlavor == "" {
+		return nil, fmt.Errorf("Master Flavor is not set")
+	}
+	if clusterInst.NodeFlavor == "" {
+		return nil, fmt.Errorf("Node Flavor is not set")
+	}
 	cp.MasterFlavor = clusterInst.MasterFlavor
 	cp.NodeFlavor = clusterInst.NodeFlavor
 	for i := uint32(1); i <= flavor.NumNodes; i++ {

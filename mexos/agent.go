@@ -146,6 +146,14 @@ func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platform
 	return RunMEXOSAgentService(client)
 }
 
+func getMexosAgentRemoteFilename() string {
+	return "mexosagent-" + MEXInfraVersion
+}
+
+func getMexosAgentServiceRemoteFilename() string {
+	return "mexosagent.service-" + MEXInfraVersion
+}
+
 func RunMEXOSAgentService(client pc.PlatformClient) error {
 	//TODO check if agent is running before restarting again.
 	log.DebugLog(log.DebugLevelMexos, "run mexosagent service")
@@ -159,19 +167,19 @@ func RunMEXOSAgentService(client pc.PlatformClient) error {
 	log.DebugLog(log.DebugLevelMexos, "copying new mexosagent service")
 	//TODO name should come from mf.Values and allow versioning
 	// scp the agent from the registry
-	for _, dest := range []struct{ path, name string }{
-		{"/usr/local/bin", "mexosagent"},
-		{"/lib/systemd/system", "mexosagent.service"},
+	for _, dest := range []struct{ path, remotename, localname string }{
+		{"/usr/local/bin", getMexosAgentRemoteFilename(), "mexosagent"},
+		{"/lib/systemd/system", getMexosAgentServiceRemoteFilename(), "mexosagent.service"},
 	} {
-		cmd := fmt.Sprintf("sudo scp -o %s -o %s -i id_rsa_mex mobiledgex@%s:files-repo/mobiledgex/%s %s", sshOpts[0], sshOpts[1], GetCloudletRegistryFileServer(), dest.name, dest.path)
+		cmd := fmt.Sprintf("sudo scp -C -o %s -o %s -i id_rsa_mex mobiledgex@%s:files-repo/mobiledgex/%s %s/%s", sshOpts[0], sshOpts[1], GetCloudletRegistryFileServer(), dest.remotename, dest.path, dest.localname)
 		out, err := client.Output(cmd)
 		if err != nil {
-			log.InfoLog("error: cannot download from registry", "fn", dest.name, "path", dest.path, "error", err, "out", out)
+			log.InfoLog("error: cannot download from registry", "remotefile", dest.remotename, "path", dest.path, "localfile", dest.localname, "error", err, "out", out)
 			return err
 		}
-		out, err = client.Output(fmt.Sprintf("sudo chmod a+rx %s/%s", dest.path, dest.name))
+		out, err = client.Output(fmt.Sprintf("sudo chmod a+rx %s/%s", dest.path, dest.localname))
 		if err != nil {
-			log.InfoLog("error: cannot chmod", "error", err, "fn", dest.name, "path", dest.path)
+			log.InfoLog("error: cannot chmod", "error", err, "fn", dest.localname, "path", dest.path)
 			return err
 		}
 	}
