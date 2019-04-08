@@ -32,10 +32,12 @@ build-linux: api dep ## Build mexosagent for linux
 
 install: 
 	go install ./...
+	mkdir -p ${GOPATH}/bin
 	ln -fs ${GOPATH}/bin/agent ${GOPATH}/bin/mexosagent
 
 install-linux:
 	GOOS=linux GOARCH=amd64 go install ./...
+	mkdir -p ${GOPATH}/bin/linux_amd64
 	ln -fs ${GOPATH}/bin/linux_amd64/agent ${GOPATH}/bin/linux_amd64/mexosagent
 
 dep: api ## Fetch dependencies

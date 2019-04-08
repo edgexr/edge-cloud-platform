@@ -1,6 +1,8 @@
 # Makefile
 include ../edge-cloud/Makedefs
 
+EDGE_CLOUD_VERSION = heads/master
+
 all: build-all install-all
 
 build-all: build-edge-cloud build-internal
@@ -9,12 +11,24 @@ install-all: install-edge-cloud install-internal
 
 internal: build-internal install-internal
 
+dep:
+	dep ensure -vendor-only
+
 #
 # Local OS Target
 #
 
-build-edge-cloud:
+build-edge-cloud: edge-cloud-version-check
 	make -C ../edge-cloud build
+
+CURRENT_EDGE_CLOUD_VERSION = $(shell git -C ../edge-cloud describe --tags --all)
+edge-cloud-version-check:
+	@echo "Ensuring edge-cloud repo branch/tag is $(EDGE_CLOUD_VERSION)"
+	test "$(CURRENT_EDGE_CLOUD_VERSION)" = "$(EDGE_CLOUD_VERSION)"
+
+edge-cloud-version-set:
+	@echo "Setting edge-cloud repo branch/tag to $(EDGE_CLOUD_VERSION)"
+	git -C ../edge-cloud checkout $(EDGE_CLOUD_VERSION)
 
 build-internal:
 	make -C ./openstack-tenant/agent/
