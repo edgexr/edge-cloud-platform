@@ -14,6 +14,15 @@ type OSServer struct {
 	Status, Name, Image, ID, Flavor, Networks string
 }
 
+type OSFloatingIP struct {
+	ID                string `json:"ID"`
+	Project           string `json:"Project"`
+	FixedIPAddress    string `json:"Fixed IP Address"`
+	Port              string `json:"Port"`
+	FloatingNetwork   string `json:"FloatingNetwork"`
+	FloatingIPAddress string `json:"Floating IP Address"`
+}
+
 func getNameAndIPFromNetwork(network string) (string, string, error) {
 	nets := strings.Split(network, "=")
 	if len(nets) != 2 {

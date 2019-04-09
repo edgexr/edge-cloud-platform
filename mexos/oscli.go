@@ -97,6 +97,21 @@ func ListFlavors() ([]OSFlavor, error) {
 	return flavors, nil
 }
 
+func ListFloatingIPs() ([]OSFloatingIP, error) {
+	out, err := TimedOpenStackCommand("openstack", "floating", "ip", "list", "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("cannot get floating ip list, %v", err)
+		return nil, err
+	}
+	var fips []OSFloatingIP
+	err = json.Unmarshal(out, &fips)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	return fips, nil
+}
+
 //CreateServer instantiates a new server instance, which is a KVM instance based on a qcow2 image from glance
 func CreateServer(opts *OSServerOpt) error {
 	args := []string{

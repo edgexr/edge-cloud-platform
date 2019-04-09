@@ -74,3 +74,26 @@ func GetRouterDetailInterfaces(rd *OSRouterDetail) ([]OSRouterInterface, error) 
 	log.DebugLog(log.DebugLevelMexos, "get router detail interfaces", "interfaces", interfaces)
 	return interfaces, nil
 }
+
+func GetMexRouterIP() (string, error) {
+	rtr := GetCloudletExternalRouter()
+	rd, rderr := GetRouterDetail(rtr)
+	if rderr != nil {
+		return "", fmt.Errorf("can't get router detail for %s, %v", rtr, rderr)
+	}
+	log.DebugLog(log.DebugLevelMexos, "router detail", "detail", rd)
+	reg, regerr := GetRouterDetailExternalGateway(rd)
+	if regerr != nil {
+		log.InfoLog("can't get router detail")
+		return "", fmt.Errorf("can't get router detail")
+	}
+	if reg != nil && len(reg.ExternalFixedIPs) > 0 {
+		fip := reg.ExternalFixedIPs[0]
+		log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
+		return fip.IPAddress, nil
+
+	} else {
+		log.InfoLog("can't get external fixed ips list from router detail external gateway")
+		return "", fmt.Errorf("can't get external fixed ips list from router detail")
+	}
+}

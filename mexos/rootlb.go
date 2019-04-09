@@ -84,34 +84,12 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey, platfor
 	}
 	if found == 0 {
 		log.DebugLog(log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
-		netspec := fmt.Sprintf("external-ip,%s", GetCloudletExternalNetwork())
-		//if strings.Contains(mf.Spec.Options, "dhcp") {  TODO
-		netspec = netspec + ",dhcp"
-		//}
-
-		tags := cloudletKey.Name + "-tag"
-
-		log.DebugLog(log.DebugLevelMexos, "creating agent node kvm", "netspec", netspec)
-		err = CreateMEXKVM(rootLB.Name,
-			"mex-agent-node", //important, don't change
-			netspec,
-			tags,
-			GetCloudletTenant(),
-			1,
-			nil, // cluster not needed for rootlb
-			platformFlavor,
-		)
+		err = HeatCreateVM(rootLB.Name, platformFlavor)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error while creating mex kvm", "error", err)
+			log.DebugLog(log.DebugLevelMexos, "error while creating VM", "error", err)
 			return err
 		}
-		log.DebugLog(log.DebugLevelMexos, "created kvm instance", "name", rootLB.Name)
-
-		//rootLBIPaddr, ierr := GetServerIPAddr(GetCloudletExternalNetwork(), rootLB.Name)
-		// if ierr != nil {
-		// 	log.DebugLog(log.DebugLevelMexos, "cannot get rootlb IP address", "error", ierr)
-		// 	return fmt.Errorf("created rootlb but cannot get rootlb IP")
-		// }
+		log.DebugLog(log.DebugLevelMexos, "created VM", "name", rootLB.Name)
 		ruleName := GetCloudletSecurityRule()
 		//privateNetCIDR := strings.Replace(defaultPrivateNetRange, "X", "0", 1)
 		allowedClientCIDR := GetAllowedClientCIDR()
@@ -121,9 +99,6 @@ func EnableRootLB(rootLB *MEXRootLB, cloudletKey *edgeproto.CloudletKey, platfor
 				log.DebugLog(log.DebugLevelMexos, "warning, cannot add security rule", "error", err, "cidr", allowedClientCIDR, "port", p, "rule", ruleName)
 			}
 		}
-		//TODO: removal of security rules. Needs to be done for general resource per VM object.
-		//    Add annotation to the running VM. When VM is removed, go through annotations
-		//   and undo the resource allocations, like security rules, etc.
 	} else {
 		log.DebugLog(log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
 	}

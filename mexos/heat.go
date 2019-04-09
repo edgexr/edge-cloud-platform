@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +13,55 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+type VMParams struct {
+	VMName              string
+	Flavor              string
+	ImageName           string
+	NetworkName         string
+	MEXRouterIP         string
+	GatewayIP           string
+	FloatingIPAddressID string
+}
+
+var floatingIPLock sync.Mutex
+
+var vmTemplate = `
+heat_template_version: 2016-10-14
+description: Create a VM
+
+resources:
+    vm:
+      type: OS::Nova::Server
+      properties:
+         name: 
+            {{.VMName}}
+         image: {{.ImageName}}
+         flavor: {{.Flavor}}
+         config_drive: true
+         user_data_format: RAW
+         user_data:
+            get_file: /root/.mobiledgex/userdata.txt
+         networks:
+          - network: {{.NetworkName}}
+         metadata:
+            skipk8s: yes
+            role: mex-agent-node 
+            edgeproxy: {{.GatewayIP}}
+            mex-flavor: {{.Flavor}}
+            privaterouter: {{.MEXRouterIP}}
+   {{if .FloatingIPAddressID}}
+    vm-port:
+       type: OS::Neutron::Port
+       properties:
+           name: {{.VMName}}-port
+           network_id: {{.NetworkName}}
+    floatingip:
+       type: OS::Neutron::FloatingIPAssociation
+       properties:
+          floatingip_id: {{.FloatingIPAddressID}}
+          port_id: { get_resource: vm-port }
+   {{- end}}`
 
 // ClusterNode is a k8s node
 type ClusterNode struct {
@@ -126,6 +176,122 @@ resources:
   {{end}}
 `
 
+func writeTemplateFile(filename string, buf *bytes.Buffer) error {
+	outFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("unable to write heat template %s: %s", filename, err.Error())
+	}
+	_, err = outFile.WriteString(buf.String())
+
+	if err != nil {
+		outFile.Close()
+		os.Remove(filename)
+		return fmt.Errorf("unable to write heat template file %s: %s", filename, err.Error())
+	}
+	outFile.Sync()
+	outFile.Close()
+	return nil
+}
+
+func waitForStackCreate(stackname string) error {
+	start := time.Now()
+	for {
+		time.Sleep(10 * time.Second)
+		hd, err := getHeatStackDetail(stackname)
+		if err != nil {
+			return err
+		}
+		log.DebugLog(log.DebugLevelMexos, "Got Heat Stack detail", "detail", hd)
+		switch hd.StackStatus {
+		case "CREATE_COMPLETE":
+			log.DebugLog(log.DebugLevelMexos, "Heat Stack Creation succeeded", "stackName", stackname)
+			return nil
+		case "CREATE_IN_PROGRESS":
+			elapsed := time.Since(start)
+			if elapsed >= (time.Minute * 20) {
+				// this should not happen and indicates the stack is stuck somehow
+				log.InfoLog("Heat stack create taking too long", "status", hd.StackStatus, "elasped time", elapsed)
+				return fmt.Errorf("Heat stack create taking too long")
+			}
+			continue
+		case "CREATE_FAILED":
+			log.InfoLog("Heat Stack Creation failed", "stackName", stackname)
+			return fmt.Errorf("Heat Stack create failed")
+		default:
+			log.InfoLog("Unexpected Heat Stack status", "status", stackname)
+			return fmt.Errorf("Stack create unexpected status: %s", hd.StackStatus)
+		}
+	}
+}
+
+// HeatCreateVM creates a new VM and optionally associates a floating IP
+func HeatCreateVM(serverName, flavor string) error {
+	log.DebugLog(log.DebugLevelMexos, "HeatCreateVM", "serverName", serverName, "flavor", flavor)
+
+	ni, err := ParseNetSpec(GetCloudletNetworkScheme())
+	if err != nil {
+		return err
+	}
+	var vmp VMParams
+	vmp.VMName = serverName
+	vmp.Flavor = flavor
+	vmp.ImageName = GetCloudletOSImage()
+	vmp.GatewayIP, err = GetExternalGateway(GetCloudletExternalNetwork())
+	if err != nil {
+		return err
+	}
+	vmp.MEXRouterIP, err = GetMexRouterIP()
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(ni.Options, "floatingip") {
+		// lock here to avoid getting the same floating IP; we need to lock until the stack is done
+		floatingIPLock.Lock()
+		defer floatingIPLock.Unlock()
+
+		fips, err := ListFloatingIPs()
+		for _, f := range fips {
+			if f.Port == "" && f.FloatingIPAddress != "" {
+				vmp.FloatingIPAddressID = f.ID
+			}
+		}
+		if vmp.FloatingIPAddressID == "" {
+			return fmt.Errorf("Unable to allocate a floating IP")
+		}
+		if err != nil {
+			return fmt.Errorf("Unable to list floating IPs %v", err)
+		}
+		vmp.NetworkName = GetCloudletMexNetwork()
+	} else {
+		vmp.NetworkName = GetCloudletExternalNetwork()
+	}
+
+	tmpl, err := template.New("mexrootlb").Parse(vmTemplate)
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, vmp)
+	if err != nil {
+		return err
+	}
+	filename := serverName + "-heat.yaml"
+	err = writeTemplateFile(filename, &buf)
+	if err != nil {
+		return err
+	}
+	err = createHeatStack(filename, serverName)
+	if err != nil {
+		return err
+	}
+	err = waitForStackCreate(serverName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //GetClusterParams fills template parameters for the cluster
 func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) (*ClusterParams, error) {
 	ni, err := ParseNetSpec(GetCloudletNetworkScheme())
@@ -209,54 +375,20 @@ func HeatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edg
 		return err
 	}
 	filename := cp.ClusterName + "-heat.yaml"
-	outFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	err = writeTemplateFile(filename, &buf)
 	if err != nil {
-		return fmt.Errorf("unable to write heat template %s: %s", filename, err.Error())
+		return err
 	}
-	_, err = outFile.WriteString(buf.String())
-
-	if err != nil {
-		outFile.Close()
-		os.Remove(filename)
-		return fmt.Errorf("unable to write heat template file %s: %s", filename, err.Error())
-	}
-	outFile.Sync()
-	outFile.Close()
 
 	err = createHeatStack(filename, cp.ClusterName)
 	if err != nil {
 		return err
 	}
-	start := time.Now()
-	for {
-		time.Sleep(10 * time.Second)
-		hd, err := getHeatStackDetail(cp.ClusterName)
-		if err != nil {
-			return err
-		}
-		log.DebugLog(log.DebugLevelMexos, "Got Heat Stack detail", "detail", hd)
-		switch hd.StackStatus {
-		case "CREATE_COMPLETE":
-			log.DebugLog(log.DebugLevelMexos, "Heat Stack Creation succeeded", "stackName", cp.ClusterName)
-			return nil
-		case "CREATE_IN_PROGRESS":
-			elapsed := time.Since(start)
-			if elapsed >= (time.Minute * 20) {
-				// this should not happen and indicates the stack is stuck somehow
-				log.InfoLog("Heat stack create taking too long", "status", hd.StackStatus, "elasped time", elapsed)
-				return fmt.Errorf("Heat stack create taking too long")
-			}
-			continue
-		case "CREATE_FAILED":
-			log.InfoLog("Heat Stack Creation failed", "stackName", cp.ClusterName)
-			return fmt.Errorf("Heat Stack create for cluster failed")
-		default:
-			log.InfoLog("Unexpected Heat Stack status", "status", hd.StackStatus)
-			return fmt.Errorf("Stack create for cluster unexpected status: %s", hd.StackStatus)
-		}
-
+	err = waitForStackCreate(cp.ClusterName)
+	if err != nil {
+		return err
 	}
-
+	return nil
 }
 
 // HeatDeleteClusterKubernetes deletes the cluster resources

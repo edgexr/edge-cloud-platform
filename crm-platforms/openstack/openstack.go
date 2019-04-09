@@ -35,7 +35,10 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	if err := mexos.InitOpenstackProps(); err != nil {
 		return err
 	}
-	mexos.CloudletInfraCommon.NetworkScheme = "priv-subnet,mex-k8s-net-1,10.101.X.0/24"
+	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
+	if mexos.CloudletInfraCommon.NetworkScheme == "" {
+		mexos.CloudletInfraCommon.NetworkScheme = "priv-subnet,mex-k8s-net-1,10.101.X.0/24"
+	}
 
 	osflavors, err := mexos.ListFlavors()
 	if err != nil || len(osflavors) == 0 {
