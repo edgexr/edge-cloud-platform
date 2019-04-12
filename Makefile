@@ -23,8 +23,11 @@ build-edge-cloud: edge-cloud-version-check
 
 CURRENT_EDGE_CLOUD_VERSION = $(shell git -C ../edge-cloud describe --tags --all)
 edge-cloud-version-check:
-	@echo "Ensuring edge-cloud repo branch/tag is $(EDGE_CLOUD_VERSION)"
-	test "$(CURRENT_EDGE_CLOUD_VERSION)" = "$(EDGE_CLOUD_VERSION)"
+	@if ! test "$(CURRENT_EDGE_CLOUD_VERSION)" = "$(EDGE_CLOUD_VERSION)"; then \
+		echo; \
+		echo "NOTE: edge-cloud repo branch/tag is NOT \"$(EDGE_CLOUD_VERSION)\""; \
+		echo; \
+	fi
 
 edge-cloud-version-set:
 	@echo "Setting edge-cloud repo branch/tag to $(EDGE_CLOUD_VERSION)"
