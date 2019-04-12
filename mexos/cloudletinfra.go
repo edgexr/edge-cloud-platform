@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var CloudletInfraCommon edgeproto.CloudletInfraCommon
@@ -61,7 +62,10 @@ func InitOpenstackProps() error {
 	}
 
 	// defaulting some value
-	OpenstackProps.OSExternalRouterName = "mex-k8s-router-1"
+	OpenstackProps.OSExternalRouterName = os.Getenv("MEX_ROUTER")
+	if OpenstackProps.OSExternalRouterName == "" {
+		OpenstackProps.OSExternalRouterName = "mex-k8s-router-1"
+	}
 	OpenstackProps.OSMexNetwork = "mex-k8s-net-1"
 	return nil
 }
@@ -128,7 +132,10 @@ func GetCloudletDockerPass() string {
 // this configurable at the controller but really is only needed for debugging.
 func GetCleanupOnFailure() bool {
 	cleanup := os.Getenv("CLEANUP_ON_FAILURE")
-	if strings.ToLower(cleanup) == "no" || strings.ToLower(cleanup) == "false" {
+	log.DebugLog(log.DebugLevelMexos, "GetCleanupOnFailure", "cleanup", cleanup)
+	cleanup = strings.ToLower(cleanup)
+	cleanup = strings.ReplaceAll(cleanup, "'", "")
+	if cleanup == "no" || cleanup == "false" {
 		return false
 	}
 	return true
@@ -141,8 +148,13 @@ func GetCloudletTenant() string {
 func GetCloudletUserData() string {
 	return MEXDir() + "/userdata.txt"
 }
-func GetCloudletSecurityRule() string {
-	return "default"
+
+func GetCloudletSecurityGroup() string {
+	sg := os.Getenv("MEX_SECURITY_GROUP")
+	if sg == "" {
+		return "default"
+	}
+	return sg
 }
 func GetCloudletMexosAgentPort() string {
 	return "18889"

@@ -54,11 +54,11 @@ func GetSSHClientIP(ipaddr, userName string) (ssh.Client, error) {
 	return client, nil
 }
 
-func SetupSSHUser(rootLB *MEXRootLB, user string) error {
+func SetupSSHUser(rootLB *MEXRootLB, user string) (ssh.Client, error) {
 	log.DebugLog(log.DebugLevelMexos, "setting up ssh user", "user", user)
 	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// XXX cloud-init creates non root user but it does not populate all the needed files.
 	//  packer will create images with correct things for root .ssh. It cannot provision
@@ -75,8 +75,8 @@ func SetupSSHUser(rootLB *MEXRootLB, user string) error {
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error setting up ssh user",
 				"user", user, "error", err, "out", out)
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return client, nil
 }

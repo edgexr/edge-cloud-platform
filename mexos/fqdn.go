@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
-	"github.com/mobiledgex/edge-cloud/log"
 )
 
 func isDomainName(s string) bool {
@@ -65,36 +64,5 @@ func ActivateFQDNA(fqdn, addr string) error {
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "getting dns record for zone", "DNSZone", GetCloudletDNSZone())
-	dr, err := cloudflare.GetDNSRecords(GetCloudletDNSZone(), fqdn)
-	if err != nil {
-		return fmt.Errorf("cannot get dns records for %s, %v", fqdn, err)
-	}
-	for _, d := range dr {
-		if d.Type == "A" && d.Name == fqdn {
-			if d.Content == addr {
-				log.DebugLog(log.DebugLevelMexos, "existing A record", "FQDN", fqdn, "addr", addr)
-				return nil
-			}
-			log.DebugLog(log.DebugLevelMexos, "cloudflare A record has different address, it will be overwritten", "existing", d, "addr", addr)
-			if err = cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), d.ID); err != nil {
-				return fmt.Errorf("can't delete DNS record for %s, %v", fqdn, err)
-			}
-			break
-		}
-	}
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "error while talking to cloudflare", "error", err)
-		return err
-	}
-	if err := cloudflare.CreateDNSRecord(GetCloudletDNSZone(), fqdn, "A", addr, 1, false); err != nil {
-		return fmt.Errorf("can't create DNS record for %s, %v", fqdn, err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "waiting for cloudflare...")
-	//once successfully inserted the A record will take a bit of time, but not too long due to fast cloudflare anycast
-	//err = WaitforDNSRegistration(fqdn)
-	//if err != nil {
-	//	return err
-	//}
-	return nil
+	return cloudflare.CreateOrUpdateDNSRecord(GetCloudletDNSZone(), fqdn, "A", addr, 1, false)
 }

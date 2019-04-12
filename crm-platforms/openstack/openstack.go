@@ -13,8 +13,9 @@ import (
 )
 
 type Platform struct {
-	rootLBName string
-	rootLB     *mexos.MEXRootLB
+	rootLBName  string
+	rootLB      *mexos.MEXRootLB
+	cloudletKey *edgeproto.CloudletKey
 }
 
 func (s *Platform) GetType() string {
@@ -23,6 +24,7 @@ func (s *Platform) GetType() string {
 
 func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	rootLBName := cloudcommon.GetRootLBFQDN(key)
+	s.cloudletKey = key
 	log.DebugLog(log.DebugLevelMexos, "init openstack", "rootLB", rootLBName)
 
 	// OPENRC_URL is required for OpenStack, but optional in InitInfraCommon
@@ -78,12 +80,12 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 		return fmt.Errorf("unable to find closest flavor for Shared RootLB: %v", err)
 	}
 
-	log.DebugLog(log.DebugLevelMexos, "calling RunMEXAgentCloudletKey", "cloudletkeystr", key.GetKeyString())
-	err = mexos.RunMEXAgentCloudletKey(rootLBName, key.GetKeyString(), flavorName)
+	log.DebugLog(log.DebugLevelMexos, "calling SetupRootLB")
+	err = mexos.SetupRootLB(rootLBName, flavorName)
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, RunMEXAgentCloudletKey with cloudlet key")
+	log.DebugLog(log.DebugLevelMexos, "ok, SetupRootLB")
 	return nil
 }
 

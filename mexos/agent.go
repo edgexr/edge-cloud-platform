@@ -1,15 +1,12 @@
 package mexos
 
 import (
-	"encoding/json"
 	"fmt"
 	"runtime"
 	"strings"
 
-	valid "github.com/asaskevich/govalidator"
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -41,109 +38,6 @@ func RunLocalMexAgent() error {
 	default:
 		return fmt.Errorf("unsupported OS: %s", os)
 	}
-}
-
-//RunMEXAgent runs the MEX agent on the RootLB. It first registers FQDN to cloudflare domain registry if not already registered.
-//   It then obtains certficiates from Letsencrypt, if not done yet.  Then it runs the docker instance of MEX agent
-//   on the RootLB. It can be told to manually pull image from docker repository.  This allows upgrading with new image.
-//   It uses MEX private docker repository.  If an instance is running already, we don't start another one.
-func RunMEXAgent(rootLBName string, cloudletKey *edgeproto.CloudletKey, platformFlavor string) error {
-	log.DebugLog(log.DebugLevelMexos, "run mex agent")
-	fqdn := rootLBName
-	//fqdn is that of the machine/kvm-instance running the agent
-	if !valid.IsDNSName(fqdn) {
-		return fmt.Errorf("fqdn %s is not valid", fqdn)
-	}
-	sd, err := GetServerDetails(fqdn)
-	if err == nil {
-		if sd.Name == fqdn {
-			log.DebugLog(log.DebugLevelMexos, "server with same name as rootLB exists", "fqdn", fqdn)
-			rootLB, err := getRootLB(fqdn)
-			if err != nil {
-				return fmt.Errorf("cannot find rootlb %s", fqdn)
-			}
-			// client can only be captured if rootLB VM is present
-			client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
-			if err != nil {
-				return err
-			}
-			extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
-			if err != nil {
-				return fmt.Errorf("cannot get rootLB IP %sv", err)
-			}
-			log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
-			rootLB.IP = extIP
-			// recheck certs in case they expired
-			err = AcquireCertificates(rootLBName) //fqdn name may be different than rootLB.Name
-			if err != nil {
-				return fmt.Errorf("can't acquire certificate for %s, %v", rootLB.Name, err)
-			}
-			// now ensure the rootLB can reach all the internal networks
-			err = LBAddRouteAndSecRules(client, rootLBName)
-			if err != nil {
-				return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
-			}
-			//return RunMEXOSAgentContainer(rootLB)
-			return RunMEXOSAgentService(client)
-		}
-	}
-	log.DebugLog(log.DebugLevelMexos, "about to create mex agent", "fqdn", fqdn)
-	rootLB, err := getRootLB(fqdn)
-	if err != nil {
-		return fmt.Errorf("cannot find rootlb %s", fqdn)
-	}
-	if rootLB == nil {
-		return fmt.Errorf("cannot run mex agent manifest, rootLB is null")
-	}
-	if GetCloudletOSImage() == "" {
-		return fmt.Errorf("missing agent image")
-	}
-	log.DebugLog(log.DebugLevelMexos, "record platform config")
-	err = EnableRootLB(rootLB, cloudletKey, platformFlavor)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "can't enable agent", "name", rootLB.Name)
-		return fmt.Errorf("Failed to enable root LB %v", err)
-	}
-	// client can only be created once EnableRootLB has created the VM
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
-	if err != nil {
-		return err
-	}
-	extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn)
-	if err != nil {
-		return fmt.Errorf("cannot get rootLB IP %sv", err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
-	rootLB.IP = extIP
-
-	err = WaitForRootLB(rootLB)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
-		return fmt.Errorf("Error waiting for rootLB %v", err)
-	}
-	if err := SetupSSHUser(rootLB, SSHUser); err != nil {
-		return err
-	}
-	if err = ActivateFQDNA(rootLB.Name, extIP); err != nil {
-		return err
-	}
-	log.DebugLog(log.DebugLevelMexos, "FQDN A record activated", "name", rootLB.Name)
-	err = AcquireCertificates(rootLB.Name) //fqdn name may be different than rootLB.Name
-	if err != nil {
-		return fmt.Errorf("can't acquire certificate for %s, %v", rootLB.Name, err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "acquired certificates from letsencrypt", "name", rootLB.Name)
-	err = GetHTPassword(rootLB.Name)
-	if err != nil {
-		return fmt.Errorf("can't download htpassword %v", err)
-	}
-	// now ensure the rootLB can reach all the internal networks
-	err = LBAddRouteAndSecRules(client, rootLB.Name)
-	if err != nil {
-		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
-	}
-	//return RunMEXOSAgentContainer(mf, rootLB)
-	return RunMEXOSAgentService(client)
 }
 
 func getMexosAgentRemoteFilename() string {
@@ -233,19 +127,4 @@ func RunMEXOSAgentContainer(client pc.PlatformClient, rootLB *MEXRootLB) error {
 	}
 	log.DebugLog(log.DebugLevelMexos, "now running dockerized mexosagent")
 	return nil
-}
-
-//RunMEXAgentCloudletKey calls MEXPlatformInit with templated manifest
-func RunMEXAgentCloudletKey(rootLBName string, cloudletKeyStr string, platformFlavor string) error {
-
-	clk := edgeproto.CloudletKey{}
-	err := json.Unmarshal([]byte(cloudletKeyStr), &clk)
-	if err != nil {
-		return fmt.Errorf("can't unmarshal json cloudletkey %s, %v", cloudletKeyStr, err)
-	}
-	log.DebugLog(log.DebugLevelMexos, "unmarshalled cloudletkeystr", "cloudletkey", clk)
-	if clk.Name == "" || clk.OperatorKey.Name == "" {
-		return fmt.Errorf("invalid cloudletkeystr %s", cloudletKeyStr)
-	}
-	return RunMEXAgent(rootLBName, &clk, platformFlavor)
 }

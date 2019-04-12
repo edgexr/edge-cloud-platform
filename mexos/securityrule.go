@@ -9,13 +9,13 @@ import (
 )
 
 func AddSecurityRules(ports []PortDetail) error {
-	sr := GetCloudletSecurityRule()
+	sg := GetCloudletSecurityGroup()
 	allowedClientCIDR := GetAllowedClientCIDR()
 	for _, port := range ports {
 		//todo: distinguish already-exists errors from others
 		portString := fmt.Sprintf("%d", port.PublicPort)
-		if err := AddSecurityRuleCIDR(allowedClientCIDR, strings.ToLower(port.Proto), sr, portString); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "warning, error while adding security rule", "addr", allowedClientCIDR, "port", port.PublicPort)
+		if err := AddSecurityRuleCIDR(allowedClientCIDR, strings.ToLower(port.Proto), sg, portString); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -40,7 +40,11 @@ func AddSecurityRuleCIDR(cidr string, proto string, name string, port string) er
 
 	out, err := TimedOpenStackCommand("openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", name)
 	if err != nil {
-		return fmt.Errorf("can't add security group rule for port %s to %s,%s,%v", port, name, out, err)
+		if strings.Contains(string(out), "SecurityGroupRuleExists") {
+			log.DebugLog(log.DebugLevelMexos, "security group already exists, proceeding")
+		} else {
+			return fmt.Errorf("can't add security group rule for port %s to %s,%s,%v", port, name, string(out), err)
+		}
 	}
 	return nil
 }

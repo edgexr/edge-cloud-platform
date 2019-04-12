@@ -14,7 +14,6 @@ import (
 func TimedOpenStackCommand(name string, a ...string) ([]byte, error) {
 	parmstr := ""
 	start := time.Now()
-
 	for _, a := range a {
 		parmstr += a + " "
 	}
@@ -22,7 +21,7 @@ func TimedOpenStackCommand(name string, a ...string) ([]byte, error) {
 	out, err := sh.Command(name, a).CombinedOutput()
 	if err != nil {
 		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
-		return nil, err
+		return out, err
 	}
 	log.DebugLog(log.DebugLevelMexos, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
 	return out, nil
