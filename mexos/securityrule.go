@@ -40,7 +40,7 @@ func AddSecurityRuleCIDR(cidr string, proto string, name string, port string) er
 
 	out, err := TimedOpenStackCommand("openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", name)
 	if err != nil {
-		if strings.Contains(string(out), "SecurityGroupRuleExists") {
+		if strings.Contains(string(out), "Security group rule already exists") {
 			log.DebugLog(log.DebugLevelMexos, "security group already exists, proceeding")
 		} else {
 			return fmt.Errorf("can't add security group rule for port %s to %s,%s,%v", port, name, string(out), err)
