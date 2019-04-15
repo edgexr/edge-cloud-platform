@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +19,7 @@ type VMParams struct {
 	ImageName           string
 	SecurityGroup       string
 	NetworkName         string
+	SubnetName          string
 	MEXRouterIP         string
 	GatewayIP           string
 	FloatingIPAddressID string
@@ -40,14 +40,17 @@ var vmTemplateResources = `
          security_groups:
           - {{.SecurityGroup}}
         {{- end}}
-          - {{.SecurityGroup}}
          flavor: {{.Flavor}}
          config_drive: true
          user_data_format: RAW
          user_data:
             get_file: /root/.mobiledgex/userdata.txt
          networks:
+        {{if .FloatingIPAddressID}}
+          - port: { get_resource: vm-port }
+        {{else}}
           - network: {{.NetworkName}}
+        {{- end}}
          metadata:
             skipk8s: yes
             role: mex-agent-node 
@@ -59,9 +62,11 @@ var vmTemplateResources = `
        type: OS::Neutron::Port
        properties:
            name: {{.VMName}}-port
-		   network_id: {{.NetworkName}}
-       security_groups:
-        - {{$.SecurityGroup}}
+           network_id: {{.NetworkName}}
+           fixed_ips: 
+            - subnet_id: {{.SubnetName}}
+           security_groups:
+            - {{$.SecurityGroup}}
    floatingip:
        type: OS::Neutron::FloatingIPAssociation
        properties:
@@ -286,7 +291,7 @@ func getVMParams(serverName, flavor, imageName string) (*VMParams, error) {
 	if err != nil {
 		return nil, err
 	}
-	if strings.Contains(ni.Options, "floatingip") {
+	if ni.FloatingIPNet != "" {
 		// lock here to avoid getting the same floating IP; we need to lock until the stack is done
 		floatingIPLock.Lock()
 		defer floatingIPLock.Unlock()
@@ -303,7 +308,8 @@ func getVMParams(serverName, flavor, imageName string) (*VMParams, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Unable to list floating IPs %v", err)
 		}
-		vmp.NetworkName = GetCloudletMexNetwork()
+		vmp.NetworkName = ni.FloatingIPNet
+		vmp.SubnetName = ni.FloatingIPSubnet
 	} else {
 		vmp.NetworkName = GetCloudletExternalNetwork()
 	}

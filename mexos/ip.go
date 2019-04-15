@@ -17,6 +17,8 @@ type NetSpecInfo struct {
 	NetmaskBits               string
 	Octets                    []string
 	DelimiterOctet            int // this is the X
+	FloatingIPNet             string
+	FloatingIPSubnet          string
 	Extra                     []string
 }
 
@@ -35,10 +37,19 @@ func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 	ni.Kind = items[NetTypeVal]
 	ni.Name = items[NetNameVal]
 	ni.CIDR = items[NetCIDRVal]
-	if len(items) == 4 {
+	if len(items) > NetFloatingIPVal {
+		fi := items[NetFloatingIPVal]
+		fs := strings.Split(fi, "|")
+		if len(fs) != 2 {
+			return nil, fmt.Errorf("floating ip format wrong expected: internalnet|internalsubnet")
+		}
+		ni.FloatingIPNet = fs[0]
+		ni.FloatingIPSubnet = fs[1]
+	}
+	if len(items) > NetOptVal {
 		ni.Options = items[NetOptVal]
 	}
-	if len(items) > 4 {
+	if len(items) > NetOptVal+1 {
 		ni.Extra = items[NetOptVal+1:]
 	}
 
@@ -142,7 +153,18 @@ func GetServerIPAddr(networkName, serverName string) (string, error) {
 		return "", fmt.Errorf("GetServerIPAddr: can't parse server detail addresses, %v, %v", sd, err)
 	}
 	if its[0] != networkName {
+		// when there is a floating ip, the public IP is listed second after a comma
+		// e.g. internal=10.5.6.6, 192.168.5.100
+		if networkName == GetCloudletExternalNetwork() {
+			addrs := strings.Split(sd.Addresses, ",")
+			if len(addrs) == 2 {
+				addr := strings.TrimSpace(addrs[1])
+				log.DebugLog(log.DebugLevelMexos, "found floating ip", "addr", addr)
+				return addr, nil
+			}
+		}
 		return "", fmt.Errorf("invalid network name in server detail address, %s", sd.Addresses)
+
 	}
 	addr := its[1]
 	//log.DebugLog(log.DebugLevelMexos, "got server ip addr", "ipaddr", addr, "netname", networkName, "servername", serverName)

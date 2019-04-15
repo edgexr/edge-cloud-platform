@@ -119,7 +119,7 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string) error {
 	} else if createRootLBFlavor != "" {
 		err = CreateRootLB(rootLB, createRootLBFlavor)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "can't create agent", "name", rootLB.Name)
+			log.InfoLog("can't create agent", "name", rootLB.Name, "err", err)
 			return fmt.Errorf("Failed to enable root LB %v", err)
 		}
 	}

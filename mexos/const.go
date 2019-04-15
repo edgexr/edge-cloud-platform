@@ -13,8 +13,9 @@ const (
 //For netspec components
 //  netType,netName,netCIDR,netOptions
 const (
-	NetTypeVal = 0
-	NetNameVal = 1
-	NetCIDRVal = 2
-	NetOptVal  = 3
+	NetTypeVal       = 0
+	NetNameVal       = 1
+	NetCIDRVal       = 2
+	NetFloatingIPVal = 3
+	NetOptVal        = 4
 )
