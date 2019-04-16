@@ -3,6 +3,8 @@ include ../edge-cloud/Makedefs
 
 EDGE_CLOUD_VERSION = heads/master
 
+export GO111MODULE=on
+
 all: build-all install-all
 
 build-all: build-edge-cloud build-internal
@@ -34,7 +36,10 @@ edge-cloud-version-set:
 	git -C ../edge-cloud checkout $(EDGE_CLOUD_VERSION)
 
 build-internal:
+	go install ./fixmod
+	fixmod -srcRepo ../edge-cloud
 	make -C ./openstack-tenant/agent/
+	go build ./...
 	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so plugin/*.go
 	go vet ./...
 
