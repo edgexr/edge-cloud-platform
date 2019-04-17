@@ -122,6 +122,6 @@ func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	return nil
 }
 
-func (s *Platform) GetPlatformClient() pc.PlatformClient {
-	return &pc.LocalClient{}
+func (s *Platform) GetPlatformClient() (pc.PlatformClient, error) {
+	return &pc.LocalClient{}, nil
 }

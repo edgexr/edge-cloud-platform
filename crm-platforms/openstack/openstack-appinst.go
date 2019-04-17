@@ -11,13 +11,18 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, names *k8smgmt.KubeNames) error {
+func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 		log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 	}
-	client, err := s.GetPlatformClient(rootLBName)
+	client, err := s.GetPlatformClientRootLB(rootLBName)
+	if err != nil {
+		return err
+	}
+
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return err
 	}
@@ -61,13 +66,19 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	return nil
 }
 
-func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, names *k8smgmt.KubeNames) error {
+func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	// TODO: rootLB may be specific to clusterInst for dedicated IP configs
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 		log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
 	}
-	client, err := s.GetPlatformClient(rootLBName)
+	client, err := s.GetPlatformClientRootLB(rootLBName)
+	if err != nil {
+		return err
+	}
+
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return err
 	}
@@ -95,5 +106,50 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		fallthrough
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
+	}
+}
+
+func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+	// TODO: rootLB may be specific to clusterInst for dedicated IP configs
+	rootLBName := s.rootLBName
+	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+		log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
+	}
+	client, err := s.GetPlatformClientRootLB(rootLBName)
+	if err != nil {
+		return nil, err
+	}
+
+	switch deployment := app.Deployment; deployment {
+	case cloudcommon.AppDeploymentTypeKubernetes:
+		fallthrough
+	case cloudcommon.AppDeploymentTypeHelm:
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		if err != nil {
+			return nil, err
+		}
+		return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
+	case cloudcommon.AppDeploymentTypeKVM:
+		fallthrough
+	case cloudcommon.AppDeploymentTypeDockerSwarm:
+		fallthrough
+	default:
+		return nil, fmt.Errorf("unsupported deployment type %s", deployment)
+	}
+}
+
+func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+	switch deployment := app.Deployment; deployment {
+	case cloudcommon.AppDeploymentTypeKubernetes:
+		fallthrough
+	case cloudcommon.AppDeploymentTypeHelm:
+		return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
+	case cloudcommon.AppDeploymentTypeKVM:
+		fallthrough
+	case cloudcommon.AppDeploymentTypeDockerSwarm:
+		fallthrough
+	default:
+		return "", fmt.Errorf("unsupported deployment type %s", deployment)
 	}
 }

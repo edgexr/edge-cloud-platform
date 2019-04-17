@@ -6,7 +6,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	ssh "github.com/nanobox-io/golang-ssh"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 func GetLocalKconfName(clusterInst *edgeproto.ClusterInst) string {

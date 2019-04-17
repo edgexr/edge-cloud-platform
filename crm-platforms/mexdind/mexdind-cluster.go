@@ -12,7 +12,10 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	if err != nil {
 		return err
 	}
-	client := s.generic.GetPlatformClient()
+	client, err := s.generic.GetPlatformClient()
+	if err != nil {
+		return err
+	}
 	clusterName := clusterInst.Key.ClusterKey.Name
 
 	err = mexos.CreateDockerRegistrySecret(client, clusterInst)

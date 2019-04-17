@@ -27,7 +27,10 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done
 	time.Sleep(3 * time.Second)
-	client := s.GetPlatformClient()
+	client, err := s.GetPlatformClient()
+	if err != nil {
+		return err
+	}
 	mexos.BackupKubeconfig(client)
 	if err = GetGKECredentials(clusterName); err != nil {
 		return err

@@ -11,13 +11,21 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, names *k8smgmt.KubeNames) error {
+func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
 	if err = SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client := s.GetPlatformClient()
+	client, err := s.GetPlatformClient()
+	if err != nil {
+		return err
+	}
+
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
@@ -46,13 +54,21 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	return nil
 }
 
-func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, names *k8smgmt.KubeNames) error {
+func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
 	if err = SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client := s.GetPlatformClient()
+	client, err := s.GetPlatformClient()
+	if err != nil {
+		return err
+	}
+
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
@@ -86,4 +102,25 @@ func SetupKconf(clusterInst *edgeproto.ClusterInst) error {
 		return fmt.Errorf("can't copy %s, %v", src, err)
 	}
 	return nil
+}
+
+func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+	// regenerate kconf if missing because CRM in container was restarted
+	if err := SetupKconf(clusterInst); err != nil {
+		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
+	}
+	client, err := s.GetPlatformClient()
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return nil, err
+	}
+	return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
+}
+
+func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+	return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
 }

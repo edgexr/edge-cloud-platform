@@ -6,6 +6,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/dind"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -64,4 +65,8 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 
 func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	return s.generic.GatherCloudletInfo(info)
+}
+
+func (s *Platform) GetPlatformClient() (pc.PlatformClient, error) {
+	return s.generic.GetPlatformClient()
 }

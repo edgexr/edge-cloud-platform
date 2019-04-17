@@ -5,7 +5,7 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/log"
-	ssh "github.com/nanobox-io/golang-ssh"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var sshOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}

@@ -20,6 +20,7 @@ require (
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/mobiledgex/edge-cloud v1.0.1
+	github.com/mobiledgex/golang-ssh v0.0.2
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/nanobox-io/golang-ssh v0.0.0-20190309194042-12ea65d3a59d
@@ -29,7 +30,6 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca
-	golang.org/x/sys v0.0.0-20190402142545-baf5eb976a8c // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190401181712-f467c93bbac2
 	google.golang.org/grpc v1.19.1
@@ -273,8 +273,6 @@ replace github.com/patrickmn/go-cache => github.com/patrickmn/go-cache v2.1.0+in
 
 replace github.com/peterbourgon/diskv => github.com/peterbourgon/diskv v2.0.1+incompatible
 
-replace github.com/pkg/errors => github.com/pkg/errors v0.8.0
-
 replace github.com/prometheus/client_model => github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 
 replace github.com/prometheus/procfs => github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1
@@ -315,7 +313,7 @@ replace go.uber.org/zap => go.uber.org/zap v1.8.0
 
 replace golang.org/x/build => golang.org/x/build v0.0.0-20190314133821-5284462c4bec
 
-replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 
 replace golang.org/x/lint => golang.org/x/lint v0.0.0-20190301231843-5614ed5bae6f
 
@@ -354,3 +352,9 @@ replace k8s.io/client-go => k8s.io/client-go v0.0.0-20180517072830-4bb327ea2f8e
 replace sigs.k8s.io/yaml => sigs.k8s.io/yaml v1.1.0
 
 replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.3
+
+replace github.com/kr/pty => github.com/kr/pty v1.1.3
+
+replace github.com/pion/webrtc/v2 => github.com/pion/webrtc/v2 v2.0.7
+
+replace golang.org/x/text => golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
