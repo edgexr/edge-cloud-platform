@@ -42,20 +42,9 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 		mexos.CloudletInfraCommon.NetworkScheme = "priv-subnet,mex-k8s-net-1,10.101.X.0/24"
 	}
 
-	osflavors, err := mexos.ListFlavors()
-	if err != nil || len(osflavors) == 0 {
-		return fmt.Errorf("failed to get flavors, %s", err.Error())
-	}
-	var finfo []*edgeproto.FlavorInfo
-	for _, f := range osflavors {
-		finfo = append(
-			finfo,
-			&edgeproto.FlavorInfo{
-				Name:  f.Name,
-				Vcpus: uint64(f.VCPUs),
-				Ram:   uint64(f.RAM),
-				Disk:  uint64(f.Disk)},
-		)
+	finfo, err := mexos.GetFlavorInfo()
+	if err != nil {
+		return err
 	}
 
 	// create rootLB

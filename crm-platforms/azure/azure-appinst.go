@@ -11,7 +11,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
 	if err = s.SetupKconf(clusterInst); err != nil {

@@ -95,6 +95,12 @@ type OSImage struct {
 	Status, ID, Name string
 }
 
+type OSImageDetail struct {
+	Status    string `json:"status"`
+	ID        string `json:"id"`
+	UpdatedAt string `json:"updated_at"`
+}
+
 type OSNetwork struct {
 	Subnets, ID, Name string
 }
