@@ -44,13 +44,6 @@ var heatStackLock sync.Mutex
 // This is the resources part of a template for a VM. It is for use within another template
 // the parameters under VMP can come from either a standalone struture (VM Create) or a cluster (for rootLB)
 var vmTemplateResources = `
-   {{if .IsRootLB}}
-   mex_rootlb_init:
-      type: OS::Heat::SoftwareConfig
-      properties:
-         group: ungrouped
-         config: { get_file: /root/.mobiledgex/userdata.txt }
-   {{- end}}
    {{if .DeploymentManifest}}
    vm_init:
       type: OS::Heat::CloudConfig
@@ -72,7 +65,6 @@ var vmTemplateResources = `
       type: OS::Heat::MultipartMime
       properties:
          parts:
-          {{if .IsRootLB}} - config: {get_resource: mex_rootlb_init} {{- end}}
           {{if .DeploymentManifest}} - config: {get_resource: vm_init} {{- end}}
           {{if .Command}} - config: {get_resource: single_command} {{- end}}
    {{.VMName}}:
@@ -88,9 +80,7 @@ var vmTemplateResources = `
         {{- end}}
          flavor: {{.Flavor}}
         {{if .AuthPublicKey}} key_name: { get_resource: ssh_key_pair } {{- end}}
-         config_drive: true
-         user_data_format: SOFTWARE_CONFIG
-         user_data: { get_resource: server_init }
+         config_drive: true       
          networks:
         {{if .FloatingIPAddressID}}
           - port: { get_resource: vm-port }
@@ -104,6 +94,12 @@ var vmTemplateResources = `
             edgeproxy: {{.GatewayIP}}
             mex-flavor: {{.Flavor}}
             privaterouter: {{.MEXRouterIP}}
+         user_data_format: RAW		
+         user_data: 
+            get_file: /root/.mobiledgex/userdata.txt 
+        {{else}}
+         user_data_format: SOFTWARE_CONFIG
+         user_data: { get_resource: server_init }
         {{- end}}
   {{if .AuthPublicKey}}
    ssh_key_pair:
@@ -400,9 +396,9 @@ func GetVMParams(depType DeploymentType, serverName, flavor, imageName, authPubl
 	return &vmp, nil
 }
 
-// HeatCreateVM creates a new VM and optionally associates a floating IP
-func HeatCreateVM(data interface{}, serverName, vmTemplate string) error {
-	log.DebugLog(log.DebugLevelMexos, "HeatCreateVM")
+// createHeatStackFromTemplate fills the template from templateData and creates the stack
+func CreateHeatStackFromTemplate(templateData interface{}, stackName, templateString string) error {
+	log.DebugLog(log.DebugLevelMexos, "createHeatStackFromTemplate", "stackName", stackName)
 
 	var buf bytes.Buffer
 
@@ -413,41 +409,41 @@ func HeatCreateVM(data interface{}, serverName, vmTemplate string) error {
 			if len(values) > 1 {
 				l = values[1].(int)
 			}
-			var new_str []string
+			var newStr []string
 			for _, v := range strings.Split(string(s), "\n") {
-				n_v := fmt.Sprintf("%s%s", strings.Repeat(" ", l), v)
-				new_str = append(new_str, n_v)
+				nV := fmt.Sprintf("%s%s", strings.Repeat(" ", l), v)
+				newStr = append(newStr, nV)
 			}
-			return template.HTML(strings.Join(new_str, "\n"))
+			return template.HTML(strings.Join(newStr, "\n"))
 		},
 	}
 
-	tmpl, err := template.New(serverName).Funcs(funcMap).Parse(vmTemplate)
+	tmpl, err := template.New(stackName).Funcs(funcMap).Parse(templateString)
 	if err != nil {
 		return err
 	}
-	err = tmpl.Execute(&buf, data)
+	err = tmpl.Execute(&buf, templateData)
 	if err != nil {
 		return err
 	}
-	filename := serverName + "-heat.yaml"
+	filename := stackName + "-heat.yaml"
 	err = writeTemplateFile(filename, &buf)
 	if err != nil {
 		return err
 	}
-	err = createHeatStack(filename, serverName)
+	err = createHeatStack(filename, stackName)
 	if err != nil {
 		return err
 	}
-	err = waitForStackCreate(serverName)
+	err = waitForStackCreate(stackName)
 	return err
 }
 
 // HeatDeleteVM deletes the VM resources
-func HeatDeleteVM(serverName string) error {
-	log.DebugLog(log.DebugLevelMexos, "deleting heat stack for vm", "serverName", serverName)
-	deleteHeatStack(serverName)
-	return waitForStackDelete(serverName)
+func HeatDeleteStack(stackName string) error {
+	log.DebugLog(log.DebugLevelMexos, "deleting heat stack for stack", "stackName", stackName)
+	deleteHeatStack(stackName)
+	return waitForStackDelete(stackName)
 }
 
 //GetClusterParams fills template parameters for the cluster.  A non blank rootLBName will add a rootlb VM
@@ -526,6 +522,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.Clus
 	return &cp, nil
 }
 
+// HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
 func HeatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor, dedicatedRootLBName string) error {
 
 	log.DebugLog(log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst)
@@ -547,14 +544,6 @@ func HeatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edg
 	if dedicatedRootLBName != "" {
 		templateString += vmTemplateResources
 	}
-	err = HeatCreateVM(cp, dedicatedRootLBName, templateString)
+	err = CreateHeatStackFromTemplate(cp, cp.ClusterName, templateString)
 	return err
-}
-
-// HeatDeleteClusterKubernetes deletes the cluster resources
-func HeatDeleteClusterKubernetes(clusterInst *edgeproto.ClusterInst) error {
-	clusterName := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
-	log.DebugLog(log.DebugLevelMexos, "deleting heat stack for cluster", "stackName", clusterName)
-	deleteHeatStack(clusterName)
-	return waitForStackDelete(clusterName)
 }

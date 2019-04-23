@@ -110,7 +110,7 @@ func CreateRootLB(rootLB *MEXRootLB, platformFlavor string) error {
 		if err != nil {
 			return fmt.Errorf("Unable to get VM params: %v", err)
 		}
-		err = HeatCreateVM(vmp, rootLB.Name, VmTemplate)
+		err = CreateHeatStackFromTemplate(vmp, rootLB.Name, VmTemplate)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMexos, "error while creating VM", "error", err)
 			return err

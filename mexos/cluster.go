@@ -154,7 +154,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor
 //DeleteCluster deletes kubernetes cluster
 func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	err := HeatDeleteClusterKubernetes(clusterInst)
+	err := HeatDeleteStack(k8smgmt.GetK8sNodeNameSuffix(clusterInst))
 	if err != nil {
 		return err
 	}
