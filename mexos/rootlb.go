@@ -86,37 +86,12 @@ func CreateRootLB(rootLB *MEXRootLB, platformFlavor string) error {
 	}
 	if found == 0 {
 		log.DebugLog(log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
-		ni, err := ParseNetSpec(GetCloudletNetworkScheme())
+		err := HeatCreateRootLBVM(rootLB.Name, rootLB.Name, platformFlavor)
 		if err != nil {
-			return err
-		}
-		// lock here to avoid getting the same floating IP; we need to lock until the stack is done
-		// Floating IPs are allocated both by VM and cluster creation
-		if ni.FloatingIPNet != "" {
-			heatStackLock.Lock()
-			defer heatStackLock.Unlock()
-		}
-		vmp, err := GetVMParams(
-			RootLBVMDeployment,
-			rootLB.Name,
-			platformFlavor,
-			GetCloudletOSImage(),
-			"", // AuthPublicKey
-			"", // AccessPorts
-			"", // DeploymentManifest
-			"", // Command
-			ni,
-		)
-		if err != nil {
-			return fmt.Errorf("Unable to get VM params: %v", err)
-		}
-		err = CreateHeatStackFromTemplate(vmp, rootLB.Name, VmTemplate)
-		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error while creating VM", "error", err)
+			log.InfoLog("error while creating RootLB VM", "name", rootLB.Name, "error", err)
 			return err
 		}
 		log.DebugLog(log.DebugLevelMexos, "created VM", "name", rootLB.Name)
-
 	} else {
 		log.DebugLog(log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
 	}

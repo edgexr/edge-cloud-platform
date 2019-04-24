@@ -522,6 +522,37 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.Clus
 	return &cp, nil
 }
 
+// HeatCreateRootLBVM creates a roobLB VM
+func HeatCreateRootLBVM(serverName string, stackName string, flavor string) error {
+	log.DebugLog(log.DebugLevelMexos, "HeatCreateRootLBVM", "serverName", serverName, "stackName", stackName, "flavor", flavor)
+	ni, err := ParseNetSpec(GetCloudletNetworkScheme())
+	if err != nil {
+		return err
+	}
+	// lock here to avoid getting the same floating IP; we need to lock until the stack is done
+	// Floating IPs are allocated both by VM and cluster creation
+	// TODO: floating IP lock should apply to developer app VMs also
+	if ni.FloatingIPNet != "" {
+		heatStackLock.Lock()
+		defer heatStackLock.Unlock()
+	}
+	vmp, err := GetVMParams(
+		RootLBVMDeployment,
+		serverName,
+		flavor,
+		GetCloudletOSImage(),
+		"", // AuthPublicKey
+		"", // AccessPorts
+		"", // DeploymentManifest
+		"", // Command
+		ni,
+	)
+	if err != nil {
+		return fmt.Errorf("Unable to get VM params: %v", err)
+	}
+	return CreateHeatStackFromTemplate(vmp, stackName, VmTemplate)
+}
+
 // HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
 func HeatCreateClusterKubernetes(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor, dedicatedRootLBName string) error {
 

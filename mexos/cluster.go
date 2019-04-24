@@ -77,7 +77,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor
 		if reterr == nil {
 			return
 		}
-		log.DebugLog(log.DebugLevelMexos, "error in mexCreateClusterKubernetes", "err", reterr)
+		log.DebugLog(log.DebugLevelMexos, "error in CreateCluster", "err", reterr)
 		if GetCleanupOnFailure() {
 			log.DebugLog(log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
 			delerr := DeleteCluster(rootLBName, clusterInst)
@@ -100,7 +100,21 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		dedicatedRootLBName = rootLBName
 	}
-	err := HeatCreateClusterKubernetes(clusterInst, flavor, dedicatedRootLBName)
+
+	var err error
+	singleNodeCluster := false
+	if flavor.NumMasters == 0 {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+			//suitable for docker only
+			log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
+			singleNodeCluster = true
+			err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(clusterInst), clusterInst.NodeFlavor)
+		} else {
+			err = fmt.Errorf("NumMasters cannot be 0 for shared access")
+		}
+	} else {
+		err = HeatCreateClusterKubernetes(clusterInst, flavor, dedicatedRootLBName)
+	}
 	if err != nil {
 		return err
 	}
@@ -123,29 +137,33 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
 	ready := false
-	for i := 0; i < 10; i++ {
-		ready, err = IsClusterReady(clusterInst, flavor, rootLBName)
-		if err != nil {
+	if !singleNodeCluster {
+		for i := 0; i < 10; i++ {
+			ready, err = IsClusterReady(clusterInst, flavor, rootLBName)
+			if err != nil {
+				return err
+			}
+			if ready {
+				log.DebugLog(log.DebugLevelMexos, "kubernetes cluster ready")
+				break
+			}
+			log.DebugLog(log.DebugLevelMexos, "waiting for kubernetes cluster to be ready...")
+			time.Sleep(30 * time.Second)
+		}
+		if !ready {
+			return fmt.Errorf("cluster not ready (yet)")
+		}
+	}
+	if err := SeedDockerSecret(client, clusterInst, singleNodeCluster); err != nil {
+		return err
+	}
+	if !singleNodeCluster {
+		if err := CreateDockerRegistrySecret(client, clusterInst); err != nil {
 			return err
 		}
-		if ready {
-			log.DebugLog(log.DebugLevelMexos, "kubernetes cluster ready")
-			break
+		if err := CreateClusterConfigMap(client, clusterInst); err != nil {
+			return err
 		}
-		log.DebugLog(log.DebugLevelMexos, "waiting for kubernetes cluster to be ready...")
-		time.Sleep(30 * time.Second)
-	}
-	if !ready {
-		return fmt.Errorf("cluster not ready (yet)")
-	}
-	if err := SeedDockerSecret(client, clusterInst); err != nil {
-		return err
-	}
-	if err := CreateDockerRegistrySecret(client, clusterInst); err != nil {
-		return err
-	}
-	if err := CreateClusterConfigMap(client, clusterInst); err != nil {
-		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "created kubernetes cluster")
 	return nil
@@ -154,7 +172,8 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, flavor
 //DeleteCluster deletes kubernetes cluster
 func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	err := HeatDeleteStack(k8smgmt.GetK8sNodeNameSuffix(clusterInst))
+	clusterName := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	err := HeatDeleteStack(clusterName)
 	if err != nil {
 		return err
 	}

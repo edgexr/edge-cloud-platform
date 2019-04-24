@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -54,7 +55,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			action.ExternalIP = rootLBIPaddr
 			return &action, nil
 		}
-		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, masterIP)
+		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, masterIP, true)
 		if err != nil {
 			return fmt.Errorf("CreateKubernetesAppInst error: %v", err)
 		}
@@ -105,7 +106,6 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		if err != nil {
 			return fmt.Errorf("unable to find closest flavor for app: %v", err)
 		}
-
 		vmp, err := mexos.GetVMParams(
 			mexos.UserVMDeployment,
 			app.Key.Name,
@@ -126,8 +126,38 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("CreateVMAppInst error: %v", err)
 		}
 		return nil
-	case cloudcommon.AppDeploymentTypeDockerSwarm:
-		fallthrough
+	case cloudcommon.AppDeploymentTypeDocker:
+		rootLBName := s.rootLBName
+		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
+		}
+		client, err := s.GetPlatformClientRootLB(rootLBName)
+		if err != nil {
+			return err
+		}
+		rootLBIPaddr, err := mexos.GetServerIPAddr(mexos.GetCloudletExternalNetwork(), rootLBName)
+		if err != nil {
+			return err
+		}
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		if err != nil {
+			return fmt.Errorf("get kube names failed: %s", err)
+		}
+		err = dockermgmt.CreateAppInst(client, app, appInst)
+		if err != nil {
+			return fmt.Errorf("createAppInst error for docker %v", err)
+		}
+		getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
+			action := mexos.DnsSvcAction{}
+			action.PatchKube = false
+			action.ExternalIP = rootLBIPaddr
+			return &action, nil
+		}
+		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, rootLBIPaddr, false)
+		if err != nil {
+			return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
+		}
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -177,8 +207,17 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
 		return nil
-	case cloudcommon.AppDeploymentTypeDockerSwarm:
-		fallthrough
+	case cloudcommon.AppDeploymentTypeDocker:
+		rootLBName := s.rootLBName
+		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete docker app", "rootLBName", rootLBName)
+		}
+		client, err := s.GetPlatformClientRootLB(rootLBName)
+		if err != nil {
+			return err
+		}
+		return dockermgmt.DeleteAppInst(client, app, appInst)
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -189,7 +228,7 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
-		log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
+		log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to get runtime", "rootLBName", rootLBName)
 	}
 	client, err := s.GetPlatformClientRootLB(rootLBName)
 	if err != nil {
@@ -205,9 +244,9 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 			return nil, err
 		}
 		return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
+	case cloudcommon.AppDeploymentTypeDocker:
+		return dockermgmt.GetAppInstRuntime(client, app, appInst)
 	case cloudcommon.AppDeploymentTypeVM:
-		fallthrough
-	case cloudcommon.AppDeploymentTypeDockerSwarm:
 		fallthrough
 	default:
 		return nil, fmt.Errorf("unsupported deployment type %s", deployment)
@@ -220,9 +259,9 @@ func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *
 		fallthrough
 	case cloudcommon.AppDeploymentTypeHelm:
 		return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
+	case cloudcommon.AppDeploymentTypeDocker:
+		return dockermgmt.GetContainerCommand(clusterInst, app, appInst, req)
 	case cloudcommon.AppDeploymentTypeVM:
-		fallthrough
-	case cloudcommon.AppDeploymentTypeDockerSwarm:
 		fallthrough
 	default:
 		return "", fmt.Errorf("unsupported deployment type %s", deployment)

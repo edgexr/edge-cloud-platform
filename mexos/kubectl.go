@@ -9,6 +9,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"k8s.io/api/core/v1"
@@ -102,13 +103,22 @@ func GetSvcExternalIP(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, na
 
 func GetServices(client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Service, error) {
 	log.DebugLog(log.DebugLevelMexos, "get services", "kconf", names.KconfName)
+	svcs := svcItems{}
+	if names.DeploymentType == cloudcommon.AppDeploymentTypeDocker {
+		// just populate the service names
+		for _, sn := range names.ServiceNames {
+			item := v1.Service{}
+			item.Name = sn
+			svcs.Items = append(svcs.Items, item)
+		}
+		return svcs.Items, nil
+	}
 
 	cmd := fmt.Sprintf("%s kubectl get svc -o json", names.KconfEnv)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("can not get list of services, %s, %v", out, err)
 	}
-	svcs := svcItems{}
 	err = json.Unmarshal([]byte(out), &svcs)
 	if err != nil {
 		log.DebugLog(log.DebugLevelMexos, "cannot unmarshal svc json", "out", out, "err", err)

@@ -36,9 +36,18 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst) error {
-	log.DebugLog(log.DebugLevelMexos, "seed docker secret")
+func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst, singleNode bool) error {
+	log.DebugLog(log.DebugLevelMexos, "seed docker secret", "singleNode", singleNode)
 
+	if singleNode {
+		cmd := fmt.Sprintf("docker login %s -u %s -p %s", GetCloudletDockerRegistry(), "mobiledgex", GetCloudletDockerPass())
+		//TODO allow different docker registry as specified in the manifest
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", GetCloudletDockerRegistry(), out, err)
+		}
+		return nil
+	}
 	masteraddr, err := GetMasterIP(inst, GetCloudletExternalNetwork())
 	if err != nil {
 		return err
