@@ -11,6 +11,15 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+func startLocalMexAgent(logfile string) error {
+	var err error
+	args := []string{"--debug", "--proxy", ""}
+	var envs []string
+
+	_, err = process.StartLocal("mexosagent", "mexosagent", args, envs, logfile)
+	return err
+}
+
 func RunLocalMexAgent() error {
 	os := runtime.GOOS
 	log.DebugLog(log.DebugLevelMexos, "runLocalMexAgent", "os", os)
@@ -21,8 +30,7 @@ func RunLocalMexAgent() error {
 	// eventually be running this as a container in either case which will change this.
 	switch os {
 	case "darwin":
-		var localMexos process.MexAgentLocal
-		return localMexos.Start("/tmp/mexosagent.log")
+		return startLocalMexAgent("/tmp/mexosagent.log")
 	case "linux":
 		out, err := sh.Command("sudo", "service", "mexosagent", "start").CombinedOutput()
 		if err != nil {
