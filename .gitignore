@@ -47,3 +47,11 @@ flycheck_*.el
 
 vendor
 openstack-tenant/agent/build
+
+mc/mc
+mc/orm/dump.sql
+*rbac.conf
+mc/orm/*.mc2.go
+mc/orm/*_mc2_test.go
+mc/rbac.conf
+*.postgres

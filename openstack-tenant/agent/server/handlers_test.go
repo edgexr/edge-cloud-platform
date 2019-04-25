@@ -2,8 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
 	"testing"
+
+	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/api"
 )
 
 var validOutput = `
@@ -95,7 +96,7 @@ func TestCreateNginxConf(t *testing.T) {
 
 var defaultConfOut = `
 server {
-    listen       7777;
+    listen       64333;
     server_name  test123;
     ssl_certificate        /etc/ssl/certs/server.crt;
     ssl_certificate_key    /etc/ssl/certs/server.key;

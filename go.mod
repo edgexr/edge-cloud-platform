@@ -4,35 +4,50 @@ go 1.12
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
+	github.com/casbin/casbin v1.6.0
+	github.com/casbin/gorm-adapter v0.0.0-20171006093545-e56c6daebd5e
 	github.com/cloudflare/cloudflare-go v0.8.5
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/machine v0.16.1 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190410145444-c548f45dcf1d // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190410145444-c548f45dcf1d // indirect
 	github.com/fsouza/go-dockerclient v1.3.6
 	github.com/ghodss/yaml v1.0.0
+	github.com/gogo/googleapis v1.0.0
+	github.com/gogo/protobuf v1.2.0
 	github.com/golang/protobuf v1.3.1
+	github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42
 	github.com/gophercloud/gophercloud v0.0.0-20190330013820-4d3066f119fa
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
+	github.com/jinzhu/gorm v1.9.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
+	github.com/lib/pq v1.0.0
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.2
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/nanobox-io/golang-ssh v0.0.0-20190309194042-12ea65d3a59d
+	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pelletier/go-toml v1.3.0
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/stretchr/testify v1.3.0
+	github.com/xanzy/go-gitlab v0.16.0
+	go.uber.org/zap v1.8.0
+	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190401181712-f467c93bbac2
 	google.golang.org/grpc v1.19.1
+	gopkg.in/yaml.v2 v2.2.2
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
 	k8s.io/apimachinery v0.0.0-20190402064448-91ffda0f6be2 // indirect
