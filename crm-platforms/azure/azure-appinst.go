@@ -17,7 +17,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if err = s.SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient()
+	client, err := s.GetPlatformClient(clusterInst)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if err = s.SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient()
+	client, err := s.GetPlatformClient(clusterInst)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 	if err := s.SetupKconf(clusterInst); err != nil {
 		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient()
+	client, err := s.GetPlatformClient(clusterInst)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	if err != nil {
 		return err
 	}
-	client, err := s.generic.GetPlatformClient()
+	client, err := s.generic.GetPlatformClient(clusterInst)
 	if err != nil {
 		return err
 	}
