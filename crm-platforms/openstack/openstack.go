@@ -83,15 +83,21 @@ func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 }
 
 func (s *Platform) GetPlatformClientRootLB(rootLBName string) (pc.PlatformClient, error) {
+	log.DebugLog(log.DebugLevelMexos, "GetPlatformClientRootLB", "rootLBName", rootLBName)
+
 	if rootLBName == "" {
-		return nil, fmt.Errorf("cannot validate kubernetes parameters, rootLB is empty")
+		return nil, fmt.Errorf("cannot GetPlatformClientRootLB, rootLB is empty")
 	}
 	if mexos.GetCloudletExternalNetwork() == "" {
-		return nil, fmt.Errorf("validate kubernetes parameters, missing external network in platform config")
+		return nil, fmt.Errorf("GetPlatformClientRootLB, missing external network in platform config")
 	}
 	return mexos.GetSSHClient(rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 }
 
-func (s *Platform) GetPlatformClient() (pc.PlatformClient, error) {
-	return s.GetPlatformClientRootLB(s.rootLBName)
+func (s *Platform) GetPlatformClient(clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+	rootLBName := s.rootLBName
+	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+	}
+	return s.GetPlatformClientRootLB(rootLBName)
 }

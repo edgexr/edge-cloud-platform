@@ -45,7 +45,7 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done
 	time.Sleep(3 * time.Second)
-	client, err := s.GetPlatformClient()
+	client, err := s.GetPlatformClient(clusterInst)
 	if err != nil {
 		return err
 	}
