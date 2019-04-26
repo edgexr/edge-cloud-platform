@@ -1,85 +1,75 @@
 description: adds and deletes from mc
 tests:
 - name: verify no users to start
-  testspec:
-    actions: [mcapi-showusers]
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mcappdata_empty.yml'
-      filetype: mcusers
+  actions: [mcapi-showusers]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcusers
 - name: verify no provisioned data to start
-  testspec:
-    actions: [mcapi-show]
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mcappdata_empty.yml'
-      filetype: mcdata
+  actions: [mcapi-show]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
 - name: create users
-  testspec:
-    actions: [mcapi-createusers]
-    apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+  actions: [mcapi-createusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
 - name: admin creates controllers, flavors; verify it is there
-  testspec:
-    actions: [mcapi-create, mcapi-show]
-    apifile: '{{datadir2}}/mc_admin_data.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_admin_data.yml'
-      filetype: mcdata
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_data.yml'
+    filetype: mcdata
 - name: user1 creates operator/cloudlets; verify it is there
-  testspec:
-    actions: [mcapi-create, mcapi-show]
-    apifile: '{{datadir2}}/mc_user1_data.yml'
-    curuserfile: '{{datadir2}}/mc_user1.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_user1_data_show.yml'
-      filetype: mcdata
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_data_show.yml'
+    filetype: mcdata
 - name: user2 creates apps; verify it is there
-  testspec:
-    actions: [mcapi-create, mcapi-show]
-    apifile: '{{datadir2}}/mc_user2_data.yml'
-    curuserfile: '{{datadir2}}/mc_user2.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_user2_data_show.yml'
-      filetype: mcdata
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_user2_data.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_data_show.yml'
+    filetype: mcdata
 - name: user2 deletes apps; verify it is empty
-  testspec:
-    actions: [mcapi-delete, mcapi-show]
-    apifile: '{{datadir2}}/mc_user2_data.yml'
-    curuserfile: '{{datadir2}}/mc_user2.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_cloudlets_flavors.yml'
-      filetype: mcdata
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_user2_data.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_cloudlets_flavors.yml'
+    filetype: mcdata
 - name: user1 deletes operator/cloudlets; verify it is empty
-  testspec:
-    actions: [mcapi-delete, mcapi-show]
-    apifile: '{{datadir2}}/mc_user1_data.yml'
-    curuserfile: '{{datadir2}}/mc_user1.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_flavors.yml'
-      filetype: mcdata
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_flavors.yml'
+    filetype: mcdata
 - name: admin delete controllers, flavors, verify it is empty
-  testspec:
-    actions: [mcapi-delete, mcapi-show]
-    apifile: '{{datadir2}}/mc_admin_data.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mcappdata_empty.yml'
-      filetype: mcdata
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
 - name: delete users, verify no users left
-  testspec:
-    actions: [mcapi-deleteusers, mcapi-showusers]
-    apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
-    compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mcappdata_empty.yml'
-      filetype: mcusers
+  actions: [mcapi-deleteusers, mcapi-showusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcusers
