@@ -50,8 +50,10 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
-	k8s.io/apimachinery v0.0.0-20190402064448-91ffda0f6be2 // indirect
+	k8s.io/apimachinery v0.0.0-20190402064448-91ffda0f6be2
+	k8s.io/client-go v0.0.0-20180517072830-4bb327ea2f8e
 	k8s.io/klog v0.2.0 // indirect
+	k8s.io/kubernetes v1.14.1
 )
 
 replace github.com/mobiledgex/edge-cloud => ../edge-cloud
@@ -366,7 +368,7 @@ replace k8s.io/client-go => k8s.io/client-go v0.0.0-20180517072830-4bb327ea2f8e
 
 replace sigs.k8s.io/yaml => sigs.k8s.io/yaml v1.1.0
 
-replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.3
+replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.4
 
 replace github.com/kr/pty => github.com/kr/pty v1.1.3
 

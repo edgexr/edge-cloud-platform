@@ -9,6 +9,7 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/nmcclain/ldap"
@@ -18,7 +19,7 @@ import (
 // Server struct is just to track sql/db so we can stop them later.
 type Server struct {
 	config       *ServerConfig
-	sql          *process.Sql
+	sql          *intprocess.Sql
 	db           *gorm.DB
 	echo         *echo.Echo
 	vault        *process.Vault
@@ -125,7 +126,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}
 
 	if config.RunLocal {
-		sql := process.Sql{
+		sql := intprocess.Sql{
 			Common: process.Common{
 				Name: "sql1",
 			},

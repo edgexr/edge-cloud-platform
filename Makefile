@@ -51,9 +51,6 @@ install-edge-cloud:
 install-internal:
 	go install ./...
 
-install-dind:
-	./install-dind.sh
-
 #
 # Linux Target OS
 #
@@ -77,3 +74,41 @@ install-edge-cloud-linux:
 
 install-internal-linux:
 	${LINUX_XCOMPILE_ENV} go install ./...
+
+#
+# Test
+#
+
+test:
+	e2e-tests -testfile ./e2e-tests/testfiles/regression_run.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml
+	make -C ../edge-cloud test
+
+test-debug:
+	e2e-tests -testfile ./e2e-tests/testfiles/regression_run.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	make -C ../edge-cloud test-debug
+
+# start/restart local processes to run individual python or other tests against
+test-start:
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_start_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+# restart process, clean data
+test-reset:
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_reset_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+test-stop:
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+# QA testing - manual
+test-robot-start:
+	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_automation.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+test-robot-stop:
+	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+## note: DIND requires make install-dind from edge-cloud to be run once
+test-dind-start:
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_start_create_dind.yml -setupfile ./e2e-tests/setups/local_dind.yml -notimestamp -stop
+
+test-dind-stop:
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/delete_dind_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_dind.yml -notimestamp
+
