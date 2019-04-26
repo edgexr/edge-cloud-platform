@@ -1,0 +1,5 @@
+description: stops everything and cleans up
+tests:
+- name: stop services and cleanup
+  testspec:
+    actions: [stop, cleanup]

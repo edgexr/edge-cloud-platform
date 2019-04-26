@@ -1,0 +1,7 @@
+##
+##
+description: fetches remote logs 
+
+tests:
+- name: fetch logs
+  actions: [fetchlogs]
