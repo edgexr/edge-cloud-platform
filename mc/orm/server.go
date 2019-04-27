@@ -51,7 +51,7 @@ var DefaultSuperuser = "mexadmin"
 var DefaultSuperpass = "mexadmin123"
 
 var db *gorm.DB
-var enforcer *casbin.Enforcer
+var enforcer *casbin.SyncedEnforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
 var gitlabSync *GitlabSync
@@ -175,7 +175,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth := e.Group(root + "/auth")
 	auth.Use(AuthCookie)
 	// authenticated routes - rbac via casbin (false arg disables logging)
-	enforcer = casbin.NewEnforcer(config.RbacModelPath, adapter, false)
+	enforcer = casbin.NewSyncedEnforcer(config.RbacModelPath, adapter, false)
 	// authenticated routes - gorm router
 	auth.POST("/user/show", ShowUser)
 	auth.POST("/user/current", CurrentUser)
