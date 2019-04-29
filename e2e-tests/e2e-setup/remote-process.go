@@ -16,6 +16,14 @@ import (
 // this happens much faster, but occasionally it takes longer
 var maxWaitForServiceSeconds = 900 //15 min
 
+func getAnsibleHome() string {
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		log.Fatalf("GOPATH not set")
+	}
+	return goPath + "/src/github.com/mobiledgex/edge-cloud-infra/ansible"
+}
+
 func getExternalApiAddress(internalApiAddr string, externalHost string) string {
 	//in cloud deployments, the internal address the controller listens to may be different than the
 	//external address which clients need to use.   So use the external hostname and api port
@@ -126,7 +134,7 @@ func UpdateAPIAddrs() bool {
 
 func runPlaybook(playbook string, evars []string, procNamefilter string) bool {
 	invFile, found := createAnsibleInventoryFile(procNamefilter)
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 
 	if !setupmex.StageYamlFile("setup.yml", ansHome+"/playbooks", &Deployment) {
 		return false
@@ -142,6 +150,9 @@ func runPlaybook(playbook string, evars []string, procNamefilter string) bool {
 		argstr += ev
 		argstr += " "
 	}
+	// TODO: migrate playbooks to support python3
+	argstr += "ansible_python_interpreter=/usr/bin/python"
+
 	log.Printf("Running Playbook: %s with extra-vars: %s\n", playbook, argstr)
 	cmd := exec.Command("ansible-playbook", "-i", invFile, "-e", argstr, playbook)
 
@@ -166,12 +177,8 @@ func hostNameToAnsible(hostname string) string {
 }
 
 func createAnsibleInventoryFile(procNameFilter string) (string, bool) {
-	ansHome := os.Getenv("ANSIBLE_DIR")
-	log.Printf("Creating inventory file in ANSIBLE_DIR:%s using procname filter: %s\n", ansHome, procNameFilter)
-
-	if ansHome == "" {
-		fmt.Fprint(os.Stderr, "Need to set ANSIBLE_DIR environment variable for deployment")
-	}
+	ansHome := getAnsibleHome()
+	log.Printf("Creating inventory file in dir: %s using procname filter: %s\n", ansHome, procNameFilter)
 
 	invfile, err := os.Create(ansHome + "/mex_inventory")
 	log.Printf("Creating inventory file: %v", invfile.Name())
@@ -234,7 +241,7 @@ func DeployProcesses() bool {
 		return true //nothing to do for k8s
 	}
 
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 	playbook := ansHome + "/playbooks/mex_deploy.yml"
 	return runPlaybook(playbook, []string{}, "")
 }
@@ -243,7 +250,7 @@ func StartRemoteProcesses(processName string) bool {
 	if IsK8sDeployment() {
 		return true //nothing to do for k8s
 	}
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 	playbook := ansHome + "/playbooks/mex_start.yml"
 
 	return runPlaybook(playbook, []string{}, processName)
@@ -254,7 +261,7 @@ func StopRemoteProcesses(processName string) bool {
 		return true //nothing to do for k8s
 	}
 
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 
 	if processName != "" {
 		p := GetProcessByName(processName)
@@ -272,7 +279,7 @@ func StopRemoteProcesses(processName string) bool {
 }
 
 func CleanupRemoteProcesses() bool {
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 	playbook := ansHome + "/playbooks/mex_cleanup.yml"
 	return runPlaybook(playbook, []string{}, "")
 }
@@ -282,7 +289,7 @@ func FetchRemoteLogs(outputDir string) bool {
 		//TODO: need to get the logs from K8s
 		return true
 	}
-	ansHome := os.Getenv("ANSIBLE_DIR")
+	ansHome := getAnsibleHome()
 	playbook := ansHome + "/playbooks/mex_fetch_logs.yml"
 	return runPlaybook(playbook, []string{"local_log_path=" + outputDir}, "")
 }
