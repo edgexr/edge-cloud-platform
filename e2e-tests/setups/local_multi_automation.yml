@@ -60,8 +60,8 @@ controllers:
   httpaddr: "0.0.0.0:36001"
   notifyaddr: "127.0.0.1:37001"
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: ctrl2
@@ -70,8 +70,8 @@ controllers:
   httpaddr: "0.0.0.0:36002"
   notifyaddr: "127.0.0.1:37002"
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 
@@ -85,12 +85,12 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"operator_key":{"name":"GDDT"},"name":"automationBuckhornCloudlet"}'
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
-    LOCAPI_USER: mexserver
-    LOCAPI_PASSWD: eC2835!
+     LOCAPI_USER: mexserver
+     LOCAPI_PASSWD: eC2835!
 
 crms:
 - name: crm1
@@ -99,8 +99,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-1"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm2
@@ -109,8 +109,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-2"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm3
@@ -119,8 +119,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-3"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm4
@@ -129,8 +129,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-4"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm5
@@ -139,8 +139,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-5"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm6
@@ -149,8 +149,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-6"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm7
@@ -159,8 +159,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-7"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm8
@@ -169,8 +169,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-8"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm9
@@ -179,8 +179,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-9"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm10
@@ -189,8 +189,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"tmocloud-10"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm11
@@ -199,8 +199,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"azure"},"name":"azurecloud-1"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm12
@@ -209,8 +209,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"gcp"},"name":"gcpcloud-1"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 - name: crm13
@@ -219,8 +219,8 @@ crms:
   cloudletkey: '{"operator_key":{"name":"att"},"name":"attcloud-1"}'
   platform: fakecloudlet
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 mcs:
@@ -229,9 +229,9 @@ mcs:
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     serverkey: "{{tlsoutdir}}/mex-server.key"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
 sqls:
@@ -241,7 +241,24 @@ sqls:
   username: mcuser
   dbname: mcdb
   tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     serverkey: "{{tlsoutdir}}/mex-server.key"
+  hostname: "127.0.0.1"
+
+clustersvcs:
+- name: cluster-svc1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  tls:
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: cluster-svc2
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55002"
+  tls:
+     servercert: "{{tlsoutdir}}/mex-server.crt"
+     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
