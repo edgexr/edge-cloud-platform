@@ -13,6 +13,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+var GCPServiceAccount string //temp
+
 type Platform struct {
 	// GcpProperties needs to move to edge-cloud-infra
 	props edgeproto.GcpProperties
@@ -51,12 +53,25 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	if s.props.Zone == "" {
 		return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
 	}
+	s.props.ServiceAccount = os.Getenv("MEX_GCP_SERVICE_ACCOUNT")
+	if s.props.ServiceAccount == "" {
+		return fmt.Errorf("Env variable MEX_GCP_SERVICE_ACCOUNT not set")
+	}
+	s.props.GCPAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
+	if s.props.GCPAuthKeyUrl == "" {
+		//default it
+		s.props.GCPAuthKeyUrl = "https://vault.mobiledgex.net/v1/secret/data/cloudlet/gcp/auth_key.json"
+		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GCPAuthKeyUrl)
+	}
 	return nil
 }
 
 func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	log.DebugLog(log.DebugLevelMexos, "GetLimits (GCP)")
-
+	err := s.GCPLogin()
+	if err != nil {
+		return err
+	}
 	var quotas []GCPQuotasList
 
 	filter := fmt.Sprintf("name=(%s) AND quotas.metric=(CPUS, DISKS_TOTAL_GB)", s.props.Zone)
