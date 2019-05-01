@@ -28,6 +28,13 @@ type VaultResponse struct {
 	Data VaultData `json:"data"`
 }
 
+type VaultGenericData struct {
+	Data interface{} `json:"data"`
+}
+type VaultGenericResponse struct {
+	Data VaultGenericData `json:"data"`
+}
+
 func GetVaultData(url string) ([]byte, error) {
 	vault_token := os.Getenv("VAULT_TOKEN")
 	if vault_token == "" {
@@ -59,6 +66,15 @@ func GetVaultData(url string) ([]byte, error) {
 
 func GetVaultEnvResponse(contents []byte) (*VaultResponse, error) {
 	vr := &VaultResponse{}
+	err := yaml.Unmarshal(contents, vr)
+	if err != nil {
+		return nil, err
+	}
+	return vr, nil
+}
+
+func GetVaultGenericResponse(contents []byte) (*VaultGenericResponse, error) {
+	vr := &VaultGenericResponse{}
 	err := yaml.Unmarshal(contents, vr)
 	if err != nil {
 		return nil, err
