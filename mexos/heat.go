@@ -44,29 +44,6 @@ var heatStackLock sync.Mutex
 // This is the resources part of a template for a VM. It is for use within another template
 // the parameters under VMP can come from either a standalone struture (VM Create) or a cluster (for rootLB)
 var vmTemplateResources = `
-   {{if .DeploymentManifest}}
-   vm_init:
-      type: OS::Heat::CloudConfig
-      properties:
-         cloud_config:
-{{ Indent .DeploymentManifest 16 }}
-   {{- end}}
-   {{if .Command}}
-   single_command:
-      type: OS::Heat::CloudConfig
-      properties:
-         cloud_config:
-            merge_how: 'dict(recurse_array,no_replace)+list(append)'
-            #cloud-config
-            runcmd:
-             - {{.Command}}
-   {{- end}}
-   server_init:
-      type: OS::Heat::MultipartMime
-      properties:
-         parts:
-          {{if .DeploymentManifest}} - config: {get_resource: vm_init} {{- end}}
-          {{if .Command}} - config: {get_resource: single_command} {{- end}}
    {{.VMName}}:
       type: OS::Nova::Server
       properties:
@@ -94,12 +71,21 @@ var vmTemplateResources = `
             edgeproxy: {{.GatewayIP}}
             mex-flavor: {{.Flavor}}
             privaterouter: {{.MEXRouterIP}}
-         user_data_format: RAW		
+         user_data_format: RAW
          user_data: 
             get_file: /root/.mobiledgex/userdata.txt 
-        {{else}}
-         user_data_format: SOFTWARE_CONFIG
-         user_data: { get_resource: server_init }
+        {{- end}}
+        {{if .DeploymentManifest}}
+         user_data_format: RAW
+         user_data: |
+{{ Indent .DeploymentManifest 13 }}
+        {{- end}}
+        {{if .Command}}
+         user_data_format: RAW
+         user_data: |
+            #cloud-config
+            runcmd:
+             - {{.Command}}
         {{- end}}
   {{if .AuthPublicKey}}
    ssh_key_pair:
