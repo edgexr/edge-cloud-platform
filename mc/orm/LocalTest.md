@@ -20,7 +20,7 @@ If you want to test the controller APIS as well, in separate windows each, run
 ```
 $ etcd
 $ controller -d api,notify
-$ crmserver -cloudletKey '{"operator_key":{"name":"bigwaves"},"name":"oceanview"}' -d notify,mexos -platform fake
+$ crmserver -cloudletKey '{"operator_key":{"name":"bigwaves"},"name":"oceanview"}' -d notify,mexos -platform fakecloudlet
 ```
 
 ## User and Organization Management
