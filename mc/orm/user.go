@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -104,6 +105,13 @@ func CreateUser(c echo.Context) error {
 	// password should be passed through in Passhash field.
 	user.Passhash, user.Salt, user.Iter = NewPasshash(user.Passhash)
 	if err := db.Create(&user).Error; err != nil {
+		//check specifically for duplicate username and/or emails
+		if err.Error() == "pq: duplicate key value violates unique constraint \"users_pkey\"" {
+			return setReply(c, fmt.Errorf("Username already exists"), nil)
+		}
+		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
+			return setReply(c, fmt.Errorf("Email already in use"), nil)
+		}
 		return setReply(c, dbErr(err), nil)
 	}
 	gitlabCreateLDAPUser(&user)
