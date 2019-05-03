@@ -8,6 +8,7 @@ import (
 	"time"
 
 	valid "github.com/asaskevich/govalidator"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -55,7 +56,7 @@ func getRootLB(name string) (*MEXRootLB, error) {
 }
 
 var rootLBPorts = []int{
-	18889, //mexosagent HTTP server
+	int(cloudcommon.RootLBL7Port), // L7 access port
 }
 
 //CreateRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
@@ -150,7 +151,7 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string) error {
 	if err != nil {
 		return fmt.Errorf("can't download htpassword %v", err)
 	}
-	return RunMEXOSAgentService(client)
+	return nil
 }
 
 //WaitForRootLB waits for the RootLB instance to be up and copies of SSH credentials for internal networks.

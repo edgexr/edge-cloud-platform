@@ -13,7 +13,8 @@ import (
 )
 
 // mexdind wraps the generic dind implementation with
-// mex-specific behavior, such as setting up DNS and nginx proxy.
+// mex-specific behavior, such as setting up DNS and
+// registry.mobiledgex.net access secrets.
 
 type Platform struct {
 	generic       dind.Platform
@@ -44,10 +45,6 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	}
 	mexos.CloudletInfraCommon.NetworkScheme = s.NetworkScheme
 
-	if err := mexos.RunLocalMexAgent(); err != nil {
-		return err
-	}
-
 	fqdn := cloudcommon.GetRootLBFQDN(key)
 	ipaddr, err := s.GetDINDServiceIP()
 	if err != nil {
@@ -59,7 +56,7 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "done setup mexosagent for mexdind")
+	log.DebugLog(log.DebugLevelMexos, "done init mexdind")
 	return nil
 }
 

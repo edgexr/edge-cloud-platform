@@ -5,29 +5,36 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func AddSecurityRules(ports []PortDetail) error {
+func AddSecurityRules(ports []dme.AppPort) error {
 	sg := GetCloudletSecurityGroup()
 	allowedClientCIDR := GetAllowedClientCIDR()
 	for _, port := range ports {
 		//todo: distinguish already-exists errors from others
 		portString := fmt.Sprintf("%d", port.PublicPort)
-		if err := AddSecurityRuleCIDR(allowedClientCIDR, strings.ToLower(port.Proto), sg, portString); err != nil {
+		proto, err := edgeproto.L4ProtoStr(port.Proto)
+		if err != nil {
+			return err
+		}
+		if err := AddSecurityRuleCIDR(allowedClientCIDR, proto, sg, portString); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DeleteProxySecurityRules(rootLB *MEXRootLB, ipaddr string, appName string) error {
+func DeleteProxySecurityRules(client pc.PlatformClient, ipaddr string, appName string) error {
 
 	log.DebugLog(log.DebugLevelMexos, "delete proxy rules", "name", appName)
-	err := DeleteNginxProxy(rootLB.Name, appName)
-
+	err := nginx.DeleteNginxProxy(client, appName)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "rootlb", rootLB.Name, "error", err)
+		log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "error", err)
 	}
 	if err := DeleteSecurityRule(ipaddr); err != nil {
 		return err

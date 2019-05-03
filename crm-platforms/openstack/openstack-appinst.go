@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/flavor"
@@ -55,7 +56,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			action.ExternalIP = rootLBIPaddr
 			return &action, nil
 		}
-		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, masterIP, true)
+		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerNetwork("host"))
 		if err != nil {
 			return fmt.Errorf("CreateKubernetesAppInst error: %v", err)
 		}
@@ -188,7 +189,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		if err != nil {
 			return err
 		} // Clean up security rules and nginx proxy
-		if err := mexos.DeleteProxySecurityRules(s.rootLB, masterIP, names.AppName); err != nil {
+		if err := mexos.DeleteProxySecurityRules(client, masterIP, names.AppName); err != nil {
 			log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 		}
 		// Clean up DNS entries
