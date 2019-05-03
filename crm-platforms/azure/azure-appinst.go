@@ -97,7 +97,7 @@ func (s *Platform) SetupKconf(clusterInst *edgeproto.ClusterInst) error {
 	if err := s.AzureLogin(); err != nil {
 		return err
 	}
-	clusterName := clusterInst.Key.ClusterKey.Name
+	clusterName := AzureSanitize(clusterInst.Key.ClusterKey.Name)
 	rg := GetResourceGroupForCluster(clusterInst)
 	if err := GetAKSCredentials(rg, clusterName); err != nil {
 		return fmt.Errorf("unable to get AKS credentials %v", err)

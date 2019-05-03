@@ -31,7 +31,7 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	var err error
 
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
-	clusterName := strings.NewReplacer(".", "").Replace(clusterInst.Key.ClusterKey.Name)
+	clusterName := AzureSanitize(clusterInst.Key.ClusterKey.Name)
 	location := s.props.Location
 
 	if err = s.AzureLogin(); err != nil {
@@ -73,4 +73,8 @@ func (s *Platform) DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
 	}
 	return DeleteAKSCluster(resourceGroup)
 
+}
+
+func AzureSanitize(clusterName string) string {
+	return strings.NewReplacer(".", "").Replace(clusterName)
 }
