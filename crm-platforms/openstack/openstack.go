@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -75,6 +76,16 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "ok, SetupRootLB")
+
+	// set up L7 load balancer
+	client, err := s.GetPlatformClientRootLB(rootLBName)
+	if err != nil {
+		return err
+	}
+	err = nginx.InitL7Proxy(client, nginx.WithDockerNetwork("host"))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -25,23 +25,6 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return err
 	}
 
-	masterIP := s.GetMasterAddr(names.ClusterName)
-	log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind")
-
-	portDetail, err := mexos.GetPortDetail(appInst)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "appInst", appInst, "err", err)
-		return err
-	}
-
-	if len(portDetail) > 0 {
-		log.DebugLog(log.DebugLevelMexos, "call AddNginxProxy for dind", "ports", portDetail)
-		if err := mexos.AddNginxProxy("localhost", names.AppName, masterIP, portDetail, s.GetDockerNetworkName(names.ClusterName)); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add nginx proxy", "appName", names.AppName, "ports", portDetail)
-			return err
-		}
-	}
-
 	// Use generic DIND to create the AppInst
 	err = s.generic.CreateAppInst(clusterInst, app, appInst, flavor)
 	if err != nil {
@@ -49,6 +32,11 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	}
 
 	// set up DNS
+	cluster, err := dind.FindCluster(names.ClusterName)
+	if err != nil {
+		return err
+	}
+	masterIP := cluster.MasterAddr
 	externalIP, err := s.GetDINDServiceIP()
 	getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 		action := mexos.DnsSvcAction{}
@@ -92,19 +80,6 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete AppInst", "error", err)
 		return err
 	}
-
-	log.DebugLog(log.DebugLevelMexos, "call DeleteNginxProxy for dind")
-	portDetail, err := mexos.GetPortDetail(appInst)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "GetPortDetail failed", "appInst", appInst, "err", err)
-		return err
-	}
-	if len(portDetail) > 0 {
-		if err = mexos.DeleteNginxProxy("localhost", names.AppName); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", names.AppName)
-			return err
-		}
-	}
 	return nil
 }
 
@@ -114,15 +89,6 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 
 func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	return s.generic.GetContainerCommand(clusterInst, app, appInst, req)
-}
-
-// Get gets the ip address of the k8s master that nginx proxy will route to
-func (s *Platform) GetMasterAddr(clusterName string) string {
-	c, found := s.generic.Clusters[clusterName]
-	if !found {
-		return ""
-	}
-	return c.MasterAddr
 }
 
 // GetDINDServiceIP depending on the type of DIND cluster will return either the interface or external address
@@ -153,13 +119,4 @@ func GetExternalPublicAddr() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), err
-}
-
-func (s *Platform) GetDockerNetworkName(clusterName string) string {
-	cluster, found := s.generic.Clusters[clusterName]
-	if !found {
-		log.DebugLog(log.DebugLevelMexos, "ERROR - Cluster %s doesn't exists", clusterName)
-		return ""
-	}
-	return "kubeadm-dind-net-" + cluster.ClusterName + "-" + dind.GetClusterID(cluster.ClusterID)
 }
