@@ -143,7 +143,9 @@ func TestController(t *testing.T) {
 	testAddUserRole(t, mcClient, uri, tokenOper3, org3, "OperatorViewer", user5.Name, Fail)
 	testAddUserRole(t, mcClient, uri, tokenOper4, org3, "OperatorViewer", user5.Name, Fail)
 
-	// make sure developer and operator cannot see or modify controllers
+	// make sure developer and operator cannot modify controllers
+	// all users can see controllers (required for UI to be able to
+	// fork requests to each controller as the user).
 	ctrlNew := ormapi.Controller{
 		Region:  "Bad",
 		Address: "bad.mobiledgex.net",
@@ -153,11 +155,11 @@ func TestController(t *testing.T) {
 	status, err = mcClient.CreateController(uri, tokenOper, &ctrlNew)
 	require.Equal(t, http.StatusForbidden, status)
 	ctrls, status, err = mcClient.ShowController(uri, tokenDev)
-	require.Equal(t, http.StatusForbidden, status)
-	require.Equal(t, 0, len(ctrls))
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(ctrls))
 	ctrls, status, err = mcClient.ShowController(uri, tokenOper)
-	require.Equal(t, http.StatusForbidden, status)
-	require.Equal(t, 0, len(ctrls))
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(ctrls))
 
 	// admin can do everything
 	goodPermTestFlavor(t, mcClient, uri, tokenAd, ctrl.Region, "", icnt)

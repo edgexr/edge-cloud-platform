@@ -105,9 +105,6 @@ func ShowController(c echo.Context) error {
 
 func ShowControllerObj(claims *UserClaims) ([]ormapi.Controller, error) {
 	ctrls := []ormapi.Controller{}
-	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionView) {
-		return nil, echo.ErrForbidden
-	}
 	err := db.Find(&ctrls).Error
 	if err != nil {
 		return nil, dbErr(err)
