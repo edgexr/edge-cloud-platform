@@ -123,6 +123,27 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
 
+	// create new admin user
+	admin := ormapi.User{
+		Name:     "Admin",
+		Email:    "Admin@gmail.com",
+		Passhash: "admin-password",
+	}
+	status, err = mcClient.CreateUser(uri, &admin)
+	require.Nil(t, err, "create admin user")
+	require.Equal(t, http.StatusOK, status, "create admin user status")
+	// add admin user as admin role
+	roleArg := ormapi.Role{
+		Username: admin.Name,
+		Role:     "AdminManager",
+	}
+	status, err = mcClient.AddUserRole(uri, token, &roleArg)
+	require.Nil(t, err, "add user role")
+	require.Equal(t, http.StatusOK, status)
+	// login as new admin
+	tokenAdmin, err := mcClient.DoLogin(uri, admin.Name, admin.Passhash)
+	require.Nil(t, err, "login as admin")
+
 	// check org membership as mister x
 	orgs, status, err := mcClient.ShowOrgs(uri, tokenMisterX)
 	require.Nil(t, err)
@@ -139,6 +160,10 @@ func TestServer(t *testing.T) {
 	require.Equal(t, org2.Type, orgs[0].Type)
 	// super user should be able to show all orgs
 	orgs, status, err = mcClient.ShowOrgs(uri, token)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 2, len(orgs))
+	orgs, status, err = mcClient.ShowOrgs(uri, tokenAdmin)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 2, len(orgs))
@@ -159,7 +184,11 @@ func TestServer(t *testing.T) {
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 3, len(roleAssignments))
+	require.Equal(t, 4, len(roleAssignments))
+	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenAdmin)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 4, len(roleAssignments))
 
 	// show org users as mister x
 	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, org1.Name)
@@ -177,25 +206,29 @@ func TestServer(t *testing.T) {
 	users, status, err = mcClient.ShowUsers(uri, token, "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 3, len(users))
+	require.Equal(t, 4, len(users))
+	users, status, err = mcClient.ShowUsers(uri, tokenAdmin, "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 4, len(users))
 
 	// check that x and y cannot see each other's org users
 	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, org2.Name)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	users, status, err = mcClient.ShowUsers(uri, tokenMisterY, org1.Name)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, "foobar")
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
 	// check that x and y cannot delete each other's orgs
 	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org2)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	status, err = mcClient.DeleteOrg(uri, tokenMisterY, &org1)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
 	// create more users
@@ -215,11 +248,20 @@ func TestServer(t *testing.T) {
 	require.Equal(t, 3, len(users))
 	// make sure they can't see users from other org
 	users, status, err = mcClient.ShowUsers(uri, token3, org2.Name)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	users, status, err = mcClient.ShowUsers(uri, token4, org2.Name)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+
+	// normal user cannot remove admin roles from others
+	status, err = mcClient.RemoveUserRole(uri, tokenMisterX, &roleArg)
+	require.NotNil(t, err, "remove user role")
+	require.Equal(t, http.StatusForbidden, status)
+	// admin user can remove role
+	status, err = mcClient.RemoveUserRole(uri, tokenAdmin, &roleArg)
+	require.Nil(t, err, "remove user role")
+	require.Equal(t, http.StatusOK, status)
 
 	// delete orgs
 	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org1)
@@ -239,6 +281,9 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	status, err = mcClient.DeleteUser(uri, token4, user4)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteUser(uri, tokenAdmin, &admin)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
