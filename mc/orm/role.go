@@ -303,9 +303,6 @@ func RemoveUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 	if role.Username == "" {
 		return fmt.Errorf("Username not specified")
 	}
-	if role.Org == "" {
-		return fmt.Errorf("Organization not specified")
-	}
 	if role.Role == "" {
 		return fmt.Errorf("Role not specified")
 	}
