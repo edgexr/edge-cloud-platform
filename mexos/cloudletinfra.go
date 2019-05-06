@@ -145,10 +145,6 @@ func GetCleanupOnFailure() bool {
 func GetCloudletTenant() string {
 	return "null"
 }
-func GetCloudletUserData() string {
-	return MEXDir() + "/userdata.txt"
-}
-
 func GetCloudletSecurityGroup() string {
 	sg := os.Getenv("MEX_SECURITY_GROUP")
 	if sg == "" {
