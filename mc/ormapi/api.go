@@ -66,17 +66,18 @@ type NewPassword struct {
 // Structs used in replies
 
 type Result struct {
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
+	Code    int    `json:"code,omitempty"`
 }
 
-type ResultID struct {
-	Message string `json:"message"`
-	ID      int64  `json:"id"`
-}
+// Data struct sent back for streaming (chunked) commands.
+// Contains a data payload for incremental data, and a result
+// payload for an error result. Only one of the two will be used
+// in each chunk.
 
-type ResultName struct {
-	Message string `json:"message"`
-	Name    string `json:"name"`
+type StreamPayload struct {
+	Data   interface{} `json:"data,omitempty"`
+	Result *Result     `json:"result,omitempty"`
 }
 
 // all data is for full create/delete

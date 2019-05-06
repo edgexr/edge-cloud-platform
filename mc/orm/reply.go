@@ -19,20 +19,6 @@ func MsgErr(err error) *ormapi.Result {
 	return &ormapi.Result{Message: err.Error()}
 }
 
-func MsgID(msg string, id int64) *ormapi.ResultID {
-	return &ormapi.ResultID{
-		Message: msg,
-		ID:      id,
-	}
-}
-
-func MsgName(msg, name string) *ormapi.ResultName {
-	return &ormapi.ResultName{
-		Message: msg,
-		Name:    name,
-	}
-}
-
 func ctrlErr(c echo.Context, err error) error {
 	msg := "controller connect error, " + err.Error()
 	return c.JSON(http.StatusBadRequest, Msg(msg))

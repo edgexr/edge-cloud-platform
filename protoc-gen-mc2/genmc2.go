@@ -13,21 +13,23 @@ import (
 
 type GenMC2 struct {
 	*generator.Generator
-	support         gensupport.PluginSupport
-	tmpl            *template.Template
-	tmplMethodTest  *template.Template
-	tmplMessageTest *template.Template
-	regionStructs   map[string]struct{}
-	firstFile       bool
-	gentest         bool
-	importEcho      bool
-	importHttp      bool
-	importContext   bool
-	importIO        bool
-	importJson      bool
-	importTesting   bool
-	importRequire   bool
-	importOrmclient bool
+	support          gensupport.PluginSupport
+	tmpl             *template.Template
+	tmplMethodTest   *template.Template
+	tmplMessageTest  *template.Template
+	regionStructs    map[string]struct{}
+	firstFile        bool
+	gentest          bool
+	importEcho       bool
+	importHttp       bool
+	importContext    bool
+	importIO         bool
+	importJson       bool
+	importTesting    bool
+	importRequire    bool
+	importOrmclient  bool
+	importOrmapi     bool
+	importGrpcStatus bool
 }
 
 func (g *GenMC2) Name() string {
@@ -69,6 +71,12 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importOrmclient {
 		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormclient")
 	}
+	if g.importOrmapi {
+		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormapi")
+	}
+	if g.importGrpcStatus {
+		g.PrintImport("", "google.golang.org/grpc/status")
+	}
 }
 
 func (g *GenMC2) Generate(file *generator.FileDescriptor) {
@@ -80,6 +88,8 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importTesting = false
 	g.importRequire = false
 	g.importOrmclient = false
+	g.importOrmapi = false
+	g.importGrpcStatus = false
 
 	g.support.InitFile()
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
@@ -220,6 +230,8 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		if args.Outstream {
 			g.importIO = true
 			g.importJson = true
+			g.importOrmapi = true
+			g.importGrpcStatus = true
 		}
 	}
 	if !found {
@@ -266,24 +278,31 @@ func {{.MethodName}}(c echo.Context) error {
 	rc.region = in.Region
 {{- if .Outstream}}
 	// stream func may return "forbidden", so don't write
-	// header until we know it's ok.
+	// header until we know it's ok
 	wroteHeader := false
 	err = {{.MethodName}}Stream(rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
 		if !wroteHeader {
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			c.Response().WriteHeader(http.StatusOK)
+			wroteHeader = true
 		}
-		json.NewEncoder(c.Response()).Encode(res)
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		json.NewEncoder(c.Response()).Encode(payload)
 		c.Response().Flush()
 	})
 	if err != nil {
-		if wroteHeader {
-			json.NewEncoder(c.Response()).Encode(MsgErr(err))
-			c.Response().Flush()
-			return nil
-		} else {
-			return setReply(c, err, Msg("ok"))
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
 		}
+		if !wroteHeader {
+			return setReply(c, err, nil)
+		}
+		res := ormapi.Result{}
+		res.Message = err.Error()
+		res.Code = http.StatusBadRequest
+		payload := ormapi.StreamPayload{Result: &res}
+		json.NewEncoder(c.Response()).Encode(payload)
 	}
 	return nil
 {{- else}}
@@ -415,13 +434,13 @@ var tmplMessageTest = `
 // an organization that the user does not have permissions for.
 func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
 	status, _, err := testPermCreate{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	status, _, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	status, _, err = testPermDelete{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -448,13 +467,16 @@ func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, tok
 
 	// make sure region check works
 	status, _, err = testPermCreate{{.Message}}(mcClient, uri, token, "bad region", org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 	status, _, err = testPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 	status, _, err = testPermDelete{{.Message}}(mcClient, uri, token, "bad region", org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 
 	goodPermTestShow{{.Message}}(t, mcClient, uri, token, region, org, showcount)
@@ -468,7 +490,8 @@ func goodPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri,
 
 	// make sure region check works
 	status, list, err = testPermShow{{.Message}}(mcClient, uri, token, "bad region", org)
-	require.Nil(t, err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Equal(t, 0, len(list))
 }

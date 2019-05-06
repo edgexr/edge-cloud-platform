@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -156,8 +157,16 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	if resp.StatusCode == http.StatusOK && replyData != nil {
 		err = json.NewDecoder(resp.Body).Decode(replyData)
 		if err != nil {
-			return 0, fmt.Errorf("post %s decode resp failed, %s", uri, err.Error())
+			return resp.StatusCode, fmt.Errorf("post %s decode resp failed, %v", uri, err)
 		}
+	}
+	if resp.StatusCode != http.StatusOK {
+		res := ormapi.Result{}
+		err = json.NewDecoder(resp.Body).Decode(&res)
+		if err != nil {
+			return resp.StatusCode, fmt.Errorf("post %s decode result failed, %v", uri, err)
+		}
+		return resp.StatusCode, errors.New(res.Message)
 	}
 	return resp.StatusCode, nil
 }
@@ -168,19 +177,34 @@ func (s *Client) PostJsonStreamOut(uri, token string, reqData interface{}, reply
 		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK && replyData != nil {
-		dec := json.NewDecoder(resp.Body)
-		for {
-			err := dec.Decode(replyData)
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return 0, fmt.Errorf("post %s decode resp failed, %s", uri, err.Error())
+
+	if resp.StatusCode != http.StatusOK {
+		res := ormapi.Result{}
+		err = json.NewDecoder(resp.Body).Decode(&res)
+		if err != nil {
+			return resp.StatusCode, fmt.Errorf("post %s decode result failed, %v", uri, err)
+		}
+		return resp.StatusCode, errors.New(res.Message)
+	}
+	payload := ormapi.StreamPayload{}
+	if replyData != nil {
+		payload.Data = replyData
+	}
+	dec := json.NewDecoder(resp.Body)
+	for {
+		payload.Result = nil
+		err := dec.Decode(&payload)
+		if err != nil {
+			if err == io.EOF {
+				break
 			}
-			if replyReady != nil {
-				replyReady()
-			}
+			return resp.StatusCode, fmt.Errorf("post %s decode resp failed, %s", uri, err.Error())
+		}
+		if payload.Result != nil {
+			return resp.StatusCode, errors.New(payload.Result.Message)
+		}
+		if replyReady != nil {
+			replyReady()
 		}
 	}
 	return resp.StatusCode, nil

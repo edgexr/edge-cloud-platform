@@ -25,7 +25,7 @@ func CreateOrg(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	err = CreateOrgObj(claims, &org)
-	return setReply(c, err, MsgName("Organization created", org.Name))
+	return setReply(c, err, Msg("Organization created"))
 }
 
 func CreateOrgObj(claims *UserClaims, org *ormapi.Organization) error {
