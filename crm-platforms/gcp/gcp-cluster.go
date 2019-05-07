@@ -42,7 +42,7 @@ func (s *Platform) GCPLogin() error {
 	return nil
 }
 
-func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	var err error
 	project := s.props.Project
 	zone := s.props.Zone
@@ -77,6 +77,10 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	return mexos.CreateDockerRegistrySecret(client, clusterInst)
 }
 
-func (s *Platform) DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	return DeleteGKECluster(clusterInst.Key.ClusterKey.Name)
+}
+
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	return fmt.Errorf("update cluster inst not implemented for GCP")
 }

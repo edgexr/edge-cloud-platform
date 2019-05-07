@@ -1,17 +1,14 @@
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+- region: usa
+  address: usa.mc.mobiledgex.com:55001
+- region: germany
+  address: germany.mc.mobiledgex.com:55001
 regiondata:
 - region: local
   appdata:
     cloudlets:
-    - key:
-        operatorkey:
-          name: gcp
-        name: gcp-cloud-10
-      accessuri: cloud2.gcp
-      location:
-        latitude: 36
-        longitude: -95
-      ipsupport: IpSupportDynamic
-      numdynamicips: 254
     - key:
         operatorkey:
           name: dmuus
@@ -42,6 +39,16 @@ regiondata:
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
+    - key:
+        operatorkey:
+          name: gcp
+        name: gcp-cloud-10
+      accessuri: cloud2.gcp
+      location:
+        latitude: 36
+        longitude: -95
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
     flavors:
     - key:
         name: x1.tiny
@@ -58,31 +65,3 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
-    clusterflavors:
-    - key:
-        name: c1.tiny
-      nodeflavor:
-        name: x1.tiny
-      masterflavor:
-        name: x1.tiny
-      numnodes: 2
-      maxnodes: 2
-      nummasters: 1
-    - key:
-        name: c1.small
-      nodeflavor:
-        name: x1.small
-      masterflavor:
-        name: x1.small
-      numnodes: 3
-      maxnodes: 3
-      nummasters: 1
-    - key:
-        name: c1.medium
-      nodeflavor:
-        name: x1.medium
-      masterflavor:
-        name: x1.medium
-      numnodes: 3
-      maxnodes: 4
-      nummasters: 1

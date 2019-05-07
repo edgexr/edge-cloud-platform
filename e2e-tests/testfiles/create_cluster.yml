@@ -1,0 +1,9 @@
+##
+##
+description: Adds provisioning 
+
+tests:
+
+- name: create provisioning
+  apifile: "{{datadir2}}/appdata_clustertest.yml"
+  actions: [ctrlapi-create]

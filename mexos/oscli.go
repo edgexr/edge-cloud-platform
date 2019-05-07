@@ -553,6 +553,15 @@ func createHeatStack(templateFile string, stackName string) error {
 	return nil
 }
 
+func updateHeatStack(templateFile string, stackName string) error {
+	log.DebugLog(log.DebugLevelMexos, "update heat stack", "template", templateFile, "stackName", stackName)
+	_, err := TimedOpenStackCommand("openstack", "stack", "update", "--template", templateFile, stackName)
+	if err != nil {
+		return fmt.Errorf("error udpating heat stack: %s -- %v", templateFile, err)
+	}
+	return nil
+}
+
 // deleteHeatStack delete a stack with the given name
 func deleteHeatStack(stackName string) error {
 	log.DebugLog(log.DebugLevelMexos, "delete heat stack", "stackName", stackName)

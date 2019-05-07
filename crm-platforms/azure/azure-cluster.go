@@ -27,7 +27,7 @@ func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }
 
-func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	var err error
 
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
@@ -40,7 +40,7 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	if err = CreateResourceGroup(resourceGroup, location); err != nil {
 		return err
 	}
-	num_nodes := fmt.Sprintf("%d", flavor.NumNodes)
+	num_nodes := fmt.Sprintf("%d", clusterInst.NumNodes)
 	if err = CreateAKSCluster(resourceGroup, clusterName,
 		clusterInst.NodeFlavor, num_nodes); err != nil {
 		return err
@@ -66,13 +66,16 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	return mexos.CreateDockerRegistrySecret(client, clusterInst)
 }
 
-func (s *Platform) DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	if err := s.AzureLogin(); err != nil {
 		return err
 	}
 	return DeleteAKSCluster(resourceGroup)
+}
 
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	return fmt.Errorf("Update cluster inst not implemented for Azure")
 }
 
 func AzureSanitize(clusterName string) string {

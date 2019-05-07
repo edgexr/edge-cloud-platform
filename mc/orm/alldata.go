@@ -71,11 +71,6 @@ func CreateData(c echo.Context) error {
 			err = CreateFlavorObj(rc, &flavor)
 			streamReply(c, desc, err)
 		}
-		for _, clusterflavor := range appdata.ClusterFlavors {
-			desc := fmt.Sprintf("Create ClusterFlavor %s", clusterflavor.Key.Name)
-			err = CreateClusterFlavorObj(rc, &clusterflavor)
-			streamReply(c, desc, err)
-		}
 		for _, cloudlet := range appdata.Cloudlets {
 			desc := fmt.Sprintf("Create Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
@@ -153,11 +148,6 @@ func DeleteData(c echo.Context) error {
 			desc := fmt.Sprintf("Delete Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
 			err = DeleteCloudletStream(rc, &cloudlet, cb)
-			streamReply(c, desc, err)
-		}
-		for _, clusterflavor := range appdata.ClusterFlavors {
-			desc := fmt.Sprintf("Delete ClusterFlavor %s", clusterflavor.Key.Name)
-			err = DeleteClusterFlavorObj(rc, &clusterflavor)
 			streamReply(c, desc, err)
 		}
 		for _, flavor := range appdata.Flavors {
@@ -239,10 +229,6 @@ func ShowData(c echo.Context) error {
 		if err == nil {
 			appdata.Flavors = flavors
 		}
-		cflavors, err := ShowClusterFlavorObj(rc, &edgeproto.ClusterFlavor{})
-		if err == nil {
-			appdata.ClusterFlavors = cflavors
-		}
 		cinsts, err := ShowClusterInstObj(rc, &edgeproto.ClusterInst{})
 		if err == nil {
 			appdata.ClusterInsts = cinsts
@@ -256,7 +242,7 @@ func ShowData(c echo.Context) error {
 			appdata.AppInstances = appinsts
 		}
 
-		if len(flavors) > 0 || len(cflavors) > 0 ||
+		if len(flavors) > 0 ||
 			len(cloudlets) > 0 || len(cinsts) > 0 ||
 			len(apps) > 0 || len(appinsts) > 0 {
 			data.RegionData = append(data.RegionData, *regionData)
