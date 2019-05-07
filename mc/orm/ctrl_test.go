@@ -2,11 +2,6 @@ package orm
 
 import (
 	"fmt"
-	"net"
-	"net/http"
-	"testing"
-	"time"
-
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -15,6 +10,10 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"net"
+	"net/http"
+	"testing"
+	"time"
 )
 
 var Success = true
@@ -163,7 +162,6 @@ func TestController(t *testing.T) {
 
 	// admin can do everything
 	goodPermTestFlavor(t, mcClient, uri, tokenAd, ctrl.Region, "", icnt)
-	goodPermTestClusterFlavor(t, mcClient, uri, tokenAd, ctrl.Region, "", icnt)
 	goodPermTestCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org3, count)
 	goodPermTestCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org4, count)
 	goodPermTestApp(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
@@ -183,15 +181,6 @@ func TestController(t *testing.T) {
 	goodPermTestShowFlavor(t, mcClient, uri, tokenOper3, ctrl.Region, "", icnt)
 	goodPermTestShowFlavor(t, mcClient, uri, tokenOper4, ctrl.Region, "", icnt)
 
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenDev, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenDev2, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenDev3, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenDev4, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenOper, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenOper2, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenOper3, ctrl.Region, "", icnt)
-	goodPermTestShowClusterFlavor(t, mcClient, uri, tokenOper4, ctrl.Region, "", icnt)
-
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", count)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", count)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev3, ctrl.Region, "", count)
@@ -200,6 +189,7 @@ func TestController(t *testing.T) {
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", count)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, "", count)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper4, ctrl.Region, "", count)
+
 	// However, flavors and clusterflavors cannot be modified by non-admins
 	badPermTestFlavor(t, mcClient, uri, tokenDev, ctrl.Region, "")
 	badPermTestFlavor(t, mcClient, uri, tokenDev2, ctrl.Region, "")
@@ -209,15 +199,6 @@ func TestController(t *testing.T) {
 	badPermTestFlavor(t, mcClient, uri, tokenOper2, ctrl.Region, "")
 	badPermTestFlavor(t, mcClient, uri, tokenOper3, ctrl.Region, "")
 	badPermTestFlavor(t, mcClient, uri, tokenOper4, ctrl.Region, "")
-
-	badPermTestClusterFlavor(t, mcClient, uri, tokenDev, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenDev2, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenDev3, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenDev4, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenOper, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenOper2, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenOper3, ctrl.Region, "")
-	badPermTestClusterFlavor(t, mcClient, uri, tokenOper4, ctrl.Region, "")
 
 	// make sure operator cannot create apps, appinsts, clusters, etc
 	badPermTestApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)

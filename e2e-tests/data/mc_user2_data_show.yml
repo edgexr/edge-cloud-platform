@@ -1,3 +1,10 @@
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+- region: usa
+  address: usa.mc.mobiledgex.com:55001
+- region: germany
+  address: germany.mc.mobiledgex.com:55001
 orgs:
 - name: AcmeAppCo
   type: developer
@@ -9,146 +16,16 @@ orgs:
   address: 1 Samstreet, platos Town, South Korea
   phone: 123-123-1234
   adminusername: user2
-
 roles:
-- username: user2
-  org: AcmeAppCo
+- org: AcmeAppCo
+  username: user2
   role: DeveloperManager
-- username: user2
-  org: platos
+- org: platos
+  username: user2
   role: DeveloperManager
-
 regiondata:
 - region: local
   appdata:
-    clusterinsts:
-    - key:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-1
-        developer: AcmeAppCo
-      flavor:
-        name: c1.small
-      liveness: LivenessStatic
-      ipaccess: IpAccessDedicated
-      nodeflavor: flavor1
-      masterflavor: flavor1
-    - key:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-2
-        developer: AcmeAppCo
-      flavor:
-        name: c1.small
-      liveness: LivenessStatic
-      ipaccess: IpAccessShared
-      nodeflavor: flavor1
-      masterflavor: flavor1
-
-    apps:
-    - key:
-        developerkey:
-          name: AcmeAppCo
-        name: someapplication1
-        version: "1.0"
-      imagepath: mobiledgex_AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
-      deployment: "kubernetes"
-      defaultflavor:
-        name: x1.small
-      cluster:
-        name: SmallCluster
-      accessports: "tcp:80,http:443,udp:10002"
-      androidpackagename: com.acme.someapplication1
-      permitsplatformapps: true
-      authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
-    - key:
-        developerkey:
-          name: platos
-        name: platosEnablingLayer
-        version: "1.0"
-      imagepath: dummyvalue
-      imagetype: ImageTypeDocker
-      deployment: "kubernetes"
-      defaultflavor:
-        name: x1.small
-      cluster:
-        name: SmallCluster
-      accessports: "tcp:64000"
-
-    appinstances:
-    - key:
-        appkey:
-          developerkey:
-            name: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-1
-        id: 123
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      clusterinstkey:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-1
-        developer: AcmeAppCo
-      liveness: LivenessStatic
-      flavor:
-        name: x1.small
-    - key:
-        appkey:
-          developerkey:
-            name: AcmeAppCo
-          name: someapplication1
-          version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-2
-        id: 123
-      cloudletloc:
-        latitude: 35
-        longitude: -95
-      clusterinstkey:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-2
-        developer: AcmeAppCo
-      liveness: LivenessStatic
-      flavor:
-        name: x1.small
-    - key:
-        appkey:
-          developerkey:
-            name: platos
-          name: platosEnablingLayer
-          version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: developer
-          name: default
-        id: 123
-      liveness: LivenessStatic
-      uri: default.platosenablement.platos.com
-      flavor:
-        name: x1.small
-
     cloudlets:
     - key:
         operatorkey:
@@ -192,6 +69,11 @@ regiondata:
       numdynamicips: 254
     flavors:
     - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
         name: x1.small
       ram: 2048
       vcpus: 2
@@ -201,36 +83,286 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
+    clusterinsts:
     - key:
-        name: x1.tiny
-      ram: 1024
-      vcpus: 1
-      disk: 1
-    clusterflavors:
-    - key:
-        name: c1.tiny
-      nodeflavor:
-        name: x1.tiny
-      masterflavor:
-        name: x1.tiny
-      numnodes: 2
-      maxnodes: 2
-      nummasters: 1
-    - key:
-        name: c1.small
-      nodeflavor:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+        developer: AcmeAppCo
+      flavor:
         name: x1.small
-      masterflavor:
-        name: x1.small
-      numnodes: 3
-      maxnodes: 3
+      liveness: LivenessStatic
+      state: Ready
+      ipaccess: IpAccessDedicated
+      allocatedip: dynamic
+      nodeflavor: flavor1
+      masterflavor: flavor1
       nummasters: 1
+      numnodes: 1
     - key:
-        name: c1.medium
-      nodeflavor:
-        name: x1.medium
-      masterflavor:
-        name: x1.medium
-      numnodes: 3
-      maxnodes: 4
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-2
+        developer: AcmeAppCo
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      state: Ready
+      ipaccess: IpAccessShared
+      nodeflavor: flavor1
+      masterflavor: flavor1
       nummasters: 1
+      numnodes: 1
+    apps:
+    - key:
+        developerkey:
+          name: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      imagepath: mobiledgex_AcmeAppCo/someapplication1:1.0
+      imagetype: ImageTypeDocker
+      accessports: tcp:80,http:443,udp:10002
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: SmallCluster
+      authpublickey: |
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij
+        TkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0
+        VU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC
+        GJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS
+        z3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m
+        QnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C
+        /QIDAQAB
+        -----END PUBLIC KEY-----
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: someapplication1-tcp
+          labels:
+            run: someapplication1
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp80
+            protocol: TCP
+            port: 80
+            targetPort: 80
+          - name: http443
+            protocol: TCP
+            port: 443
+            targetPort: 443
+          selector:
+            run: someapplication1
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: someapplication1-udp
+          labels:
+            run: someapplication1
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: udp10002
+            protocol: UDP
+            port: 10002
+            targetPort: 10002
+          selector:
+            run: someapplication1
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: someapplication1-deployment
+        spec:
+          selector:
+            matchLabels:
+              run: someapplication1
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                run: someapplication1
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: mexregistrysecret
+              containers:
+              - name: someapplication1
+                image: mobiledgex_AcmeAppCo/someapplication1:1.0
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 80
+                  protocol: TCP
+                - containerPort: 443
+                  protocol: TCP
+                - containerPort: 10002
+                  protocol: UDP
+      deploymentgenerator: kubernetes-basic
+      androidpackagename: com.acme.someapplication1
+      permitsplatformapps: true
+    - key:
+        developerkey:
+          name: platos
+        name: platosEnablingLayer
+        version: "1.0"
+      imagepath: dummyvalue
+      imagetype: ImageTypeDocker
+      accessports: tcp:64000
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: SmallCluster
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: platosenablinglayer-tcp
+          labels:
+            run: platosenablinglayer
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp64000
+            protocol: TCP
+            port: 64000
+            targetPort: 64000
+          selector:
+            run: platosenablinglayer
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: platosenablinglayer-deployment
+        spec:
+          selector:
+            matchLabels:
+              run: platosenablinglayer
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                run: platosenablinglayer
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: mexregistrysecret
+              containers:
+              - name: platosenablinglayer
+                image: dummyvalue
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 64000
+                  protocol: TCP
+      deploymentgenerator: kubernetes-basic
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: platos
+          name: platosEnablingLayer
+          version: "1.0"
+        cloudletkey:
+          operatorkey:
+            name: developer
+          name: default
+        id: 123
+      uri: default.platosenablement.platos.com
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTCP
+        internalport: 64000
+      flavor:
+        name: x1.small
+      state: Ready
+    - key:
+        appkey:
+          developerkey:
+            name: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+        id: 123
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
+      clusterinstkey:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+        developer: AcmeAppCo
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTCP
+        internalport: 80
+        publicport: 80
+        fqdnprefix: someapplication1-tcp.
+      - proto: LProtoHTTP
+        internalport: 443
+        publicport: 443
+        pathprefix: acmeappco/someapplication110/p443
+      - proto: LProtoUDP
+        internalport: 10002
+        publicport: 10002
+        fqdnprefix: someapplication1-udp.
+      flavor:
+        name: x1.small
+      state: Ready
+    - key:
+        appkey:
+          developerkey:
+            name: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-2
+        id: 123
+      cloudletloc:
+        latitude: 35
+        longitude: -95
+      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      clusterinstkey:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-2
+        developer: AcmeAppCo
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTCP
+        internalport: 80
+        publicport: 80
+        fqdnprefix: someapplication1-tcp.
+      - proto: LProtoHTTP
+        internalport: 443
+        publicport: 443
+        pathprefix: acmeappco/someapplication110/p443
+      - proto: LProtoUDP
+        internalport: 10002
+        publicport: 10002
+        fqdnprefix: someapplication1-udp.
+      flavor:
+        name: x1.small
+      state: Ready

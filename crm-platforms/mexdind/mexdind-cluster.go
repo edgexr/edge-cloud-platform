@@ -7,8 +7,12 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
-	err := s.generic.CreateCluster(clusterInst, flavor)
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	return fmt.Errorf("update not implemented")
+}
+
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	err := s.generic.CreateClusterInst(clusterInst)
 	if err != nil {
 		return err
 	}
@@ -29,6 +33,6 @@ func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edg
 	return nil
 }
 
-func (s *Platform) DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
-	return s.generic.DeleteCluster(clusterInst)
+func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	return s.generic.DeleteClusterInst(clusterInst)
 }

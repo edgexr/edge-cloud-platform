@@ -6,15 +6,23 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (s *Platform) CreateCluster(clusterInst *edgeproto.ClusterInst, flavor *edgeproto.ClusterFlavor) error {
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return mexos.CreateCluster(lbName, clusterInst, flavor)
+	return mexos.UpdateCluster(lbName, clusterInst)
 }
 
-func (s *Platform) DeleteCluster(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+	lbName := s.rootLBName
+	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+	}
+	return mexos.CreateCluster(lbName, clusterInst)
+}
+
+func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
