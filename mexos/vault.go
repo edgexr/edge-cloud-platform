@@ -2,13 +2,13 @@ package mexos
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
+	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 type EnvData struct {
@@ -16,70 +16,48 @@ type EnvData struct {
 	Value string `json:"value"`
 }
 
-type VaultDataDetail struct {
+type VaultEnvData struct {
 	Env []EnvData `json:"env"`
 }
 
-type VaultData struct {
-	Detail VaultDataDetail `json:"data"`
-}
+func GetVaultData(keyURL string) (map[string]interface{}, error) {
+	roleID := os.Getenv("VAULT_ROLE_ID")
+	secretID := os.Getenv("VAULT_SECRET_ID")
 
-type VaultResponse struct {
-	Data VaultData `json:"data"`
-}
-
-type VaultGenericData struct {
-	Data interface{} `json:"data"`
-}
-type VaultGenericResponse struct {
-	Data VaultGenericData `json:"data"`
-}
-
-func GetVaultData(url string) ([]byte, error) {
-	vault_token := os.Getenv("VAULT_TOKEN")
-	if vault_token == "" {
-		res, err := ioutil.ReadFile(os.Getenv("HOME") + "/.mobiledgex/vault.txt")
-		if err != nil {
-			return nil, fmt.Errorf("no vault token")
-		}
-		vault_token = strings.TrimSpace(string(res))
-		if vault_token == "" {
-			return nil, fmt.Errorf("missing vault token")
-		}
+	if roleID == "" {
+		return nil, fmt.Errorf("VAULT_ROLE_ID env var missing")
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	if secretID == "" {
+		return nil, fmt.Errorf("VAULT_SECRET_ID env var missing")
+	}
+	uri, err := url.ParseRequestURI(keyURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid keypath %s, %v", keyURL, err)
+	}
+	addr := uri.Scheme + "://" + uri.Host
+	client, err := vault.NewClient(addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set up Vault client for %s, %v", addr, err)
+	}
+	err = vault.AppRoleLogin(client, roleID, secretID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to login to Vault, %v", err)
+	}
+	path := strings.TrimPrefix(uri.Path, "/v1")
+	data, err := vault.GetKV(client, path, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get values for %s from Vault, %v", path, err)
+	}
+	return data, nil
+}
+
+func GetVaultEnv(data map[string]interface{}) (*VaultEnvData, error) {
+	envData := &VaultEnvData{}
+	err := mapstructure.WeakDecode(data, envData)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("X-Vault-Token", vault_token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return contents, nil
-}
-
-func GetVaultEnvResponse(contents []byte) (*VaultResponse, error) {
-	vr := &VaultResponse{}
-	err := yaml.Unmarshal(contents, vr)
-	if err != nil {
-		return nil, err
-	}
-	return vr, nil
-}
-
-func GetVaultGenericResponse(contents []byte) (*VaultGenericResponse, error) {
-	vr := &VaultGenericResponse{}
-	err := yaml.Unmarshal(contents, vr)
-	if err != nil {
-		return nil, err
-	}
-	return vr, nil
+	return envData, nil
 }
 
 var home = os.Getenv("HOME")
@@ -103,62 +81,18 @@ func internEnv(envs []EnvData) error {
 	return nil
 }
 
-func InternVaultEnv(openrc string, mexenv string) error {
-	log.DebugLog(log.DebugLevelMexos, "interning vault", "openrc", openrc, "mexenv", mexenv)
-	for _, u := range []string{openrc, mexenv} {
-		if u == "" {
-			continue
-		}
-		dat, err := GetVaultData(u)
-		if err != nil {
-			return err
-		}
-		vr, err := GetVaultEnvResponse(dat)
-		if err != nil {
-			return err
-		}
-		//log.DebugLog(log.DebugLevelMexos, "interning vault data", "data", vr)
-		err = internEnv(vr.Data.Detail.Env)
-		if err != nil {
-			return err
-		}
+func InternVaultEnv(keyURL string) error {
+	log.DebugLog(log.DebugLevelMexos, "interning vault", "keyURL", keyURL)
+	dat, err := GetVaultData(keyURL)
+	if err != nil {
+		return err
 	}
-	//log.DebugLog(log.DebugLevelMexos, "vault env var map", "vault env map", mf.Values.VaultEnvMap)
-	return nil
-}
-
-func CheckPlatformEnv(platformType string) error {
-	// if !strings.Contains(platformType, "openstack") { // TODO gcp,azure,...
-	// 	log.DebugLog(log.DebugLevelMexos, "warning, unsupported, skip check platform environment", "platform", platformType)
-	// 	return nil
-	// }
-	// for _, n := range []struct {
-	// 	name   string
-	// 	getter func() string
-	// }{
-	// 	{"MEX_EXT_NETWORK", GetCloudletExternalNetwork},
-	// 	{"MEX_EXT_ROUTER", GetCloudletExternalRouter},
-	// 	{"MEX_NETWORK", GetCloudletNetwork},
-	// 	{"MEX_SECURITY_RULE", GetCloudletSecurityRule},
-	// } {
-	// 	ev := os.Getenv(n.name)
-	// 	if ev == "" {
-	// 		ev = n.getter()
-	// 	}
-	// 	if ev == "" {
-	// 		return fmt.Errorf("missing " + n.name)
-	// 	}
-	// }
-	// log.DebugLog(log.DebugLevelMexos, "doing oscli sanity check")
-	// _, err := ListImages()
-	// if err != nil {
-	// 	return fmt.Errorf("oscli sanity check failed, %v", err)
-	// }
-	return nil
-}
-
-func GetVaultEnv(openrc string, mexenv string) error {
-	if err := InternVaultEnv(openrc, mexenv); err != nil {
+	envData, err := GetVaultEnv(dat)
+	if err != nil {
+		return err
+	}
+	err = internEnv(envData.Env)
+	if err != nil {
 		return err
 	}
 	return nil

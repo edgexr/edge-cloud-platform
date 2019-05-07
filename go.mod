@@ -28,6 +28,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
 	github.com/lib/pq v1.0.0
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.2
 	github.com/modern-go/reflect2 v1.0.1 // indirect

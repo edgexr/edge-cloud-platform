@@ -25,10 +25,9 @@ func InitInfraCommon() error {
 	if mexEnvURL == "" {
 		return fmt.Errorf("Env variable MEXENV_URL not set")
 	}
-	openRcURL := os.Getenv("OPENRC_URL")
-	err := InternVaultEnv(openRcURL, mexEnvURL)
+	err := InternVaultEnv(mexEnvURL)
 	if err != nil {
-		return fmt.Errorf("failed to InternVaultEnv: %v", err)
+		return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
 	}
 	CloudletInfraCommon.CFKey = os.Getenv("MEX_CF_KEY")
 	if CloudletInfraCommon.CFKey == "" {
@@ -49,6 +48,13 @@ func InitInfraCommon() error {
 }
 
 func InitOpenstackProps() error {
+	openRcURL := os.Getenv("OPENRC_URL")
+	if openRcURL != "" {
+		err := InternVaultEnv(openRcURL)
+		if err != nil {
+			return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
+		}
+	}
 	OpenstackProps.OpenRcVars = make(map[string]string)
 
 	OpenstackProps.OSExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
