@@ -53,7 +53,7 @@ func GetVaultData(keyURL string) (map[string]interface{}, error) {
 
 func GetVaultEnv(data map[string]interface{}) (*VaultEnvData, error) {
 	envData := &VaultEnvData{}
-	err := mapstructure.WeakDecode(data, envData)
+	err := mapstructure.WeakDecode(data["data"], envData)
 	if err != nil {
 		return nil, err
 	}
