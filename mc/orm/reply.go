@@ -28,6 +28,11 @@ func dbErr(err error) error {
 	return fmt.Errorf("database error, %s", err.Error())
 }
 
+func bindErr(c echo.Context, err error) error {
+	msg := "Invalid POST data, " + err.Error()
+	return c.JSON(http.StatusBadRequest, Msg(msg))
+}
+
 func setReply(c echo.Context, err error, successReply interface{}) error {
 	if err == echo.ErrForbidden {
 		return err

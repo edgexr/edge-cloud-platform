@@ -2,7 +2,9 @@ package orm
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -12,7 +14,6 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // Init admin creates the admin user and adds the admin role.
@@ -75,6 +76,10 @@ func Login(c echo.Context) error {
 		time.Sleep(BadAuthDelay)
 		return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
 	}
+	if user.Locked {
+		return c.JSON(http.StatusBadRequest, Msg("Account is locked, please contact MobiledgeX support"))
+	}
+
 	cookie, err := GenerateCookie(&user)
 	if err != nil {
 		log.DebugLog(log.DebugLevelApi, "failed to generate cookie", "err", err)
@@ -104,6 +109,13 @@ func CreateUser(c echo.Context) error {
 	if !util.ValidLDAPName(user.Name) {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid characters in user name"))
 	}
+	config, err := getConfig()
+	if err != nil {
+		return err
+	}
+	if config.LockNewAccounts {
+		user.Locked = true
+	}
 	user.EmailVerified = false
 	// password should be passed through in Passhash field.
 	user.Passhash, user.Salt, user.Iter = NewPasshash(user.Passhash)
@@ -118,6 +130,16 @@ func CreateUser(c echo.Context) error {
 		return setReply(c, dbErr(err), nil)
 	}
 	gitlabCreateLDAPUser(&user)
+
+	if user.Locked {
+		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
+		// just log in case of error
+		senderr := sendNotify(config.NotifyEmailAddress,
+			"Locked account created", msg)
+		if senderr != nil {
+			log.DebugLog(log.DebugLevelApi, "failed to send notify of new locked account", "err", senderr)
+		}
+	}
 
 	return c.JSON(http.StatusOK, Msg("user created"))
 }
@@ -275,9 +297,7 @@ func PasswordResetRequest(c echo.Context) error {
 	if reset.Email == "" {
 		return c.JSON(http.StatusBadRequest, Msg("Email not specified"))
 	}
-	noreply := emailAccount{}
-	err := vault.GetData(serverConfig.VaultAddr, roleID, secretID,
-		"/secret/data/accounts/noreplyemail", 0, &noreply)
+	noreply, err := getNoreply()
 	if err != nil {
 		return err
 	}
@@ -321,7 +341,7 @@ func PasswordResetRequest(c echo.Context) error {
 	if err := tmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	return sendEmail(&noreply, reset.Email, &buf)
+	return sendEmail(noreply, reset.Email, &buf)
 }
 
 func PasswordReset(c echo.Context) error {
@@ -339,4 +359,42 @@ func PasswordReset(c echo.Context) error {
 		}
 	}
 	return setPassword(c, claims.Username, pw.Password)
+}
+
+func RestrictedUserUpdate(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Only admin user allowed to update user data.
+	if !enforcer.Enforce(claims.Username, "", ResourceUsers, ActionManage) {
+		return echo.ErrForbidden
+	}
+	// Pull json directly so we can unmarshal twice.
+	// First time is to do lookup, second time is to apply
+	// modified fields.
+	body, err := ioutil.ReadAll(c.Request().Body)
+	lookup := ormapi.User{}
+	err = json.Unmarshal(body, &lookup)
+	if err != nil {
+		return bindErr(c, err)
+	}
+	user := ormapi.User{}
+	res := db.Where(&lookup).First(&user)
+	if res.RecordNotFound() {
+		return c.JSON(http.StatusBadRequest, Msg("user not found"))
+	}
+	if res.Error != nil {
+		return dbErr(res.Error)
+	}
+	// apply specified fields
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		return bindErr(c, err)
+	}
+	err = db.Save(&user).Error
+	if err != nil {
+		return dbErr(err)
+	}
+	return nil
 }

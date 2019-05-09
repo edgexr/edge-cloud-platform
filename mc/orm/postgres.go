@@ -62,7 +62,7 @@ func InitData(superuser, superpass string, pingInterval time.Duration, stop *boo
 
 		// create or update tables
 		err := db.AutoMigrate(&ormapi.User{}, &ormapi.Organization{},
-			&ormapi.Controller{}).Error
+			&ormapi.Controller{}, &ormapi.Config{}).Error
 		if err != nil {
 			log.DebugLog(log.DebugLevelApi, "automigrate", "err", err)
 			continue
@@ -76,6 +76,11 @@ func InitData(superuser, superpass string, pingInterval time.Duration, stop *boo
 		err = InitAdmin(superuser, superpass)
 		if err != nil {
 			log.DebugLog(log.DebugLevelApi, "init admin", "err", err)
+			continue
+		}
+		err = InitConfig()
+		if err != nil {
+			log.DebugLog(log.DebugLevelApi, "init config", "err", err)
 			continue
 		}
 		log.DebugLog(log.DebugLevelApi, "init data done")

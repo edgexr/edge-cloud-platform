@@ -201,6 +201,9 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/data/delete", DeleteData)
 	auth.POST("/data/show", ShowData)
 	auth.POST("/gitlab/resync", GitlabResync)
+	auth.POST("/config/update", UpdateConfig)
+	auth.POST("/config/show", ShowConfig)
+	auth.POST("/restricted/user/update", RestrictedUserUpdate)
 	addControllerApis(auth)
 	go func() {
 		var err error

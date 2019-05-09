@@ -71,7 +71,7 @@ func TestServer(t *testing.T) {
 	policies, status, err := showRolePerms(mcClient, uri, token)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
-	require.Equal(t, 97, len(policies), "number of role perms")
+	require.Equal(t, 99, len(policies), "number of role perms")
 	roles, status, err := showRoles(mcClient, uri, token)
 	require.Nil(t, err, "show roles err")
 	require.Equal(t, http.StatusOK, status, "show roles status")
@@ -297,6 +297,8 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))
+
+	testLockedUsers(t, uri, mcClient)
 }
 
 func showCurrentUser(mcClient *ormclient.Client, uri, token string) (*ormapi.User, int, error) {
@@ -333,4 +335,116 @@ func dumpTables() {
 	for _, org := range orgs {
 		fmt.Printf("%v\n", org)
 	}
+}
+
+func testLockedUsers(t *testing.T, uri string, mcClient *ormclient.Client) {
+	// login as super user
+	superTok, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass)
+	require.Nil(t, err, "login as superuser")
+
+	// set config to be locked. This needs to be a map so that
+	// marshalling the JSON doesn't put in null entries for other
+	// fields, and preserves null entries for specified fields regardless
+	// of omit empty.
+	notifyEmail := "foo@gmail.com"
+	configReq := make(map[string]interface{})
+	configReq["locknewaccounts"] = true
+	configReq["notifyemailaddress"] = notifyEmail
+	status, err := mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// create new account
+	user1 := ormapi.User{
+		Name:     "user1",
+		Email:    "user1@gmail.com",
+		Passhash: "user1-password",
+	}
+	status, err = mcClient.CreateUser(uri, &user1)
+	require.Nil(t, err, "create user")
+	require.Equal(t, http.StatusOK, status, "create user status")
+	// login as new user1
+	_, err = mcClient.DoLogin(uri, user1.Name, user1.Passhash)
+	require.NotNil(t, err, "login")
+	require.Contains(t, err.Error(), "Account is locked")
+
+	// super user unlock account
+	userReq := make(map[string]interface{})
+	userReq["email"] = user1.Email
+	userReq["locked"] = false
+	status, err = mcClient.RestrictedUserUpdate(uri, superTok, userReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// user should be able to log in now
+	tok1, err := mcClient.DoLogin(uri, user1.Name, user1.Passhash)
+	require.Nil(t, err)
+
+	// create another new user
+	user2 := ormapi.User{
+		Name:     "user2",
+		Email:    "user2@gmail.com",
+		Passhash: "user2-password",
+	}
+	status, err = mcClient.CreateUser(uri, &user2)
+	require.Nil(t, err, "create user")
+	require.Equal(t, http.StatusOK, status, "create user status")
+	// login as new user2
+	_, err = mcClient.DoLogin(uri, user2.Name, user2.Passhash)
+	require.NotNil(t, err, "login")
+	require.Contains(t, err.Error(), "Account is locked")
+
+	// make sure users cannot unlock other users
+	userReq = make(map[string]interface{})
+	userReq["email"] = user2.Email
+	userReq["locked"] = false
+	status, err = mcClient.RestrictedUserUpdate(uri, tok1, userReq)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// make sure users cannot modify config
+	configReq = make(map[string]interface{})
+	configReq["locknewaccounts"] = false
+	status, err = mcClient.UpdateConfig(uri, tok1, configReq)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// super user unlock new accounts
+	status, err = mcClient.UpdateConfig(uri, superTok, configReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// user2 still should not be able to log in
+	_, err = mcClient.DoLogin(uri, user2.Name, user2.Passhash)
+	require.NotNil(t, err, "login")
+	require.Contains(t, err.Error(), "Account is locked")
+
+	// delete user2, recreate, should be unlocked now
+	status, err = mcClient.DeleteUser(uri, superTok, &user2)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.CreateUser(uri, &user2)
+	require.Nil(t, err, "create user")
+	require.Equal(t, http.StatusOK, status, "create user status")
+	// login as new user2
+	_, err = mcClient.DoLogin(uri, user2.Name, user2.Passhash)
+	require.Nil(t, err)
+
+	// show config, make sure changes didn't affect notify email address
+	config, status, err := mcClient.ShowConfig(uri, superTok)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, notifyEmail, config.NotifyEmailAddress)
+
+	// make sure users can't see config
+	_, status, err = mcClient.ShowConfig(uri, tok1)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// clean up
+	status, err = mcClient.DeleteUser(uri, superTok, &user1)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteUser(uri, superTok, &user2)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }
