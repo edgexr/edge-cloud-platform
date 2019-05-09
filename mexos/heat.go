@@ -167,6 +167,7 @@ type ClusterParams struct {
 	CIDR           string
 	GatewayIP      string
 	MasterIP       string
+	DNSServers     []string
 	Nodes          []ClusterNode
 	*VMParams      //rootlb
 }
@@ -183,6 +184,10 @@ resources:
         network: mex-k8s-net-1
         gateway_ip: {{.GatewayIP}}
         enable_dhcp: false
+        dns_nameservers:
+       {{range .DNSServers}}
+         - {{.}}
+       {{end}}
         name: 
            mex-k8s-subnet-{{.ClusterName}}
 
@@ -526,6 +531,8 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, rootLBName string, act
 		cn := ClusterNode{NodeName: nn, NodeIP: nip}
 		cp.Nodes = append(cp.Nodes, cn)
 	}
+	// cloudflare primary and backup
+	cp.DNSServers = []string{"1.1.1.1", "1.0.0.1"}
 	return &cp, nil
 }
 

@@ -28,6 +28,8 @@ func LBAddRouteAndSecRules(client pc.PlatformClient, rootLBName string) error {
 	//TODO: this may not be necessary, as instead we can allow group to remote group rules
 	// add to the /16 range for all the possible subnets
 	subnet := fmt.Sprintf("%s.%s.0.0/16", ni.Octets[0], ni.Octets[1])
+	subnetNomask := fmt.Sprintf("%s.%s.0.0", ni.Octets[0], ni.Octets[1])
+	mask := "255.255.0.0"
 
 	rd, err := GetRouterDetail(GetCloudletExternalRouter())
 	if err != nil {
@@ -52,10 +54,25 @@ func LBAddRouteAndSecRules(client pc.PlatformClient, rootLBName string) error {
 	if err != nil {
 		if strings.Contains(out, "RTNETLINK") && strings.Contains(out, " exists") {
 			log.DebugLog(log.DebugLevelMexos, "warning, can't add existing route to rootLB", "cmd", cmd, "out", out, "error", err)
-
 		} else {
 			return fmt.Errorf("can't add route to rootlb, %s, %s, %v", cmd, out, err)
 		}
+	}
+	// make the route persist by adding the following line if not already present via grep.
+	routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", subnetNomask, mask, fip[0].IPAddress)
+	interfacesFile := "/etc/network/interfaces.d/50-cloud-init.cfg"
+	cmd = fmt.Sprintf("grep -l '%s' %s", routeAddLine, interfacesFile)
+	out, err = client.Output(cmd)
+	if err != nil {
+		// grep failed so not there already
+		log.DebugLog(log.DebugLevelMexos, "adding route to interfaces file", "route", routeAddLine, "file", interfacesFile)
+		cmd = fmt.Sprintf("echo '%s'|sudo tee -a %s", routeAddLine, interfacesFile)
+		out, err = client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("can't add route to interfaces file: %v", err)
+		}
+	} else {
+		log.DebugLog(log.DebugLevelMexos, "route already present in interfaces file")
 	}
 
 	// open the firewall for internal traffic
