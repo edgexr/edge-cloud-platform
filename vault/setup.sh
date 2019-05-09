@@ -24,11 +24,11 @@ path "jwtkeys/metadata/mcorm" {
   capabilities = [ "read" ]
 }
 
-path "secret/accounts/sql" {
+path "secret/data/accounts/sql" {
   capabilities = [ "read" ]
 }
 
-path "secret/accounts/noreplyemail" {
+path "secret/data/accounts/noreplyemail" {
   capabilities = [ "read" ]
 }
 EOF

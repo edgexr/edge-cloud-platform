@@ -1,15 +1,18 @@
 package orm
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // Init admin creates the admin user and adds the admin role.
@@ -229,18 +232,111 @@ func NewPassword(c echo.Context) error {
 	if err := c.Bind(&in); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	if err := ValidPassword(in.Password); err != nil {
+	return setPassword(c, claims.Username, in.Password)
+}
+
+func setPassword(c echo.Context, username, password string) error {
+	if err := ValidPassword(password); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
 			err.Error()))
 	}
-	user := ormapi.User{Name: claims.Username}
-	err = db.Where(&user).First(&user).Error
+	user := ormapi.User{Name: username}
+	err := db.Where(&user).First(&user).Error
 	if err != nil {
 		return setReply(c, dbErr(err), nil)
 	}
-	user.Passhash, user.Salt, user.Iter = NewPasshash(in.Password)
+	user.Passhash, user.Salt, user.Iter = NewPasshash(password)
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
 		return setReply(c, dbErr(err), nil)
 	}
 	return c.JSON(http.StatusOK, Msg("password updated"))
+}
+
+type PasswordResetClaims struct {
+	jwt.StandardClaims
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Kid      int    `json:"kid"`
+}
+
+func (s *PasswordResetClaims) GetKid() (int, error) {
+	return s.Kid, nil
+}
+
+func (s *PasswordResetClaims) SetKid(kid int) {
+	s.Kid = kid
+}
+
+func PasswordResetRequest(c echo.Context) error {
+	reset := ormapi.PasswordResetRequest{}
+	if err := c.Bind(&reset); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+	if reset.Email == "" {
+		return c.JSON(http.StatusBadRequest, Msg("Email not specified"))
+	}
+	noreply := emailAccount{}
+	err := vault.GetData(serverConfig.VaultAddr, roleID, secretID,
+		"/secret/data/accounts/noreplyemail", 0, &noreply)
+	if err != nil {
+		return err
+	}
+
+	tmpl := passwordResetNoneTmpl
+	arg := passwordTmplArg{
+		From:    noreply.Email,
+		Email:   reset.Email,
+		OS:      reset.OperatingSystem,
+		Browser: reset.Browser,
+		IP:      c.RealIP(),
+	}
+	// To ensure we do not leak user accounts, we do not
+	// return an error if the user is not found. Instead, we always
+	// send an email to the account specified, but the contents
+	// of the email are different if the user was not found.
+	user := ormapi.User{Email: reset.Email}
+	res := db.Where(&user).First(&user)
+	if !res.RecordNotFound() && res.Error == nil {
+		info := PasswordResetClaims{
+			StandardClaims: jwt.StandardClaims{
+				IssuedAt: time.Now().Unix(),
+				// 1 hour
+				ExpiresAt: time.Now().Add(time.Hour).Unix(),
+			},
+			Email:    reset.Email,
+			Username: user.Name,
+		}
+		cookie, err := Jwks.GenerateCookie(&info)
+		if err != nil {
+			return err
+		}
+		if reset.ResetPageURL == "" {
+			return c.JSON(http.StatusBadRequest, "reset page URL not set by client")
+		}
+		arg.Name = user.Name
+		arg.URL = reset.ResetPageURL + "?token=" + cookie
+		tmpl = passwordResetTmpl
+	}
+	buf := bytes.Buffer{}
+	if err := tmpl.Execute(&buf, &arg); err != nil {
+		return err
+	}
+	return sendEmail(&noreply, reset.Email, &buf)
+}
+
+func PasswordReset(c echo.Context) error {
+	pw := ormapi.PasswordReset{}
+	if err := c.Bind(&pw); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+	claims := PasswordResetClaims{}
+	token, err := Jwks.VerifyCookie(pw.Token, &claims)
+	if err != nil || !token.Valid {
+		return &echo.HTTPError{
+			Code:     http.StatusUnauthorized,
+			Message:  "invalid or expired token",
+			Internal: err,
+		}
+	}
+	return setPassword(c, claims.Username, pw.Password)
 }
