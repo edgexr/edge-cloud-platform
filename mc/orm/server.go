@@ -55,6 +55,8 @@ var enforcer *casbin.SyncedEnforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
 var gitlabSync *GitlabSync
+var roleID string
+var secretID string
 
 func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
@@ -92,8 +94,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	// roleID and secretID could also come from RAM disk.
 	// assume env vars for now.
-	roleID := os.Getenv("VAULT_ROLE_ID")
-	secretID := os.Getenv("VAULT_SECRET_ID")
+	roleID = os.Getenv("VAULT_ROLE_ID")
+	secretID = os.Getenv("VAULT_SECRET_ID")
 	if config.LocalVault {
 		vault := process.Vault{
 			Common: process.Common{
@@ -171,6 +173,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	e.POST(root+"/login", Login)
 	// accessible routes
 	e.POST(root+"/usercreate", CreateUser)
+	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
+	e.POST(root+"/passwordreset", PasswordReset)
 	// authenticated routes - jwt middleware
 	auth := e.Group(root + "/auth")
 	auth.Use(AuthCookie)
