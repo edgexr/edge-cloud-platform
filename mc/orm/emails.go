@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"html/template"
 	"net/smtp"
+
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // These are email templates. Eventually these should be pulled
@@ -13,10 +15,12 @@ import (
 
 var passwordResetTmpl *template.Template
 var passwordResetNoneTmpl *template.Template
+var notifyTmpl *template.Template
 
 func init() {
 	passwordResetTmpl = template.Must(template.New("pwdreset").Parse(passwordResetT))
 	passwordResetNoneTmpl = template.Must(template.New("pwdresetnone").Parse(passwordResetNoneT))
+	notifyTmpl = template.Must(template.New("notify").Parse(notifyT))
 }
 
 type passwordTmplArg struct {
@@ -60,10 +64,52 @@ Thanks!
 MobiledgeX Team
 `
 
+type notifyTmplArg struct {
+	From    string
+	To      string
+	Subject string
+	Message string
+}
+
+var notifyT = `From: {{.From}}
+To: {{.To}}
+Subject: {{.Subject}}
+
+{{.Message}}
+`
+
+func sendNotify(to, subject, message string) error {
+	noreply, err := getNoreply()
+	if err != nil {
+		return err
+	}
+	arg := notifyTmplArg{
+		From:    noreply.Email,
+		To:      to,
+		Subject: subject,
+		Message: message,
+	}
+	buf := bytes.Buffer{}
+	if err := notifyTmpl.Execute(&buf, &arg); err != nil {
+		return err
+	}
+	return sendEmail(noreply, to, &buf)
+}
+
 type emailAccount struct {
 	Email string `json:"email"`
 	Pass  string `json:"pass"`
 	Smtp  string `json:"smtp"`
+}
+
+func getNoreply() (*emailAccount, error) {
+	noreply := emailAccount{}
+	err := vault.GetData(serverConfig.VaultAddr, roleID, secretID,
+		"/secret/data/accounts/noreplyemail", 0, &noreply)
+	if err != nil {
+		return nil, err
+	}
+	return &noreply, nil
 }
 
 // sendEmail is only tested with gmail's smtp server.

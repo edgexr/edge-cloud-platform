@@ -82,6 +82,10 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		if nexterr != nil {
 			kvs = append(kvs, "err")
 			kvs = append(kvs, nexterr)
+			he, ok := nexterr.(*echo.HTTPError)
+			if ok && he.Internal != nil {
+				kvs = append(kvs, "ierr", he.Internal)
+			}
 		}
 		if len(reqBody) > 0 {
 			kvs = append(kvs, "req")

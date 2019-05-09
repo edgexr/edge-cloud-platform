@@ -119,6 +119,20 @@ func (s *Client) ShowData(uri, token string) (*ormapi.AllData, int, error) {
 	return &data, status, err
 }
 
+func (s *Client) UpdateConfig(uri, token string, config map[string]interface{}) (int, error) {
+	return s.PostJson(uri+"/auth/config/update", token, config, nil)
+}
+
+func (s *Client) ShowConfig(uri, token string) (*ormapi.Config, int, error) {
+	config := ormapi.Config{}
+	status, err := s.PostJson(uri+"/auth/config/show", token, nil, &config)
+	return &config, status, err
+}
+
+func (s *Client) RestrictedUserUpdate(uri, token string, user map[string]interface{}) (int, error) {
+	return s.PostJson(uri+"/auth/restricted/user/update", token, user, nil)
+}
+
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
 	var body io.Reader
 	if reqData != nil {

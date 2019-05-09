@@ -25,6 +25,7 @@ const ResourceCloudlets = "cloudlets"
 const ResourceCloudletAnalytics = "cloudletanalytics"
 const ResourceClusterFlavors = "clusterflavors"
 const ResourceFlavors = "flavors"
+const ResourceConfig = "config"
 
 var DeveloperResources = []string{
 	ResourceApps,
@@ -60,6 +61,8 @@ func InitRolePerms() error {
 	enforcer.AddPolicy(RoleAdminManager, ResourceClusterFlavors, ActionView)
 	enforcer.AddPolicy(RoleAdminManager, ResourceFlavors, ActionManage)
 	enforcer.AddPolicy(RoleAdminManager, ResourceFlavors, ActionView)
+	enforcer.AddPolicy(RoleAdminManager, ResourceConfig, ActionManage)
+	enforcer.AddPolicy(RoleAdminManager, ResourceConfig, ActionView)
 
 	enforcer.AddPolicy(RoleDeveloperManager, ResourceUsers, ActionManage)
 	enforcer.AddPolicy(RoleDeveloperManager, ResourceUsers, ActionView)

@@ -21,6 +21,7 @@ type User struct {
 	Nickname      string
 	CreatedAt     time.Time `json:",omitempty"`
 	UpdatedAt     time.Time `json:",omitempty"`
+	Locked        bool
 }
 
 type Organization struct {
@@ -38,6 +39,12 @@ type Controller struct {
 	Address   string    `gorm:"unique;not null"`
 	CreatedAt time.Time `json:",omitempty"`
 	UpdatedAt time.Time `json:",omitempty"`
+}
+
+type Config struct {
+	ID                 int `gorm:"primary_key;auto_increment:false"`
+	LockNewAccounts    bool
+	NotifyEmailAddress string
 }
 
 // Structs used for API calls
