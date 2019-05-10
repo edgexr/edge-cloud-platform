@@ -343,6 +343,9 @@ func ShowUserRoleObj(username string) ([]ormapi.Role, error) {
 		if role == nil {
 			continue
 		}
+		if role.Username != username {
+			continue
+		}
 		if !enforcer.Enforce(username, role.Org, ResourceUsers, ActionView) {
 			continue
 		}
