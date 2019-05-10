@@ -55,3 +55,5 @@ mc/orm/*.mc2.go
 mc/orm/*_mc2_test.go
 mc/rbac.conf
 *.postgres
+ansible.auto.tfvars
+.terraform.init.done

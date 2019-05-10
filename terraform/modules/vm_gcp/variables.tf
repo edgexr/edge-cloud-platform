@@ -1,0 +1,54 @@
+variable "instance_name" {
+	description	= "VM instance name"
+	type				= "string"
+}
+
+variable "instance_size" {
+	description	= "VM instance size"
+	type				= "string"
+	default			= "n1-standard-2"
+}
+
+variable "tags" {
+	description	= "Tags for VM instance"
+	type				= "list"
+}
+
+variable "zone" {
+	description	= "GCP zone for VM instance"
+	type				= "string"
+}
+
+variable "boot_image" {
+	description	= "OS image"
+	type				= "string"
+	default			= "ubuntu-os-cloud/ubuntu-1804-lts"
+}
+
+variable "allow_stopping_for_update" {
+	description	= "Flag to determine if the VM can be stopped for updates"
+	default			= true
+}
+
+variable "deletion_protection" {
+	description	= "Flag to determine if the VM is delete-protected"
+	default			= true
+}
+
+variable "network" {
+	description	= "Network for the VM instance"
+	type				= "string"
+	default			= "default"
+}
+
+variable "ansible_ssh_user" {
+	description	= "User account for ansible"
+	type				= "string"
+	default			= "ansible"
+}
+
+variable "ssh_public_key_file" {
+	description	= "SSH public key file for the ansible account"
+	type				= "string"
+	default			= "~/.mobiledgex/id_rsa_mex.pub"
+}
