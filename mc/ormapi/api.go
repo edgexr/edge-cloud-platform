@@ -70,19 +70,29 @@ type NewPassword struct {
 	Password string `form:"password" json:"password"`
 }
 
-// PasswordResetRequest should contain the user's email,
-// the operating system and browser type of the client,
-// and the UI's URI to complete the password reset request.
-type PasswordResetRequest struct {
+type CreateUser struct {
+	User   `json:",inline"`
+	Verify EmailRequest `json:"verify"` // for verifying email
+}
+
+// Email request is used for password reset and to resend welcome
+// verification email. It contains the information need to send
+// some kind of email to the user.
+type EmailRequest struct {
 	Email           string `form:"email" json:"email"`
 	OperatingSystem string `form:"operatingsystem" json:"operatingsystem"`
 	Browser         string `form:"browser" json:"browser"`
-	ResetPageURL    string `form:"resetpageurl" json:"resetpageurl"`
+	CallbackURL     string `form:"callbackurl" json:"callbackurl"`
+	ClientIP        string `form:"clientip" json:"clientip"`
 }
 
 type PasswordReset struct {
 	Token    string `form:"token" json:"token"`
 	Password string `form:"password" json:"password"`
+}
+
+type Token struct {
+	Token string `form:"token" json:"token"`
 }
 
 // Structs used in replies

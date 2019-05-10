@@ -40,6 +40,7 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--clientCert")
 		args = append(args, p.TLS.ClientCert)
 	}
+	args = append(args, "-skipVerifyEmail")
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {

@@ -23,11 +23,12 @@ func TestAllData(t *testing.T) {
 	uri := "http://" + addr + "/api/v1"
 
 	config := ServerConfig{
-		ServAddr:  addr,
-		SqlAddr:   "127.0.0.1:5445",
-		RunLocal:  true,
-		InitLocal: true,
-		IgnoreEnv: true,
+		ServAddr:        addr,
+		SqlAddr:         "127.0.0.1:5445",
+		RunLocal:        true,
+		InitLocal:       true,
+		IgnoreEnv:       true,
+		SkipVerifyEmail: true,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
