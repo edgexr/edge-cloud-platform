@@ -2,6 +2,11 @@ package orm
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -10,10 +15,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"net"
-	"net/http"
-	"testing"
-	"time"
 )
 
 var Success = true
@@ -25,11 +26,12 @@ func TestController(t *testing.T) {
 	uri := "http://" + addr + "/api/v1"
 
 	config := ServerConfig{
-		ServAddr:  addr,
-		SqlAddr:   "127.0.0.1:5445",
-		RunLocal:  true,
-		InitLocal: true,
-		IgnoreEnv: true,
+		ServAddr:        addr,
+		SqlAddr:         "127.0.0.1:5445",
+		RunLocal:        true,
+		InitLocal:       true,
+		IgnoreEnv:       true,
+		SkipVerifyEmail: true,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

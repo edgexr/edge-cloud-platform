@@ -17,7 +17,7 @@ func InitConfig() error {
 	config := ormapi.Config{}
 	config.ID = configID
 	config.NotifyEmailAddress = "support@mobiledgex.com"
-	err := db.FirstOrCreate(&config, &config).Error
+	err := db.FirstOrCreate(&config, &ormapi.Config{ID: configID}).Error
 	if err != nil {
 		return err
 	}

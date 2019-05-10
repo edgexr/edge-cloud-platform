@@ -28,20 +28,21 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	ServAddr      string
-	SqlAddr       string
-	VaultAddr     string
-	RunLocal      bool
-	InitLocal     bool
-	IgnoreEnv     bool
-	RbacModelPath string
-	TlsCertFile   string
-	TlsKeyFile    string
-	LocalVault    bool
-	LDAPAddr      string
-	GitlabAddr    string
-	ClientCert    string
-	PingInterval  time.Duration
+	ServAddr        string
+	SqlAddr         string
+	VaultAddr       string
+	RunLocal        bool
+	InitLocal       bool
+	IgnoreEnv       bool
+	RbacModelPath   string
+	TlsCertFile     string
+	TlsKeyFile      string
+	LocalVault      bool
+	LDAPAddr        string
+	GitlabAddr      string
+	ClientCert      string
+	PingInterval    time.Duration
+	SkipVerifyEmail bool
 }
 
 var DefaultDBUser = "mcuser"
@@ -175,6 +176,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	e.POST(root+"/usercreate", CreateUser)
 	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
 	e.POST(root+"/passwordreset", PasswordReset)
+	e.POST(root+"/verifyemail", VerifyEmail)
+	e.POST(root+"/resendverify", ResendVerify)
 	// authenticated routes - jwt middleware
 	auth := e.Group(root + "/auth")
 	auth.Use(AuthCookie)

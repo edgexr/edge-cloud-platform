@@ -79,6 +79,9 @@ func Login(c echo.Context) error {
 	if user.Locked {
 		return c.JSON(http.StatusBadRequest, Msg("Account is locked, please contact MobiledgeX support"))
 	}
+	if !serverConfig.SkipVerifyEmail && !user.EmailVerified {
+		return c.JSON(http.StatusBadRequest, Msg("Email not verified yet"))
+	}
 
 	cookie, err := GenerateCookie(&user)
 	if err != nil {
@@ -89,10 +92,11 @@ func Login(c echo.Context) error {
 }
 
 func CreateUser(c echo.Context) error {
-	user := ormapi.User{}
-	if err := c.Bind(&user); err != nil {
+	createuser := ormapi.CreateUser{}
+	if err := c.Bind(&createuser); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
+	user := createuser.User
 	if user.Name == "" {
 		return c.JSON(http.StatusBadRequest, Msg("Name not specified"))
 	}
@@ -109,6 +113,15 @@ func CreateUser(c echo.Context) error {
 	if !util.ValidLDAPName(user.Name) {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid characters in user name"))
 	}
+	if !serverConfig.SkipVerifyEmail {
+		// real email will be filled in later
+		createuser.Verify.Email = "dummy@dummy.com"
+		err := ValidateEmailRequest(c, &createuser.Verify)
+		if err != nil {
+			return err
+		}
+	}
+
 	config, err := getConfig()
 	if err != nil {
 		return err
@@ -129,8 +142,14 @@ func CreateUser(c echo.Context) error {
 		}
 		return setReply(c, dbErr(err), nil)
 	}
-	gitlabCreateLDAPUser(&user)
+	createuser.Verify.Email = user.Email
+	err = sendVerifyEmail(user.Name, &createuser.Verify)
+	if err != nil {
+		db.Delete(&user)
+		return err
+	}
 
+	gitlabCreateLDAPUser(&user)
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
 		// just log in case of error
@@ -142,6 +161,44 @@ func CreateUser(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Msg("user created"))
+}
+
+func ResendVerify(c echo.Context) error {
+	req := ormapi.EmailRequest{}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+	if err := ValidateEmailRequest(c, &req); err != nil {
+		return err
+	}
+	return sendVerifyEmail("MobiledgeX user", &req)
+}
+
+func VerifyEmail(c echo.Context) error {
+	tok := ormapi.Token{}
+	if err := c.Bind(&tok); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+	claims := EmailClaims{}
+	token, err := Jwks.VerifyCookie(tok.Token, &claims)
+	if err != nil || !token.Valid {
+		return &echo.HTTPError{
+			Code:     http.StatusUnauthorized,
+			Message:  "invalid or expired token",
+			Internal: err,
+		}
+	}
+	user := ormapi.User{Email: claims.Email}
+	err = db.Where(&user).First(&user).Error
+	if err != nil {
+		// user got deleted in the meantime?
+		return nil
+	}
+	user.EmailVerified = true
+	if err := db.Model(&user).Updates(&user).Error; err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+	return c.JSON(http.StatusOK, Msg("email verified, thank you"))
 }
 
 func DeleteUser(c echo.Context) error {
@@ -274,28 +331,13 @@ func setPassword(c echo.Context, username, password string) error {
 	return c.JSON(http.StatusOK, Msg("password updated"))
 }
 
-type PasswordResetClaims struct {
-	jwt.StandardClaims
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Kid      int    `json:"kid"`
-}
-
-func (s *PasswordResetClaims) GetKid() (int, error) {
-	return s.Kid, nil
-}
-
-func (s *PasswordResetClaims) SetKid(kid int) {
-	s.Kid = kid
-}
-
 func PasswordResetRequest(c echo.Context) error {
-	reset := ormapi.PasswordResetRequest{}
-	if err := c.Bind(&reset); err != nil {
+	req := ormapi.EmailRequest{}
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	if reset.Email == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Email not specified"))
+	if err := ValidateEmailRequest(c, &req); err != nil {
+		return err
 	}
 	noreply, err := getNoreply()
 	if err != nil {
@@ -303,45 +345,47 @@ func PasswordResetRequest(c echo.Context) error {
 	}
 
 	tmpl := passwordResetNoneTmpl
-	arg := passwordTmplArg{
+	arg := emailTmplArg{
 		From:    noreply.Email,
-		Email:   reset.Email,
-		OS:      reset.OperatingSystem,
-		Browser: reset.Browser,
-		IP:      c.RealIP(),
+		Email:   req.Email,
+		OS:      req.OperatingSystem,
+		Browser: req.Browser,
+		IP:      req.ClientIP,
 	}
 	// To ensure we do not leak user accounts, we do not
 	// return an error if the user is not found. Instead, we always
 	// send an email to the account specified, but the contents
 	// of the email are different if the user was not found.
-	user := ormapi.User{Email: reset.Email}
+	user := ormapi.User{Email: req.Email}
 	res := db.Where(&user).First(&user)
 	if !res.RecordNotFound() && res.Error == nil {
-		info := PasswordResetClaims{
+		info := EmailClaims{
 			StandardClaims: jwt.StandardClaims{
 				IssuedAt: time.Now().Unix(),
 				// 1 hour
 				ExpiresAt: time.Now().Add(time.Hour).Unix(),
 			},
-			Email:    reset.Email,
+			Email:    req.Email,
 			Username: user.Name,
 		}
 		cookie, err := Jwks.GenerateCookie(&info)
 		if err != nil {
 			return err
 		}
-		if reset.ResetPageURL == "" {
-			return c.JSON(http.StatusBadRequest, "reset page URL not set by client")
+		if req.CallbackURL == "" {
+			return c.JSON(http.StatusBadRequest, "callback URL not set by client")
 		}
 		arg.Name = user.Name
-		arg.URL = reset.ResetPageURL + "?token=" + cookie
+		arg.URL = req.CallbackURL + "?token=" + cookie
 		tmpl = passwordResetTmpl
 	}
 	buf := bytes.Buffer{}
 	if err := tmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	return sendEmail(noreply, reset.Email, &buf)
+	log.DebugLog(log.DebugLevelApi, "send password reset email",
+		"from", noreply.Email, "to", req.Email)
+	return sendEmail(noreply, req.Email, &buf)
 }
 
 func PasswordReset(c echo.Context) error {
@@ -349,7 +393,7 @@ func PasswordReset(c echo.Context) error {
 	if err := c.Bind(&pw); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	claims := PasswordResetClaims{}
+	claims := EmailClaims{}
 	token, err := Jwks.VerifyCookie(pw.Token, &claims)
 	if err != nil || !token.Valid {
 		return &echo.HTTPError{
@@ -374,10 +418,16 @@ func RestrictedUserUpdate(c echo.Context) error {
 	// First time is to do lookup, second time is to apply
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
-	lookup := ormapi.User{}
-	err = json.Unmarshal(body, &lookup)
+	in := ormapi.User{}
+	err = json.Unmarshal(body, &in)
 	if err != nil {
 		return bindErr(c, err)
+	}
+	// in may contain other fields, but can only specify
+	// name and email for where clause.
+	lookup := ormapi.User{
+		Name:  in.Name,
+		Email: in.Email,
 	}
 	user := ormapi.User{}
 	res := db.Where(&lookup).First(&user)
