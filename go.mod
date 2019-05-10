@@ -34,6 +34,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/nanobox-io/golang-ssh v0.0.0-20190309194042-12ea65d3a59d
+	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pelletier/go-toml v1.3.0
@@ -48,6 +49,7 @@ require (
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190401181712-f467c93bbac2
 	google.golang.org/grpc v1.19.1
+	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
