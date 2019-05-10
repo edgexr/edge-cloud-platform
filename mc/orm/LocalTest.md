@@ -517,7 +517,175 @@ Date: Wed, 13 Mar 2019 19:05:23 GMT
 }
 ```
 
-Notes:
+#### VM based Deployment APIs:
+Once controller & CRM server is up and running, following http commands can be used to CreateApp/CreateAppInst via MC:
+
+* CreateApp with auth_public_key & command set:
+```
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateApp <<< '{
+  "region": "local",
+  "app": {
+    "key": {
+      "developer_key": {
+        "name": "MEXInc"
+      },
+      "name": "TestVM",
+      "version": "1.0"
+    },
+    "image_path": "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img",
+    "image_type": 2,
+    "access_ports": "tcp:22,udp:1111",
+    "default_flavor": {
+      "name": "x1.medium"
+    },
+    "cluster": {
+      "name": "appcluster"
+    },
+    "command": "touch /tmp/somefile.txt",
+    "auth_public_key": "ssh-rsa dummmy-ssh-rsa-data+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd"
+  }
+}'
+
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateAppInst <<< '{
+  "region": "local",
+  "appinst": {
+    "key": {
+      "app_key": {
+        "developer_key": {
+          "name": "MEXInc"
+        },
+        "name": "TestVM",
+        "version": "1.0"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    },
+    "cluster_inst_key": {
+      "cluster_key": {
+        "name": "appcluster"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    }
+  }
+}'
+```
+
+* CreateApp with deployment_manifest set:
+```
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateApp <<< '{
+  "region": "local",
+  "app": {
+    "key": {
+      "developer_key": {
+        "name": "MEXInc"
+      },
+      "name": "TestVM",
+      "version": "1.0"
+    },
+    "image_path": "http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img",
+    "image_type": 2,
+    "access_ports": "tcp:22,udp:1111",
+    "default_flavor": {
+      "name": "x1.medium"
+    },
+    "cluster": {
+      "name": "appcluster"
+    },
+    "deployment_manifest": "#cloud-config\nusers:\n  - name: demo\n    groups: sudo\n    shell: /bin/bash\n    sudo: [\"ALL=(ALL) NOPASSWD:ALL\"]\n    ssh-authorized-keys:\n      - ssh-rsa dummmy-ssh-rsa-data+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd bob@registry\nruncmd:\n  - touch /test.txt"
+  }
+}'
+
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateAppInst <<< '{
+  "region": "local",
+  "appinst": {
+    "key": {
+      "app_key": {
+        "developer_key": {
+          "name": "MEXInc"
+        },
+        "name": "TestVM",
+        "version": "1.0"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    },
+    "cluster_inst_key": {
+      "cluster_key": {
+        "name": "appcluster"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    }
+  }
+}'
+```
+
+* Deletion of App/AppInst:
+```
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/DeleteAppInst <<< '{
+  "region": "local",
+  "appinst": {
+    "key": {
+      "app_key": {
+        "developer_key": {
+          "name": "MEXInc"
+        },
+        "name": "TestVM",
+        "version": "1.0"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    },
+    "cluster_inst_key": {
+      "cluster_key": {
+        "name": "appcluster"
+      },
+      "cloudlet_key": {
+        "operator_key": {
+          "name": "GDDT"
+        },
+        "name": "beacon-mexdemo"
+      }
+    }
+  }
+}'
+
+http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/DeleteApp <<< '{
+  "region": "local",
+  "app": {
+    "key": {
+      "developer_key": {
+        "name": "MEXInc"
+      },
+      "name": "TestVM",
+      "version": "1.0"
+    }
+  }
+}'
+```
+
+#### Notes:
 edgectl commands to populate controller directly:
 ```
 edgectl controller CreateCloudlet --key-name oceanview --key-operatorkey-name bigwaves --numdynamicips 30 --location-longitude 1 --location-latitude 1
