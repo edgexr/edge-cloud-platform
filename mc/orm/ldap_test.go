@@ -16,12 +16,13 @@ func TestLDAPServer(t *testing.T) {
 	uri := "http://" + addr + "/api/v1"
 
 	config := ServerConfig{
-		ServAddr:  addr,
-		SqlAddr:   "127.0.0.1:5445",
-		RunLocal:  true,
-		InitLocal: true,
-		IgnoreEnv: true,
-		LDAPAddr:  "127.0.0.1:9389",
+		ServAddr:        addr,
+		SqlAddr:         "127.0.0.1:5445",
+		RunLocal:        true,
+		InitLocal:       true,
+		IgnoreEnv:       true,
+		LDAPAddr:        "127.0.0.1:9389",
+		SkipVerifyEmail: true,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

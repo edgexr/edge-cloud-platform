@@ -9,7 +9,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/nmcclain/asn1-ber"
+	ber "github.com/nmcclain/asn1-ber"
 	"github.com/nmcclain/ldap"
 )
 
@@ -128,7 +128,15 @@ func ldapLookupUsers(username string, filter *ber.Packet, result *ldap.ServerSea
 				},
 			},
 		}
-		roles, err := ShowUserRoleObj(user.Name)
+		groupings := enforcer.GetGroupingPolicy()
+		roles := []*ormapi.Role{}
+		for ii, _ := range groupings {
+			role := parseRole(groupings[ii])
+			if role == nil {
+				continue
+			}
+			roles = append(roles, role)
+		}
 		if err == nil {
 			orgs := []string{}
 			for _, role := range roles {
