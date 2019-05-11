@@ -78,6 +78,11 @@ install-internal-linux:
 # Test
 #
 
+UNIT_TEST_LOG = /tmp/edge-cloud-infra-unit-test.log
+
+unit-test:
+	go test ./... > $(UNIT_TEST_LOG) || !(grep FAIL $(UNIT_TEST_LOG))
+
 test:
 	e2e-tests -testfile ./e2e-tests/testfiles/regression_run.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml
 	make -C ../edge-cloud test
