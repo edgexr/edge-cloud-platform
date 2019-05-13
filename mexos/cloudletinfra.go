@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud/deploygen"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -42,7 +43,9 @@ func InitInfraCommon() error {
 		return fmt.Errorf("Env variable MEX_DOCKER_REG_PASS not set")
 	}
 	CloudletInfraCommon.DNSZone = "mobiledgex.net"
-	CloudletInfraCommon.DockerRegistry = "registry.mobiledgex.net:5000"
+	CloudletInfraCommon.DockerRegistry = deploygen.MexRegistry
+	CloudletInfraCommon.DockerRegistrySecret = deploygen.MexRegistrySecret
+
 	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
 	return nil
 }
@@ -107,14 +110,12 @@ func GetCloudletOSImage() string {
 	return OpenstackProps.OSImageName
 }
 
-func GetCloudletAgentContainerImage() string {
-	return "unused - unnecessary?"
-	//return CloudletInfra.MexosContainerImageName
-}
-
-// todo: CRM supports only 1 registry
 func GetCloudletDockerRegistry() string {
 	return CloudletInfraCommon.DockerRegistry
+}
+
+func GetCloudletDockerRegistrySecret() string {
+	return CloudletInfraCommon.DockerRegistrySecret
 }
 
 func GetCloudletRegistryFileServer() string {
