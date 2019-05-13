@@ -18,12 +18,12 @@ import (
 func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
 	var out string
 
-	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubrnetes cluster")
+	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster", "registry", GetCloudletDockerRegistry(), "secret", GetCloudletDockerRegistrySecret())
 
-	cmd := fmt.Sprintf("kubectl create secret docker-registry mexregistrysecret "+
+	cmd := fmt.Sprintf("kubectl create secret docker-registry %s "+
 		"--docker-server=%s --docker-username=mobiledgex --docker-password=%s "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
-		GetCloudletDockerRegistry(), GetCloudletDockerPass(),
+		GetCloudletDockerRegistrySecret(), GetCloudletDockerRegistry(), GetCloudletDockerPass(),
 		k8smgmt.GetKconfName(clusterInst))
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -33,7 +33,7 @@ func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto
 			log.DebugLog(log.DebugLevelMexos, "warning, docker registry secret already exists.")
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, created mexregistrysecret")
+	log.DebugLog(log.DebugLevelMexos, "ok, created registry secret")
 	return nil
 }
 

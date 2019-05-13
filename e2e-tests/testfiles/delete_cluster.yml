@@ -1,0 +1,9 @@
+##
+##
+description: deletes provisioning 
+
+tests:
+
+- name: delete provisioning
+  apifile: "{{datadir2}}/appdata_clustertest.yml"
+  actions: [ctrlapi-delete]

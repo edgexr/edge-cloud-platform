@@ -34,10 +34,24 @@ operators:
 
 developers:
 - key:
-    name: MEX
+    name: MobiledgeX
   username: mex
   passhash: 8136f09c17354891c642b9b9f1722c34
   address: 123 Maple Street, Gainesville, FL 32604
+
+apps:
+- key:
+    developerkey:
+       name: MobiledgeX
+    name: "MobiledgeX SDK Demo"
+    version: "1.0"
+  imagepath: docker.mobiledgex.net/mobiledgex/images/mobiledgexsdkdemo
+  imagetype: ImageTypeDocker
+  deployment: "kubernetes"
+  defaultflavor:
+     name: x1.medium
+  accessports:
+     tcp:7777
 
 cloudlets:
 - key:
@@ -50,4 +64,5 @@ cloudlets:
     longitude: -91
   ipsupport: IpSupportDynamic
   numdynamicips: 254
+
 
