@@ -236,6 +236,23 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string) (bool
 	if err := CopyKubeConfig(client, clusterInst, rootLBName, ipaddr); err != nil {
 		return false, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
+	if clusterInst.NumNodes == 0 {
+		//remove the taint from the master if there are no nodes. This has potential side effects if the cluster
+		// becomes very busy but is useful for testing and PoC type clusters.
+		// TODO: if the cluster is subsequently increased in size do we need to add the taint?
+		//For now leaving that alone since an increased cluster size means we needed more capacity.
+		log.DebugLog(log.DebugLevelMexos, "removing NoSchedule taint from master", "master", master)
+		cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, ipaddr, master)
+		out, err := client.Output(cmd)
+		if err != nil {
+			if strings.Contains(out, "not found") {
+				log.DebugLog(log.DebugLevelMexos, "master taint already gone")
+			} else {
+				log.InfoLog("error removing master taint", "out", out, "err", err)
+				return false, fmt.Errorf("Cannot remove NoSchedule taint from master, %v", err)
+			}
+		}
+	}
 	log.DebugLog(log.DebugLevelMexos, "cluster ready.")
 	return true, nil
 }
