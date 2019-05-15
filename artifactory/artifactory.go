@@ -3,16 +3,15 @@ package artifactory
 import (
 	"fmt"
 	"os"
+
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func GetCreds() (string, string, error) {
-	af_user := os.Getenv("MEX_ARTIFACTORY_USER")
-	if af_user == "" {
-		return "", "", fmt.Errorf("Env variable MEX_ARTIFACTORY_USER not set")
+func GetArtifactoryApiKey() (string, error) {
+	artifactoryApiKey := os.Getenv("artifactory_apikey")
+	if artifactoryApiKey == "" {
+		log.InfoLog("Note: No 'artifactory_apikey' env var found")
+		return "", fmt.Errorf("Artifactory API Key not found")
 	}
-	af_pass := os.Getenv("MEX_ARTIFACTORY_PASS")
-	if af_pass == "" {
-		return "", "", fmt.Errorf("Env variable MEX_ARTIFACTORY_PASS not set")
-	}
-	return af_user, af_pass, nil
+	return artifactoryApiKey, nil
 }

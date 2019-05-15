@@ -40,6 +40,7 @@ type ServerConfig struct {
 	LocalVault      bool
 	LDAPAddr        string
 	GitlabAddr      string
+	ArtifactoryAddr string
 	ClientCert      string
 	PingInterval    time.Duration
 	SkipVerifyEmail bool
@@ -55,7 +56,8 @@ var db *gorm.DB
 var enforcer *casbin.SyncedEnforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
-var gitlabSync *GitlabSync
+var gitlabSync *AppStoreSync
+var artifactorySync *AppStoreSync
 var roleID string
 var secretID string
 
@@ -204,6 +206,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/data/delete", DeleteData)
 	auth.POST("/data/show", ShowData)
 	auth.POST("/gitlab/resync", GitlabResync)
+	auth.POST("/artifactory/resync", ArtifactoryResync)
 	auth.POST("/config/update", UpdateConfig)
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
@@ -232,8 +235,11 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		}
 	}()
 
-	gitlabSync = gitlabNewSync()
+	gitlabSync = GitlabNewSync()
 	gitlabSync.Start()
+
+	artifactorySync = ArtifactoryNewSync()
+	artifactorySync.Start()
 
 	return &server, nil
 }

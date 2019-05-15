@@ -1,8 +1,6 @@
 package orm
 
 import (
-	"time"
-
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -10,62 +8,23 @@ import (
 	gitlab "github.com/xanzy/go-gitlab"
 )
 
-// Gitlab's groups and group members are a duplicate of the Organizations
-// and Org Roles in MC. Because it's a duplicate, it's possible to get
-// out of sync (either due to failed operations, or MC or gitlab DB reset
-// or restored from backup, etc). GitlabSync takes care of re-syncing.
-// Syncs are triggered either by a failure, or by an API call.
-
-// Sync Interval attempts to re-sync if there was a failure
-var GitlabSyncInterval = 5 * time.Minute
-
 // MC tag is used to tag groups/projects created by master controller
 var GitlabMCTag = "mastercontroller"
 var GitlabAdminID = 1
 
-type GitlabSync struct {
-	run       chan bool
-	needsSync bool
+func GitlabNewSync() *AppStoreSync {
+	gSync := AppStoreNewSync("gitlab")
+	gSync.syncObjects = gSync.syncGitlabObjects
+	return gSync
 }
 
-func gitlabNewSync() *GitlabSync {
-	sync := GitlabSync{}
-	sync.run = make(chan bool, 1)
-	return &sync
+func (s *AppStoreSync) syncGitlabObjects() {
+	s.syncUsers()
+	s.syncGroups()
+	s.syncGroupMembers()
 }
 
-func (s *GitlabSync) Start() {
-	go func() {
-		for {
-			time.Sleep(GitlabSyncInterval)
-			if s.needsSync {
-				s.wakeup()
-			}
-		}
-	}()
-	s.NeedsSync()
-	s.wakeup()
-	go s.runThread()
-}
-
-func (s *GitlabSync) runThread() {
-	var err error
-	for {
-		if err != nil {
-			err = nil
-		}
-		select {
-		case <-s.run:
-		}
-		log.DebugLog(log.DebugLevelApi, "Gitlab Sync running")
-		s.needsSync = false
-		s.syncUsers()
-		s.syncGroups()
-		s.syncGroupMembers()
-	}
-}
-
-func (s *GitlabSync) syncUsers() {
+func (s *AppStoreSync) syncUsers() {
 	// get Gitlab users
 	gusers, _, err := gitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{})
 	if err != nil {
@@ -125,7 +84,12 @@ func (s *GitlabSync) syncUsers() {
 	}
 }
 
-func (s *GitlabSync) syncGroups() {
+func (s *AppStoreSync) syncGroups() {
+	orgsT, err := GetAllOrgs()
+	if err != nil {
+		s.syncErr(err)
+		return
+	}
 	// get Gitlab groups
 	groups, _, err := gitlabClient.Groups.ListGroups(&gitlab.ListGroupsOptions{})
 	if err != nil {
@@ -136,18 +100,6 @@ func (s *GitlabSync) syncGroups() {
 	for ii, _ := range groups {
 		groupsT[groups[ii].Name] = groups[ii]
 	}
-	// get MC orgs
-	orgs := []ormapi.Organization{}
-	err = db.Find(&orgs).Error
-	if err != nil {
-		s.syncErr(err)
-		return
-	}
-	orgsT := make(map[string]*ormapi.Organization)
-	for ii, _ := range orgs {
-		orgsT[orgs[ii].Name] = &orgs[ii]
-	}
-
 	for name, org := range orgsT {
 		name = util.GitlabGroupSanitize(name)
 		if _, found := groupsT[name]; found {
@@ -179,7 +131,7 @@ func (s *GitlabSync) syncGroups() {
 	}
 }
 
-func (s *GitlabSync) syncGroupMembers() {
+func (s *AppStoreSync) syncGroupMembers() {
 	members := make(map[string]map[string]*gitlab.GroupMember)
 	var err error
 
@@ -240,32 +192,12 @@ func (s *GitlabSync) syncGroupMembers() {
 	}
 }
 
-func (s *GitlabSync) NeedsSync() {
-	s.needsSync = true
-}
-
-func (s *GitlabSync) wakeup() {
-	select {
-	case s.run <- true:
-	default:
-	}
-}
-
-func (s *GitlabSync) syncErr(err error) {
-	log.DebugLog(log.DebugLevelApi, "Gitlab Sync failed", "err", err)
-	s.NeedsSync()
-}
-
 func GitlabResync(c echo.Context) error {
-	claims, err := getClaims(c)
+	err := SyncAccessCheck(c)
 	if err != nil {
 		return err
 	}
-	// only super user can access
-	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
-		return echo.ErrForbidden
-	}
 	gitlabSync.NeedsSync()
 	gitlabSync.wakeup()
-	return nil
+	return err
 }

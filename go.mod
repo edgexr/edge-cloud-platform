@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
+	github.com/atlassian/go-artifactory/v2 v2.3.0
 	github.com/casbin/casbin v1.6.0
 	github.com/casbin/gorm-adapter v0.0.0-20171006093545-e56c6daebd5e
 	github.com/cloudflare/cloudflare-go v0.8.5

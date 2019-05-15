@@ -70,6 +70,9 @@ func CreateOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 		Role:     role,
 	}
 	gitlabAddGroupMember(&r)
+
+	artifactoryCreateGroupObjects(org.Name)
+
 	return nil
 }
 
@@ -110,6 +113,7 @@ func DeleteOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 		}
 	}
 	gitlabDeleteGroup(org)
+	artifactoryDeleteGroupObjects(org.Name)
 	return nil
 }
 
@@ -151,4 +155,18 @@ func ShowOrgObj(claims *UserClaims) ([]ormapi.Organization, error) {
 		}
 	}
 	return orgs, nil
+}
+
+func GetAllOrgs() (map[string]*ormapi.Organization, error) {
+	orgsT := make(map[string]*ormapi.Organization)
+	orgs := []ormapi.Organization{}
+
+	err := db.Find(&orgs).Error
+	if err != nil {
+		return orgsT, err
+	}
+	for ii, _ := range orgs {
+		orgsT[orgs[ii].Name] = &orgs[ii]
+	}
+	return orgsT, err
 }
