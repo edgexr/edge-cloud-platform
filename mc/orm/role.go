@@ -351,6 +351,17 @@ func ShowUserRoleObj(username string) ([]ormapi.Role, error) {
 	return roles, nil
 }
 
+func SyncAccessCheck(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
+		return echo.ErrForbidden
+	}
+	return nil
+}
+
 // for debugging
 func dumpRbac() {
 	policies := enforcer.GetPolicy()

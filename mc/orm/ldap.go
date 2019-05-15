@@ -135,12 +135,17 @@ func ldapLookupUsers(username string, filter *ber.Packet, result *ldap.ServerSea
 			if role == nil {
 				continue
 			}
+			if role.Username != user.Name {
+				continue
+			}
+			if role.Org == "" {
+				continue
+			}
 			roles = append(roles, role)
 		}
 		if err == nil {
 			orgs := []string{}
 			for _, role := range roles {
-				// for now any role has full access
 				dn := ldapdn{
 					cn: role.Org,
 					ou: OUorgs,

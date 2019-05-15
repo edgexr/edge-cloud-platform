@@ -118,9 +118,9 @@ func SendHTTPReq(method, fileUrlPath string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	var af_user, af_pass string
+	var af_apikey string
 	if fileUrl.Host == "artifactory.mobiledgex.net" {
-		af_user, af_pass, err = artifactory.GetCreds()
+		af_apikey, err = artifactory.GetArtifactoryApiKey()
 		if err != nil {
 			return nil, err
 		}
@@ -130,8 +130,8 @@ func SendHTTPReq(method, fileUrlPath string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed sending request %v", err)
 	}
-	if af_user != "" && af_pass != "" {
-		req.SetBasicAuth(af_user, af_pass)
+	if af_apikey != "" {
+		req.Header.Set("X-JFrog-Art-Api", af_apikey)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
