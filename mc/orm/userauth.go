@@ -126,15 +126,11 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 		l := len(scheme)
 		if len(auth) <= len(scheme) || !strings.HasPrefix(auth, scheme) {
 			//if no token provided, return a 400 err
-			err := fmt.Errorf("no token found for Authorization Bearer")
-			if auth == scheme {
-				return &echo.HTTPError{
-					Code:     http.StatusBadRequest,
-					Message:  "no token found",
-					Internal: err,
-				}
+			return &echo.HTTPError{
+				Code:     http.StatusBadRequest,
+				Message:  "no bearer token found",
+				Internal: fmt.Errorf("no token found for Authorization Bearer"),
 			}
-			return err
 		}
 
 		cookie := auth[l+1:]
