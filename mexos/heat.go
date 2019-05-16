@@ -326,7 +326,7 @@ func waitForStack(stackname string, action string) error {
 			continue
 		case action + "_FAILED":
 			log.InfoLog("Heat Stack failed", "action", action, "stackName", stackname)
-			return fmt.Errorf("Heat Stack failed")
+			return fmt.Errorf("Heat Stack failed: %s", hd.StackStatusReason)
 		default:
 			log.InfoLog("Unexpected Heat Stack status", "status", stackname)
 			return fmt.Errorf("Stack create unexpected status: %s", hd.StackStatus)
