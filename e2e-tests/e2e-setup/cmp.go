@@ -44,7 +44,7 @@ var IgnoreAppInstUri = cmpopts.AcyclicTransformer("removeAppInstUri", func(inst 
 	// appinst. So we cannot use "nocmp". Remove the URIs for
 	// non-defaultCloudlets.
 	out := inst
-	if out.Key.CloudletKey != cloudcommon.DefaultCloudletKey {
+	if out.Key.ClusterInstKey.CloudletKey != cloudcommon.DefaultCloudletKey {
 		out.Uri = ""
 	}
 	return out
