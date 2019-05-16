@@ -310,12 +310,22 @@ func RemoveUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 		return fmt.Errorf("Role not specified")
 	}
 
+	// Special case: if policy does not exist, return success.
+	// This deals with a case in e2e-testing, where we delete the
+	// Org first (which deletes all associated roles), and then try
+	// to delete the manager role for the Org (which has already
+	// been delete). Since it's deleted, the enforcer fails, causing
+	// a forbidden error.
+	psub := getCasbinGroup(role.Org, role.Username)
+	if !enforcer.HasGroupingPolicy(psub, role.Role) {
+		return nil
+	}
+
 	// make sure caller has perms to modify users of target org
 	if !enforcer.Enforce(claims.Username, role.Org, ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
 
-	psub := getCasbinGroup(role.Org, role.Username)
 	enforcer.RemoveGroupingPolicy(psub, role.Role)
 
 	gitlabRemoveGroupMember(role)

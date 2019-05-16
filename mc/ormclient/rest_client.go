@@ -91,6 +91,12 @@ func (s *Client) RemoveUserRole(uri, token string, role *ormapi.Role) (int, erro
 	return s.PostJson(uri+"/auth/role/removeuser", token, role, nil)
 }
 
+func (s *Client) ShowUserRole(uri, token string) ([]ormapi.Role, int, error) {
+	roles := []ormapi.Role{}
+	status, err := s.PostJson(uri+"/auth/role/showuser", token, nil, &roles)
+	return roles, status, err
+}
+
 func (s *Client) ShowRoleAssignment(uri, token string) ([]ormapi.Role, int, error) {
 	roles := []ormapi.Role{}
 	status, err := s.PostJson(uri+"/auth/role/assignment/show", token, nil, &roles)

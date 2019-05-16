@@ -283,7 +283,7 @@ func TestController(t *testing.T) {
 	status, err = mcClient.CreateController(uri, token, &ctrl)
 	require.Nil(t, err, "create controller")
 	require.Equal(t, http.StatusOK, status)
-	dat := RegionClusterInst{
+	dat := ormapi.RegionClusterInst{
 		Region: ctrl.Region,
 	}
 	out := edgeproto.Result{}
