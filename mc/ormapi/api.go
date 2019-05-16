@@ -118,8 +118,7 @@ type AllData struct {
 	Controllers []Controller   `json:"controllers,omitempty"`
 	Orgs        []Organization `json:"orgs,omitempty"`
 	Roles       []Role         `json:"roles,omitempty"`
-	// not supported yet
-	RegionData []RegionData `json:"regiondata,omitempty"`
+	RegionData  []RegionData   `json:"regiondata,omitempty"`
 }
 
 type RegionData struct {

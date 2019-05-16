@@ -15,11 +15,15 @@ type GenMC2 struct {
 	*generator.Generator
 	support          gensupport.PluginSupport
 	tmpl             *template.Template
+	tmplApi          *template.Template
 	tmplMethodTest   *template.Template
 	tmplMessageTest  *template.Template
+	tmplMethodClient *template.Template
 	regionStructs    map[string]struct{}
 	firstFile        bool
+	genapi           bool
 	gentest          bool
+	genclient        bool
 	importEcho       bool
 	importHttp       bool
 	importContext    bool
@@ -39,7 +43,9 @@ func (g *GenMC2) Name() string {
 func (g *GenMC2) Init(gen *generator.Generator) {
 	g.Generator = gen
 	g.tmpl = template.Must(template.New("mc2").Parse(tmpl))
+	g.tmplApi = template.Must(template.New("mc2api").Parse(tmplApi))
 	g.tmplMethodTest = template.Must(template.New("methodtest").Parse(tmplMethodTest))
+	g.tmplMethodClient = template.Must(template.New("methodclient").Parse(tmplMethodClient))
 	g.tmplMessageTest = template.Must(template.New("messagetest").Parse(tmplMessageTest))
 	g.regionStructs = make(map[string]struct{})
 	g.firstFile = true
@@ -100,14 +106,26 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	}
 
 	g.P(gensupport.AutoGenComment)
+	if _, found := g.Generator.Param["genapi"]; found {
+		// generate client code
+		g.genapi = true
+	}
 	if _, found := g.Generator.Param["gentest"]; found {
 		// generate test code
 		g.gentest = true
+	}
+	if _, found := g.Generator.Param["genclient"]; found {
+		// generate client code
+		g.genclient = true
 	}
 
 	for _, service := range file.FileDescriptorProto.Service {
 		g.generateService(service)
 	}
+	if g.genapi || g.genclient {
+		return
+	}
+
 	if g.firstFile {
 		if !g.gentest {
 			g.generatePosts()
@@ -213,17 +231,18 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	if args.Action == "ActionView" && strings.HasPrefix(args.MethodName, "Show") {
 		args.Show = true
 	}
-	if g.gentest {
-		err := g.tmplMethodTest.Execute(g, &args)
-		if err != nil {
-			g.Fail("Failed to execute method test template: ", err.Error())
-		}
+	var tmpl *template.Template
+	if g.genapi {
+		tmpl = g.tmplApi
+	} else if g.genclient {
+		tmpl = g.tmplMethodClient
+		g.importOrmapi = true
+	} else if g.gentest {
+		tmpl = g.tmplMethodTest
+		g.importOrmapi = true
 		g.importOrmclient = true
 	} else {
-		err := g.tmpl.Execute(g, &args)
-		if err != nil {
-			g.Fail("Failed to execute method template: ", err.Error())
-		}
+		tmpl = g.tmpl
 		g.importEcho = true
 		g.importHttp = true
 		g.importContext = true
@@ -233,6 +252,10 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 			g.importOrmapi = true
 			g.importGrpcStatus = true
 		}
+	}
+	err := tmpl.Execute(g, &args)
+	if err != nil {
+		g.Fail("Failed to execute template %s: ", tmpl.Name(), err.Error())
 	}
 	if !found {
 		g.regionStructs[inname] = struct{}{}
@@ -255,7 +278,7 @@ type tmplArgs struct {
 	Show        bool
 }
 
-var tmpl = `
+var tmplApi = `
 {{- if .GenStruct}}
 type Region{{.InName}} struct {
 	Region string
@@ -263,6 +286,9 @@ type Region{{.InName}} struct {
 }
 
 {{- end}}
+`
+
+var tmpl = `
 func {{.MethodName}}(c echo.Context) error {
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
@@ -271,7 +297,7 @@ func {{.MethodName}}(c echo.Context) error {
 	}
 	rc.claims = claims
 
-	in := Region{{.InName}}{}
+	in := ormapi.Region{{.InName}}{}
 	if err := c.Bind(&in); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
@@ -378,30 +404,20 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) ([]edgepr
 
 var tmplMethodTest = `
 {{- if .Outstream}}
-func test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) (int, []edgeproto.{{.OutName}}, error) {
+func test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) ([]edgeproto.{{.OutName}}, int, error) {
 {{- else}}
-func test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) (int, edgeproto.{{.OutName}}, error) {
+func test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) (edgeproto.{{.OutName}}, int, error) {
 {{- end}}
-	dat := &Region{{.InName}}{}
+	dat := &ormapi.Region{{.InName}}{}
 	dat.Region = region
 	dat.{{.InName}} = *in
-	out := edgeproto.{{.OutName}}{}
-{{- if .Outstream}}
-	outlist := []edgeproto.{{.OutName}}{}
-	status, err := mcClient.PostJsonStreamOut(uri+"/auth/ctrl/{{.MethodName}}", token, dat, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return status, outlist, err
-{{- else}}
-	status, err := mcClient.PostJson(uri+"/auth/ctrl/{{.MethodName}}", token, dat, &out)
-	return status, out, err
-{{- end}}
+	return mcClient.{{.MethodName}}(uri, token, dat)
 }
 
 {{- if .Outstream}}
-func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) (int, []edgeproto.{{.OutName}}, error) {
+func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.{{.OutName}}, int, error) {
 {{- else}}
-func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) (int, edgeproto.{{.OutName}}, error) {
+func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.{{.OutName}}, int, error) {
 {{- end}}
 	in := &edgeproto.{{.InName}}{}
 {{- if and (ne .OrgField "") (not .SkipEnforce)}}
@@ -409,6 +425,27 @@ func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org
 {{- end}}
 	return test{{.MethodName}}(mcClient, uri, token, region, in)
 }
+`
+
+var tmplMethodClient = `
+{{- if .Outstream}}
+func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) ([]edgeproto.{{.OutName}}, int, error) {
+	out := edgeproto.{{.OutName}}{}
+	outlist := []edgeproto.{{.OutName}}{}
+	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/{{.MethodName}}", token, in, &out, func() {
+		outlist = append(outlist, out)
+		// clear buffer
+		out = edgeproto.{{.OutName}}{}
+	})
+	return outlist, status, err
+}
+{{- else}}
+func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) (edgeproto.{{.OutName}}, int, error) {
+	out := edgeproto.{{.OutName}}{}
+	status, err := s.PostJson(uri+"/auth/ctrl/{{.MethodName}}", token, in, &out)
+	return out, status, err
+}
+{{- end}}
 `
 
 func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
@@ -433,20 +470,20 @@ var tmplMessageTest = `
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
 func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	status, _, err := testPermCreate{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err := testPermCreate{{.Message}}(mcClient, uri, token, region, org)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	status, _, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	status, _, err = testPermDelete{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err = testPermDelete{{.Message}}(mcClient, uri, token, region, org)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
 func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
-	status, list, err := testPermShow{{.Message}}(mcClient, uri, token, region, org)
+	list, status, err := testPermShow{{.Message}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(list))
@@ -455,26 +492,26 @@ func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
 func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
-	status, _, err := testPermCreate{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err := testPermCreate{{.Message}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	status, _, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	status, _, err = testPermDelete{{.Message}}(mcClient, uri, token, region, org)
+	_, status, err = testPermDelete{{.Message}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
 	// make sure region check works
-	status, _, err = testPermCreate{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err = testPermCreate{{.Message}}(mcClient, uri, token, "bad region", org)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	status, _, err = testPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	status, _, err = testPermDelete{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err = testPermDelete{{.Message}}(mcClient, uri, token, "bad region", org)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -483,13 +520,13 @@ func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, tok
 }
 
 func goodPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, count int) {
-	status, list, err := testPermShow{{.Message}}(mcClient, uri, token, region, org)
+	list, status, err := testPermShow{{.Message}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, count, len(list))
 
 	// make sure region check works
-	status, list, err = testPermShow{{.Message}}(mcClient, uri, token, "bad region", org)
+	list, status, err = testPermShow{{.Message}}(mcClient, uri, token, "bad region", org)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)

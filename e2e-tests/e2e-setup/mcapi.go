@@ -10,20 +10,21 @@ import (
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 )
 
 var mcClient = ormclient.Client{SkipVerify: true}
 
-func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string) bool {
+func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
 
 	if strings.HasSuffix(api, "users") {
-		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir)
+		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods)
 	}
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods)
 }
 
 func getMC(name string) *intprocess.MC {
@@ -39,7 +40,7 @@ func getMC(name string) *intprocess.MC {
 	return nil //unreachable
 }
 
-func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string) bool {
+func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
 	log.Printf("Applying MC users via APIs for %s\n", apiFile)
 
 	rc := true
@@ -79,8 +80,9 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string) bool {
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string) bool {
-	log.Printf("Applying MC data via APIs for %s\n", apiFile)
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+	log.Printf("Applying MC data via APIs for %s %v\n", apiFile, mods)
+	sep := hasMod("sep", mods)
 
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
@@ -92,8 +94,12 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string) bool {
 	}
 
 	if api == "show" {
-		showData, status, err := mcClient.ShowData(uri, token)
-		checkMcErr("ShowData", status, err, &rc)
+		var showData *ormapi.AllData
+		if sep {
+			showData = showMcDataSep(uri, token, &rc)
+		} else {
+			showData = showMcDataAll(uri, token, &rc)
+		}
 		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 		return rc
 	}
@@ -105,15 +111,17 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string) bool {
 	data := readMCDataFile(apiFile)
 	switch api {
 	case "create":
-		status, err := mcClient.CreateData(uri, token, data, func(res *ormapi.Result) {
-			log.Printf("CreateData: %s\n", res.Message)
-		})
-		checkMcErr("CreateData", status, err, &rc)
+		if sep {
+			createMcDataSep(uri, token, data, &rc)
+		} else {
+			createMcDataAll(uri, token, data, &rc)
+		}
 	case "delete":
-		status, err := mcClient.DeleteData(uri, token, data, func(res *ormapi.Result) {
-			log.Printf("DeleteData: %s\n", res.Message)
-		})
-		checkMcErr("DeleteData", status, err, &rc)
+		if sep {
+			deleteMcDataSep(uri, token, data, &rc)
+		} else {
+			deleteMcDataAll(uri, token, data, &rc)
+		}
 	}
 	return rc
 }
@@ -167,5 +175,226 @@ func checkMcErr(msg string, status int, err error, rc *bool) {
 	if err != nil || status != http.StatusOK {
 		log.Printf("%s failed %v/%d\n", msg, err, status)
 		*rc = false
+	}
+}
+
+func checkMcCtrlErr(msg string, status int, err error, rc *bool) {
+	if err != nil && strings.Contains(err.Error(), "no such host") &&
+		status == http.StatusBadRequest {
+		// trying to show dummy controller that doesn't exist
+		log.Printf("ignoring no host err for %s, %v\n", msg, err)
+		return
+	}
+	if err != nil || status != http.StatusOK {
+		log.Printf("%s failed %v/%d\n", msg, err, status)
+		*rc = false
+	}
+}
+
+func hasMod(mod string, mods []string) bool {
+	for _, a := range mods {
+		if a == mod {
+			return true
+		}
+	}
+	return false
+}
+
+func showMcDataAll(uri, token string, rc *bool) *ormapi.AllData {
+	showData, status, err := mcClient.ShowData(uri, token)
+	checkMcErr("ShowData", status, err, rc)
+	return showData
+}
+
+func createMcDataAll(uri, token string, data *ormapi.AllData, rc *bool) {
+	status, err := mcClient.CreateData(uri, token, data, func(res *ormapi.Result) {
+		log.Printf("CreateData: %s\n", res.Message)
+	})
+	checkMcErr("CreateData", status, err, rc)
+}
+
+func deleteMcDataAll(uri, token string, data *ormapi.AllData, rc *bool) {
+	status, err := mcClient.DeleteData(uri, token, data, func(res *ormapi.Result) {
+		log.Printf("DeleteData: %s\n", res.Message)
+	})
+	checkMcErr("DeleteData", status, err, rc)
+}
+
+func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
+	ctrls, status, err := mcClient.ShowController(uri, token)
+	checkMcErr("ShowControllers", status, err, rc)
+	orgs, status, err := mcClient.ShowOrgs(uri, token)
+	checkMcErr("ShowOrgs", status, err, rc)
+	roles, status, err := mcClient.ShowUserRole(uri, token)
+
+	showData := &ormapi.AllData{
+		Controllers: ctrls,
+		Orgs:        orgs,
+		Roles:       roles,
+	}
+	for _, ctrl := range ctrls {
+		inFlavor := &ormapi.RegionFlavor{
+			Region: ctrl.Region,
+		}
+		flavors, status, err := mcClient.ShowFlavor(uri, token, inFlavor)
+		checkMcCtrlErr("ShowFlavors", status, err, rc)
+
+		inCloudlet := &ormapi.RegionCloudlet{
+			Region: ctrl.Region,
+		}
+		cloudlets, status, err := mcClient.ShowCloudlet(uri, token, inCloudlet)
+		checkMcCtrlErr("ShowCloudlet", status, err, rc)
+
+		inClusterInst := &ormapi.RegionClusterInst{
+			Region: ctrl.Region,
+		}
+		clusterInsts, status, err := mcClient.ShowClusterInst(uri, token, inClusterInst)
+		checkMcCtrlErr("ShowClusterInst", status, err, rc)
+
+		inApp := &ormapi.RegionApp{
+			Region: ctrl.Region,
+		}
+		apps, status, err := mcClient.ShowApp(uri, token, inApp)
+		checkMcCtrlErr("ShowApp", status, err, rc)
+
+		inAppInst := &ormapi.RegionAppInst{
+			Region: ctrl.Region,
+		}
+		appInsts, status, err := mcClient.ShowAppInst(uri, token, inAppInst)
+		checkMcCtrlErr("ShowAppInst", status, err, rc)
+
+		// match what alldata.go does.
+		if len(flavors) == 0 && len(cloudlets) == 0 &&
+			len(clusterInsts) == 0 && len(apps) == 0 &&
+			len(appInsts) == 0 {
+			continue
+		}
+
+		rd := ormapi.RegionData{
+			Region: ctrl.Region,
+			AppData: edgeproto.ApplicationData{
+				Flavors:      flavors,
+				Cloudlets:    cloudlets,
+				ClusterInsts: clusterInsts,
+				Applications: apps,
+				AppInstances: appInsts,
+			},
+		}
+		showData.RegionData = append(showData.RegionData, rd)
+	}
+	return showData
+}
+
+func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
+	for _, ctrl := range data.Controllers {
+		st, err := mcClient.CreateController(uri, token, &ctrl)
+		checkMcErr("CreateController", st, err, rc)
+	}
+	for _, org := range data.Orgs {
+		st, err := mcClient.CreateOrg(uri, token, &org)
+		checkMcErr("CreateOrg", st, err, rc)
+	}
+	for _, role := range data.Roles {
+		st, err := mcClient.AddUserRole(uri, token, &role)
+		checkMcErr("AddUserRole", st, err, rc)
+	}
+	for _, rd := range data.RegionData {
+		for _, flavor := range rd.AppData.Flavors {
+			in := &ormapi.RegionFlavor{
+				Region: rd.Region,
+				Flavor: flavor,
+			}
+			_, st, err := mcClient.CreateFlavor(uri, token, in)
+			checkMcErr("CreateFlavor", st, err, rc)
+		}
+		for _, cloudlet := range rd.AppData.Cloudlets {
+			in := &ormapi.RegionCloudlet{
+				Region:   rd.Region,
+				Cloudlet: cloudlet,
+			}
+			_, st, err := mcClient.CreateCloudlet(uri, token, in)
+			checkMcErr("CreateCloudlet", st, err, rc)
+		}
+		for _, cinst := range rd.AppData.ClusterInsts {
+			in := &ormapi.RegionClusterInst{
+				Region:      rd.Region,
+				ClusterInst: cinst,
+			}
+			_, st, err := mcClient.CreateClusterInst(uri, token, in)
+			checkMcErr("CreateClusterInst", st, err, rc)
+		}
+		for _, app := range rd.AppData.Applications {
+			in := &ormapi.RegionApp{
+				Region: rd.Region,
+				App:    app,
+			}
+			_, st, err := mcClient.CreateApp(uri, token, in)
+			checkMcErr("CreateApp", st, err, rc)
+		}
+		for _, appinst := range rd.AppData.AppInstances {
+			in := &ormapi.RegionAppInst{
+				Region:  rd.Region,
+				AppInst: appinst,
+			}
+			_, st, err := mcClient.CreateAppInst(uri, token, in)
+			checkMcErr("CreateAppInst", st, err, rc)
+		}
+	}
+}
+
+func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
+	for _, rd := range data.RegionData {
+		for _, appinst := range rd.AppData.AppInstances {
+			in := &ormapi.RegionAppInst{
+				Region:  rd.Region,
+				AppInst: appinst,
+			}
+			_, st, err := mcClient.DeleteAppInst(uri, token, in)
+			checkMcErr("DeleteAppInst", st, err, rc)
+		}
+		for _, app := range rd.AppData.Applications {
+			in := &ormapi.RegionApp{
+				Region: rd.Region,
+				App:    app,
+			}
+			_, st, err := mcClient.DeleteApp(uri, token, in)
+			checkMcErr("DeleteApp", st, err, rc)
+		}
+		for _, cinst := range rd.AppData.ClusterInsts {
+			in := &ormapi.RegionClusterInst{
+				Region:      rd.Region,
+				ClusterInst: cinst,
+			}
+			_, st, err := mcClient.DeleteClusterInst(uri, token, in)
+			checkMcErr("DeleteClusterInst", st, err, rc)
+		}
+		for _, cloudlet := range rd.AppData.Cloudlets {
+			in := &ormapi.RegionCloudlet{
+				Region:   rd.Region,
+				Cloudlet: cloudlet,
+			}
+			_, st, err := mcClient.DeleteCloudlet(uri, token, in)
+			checkMcErr("DeleteCloudlet", st, err, rc)
+		}
+		for _, flavor := range rd.AppData.Flavors {
+			in := &ormapi.RegionFlavor{
+				Region: rd.Region,
+				Flavor: flavor,
+			}
+			_, st, err := mcClient.DeleteFlavor(uri, token, in)
+			checkMcErr("DeleteFlavor", st, err, rc)
+		}
+	}
+	for _, org := range data.Orgs {
+		st, err := mcClient.DeleteOrg(uri, token, &org)
+		checkMcErr("DeleteOrg", st, err, rc)
+	}
+	for _, role := range data.Roles {
+		st, err := mcClient.RemoveUserRole(uri, token, &role)
+		checkMcErr("RemoveUserRole", st, err, rc)
+	}
+	for _, ctrl := range data.Controllers {
+		st, err := mcClient.DeleteController(uri, token, &ctrl)
+		checkMcErr("DeleteController", st, err, rc)
 	}
 }
