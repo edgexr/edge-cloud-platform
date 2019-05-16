@@ -273,11 +273,13 @@ regiondata:
             name: platos
           name: platosEnablingLayer
           version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: developer
-          name: default
-        id: 123
+        clusterinstkey:
+          clusterkey:
+            name: default
+          cloudletkey:
+            operatorkey:
+              name: developer
+            name: default
       uri: default.platosenablement.platos.com
       liveness: LivenessStatic
       mappedports:
@@ -292,23 +294,18 @@ regiondata:
             name: AcmeAppCo
           name: someapplication1
           version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-1
-        id: 123
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            operatorkey:
+              name: dmuus
+            name: dmuus-cloud-1
+          developer: AcmeAppCo
       cloudletloc:
         latitude: 31
         longitude: -91
       uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
-      clusterinstkey:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-1
-        developer: AcmeAppCo
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTCP
@@ -332,23 +329,18 @@ regiondata:
             name: AcmeAppCo
           name: someapplication1
           version: "1.0"
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-2
-        id: 123
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            operatorkey:
+              name: dmuus
+            name: dmuus-cloud-2
+          developer: AcmeAppCo
       cloudletloc:
         latitude: 35
         longitude: -95
       uri: dmuus-cloud-2.dmuus.mobiledgex.net
-      clusterinstkey:
-        clusterkey:
-          name: SmallCluster
-        cloudletkey:
-          operatorkey:
-            name: dmuus
-          name: dmuus-cloud-2
-        developer: AcmeAppCo
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTCP
