@@ -490,7 +490,7 @@ http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/Crea
 http --auth-type=jwt --auth=$BBTOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateCloudlet <<< '{"region":"local","cloudlet":{"key":{"operator_key":{"name":"bigwaves"},"name":"oceanview"},"location":{"latitude":1,"longitude":1,"timestamp":{}},"ip_support":2,"num_dynamic_ips":30}}'
 http --auth-type=jwt --auth=$ORGMANTOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateClusterInst <<< '{"region":"local","clusterinst":{"key":{"cluster_key":{"name":"bigclust"},"cloudlet_key":{"operator_key":{"name":"bigwaves"},"name":"oceanview"},"developer":"bigorg"},"flavor":{"name":"x1.medium"}}}'
 http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateApp <<< '{"region":"local","app":{"key":{"developer_key":{"name":"bigorg"},"name":"myapp","version":"1.0.0"},"image_path":"registry.mobiledgex.net:5000/mobiledgex/simapp","image_type":1,"access_ports":"udp:12001,tcp:80,http:7777","default_flavor":{"name":"x1.medium"},"cluster":{"name":"bigclust"},"command":"simapp -port 7777"}}'
-http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateAppInst <<< '{"region":"local","appinst":{"key":{"app_key":{"developer_key":{"name":"bigorg"},"name":"myapp","version":"1.0.0"},"cloudlet_key":{"operator_key":{"name":"bigwaves"},"name":"oceanview"}},"cluster_inst_key":{"cluster_key":{"name":"bigclust"},"cloudlet_key":{"operator_key":{"name":"bigwaves"},"name":"oceanview"}}}}'
+http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/CreateAppInst <<< '{"region":"local","appinst":{"key":{"app_key":{"developer_key":{"name":"bigorg"},"name":"myapp","version":"1.0.0"},"cluster_inst_key":{"cluster_key":{"name":"bigclust"},"cloudlet_key":{"operator_key":{"name":"bigwaves"},"name":"oceanview"}}}}}'
 ```
 
 Show commands must take at least the region. Other fields may also be specified for additional result filtering. Equivalent show commands for the above are below.
@@ -557,22 +557,16 @@ http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/Crea
         "name": "TestVM",
         "version": "1.0"
       },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
+      "cluster_inst_key": {
+        "cluster_key": {
+          "name": "appcluster"
         },
-        "name": "beacon-mexdemo"
-      }
-    },
-    "cluster_inst_key": {
-      "cluster_key": {
-        "name": "appcluster"
-      },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
-        },
-        "name": "beacon-mexdemo"
+        "cloudlet_key": {
+          "operator_key": {
+            "name": "GDDT"
+          },
+          "name": "beacon-mexdemo"
+        }
       }
     }
   }
@@ -615,22 +609,16 @@ http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/Crea
         "name": "TestVM",
         "version": "1.0"
       },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
+      "cluster_inst_key": {
+        "cluster_key": {
+          "name": "appcluster"
         },
-        "name": "beacon-mexdemo"
-      }
-    },
-    "cluster_inst_key": {
-      "cluster_key": {
-        "name": "appcluster"
-      },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
-        },
-        "name": "beacon-mexdemo"
+        "cloudlet_key": {
+          "operator_key": {
+            "name": "GDDT"
+          },
+          "name": "beacon-mexdemo"
+        }
       }
     }
   }
@@ -650,22 +638,16 @@ http --auth-type=jwt --auth=$SUPERPASS POST 127.0.0.1:9900/api/v1/auth/ctrl/Dele
         "name": "TestVM",
         "version": "1.0"
       },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
+      "cluster_inst_key": {
+        "cluster_key": {
+          "name": "appcluster"
         },
-        "name": "beacon-mexdemo"
-      }
-    },
-    "cluster_inst_key": {
-      "cluster_key": {
-        "name": "appcluster"
-      },
-      "cloudlet_key": {
-        "operator_key": {
-          "name": "GDDT"
-        },
-        "name": "beacon-mexdemo"
+        "cloudlet_key": {
+          "operator_key": {
+            "name": "GDDT"
+          },
+          "name": "beacon-mexdemo"
+        }
       }
     }
   }
