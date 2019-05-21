@@ -8,18 +8,30 @@ import (
 	"strings"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 )
 
-var mcClient = ormclient.Client{SkipVerify: true}
+var mcClient ormclient.Api
 
 func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
+
+	if hasMod("cli", mods) {
+		mcClient = &cliwrapper.Client{
+			DebugLog:   true,
+			SkipVerify: true,
+		}
+	} else {
+		mcClient = &ormclient.Client{
+			SkipVerify: true,
+		}
+	}
 
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods)
@@ -49,7 +61,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		if !rc {
 			return false
 		}
-		users, status, err := mcClient.ShowUsers(uri, token, "")
+		users, status, err := mcClient.ShowUser(uri, token, &ormapi.Organization{})
 		checkMcErr("ShowUser", status, err, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
 		return rc
@@ -179,8 +191,7 @@ func checkMcErr(msg string, status int, err error, rc *bool) {
 }
 
 func checkMcCtrlErr(msg string, status int, err error, rc *bool) {
-	if err != nil && strings.Contains(err.Error(), "no such host") &&
-		status == http.StatusBadRequest {
+	if err != nil && strings.Contains(err.Error(), "no such host") {
 		// trying to show dummy controller that doesn't exist
 		log.Printf("ignoring no host err for %s, %v\n", msg, err)
 		return
@@ -223,7 +234,7 @@ func deleteMcDataAll(uri, token string, data *ormapi.AllData, rc *bool) {
 func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 	ctrls, status, err := mcClient.ShowController(uri, token)
 	checkMcErr("ShowControllers", status, err, rc)
-	orgs, status, err := mcClient.ShowOrgs(uri, token)
+	orgs, status, err := mcClient.ShowOrg(uri, token)
 	checkMcErr("ShowOrgs", status, err, rc)
 	roles, status, err := mcClient.ShowUserRole(uri, token)
 

@@ -14,9 +14,13 @@ BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoog
 OUTDIR		= ${INFRA}/mc/orm
 OUTAPI		= ${INFRA}/mc/ormapi
 OUTCLIENT	= ${INFRA}/mc/ormclient
+OUTCTL		= ${INFRA}/mc/mcctl/ormctl
+OUTCLIWRAPPER	= ${INFRA}/mc/mcctl/cliwrapper
 
 build:
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genapi,pkg=ormapi:${OUTAPI} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN}:${OUTDIR} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},gentest,suffix=_mc2_test.go:${OUTDIR} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genclient,pkg=ormclient,suffix=_client.go:${OUTCLIENT} *.proto)
+	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genctl,pkg=ormctl:${OUTCTL} *.proto)
+	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},gencliwrapper,pkg=cliwrapper:${OUTCLIWRAPPER} *.proto)

@@ -27,6 +27,9 @@ func connectControllerAddr(addr string) (*grpc.ClientConn, error) {
 }
 
 func getControllerAddrForRegion(region string) (string, error) {
+	if region == "" {
+		return "", fmt.Errorf("no region specified")
+	}
 	ctrl := ormapi.Controller{
 		Region: region,
 	}

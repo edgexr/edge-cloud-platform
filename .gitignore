@@ -49,6 +49,7 @@ vendor
 openstack-tenant/agent/build
 
 mc/mc
+mc/mcctl/mcctl
 mc/orm/dump.sql
 *rbac.conf
 mc/orm/*.mc2.go

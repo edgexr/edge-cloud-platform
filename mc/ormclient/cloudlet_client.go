@@ -26,8 +26,6 @@ func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/CreateCloudlet", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.Result{}
 	})
 	return outlist, status, err
 }
@@ -37,8 +35,6 @@ func (s *Client) DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/DeleteCloudlet", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.Result{}
 	})
 	return outlist, status, err
 }
@@ -48,8 +44,6 @@ func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/UpdateCloudlet", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.Result{}
 	})
 	return outlist, status, err
 }
@@ -59,10 +53,15 @@ func (s *Client) ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]e
 	outlist := []edgeproto.Cloudlet{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/ShowCloudlet", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.Cloudlet{}
 	})
 	return outlist, status, err
+}
+
+type CloudletApiClient interface {
+	CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error)
+	DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error)
+	UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error)
+	ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Cloudlet, int, error)
 }
 
 func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
@@ -70,8 +69,10 @@ func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletIn
 	outlist := []edgeproto.CloudletInfo{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/ShowCloudletInfo", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.CloudletInfo{}
 	})
 	return outlist, status, err
+}
+
+type CloudletInfoApiClient interface {
+	ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error)
 }

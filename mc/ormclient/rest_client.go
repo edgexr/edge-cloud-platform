@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
 type Client struct {
 	SkipVerify bool
+	Debug      bool
 }
 
 func (s *Client) DoLogin(uri, user, pass string) (string, error) {
@@ -48,10 +50,9 @@ func (s *Client) DeleteUser(uri, token string, user *ormapi.User) (int, error) {
 	return s.PostJson(uri+"/auth/user/delete", token, user, nil)
 }
 
-func (s *Client) ShowUsers(uri, token, org string) ([]ormapi.User, int, error) {
+func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error) {
 	users := []ormapi.User{}
-	in := ormapi.Organization{Name: org}
-	status, err := s.PostJson(uri+"/auth/user/show", token, &in, &users)
+	status, err := s.PostJson(uri+"/auth/user/show", token, org, &users)
 	return users, status, err
 }
 
@@ -77,7 +78,7 @@ func (s *Client) DeleteOrg(uri, token string, org *ormapi.Organization) (int, er
 	return s.PostJson(uri+"/auth/org/delete", token, org, nil)
 }
 
-func (s *Client) ShowOrgs(uri, token string) ([]ormapi.Organization, int, error) {
+func (s *Client) ShowOrg(uri, token string) ([]ormapi.Organization, int, error) {
 	orgs := []ormapi.Organization{}
 	status, err := s.PostJson(uri+"/auth/org/show", token, nil, &orgs)
 	return orgs, status, err
@@ -105,17 +106,35 @@ func (s *Client) ShowRoleAssignment(uri, token string) ([]ormapi.Role, int, erro
 
 func (s *Client) CreateData(uri, token string, data *ormapi.AllData, cb func(res *ormapi.Result)) (int, error) {
 	res := ormapi.Result{}
+	var reserr error
+	var resstatus int
 	status, err := s.PostJsonStreamOut(uri+"/auth/data/create", token, data, &res, func() {
+		if res.Code != 0 {
+			reserr = fmt.Errorf(res.Message)
+			resstatus = res.Code
+		}
 		cb(&res)
 	})
+	if reserr != nil {
+		return resstatus, reserr
+	}
 	return status, err
 }
 
 func (s *Client) DeleteData(uri, token string, data *ormapi.AllData, cb func(res *ormapi.Result)) (int, error) {
 	res := ormapi.Result{}
+	var reserr error
+	var resstatus int
 	status, err := s.PostJsonStreamOut(uri+"/auth/data/delete", token, data, &res, func() {
+		if res.Code != 0 {
+			reserr = fmt.Errorf(res.Message)
+			resstatus = res.Code
+		}
 		cb(&res)
 	})
+	if reserr != nil {
+		return resstatus, reserr
+	}
 	return status, err
 }
 
@@ -145,6 +164,9 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 		out, err := json.Marshal(reqData)
 		if err != nil {
 			return nil, fmt.Errorf("post %s marshal req failed, %s", uri, err.Error())
+		}
+		if s.Debug {
+			fmt.Printf("posting %s\n", string(out))
 		}
 		body = bytes.NewBuffer(out)
 	} else {
@@ -176,7 +198,7 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK && replyData != nil {
 		err = json.NewDecoder(resp.Body).Decode(replyData)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			return resp.StatusCode, fmt.Errorf("post %s decode resp failed, %v", uri, err)
 		}
 	}
@@ -191,7 +213,7 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	return resp.StatusCode, nil
 }
 
-func (s *Client) PostJsonStreamOut(uri, token string, reqData interface{}, replyData interface{}, replyReady func()) (int, error) {
+func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
 	resp, err := s.PostJsonSend(uri, token, reqData)
 	if err != nil {
 		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
@@ -210,8 +232,16 @@ func (s *Client) PostJsonStreamOut(uri, token string, reqData interface{}, reply
 	if replyData != nil {
 		payload.Data = replyData
 	}
+
 	dec := json.NewDecoder(resp.Body)
 	for {
+		if replyData != nil {
+			// clear passed in buffer for next iteration.
+			// replyData must be pointer to object.
+			p := reflect.ValueOf(replyData).Elem()
+			p.Set(reflect.Zero(p.Type()))
+		}
+
 		payload.Result = nil
 		err := dec.Decode(&payload)
 		if err != nil {

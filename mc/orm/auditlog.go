@@ -59,7 +59,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 		if strings.HasSuffix(req.RequestURI, "usercreate") {
-			user := ormapi.User{}
+			user := ormapi.CreateUser{}
 			err := json.Unmarshal(reqBody, &user)
 			if err == nil {
 				user.Passhash = ""

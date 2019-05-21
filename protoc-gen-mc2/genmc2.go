@@ -8,32 +8,38 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	"github.com/mobiledgex/edge-cloud/gensupport"
+	"github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 	"github.com/mobiledgex/edge-cloud/protogen"
 )
 
 type GenMC2 struct {
 	*generator.Generator
-	support          gensupport.PluginSupport
-	tmpl             *template.Template
-	tmplApi          *template.Template
-	tmplMethodTest   *template.Template
-	tmplMessageTest  *template.Template
-	tmplMethodClient *template.Template
-	regionStructs    map[string]struct{}
-	firstFile        bool
-	genapi           bool
-	gentest          bool
-	genclient        bool
-	importEcho       bool
-	importHttp       bool
-	importContext    bool
-	importIO         bool
-	importJson       bool
-	importTesting    bool
-	importRequire    bool
-	importOrmclient  bool
-	importOrmapi     bool
-	importGrpcStatus bool
+	support              gensupport.PluginSupport
+	tmpl                 *template.Template
+	tmplApi              *template.Template
+	tmplMethodTest       *template.Template
+	tmplMethodCtl        *template.Template
+	tmplMessageTest      *template.Template
+	tmplMethodClient     *template.Template
+	tmplMethodCliWrapper *template.Template
+	regionStructs        map[string]struct{}
+	firstFile            bool
+	genapi               bool
+	gentest              bool
+	genclient            bool
+	genctl               bool
+	gencliwrapper        bool
+	importEcho           bool
+	importHttp           bool
+	importContext        bool
+	importIO             bool
+	importJson           bool
+	importTesting        bool
+	importRequire        bool
+	importOrmclient      bool
+	importOrmapi         bool
+	importGrpcStatus     bool
+	importStrings        bool
 }
 
 func (g *GenMC2) Name() string {
@@ -46,6 +52,8 @@ func (g *GenMC2) Init(gen *generator.Generator) {
 	g.tmplApi = template.Must(template.New("mc2api").Parse(tmplApi))
 	g.tmplMethodTest = template.Must(template.New("methodtest").Parse(tmplMethodTest))
 	g.tmplMethodClient = template.Must(template.New("methodclient").Parse(tmplMethodClient))
+	g.tmplMethodCtl = template.Must(template.New("methodctl").Parse(tmplMethodCtl))
+	g.tmplMethodCliWrapper = template.Must(template.New("methodcliwrapper").Parse(tmplMethodCliWrapper))
 	g.tmplMessageTest = template.Must(template.New("messagetest").Parse(tmplMessageTest))
 	g.regionStructs = make(map[string]struct{})
 	g.firstFile = true
@@ -71,6 +79,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importTesting {
 		g.PrintImport("", "testing")
 	}
+	if g.importStrings {
+		g.PrintImport("", "strings")
+	}
 	if g.importRequire {
 		g.PrintImport("", "github.com/stretchr/testify/require")
 	}
@@ -92,6 +103,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importIO = false
 	g.importJson = false
 	g.importTesting = false
+	g.importStrings = false
 	g.importRequire = false
 	g.importOrmclient = false
 	g.importOrmapi = false
@@ -106,23 +118,22 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	}
 
 	g.P(gensupport.AutoGenComment)
-	if _, found := g.Generator.Param["genapi"]; found {
-		// generate client code
-		g.genapi = true
-	}
-	if _, found := g.Generator.Param["gentest"]; found {
-		// generate test code
-		g.gentest = true
-	}
-	if _, found := g.Generator.Param["genclient"]; found {
-		// generate client code
-		g.genclient = true
-	}
+	g.genapi = g.hasParam("genapi")
+	g.gentest = g.hasParam("gentest")
+	g.genclient = g.hasParam("genclient")
+	g.genctl = g.hasParam("genctl")
+	g.gencliwrapper = g.hasParam("gencliwrapper")
 
 	for _, service := range file.FileDescriptorProto.Service {
 		g.generateService(service)
+		if g.genclient {
+			g.generateClientInterface(service)
+		}
+		if g.genctl {
+			g.generateCtlGroup(service)
+		}
 	}
-	if g.genapi || g.genclient {
+	if g.genapi || g.genclient || g.genctl || g.gencliwrapper {
 		return
 	}
 
@@ -209,17 +220,18 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	inname := *in.DescriptorProto.Name
 	_, found := g.regionStructs[inname]
 	args := tmplArgs{
-		Service:    service,
-		MethodName: *method.Name,
-		InName:     inname,
-		OutName:    *out.DescriptorProto.Name,
-		GenStruct:  !found,
-		Resource:   apiVals[0],
-		Action:     apiVals[1],
-		OrgField:   apiVals[2],
-		Org:        "obj." + apiVals[2],
-		ShowOrg:    "res." + apiVals[2],
-		Outstream:  gensupport.ServerStreaming(method),
+		Service:              service,
+		MethodName:           *method.Name,
+		InName:               inname,
+		OutName:              *out.DescriptorProto.Name,
+		GenStruct:            !found,
+		Resource:             apiVals[0],
+		Action:               apiVals[1],
+		OrgField:             apiVals[2],
+		Org:                  "obj." + apiVals[2],
+		ShowOrg:              "res." + apiVals[2],
+		Outstream:            gensupport.ServerStreaming(method),
+		StreamOutIncremental: GetStreamOutIncremental(method),
 	}
 	if apiVals[2] == "" {
 		args.Org = `""`
@@ -241,6 +253,14 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		tmpl = g.tmplMethodTest
 		g.importOrmapi = true
 		g.importOrmclient = true
+	} else if g.genctl {
+		tmpl = g.tmplMethodCtl
+		g.importOrmapi = true
+	} else if g.gencliwrapper {
+		tmpl = g.tmplMethodCliWrapper
+		args.NoConfig = GetNoConfig(in.DescriptorProto)
+		g.importOrmapi = true
+		g.importStrings = true
 	} else {
 		tmpl = g.tmpl
 		g.importEcho = true
@@ -263,19 +283,21 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 }
 
 type tmplArgs struct {
-	Service     string
-	MethodName  string
-	InName      string
-	OutName     string
-	GenStruct   bool
-	Resource    string
-	Action      string
-	OrgField    string
-	Org         string
-	ShowOrg     string
-	Outstream   bool
-	SkipEnforce bool
-	Show        bool
+	Service              string
+	MethodName           string
+	InName               string
+	OutName              string
+	GenStruct            bool
+	Resource             string
+	Action               string
+	OrgField             string
+	Org                  string
+	ShowOrg              string
+	Outstream            bool
+	SkipEnforce          bool
+	Show                 bool
+	StreamOutIncremental bool
+	NoConfig             string
 }
 
 var tmplApi = `
@@ -434,8 +456,6 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 	outlist := []edgeproto.{{.OutName}}{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/{{.MethodName}}", token, in, &out, func() {
 		outlist = append(outlist, out)
-		// clear buffer
-		out = edgeproto.{{.OutName}}{}
 	})
 	return outlist, status, err
 }
@@ -446,6 +466,49 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 	return out, status, err
 }
 {{- end}}
+`
+
+var tmplMethodCtl = `
+var {{.MethodName}}Cmd = &Command{
+	Use: "{{.MethodName}}",
+	ReqData: &ormapi.Region{{.InName}}{},
+	ReplyData: &edgeproto.{{.OutName}}{},
+	Path: "/auth/ctrl/{{.MethodName}}",
+	OptionalArgs: "region",
+{{- if .Outstream}}
+	StreamOut: true,
+{{- end}}
+{{- if .StreamOutIncremental}}
+	StreamOutIncremental: true,
+{{- end}}
+}
+`
+
+var tmplMethodCliWrapper = `
+{{- if .Outstream}}
+func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) ([]edgeproto.{{.OutName}}, int, error) {
+	args := []string{"ctrl", "{{.MethodName}}"}
+	outlist := []edgeproto.{{.OutName}}{}
+	noconfig := strings.Split("{{.NoConfig}}", ",")
+	ops := []runOp{
+		withIgnore(noconfig),
+{{- if .StreamOutIncremental}}
+		withStreamOutIncremental(),
+{{- end}}
+	}
+	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
+	return outlist, st, err
+}
+{{- else}}
+func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) (edgeproto.{{.OutName}}, int, error) {
+	args := []string{"ctrl", "{{.MethodName}}"}
+	out := edgeproto.{{.OutName}}{}
+	noconfig := strings.Split("{{.NoConfig}}", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	return out, st, err
+}
+{{- end}}
+
 `
 
 func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
@@ -547,6 +610,63 @@ func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1,
 }
 `
 
+func (g *GenMC2) generateClientInterface(service *descriptor.ServiceDescriptorProto) {
+	if !hasMc2Api(service) {
+		return
+	}
+	g.P("type ", service.Name, "Client interface{")
+	for _, method := range service.Method {
+		if GetMc2Api(method) == "" {
+			continue
+		}
+		in := gensupport.GetDesc(g.Generator, method.GetInputType())
+		out := gensupport.GetDesc(g.Generator, method.GetOutputType())
+		inname := *in.DescriptorProto.Name
+		outname := *out.DescriptorProto.Name
+
+		if gensupport.ServerStreaming(method) {
+			// outstream
+			g.P(method.Name, "(uri, token string, in *ormapi.Region", inname, ") ([]edgeproto.", outname, ", int, error)")
+		} else {
+			g.P(method.Name, "(uri, token string, in *ormapi.Region", inname, ") (edgeproto.", outname, ", int, error)")
+		}
+	}
+	g.P("}")
+	g.P()
+}
+
+func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
+	if !hasMc2Api(service) {
+		return
+	}
+	g.P("var ", service.Name, "Cmds = []*Command{")
+	for _, method := range service.Method {
+		if GetMc2Api(method) == "" {
+			continue
+		}
+		g.P(method.Name, "Cmd,")
+	}
+	g.P("}")
+	g.P()
+}
+
+func hasMc2Api(service *descriptor.ServiceDescriptorProto) bool {
+	if len(service.Method) == 0 {
+		return false
+	}
+	for _, method := range service.Method {
+		if GetMc2Api(method) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *GenMC2) hasParam(p string) bool {
+	_, found := g.Generator.Param[p]
+	return found
+}
+
 func GetMc2Api(method *descriptor.MethodDescriptorProto) string {
 	return gensupport.GetStringExtension(method.Options, protogen.E_Mc2Api, "")
 }
@@ -557,4 +677,12 @@ func GetGenerateCud(message *descriptor.DescriptorProto) bool {
 
 func GetGenerateShowTest(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateShowTest, false)
+}
+
+func GetStreamOutIncremental(method *descriptor.MethodDescriptorProto) bool {
+	return proto.GetBoolExtension(method.Options, protocmd.E_StreamOutIncremental, false)
+}
+
+func GetNoConfig(message *descriptor.DescriptorProto) string {
+	return gensupport.GetStringExtension(message.Options, protocmd.E_Noconfig, "")
 }

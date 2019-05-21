@@ -45,16 +45,22 @@ func setReply(c echo.Context, err error, successReply interface{}) error {
 
 func streamReply(c echo.Context, desc string, err error) {
 	res := "ok"
+	code := 0
 	if err == echo.ErrForbidden {
 		res = "forbidden"
+		code = http.StatusForbidden
 	} else if err != nil {
 		res = err.Error()
+		code = http.StatusBadRequest
 	}
-	streamReplyMsg(c, desc, res)
+	streamReplyMsg(c, desc, res, code)
 }
 
-func streamReplyMsg(c echo.Context, desc, res string) {
-	msg := Msg(fmt.Sprintf("%s: %s", desc, res))
+func streamReplyMsg(c echo.Context, desc, res string, code int) {
+	msg := ormapi.Result{
+		Message: fmt.Sprintf("%s: %s", desc, res),
+		Code:    code,
+	}
 	json.NewEncoder(c.Response()).Encode(msg)
 	c.Response().Flush()
 }

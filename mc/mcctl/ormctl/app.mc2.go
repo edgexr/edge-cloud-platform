@@ -2,7 +2,7 @@
 // source: app.proto
 
 /*
-Package ormclient is a generated protocol buffer package.
+Package ormctl is a generated protocol buffer package.
 
 It is generated from these files:
 	app.proto
@@ -66,7 +66,7 @@ It has these top-level messages:
 	ClusterRefs
 	Result
 */
-package ormclient
+package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -85,36 +85,41 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
-	out := edgeproto.Result{}
-	status, err := s.PostJson(uri+"/auth/ctrl/CreateApp", token, in, &out)
-	return out, status, err
+var CreateAppCmd = &Command{
+	Use:          "CreateApp",
+	ReqData:      &ormapi.RegionApp{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/CreateApp",
+	OptionalArgs: "region",
 }
 
-func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
-	out := edgeproto.Result{}
-	status, err := s.PostJson(uri+"/auth/ctrl/DeleteApp", token, in, &out)
-	return out, status, err
+var DeleteAppCmd = &Command{
+	Use:          "DeleteApp",
+	ReqData:      &ormapi.RegionApp{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/DeleteApp",
+	OptionalArgs: "region",
 }
 
-func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
-	out := edgeproto.Result{}
-	status, err := s.PostJson(uri+"/auth/ctrl/UpdateApp", token, in, &out)
-	return out, status, err
+var UpdateAppCmd = &Command{
+	Use:          "UpdateApp",
+	ReqData:      &ormapi.RegionApp{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateApp",
+	OptionalArgs: "region",
 }
 
-func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error) {
-	out := edgeproto.App{}
-	outlist := []edgeproto.App{}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/ShowApp", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
+var ShowAppCmd = &Command{
+	Use:          "ShowApp",
+	ReqData:      &ormapi.RegionApp{},
+	ReplyData:    &edgeproto.App{},
+	Path:         "/auth/ctrl/ShowApp",
+	OptionalArgs: "region",
+	StreamOut:    true,
 }
-
-type AppApiClient interface {
-	CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
-	DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
-	UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
-	ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error)
+var AppApiCmds = []*Command{
+	CreateAppCmd,
+	DeleteAppCmd,
+	UpdateAppCmd,
+	ShowAppCmd,
 }

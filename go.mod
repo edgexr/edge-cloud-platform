@@ -32,6 +32,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.2
+	github.com/mobiledgex/yaml v2.1.0+incompatible
 	github.com/mobiledgex/yaml/v2 v2.2.4
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
@@ -42,6 +43,7 @@ require (
 	github.com/pelletier/go-toml v1.3.0
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
+	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/xanzy/go-gitlab v0.16.0

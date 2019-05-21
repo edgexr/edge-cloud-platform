@@ -126,6 +126,7 @@ func CreateUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	user.Locked = false
 	if config.LockNewAccounts {
 		user.Locked = true
 	}
@@ -262,11 +263,17 @@ func ShowUser(c echo.Context) error {
 		return err
 	}
 	filter := ormapi.Organization{}
-	if err := c.Bind(&filter); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	if c.Request().ContentLength > 0 {
+		if err := c.Bind(&filter); err != nil {
+			return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		}
 	}
 	users := []ormapi.User{}
 	if !enforcer.Enforce(claims.Username, filter.Name, ResourceUsers, ActionView) {
+		if filter.Name == "" && c.Request().ContentLength == 0 {
+			// user probably forgot to specify orgname
+			return c.JSON(http.StatusBadRequest, Msg("No organization name specified"))
+		}
 		return echo.ErrForbidden
 	}
 	// if filter ID is 0, show all users (super user only)
@@ -437,11 +444,20 @@ func RestrictedUserUpdate(c echo.Context) error {
 	if res.Error != nil {
 		return dbErr(res.Error)
 	}
+	saveuser := user
 	// apply specified fields
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		return bindErr(c, err)
 	}
+	// cannot update password or invariant fields
+	user.Passhash = saveuser.Passhash
+	user.Salt = saveuser.Salt
+	user.Iter = saveuser.Iter
+	user.CreatedAt = saveuser.CreatedAt
+	user.Name = saveuser.Name
+	user.Email = saveuser.Email
+
 	err = db.Save(&user).Error
 	if err != nil {
 		return dbErr(err)
