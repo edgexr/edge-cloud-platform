@@ -6,5 +6,11 @@ tests:
   - includefile: mc_add_delete.yml
     mods: [sep]
     loops: 2
+  - includefile: mc_add_delete.yml
+    mods: [cli]
+    loops: 2
+  - includefile: mc_add_delete.yml
+    mods: [cli,sep]
+    loops: 2
   - includefile: fetchlogs.yml
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml

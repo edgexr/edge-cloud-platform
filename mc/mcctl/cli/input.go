@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -10,6 +11,12 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 	"golang.org/x/crypto/ssh/terminal"
 )
+
+// CLI ParseArgs and UnmarshalArgs map the arg name to the lower-case
+// version of the field name. This is the default behavior of JSON and
+// YAML, but may be overridden by JSON/YAML tags. Args however do not
+// honor those tags, so we need to be careful when supplying raw map
+// data to something that wants to unmarshal using JSON/YAML tags.
 
 type Input struct {
 	// Required argument names
@@ -28,7 +35,10 @@ type Input struct {
 
 // Args are format name=val, where name could be a hierarchical name
 // separated by ., i.e. appdata.key.name.
-// Arg names should be all lowercase.
+// Arg names should be all lowercase, matching the struct field names.
+// This returns a generic map of values set by the args, again
+// based on lower case field names, ignoring any json/yaml tags.
+// It also fills in obj if specified.
 // NOTE: arrays and maps not supported yet.
 func (s *Input) ParseArgs(args []string, obj interface{}) (map[string]interface{}, error) {
 	dat := make(map[string]interface{})
@@ -90,10 +100,8 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (map[string]interface{
 		setKeyVal(dat, resolveAlias(s.PasswordArg, aliases), pw)
 	}
 
-	// Specifying obj is used for two purposes.
-	// First is to ensure user has specified valid arguments.
-	// Second is to convert the values for any non-string fields
-	// to their appropriate type.
+	// Fill in obj with values. Also checks for args that
+	// don't correspond to any fields in the target object.
 	if obj != nil {
 		unused, err := WeakDecode(dat, obj, s.DecodeHook)
 		if err != nil {
@@ -103,33 +111,12 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (map[string]interface{
 			return dat, fmt.Errorf("invalid args: %s",
 				strings.Join(unused, " "))
 		}
-
-		// This back and forth between yaml is to generate another
-		// set of generic map[string]interface{} data that contains
-		// typed values instead of string values. The json body
-		// values need to be properly typed to be unmarshalled
-		// properly, so we replace the specified untyped (string)
-		// values with properly typed (bool, int, etc) values.
-		// We can't use the typedMap directly because it may
-		// contain empty fields that were not specified by the
-		// user in the args list, which will mess up updates.
-		yaml.AlwaysOmitEmpty = false
-		byt, err := yaml.Marshal(obj)
-		if err != nil {
-			return dat, err
-		}
-		yaml.AlwaysOmitEmpty = true
-
-		typedDat := make(map[string]interface{})
-		err = yaml.Unmarshal(byt, &typedDat)
-		if err != nil {
-			return dat, err
-		}
-		replaceMapVals(typedDat, dat)
 	}
 	return dat, nil
 }
 
+// Use mapstructure to convert an args map (map[string]interface{})
+// to fill in an object in output.
 func WeakDecode(input, output interface{}, hook mapstructure.DecodeHookFunc) ([]string, error) {
 	// use mapstructure.ComposeDecodeHookFunc if we need multiple
 	// decode hook functions.
@@ -146,6 +133,103 @@ func WeakDecode(input, output interface{}, hook mapstructure.DecodeHookFunc) ([]
 	}
 	err = decoder.Decode(input)
 	return config.Metadata.Unused, err
+}
+
+// JsonMap takes as input the generic args map from ParseArgs
+// corresponding to obj, and uses the json tags in obj to generate
+// a map with json names for the data.
+func JsonMap(args map[string]interface{}, obj interface{}) (map[string]interface{}, error) {
+	js := make(map[string]interface{})
+	err := MapJsonNamesT(args, js, reflect.TypeOf(obj))
+	if err != nil {
+		return nil, err
+	}
+	return js, nil
+}
+
+func MapJsonNamesT(args, js map[string]interface{}, t reflect.Type) error {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	for key, val := range args {
+		// get the StructField to get the json tag
+		sf, ok := t.FieldByNameFunc(func(name string) bool {
+			return strings.ToLower(name) == strings.ToLower(key)
+		})
+		if !ok {
+			continue
+		}
+		tag := sf.Tag.Get("json")
+		tagvals := strings.Split(tag, ",")
+		jsonName := ""
+		if len(tagvals) > 0 {
+			jsonName = tagvals[0]
+			tagvals = tagvals[1:]
+		}
+		if jsonName == "" {
+			jsonName = strings.ToLower(key)
+		}
+		if subargs, ok := val.(map[string]interface{}); ok {
+			// sub struct
+			var subjson map[string]interface{}
+			if hasTag("inline", tagvals) {
+				subjson = js
+			} else {
+				subjson = getSubMap(js, jsonName)
+			}
+			err := MapJsonNamesT(subargs, subjson, sf.Type)
+			if err != nil {
+				return err
+			}
+		} else {
+			// note: arrays/maps not handled, so this is a value.
+			// allocate an object of type (gives us a pointer to it)
+			v := reflect.New(sf.Type)
+			// let yaml deal with converting the string to the
+			// field's type. The only special case is string types
+			// may need quotes around string values in case there
+			// are special characters in the string.
+			strval := fmt.Sprintf("%v", val)
+			if v.Elem().Kind() == reflect.String {
+				strval = strconv.Quote(strval)
+			}
+			err := yaml.Unmarshal([]byte(strval), v.Interface())
+			if err != nil {
+				return fmt.Errorf("unmarshal err on %s, %v", key, err)
+			}
+			// elem to dereference it
+			js[jsonName] = v.Elem().Interface()
+		}
+	}
+	return nil
+}
+
+func getSubMap(cur map[string]interface{}, key string) map[string]interface{} {
+	var sub map[string]interface{}
+	val, ok := cur[key]
+	if !ok {
+		// create new one
+		sub = make(map[string]interface{})
+		cur[key] = sub
+		return sub
+	}
+	// check that it's the right type
+	sub, ok = val.(map[string]interface{})
+	if !ok {
+		// conflict, overwrite
+		sub = make(map[string]interface{})
+		cur[key] = sub
+	}
+	return sub
+}
+
+func hasTag(tag string, tags []string) bool {
+	for _, t := range tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
 }
 
 func resolveAlias(name string, aliases map[string]string) string {
@@ -168,20 +252,7 @@ func setKeyVal(dat map[string]interface{}, key, val string) {
 				dat[part] = val
 			}
 		} else {
-			var submap map[string]interface{}
-			sub, ok := dat[part]
-			if !ok {
-				submap = make(map[string]interface{})
-				dat[part] = submap
-			} else {
-				submap, ok = sub.(map[string]interface{})
-				if !ok {
-					// conflict, overwrite
-					submap = make(map[string]interface{})
-					dat[part] = submap
-				}
-			}
-			dat = submap
+			dat = getSubMap(dat, part)
 		}
 	}
 }
@@ -224,7 +295,10 @@ func replaceMapVals(src map[string]interface{}, dst map[string]interface{}) {
 	}
 }
 
-func MarshalArgs(obj interface{}) ([]string, error) {
+// MarshalArgs generates a name=val arg list from the object.
+// Arg names that should be ignore can be specified. Names are the
+// same format as arg names, lowercase of field names, joined by '.'
+func MarshalArgs(obj interface{}, ignore []string) ([]string, error) {
 	args := []string{}
 	if obj == nil {
 		return args, nil
@@ -238,18 +312,31 @@ func MarshalArgs(obj interface{}) ([]string, error) {
 	dat := make(map[string]interface{})
 	err = yaml.Unmarshal(byt, &dat)
 
-	return MapToArgs([]string{}, dat), nil
+	ignoremap := make(map[string]struct{})
+	if ignore != nil {
+		for _, str := range ignore {
+			ignoremap[str] = struct{}{}
+		}
+	}
+
+	return MapToArgs([]string{}, dat, ignoremap), nil
 }
 
-func MapToArgs(prefix []string, dat map[string]interface{}) []string {
+func MapToArgs(prefix []string, dat map[string]interface{}, ignore map[string]struct{}) []string {
 	args := []string{}
 	for k, v := range dat {
+		if v == nil {
+			continue
+		}
 		if sub, ok := v.(map[string]interface{}); ok {
-			subargs := MapToArgs(append(prefix, k), sub)
+			subargs := MapToArgs(append(prefix, k), sub, ignore)
 			args = append(args, subargs...)
 			continue
 		}
 		keys := append(prefix, k)
+		if _, ok := ignore[strings.Join(keys, ".")]; ok {
+			continue
+		}
 		val := fmt.Sprintf("%v", v)
 		if strings.ContainsAny(val, " \t\r\n") {
 			val = strconv.Quote(val)

@@ -61,7 +61,7 @@ func TestServer(t *testing.T) {
 	require.Equal(t, super.Name, roleAssignments[0].Username)
 
 	// show users - only super user at this point
-	users, status, err := mcClient.ShowUsers(uri, token, "")
+	users, status, err := mcClient.ShowUser(uri, token, &ormapi.Organization{})
 	require.Equal(t, http.StatusOK, status, "show user status")
 	require.Equal(t, 1, len(users))
 	require.Equal(t, DefaultSuperuser, users[0].Name, "super user name")
@@ -146,25 +146,25 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "login as admin")
 
 	// check org membership as mister x
-	orgs, status, err := mcClient.ShowOrgs(uri, tokenMisterX)
+	orgs, status, err := mcClient.ShowOrg(uri, tokenMisterX)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(orgs))
 	require.Equal(t, org1.Name, orgs[0].Name)
 	require.Equal(t, org1.Type, orgs[0].Type)
 	// check org membership as mister y
-	orgs, status, err = mcClient.ShowOrgs(uri, tokenMisterY)
+	orgs, status, err = mcClient.ShowOrg(uri, tokenMisterY)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(orgs))
 	require.Equal(t, org2.Name, orgs[0].Name)
 	require.Equal(t, org2.Type, orgs[0].Type)
 	// super user should be able to show all orgs
-	orgs, status, err = mcClient.ShowOrgs(uri, token)
+	orgs, status, err = mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 2, len(orgs))
-	orgs, status, err = mcClient.ShowOrgs(uri, tokenAdmin)
+	orgs, status, err = mcClient.ShowOrg(uri, tokenAdmin)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 2, len(orgs))
@@ -192,35 +192,38 @@ func TestServer(t *testing.T) {
 	require.Equal(t, 4, len(roleAssignments))
 
 	// show org users as mister x
-	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, org1.Name)
+	users, status, err = mcClient.ShowUser(uri, tokenMisterX, &org1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, user1.Name, users[0].Name)
 	// show org users as mister y
-	users, status, err = mcClient.ShowUsers(uri, tokenMisterY, org2.Name)
+	users, status, err = mcClient.ShowUser(uri, tokenMisterY, &org2)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))
 	require.Equal(t, user2.Name, users[0].Name)
 	// super user can see all users with org ID = 0
-	users, status, err = mcClient.ShowUsers(uri, token, "")
+	users, status, err = mcClient.ShowUser(uri, token, &ormapi.Organization{})
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 4, len(users))
-	users, status, err = mcClient.ShowUsers(uri, tokenAdmin, "")
+	users, status, err = mcClient.ShowUser(uri, tokenAdmin, &ormapi.Organization{})
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 4, len(users))
 
 	// check that x and y cannot see each other's org users
-	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, org2.Name)
+	users, status, err = mcClient.ShowUser(uri, tokenMisterX, &org2)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	users, status, err = mcClient.ShowUsers(uri, tokenMisterY, org1.Name)
+	users, status, err = mcClient.ShowUser(uri, tokenMisterY, &org1)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	users, status, err = mcClient.ShowUsers(uri, tokenMisterX, "foobar")
+	foobar := &ormapi.Organization{
+		Name: "foobar",
+	}
+	users, status, err = mcClient.ShowUser(uri, tokenMisterX, foobar)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
@@ -239,19 +242,19 @@ func TestServer(t *testing.T) {
 	testAddUserRole(t, mcClient, uri, tokenMisterX, org1.Name, "DeveloperContributor", user3.Name, Success)
 	testAddUserRole(t, mcClient, uri, tokenMisterX, org1.Name, "DeveloperViewer", user4.Name, Success)
 	// check that they can see all users in org
-	users, status, err = mcClient.ShowUsers(uri, token3, org1.Name)
+	users, status, err = mcClient.ShowUser(uri, token3, &org1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 3, len(users))
-	users, status, err = mcClient.ShowUsers(uri, token4, org1.Name)
+	users, status, err = mcClient.ShowUser(uri, token4, &org1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 3, len(users))
 	// make sure they can't see users from other org
-	users, status, err = mcClient.ShowUsers(uri, token3, org2.Name)
+	users, status, err = mcClient.ShowUser(uri, token3, &org2)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	users, status, err = mcClient.ShowUsers(uri, token4, org2.Name)
+	users, status, err = mcClient.ShowUser(uri, token4, &org2)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
@@ -289,12 +292,12 @@ func TestServer(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 
 	// check orgs are gone
-	orgs, status, err = mcClient.ShowOrgs(uri, token)
+	orgs, status, err = mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(orgs))
 	// check users are gone
-	users, status, err = mcClient.ShowUsers(uri, token, "")
+	users, status, err = mcClient.ShowUser(uri, token, &ormapi.Organization{})
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))

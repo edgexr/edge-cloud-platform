@@ -19,7 +19,7 @@ type RegionContext struct {
 
 func newResCb(c echo.Context, desc string) func(*edgeproto.Result) {
 	return func(res *edgeproto.Result) {
-		streamReplyMsg(c, desc, res.Message)
+		streamReplyMsg(c, desc, res.Message, 0)
 	}
 }
 
