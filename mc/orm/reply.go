@@ -43,24 +43,38 @@ func setReply(c echo.Context, err error, successReply interface{}) error {
 	return c.JSON(http.StatusOK, successReply)
 }
 
-func streamReply(c echo.Context, desc string, err error) {
+// streamReply funcs used by alldata always send back just a status
+// message, never an error - even if an error was generated. So they
+// never use payload.Result, which is used to convey an error.
+func streamReply(c echo.Context, desc string, err error, hadErr *bool) {
 	res := "ok"
-	code := 0
 	if err == echo.ErrForbidden {
 		res = "forbidden"
-		code = http.StatusForbidden
+		*hadErr = true
 	} else if err != nil {
 		res = err.Error()
-		code = http.StatusBadRequest
+		*hadErr = true
 	}
-	streamReplyMsg(c, desc, res, code)
+	streamReplyMsg(c, desc, res)
 }
 
-func streamReplyMsg(c echo.Context, desc, res string, code int) {
-	msg := ormapi.Result{
-		Message: fmt.Sprintf("%s: %s", desc, res),
-		Code:    code,
+func streamReplyMsg(c echo.Context, desc, res string) {
+	payload := ormapi.StreamPayload{
+		Data: &ormapi.Result{
+			Message: fmt.Sprintf("%s: %s", desc, res),
+			Code:    0,
+		},
 	}
-	json.NewEncoder(c.Response()).Encode(msg)
+	json.NewEncoder(c.Response()).Encode(payload)
+	c.Response().Flush()
+}
+
+func streamErr(c echo.Context, msg string) {
+	payload := ormapi.StreamPayload{
+		Result: &ormapi.Result{
+			Message: msg,
+		},
+	}
+	json.NewEncoder(c.Response()).Encode(payload)
 	c.Response().Flush()
 }

@@ -1,0 +1,98 @@
+orgs:
+- name: MobiledgeX
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+  adminusername: user2
+
+roles:
+- username: user2
+  org: MobiledgeX
+  role: DeveloperManager
+
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: AppCluster
+        cloudletkey:
+          operatorkey:
+            name: mexdev
+          name: localtest
+        developer: MobiledgeX
+      flavor:
+        name: x1.medium
+      liveness: LivenessStatic
+      nummasters: 1
+      numnodes: 3
+    apps:
+    - key:
+        developerkey:
+          name: MobiledgeX
+        name: MobiledgeX SDK Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/images/mobiledgexsdkdemo
+      imagetype: ImageTypeDocker
+      accessports: tcp:7777
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: AppCluster
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.sdkdemo
+      permitsplatformapps: true
+    - key:
+        developerkey:
+          name: MobiledgeX
+        name: Face Detection Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/images/facedetection
+      imagetype: ImageTypeDocker
+      accessports: tcp:8008
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: AppCluster
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.facedemo
+      permitsplatformapps: true
+      configs:
+      - kind: envVarsYaml
+        config: |
+          - name: SOME_ENV1
+            value: value1
+          - name: SOME_ENV2
+            valueFrom:
+              configMapKeyRef:
+                key: CloudletName
+                name: mexcluster-info
+                optional: true
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: MobiledgeX
+          name: MobiledgeX SDK Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            operatorkey:
+              name: mexdev
+            name: localtest
+    - key:
+        appkey:
+          developerkey:
+            name: MobiledgeX
+          name: Face Detection Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            operatorkey:
+              name: mexdev
+            name: localtest
