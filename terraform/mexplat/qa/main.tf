@@ -26,29 +26,16 @@ terraform {
   backend "azurerm" {
     storage_account_name  = "mexterraformstate"
     container_name        = "mexplat-tfstate"
-    key                   = "stage.tfstate"
+    key                   = "test.tfstate"
   }
 }
 
-module "k8s" {
-  source              = "../../modules/k8s_azure"
-
-  location            = "${var.azure_location}"
-  client_id           = "${var.azure_terraform_service_principal_id}"
-  client_secret       = "${var.azure_terraform_service_principal_secret}"
-  cluster_name        = "${var.cluster_name}"
-  vm_size             = "${var.azure_vm_size}"
-  cluster_tag         = "mexplat-${var.environ_tag}"
-  resource_group_name = "${var.resource_group_name}"
-}
-
-# Common VM for gitlab, crm, mc, vault, postgres
 module "gitlab" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.gitlab_instance_name}"
   zone                = "${var.gcp_zone}"
-  boot_disk_size      = 100
+  boot_disk_size      = 20
   tags                = [ "mexplat-${var.environ_tag}", "gitlab-registry", "http-server", "https-server", "pg-5432", "crm", "mc", "stun-turn" ]
 }
 
@@ -64,31 +51,13 @@ module "docker_dns" {
   ip                            = "${module.gitlab.external_ip}"
 }
 
-module "crm_vm_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.crm_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
-module "mc_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.mc_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
-module "postgres_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.postgres_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
 # VM for console
 module "console" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.console_instance_name}"
   zone                = "${var.gcp_zone}"
-  tags                = [ "http-server", "https-server", "console-debug" ]
+  tags                = [ "http-server", "https-server", "console-debug", "mc" ]
 }
 
 module "console_dns" {

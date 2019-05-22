@@ -1,6 +1,6 @@
 variable "environ_tag" {
   description = "Name to tag instances created by this workspace"
-  default     = "stage"
+  default     = "qa"
 }
 
 variable "azure_location" {
@@ -39,11 +39,15 @@ variable "cloudflare_account_api_token" {
 }
 
 variable "cluster_name" {
-  default     = "mexplat-stage"
+  default     = "mexplat-qa"
 }
 
 variable "resource_group_name" {
-  default     = "mexplat-stage-rg"
+  default     = "mexplat-qa-rg"
+}
+
+variable "address_space" {
+  default     = "172.30.0.0/24"
 }
 
 variable "azure_vm_size" {
@@ -59,29 +63,14 @@ variable "gcp_zone" {
 }
 
 variable "gitlab_instance_name" {
-  default     = "gitlab-stage"
+  default     = "gitlab-qa"
 }
 
 variable "console_instance_name" {
-  default     = "console-stage"
+  default     = "console-qa"
 }
 
 // DNS entries
-
-variable "crm_vm_domain_name" {
-  description = "CRM VM domain name"
-  type        = "string"
-}
-
-variable "mc_vm_domain_name" {
-  description = "MC VM domain name"
-  type        = "string"
-}
-
-variable "postgres_domain_name" {
-  description = "Postgres domain name"
-  type        = "string"
-}
 
 variable "gitlab_domain_name" {
   description = "Gitlab domain name"
