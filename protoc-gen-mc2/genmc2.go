@@ -243,6 +243,9 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	if args.Action == "ActionView" && strings.HasPrefix(args.MethodName, "Show") {
 		args.Show = true
 	}
+	if !args.Outstream {
+		args.ReturnErrArg = "nil, "
+	}
 	var tmpl *template.Template
 	if g.genapi {
 		tmpl = g.tmplApi
@@ -266,10 +269,10 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importEcho = true
 		g.importHttp = true
 		g.importContext = true
+		g.importOrmapi = true
 		if args.Outstream {
 			g.importIO = true
 			g.importJson = true
-			g.importOrmapi = true
 			g.importGrpcStatus = true
 		}
 	}
@@ -298,6 +301,7 @@ type tmplArgs struct {
 	Show                 bool
 	StreamOutIncremental bool
 	NoConfig             string
+	ReturnErrArg         string
 }
 
 var tmplApi = `
@@ -354,26 +358,26 @@ func {{.MethodName}}(c echo.Context) error {
 	}
 	return nil
 {{- else}}
-	err = {{.MethodName}}Obj(rc, &in.{{.InName}})
-	return setReply(c, err, Msg("ok"))
+	resp, err := {{.MethodName}}Obj(rc, &in.{{.InName}})
+	return setReply(c, err, resp)
 {{- end}}
 }
 
 {{if .Outstream}}
 func {{.MethodName}}Stream(rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
 {{- else}}
-func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) error {
+func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
 {{- if and (not .Show) (not .SkipEnforce)}}
 	if !enforcer.Enforce(rc.claims.Username, {{.Org}},
 		{{.Resource}}, {{.Action}}) {
-		return echo.ErrForbidden
+		return {{.ReturnErrArg}}echo.ErrForbidden
 	}
 {{- end}}
 	if rc.conn == nil {
 		conn, err := connectController(rc.region)
 		if err != nil {
-			return err
+			return {{.ReturnErrArg}}err
 		}
 		rc.conn = conn
 		defer func() {
@@ -386,7 +390,7 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) error {
 {{- if .Outstream}}
 	stream, err := api.{{.MethodName}}(ctx, obj)
 	if err != nil {
-		return err
+		return {{.ReturnErrArg}}err
 	}
 	for {
 		res, err := stream.Recv()
@@ -395,7 +399,7 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) error {
 			break
 		}
 		if err != nil {
-			return err
+			return {{.ReturnErrArg}}err
 		}
 {{- if and (.Show) (not .SkipEnforce)}}
 		if !enforcer.Enforce(rc.claims.Username, {{.ShowOrg}},
@@ -407,8 +411,7 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) error {
 	}
 	return nil
 {{- else}}
-	_, err := api.{{.MethodName}}(ctx, obj)
-	return err
+	return api.{{.MethodName}}(ctx, obj)
 {{- end}}
 }
 

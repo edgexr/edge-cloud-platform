@@ -19,7 +19,7 @@ type RegionContext struct {
 
 func newResCb(c echo.Context, desc string) func(*edgeproto.Result) {
 	return func(res *edgeproto.Result) {
-		streamReplyMsg(c, desc, res.Message, 0)
+		streamReplyMsg(c, desc, res.Message)
 	}
 }
 
@@ -36,26 +36,27 @@ func CreateData(c echo.Context) error {
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
 
+	hadErr := false
 	for _, ctrl := range data.Controllers {
 		desc := fmt.Sprintf("Create Controller region %s", ctrl.Region)
 		err := CreateControllerObj(claims, &ctrl)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
 	for _, org := range data.Orgs {
 		desc := fmt.Sprintf("Create Organization %s", org.Name)
 		err := CreateOrgObj(claims, &org)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
 	for _, role := range data.Roles {
 		desc := fmt.Sprintf("Add User Role %v", role)
 		err := AddUserRoleObj(claims, &role)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
 	for _, regionData := range data.RegionData {
 		conn, err := connectController(regionData.Region)
 		if err != nil {
 			desc := fmt.Sprintf("Connect %s Controller", regionData.Region)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 			continue
 		}
 		defer conn.Close()
@@ -68,32 +69,35 @@ func CreateData(c echo.Context) error {
 		appdata := &regionData.AppData
 		for _, flavor := range appdata.Flavors {
 			desc := fmt.Sprintf("Create Flavor %s", flavor.Key.Name)
-			err = CreateFlavorObj(rc, &flavor)
-			streamReply(c, desc, err)
+			_, err = CreateFlavorObj(rc, &flavor)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
 			desc := fmt.Sprintf("Create Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
 			err = CreateCloudletStream(rc, &cloudlet, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Create ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
 			err = CreateClusterInstStream(rc, &cinst, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, app := range appdata.Applications {
 			desc := fmt.Sprintf("Create App %v", app.Key)
-			err = CreateAppObj(rc, &app)
-			streamReply(c, desc, err)
+			_, err = CreateAppObj(rc, &app)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, appinst := range appdata.AppInstances {
 			desc := fmt.Sprintf("Create AppInst %v", appinst.Key)
 			cb := newResCb(c, desc)
 			err = CreateAppInstStream(rc, &appinst, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
+	}
+	if hadErr {
+		streamErr(c, "Some error encountered")
 	}
 	return nil
 }
@@ -111,11 +115,12 @@ func DeleteData(c echo.Context) error {
 	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	c.Response().WriteHeader(http.StatusOK)
 
+	hadErr := false
 	for _, regionData := range data.RegionData {
 		conn, err := connectController(regionData.Region)
 		if err != nil {
 			desc := fmt.Sprintf("Connect %s Controller", regionData.Region)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 			continue
 		}
 		defer conn.Close()
@@ -131,29 +136,29 @@ func DeleteData(c echo.Context) error {
 			desc := fmt.Sprintf("Delete AppInst %v", appinst.Key)
 			cb := newResCb(c, desc)
 			err = DeleteAppInstStream(rc, &appinst, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, app := range appdata.Applications {
 			desc := fmt.Sprintf("Delete App %v", app.Key)
-			err = DeleteAppObj(rc, &app)
-			streamReply(c, desc, err)
+			_, err = DeleteAppObj(rc, &app)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Delete ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
 			err = DeleteClusterInstStream(rc, &cinst, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
 			desc := fmt.Sprintf("Delete Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
 			err = DeleteCloudletStream(rc, &cloudlet, cb)
-			streamReply(c, desc, err)
+			streamReply(c, desc, err, &hadErr)
 		}
 		for _, flavor := range appdata.Flavors {
 			desc := fmt.Sprintf("Delete Flavor %s", flavor.Key.Name)
-			err = DeleteFlavorObj(rc, &flavor)
-			streamReply(c, desc, err)
+			_, err = DeleteFlavorObj(rc, &flavor)
+			streamReply(c, desc, err, &hadErr)
 		}
 	}
 	// roles must be deleted after orgs, otherwise we may delete the
@@ -161,19 +166,22 @@ func DeleteData(c echo.Context) error {
 	for _, org := range data.Orgs {
 		desc := fmt.Sprintf("Delete Organization %s", org.Name)
 		err := DeleteOrgObj(claims, &org)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
 	for _, role := range data.Roles {
 		desc := fmt.Sprintf("Remove User Role %v", role)
 		err := RemoveUserRoleObj(claims, &role)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
 	for _, ctrl := range data.Controllers {
 		desc := fmt.Sprintf("Delete Controller region %s", ctrl.Region)
 		err := DeleteControllerObj(claims, &ctrl)
-		streamReply(c, desc, err)
+		streamReply(c, desc, err, &hadErr)
 	}
-	return c.JSON(http.StatusOK, Msg("Data delete done"))
+	if hadErr {
+		streamErr(c, "Some error encountered")
+	}
+	return nil
 }
 
 func ShowData(c echo.Context) error {

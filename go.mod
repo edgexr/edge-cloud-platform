@@ -11,6 +11,7 @@ require (
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/cli v0.0.0-20190520121752-57aa7731d0a5
 	github.com/docker/machine v0.16.1 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190410145444-c548f45dcf1d // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190410145444-c548f45dcf1d // indirect
@@ -41,6 +42,7 @@ require (
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pelletier/go-toml v1.3.0
+	github.com/pion/webrtc/v2 v2.0.7
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.3

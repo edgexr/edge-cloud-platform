@@ -111,8 +111,7 @@ test-robot-stop:
 
 ## note: DIND requires make install-dind from edge-cloud to be run once
 test-dind-start:
-	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_start_create_dind.yml -setupfile ./e2e-tests/setups/local_dind.yml -notimestamp -stop
+	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_dind.yml -setupfile ./e2e-tests/setups/local_dind.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
 
 test-dind-stop:
-	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/delete_dind_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_dind.yml -notimestamp
-
+	e2e-tests -testfile ./e2e-tests/testfiles/delete_dind_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_dind.yml -varsfile ./e2e-tests/vars.yml -notimestamp

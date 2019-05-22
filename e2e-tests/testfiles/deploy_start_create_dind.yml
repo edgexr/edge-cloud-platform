@@ -1,0 +1,26 @@
+##
+##
+
+tests:
+
+- name: start 
+  actions: [start]
+
+- name: admin create controllers, flavors
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: create users
+  actions: [mcapi-createusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+
+- name: user1 creates operator/cloudlets
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_dind.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: user2 creates apps
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user2_dind.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
