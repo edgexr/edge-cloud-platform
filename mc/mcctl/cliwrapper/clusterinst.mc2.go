@@ -24,7 +24,7 @@ var _ = math.Inf
 func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "CreateClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Nodes,Liveness,Auto,MasterFlavor,NodeFlavor", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -36,7 +36,7 @@ func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "DeleteClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Nodes,Liveness,Auto,MasterFlavor,NodeFlavor", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -48,7 +48,7 @@ func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "UpdateClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Nodes,Liveness,Auto,MasterFlavor,NodeFlavor", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -60,7 +60,7 @@ func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.ClusterInst, int, error) {
 	args := []string{"ctrl", "ShowClusterInst"}
 	outlist := []edgeproto.ClusterInst{}
-	noconfig := strings.Split("Nodes,Liveness,Auto,MasterFlavor,NodeFlavor", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}

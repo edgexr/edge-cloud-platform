@@ -4,6 +4,7 @@
 package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -22,11 +23,40 @@ var _ = math.Inf
 
 var RunCommandCmd = &Command{
 	Use:          "RunCommand",
+	RequiredArgs: strings.Join(append([]string{"region"}, ExecRequestRequiredArgs...), " "),
+	OptionalArgs: strings.Join(ExecRequestOptionalArgs, " "),
+	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
 	Path:         "/auth/ctrl/RunCommand",
-	OptionalArgs: "region",
 }
 var ExecApiCmds = []*Command{
 	RunCommandCmd,
+}
+
+var ExecRequestRequiredArgs = []string{}
+var ExecRequestOptionalArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+	"cluster",
+	"operator",
+	"cloudlet",
+	"clusterdeveloper",
+	"command",
+	"containerid",
+}
+var ExecRequestAliasArgs = []string{
+	"developer=execrequest.appinstkey.appkey.developerkey.name",
+	"appname=execrequest.appinstkey.appkey.name",
+	"appvers=execrequest.appinstkey.appkey.version",
+	"cluster=execrequest.appinstkey.clusterinstkey.clusterkey.name",
+	"operator=execrequest.appinstkey.clusterinstkey.cloudletkey.operatorkey.name",
+	"cloudlet=execrequest.appinstkey.clusterinstkey.cloudletkey.name",
+	"clusterdeveloper=execrequest.appinstkey.clusterinstkey.developer",
+	"command=execrequest.command",
+	"containerid=execrequest.containerid",
+	"offer=execrequest.offer",
+	"answer=execrequest.answer",
+	"err=execrequest.err",
 }

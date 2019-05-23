@@ -69,6 +69,7 @@ It has these top-level messages:
 package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -87,34 +88,42 @@ var _ = math.Inf
 
 var CreateAppCmd = &Command{
 	Use:          "CreateApp",
+	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	OptionalArgs: strings.Join(AppOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateApp",
-	OptionalArgs: "region",
 }
 
 var DeleteAppCmd = &Command{
 	Use:          "DeleteApp",
+	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	OptionalArgs: strings.Join(AppOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteApp",
-	OptionalArgs: "region",
 }
 
 var UpdateAppCmd = &Command{
 	Use:          "UpdateApp",
+	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	OptionalArgs: strings.Join(AppOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateApp",
-	OptionalArgs: "region",
 }
 
 var ShowAppCmd = &Command{
 	Use:          "ShowApp",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(AppRequiredArgs, AppOptionalArgs...), " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.App{},
 	Path:         "/auth/ctrl/ShowApp",
-	OptionalArgs: "region",
 	StreamOut:    true,
 }
 var AppApiCmds = []*Command{
@@ -122,4 +131,73 @@ var AppApiCmds = []*Command{
 	DeleteAppCmd,
 	UpdateAppCmd,
 	ShowAppCmd,
+}
+
+var AppKeyRequiredArgs = []string{}
+var AppKeyOptionalArgs = []string{
+	"developerkey.name",
+	"name",
+	"version",
+}
+var AppKeyAliasArgs = []string{
+	"developerkey.name=appkey.developerkey.name",
+	"name=appkey.name",
+	"version=appkey.version",
+}
+var ConfigFileRequiredArgs = []string{}
+var ConfigFileOptionalArgs = []string{
+	"kind",
+	"config",
+}
+var ConfigFileAliasArgs = []string{
+	"kind=configfile.kind",
+	"config=configfile.config",
+}
+var AppRequiredArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+}
+var AppOptionalArgs = []string{
+	"imagepath",
+	"imagetype",
+	"accessports",
+	"config",
+	"defaultflavor.name",
+	"cluster.name",
+	"apptemplate",
+	"authpublickey",
+	"command",
+	"annotations",
+	"deployment",
+	"deploymentmanifest",
+	"deploymentgenerator",
+	"androidpackagename",
+	"permitsplatformapps",
+	"delopt",
+	"configs.kind",
+	"configs.config",
+}
+var AppAliasArgs = []string{
+	"developer=app.key.developerkey.name",
+	"appname=app.key.name",
+	"appvers=app.key.version",
+	"imagepath=app.imagepath",
+	"imagetype=app.imagetype",
+	"accessports=app.accessports",
+	"config=app.config",
+	"defaultflavor.name=app.defaultflavor.name",
+	"cluster.name=app.cluster.name",
+	"apptemplate=app.apptemplate",
+	"authpublickey=app.authpublickey",
+	"command=app.command",
+	"annotations=app.annotations",
+	"deployment=app.deployment",
+	"deploymentmanifest=app.deploymentmanifest",
+	"deploymentgenerator=app.deploymentgenerator",
+	"androidpackagename=app.androidpackagename",
+	"permitsplatformapps=app.permitsplatformapps",
+	"delopt=app.delopt",
+	"configs.kind=app.configs.kind",
+	"configs.config=app.configs.config",
 }

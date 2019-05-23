@@ -4,6 +4,7 @@
 package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -22,34 +23,42 @@ var _ = math.Inf
 
 var CreateFlavorCmd = &Command{
 	Use:          "CreateFlavor",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateFlavor",
-	OptionalArgs: "region",
 }
 
 var DeleteFlavorCmd = &Command{
 	Use:          "DeleteFlavor",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteFlavor",
-	OptionalArgs: "region",
 }
 
 var UpdateFlavorCmd = &Command{
 	Use:          "UpdateFlavor",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateFlavor",
-	OptionalArgs: "region",
 }
 
 var ShowFlavorCmd = &Command{
 	Use:          "ShowFlavor",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(FlavorRequiredArgs, FlavorOptionalArgs...), " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Flavor{},
 	Path:         "/auth/ctrl/ShowFlavor",
-	OptionalArgs: "region",
 	StreamOut:    true,
 }
 var FlavorApiCmds = []*Command{
@@ -57,4 +66,26 @@ var FlavorApiCmds = []*Command{
 	DeleteFlavorCmd,
 	UpdateFlavorCmd,
 	ShowFlavorCmd,
+}
+
+var FlavorKeyRequiredArgs = []string{}
+var FlavorKeyOptionalArgs = []string{
+	"name",
+}
+var FlavorKeyAliasArgs = []string{
+	"name=flavorkey.name",
+}
+var FlavorRequiredArgs = []string{
+	"name",
+}
+var FlavorOptionalArgs = []string{
+	"ram",
+	"vcpus",
+	"disk",
+}
+var FlavorAliasArgs = []string{
+	"name=flavor.key.name",
+	"ram=flavor.ram",
+	"vcpus=flavor.vcpus",
+	"disk=flavor.disk",
 }
