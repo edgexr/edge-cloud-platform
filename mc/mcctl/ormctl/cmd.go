@@ -1,6 +1,7 @@
 package ormctl
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -54,6 +55,9 @@ func genCmd(c *Command) *cobra.Command {
 	if len(args) > 0 {
 		short += " [" + strings.Join(args, " ") + "]"
 	}
+	if len(short) > 60 {
+		short = short[:57] + "..."
+	}
 	if c.ReplyData == nil {
 		c.ReplyData = &ormapi.Result{}
 	}
@@ -64,6 +68,7 @@ func genCmd(c *Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   c.Use,
 		Short: short,
+		Long:  longHelp(short, c),
 		RunE:  c.Run,
 	}
 	return cmd
@@ -238,4 +243,28 @@ func getUri() string {
 		Addr = "http://" + Addr
 	}
 	return Addr + "/api/v1"
+}
+
+func longHelp(short string, c *Command) string {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, "%s\n\n", short)
+
+	args := strings.Split(c.RequiredArgs, " ")
+	if len(args) > 0 {
+		fmt.Fprintf(&buf, "Required Args:\n")
+		//w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
+		for _, str := range args {
+			//fmt.Fprintf(w, "  %s\t%s\n", argshelp[0], argshelp[1])
+			fmt.Fprintf(&buf, "  %s\n", str)
+		}
+		//w.Flush()
+	}
+	args = strings.Split(c.OptionalArgs, " ")
+	if len(args) > 0 {
+		fmt.Fprintf(&buf, "Optional Args:\n")
+		for _, str := range args {
+			fmt.Fprintf(&buf, "  %s\n", str)
+		}
+	}
+	return buf.String()
 }

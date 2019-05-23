@@ -26,7 +26,7 @@ var _ = math.Inf
 func (s *Client) CreateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "CreateAppInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey", ",")
+	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -38,7 +38,7 @@ func (s *Client) CreateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "DeleteAppInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey", ",")
+	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -50,7 +50,7 @@ func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
 	args := []string{"ctrl", "UpdateAppInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey", ",")
+	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -62,7 +62,7 @@ func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 func (s *Client) ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.AppInst, int, error) {
 	args := []string{"ctrl", "ShowAppInst"}
 	outlist := []edgeproto.AppInst{}
-	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey", ",")
+	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}

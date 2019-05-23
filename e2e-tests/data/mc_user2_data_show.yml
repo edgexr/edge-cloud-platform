@@ -280,6 +280,7 @@ regiondata:
             operatorkey:
               name: developer
             name: default
+          developer: platos
       uri: default.platosenablement.platos.com
       liveness: LivenessStatic
       mappedports:

@@ -4,6 +4,7 @@
 package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -22,40 +23,48 @@ var _ = math.Inf
 
 var CreateClusterInstCmd = &Command{
 	Use:                  "CreateClusterInst",
+	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateClusterInst",
-	OptionalArgs:         "region",
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
 var DeleteClusterInstCmd = &Command{
 	Use:                  "DeleteClusterInst",
+	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteClusterInst",
-	OptionalArgs:         "region",
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
 var UpdateClusterInstCmd = &Command{
 	Use:                  "UpdateClusterInst",
+	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateClusterInst",
-	OptionalArgs:         "region",
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
 var ShowClusterInstCmd = &Command{
 	Use:          "ShowClusterInst",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(ClusterInstRequiredArgs, ClusterInstOptionalArgs...), " "),
+	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
 	ReqData:      &ormapi.RegionClusterInst{},
 	ReplyData:    &edgeproto.ClusterInst{},
 	Path:         "/auth/ctrl/ShowClusterInst",
-	OptionalArgs: "region",
 	StreamOut:    true,
 }
 var ClusterInstApiCmds = []*Command{
@@ -63,4 +72,70 @@ var ClusterInstApiCmds = []*Command{
 	DeleteClusterInstCmd,
 	UpdateClusterInstCmd,
 	ShowClusterInstCmd,
+}
+
+var ClusterInstKeyRequiredArgs = []string{}
+var ClusterInstKeyOptionalArgs = []string{
+	"clusterkey.name",
+	"cloudletkey.operatorkey.name",
+	"cloudletkey.name",
+	"developer",
+}
+var ClusterInstKeyAliasArgs = []string{
+	"clusterkey.name=clusterinstkey.clusterkey.name",
+	"cloudletkey.operatorkey.name=clusterinstkey.cloudletkey.operatorkey.name",
+	"cloudletkey.name=clusterinstkey.cloudletkey.name",
+	"developer=clusterinstkey.developer",
+}
+var ClusterInstRequiredArgs = []string{
+	"cluster",
+	"operator",
+	"cloudlet",
+	"key.developer",
+}
+var ClusterInstOptionalArgs = []string{
+	"flavor.name",
+	"state",
+	"errors",
+	"crmoverride",
+	"ipaccess",
+	"nummasters",
+	"numnodes",
+}
+var ClusterInstAliasArgs = []string{
+	"cluster=clusterinst.key.clusterkey.name",
+	"operator=clusterinst.key.cloudletkey.operatorkey.name",
+	"cloudlet=clusterinst.key.cloudletkey.name",
+	"key.developer=clusterinst.key.developer",
+	"flavor.name=clusterinst.flavor.name",
+	"liveness=clusterinst.liveness",
+	"auto=clusterinst.auto",
+	"state=clusterinst.state",
+	"errors=clusterinst.errors",
+	"crmoverride=clusterinst.crmoverride",
+	"ipaccess=clusterinst.ipaccess",
+	"allocatedip=clusterinst.allocatedip",
+	"nodeflavor=clusterinst.nodeflavor",
+	"nummasters=clusterinst.nummasters",
+	"numnodes=clusterinst.numnodes",
+}
+var ClusterInstInfoRequiredArgs = []string{
+	"key.clusterkey.name",
+	"key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.name",
+	"key.developer",
+}
+var ClusterInstInfoOptionalArgs = []string{
+	"notifyid",
+	"state",
+	"errors",
+}
+var ClusterInstInfoAliasArgs = []string{
+	"key.clusterkey.name=clusterinstinfo.key.clusterkey.name",
+	"key.cloudletkey.operatorkey.name=clusterinstinfo.key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.name=clusterinstinfo.key.cloudletkey.name",
+	"key.developer=clusterinstinfo.key.developer",
+	"notifyid=clusterinstinfo.notifyid",
+	"state=clusterinstinfo.state",
+	"errors=clusterinstinfo.errors",
 }

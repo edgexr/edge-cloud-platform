@@ -4,6 +4,7 @@
 package ormctl
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -22,10 +23,12 @@ var _ = math.Inf
 
 var ShowCloudletRefsCmd = &Command{
 	Use:          "ShowCloudletRefs",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(CloudletRefsRequiredArgs, CloudletRefsOptionalArgs...), " "),
+	AliasArgs:    strings.Join(CloudletRefsAliasArgs, " "),
 	ReqData:      &ormapi.RegionCloudletRefs{},
 	ReplyData:    &edgeproto.CloudletRefs{},
 	Path:         "/auth/ctrl/ShowCloudletRefs",
-	OptionalArgs: "region",
 	StreamOut:    true,
 }
 var CloudletRefsApiCmds = []*Command{
@@ -34,12 +37,76 @@ var CloudletRefsApiCmds = []*Command{
 
 var ShowClusterRefsCmd = &Command{
 	Use:          "ShowClusterRefs",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(ClusterRefsRequiredArgs, ClusterRefsOptionalArgs...), " "),
+	AliasArgs:    strings.Join(ClusterRefsAliasArgs, " "),
 	ReqData:      &ormapi.RegionClusterRefs{},
 	ReplyData:    &edgeproto.ClusterRefs{},
 	Path:         "/auth/ctrl/ShowClusterRefs",
-	OptionalArgs: "region",
 	StreamOut:    true,
 }
 var ClusterRefsApiCmds = []*Command{
 	ShowClusterRefsCmd,
+}
+
+var CloudletRefsRequiredArgs = []string{
+	"key.operatorkey.name",
+	"key.name",
+}
+var CloudletRefsOptionalArgs = []string{
+	"clusters.name",
+	"usedram",
+	"usedvcores",
+	"useddisk",
+	"rootlbports.key",
+	"rootlbports.value",
+	"useddynamicips",
+	"usedstaticips",
+}
+var CloudletRefsAliasArgs = []string{
+	"key.operatorkey.name=cloudletrefs.key.operatorkey.name",
+	"key.name=cloudletrefs.key.name",
+	"clusters.name=cloudletrefs.clusters.name",
+	"usedram=cloudletrefs.usedram",
+	"usedvcores=cloudletrefs.usedvcores",
+	"useddisk=cloudletrefs.useddisk",
+	"rootlbports.key=cloudletrefs.rootlbports.key",
+	"rootlbports.value=cloudletrefs.rootlbports.value",
+	"useddynamicips=cloudletrefs.useddynamicips",
+	"usedstaticips=cloudletrefs.usedstaticips",
+}
+var RootLbPortsEntryRequiredArgs = []string{}
+var RootLbPortsEntryOptionalArgs = []string{
+	"key",
+	"value",
+}
+var RootLbPortsEntryAliasArgs = []string{
+	"key=rootlbportsentry.key",
+	"value=rootlbportsentry.value",
+}
+var ClusterRefsRequiredArgs = []string{
+	"key.clusterkey.name",
+	"key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.name",
+	"key.developer",
+}
+var ClusterRefsOptionalArgs = []string{
+	"apps.developerkey.name",
+	"apps.name",
+	"apps.version",
+	"usedram",
+	"usedvcores",
+	"useddisk",
+}
+var ClusterRefsAliasArgs = []string{
+	"key.clusterkey.name=clusterrefs.key.clusterkey.name",
+	"key.cloudletkey.operatorkey.name=clusterrefs.key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.name=clusterrefs.key.cloudletkey.name",
+	"key.developer=clusterrefs.key.developer",
+	"apps.developerkey.name=clusterrefs.apps.developerkey.name",
+	"apps.name=clusterrefs.apps.name",
+	"apps.version=clusterrefs.apps.version",
+	"usedram=clusterrefs.usedram",
+	"usedvcores=clusterrefs.usedvcores",
+	"useddisk=clusterrefs.useddisk",
 }
