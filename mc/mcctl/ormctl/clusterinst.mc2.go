@@ -99,6 +99,7 @@ var ClusterInstOptionalArgs = []string{
 	"errors",
 	"crmoverride",
 	"ipaccess",
+	"deployment",
 	"nummasters",
 	"numnodes",
 }
@@ -116,6 +117,7 @@ var ClusterInstAliasArgs = []string{
 	"ipaccess=clusterinst.ipaccess",
 	"allocatedip=clusterinst.allocatedip",
 	"nodeflavor=clusterinst.nodeflavor",
+	"deployment=clusterinst.deployment",
 	"nummasters=clusterinst.nummasters",
 	"numnodes=clusterinst.numnodes",
 }
