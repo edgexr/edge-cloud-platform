@@ -65,7 +65,7 @@ func checkPEMCert(fn, fqdn string) error {
 
 //AcquireCertificates obtains certficates from Letsencrypt over ACME. It should be used carefully. The API calls have quota.
 func AcquireCertificates(fqdn string) error {
-	log.DebugLog(log.DebugLevelMexos, "acquiring certificates for FQDN", "FQDN", fqdn)
+	log.DebugLog(log.DebugLevelMexos, "acquiring certificates for Fqdn", "Fqdn", fqdn)
 	kf := PrivateSSHKey()
 	srcfile := fmt.Sprintf("mobiledgex@%s:files-repo/certs/%s/fullchain.cer", GetCloudletRegistryFileServer(), fqdn)
 	dkey := fmt.Sprintf("%s/%s.key", fqdn, fqdn)
@@ -91,10 +91,10 @@ func AcquireCertificates(fqdn string) error {
 			log.DebugLog(log.DebugLevelMexos, "warning, failed to get cached key file", "src", srcfile, "cert", certfile, "error", err, "out", out)
 		} else if checkPEMFile(keyfile) == nil {
 			//because Letsencrypt complains if we get certs repeated for the same fqdn
-			log.DebugLog(log.DebugLevelMexos, "got cached certs from registry", "FQDN", fqdn)
+			log.DebugLog(log.DebugLevelMexos, "got cached certs from registry", "Fqdn", fqdn)
 			addr, ierr := GetServerIPAddr(GetCloudletExternalNetwork(), fqdn) //XXX should just use fqdn but paranoid
 			if ierr != nil {
-				log.DebugLog(log.DebugLevelMexos, "failed to get server ip addr", "FQDN", fqdn, "error", ierr)
+				log.DebugLog(log.DebugLevelMexos, "failed to get server ip addr", "Fqdn", fqdn, "error", ierr)
 				return ierr
 			}
 			client, err := GetSSHClient(fqdn, GetCloudletExternalNetwork(), SSHUser)
@@ -111,7 +111,7 @@ func AcquireCertificates(fqdn string) error {
 					return fmt.Errorf("cannot copy %s to /root, %v, %s", fn, err, out)
 				}
 			}
-			log.DebugLog(log.DebugLevelMexos, "using cached cert and key", "FQDN", fqdn)
+			log.DebugLog(log.DebugLevelMexos, "using cached cert and key", "Fqdn", fqdn)
 			return nil
 		}
 	}
@@ -165,6 +165,6 @@ func AcquireCertificates(fqdn string) error {
 	if err != nil {
 		return fmt.Errorf("failed to upload certs for %s, %v, %v", fqdn, err, res)
 	}
-	log.DebugLog(log.DebugLevelMexos, "saved acquired cert and key", "FQDN", fqdn)
+	log.DebugLog(log.DebugLevelMexos, "saved acquired cert and key", "Fqdn", fqdn)
 	return nil
 }

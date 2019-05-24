@@ -168,7 +168,7 @@ func DockerComposePorts(mf *Manifest, dc *DockerCompose) error {
 				}
 				pd := PortDetail{
 					Name:         fmt.Sprintf("%s%d", k, pubp),
-					MexProto:     "LProtoTCP", //XXX
+					MexProto:     "L_PROTO_TCP", //XXX
 					Proto:        "TCP",       //XXX
 					InternalPort: intp,
 					PublicPort:   pubp,

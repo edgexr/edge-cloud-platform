@@ -284,7 +284,7 @@ regiondata:
       uri: default.platosenablement.platos.com
       liveness: LivenessStatic
       mappedports:
-      - proto: LProtoTCP
+      - proto: LProtoTcp
         internalport: 64000
       flavor:
         name: x1.small
@@ -309,15 +309,15 @@ regiondata:
       uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
-      - proto: LProtoTCP
+      - proto: LProtoTcp
         internalport: 80
         publicport: 80
         fqdnprefix: someapplication1-tcp.
-      - proto: LProtoHTTP
+      - proto: LProtoHttp
         internalport: 443
         publicport: 443
         pathprefix: acmeappco/someapplication110/p443
-      - proto: LProtoUDP
+      - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
         fqdnprefix: someapplication1-udp.
@@ -344,15 +344,15 @@ regiondata:
       uri: dmuus-cloud-2.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
-      - proto: LProtoTCP
+      - proto: LProtoTcp
         internalport: 80
         publicport: 80
         fqdnprefix: someapplication1-tcp.
-      - proto: LProtoHTTP
+      - proto: LProtoHttp
         internalport: 443
         publicport: 443
         pathprefix: acmeappco/someapplication110/p443
-      - proto: LProtoUDP
+      - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
         fqdnprefix: someapplication1-udp.

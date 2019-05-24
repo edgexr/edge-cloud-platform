@@ -23,7 +23,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		fallthrough
 	case cloudcommon.AppDeploymentTypeHelm:
 		rootLBName := s.rootLBName
-		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 		}
@@ -129,7 +129,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return nil
 	case cloudcommon.AppDeploymentTypeDocker:
 		rootLBName := s.rootLBName
-		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 		}
@@ -172,7 +172,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		fallthrough
 	case cloudcommon.AppDeploymentTypeHelm:
 		rootLBName := s.rootLBName
-		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
 		}

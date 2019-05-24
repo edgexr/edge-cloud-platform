@@ -46,15 +46,14 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/xanzy/go-gitlab v0.16.0
-	go.uber.org/zap v1.8.0
+	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190401181712-f467c93bbac2
-	google.golang.org/grpc v1.19.1
+	google.golang.org/grpc v1.20.1
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
@@ -169,7 +168,7 @@ replace github.com/gogo/googleapis => github.com/gogo/googleapis v1.0.0
 
 replace github.com/golang/groupcache => github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 
-replace github.com/golang/protobuf => github.com/golang/protobuf v1.2.0
+replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.1
 
 replace github.com/golangplus/bytes => github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450
 
@@ -313,7 +312,7 @@ replace github.com/spaolacci/murmur3 => github.com/spaolacci/murmur3 v1.1.0
 
 replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.3
 
-replace github.com/spf13/pflag => github.com/spf13/pflag v1.0.1
+replace github.com/spf13/pflag => github.com/spf13/pflag v1.0.3
 
 replace github.com/stretchr/testify => github.com/stretchr/testify v1.3.0
 
@@ -335,7 +334,7 @@ replace go.uber.org/atomic => go.uber.org/atomic v1.3.2
 
 replace go.uber.org/multierr => go.uber.org/multierr v1.1.0
 
-replace go.uber.org/zap => go.uber.org/zap v1.8.0
+replace go.uber.org/zap => go.uber.org/zap v1.10.0
 
 replace golang.org/x/build => golang.org/x/build v0.0.0-20190314133821-5284462c4bec
 
@@ -353,7 +352,7 @@ replace google.golang.org/api => google.golang.org/api v0.1.0
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20190307195333-5fe7a883aa19
 
-replace google.golang.org/grpc => google.golang.org/grpc v1.19.0
+replace google.golang.org/grpc => google.golang.org/grpc v1.20.1
 
 replace gopkg.in/alecthomas/kingpin.v2 => gopkg.in/alecthomas/kingpin.v2 v2.2.6
 
@@ -384,3 +383,5 @@ replace github.com/kr/pty => github.com/kr/pty v1.1.3
 replace github.com/pion/webrtc/v2 => github.com/pion/webrtc/v2 v2.0.7
 
 replace golang.org/x/text => golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
+
+replace github.com/uber/prototool => github.com/uber/prototool v1.7.0

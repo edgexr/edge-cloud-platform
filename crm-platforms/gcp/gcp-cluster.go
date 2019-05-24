@@ -18,8 +18,8 @@ import (
 
 // GCPLogin logs into google cloud
 func (s *Platform) GCPLogin() error {
-	log.DebugLog(log.DebugLevelMexos, "doing GcpLogin", "vault url", s.props.GCPAuthKeyUrl)
-	dat, err := mexos.GetVaultData(s.props.GCPAuthKeyUrl)
+	log.DebugLog(log.DebugLevelMexos, "doing GcpLogin", "vault url", s.props.GcpAuthKeyUrl)
+	dat, err := mexos.GetVaultData(s.props.GcpAuthKeyUrl)
 	if err != nil {
 		return err
 	}

@@ -57,11 +57,11 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	if s.props.ServiceAccount == "" {
 		return fmt.Errorf("Env variable MEX_GCP_SERVICE_ACCOUNT not set")
 	}
-	s.props.GCPAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
-	if s.props.GCPAuthKeyUrl == "" {
+	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
+	if s.props.GcpAuthKeyUrl == "" {
 		//default it
-		s.props.GCPAuthKeyUrl = "https://vault.mobiledgex.net/v1/secret/data/cloudlet/gcp/auth_key.json"
-		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GCPAuthKeyUrl)
+		s.props.GcpAuthKeyUrl = "https://vault.mobiledgex.net/v1/secret/data/cloudlet/gcp/auth_key.json"
+		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
 	}
 	return nil
 }

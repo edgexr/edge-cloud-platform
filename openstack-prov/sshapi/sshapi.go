@@ -9,7 +9,7 @@ import (
 
 var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
 
-var testTarget = "" //TODO use FQDN reserved for testing
+var testTarget = "" //TODO use Fqdn reserved for testing
 
 func main() {
 	if mexTestInfra == "" {

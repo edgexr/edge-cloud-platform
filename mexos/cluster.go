@@ -115,14 +115,14 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) (reter
 	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst)
 
 	dedicatedRootLBName := ""
-	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		dedicatedRootLBName = rootLBName
 	}
 
 	var err error
 	singleNodeCluster := false
 	if clusterInst.NumMasters == 0 {
-		if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			//suitable for docker only
 			log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 			singleNodeCluster = true
@@ -138,7 +138,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) (reter
 	}
 	// the root LB was created as part of cluster creation, but it needs to be prepped and
 	// mex agent started
-	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		log.DebugLog(log.DebugLevelMexos, "need dedicated rootLB", "IpAccess", clusterInst.IpAccess)
 		_, err := NewRootLB(rootLBName)
 		if err != nil {
@@ -183,7 +183,7 @@ func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error 
 	if err != nil {
 		return err
 	}
-	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		DeleteRootLB(rootLBName)
 	}
 	return nil
