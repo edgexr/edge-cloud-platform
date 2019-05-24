@@ -107,7 +107,7 @@ func (s *Platform) GetPlatformClientRootLB(rootLBName string) (pc.PlatformClient
 
 func (s *Platform) GetPlatformClient(clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
 	rootLBName := s.rootLBName
-	if clusterInst.IpAccess == edgeproto.IpAccess_IpAccessDedicated {
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
 	return s.GetPlatformClientRootLB(rootLBName)

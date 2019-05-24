@@ -18,7 +18,7 @@ import (
 )
 
 //validateDomain does strange validation, not strictly domain, due to the data passed from controller.
-// if it is FQDN it is valid. And if it starts with http:// or https:// and followed by fqdn, it is valid.
+// if it is Fqdn it is valid. And if it starts with http:// or https:// and followed by fqdn, it is valid.
 func validateDomain(uri string) error {
 	if isDomainName(uri) {
 		return nil

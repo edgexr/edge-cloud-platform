@@ -92,7 +92,7 @@ func TestCreateContainer(t *testing.T) {
 	config.Image = containerImage
 
 	home := os.Getenv("HOME")
-	certDir := home + "/.mobiledgex/certs" //+ FQDN
+	certDir := home + "/.mobiledgex/certs" //+ Fqdn
 
 	hostConfig.Binds = []string{certDir + ":/var/www/.cache", "/etc/ssl/certs:/etc/ssl/certs"}
 

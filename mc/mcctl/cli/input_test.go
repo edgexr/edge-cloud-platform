@@ -90,7 +90,7 @@ func TestParseArgs(t *testing.T) {
 	rc := ormapi.RegionCloudlet{
 		Region: "local",
 		Cloudlet: edgeproto.Cloudlet{
-			IpSupport: edgeproto.IpSupport_IpSupportDynamic,
+			IpSupport: edgeproto.IpSupport_IP_SUPPORT_DYNAMIC,
 		},
 	}
 	args = []string{"region=local", "cloudlet.ipsupport=IpSupportDynamic"}

@@ -30,19 +30,19 @@ func InitInfraCommon() error {
 	if err != nil {
 		return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
 	}
-	CloudletInfraCommon.CFKey = os.Getenv("MEX_CF_KEY")
-	if CloudletInfraCommon.CFKey == "" {
+	CloudletInfraCommon.CfKey = os.Getenv("MEX_CF_KEY")
+	if CloudletInfraCommon.CfKey == "" {
 		return fmt.Errorf("Env variable MEX_CF_KEY not set")
 	}
-	CloudletInfraCommon.CFUser = os.Getenv("MEX_CF_USER")
-	if CloudletInfraCommon.CFKey == "" {
+	CloudletInfraCommon.CfUser = os.Getenv("MEX_CF_USER")
+	if CloudletInfraCommon.CfKey == "" {
 		return fmt.Errorf("Env variable MEX_CF_USER not set")
 	}
 	CloudletInfraCommon.DockerRegPass = os.Getenv("MEX_DOCKER_REG_PASS")
 	if CloudletInfraCommon.DockerRegPass == "" {
 		return fmt.Errorf("Env variable MEX_DOCKER_REG_PASS not set")
 	}
-	CloudletInfraCommon.DNSZone = "mobiledgex.net"
+	CloudletInfraCommon.DnsZone = "mobiledgex.net"
 	CloudletInfraCommon.DockerRegistry = deploygen.MexRegistry
 	CloudletInfraCommon.DockerRegistrySecret = deploygen.MexRegistrySecret
 
@@ -60,46 +60,46 @@ func InitOpenstackProps() error {
 	}
 	OpenstackProps.OpenRcVars = make(map[string]string)
 
-	OpenstackProps.OSExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
-	if OpenstackProps.OSExternalNetworkName == "" {
-		OpenstackProps.OSExternalNetworkName = "external-network-shared"
+	OpenstackProps.OsExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
+	if OpenstackProps.OsExternalNetworkName == "" {
+		OpenstackProps.OsExternalNetworkName = "external-network-shared"
 	}
 
-	OpenstackProps.OSImageName = os.Getenv("MEX_OS_IMAGE")
-	if OpenstackProps.OSImageName == "" {
-		OpenstackProps.OSImageName = defaultOSImageName
+	OpenstackProps.OsImageName = os.Getenv("MEX_OS_IMAGE")
+	if OpenstackProps.OsImageName == "" {
+		OpenstackProps.OsImageName = defaultOSImageName
 	}
 
 	// defaulting some value
-	OpenstackProps.OSExternalRouterName = os.Getenv("MEX_ROUTER")
-	if OpenstackProps.OSExternalRouterName == "" {
-		OpenstackProps.OSExternalRouterName = "mex-k8s-router-1"
+	OpenstackProps.OsExternalRouterName = os.Getenv("MEX_ROUTER")
+	if OpenstackProps.OsExternalRouterName == "" {
+		OpenstackProps.OsExternalRouterName = "mex-k8s-router-1"
 	}
-	OpenstackProps.OSMexNetwork = "mex-k8s-net-1"
+	OpenstackProps.OsMexNetwork = "mex-k8s-net-1"
 	return nil
 }
 
 //GetCloudletExternalRouter returns default MEX external router name
 func GetCloudletExternalRouter() string {
 	//TODO validate existence and status
-	return OpenstackProps.OSExternalRouterName
+	return OpenstackProps.OsExternalRouterName
 }
 
 func GetCloudletExternalNetwork() string {
 	// this will be unset if platform is not openstack
 	// because InitOpenstackProps() will not have been called.
-	return OpenstackProps.OSExternalNetworkName
+	return OpenstackProps.OsExternalNetworkName
 }
 
 // Utility functions that used to be within manifest.
 //GetCloudletNetwork returns default MEX network, internal and prepped
 func GetCloudletMexNetwork() string {
 	//TODO validate existence and status
-	return OpenstackProps.OSMexNetwork
+	return OpenstackProps.OsMexNetwork
 }
 
 func GetCloudletDNSZone() string {
-	return CloudletInfraCommon.DNSZone
+	return CloudletInfraCommon.DnsZone
 }
 
 func GetCloudletNetworkScheme() string {
@@ -107,7 +107,7 @@ func GetCloudletNetworkScheme() string {
 }
 
 func GetCloudletOSImage() string {
-	return OpenstackProps.OSImageName
+	return OpenstackProps.OsImageName
 }
 
 func GetCloudletDockerRegistry() string {
@@ -123,11 +123,11 @@ func GetCloudletRegistryFileServer() string {
 }
 
 func GetCloudletCFKey() string {
-	return CloudletInfraCommon.CFKey
+	return CloudletInfraCommon.CfKey
 }
 
 func GetCloudletCFUser() string {
-	return CloudletInfraCommon.CFUser
+	return CloudletInfraCommon.CfUser
 }
 
 func GetCloudletDockerPass() string {

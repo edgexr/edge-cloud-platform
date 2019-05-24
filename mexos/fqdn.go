@@ -59,7 +59,7 @@ func uri2fqdn(uri string) string {
 	return fqdn
 }
 
-//ActivateFQDNA updates and ensures FQDN is registered properly
+//ActivateFQDNA updates and ensures Fqdn is registered properly
 func ActivateFQDNA(fqdn, addr string) error {
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
