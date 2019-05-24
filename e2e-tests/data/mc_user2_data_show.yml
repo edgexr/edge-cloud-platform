@@ -100,6 +100,7 @@ regiondata:
       allocatedip: dynamic
       nodeflavor: flavor1
       masterflavor: flavor1
+      deployment: kubernetes
       nummasters: 1
       numnodes: 1
     - key:
@@ -117,6 +118,7 @@ regiondata:
       ipaccess: IpAccessShared
       nodeflavor: flavor1
       masterflavor: flavor1
+      deployment: kubernetes
       nummasters: 1
       numnodes: 1
     apps:
