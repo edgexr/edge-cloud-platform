@@ -47,7 +47,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		handler := bd(next)
 		nexterr = handler(c)
 		// remove passwords from requests so they aren't logged
-		if strings.HasSuffix(req.RequestURI, "login") {
+		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
 			err := json.Unmarshal(reqBody, &login)
 			if err == nil {
@@ -57,13 +57,32 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
-		}
-		if strings.HasSuffix(req.RequestURI, "usercreate") {
+		} else if strings.Contains(req.RequestURI, "usercreate") {
 			user := ormapi.CreateUser{}
 			err := json.Unmarshal(reqBody, &user)
 			if err == nil {
 				user.Passhash = ""
 				reqBody, err = json.Marshal(user)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
+		} else if strings.Contains(req.RequestURI, "passwordreset") {
+			reset := ormapi.PasswordReset{}
+			err := json.Unmarshal(reqBody, &reset)
+			if err == nil {
+				reset.Password = ""
+				reqBody, err = json.Marshal(reset)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
+		} else if strings.Contains(req.RequestURI, "user/newpass") {
+			newpass := ormapi.NewPassword{}
+			err := json.Unmarshal(reqBody, &newpass)
+			if err == nil {
+				newpass.Password = ""
+				reqBody, err = json.Marshal(newpass)
 			}
 			if err != nil {
 				reqBody = []byte{}
