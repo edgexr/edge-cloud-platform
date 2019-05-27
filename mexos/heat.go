@@ -76,6 +76,7 @@ var vmTemplateResources = `
          flavor: {{.Flavor}}
         {{if .AuthPublicKey}} key_name: { get_resource: ssh_key_pair } {{- end}}
          config_drive: true       
+         user_data_format: RAW
          networks:
         {{if .FloatingIPAddressID}}
           - port: { get_resource: vm-port }
@@ -89,17 +90,14 @@ var vmTemplateResources = `
             edgeproxy: {{.GatewayIP}}
             mex-flavor: {{.Flavor}}
             privaterouter: {{.MEXRouterIP}}
-         user_data_format: RAW
          user_data: |
 ` + reindent(vmCloudConfig, 12) + `
         {{- end}}
         {{if .DeploymentManifest}}
-         user_data_format: RAW
          user_data: |
 {{ Indent .DeploymentManifest 13 }}
         {{- end}}
         {{if .Command}}
-         user_data_format: RAW
          user_data: |
             #cloud-config
             runcmd:
