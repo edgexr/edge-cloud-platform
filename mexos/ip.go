@@ -128,47 +128,28 @@ func GetServerIPAddr(networkName, serverName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	its := strings.Split(sd.Addresses, "=")
-	if len(its) != 2 {
-		its = strings.Split(sd.Addresses, ";")
-		foundaddr := ""
-		if len(its) > 1 {
-			for _, it := range its {
-				sits := strings.Split(it, "=")
-				if len(sits) == 2 {
-					if strings.Contains(sits[0], "mex-k8s-net") {
-						continue
-					}
-					if strings.TrimSpace(sits[0]) == networkName { // XXX
-						foundaddr = sits[1]
-						break
-					}
+	its := strings.Split(sd.Addresses, ";")
+	for _, it := range its {
+		sits := strings.Split(it, "=")
+		if len(sits) != 2 {
+			return "", fmt.Errorf("GetServerIPAddr: Unable to parse '%s'", it)
+		}
+		if strings.Contains(sits[0], networkName) {
+			addr := sits[1]
+			if strings.Contains(addr, ",") {
+				addrs := strings.Split(addr, ",")
+				if len(addrs) == 2 {
+					addr = addrs[1]
+				} else {
+					return "", fmt.Errorf("GetServerIPAddr: Unable to parse '%s'", addr)
 				}
 			}
+			addr = strings.TrimSpace(addr)
+			log.DebugLog(log.DebugLevelMexos, "retrieved server ipaddr", "ipaddr", addr, "netname", networkName, "servername", serverName)
+			return addr, nil
 		}
-		if foundaddr != "" {
-			log.DebugLog(log.DebugLevelMexos, "retrieved server ipaddr", "ipaddr", foundaddr, "netname", networkName, "servername", serverName)
-			return foundaddr, nil
-		}
-		return "", fmt.Errorf("GetServerIPAddr: can't parse server detail addresses, %v, %v", sd, err)
 	}
-	if its[0] != networkName {
-		// when there is a floating ip, the public IP is listed second after a comma
-		// e.g. internal=10.5.6.6, 192.168.5.100
-		if networkName == GetCloudletExternalNetwork() {
-			addrs := strings.Split(sd.Addresses, ",")
-			if len(addrs) == 2 {
-				addr := strings.TrimSpace(addrs[1])
-				log.DebugLog(log.DebugLevelMexos, "found floating ip", "addr", addr)
-				return addr, nil
-			}
-		}
-		return "", fmt.Errorf("invalid network name in server detail address, %s", sd.Addresses)
-
-	}
-	addr := its[1]
-	//log.DebugLog(log.DebugLevelMexos, "got server ip addr", "ipaddr", addr, "netname", networkName, "servername", serverName)
-	return addr, nil
+	return "", fmt.Errorf("GetServerIPAddr: Unable to find network %s for server %s", networkName, serverName)
 }
 
 //FindNodeIP finds IP for the given node

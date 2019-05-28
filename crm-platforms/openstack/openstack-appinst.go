@@ -126,6 +126,20 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		if err != nil {
 			return fmt.Errorf("CreateVMAppInst error: %v", err)
 		}
+		external_ip, err := mexos.GetServerIPAddr(mexos.GetCloudletExternalNetwork(), app.Key.Name)
+		if err != nil {
+			return err
+		}
+		if appInst.Uri != "" && external_ip != "" {
+			fqdn := appInst.Uri
+			if err = mexos.ActivateFQDNA(fqdn, external_ip); err != nil {
+				return err
+			}
+			log.DebugLog(log.DebugLevelMexos, "DNS A record activated",
+				"name", app.Key.Name,
+				"fqdn", fqdn,
+				"IP", external_ip)
+		}
 		return nil
 	case cloudcommon.AppDeploymentTypeDocker:
 		rootLBName := s.rootLBName
