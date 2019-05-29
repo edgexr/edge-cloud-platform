@@ -95,7 +95,7 @@ func (s *AppStoreSync) syncArtifactoryObjects() {
 		log.DebugLog(log.DebugLevelApi,
 			"Artifactory Sync delete extra repository",
 			"name", repo)
-		err = artifactoryDeleteRepo(strings.TrimPrefix(repo, ArtifactoryRepoPrefix))
+		err = artifactoryDeleteRepo(strings.TrimPrefix(repo, getArtifactoryRepoPrefix()))
 		if err != nil {
 			s.syncErr(err)
 		}
@@ -104,7 +104,7 @@ func (s *AppStoreSync) syncArtifactoryObjects() {
 		log.DebugLog(log.DebugLevelApi,
 			"Artifactory Sync delete extra permission target",
 			"name", perm)
-		err = artifactoryDeleteRepoPerms(strings.TrimPrefix(perm, ArtifactoryPermPrefix))
+		err = artifactoryDeleteRepoPerms(strings.TrimPrefix(perm, getArtifactoryPermPrefix()))
 		if err != nil {
 			s.syncErr(err)
 		}

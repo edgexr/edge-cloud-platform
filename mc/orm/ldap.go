@@ -30,6 +30,9 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 	if err != nil {
 		return ldap.LDAPResultInvalidDNSyntax, nil
 	}
+	if dn.dc != serverConfig.Tag {
+		return ldap.LDAPResultInvalidCredentials, nil
+	}
 	if dn.ou == OUusers && dn.cn == "gitlab" && bindSimplePw == "gitlab" {
 		return ldap.LDAPResultSuccess, nil
 	}
@@ -70,6 +73,9 @@ func (s *ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn 
 	if err != nil {
 		return res, fmt.Errorf("Invalid DN, %s", err.Error())
 	}
+	if dn.dc != serverConfig.Tag {
+		return res, fmt.Errorf("Invalid DN (dc)")
+	}
 	if dn.ou == "" {
 		ldapLookupUsers(dn.cn, filter, &res)
 		ldapLookupOrgs(dn.cn, filter, &res)
@@ -98,6 +104,7 @@ func ldapLookupUsers(username string, filter *ber.Packet, result *ldap.ServerSea
 		dn := ldapdn{
 			cn: user.Name,
 			ou: OUusers,
+			dc: serverConfig.Tag,
 		}
 		entry := ldap.Entry{
 			DN: dn.String(),
@@ -149,6 +156,7 @@ func ldapLookupUsers(username string, filter *ber.Packet, result *ldap.ServerSea
 				dn := ldapdn{
 					cn: role.Org,
 					ou: OUorgs,
+					dc: serverConfig.Tag,
 				}
 				orgs = append(orgs, dn.String())
 			}
@@ -188,6 +196,7 @@ func ldapLookupOrgs(orgname string, filter *ber.Packet, result *ldap.ServerSearc
 		dn := ldapdn{
 			cn: org,
 			ou: OUorgs,
+			dc: serverConfig.Tag,
 		}
 		entry := ldap.Entry{
 			DN: dn.String(),
@@ -211,6 +220,7 @@ func ldapLookupOrgs(orgname string, filter *ber.Packet, result *ldap.ServerSearc
 			udn := ldapdn{
 				cn: user,
 				ou: OUusers,
+				dc: serverConfig.Tag,
 			}
 			orgmems = append(orgmems, udn.String())
 		}
@@ -235,6 +245,7 @@ func ldapLookupOrgs(orgname string, filter *ber.Packet, result *ldap.ServerSearc
 type ldapdn struct {
 	cn string // common name (unique identifier)
 	ou string // organization unit (users, orgs)
+	dc string // domain component
 }
 
 func parseDN(str string) (ldapdn, error) {
@@ -254,9 +265,14 @@ func parseDN(str string) (ldapdn, error) {
 			dn.cn = kv[1]
 		case "ou":
 			dn.ou = kv[1]
+		case "dc":
+			dn.dc = kv[1]
 		default:
 			return dn, fmt.Errorf("LDAP DN invalid component %s", kv[0])
 		}
+	}
+	if dn.dc == "" {
+		dn.dc = serverConfig.Tag
 	}
 	return dn, nil
 }
@@ -268,6 +284,9 @@ func (s *ldapdn) String() string {
 	}
 	if s.ou != "" {
 		strs = append(strs, "ou="+util.EscapeLDAPName(s.ou))
+	}
+	if s.dc != "" {
+		strs = append(strs, "dc="+util.EscapeLDAPName(s.dc))
 	}
 	if len(strs) == 0 {
 		return ""

@@ -11,11 +11,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-const (
-	ArtifactoryRepoPrefix string = "mc-repo-"
-	ArtifactoryPermPrefix string = "mc-perm-"
-)
-
 func artifactoryClient() (*artifactory.Artifactory, error) {
 	artifactoryApiKey, err := rtf.GetArtifactoryApiKey()
 	if err != nil {
@@ -33,16 +28,24 @@ func artifactoryClient() (*artifactory.Artifactory, error) {
 	return client, nil
 }
 
+func getArtifactoryRepoPrefix() string {
+	return serverConfig.Tag + "-repo-"
+}
+
+func getArtifactoryPermPrefix() string {
+	return serverConfig.Tag + "-perm-"
+}
+
 func getArtifactoryRepoName(orgName string) string {
-	return ArtifactoryRepoPrefix + orgName
+	return getArtifactoryRepoPrefix() + orgName
 }
 
 func getArtifactoryPermName(orgName string) string {
-	return ArtifactoryPermPrefix + orgName
+	return getArtifactoryPermPrefix() + orgName
 }
 
 func getArtifactoryRealmAttr(orgName string) string {
-	return "ldapGroupName=" + orgName + ";groupsStrategy=STATIC;groupDn=cn=" + orgName + ",ou=orgs"
+	return "ldapGroupName=" + orgName + ";groupsStrategy=STATIC;groupDn=cn=" + orgName + ",ou=orgs,dc=" + serverConfig.Tag
 }
 
 func artifactoryListGroups() (map[string]bool, error) {
@@ -116,7 +119,7 @@ func artifactoryListRepos() (map[string]bool, error) {
 	tmp := make(map[string]bool)
 	for _, repo := range *repos {
 		repoName := *repo.Key
-		if strings.HasPrefix(repoName, ArtifactoryRepoPrefix) {
+		if strings.HasPrefix(repoName, getArtifactoryRepoPrefix()) {
 			tmp[repoName] = true
 		}
 	}
@@ -180,7 +183,7 @@ func artifactoryListPerms() (map[string]bool, error) {
 	tmp := make(map[string]bool)
 	for _, perm := range perms {
 		permName := *perm.Name
-		if strings.HasPrefix(permName, ArtifactoryPermPrefix) {
+		if strings.HasPrefix(permName, getArtifactoryPermPrefix()) {
 			tmp[permName] = true
 		}
 	}
@@ -201,7 +204,7 @@ func artifactoryCreateRepoPerms(orgName string) error {
 		Repositories: &[]string{repoName},
 		Principals: &v1.Principals{
 			Groups: &map[string][]string{
-				groupName: []string{"m", "w", "n", "d", "r"},
+				groupName: []string{"w", "d", "r"},
 			},
 		},
 	}
