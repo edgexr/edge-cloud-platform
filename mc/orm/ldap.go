@@ -220,7 +220,6 @@ func ldapLookupOrgs(orgname string, filter *ber.Packet, result *ldap.ServerSearc
 			udn := ldapdn{
 				cn: user,
 				ou: OUusers,
-				dc: serverConfig.Tag,
 			}
 			orgmems = append(orgmems, udn.String())
 		}
@@ -250,6 +249,8 @@ type ldapdn struct {
 
 func parseDN(str string) (ldapdn, error) {
 	dn := ldapdn{}
+	dn.dc = serverConfig.Tag
+
 	if str == "" {
 		return dn, nil
 	}
@@ -270,9 +271,6 @@ func parseDN(str string) (ldapdn, error) {
 		default:
 			return dn, fmt.Errorf("LDAP DN invalid component %s", kv[0])
 		}
-	}
-	if dn.dc == "" {
-		dn.dc = serverConfig.Tag
 	}
 	return dn, nil
 }
