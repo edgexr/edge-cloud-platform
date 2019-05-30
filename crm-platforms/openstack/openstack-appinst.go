@@ -41,7 +41,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			err = k8smgmt.CreateHelmAppInst(client, names, clusterInst, app, appInst)
 		}
 		// set up DNS
-		masterIP, err := mexos.GetMasterIP(clusterInst, mexos.GetCloudletExternalNetwork())
+		masterIP, err := mexos.GetMasterIP(clusterInst)
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 
-		masterIP, err := mexos.GetMasterIP(clusterInst, mexos.GetCloudletExternalNetwork())
+		masterIP, err := mexos.GetMasterIP(clusterInst)
 		if err != nil {
 			return err
 		} // Clean up security rules and nginx proxy
