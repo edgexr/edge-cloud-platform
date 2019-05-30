@@ -8,6 +8,11 @@ variable "azure_location" {
   default     = "West US 2"
 }
 
+variable "azure_eu_location" {
+  description = "Name of the Azure resource group for the EU cluster"
+  default     = "West Europe"
+}
+
 variable "azure_terraform_service_principal_id" {
   description = "Azure service principal client ID"
   type        = "string"
@@ -42,8 +47,16 @@ variable "cluster_name" {
   default     = "mexplat-stage"
 }
 
+variable "eu_cluster_name" {
+  default     = "mexplat-stage-eu"
+}
+
 variable "resource_group_name" {
   default     = "mexplat-stage-rg"
+}
+
+variable "eu_resource_group_name" {
+  default     = "mexplat-stage-eu-rg"
 }
 
 variable "azure_vm_size" {
