@@ -173,7 +173,7 @@ func FindNodeIP(name string, srvs []OSServer) (string, error) {
 }
 
 // GetMasterIP gets the IP address of the cluster's master node.
-func GetMasterIP(clusterInst *edgeproto.ClusterInst, networkName string) (string, error) {
+func GetMasterIP(clusterInst *edgeproto.ClusterInst) (string, error) {
 	log.DebugLog(log.DebugLevelMexos, "get master IP", "cluster", clusterInst.Key.ClusterKey.Name)
 	srvs, err := ListServers()
 	if err != nil {
