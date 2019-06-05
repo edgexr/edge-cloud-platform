@@ -30,6 +30,9 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
 		err = k8smgmt.CreateAppInst(client, names, app, appInst)
+		if err == nil {
+			err = k8smgmt.WaitForAppInst(client, names, app)
+		}
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}
