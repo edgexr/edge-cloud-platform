@@ -61,7 +61,7 @@ module "gitlab" {
   instance_name       = "${var.gitlab_instance_name}"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
-  tags                = [ "mexplat-${var.environ_tag}", "gitlab-registry", "http-server", "https-server", "pg-5432", "crm", "mc", "stun-turn" ]
+  tags                = [ "mexplat-${var.environ_tag}", "gitlab-registry", "http-server", "https-server", "pg-5432", "crm", "mc", "stun-turn", "vault-ac" ]
 }
 
 module "gitlab_dns" {
@@ -85,6 +85,12 @@ module "crm_vm_dns" {
 module "mc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.mc_vm_domain_name}"
+  ip                            = "${module.gitlab.external_ip}"
+}
+
+module "vault_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.vault_vm_domain_name}"
   ip                            = "${module.gitlab.external_ip}"
 }
 
