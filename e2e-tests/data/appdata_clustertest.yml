@@ -21,6 +21,7 @@ clusterinsts:
       operatorkey:
         name: GDDT
       name: jlmcloudlet
+    developer: MobiledgeX
   flavor:
     name: x1.medium
   liveness: LivenessStatic
