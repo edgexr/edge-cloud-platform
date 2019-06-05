@@ -150,12 +150,20 @@ func GetUrlInfo(fileUrlPath string) (time.Time, string, error) {
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("Error fetching last modified time of URL %s, %v", fileUrlPath, err)
 	}
+	defer resp.Body.Close()
 	tStr := resp.Header.Get("Last-modified")
 	lastMod, err := time.Parse(time.RFC1123, tStr)
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("Error parsing last modified time of URL %s, %v", fileUrlPath, err)
 	}
-	md5Sum := resp.Header.Get("X-Checksum-Md5")
+	md5Sum := ""
+	urlInfo := strings.Split(fileUrlPath, "#")
+	if len(urlInfo) == 2 {
+		cSum := strings.Split(urlInfo[1], ":")
+		if len(cSum) == 2 && cSum[0] == "md5" {
+			md5Sum = cSum[1]
+		}
+	}
 	return lastMod, md5Sum, err
 }
 
