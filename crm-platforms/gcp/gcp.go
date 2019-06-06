@@ -40,8 +40,8 @@ func (s *Platform) GetType() string {
 	return "gcp"
 }
 
-func (s *Platform) Init(key *edgeproto.CloudletKey) error {
-	if err := mexos.InitInfraCommon(); err != nil {
+func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
+	if err := mexos.InitInfraCommon(vaultAddr); err != nil {
 		return err
 	}
 	s.props.Project = os.Getenv("MEX_GCP_PROJECT")
@@ -60,7 +60,7 @@ func (s *Platform) Init(key *edgeproto.CloudletKey) error {
 	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
 	if s.props.GcpAuthKeyUrl == "" {
 		//default it
-		s.props.GcpAuthKeyUrl = "https://vault.mobiledgex.net/v1/secret/data/cloudlet/gcp/auth_key.json"
+		s.props.GcpAuthKeyUrl = "https://" + vaultAddr + "/v1/secret/data/cloudlet/gcp/auth_key.json"
 		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
 	}
 	return nil

@@ -21,11 +21,18 @@ var OpenstackProps edgeproto.OpenStackProperties
 var MEXInfraVersion = "v2.0.2" //Stratus
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 
-func InitInfraCommon() error {
-	mexEnvURL := os.Getenv("MEXENV_URL")
-	if mexEnvURL == "" {
-		return fmt.Errorf("Env variable MEXENV_URL not set")
+func getVaultCloudletPath(filePath, vaultAddr string) string {
+	return fmt.Sprintf(
+		"https://%s/v1/secret/data/cloudlet/openstack/%s",
+		vaultAddr, filePath,
+	)
+}
+
+func InitInfraCommon(vaultAddr string) error {
+	if vaultAddr == "" {
+		return fmt.Errorf("vaultAddr is not specified")
 	}
+	mexEnvURL := getVaultCloudletPath("mexenv.json", vaultAddr)
 	err := InternVaultEnv(mexEnvURL)
 	if err != nil {
 		return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
@@ -50,14 +57,25 @@ func InitInfraCommon() error {
 	return nil
 }
 
-func InitOpenstackProps() error {
-	openRcURL := os.Getenv("OPENRC_URL")
-	if openRcURL != "" {
-		err := InternVaultEnv(openRcURL)
-		if err != nil {
-			return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
+func InitOpenstackProps(operatorName, physicalName, vaultAddr string) error {
+	openRcURL := getVaultCloudletPath(physicalName+"/openrc.json", vaultAddr)
+	err := InternVaultEnv(openRcURL)
+	if err != nil {
+		return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
+	}
+	authURL := os.Getenv("OS_AUTH_URL")
+	if strings.HasPrefix(authURL, "https") {
+		caCertURL := getVaultCloudletPath(physicalName+"/os_cacert.json", vaultAddr)
+		if caCertURL != "" {
+			certFile := fmt.Sprintf("/tmp/%s.%s.cert", operatorName, physicalName)
+			err := GetVaultDataToFile(caCertURL, certFile)
+			if err != nil {
+				return fmt.Errorf("failed to GetVaultDataToFile %s: %v", caCertURL, err)
+			}
+			os.Setenv("OS_CACERT", certFile)
 		}
 	}
+
 	OpenstackProps.OpenRcVars = make(map[string]string)
 
 	OpenstackProps.OsExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")

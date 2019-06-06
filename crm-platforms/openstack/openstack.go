@@ -23,19 +23,20 @@ func (s *Platform) GetType() string {
 	return "openstack"
 }
 
-func (s *Platform) Init(key *edgeproto.CloudletKey) error {
+func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
 	rootLBName := cloudcommon.GetRootLBFQDN(key)
 	s.cloudletKey = key
-	log.DebugLog(log.DebugLevelMexos, "init openstack", "rootLB", rootLBName)
+	log.DebugLog(
+		log.DebugLevelMexos, "init openstack",
+		"rootLB", rootLBName,
+		"physicalName", physicalName,
+		"vaultAddr", vaultAddr,
+	)
 
-	// OPENRC_URL is required for OpenStack, but optional in InitInfraCommon
-	if os.Getenv("OPENRC_URL") == "" {
-		return fmt.Errorf("Env OPENRC_URL not set")
-	}
-	if err := mexos.InitInfraCommon(); err != nil {
+	if err := mexos.InitInfraCommon(vaultAddr); err != nil {
 		return err
 	}
-	if err := mexos.InitOpenstackProps(); err != nil {
+	if err := mexos.InitOpenstackProps(key.OperatorKey.Name, physicalName, vaultAddr); err != nil {
 		return err
 	}
 	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
