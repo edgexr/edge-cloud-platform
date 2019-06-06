@@ -2,6 +2,7 @@ package mexos
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -18,6 +19,10 @@ type EnvData struct {
 
 type VaultEnvData struct {
 	Env []EnvData `json:"env"`
+}
+
+type VaultData struct {
+	Data string `json:"data"`
 }
 
 func GetVaultData(keyURL string) (map[string]interface{}, error) {
@@ -95,5 +100,27 @@ func InternVaultEnv(keyURL string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func GetVaultDataToFile(keyURL, fileName string) error {
+	log.DebugLog(log.DebugLevelMexos, "get vault data to file", "keyURL", keyURL, "file", fileName)
+	dat, err := GetVaultData(keyURL)
+	if err != nil {
+		return err
+	}
+	vaultData := &VaultData{}
+	err = mapstructure.WeakDecode(dat["data"], vaultData)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(fileName, []byte(vaultData.Data), 0644)
+	if err != nil {
+		return err
+	}
+
+	log.DebugLog(log.DebugLevelMexos, "vault data imported to file successfully")
+
 	return nil
 }

@@ -25,13 +25,13 @@ func (s *Platform) GetType() string {
 	return "mexdind"
 }
 
-func (s *Platform) Init(key *edgeproto.CloudletKey) error {
-	err := s.generic.Init(key)
+func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
+	err := s.generic.Init(key, physicalName, vaultAddr)
 	if err != nil {
 		return err
 	}
 
-	if err := mexos.InitInfraCommon(); err != nil {
+	if err := mexos.InitInfraCommon(vaultAddr); err != nil {
 		return err
 	}
 
