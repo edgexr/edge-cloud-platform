@@ -65,7 +65,7 @@ func InitOpenstackProps(operatorName, physicalName, vaultAddr string) error {
 	}
 	authURL := os.Getenv("OS_AUTH_URL")
 	if strings.HasPrefix(authURL, "https") {
-		caCertURL := getVaultCloudletPath(physicalName+"/os_cacert.json", vaultAddr)
+		caCertURL := getVaultCloudletPath(physicalName+"/os_cacert", vaultAddr)
 		if caCertURL != "" {
 			certFile := fmt.Sprintf("/tmp/%s.%s.cert", operatorName, physicalName)
 			err := GetVaultDataToFile(caCertURL, certFile)
