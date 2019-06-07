@@ -43,7 +43,6 @@ It has these top-level messages:
 	CloudletInfo
 	CloudletMetrics
 	ClusterKey
-	Cluster
 	ClusterInstKey
 	ClusterInst
 	ClusterInstInfo
@@ -162,10 +161,7 @@ var AppOptionalArgs = []string{
 	"imagepath",
 	"imagetype",
 	"accessports",
-	"config",
 	"defaultflavor.name",
-	"cluster.name",
-	"apptemplate",
 	"authpublickey",
 	"command",
 	"annotations",
@@ -185,10 +181,7 @@ var AppAliasArgs = []string{
 	"imagepath=app.imagepath",
 	"imagetype=app.imagetype",
 	"accessports=app.accessports",
-	"config=app.config",
 	"defaultflavor.name=app.defaultflavor.name",
-	"cluster.name=app.cluster.name",
-	"apptemplate=app.apptemplate",
 	"authpublickey=app.authpublickey",
 	"command=app.command",
 	"annotations=app.annotations",

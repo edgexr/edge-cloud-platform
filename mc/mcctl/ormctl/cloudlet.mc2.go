@@ -211,7 +211,7 @@ var CloudletRequiredArgs = []string{
 	"name",
 }
 var CloudletOptionalArgs = []string{
-	"accessuri",
+	"accesscredentials",
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
@@ -224,7 +224,7 @@ var CloudletOptionalArgs = []string{
 var CloudletAliasArgs = []string{
 	"operator=cloudlet.key.operatorkey.name",
 	"name=cloudlet.key.name",
-	"accessuri=cloudlet.accessuri",
+	"accesscredentials=cloudlet.accesscredentials",
 	"location.latitude=cloudlet.location.latitude",
 	"location.longitude=cloudlet.location.longitude",
 	"location.horizontalaccuracy=cloudlet.location.horizontalaccuracy",
