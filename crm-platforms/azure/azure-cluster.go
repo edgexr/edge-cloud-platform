@@ -27,7 +27,7 @@ func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
@@ -74,7 +74,7 @@ func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
 	return DeleteAKSCluster(resourceGroup)
 }
 
-func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Update cluster inst not implemented for Azure")
 }
 

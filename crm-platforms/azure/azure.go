@@ -8,6 +8,7 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -22,8 +23,8 @@ func (s *Platform) GetType() string {
 	return "azure"
 }
 
-func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
-	if err := mexos.InitInfraCommon(vaultAddr); err != nil {
+func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
+	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
 	s.props.Location = os.Getenv("MEX_AZURE_LOCATION")

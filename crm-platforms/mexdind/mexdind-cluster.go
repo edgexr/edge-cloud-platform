@@ -7,12 +7,12 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("update not implemented")
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst) error {
-	err := s.generic.CreateClusterInst(clusterInst)
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.generic.CreateClusterInst(clusterInst, updateCallback)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -17,7 +18,8 @@ var GCPServiceAccount string //temp
 
 type Platform struct {
 	// GcpProperties needs to move to edge-cloud-infra
-	props edgeproto.GcpProperties
+	props        edgeproto.GcpProperties
+	clusterCache *edgeproto.ClusterInstInfoCache
 }
 
 type GCPQuotas struct {
@@ -40,8 +42,8 @@ func (s *Platform) GetType() string {
 	return "gcp"
 }
 
-func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
-	if err := mexos.InitInfraCommon(vaultAddr); err != nil {
+func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
+	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
 	s.props.Project = os.Getenv("MEX_GCP_PROJECT")
@@ -60,7 +62,7 @@ func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr stri
 	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
 	if s.props.GcpAuthKeyUrl == "" {
 		//default it
-		s.props.GcpAuthKeyUrl = "https://" + vaultAddr + "/v1/secret/data/cloudlet/gcp/auth_key.json"
+		s.props.GcpAuthKeyUrl = "https://" + platformConfig.VaultAddr + "/v1/secret/data/cloudlet/gcp/auth_key.json"
 		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
 	}
 	return nil
