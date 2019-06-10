@@ -61,7 +61,7 @@ var rootLBPorts = []int{
 
 //CreateRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
 //  It also sets up first basic network router and subnet, ready for running first MEX agent.
-func CreateRootLB(rootLB *MEXRootLB, platformFlavor string) error {
+func CreateRootLB(rootLB *MEXRootLB, platformFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name)
 	if rootLB == nil {
 		return fmt.Errorf("cannot enable rootLB, rootLB is null")
@@ -87,7 +87,7 @@ func CreateRootLB(rootLB *MEXRootLB, platformFlavor string) error {
 	}
 	if found == 0 {
 		log.DebugLog(log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
-		err := HeatCreateRootLBVM(rootLB.Name, rootLB.Name, platformFlavor)
+		err := HeatCreateRootLBVM(rootLB.Name, rootLB.Name, platformFlavor, updateCallback)
 		if err != nil {
 			log.InfoLog("error while creating RootLB VM", "name", rootLB.Name, "error", err)
 			return err
@@ -103,7 +103,7 @@ func CreateRootLB(rootLB *MEXRootLB, platformFlavor string) error {
 
 //SetupRootLB prepares the RootLB. It will optionally create the rootlb if the createRootLBFlavor
 // is not blank and no existing server found
-func SetupRootLB(rootLBName string, createRootLBFlavor string) error {
+func SetupRootLB(rootLBName string, createRootLBFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelMexos, "SetupRootLB", "createRootLBFlavor", createRootLBFlavor)
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(rootLBName) {
@@ -117,7 +117,7 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string) error {
 	if err == nil && sd.Name == rootLBName {
 		log.DebugLog(log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
 	} else if createRootLBFlavor != "" {
-		err = CreateRootLB(rootLB, createRootLBFlavor)
+		err = CreateRootLB(rootLB, createRootLBFlavor, updateCallback)
 		if err != nil {
 			log.InfoLog("can't create agent", "name", rootLB.Name, "err", err)
 			return fmt.Errorf("Failed to enable root LB %v", err)

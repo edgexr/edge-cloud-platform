@@ -172,18 +172,19 @@ func FindNodeIP(name string, srvs []OSServer) (string, error) {
 	return "", fmt.Errorf("node %s, ip not found", name)
 }
 
-// GetMasterIP gets the IP address of the cluster's master node.
-func GetMasterIP(clusterInst *edgeproto.ClusterInst) (string, error) {
+// GetMasterNameAndIP gets the name and IP address of the cluster's master node.
+func GetMasterNameAndIP(clusterInst *edgeproto.ClusterInst) (string, string, error) {
 	log.DebugLog(log.DebugLevelMexos, "get master IP", "cluster", clusterInst.Key.ClusterKey.Name)
 	srvs, err := ListServers()
 	if err != nil {
-		return "", fmt.Errorf("error getting server list: %v", err)
+		return "", "", fmt.Errorf("error getting server list: %v", err)
 
 	}
 	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
-	master, err := FindClusterMaster(nodeNameSuffix, srvs)
+	masterName, err := FindClusterMaster(nodeNameSuffix, srvs)
 	if err != nil {
-		return "", fmt.Errorf("can't find cluster with key %s, %v", nodeNameSuffix, err)
+		return "", "", fmt.Errorf("can't find cluster with key %s, %v", nodeNameSuffix, err)
 	}
-	return FindNodeIP(master, srvs)
+	masterIP, err := FindNodeIP(masterName, srvs)
+	return masterName, masterIP, err
 }

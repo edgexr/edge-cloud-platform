@@ -48,7 +48,7 @@ func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst, sin
 		}
 		return nil
 	}
-	masteraddr, err := GetMasterIP(inst)
+	_, masteraddr, err := GetMasterNameAndIP(inst)
 	if err != nil {
 		return err
 	}
