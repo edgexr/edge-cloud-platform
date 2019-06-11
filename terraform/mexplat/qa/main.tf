@@ -57,6 +57,7 @@ module "console" {
 
   instance_name       = "${var.console_instance_name}"
   zone                = "${var.gcp_zone}"
+  boot_disk_size      = 100
   tags                = [ "http-server", "https-server", "console-debug", "mc" ]
 }
 
