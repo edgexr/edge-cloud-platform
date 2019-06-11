@@ -116,9 +116,9 @@ func CreateUser(c echo.Context) error {
 	if !serverConfig.SkipVerifyEmail {
 		// real email will be filled in later
 		createuser.Verify.Email = "dummy@dummy.com"
-		err := ValidateEmailRequest(c, &createuser.Verify)
+		err := ValidEmailRequest(c, &createuser.Verify)
 		if err != nil {
-			return err
+			return c.JSON(http.StatusBadRequest, MsgErr(err))
 		}
 	}
 
@@ -169,8 +169,8 @@ func ResendVerify(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	if err := ValidateEmailRequest(c, &req); err != nil {
-		return err
+	if err := ValidEmailRequest(c, &req); err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 	return sendVerifyEmail("MobiledgeX user", &req)
 }
@@ -343,8 +343,8 @@ func PasswordResetRequest(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	if err := ValidateEmailRequest(c, &req); err != nil {
-		return err
+	if err := ValidEmailRequest(c, &req); err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 	noreply, err := getNoreply()
 	if err != nil {
@@ -379,11 +379,10 @@ func PasswordResetRequest(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		if req.CallbackURL == "" {
-			return c.JSON(http.StatusBadRequest, "callback URL not set by client")
+		if req.CallbackURL != "" {
+			arg.URL = req.CallbackURL + "?token=" + cookie
 		}
 		arg.Name = user.Name
-		arg.URL = req.CallbackURL + "?token=" + cookie
 		tmpl = passwordResetTmpl
 	}
 	buf := bytes.Buffer{}
