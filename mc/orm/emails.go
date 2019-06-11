@@ -3,8 +3,8 @@ package orm
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"html/template"
-	"net/http"
 	"net/smtp"
 	"time"
 
@@ -38,6 +38,7 @@ type emailTmplArg struct {
 	Subject string
 	Name    string
 	Email   string
+	Token   string
 	URL     string
 	OS      string
 	Browser string
@@ -52,7 +53,13 @@ Hi {{.Name}},
 
 You recently requested to reset your password for your MobiledgeX account. Use the link below to reset it. This password reset is only valid for the next 1 hour.
 
+{{ if .URL}}
 Reset your password: {{.URL}}
+{{- else}}
+Copy and paste to set your password:
+
+mcctl user passwordreset token={{.Token}}
+{{- end}}
 
 For security, this request was received from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you did not request this password reset, please ignore this email or contact MobiledgeX support for assistance.
 
@@ -116,7 +123,13 @@ Hi {{.Name}},
 
 Thanks for creating a MobiledgeX account! You are now one step away from utilizing the power of the edge. Please verify this email account by clicking on the link below. Then you'll be able to login and get started.
 
+{{ if .URL}}
 Click to verify: {{.URL}}
+{{ else}}
+Copy and paste to verify your email:
+
+mcctl user verifyemail token={{.Token}}
+{{- end}}
 
 For security, this request was received for {{.Email}} from a {{.OS}} device using {{.Browser}} with IP {{.IP}}. If you are not expecting this email, please ignore this email or contact MobiledgeX support for assistance.
 
@@ -151,10 +164,13 @@ func sendVerifyEmail(username string, req *ormapi.EmailRequest) error {
 		To:      req.Email,
 		Name:    username,
 		Email:   req.Email,
-		URL:     req.CallbackURL + "?token=" + cookie,
+		Token:   cookie,
 		OS:      req.OperatingSystem,
 		Browser: req.Browser,
 		IP:      req.ClientIP,
+	}
+	if req.CallbackURL != "" {
+		arg.URL = req.CallbackURL + "?token=" + cookie
 	}
 	buf := bytes.Buffer{}
 	if err := welcomeTmpl.Execute(&buf, &arg); err != nil {
@@ -230,12 +246,9 @@ func (s *EmailClaims) SetKid(kid int) {
 	s.Kid = kid
 }
 
-func ValidateEmailRequest(c echo.Context, e *ormapi.EmailRequest) error {
+func ValidEmailRequest(c echo.Context, e *ormapi.EmailRequest) error {
 	if !util.ValidEmail(e.Email) {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid email address"))
-	}
-	if e.CallbackURL == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Callback URL not specified by client"))
+		return fmt.Errorf("Invalid email address")
 	}
 	if e.ClientIP == "" {
 		e.ClientIP = c.RealIP()
