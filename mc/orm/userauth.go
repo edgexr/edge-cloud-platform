@@ -30,7 +30,7 @@ var PasshashSaltBytes = 8
 var Jwks vault.JWKS
 
 func InitVault(addr, roleID, secretID string) {
-	Jwks.Init(addr, "mcorm", roleID, secretID)
+	Jwks.Init(addr, "", "mcorm", roleID, secretID)
 	Jwks.GoUpdate()
 }
 
