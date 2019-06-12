@@ -39,7 +39,7 @@ func (s *Platform) GCPLogin() error {
 	return nil
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	var err error
 	project := s.props.Project
 	zone := s.props.Zone

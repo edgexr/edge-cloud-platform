@@ -2,6 +2,8 @@ package openstack
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -15,7 +17,7 @@ func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 	return mexos.UpdateCluster(lbName, clusterInst, updateCallback)
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
@@ -26,7 +28,11 @@ func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 			return fmt.Errorf("Insufficient disk size, please specify a flavor with at least %dgb", MINIMUM_DISK_SIZE)
 		}
 	}
-	return mexos.CreateCluster(lbName, clusterInst, updateCallback)
+
+	//adjust the timeout just a bit to give some buffer for the API exchange and also sleep loops
+	timeout -= time.Minute
+
+	return mexos.CreateCluster(lbName, clusterInst, updateCallback, timeout)
 }
 
 func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
