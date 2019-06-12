@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -44,6 +46,17 @@ func TestController(t *testing.T) {
 		Refresh: "1s",
 	}
 
+	// run a dummy http server to mimic influxdb
+	// this will reply with empty json to everything
+	influxServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintln(w, `{"data":[{"Messages": null,"Series": null}]}`)
+	}))
+	defer influxServer.Close()
+
+	// TODO - once add TLS to influxdb change this as well
+	influxAddr := strings.TrimPrefix(influxServer.URL, "http://")
+
 	// run dummy controller - this always returns success
 	// to all APIs directed to it, and does not actually
 	// create or delete objects. We are mocking it out
@@ -74,8 +87,9 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
 	ctrl := ormapi.Controller{
-		Region:  "USA",
-		Address: ctrlAddr,
+		Region:   "USA",
+		Address:  ctrlAddr,
+		InfluxDB: influxAddr,
 	}
 	// create controller
 	status, err = mcClient.CreateController(uri, token, &ctrl)
@@ -131,7 +145,7 @@ func TestController(t *testing.T) {
 	badPermTestShowClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org1)
-
+	badPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	// add new users to orgs
 	testAddUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperContributor", dev3.Name, Success)
 	testAddUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperViewer", dev4.Name, Success)
@@ -240,6 +254,8 @@ func TestController(t *testing.T) {
 	goodPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
 	goodPermTestAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
+	goodPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+
 	// test users with different roles
 	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, count)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, dcnt)

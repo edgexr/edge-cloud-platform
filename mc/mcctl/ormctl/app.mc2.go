@@ -174,6 +174,7 @@ var AppOptionalArgs = []string{
 	"delopt",
 	"configs.kind",
 	"configs.config",
+	"scalewithcluster",
 }
 var AppAliasArgs = []string{
 	"developer=app.key.developerkey.name",
@@ -194,4 +195,5 @@ var AppAliasArgs = []string{
 	"delopt=app.delopt",
 	"configs.kind=app.configs.kind",
 	"configs.config=app.configs.config",
+	"scalewithcluster=app.scalewithcluster",
 }

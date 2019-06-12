@@ -10,6 +10,7 @@ require (
 	github.com/cloudflare/cloudflare-go v0.8.5
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
+	github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/cli v0.0.0-20190520121752-57aa7731d0a5
 	github.com/docker/machine v0.16.1 // indirect
@@ -23,6 +24,7 @@ require (
 	github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42
 	github.com/gophercloud/gophercloud v0.0.0-20190330013820-4d3066f119fa
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
+	github.com/influxdata/influxdb v1.6.2
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/jinzhu/gorm v1.9.1
 	github.com/json-iterator/go v1.1.6 // indirect
@@ -52,7 +54,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	google.golang.org/genproto v0.0.0-20190401181712-f467c93bbac2
+	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107
 	google.golang.org/grpc v1.20.1
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2

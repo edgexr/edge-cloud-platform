@@ -37,6 +37,7 @@ type Organization struct {
 type Controller struct {
 	Region    string    `gorm:"primary_key"`
 	Address   string    `gorm:"unique;not null"`
+	InfluxDB  string    `gorm:"type:text"`
 	CreatedAt time.Time `json:",omitempty"`
 	UpdatedAt time.Time `json:",omitempty"`
 }
@@ -124,4 +125,21 @@ type AllData struct {
 type RegionData struct {
 	Region  string                    `json:"region,omitempty"`
 	AppData edgeproto.ApplicationData `json:"appdata,omitempty"`
+}
+
+// Metrics data
+type RegionAppInstMetrics struct {
+	Region    string
+	AppInst   edgeproto.AppInstKey
+	Selector  string    `json:",omitempty"`
+	StartTime time.Time `json:",omitempty"`
+	EndTime   time.Time `json:",omitempty"`
+}
+
+type RegionClusterInstMetrics struct {
+	Region      string
+	ClusterInst edgeproto.ClusterInstKey
+	Selector    string    `json:",omitempty"`
+	StartTime   time.Time `json:",omitempty"`
+	EndTime     time.Time `json:",omitempty"`
 }

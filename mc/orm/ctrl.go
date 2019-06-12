@@ -27,8 +27,16 @@ func connectControllerAddr(addr string) (*grpc.ClientConn, error) {
 }
 
 func getControllerAddrForRegion(region string) (string, error) {
+	ctrl, err := getControllerObj(region)
+	if err != nil {
+		return "", err
+	}
+	return ctrl.Address, nil
+}
+
+func getControllerObj(region string) (*ormapi.Controller, error) {
 	if region == "" {
-		return "", fmt.Errorf("no region specified")
+		return nil, fmt.Errorf("no region specified")
 	}
 	ctrl := ormapi.Controller{
 		Region: region,
@@ -36,11 +44,11 @@ func getControllerAddrForRegion(region string) (string, error) {
 	res := db.Where(&ctrl).First(&ctrl)
 	if res.Error != nil {
 		if res.RecordNotFound() {
-			return "", fmt.Errorf("region \"%s\" not found", region)
+			return nil, fmt.Errorf("region \"%s\" not found", region)
 		}
-		return "", res.Error
+		return nil, res.Error
 	}
-	return ctrl.Address, nil
+	return &ctrl, nil
 }
 
 func CreateController(c echo.Context) error {
