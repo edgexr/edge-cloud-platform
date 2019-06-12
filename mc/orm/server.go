@@ -212,6 +212,9 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
 	addControllerApis(auth)
+	// Metrics api route use auth to serve a query to influxDB
+	auth.POST("/metrics/app", GetMetricsCommon)
+	auth.POST("/metrics/cluster", GetMetricsCommon)
 	go func() {
 		var err error
 		if config.TlsCertFile != "" {

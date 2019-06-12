@@ -21,6 +21,7 @@ const ResourceAppInsts = "appinsts"
 const ResourceClusters = "clusters"
 const ResourceClusterInsts = "clusterinsts"
 const ResourceAppAnalytics = "appanalytics"
+const ResourceClusterAnalytics = "clusteranalytics"
 const ResourceCloudlets = "cloudlets"
 const ResourceCloudletAnalytics = "cloudletanalytics"
 const ResourceClusterFlavors = "clusterflavors"
@@ -33,6 +34,7 @@ var DeveloperResources = []string{
 	ResourceClusters,
 	ResourceClusterInsts,
 	ResourceAppAnalytics,
+	ResourceClusterAnalytics,
 }
 var OperatorResources = []string{
 	ResourceCloudlets,

@@ -503,6 +503,14 @@ http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/S
 http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/ctrl/ShowAppInst region=local
 ```
 
+App and Cluster metrics API usage:
+```
+http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metrics/cluster <<< '{"region":"local","clusterinst":{"cluster_key":{"name":"AppCluster"},"cloudlet_key":{"operator_key":{"name":"mexdev"},"name":"localtest"},"developer":"MobiledgeX"},"starttime":"2019-06-11T21:26:04Z","endtime":"2019-06-11T21:26:10Z","selector":"cpu"}'
+http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metrics/cluster <<< '{"region":"local","clusterinst":{"cluster_key":{"name":"AppCluster"},"cloudlet_key":{"operator_key":{"name":"mexdev"},"name":"localtest"},"developer":"MobiledgeX"},"starttime":"2019-06-11T21:26:04Z","endtime":"2019-06-11T21:26:10Z"}'
+http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metrics/app <<< '{"region":"local","appinst":{"app_key":{"developer_key":{"name":"MobiledgeX"},"name":"facedetectiondemo","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"AppCluster"},"cloudlet_key":{"operator_key":{"name":""}}}},"starttime":"2019-06-11T21:26:04Z","endtime":"2019-06-11T21:26:10Z","selector":"cpu"}'
+http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metrics/app <<< '{"region":"local","appinst":{"app_key":{"developer_key":{"name":"MobiledgeX"},"name":"facedetectiondemo","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"AppCluster"},"cloudlet_key":{"operator_key":{"name":""}}}},"starttime":"2019-06-11T21:26:04Z","endtime":"2019-06-11T21:26:10Z"}'
+```
+
 Change your password:
 
 ```
