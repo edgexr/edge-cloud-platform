@@ -64,14 +64,14 @@ type ClusterNodeFlavor struct {
 	Name string
 }
 
-var maxClusterWaitTime = 10 * time.Minute
-
-func waitClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) error {
+func waitClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 
 	start := time.Now()
 	masterName := ""
 	masterIP := ""
 	var currReadyCount uint32
+	log.DebugLog(log.DebugLevelMexos, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
+
 	for {
 		if masterIP == "" {
 			masterName, masterIP, _ = GetMasterNameAndIP(clusterInst)
@@ -95,7 +95,7 @@ func waitClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string, upd
 				log.DebugLog(log.DebugLevelMexos, "kubernetes cluster ready")
 				return nil
 			}
-			if time.Since(start) > maxClusterWaitTime {
+			if time.Since(start) > timeout {
 				return fmt.Errorf("cluster not ready (yet)")
 			}
 		}
@@ -112,10 +112,11 @@ func UpdateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Update")
-	return waitClusterReady(clusterInst, rootLBName, updateCallback)
+	//todo: calculate timeouts instead of hardcoded value
+	return waitClusterReady(clusterInst, rootLBName, updateCallback, time.Minute*15)
 }
 
-func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
 	// clean-up func
 	defer func() {
 		if reterr == nil {
@@ -134,7 +135,8 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 		}
 	}()
 
-	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst)
+	start := time.Now()
+	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "timeout", timeout)
 
 	dedicatedRootLBName := ""
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
@@ -179,8 +181,11 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
 	if !singleNodeCluster {
+		elapsed := time.Since(start)
+		// subtract elapsed time from total time to get remaining time
+		timeout -= elapsed
 		updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Initialize")
-		err := waitClusterReady(clusterInst, rootLBName, updateCallback)
+		err := waitClusterReady(clusterInst, rootLBName, updateCallback, timeout)
 		if err != nil {
 			return err
 		}

@@ -2,6 +2,7 @@ package mexdind
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -11,8 +12,8 @@ func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 	return fmt.Errorf("update not implemented")
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.generic.CreateClusterInst(clusterInst, updateCallback)
+func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+	err := s.generic.CreateClusterInst(clusterInst, updateCallback, timeout)
 	if err != nil {
 		return err
 	}

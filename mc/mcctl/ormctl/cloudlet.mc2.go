@@ -96,6 +96,23 @@ var CloudletKeyAliasArgs = []string{
 	"operatorkey.name=cloudletkey.operatorkey.name",
 	"name=cloudletkey.name",
 }
+var OperationTimeLimitsRequiredArgs = []string{}
+var OperationTimeLimitsOptionalArgs = []string{
+	"createclusterinsttimeout",
+	"updateclusterinsttimeout",
+	"deleteclusterinsttimeout",
+	"createappinsttimeout",
+	"updateappinsttimeout",
+	"deleteappinsttimeout",
+}
+var OperationTimeLimitsAliasArgs = []string{
+	"createclusterinsttimeout=operationtimelimits.createclusterinsttimeout",
+	"updateclusterinsttimeout=operationtimelimits.updateclusterinsttimeout",
+	"deleteclusterinsttimeout=operationtimelimits.deleteclusterinsttimeout",
+	"createappinsttimeout=operationtimelimits.createappinsttimeout",
+	"updateappinsttimeout=operationtimelimits.updateappinsttimeout",
+	"deleteappinsttimeout=operationtimelimits.deleteappinsttimeout",
+}
 var CloudletInfraCommonRequiredArgs = []string{}
 var CloudletInfraCommonOptionalArgs = []string{
 	"dockerregistry",
@@ -237,6 +254,12 @@ var CloudletAliasArgs = []string{
 	"ipsupport=cloudlet.ipsupport",
 	"staticips=cloudlet.staticips",
 	"numdynamicips=cloudlet.numdynamicips",
+	"timelimits.createclusterinsttimeout=cloudlet.timelimits.createclusterinsttimeout",
+	"timelimits.updateclusterinsttimeout=cloudlet.timelimits.updateclusterinsttimeout",
+	"timelimits.deleteclusterinsttimeout=cloudlet.timelimits.deleteclusterinsttimeout",
+	"timelimits.createappinsttimeout=cloudlet.timelimits.createappinsttimeout",
+	"timelimits.updateappinsttimeout=cloudlet.timelimits.updateappinsttimeout",
+	"timelimits.deleteappinsttimeout=cloudlet.timelimits.deleteappinsttimeout",
 }
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{
