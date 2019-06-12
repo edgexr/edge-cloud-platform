@@ -6,9 +6,14 @@ set -e
 # This collection of commands builds on the set in edge-cloud/vault/setup.sh
 # It configures MC access.
 
+vault secrets enable -path=jwtkeys kv
+vault kv enable-versioning jwtkeys
+vault write jwtkeys/config max_versions=2
 
-# these are commented out but are used to set the dme/mcorm secrets
+# these are commented out but are used to set the mcorm secrets
 #vault kv put jwtkeys/mcorm secret=12345 refresh=60m
+#vault kv get jwtkeys/mcorm
+#vault kv metadata get jwtkeys/mcorm
 
 # set mcorm approle
 cat > /tmp/mcorm-pol.hcl <<EOF
@@ -39,24 +44,7 @@ vault write auth/approle/role/mcorm period="720h" policies="mcorm"
 vault read auth/approle/role/mcorm/role-id
 vault write -f auth/approle/role/mcorm/secret-id
 
-# set crm approle
-cat > /tmp/crm-pol.hcl <<EOF
-path "auth/approle/login" {
-  capabilities = [ "create", "read" ]
-}
-
-path "secret/data/cloudlet/*" {
-  capabilities = [ "read" ]
-}
-EOF
-vault policy write crm /tmp/crm-pol.hcl
-rm /tmp/crm-pol.hcl
-vault write auth/approle/role/crm period="720h" policies="crm"
-# get crm app roleID and generate secretID
-vault read auth/approle/role/crm/role-id
-vault write -f auth/approle/role/crm/secret-id
-
-# set rotator approle - rotates dme/mcorm secret
+# set rotator approle - rotates mcorm secret
 cat > /tmp/rotator-pol.hcl <<EOF
 path "auth/approle/login" {
   capabilities = [ "create", "read" ]

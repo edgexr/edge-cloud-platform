@@ -105,15 +105,18 @@ func RunServer(config *ServerConfig) (*Server, error) {
 			Common: process.Common{
 				Name: "vault",
 			},
-			DmeSecret:   "123456",
-			McormSecret: "987664",
+			DmeSecret: "123456",
 		}
-		roles, err := vault.StartLocalRoles()
+		_, err := vault.StartLocalRoles()
 		if err != nil {
 			return nil, err
 		}
-		roleID = roles.MCORMRoleID
-		secretID = roles.MCORMSecretID
+		roles, err := intprocess.SetupVault(&vault)
+		if err != nil {
+			return nil, err
+		}
+		roleID = roles.MCRoleID
+		secretID = roles.MCSecretID
 		config.VaultAddr = process.VaultAddress
 		server.vault = &vault
 	}

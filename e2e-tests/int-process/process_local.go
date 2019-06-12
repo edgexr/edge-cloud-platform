@@ -53,14 +53,14 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		if err != nil {
 			return err
 		}
-		roles := process.VaultRoles{}
+		roles := VaultRoles{}
 		err = yaml.Unmarshal(dat, &roles)
 		if err != nil {
 			return err
 		}
 		envs = []string{
-			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.MCORMRoleID),
-			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.MCORMSecretID),
+			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.MCRoleID),
+			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.MCSecretID),
 		}
 		log.Printf("MC envs: %v\n", envs)
 	}
@@ -191,4 +191,49 @@ func (p *Sql) runPsql(args []string) ([]byte, error) {
 		}
 	}
 	return exec.Command("psql", args...).CombinedOutput()
+}
+
+type VaultRoles struct {
+	MCRoleID        string `json:"mcroleid"`
+	MCSecretID      string `json:"mcsecretid"`
+	RotatorRoleID   string `json:"rotatorroleid"`
+	RotatorSecretID string `json:"rotatorsecretid"`
+}
+
+// Vault is already started by edge-cloud setup file.
+func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) {
+	var err error
+	mcormSecret := "mc-secret"
+
+	// run global setup script
+	gopath := os.Getenv("GOPATH")
+	setup := gopath + "/src/github.com/mobiledgex/edge-cloud-infra/vault/setup.sh"
+	out := p.Run("/bin/sh", setup, &err)
+	if err != nil {
+		fmt.Println(out)
+		return nil, err
+	}
+
+	// get roleIDs and secretIDs
+	roles := VaultRoles{}
+	p.GetAppRole("", "mcorm", &roles.MCRoleID, &roles.MCSecretID, &err)
+	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
+	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
+	p.PutSecret("", "mcorm", mcormSecret, &err)
+	if err != nil {
+		return &roles, err
+	}
+	options := process.StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.RolesFile != "" {
+		roleYaml, err := yaml.Marshal(&roles)
+		if err != nil {
+			return &roles, err
+		}
+		err = ioutil.WriteFile(options.RolesFile, roleYaml, 0644)
+		if err != nil {
+			return &roles, err
+		}
+	}
+	return &roles, err
 }

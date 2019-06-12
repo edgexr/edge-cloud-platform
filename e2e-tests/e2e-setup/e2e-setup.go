@@ -95,16 +95,37 @@ func IsK8sDeployment() bool {
 	return Deployment.Cluster.MexManifest != "" //TODO Azure
 }
 
+func setupVault(rolesfile string) bool {
+	pr := util.GetProcessByName("vault")
+	if pr == nil {
+		return true
+	}
+	p, ok := pr.(*process.Vault)
+	if !ok {
+		log.Printf("found process named vault but not Vault type")
+		return false
+	}
+
+	_, err := intprocess.SetupVault(p, process.WithRolesFile(rolesfile))
+	if err != nil {
+		log.Printf("Failed to setup vault, %v\n", err)
+		return false
+	}
+	return true
+}
+
 func StartProcesses(processName string, outputDir string) bool {
 	if !setupmex.StartProcesses(processName, outputDir) {
 		return false
 	}
 
-	// this roles file needs to match the one from setupmex.StartProcess()
 	if outputDir == "" {
 		outputDir = "."
 	}
-	rolesfile := outputDir + "/roles.yaml"
+	rolesfile := outputDir + "/roles-infra.yaml"
+	if !setupVault(rolesfile) {
+		return false
+	}
 
 	opts := []process.StartOp{}
 	if processName == "" {
