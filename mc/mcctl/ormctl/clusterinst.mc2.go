@@ -91,7 +91,7 @@ var ClusterInstRequiredArgs = []string{
 	"cluster",
 	"operator",
 	"cloudlet",
-	"key.developer",
+	"developer",
 }
 var ClusterInstOptionalArgs = []string{
 	"flavor.name",
@@ -107,7 +107,7 @@ var ClusterInstAliasArgs = []string{
 	"cluster=clusterinst.key.clusterkey.name",
 	"operator=clusterinst.key.cloudletkey.operatorkey.name",
 	"cloudlet=clusterinst.key.cloudletkey.name",
-	"key.developer=clusterinst.key.developer",
+	"developer=clusterinst.key.developer",
 	"flavor.name=clusterinst.flavor.name",
 	"liveness=clusterinst.liveness",
 	"auto=clusterinst.auto",
