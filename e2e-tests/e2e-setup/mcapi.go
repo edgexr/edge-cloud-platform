@@ -35,6 +35,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods)
+	} else if api == "runcommand" {
+		return runMcRunCommand(uri, apiFile, curUserFile, outputDir, mods)
 	}
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods)
 }
@@ -408,4 +410,47 @@ func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 		st, err := mcClient.DeleteController(uri, token, &ctrl)
 		checkMcErr("DeleteController", st, err, rc)
 	}
+}
+
+type runCommandData struct {
+	Request        ormapi.RegionExecRequest
+	ExpectedOutput string
+}
+
+func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+	// test only runnable for mod CLI. Also avoid for mod sep just
+	// because webrtc takes a while to setup and it slows down the tests.
+	if !hasMod("cli", mods) || hasMod("sep", mods) {
+		return true
+	}
+	client, ok := mcClient.(*cliwrapper.Client)
+	if !ok {
+		// should never happen because of check for "cli" mod above.
+		panic("not cliwrapper client")
+	}
+
+	// RunCommand is a special case only supported by mcctl CLI,
+	// because it leverages the webrtc client code in mcctl.
+	token, rc := loginCurUser(uri, curUserFile)
+	if !rc {
+		return false
+	}
+	data := runCommandData{}
+	err := util.ReadYamlFile(apiFile, &data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
+		return false
+	}
+	out, err := client.RunCommandOut(uri, token, &data.Request)
+	if err != nil {
+		log.Printf("Error running RunCommand API %v\n", err)
+		return false
+	}
+	log.Printf("RunCommand output: %s\n", out)
+	actual := strings.TrimSpace(out)
+	if actual != data.ExpectedOutput {
+		log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
+		return false
+	}
+	return true
 }
