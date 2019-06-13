@@ -16,7 +16,7 @@ import (
 // We don't use the auto-generated Command because the client
 // must implement the webrtc protocol.
 
-const runCommandRequiredArgs = "region command appname appvers developer clustername clusterdeveloper cloudlet operator"
+const runCommandRequiredArgs = "region command appname appvers developer cluster cloudlet operator"
 
 var runCommandAliasArgs = []string{
 	"appname=execrequest.appinstkey.appkey.name",
@@ -44,6 +44,22 @@ func runExecRequest(cmd *cobra.Command, args []string) error {
 		AliasArgs:    runCommandAliasArgs,
 	}
 	req := ormapi.RegionExecRequest{}
+
+	var developer string
+	var clusterdeveloper string
+	for _, arg := range args {
+		parts := strings.Split(arg, "=")
+		if parts[0] == "developer" {
+			developer = parts[1]
+		}
+		if parts[1] == "clusterdeveloper" {
+			clusterdeveloper = parts[1]
+		}
+	}
+	if clusterdeveloper == "" && developer != "" {
+		args = append(args, fmt.Sprintf("clusterdeveloper=%s", developer))
+	}
+
 	_, err := input.ParseArgs(args, &req)
 	if err != nil {
 		return err

@@ -55,7 +55,9 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 	}
 	str := strings.TrimSpace(string(byt))
 	if out != nil && len(str) > 0 {
-		if opts.streamOutIncremental {
+		if strp, ok := out.(*string); ok {
+			*strp = str
+		} else if opts.streamOutIncremental {
 			// each line is a separate object, join together in a json array
 			lines := strings.Split(str, "\n")
 			arr := "[" + strings.Join(lines, ",") + "]"
