@@ -47,10 +47,12 @@ output "k8s_clusters" {
     {
       "name" = "${var.cluster_name}"
       "kube_config" = "${module.k8s.kube_config}"
+      "region" = "US"
     },
     {
       "name" = "${var.eu_cluster_name}"
       "kube_config" = "${module.k8s_eu.kube_config}"
+      "region" = "EU"
     }
   ]
 }
