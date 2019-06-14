@@ -233,7 +233,8 @@ func AddUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 		return fmt.Errorf("Role not specified")
 	}
 	// check that user/org/role exists
-	res := db.Where(&ormapi.User{Name: role.Username}).First(&ormapi.User{})
+	targetUser := ormapi.User{}
+	res := db.Where(&ormapi.User{Name: role.Username}).First(&targetUser)
 	if res.RecordNotFound() {
 		return fmt.Errorf("Username not found")
 	}
@@ -286,6 +287,11 @@ func AddUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 	}
 	psub := getCasbinGroup(role.Org, role.Username)
 	enforcer.AddGroupingPolicy(psub, role.Role)
+	// notify recipient that they were added. don't fail on error
+	senderr := sendAddedEmail(claims.Username, targetUser.Name, targetUser.Email, role.Org, role.Role)
+	if senderr != nil {
+		log.DebugLog(log.DebugLevelApi, "failed to send role added email", "err", senderr)
+	}
 
 	gitlabAddGroupMember(role)
 	return nil

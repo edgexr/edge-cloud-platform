@@ -24,12 +24,14 @@ var passwordResetTmpl *template.Template
 var passwordResetNoneTmpl *template.Template
 var notifyTmpl *template.Template
 var welcomeTmpl *template.Template
+var addedTmpl *template.Template
 
 func init() {
 	passwordResetTmpl = template.Must(template.New("pwdreset").Parse(passwordResetT))
 	passwordResetNoneTmpl = template.Must(template.New("pwdresetnone").Parse(passwordResetNoneT))
 	notifyTmpl = template.Must(template.New("notify").Parse(notifyT))
 	welcomeTmpl = template.Must(template.New("welcome").Parse(welcomeT))
+	addedTmpl = template.Must(template.New("added").Parse(addedT))
 }
 
 type emailTmplArg struct {
@@ -260,4 +262,46 @@ func ValidEmailRequest(c echo.Context, e *ormapi.EmailRequest) error {
 		e.Browser = "unspecified browser"
 	}
 	return nil
+}
+
+type addedTmplArg struct {
+	From  string
+	Admin string
+	Name  string
+	Email string
+	Org   string
+	Role  string
+}
+
+var addedT = `From: {{.From}}
+To: {{.Email}}
+Subject: Added to {{.Org}}!
+
+Hi {{.Name}},
+
+User {{.Admin}} has added you ({{.Email}}) to Organization {{.Org}}! Resources and permissions corresponding to your role {{.Role}} are now available to you.
+
+MobiledgeX Team
+`
+
+func sendAddedEmail(admin, name, email, org, role string) error {
+	noreply, err := getNoreply()
+	if err != nil {
+		return err
+	}
+	arg := addedTmplArg{
+		From:  noreply.Email,
+		Admin: admin,
+		Name:  name,
+		Email: email,
+		Org:   org,
+		Role:  role,
+	}
+	buf := bytes.Buffer{}
+	if err := addedTmpl.Execute(&buf, &arg); err != nil {
+		return err
+	}
+	log.DebugLog(log.DebugLevelApi, "send added email",
+		"from", noreply.Email, "to", email)
+	return sendEmail(noreply, email, &buf)
 }
