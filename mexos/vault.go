@@ -1,9 +1,7 @@
 package mexos
 
 import (
-	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"strings"
 
@@ -23,37 +21,6 @@ type VaultEnvData struct {
 
 type VaultData struct {
 	Data string `json:"data"`
-}
-
-func GetVaultData(keyURL string) (map[string]interface{}, error) {
-	roleID := os.Getenv("VAULT_ROLE_ID")
-	secretID := os.Getenv("VAULT_SECRET_ID")
-
-	if roleID == "" {
-		return nil, fmt.Errorf("VAULT_ROLE_ID env var missing")
-	}
-	if secretID == "" {
-		return nil, fmt.Errorf("VAULT_SECRET_ID env var missing")
-	}
-	uri, err := url.ParseRequestURI(keyURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid keypath %s, %v", keyURL, err)
-	}
-	addr := uri.Scheme + "://" + uri.Host
-	client, err := vault.NewClient(addr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set up Vault client for %s, %v", addr, err)
-	}
-	err = vault.AppRoleLogin(client, roleID, secretID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to login to Vault, %v", err)
-	}
-	path := strings.TrimPrefix(uri.Path, "/v1")
-	data, err := vault.GetKV(client, path, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get values for %s from Vault, %v", path, err)
-	}
-	return data, nil
 }
 
 func GetVaultEnv(data map[string]interface{}) (*VaultEnvData, error) {
@@ -88,7 +55,7 @@ func internEnv(envs []EnvData) error {
 
 func InternVaultEnv(keyURL string) error {
 	log.DebugLog(log.DebugLevelMexos, "interning vault", "keyURL", keyURL)
-	dat, err := GetVaultData(keyURL)
+	dat, err := vault.GetVaultData(keyURL)
 	if err != nil {
 		return err
 	}
@@ -105,7 +72,7 @@ func InternVaultEnv(keyURL string) error {
 
 func GetVaultDataToFile(keyURL, fileName string) error {
 	log.DebugLog(log.DebugLevelMexos, "get vault data to file", "keyURL", keyURL, "file", fileName)
-	dat, err := GetVaultData(keyURL)
+	dat, err := vault.GetVaultData(keyURL)
 	if err != nil {
 		return err
 	}
