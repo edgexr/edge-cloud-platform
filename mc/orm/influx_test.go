@@ -16,6 +16,7 @@ func testPermShowClusterMetrics(mcClient *ormclient.Client, uri, token, region, 
 
 	in := &edgeproto.ClusterInstKey{}
 	in.Developer = org
+	in.ClusterKey.Name = "testcluster"
 	dat := &ormapi.RegionClusterInstMetrics{}
 	dat.Region = region
 	dat.ClusterInst = *in
@@ -31,6 +32,7 @@ func testPermShowAppInstMetrics(mcClient *ormclient.Client, uri, token, region, 
 
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.DeveloperKey.Name = org
+	in.ClusterInstKey.ClusterKey.Name = "testcluster"
 	dat := &ormapi.RegionAppInstMetrics{}
 	dat.Region = region
 	dat.AppInst = *in
