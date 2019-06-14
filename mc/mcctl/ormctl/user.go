@@ -68,7 +68,7 @@ func GetUserCommand() *cobra.Command {
 		Use:          "restricteduserupdate",
 		OptionalArgs: "name email emailverified familyname givenname nickname locked",
 		ReqData:      &ormapi.User{},
-		Path:         "/restricted/user/update",
+		Path:         "/auth/restricted/user/update",
 	}}
 	return genGroup("user", "manage users", cmds)
 }
