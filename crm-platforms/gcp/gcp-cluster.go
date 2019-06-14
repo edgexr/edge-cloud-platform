@@ -14,12 +14,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // GCPLogin logs into google cloud
 func (s *Platform) GCPLogin() error {
 	log.DebugLog(log.DebugLevelMexos, "doing GcpLogin", "vault url", s.props.GcpAuthKeyUrl)
-	dat, err := mexos.GetVaultData(s.props.GcpAuthKeyUrl)
+	dat, err := vault.GetVaultData(s.props.GcpAuthKeyUrl)
 	if err != nil {
 		return err
 	}

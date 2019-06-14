@@ -2,7 +2,7 @@ package vault
 
 import (
 	"github.com/mitchellh/mapstructure"
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 var InfluxDBVaultPath = "https://vault.mobiledgex.net/v1/secret/data/influxdb/"
@@ -14,7 +14,7 @@ type InfluxDBVaultData struct {
 
 // Get influxDB login credentials from the vault
 func GetInfluxDBCreds(region string) (*InfluxDBVaultData, error) {
-	data, err := mexos.GetVaultData(InfluxDBVaultPath + "region/influxdb.json")
+	data, err := vault.GetVaultData(InfluxDBVaultPath + "region/influxdb.json")
 	if err != nil {
 		return nil, err
 	}
