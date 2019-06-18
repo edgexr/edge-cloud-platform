@@ -268,8 +268,6 @@ replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.10.0
 
 replace github.com/mitchellh/copystructure => github.com/mitchellh/copystructure v1.0.0
 
-replace github.com/mitchellh/go-homedir => github.com/mitchellh/go-homedir v1.0.0
-
 replace github.com/mitchellh/go-testing-interface => github.com/mitchellh/go-testing-interface v1.0.0
 
 replace github.com/mitchellh/mapstructure => github.com/mitchellh/mapstructure v1.1.2
