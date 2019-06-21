@@ -65,7 +65,7 @@ func connectInfluxDB(region string) (influxdb.Client, error) {
 		}
 	}
 	client, err := influxdb.NewHTTPClient(influxdb.HTTPConfig{
-		Addr:     "http://" + addr,
+		Addr:     addr,
 		Username: creds.Username,
 		Password: creds.Password,
 	})

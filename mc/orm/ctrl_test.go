@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -54,9 +53,6 @@ func TestController(t *testing.T) {
 	}))
 	defer influxServer.Close()
 
-	// TODO - once add TLS to influxdb change this as well
-	influxAddr := strings.TrimPrefix(influxServer.URL, "http://")
-
 	// run dummy controller - this always returns success
 	// to all APIs directed to it, and does not actually
 	// create or delete objects. We are mocking it out
@@ -89,7 +85,7 @@ func TestController(t *testing.T) {
 	ctrl := ormapi.Controller{
 		Region:   "USA",
 		Address:  ctrlAddr,
-		InfluxDB: influxAddr,
+		InfluxDB: influxServer.URL,
 	}
 	// create controller
 	status, err = mcClient.CreateController(uri, token, &ctrl)
