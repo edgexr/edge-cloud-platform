@@ -642,3 +642,18 @@ func GetFlavorInfo() ([]*edgeproto.FlavorInfo, error) {
 	}
 	return finfo, nil
 }
+
+func OSGetConsoleUrl(serverName string) (*OSConsoleUrl, error) {
+	log.DebugLog(log.DebugLevelMexos, "get console url", "server", serverName)
+	out, err := TimedOpenStackCommand("openstack", "console", "url", "show", "-f", "json", "-c", "url", "--novnc", serverName)
+	if err != nil {
+		err = fmt.Errorf("can't get console url details for %s, %s, %v", serverName, out, err)
+		return nil, err
+	}
+	consoleUrl := &OSConsoleUrl{}
+	err = json.Unmarshal(out, consoleUrl)
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal console url output, %v", err)
+	}
+	return consoleUrl, nil
+}

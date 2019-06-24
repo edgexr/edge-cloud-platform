@@ -111,6 +111,7 @@ var AppInstOptionalArgs = []string{
 	"errors",
 	"crmoverride",
 	"runtimeinfo.containerids",
+	"runtimeinfo.consoleurl",
 	"autoclusteripaccess",
 }
 var AppInstAliasArgs = []string{
@@ -142,6 +143,7 @@ var AppInstAliasArgs = []string{
 	"errors=appinst.errors",
 	"crmoverride=appinst.crmoverride",
 	"runtimeinfo.containerids=appinst.runtimeinfo.containerids",
+	"runtimeinfo.consoleurl=appinst.runtimeinfo.consoleurl",
 	"createdat.seconds=appinst.createdat.seconds",
 	"createdat.nanos=appinst.createdat.nanos",
 	"autoclusteripaccess=appinst.autoclusteripaccess",
@@ -153,9 +155,11 @@ var AppInstAliasArgs = []string{
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
 	"containerids",
+	"consoleurl",
 }
 var AppInstRuntimeAliasArgs = []string{
 	"containerids=appinstruntime.containerids",
+	"consoleurl=appinstruntime.consoleurl",
 }
 var AppInstInfoRequiredArgs = []string{
 	"key.appkey.developerkey.name",
@@ -171,6 +175,7 @@ var AppInstInfoOptionalArgs = []string{
 	"state",
 	"errors",
 	"runtimeinfo.containerids",
+	"runtimeinfo.consoleurl",
 	"status.tasknumber",
 	"status.maxtasks",
 	"status.taskname",
@@ -188,6 +193,7 @@ var AppInstInfoAliasArgs = []string{
 	"state=appinstinfo.state",
 	"errors=appinstinfo.errors",
 	"runtimeinfo.containerids=appinstinfo.runtimeinfo.containerids",
+	"runtimeinfo.consoleurl=appinstinfo.runtimeinfo.consoleurl",
 	"status.tasknumber=appinstinfo.status.tasknumber",
 	"status.maxtasks=appinstinfo.status.maxtasks",
 	"status.taskname=appinstinfo.status.taskname",
