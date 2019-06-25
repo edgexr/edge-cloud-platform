@@ -72,6 +72,11 @@ variable "console_instance_name" {
 
 // DNS entries
 
+variable "vault_vm_domain_name" {
+  description = "Vault domain name"
+  type        = "string"
+}
+
 variable "gitlab_domain_name" {
   description = "Gitlab domain name"
   type        = "string"
