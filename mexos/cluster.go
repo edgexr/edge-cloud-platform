@@ -151,7 +151,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 			log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 			singleNodeCluster = true
 			updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-			err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(clusterInst), clusterInst.NodeFlavor, updateCallback)
+			err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
 		} else {
 			err = fmt.Errorf("NumMasters cannot be 0 for shared access")
 		}
@@ -209,7 +209,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 //DeleteCluster deletes kubernetes cluster
 func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	clusterName := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	clusterName := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	err := HeatDeleteStack(clusterName)
 	if err != nil {
 		return err
