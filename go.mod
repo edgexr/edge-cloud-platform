@@ -34,7 +34,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
-	github.com/mobiledgex/golang-ssh v0.0.2
+	github.com/mobiledgex/golang-ssh v0.0.3
 	github.com/mobiledgex/yaml v2.1.0+incompatible
 	github.com/mobiledgex/yaml/v2 v2.2.4
 	github.com/modern-go/reflect2 v1.0.1 // indirect

@@ -302,6 +302,8 @@ github.com/mobiledgex/golang-ssh v0.0.1 h1:4Y2lgwrUHTKgAgijSUPRZpj93STVcWJzio5zt
 github.com/mobiledgex/golang-ssh v0.0.1/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/golang-ssh v0.0.2 h1:7gdr5BYsttW9QKCf1uZB5f6IQvCI0uJ/wXkbS3SUBt0=
 github.com/mobiledgex/golang-ssh v0.0.2/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
+github.com/mobiledgex/golang-ssh v0.0.3 h1:8F0IfpfmbKeuMpxJPyWTA2St8fXchDQkXrCTBFhbr4I=
+github.com/mobiledgex/golang-ssh v0.0.3/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/yaml v2.1.0+incompatible h1:DCHKWrHE/SSObImB116B++3HK9Ndv5iW317wgJxpdyU=
 github.com/mobiledgex/yaml v2.1.0+incompatible/go.mod h1:GpldZ1HpZK00hDwW4RRAs958Yu26Kqyd1nMfztJrx8M=
 github.com/mobiledgex/yaml/v2 v2.2.3/go.mod h1:9xwjeLnIOTcA1fPBSAYKGRjeRy/bP/LnodFNfuZ9kqE=
