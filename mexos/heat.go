@@ -483,7 +483,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, rootLBName string, act
 			return nil, fmt.Errorf("Unable to get rootlb params: %v", err)
 		}
 	}
-	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	cp.MEXRouterName = GetCloudletExternalRouter()
 	cp.MEXNetworkName = GetCloudletMexNetwork()
 	cp.ImageName = GetCloudletOSImage()

@@ -180,7 +180,7 @@ func GetMasterNameAndIP(clusterInst *edgeproto.ClusterInst) (string, string, err
 		return "", "", fmt.Errorf("error getting server list: %v", err)
 
 	}
-	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	masterName, err := FindClusterMaster(nodeNameSuffix, srvs)
 	if err != nil {
 		return "", "", fmt.Errorf("can't find cluster with key %s, %v", nodeNameSuffix, err)
