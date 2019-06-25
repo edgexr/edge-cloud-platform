@@ -8,7 +8,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -23,6 +23,10 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	}
 
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	err = mexos.CreateDockerRegistrySecret(client, clusterInst, app, s.config.VaultAddr)
 	if err != nil {
 		return err
 	}

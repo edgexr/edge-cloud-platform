@@ -12,7 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/flavor"
 	"github.com/mobiledgex/edge-cloud/log"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -34,6 +34,11 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return err
 		}
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		if err != nil {
+			return err
+		}
+		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
+		err = mexos.CreateDockerRegistrySecret(client, clusterInst, app, s.config.VaultAddr)
 		if err != nil {
 			return err
 		}
@@ -184,7 +189,12 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		}
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
-			return fmt.Errorf("get kube names failed: %s", err)
+			return fmt.Errorf("get kube names failed, %v", err)
+		}
+		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
+		err = mexos.SeedDockerSecret(client, clusterInst, app, s.config.VaultAddr)
+		if err != nil {
+			return fmt.Errorf("seeding docker secret failed, %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 		err = dockermgmt.CreateAppInst(client, app, appInst)

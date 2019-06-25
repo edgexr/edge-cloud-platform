@@ -19,6 +19,7 @@ import (
 
 type Platform struct {
 	generic       dind.Platform
+	config        platform.PlatformConfig
 	NetworkScheme string
 }
 
@@ -28,6 +29,7 @@ func (s *Platform) GetType() string {
 
 func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	err := s.generic.Init(platformConfig)
+	s.config = *platformConfig
 	if err != nil {
 		return err
 	}

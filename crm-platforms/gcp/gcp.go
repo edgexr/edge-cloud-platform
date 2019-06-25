@@ -19,6 +19,7 @@ var GCPServiceAccount string //temp
 type Platform struct {
 	// GcpProperties needs to move to edge-cloud-infra
 	props        edgeproto.GcpProperties
+	config       platform.PlatformConfig
 	clusterCache *edgeproto.ClusterInstInfoCache
 }
 
@@ -46,6 +47,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
+	s.config = *platformConfig
 	s.props.Project = os.Getenv("MEX_GCP_PROJECT")
 	if s.props.Project == "" {
 		//default

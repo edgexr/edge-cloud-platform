@@ -21,6 +21,7 @@ type Platform struct {
 	rootLB      *mexos.MEXRootLB
 	cloudletKey *edgeproto.CloudletKey
 	flavorList  []*edgeproto.FlavorInfo
+	config      platform.PlatformConfig
 }
 
 func (s *Platform) GetType() string {
@@ -30,6 +31,7 @@ func (s *Platform) GetType() string {
 func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	rootLBName := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
 	s.cloudletKey = platformConfig.CloudletKey
+	s.config = *platformConfig
 	log.DebugLog(
 		log.DebugLevelMexos, "init openstack",
 		"rootLB", rootLBName,

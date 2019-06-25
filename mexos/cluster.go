@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -144,17 +145,11 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 	}
 
 	var err error
-	singleNodeCluster := false
-	if clusterInst.NumMasters == 0 {
-		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-			//suitable for docker only
-			log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
-			singleNodeCluster = true
-			updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-			err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
-		} else {
-			err = fmt.Errorf("NumMasters cannot be 0 for shared access")
-		}
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+		//suitable for docker only
+		log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
+		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
+		err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
 	} else {
 		err = HeatCreateClusterKubernetes(clusterInst, dedicatedRootLBName, updateCallback)
 	}
@@ -180,7 +175,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
-	if !singleNodeCluster {
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeKubernetes {
 		elapsed := time.Since(start)
 		// subtract elapsed time from total time to get remaining time
 		timeout -= elapsed
@@ -189,15 +184,7 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 		if err != nil {
 			return err
 		}
-	}
-	updateCallback(edgeproto.UpdateTask, "Updating Docker Credentials for cluster")
-	if err := SeedDockerSecret(client, clusterInst, singleNodeCluster); err != nil {
-		return err
-	}
-	if !singleNodeCluster {
-		if err := CreateDockerRegistrySecret(client, clusterInst); err != nil {
-			return err
-		}
+		updateCallback(edgeproto.UpdateTask, "Creating config map")
 		if err := CreateClusterConfigMap(client, clusterInst); err != nil {
 			return err
 		}

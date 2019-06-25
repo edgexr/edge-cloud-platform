@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/deploygen"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -45,14 +44,7 @@ func InitInfraCommon(vaultAddr string) error {
 	if CloudletInfraCommon.CfKey == "" {
 		return fmt.Errorf("Env variable MEX_CF_USER not set")
 	}
-	CloudletInfraCommon.DockerRegPass = os.Getenv("MEX_DOCKER_REG_PASS")
-	if CloudletInfraCommon.DockerRegPass == "" {
-		return fmt.Errorf("Env variable MEX_DOCKER_REG_PASS not set")
-	}
 	CloudletInfraCommon.DnsZone = "mobiledgex.net"
-	CloudletInfraCommon.DockerRegistry = deploygen.MexRegistry
-	CloudletInfraCommon.DockerRegistrySecret = deploygen.MexRegistrySecret
-
 	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
 	return nil
 }
@@ -128,14 +120,6 @@ func GetCloudletOSImage() string {
 	return OpenstackProps.OsImageName
 }
 
-func GetCloudletDockerRegistry() string {
-	return CloudletInfraCommon.DockerRegistry
-}
-
-func GetCloudletDockerRegistrySecret() string {
-	return CloudletInfraCommon.DockerRegistrySecret
-}
-
 func GetCloudletRegistryFileServer() string {
 	return CloudletInfraCommon.RegistryFileServer
 }
@@ -146,10 +130,6 @@ func GetCloudletCFKey() string {
 
 func GetCloudletCFUser() string {
 	return CloudletInfraCommon.CfUser
-}
-
-func GetCloudletDockerPass() string {
-	return CloudletInfraCommon.DockerRegPass
 }
 
 // GetCleanupOnFailure should be true unless we want to debug the failure,
