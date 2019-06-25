@@ -16,7 +16,8 @@ import (
 
 type Platform struct {
 	// AzureProperties should be moved to edge-cloud-infra
-	props edgeproto.AzureProperties
+	props  edgeproto.AzureProperties
+	config platform.PlatformConfig
 }
 
 func (s *Platform) GetType() string {
@@ -27,6 +28,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
+	s.config = *platformConfig
 	s.props.Location = os.Getenv("MEX_AZURE_LOCATION")
 	if s.props.Location == "" {
 		return fmt.Errorf("Env variable MEX_AZURE_LOCATION not set")

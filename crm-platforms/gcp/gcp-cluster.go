@@ -72,7 +72,7 @@ func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 		return err
 	}
 	log.DebugLog(log.DebugLevelMexos, "created gke", "name", clusterName)
-	return mexos.CreateDockerRegistrySecret(client, clusterInst)
+	return nil
 }
 
 func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {

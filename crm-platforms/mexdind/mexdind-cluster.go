@@ -23,10 +23,6 @@ func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 	}
 	clusterName := clusterInst.Key.ClusterKey.Name
 
-	err = mexos.CreateDockerRegistrySecret(client, clusterInst)
-	if err != nil {
-		return fmt.Errorf("cannot create mexreg secret for: %s, err: %v", clusterName, err)
-	}
 	err = mexos.CreateClusterConfigMap(client, clusterInst)
 	if err != nil {
 		return fmt.Errorf("cannot create ConfigMap for: %s, err: %v", clusterName, err)

@@ -12,20 +12,30 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
+func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
 	var out string
+	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
+	auth, err := cloudcommon.GetRegistryAuth(app.ImagePath, vaultAddr)
+	if err != nil {
+		return err
+	}
+	if auth.AuthType != cloudcommon.BasicAuth {
+		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
+	}
 
-	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster", "registry", GetCloudletDockerRegistry(), "secret", GetCloudletDockerRegistrySecret())
-
+	// Note that the registry secret name must be per-app, since a developer
+	// may put multiple apps in the same ClusterInst and they may come
+	// from different registries.
 	cmd := fmt.Sprintf("kubectl create secret docker-registry %s "+
-		"--docker-server=%s --docker-username=mobiledgex --docker-password=%s "+
+		"--docker-server=%s --docker-username=%s --docker-password=%s "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
-		GetCloudletDockerRegistrySecret(), GetCloudletDockerRegistry(), GetCloudletDockerPass(),
+		auth.Hostname, auth.Hostname, auth.Username, auth.Password,
 		k8smgmt.GetKconfName(clusterInst))
-	out, err := client.Output(cmd)
+	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "cmd", cmd)
+	out, err = client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
@@ -33,7 +43,7 @@ func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto
 			log.DebugLog(log.DebugLevelMexos, "warning, docker registry secret already exists.")
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, created registry secret")
+	log.DebugLog(log.DebugLevelMexos, "ok, created registry secret", "out", out)
 	return nil
 }
 
