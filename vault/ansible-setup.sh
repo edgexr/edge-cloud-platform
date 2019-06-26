@@ -27,8 +27,12 @@ path "auth/approle/login" {
 path "secret/data/ansible/${ENVIRON}/*" {
   capabilities = [ "read" ]
 }
+
+path "secret/data/+/accounts/influxdb" {
+  capabilities = [ "read" ]
+}
 EOF
 vault policy write ${ENVIRON}.ansible /tmp/ansible-pol.hcl
 rm /tmp/ansible-pol.hcl
 
-vault write auth/approle/role/${ENVIRON}.ansible policies="${ENVIRON}.ansible" token_ttl=120 token_num_uses=1
+vault write auth/approle/role/${ENVIRON}.ansible policies="${ENVIRON}.ansible" token_ttl=120
