@@ -35,7 +35,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	case cloudcommon.AppDeploymentTypeKubernetes:
 		err = k8smgmt.CreateAppInst(client, names, app, appInst)
 		if err == nil {
-			err = k8smgmt.WaitForAppInst(client, names, app)
+			err = k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
 		}
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
@@ -88,11 +88,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return err
 	}
 
-	err = mexos.DeleteAppDNS(client, names)
-	if err != nil {
-		return err
-	}
-	return nil
+	return mexos.DeleteAppDNS(client, names)
 }
 
 func (s *Platform) SetupKconf(clusterInst *edgeproto.ClusterInst) error {
