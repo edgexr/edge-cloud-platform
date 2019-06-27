@@ -55,7 +55,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		// wait for the appinst in parallel with other tasks
 		go func() {
 			if deployment == cloudcommon.AppDeploymentTypeKubernetes {
-				waitErr := k8smgmt.WaitForAppInst(client, names, app)
+				waitErr := k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
 				if waitErr == nil {
 					appWaitChan <- ""
 				} else {
