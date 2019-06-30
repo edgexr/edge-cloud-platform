@@ -14,6 +14,11 @@ variable cluster_name {
   type        = "string"
 }
 
+variable dns_prefix {
+  description = "DNS prefix"
+  type        = "string"
+}
+
 variable resource_group_name {
   description = "Name of the Azure resource group for the cluster"
   type        = "string"
@@ -44,4 +49,16 @@ variable "ssh_public_key" {
   description = "SSH authorized key for admin account"
   type        = "string"
   default     = "~/.mobiledgex/id_rsa_mex.pub"
+}
+
+variable "agent_pool_name" {
+  description = "Name of the agent pool profile"
+  type        = "string"
+  default     = "agentpool"
+}
+
+variable "admin_username" {
+  description = "Admin account username"
+  type        = "string"
+  default     = "ubuntu"
 }

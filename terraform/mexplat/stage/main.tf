@@ -37,6 +37,7 @@ module "k8s" {
   client_id           = "${var.azure_terraform_service_principal_id}"
   client_secret       = "${var.azure_terraform_service_principal_secret}"
   cluster_name        = "${var.cluster_name}"
+  dns_prefix          = "${var.cluster_name}"
   vm_size             = "${var.azure_vm_size}"
   cluster_tag         = "mexplat-${var.environ_tag}"
   resource_group_name = "${var.resource_group_name}"
@@ -49,6 +50,7 @@ module "k8s_eu" {
   client_id           = "${var.azure_terraform_service_principal_id}"
   client_secret       = "${var.azure_terraform_service_principal_secret}"
   cluster_name        = "${var.eu_cluster_name}"
+  dns_prefix          = "${var.eu_cluster_name}"
   vm_size             = "${var.azure_vm_size}"
   cluster_tag         = "mexplat-${var.environ_tag}"
   resource_group_name = "${var.eu_resource_group_name}"
@@ -85,12 +87,6 @@ module "crm_vm_dns" {
 module "mc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.mc_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
-module "vault_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.vault_vm_domain_name}"
   ip                            = "${module.gitlab.external_ip}"
 }
 
