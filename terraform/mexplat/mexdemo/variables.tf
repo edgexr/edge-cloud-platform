@@ -1,11 +1,11 @@
 variable "environ_tag" {
   description = "Name to tag instances created by this workspace"
-  default     = "dev"
+  default     = "mexdemo"
 }
 
 variable "azure_location" {
   description = "Name of the Azure resource group for the cluster"
-  default     = "West US 2"
+  default     = "Central US"
 }
 
 variable "azure_eu_location" {
@@ -44,19 +44,19 @@ variable "cloudflare_account_api_token" {
 }
 
 variable "cluster_name" {
-  default     = "mexplat-dev"
+  default     = "mexdemo2-cluster"
 }
 
 variable "eu_cluster_name" {
-  default     = "mexplat-dev-eu"
+  default     = "mexdemo-eu-cluster"
 }
 
 variable "resource_group_name" {
-  default     = "mexplat-dev-rg"
+  default     = "mexdemo2-resource-group"
 }
 
 variable "eu_resource_group_name" {
-  default     = "mexplat-dev-eu-rg"
+  default     = "mexdemo-eu-resource-group"
 }
 
 variable "azure_vm_size" {
@@ -69,44 +69,4 @@ variable "gcp_project" {
 
 variable "gcp_zone" {
   default     = "us-west2-a"
-}
-
-variable "gitlab_instance_name" {
-  default     = "gitlab-dev"
-}
-
-variable "console_instance_name" {
-  default     = "console-dev"
-}
-
-// DNS entries
-
-variable "crm_vm_domain_name" {
-  description = "CRM VM domain name"
-  type        = "string"
-}
-
-variable "mc_vm_domain_name" {
-  description = "MC VM domain name"
-  type        = "string"
-}
-
-variable "postgres_domain_name" {
-  description = "Postgres domain name"
-  type        = "string"
-}
-
-variable "gitlab_domain_name" {
-  description = "Gitlab domain name"
-  type        = "string"
-}
-
-variable "gitlab_docker_domain_name" {
-  description = "Gitlab docker repo domain name"
-  type        = "string"
-}
-
-variable "console_domain_name" {
-  description = "Console domain name"
-  type        = "string"
 }
