@@ -11,7 +11,6 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/vault"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	"google.golang.org/grpc/status"
@@ -56,18 +55,15 @@ func connectInfluxDB(region string) (influxdb.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	creds, err := vault.GetInfluxDBCreds(region)
-	if err != nil {
-		// defeault to default user/pass
-		creds = &vault.InfluxDBVaultData{
-			Username: "root",
-			Password: "root",
-		}
+	creds := cloudcommon.GetInfluxDataAuth(serverConfig.VaultAddr, region)
+	if creds == nil {
+		// defeault to empty auth
+		creds = &cloudcommon.InfluxCreds{}
 	}
 	client, err := influxdb.NewHTTPClient(influxdb.HTTPConfig{
 		Addr:     addr,
-		Username: creds.Username,
-		Password: creds.Password,
+		Username: creds.User,
+		Password: creds.Pass,
 	})
 	log.DebugLog(log.DebugLevelMetrics, "connecting to influxdb",
 		"addr", addr, "err", err)
