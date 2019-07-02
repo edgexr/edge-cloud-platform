@@ -28,6 +28,7 @@ var platformName = flag.String("platform", "", "Platform type of Cloudlet")
 var vaultAddr = flag.String("vaultAddr", "", "Address to vault")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
+var region = flag.String("region", "local", "region name")
 
 var promQCpuClust = "sum(rate(container_cpu_usage_seconds_total%7Bid%3D%22%2F%22%7D%5B1m%5D))%2Fsum(machine_cpu_cores)*100"
 var promQMemClust = "sum(container_memory_working_set_bytes%7Bid%3D%22%2F%22%7D)%2Fsum(machine_memory_bytes)*100"
@@ -130,7 +131,13 @@ func main() {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
 	pf.Init(&cloudletKey, *physicalName, *vaultAddr)
-	influxQ = influxq.NewInfluxQ(InfluxDBName)
+	// get influxDB credentials from vault
+	influxAuth := cloudcommon.GetInfluxDataAuth(*vaultAddr, *region)
+	if influxAuth == nil {
+		// defeault to default user/pass
+		influxAuth = &cloudcommon.InfluxCreds{}
+	}
+	influxQ = influxq.NewInfluxQ(InfluxDBName, influxAuth.User, influxAuth.Pass)
 	err = influxQ.Start(*influxdb, "")
 	if err != nil {
 		log.FatalLog("Failed to start influx queue",
