@@ -3,9 +3,7 @@ package gcp
 import (
 	"time"
 
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -14,19 +12,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // GCPLogin logs into google cloud
 func (s *Platform) GCPLogin() error {
 	log.DebugLog(log.DebugLevelMexos, "doing GcpLogin", "vault url", s.props.GcpAuthKeyUrl)
-	dat, err := vault.GetVaultData(s.props.GcpAuthKeyUrl)
-	if err != nil {
-		return err
-	}
-	databytes, err := json.Marshal(dat)
 	filename := "/tmp/auth_key.json"
-	err = ioutil.WriteFile(filename, databytes, 0644)
+	err := mexos.GetVaultDataToFile(s.props.GcpAuthKeyUrl, filename)
 	if err != nil {
 		return fmt.Errorf("unable to write auth file %s: %s", filename, err.Error())
 	}
