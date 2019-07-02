@@ -175,15 +175,31 @@ func getTestMetrics(addr string, query string) (*PromResp, error) {
 }
 
 func TestPromStats(t *testing.T) {
-	*operatorName = "testoper"
-	*cloudletName = "testcloudlet"
-	*clusterName = "testcluster"
 	testAppKey := MetricAppInstKey{
-		operator:  *operatorName,
-		cloudlet:  *cloudletName,
-		cluster:   *clusterName,
+		operator:  "testoper",
+		cloudlet:  "testcloudlet",
+		cluster:   "testcluster",
 		developer: "",
 	}
+
+	testOperatorKey := edgeproto.OperatorKey{Name: "testoper"}
+	testCloudletKey := edgeproto.CloudletKey{
+		OperatorKey: testOperatorKey,
+		Name:        "testcloudlet",
+	}
+	testClusterKey := edgeproto.ClusterKey{Name: "testcluster"}
+	testClusterInstKey := edgeproto.ClusterInstKey{
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
+		Developer:   "",
+	}
+	testClusterInst := edgeproto.ClusterInst{
+		Key: testClusterInstKey,
+	}
+
+	*platformName = "fake"
+	testPlatform, _ := getPlatform()
+
 	// Skip this much of the URL
 	skiplen := len("/api/v1/query?query=")
 	// start up http server to serve Prometheus metrics data
@@ -192,7 +208,7 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats := NewPromStats(tsProm.URL[7:], time.Second*1, testMetricSend)
+	testPromStats := NewPromStats(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
 	err := testPromStats.CollectPromStats()
 	assert.Nil(t, err, "Fill stats from json")
 	testAppKey.pod = "testPod1"
@@ -216,6 +232,6 @@ func TestPromStats(t *testing.T) {
 	// Check callback is called
 	ts, _ := types.TimestampProto(time.Now())
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ClusterStatToMetric(ts, testPromStats.clusterStat))
+	testPromStats.send(ClusterStatToMetric(ts, testPromStats.clusterStat, testAppKey.operator, testAppKey.cloudlet, testAppKey.cluster))
 	assert.Equal(t, int(1), testMetricSent)
 }
