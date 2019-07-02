@@ -75,6 +75,8 @@ type PromLables struct {
 	PodName string `json:"pod_name,omitempty"`
 }
 
+const platformClientHeaderSize = 3
+
 func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric), clusterInst *edgeproto.ClusterInst, pf platform.Platform) *PromStats {
 	var err error
 	p := PromStats{}
@@ -97,7 +99,7 @@ func NewPromStats(promAddr string, interval time.Duration, send func(metric *edg
 
 //trims the output from the pc.PlatformClient.Output request so that to get rid of the header stuff tacked on by it
 func outputTrim(output string) string {
-	lines := strings.Split(output, "\n")
+	lines := strings.SplitN(output, "\n", platformClientHeaderSize+1)
 	if len(lines) == 0 {
 		return ""
 	}
@@ -360,13 +362,20 @@ func ClusterStatToMetric(ts *types.Timestamp, stat *ClustPromStat, operatorName 
 	metric.AddTag("operator", operatorName)
 	metric.AddTag("cloudlet", cloudletName)
 	metric.AddTag("cluster", clusterName)
+	//add a dev tag
+
 	metric.AddDoubleVal("cpu", stat.cpu)
+
 	metric.AddDoubleVal("mem", stat.mem)
+
 	metric.AddDoubleVal("disk", stat.disk)
+
 	metric.AddIntVal("sendBytes", stat.netSend)
 	metric.AddIntVal("recvBytes", stat.netRecv)
+
 	metric.AddIntVal("tcpConns", stat.tcpConns)
 	metric.AddIntVal("tcpRetrans", stat.tcpRetrans)
+
 	metric.AddIntVal("udpSend", stat.udpSend)
 	metric.AddIntVal("udpRecv", stat.udpRecv)
 	metric.AddIntVal("udpRecvErr", stat.udpRecvErr)
@@ -382,9 +391,13 @@ func PodStatToMetric(ts *types.Timestamp, key *MetricAppInstKey, stat *PodPromSt
 	metric.AddTag("cluster", key.cluster)
 	metric.AddTag("dev", key.developer)
 	metric.AddTag("app", key.pod)
+
 	metric.AddDoubleVal("cpu", stat.cpu)
+
 	metric.AddIntVal("mem", stat.mem)
+
 	metric.AddDoubleVal("disk", stat.disk)
+
 	metric.AddIntVal("sendBytes", stat.netSend)
 	metric.AddIntVal("recvBytes", stat.netRecv)
 	return &metric
