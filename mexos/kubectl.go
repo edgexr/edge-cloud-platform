@@ -20,7 +20,8 @@ func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto
 	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
 	auth, err := cloudcommon.GetRegistryAuth(app.ImagePath, vaultAddr)
 	if err != nil {
-		return err
+		log.DebugLog(log.DebugLevelMexos, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
+		return nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
 		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
