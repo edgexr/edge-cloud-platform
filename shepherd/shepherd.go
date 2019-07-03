@@ -137,8 +137,8 @@ func main() {
 	// get influxDB credentials from vault
 	influxAuth := cloudcommon.GetInfluxDataAuth(*vaultAddr, *region)
 	if influxAuth == nil {
-		// defeault to default user/pass
-		influxAuth = &cloudcommon.InfluxCreds{}
+		// default to default user/pass
+		influxAuth = &cloudcommon.InfluxCreds{User: "root", Pass: "root"}
 	}
 	influxQ = influxq.NewInfluxQ(InfluxDBName, influxAuth.User, influxAuth.Pass)
 	err = influxQ.Start(*influxdb, "")
