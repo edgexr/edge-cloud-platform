@@ -61,11 +61,12 @@ type K8CopyFile struct {
 
 type DeploymentData struct {
 	util.DeploymentData `yaml:",inline"`
-	Cluster             ClusterInfo          `yaml:"cluster"`
-	K8sDeployment       []*K8sDeploymentStep `yaml:"k8s-deployment"`
-	Mcs                 []*intprocess.MC     `yaml:"mcs"`
-	Sqls                []*intprocess.Sql    `yaml:"sqls"`
-	Cloudflare          CloudflareDNS        `yaml:"cloudflare"`
+	Cluster             ClusterInfo            `yaml:"cluster"`
+	K8sDeployment       []*K8sDeploymentStep   `yaml:"k8s-deployment"`
+	Mcs                 []*intprocess.MC       `yaml:"mcs"`
+	Sqls                []*intprocess.Sql      `yaml:"sqls"`
+	Shepherds           []*intprocess.Shepherd `yaml:"shepherds"`
+	Cloudflare          CloudflareDNS          `yaml:"cloudflare"`
 }
 
 var apiAddrsUpdated = false
@@ -77,6 +78,9 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Mcs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Shepherds {
 		all = append(all, p)
 	}
 	return all
@@ -141,6 +145,13 @@ func StartProcesses(processName string, outputDir string) bool {
 	for _, p := range Deployment.Mcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api"))
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Shepherds {
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("metrics"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
