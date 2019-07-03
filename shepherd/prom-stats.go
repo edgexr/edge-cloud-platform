@@ -345,9 +345,15 @@ func (p *PromStats) RunNotify() {
 			log.DebugLog(log.DebugLevelMetrics, fmt.Sprintf("Sending metrics for (%s-%s)%s with timestamp %s\n", p.operatorName, p.cloudletName,
 				p.clusterName, ts.String()))
 			for key, stat := range p.appStatsMap {
-				p.send(PodStatToMetric(ts, &key, stat))
+				appMetrics := PodStatToMetrics(ts, &key, stat)
+				for _, metric := range appMetrics {
+					p.send(metric)
+				}
 			}
-			p.send(ClusterStatToMetric(ts, p.clusterStat, p.operatorName, p.cloudletName, p.clusterName))
+			clusterMetrics := ClusterStatToMetrics(ts, p)
+			for _, metric := range clusterMetrics {
+				p.send(metric)
+			}
 		case <-p.stop:
 			done = true
 		}
@@ -355,50 +361,75 @@ func (p *PromStats) RunNotify() {
 	p.waitGrp.Done()
 }
 
-func ClusterStatToMetric(ts *types.Timestamp, stat *ClustPromStat, operatorName string, cloudletName string, clusterName string) *edgeproto.Metric {
+func newMetric(operator, cloudlet, cluster, developer, name string, key *MetricAppInstKey, ts *types.Timestamp) *edgeproto.Metric {
 	metric := edgeproto.Metric{}
 	metric.Timestamp = *ts
-	metric.Name = "crm-cluster"
-	metric.AddTag("operator", operatorName)
-	metric.AddTag("cloudlet", cloudletName)
-	metric.AddTag("cluster", clusterName)
-	//add a dev tag
-
-	metric.AddDoubleVal("cpu", stat.cpu)
-
-	metric.AddDoubleVal("mem", stat.mem)
-
-	metric.AddDoubleVal("disk", stat.disk)
-
-	metric.AddIntVal("sendBytes", stat.netSend)
-	metric.AddIntVal("recvBytes", stat.netRecv)
-
-	metric.AddIntVal("tcpConns", stat.tcpConns)
-	metric.AddIntVal("tcpRetrans", stat.tcpRetrans)
-
-	metric.AddIntVal("udpSend", stat.udpSend)
-	metric.AddIntVal("udpRecv", stat.udpRecv)
-	metric.AddIntVal("udpRecvErr", stat.udpRecvErr)
+	metric.Name = name
+	metric.AddTag("operator", operator)
+	metric.AddTag("cloudlet", cloudlet)
+	metric.AddTag("cluster", cluster)
+	metric.AddTag("dev", developer)
+	if key != nil {
+		metric.AddTag("app", key.pod)
+	}
 	return &metric
 }
 
-func PodStatToMetric(ts *types.Timestamp, key *MetricAppInstKey, stat *PodPromStat) *edgeproto.Metric {
-	metric := edgeproto.Metric{}
-	metric.Timestamp = *ts
-	metric.Name = "crm-appinst"
-	metric.AddTag("operator", key.operator)
-	metric.AddTag("cloudlet", key.cloudlet)
-	metric.AddTag("cluster", key.cluster)
-	metric.AddTag("dev", key.developer)
-	metric.AddTag("app", key.pod)
+func ClusterStatToMetrics(ts *types.Timestamp, p *PromStats) []*edgeproto.Metric {
+	var metrics []*edgeproto.Metric
+	var metric *edgeproto.Metric
 
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-cpu", nil, ts)
+	metric.AddDoubleVal("cpu", p.clusterStat.cpu)
+	metrics = append(metrics, metric)
+
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-mem", nil, ts)
+	metric.AddDoubleVal("mem", p.clusterStat.mem)
+	metrics = append(metrics, metric)
+
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-disk", nil, ts)
+	metric.AddDoubleVal("disk", p.clusterStat.disk)
+	metrics = append(metrics, metric)
+
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-network", nil, ts)
+	metric.AddIntVal("sendBytes", p.clusterStat.netSend)
+	metric.AddIntVal("recvBytes", p.clusterStat.netRecv)
+	metrics = append(metrics, metric)
+
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-tcp", nil, ts)
+	metric.AddIntVal("tcpConns", p.clusterStat.tcpConns)
+	metric.AddIntVal("tcpRetrans", p.clusterStat.tcpRetrans)
+	metrics = append(metrics, metric)
+
+	metric = newMetric(p.operatorName, p.cloudletName, p.clusterName, p.developer, "crm-cluster-udp", nil, ts)
+	metric.AddIntVal("udpSend", p.clusterStat.udpSend)
+	metric.AddIntVal("udpRecv", p.clusterStat.udpRecv)
+	metric.AddIntVal("udpRecvErr", p.clusterStat.udpRecvErr)
+	metrics = append(metrics, metric)
+
+	return metrics
+}
+
+func PodStatToMetrics(ts *types.Timestamp, key *MetricAppInstKey, stat *PodPromStat) []*edgeproto.Metric {
+	var metrics []*edgeproto.Metric
+	var metric *edgeproto.Metric
+
+	metric = newMetric(key.operator, key.cloudlet, key.cluster, key.developer, "crm-appinst-cpu", key, ts)
 	metric.AddDoubleVal("cpu", stat.cpu)
+	metrics = append(metrics, metric)
 
+	metric = newMetric(key.operator, key.cloudlet, key.cluster, key.developer, "crm-appinst-mem", key, ts)
 	metric.AddIntVal("mem", stat.mem)
+	metrics = append(metrics, metric)
 
+	metric = newMetric(key.operator, key.cloudlet, key.cluster, key.developer, "crm-appinst-disk", key, ts)
 	metric.AddDoubleVal("disk", stat.disk)
+	metrics = append(metrics, metric)
 
+	metric = newMetric(key.operator, key.cloudlet, key.cluster, key.developer, "crm-appinst-network", key, ts)
 	metric.AddIntVal("sendBytes", stat.netSend)
 	metric.AddIntVal("recvBytes", stat.netRecv)
-	return &metric
+	metrics = append(metrics, metric)
+
+	return metrics
 }

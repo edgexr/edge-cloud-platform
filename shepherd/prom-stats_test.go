@@ -232,6 +232,6 @@ func TestPromStats(t *testing.T) {
 	// Check callback is called
 	ts, _ := types.TimestampProto(time.Now())
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ClusterStatToMetric(ts, testPromStats.clusterStat, testAppKey.operator, testAppKey.cloudlet, testAppKey.cluster))
+	testPromStats.send(ClusterStatToMetrics(ts, testPromStats)[0])
 	assert.Equal(t, int(1), testMetricSent)
 }
