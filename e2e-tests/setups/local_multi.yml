@@ -260,3 +260,104 @@ sqls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
   hostname: "127.0.0.1"
+
+shepherds:
+- name: shepherd1
+  notifyaddrs: "127.0.0.1:51101"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd2
+  notifyaddrs: "127.0.0.1:51102"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd3
+  notifyaddrs:  "127.0.0.1:51103"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-3"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd4
+  notifyaddrs: "127.0.0.1:51104"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-4"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd5
+  notifyaddrs: "127.0.0.1:51105"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-5"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd6
+  notifyaddrs: "127.0.0.1:51106"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-6"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd7
+  notifyaddrs: "127.0.0.1:51107"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-7"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd8
+  notifyaddrs: "127.0.0.1:51108"
+  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-8"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd9
+  notifyaddrs: "127.0.0.1:51109"
+  cloudletkey: '{"operator_key":{"name":"azure"},"name":"azure-cloud-9"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: shepherd10
+  notifyaddrs: "127.0.0.1:51110"
+  cloudletkey: '{"operator_key":{"name":"gcp"},"name":"gcp-cloud-10"}'
+  platform: fakecloudlet
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"

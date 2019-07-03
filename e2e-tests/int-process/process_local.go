@@ -193,11 +193,88 @@ func (p *Sql) runPsql(args []string) ([]byte, error) {
 	return exec.Command("psql", args...).CombinedOutput()
 }
 
+func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{}
+	if p.Name != "" {
+		args = append(args, "--name")
+		args = append(args, p.Name)
+	}
+	if p.NotifyAddrs != "" {
+		args = append(args, "--notifyAddrs")
+		args = append(args, p.NotifyAddrs)
+	}
+	if p.InfluxAddr != "" {
+		args = append(args, "--influxAddr")
+		args = append(args, p.InfluxAddr)
+	}
+	if p.Interval != "" {
+		args = append(args, "--interval")
+		args = append(args, p.Interval)
+	}
+	if p.Platform != "" {
+		args = append(args, "--platform")
+		args = append(args, p.Platform)
+	}
+	if p.VaultAddr != "" {
+		args = append(args, "--vaultAddr")
+		args = append(args, p.VaultAddr)
+	}
+	if p.PhysicalName != "" {
+		args = append(args, "--physicalName")
+		args = append(args, p.PhysicalName)
+	}
+	if p.CloudletKey != "" {
+		args = append(args, "--cloudletKey")
+		args = append(args, p.CloudletKey)
+	}
+	if p.TLS.ServerCert != "" {
+		args = append(args, "--tls")
+		args = append(args, p.TLS.ServerCert)
+	}
+	options := process.StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.Debug != "" {
+		args = append(args, "-d")
+		args = append(args, options.Debug)
+	}
+	var envs []string
+	if options.RolesFile != "" {
+		dat, err := ioutil.ReadFile(options.RolesFile)
+		if err != nil {
+			return err
+		}
+		roles := VaultRoles{}
+		err = yaml.Unmarshal(dat, &roles)
+		if err != nil {
+			return err
+		}
+		envs = []string{
+			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.ShepherdRoleID),
+			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.ShepherdSecretID),
+		}
+		log.Printf("Shepherd envs: %v\n", envs)
+	}
+
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *Shepherd) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *Shepherd) GetExeName() string { return "shepherd" }
+
+func (p *Shepherd) LookupArgs() string { return "--name " + p.Name }
+
 type VaultRoles struct {
-	MCRoleID        string `json:"mcroleid"`
-	MCSecretID      string `json:"mcsecretid"`
-	RotatorRoleID   string `json:"rotatorroleid"`
-	RotatorSecretID string `json:"rotatorsecretid"`
+	MCRoleID         string `json:"mcroleid"`
+	MCSecretID       string `json:"mcsecretid"`
+	ShepherdRoleID   string `json:"shepherdroleid"`
+	ShepherdSecretID string `json:"shepherdsecretid"`
+	RotatorRoleID    string `json:"rotatorroleid"`
+	RotatorSecretID  string `json:"rotatorsecretid"`
 }
 
 // Vault is already started by edge-cloud setup file.

@@ -24,3 +24,15 @@ type Sql struct {
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 }
+type Shepherd struct {
+	process.Common `yaml:",inline"`
+	NotifyAddrs    string
+	InfluxAddr     string
+	Interval       string
+	Platform       string
+	VaultAddr      string
+	PhysicalName   string
+	CloudletKey    string
+	TLS            process.TLSCerts
+	cmd            *exec.Cmd
+}
