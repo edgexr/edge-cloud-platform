@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"regexp"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -13,6 +14,7 @@ import (
 )
 
 var AuditId uint64
+var jwtRegex = regexp.MustCompile(`"(.*?)"`) // scrub jwt tokens from responses before logging, find all quoted strings.
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -111,8 +113,26 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			kvs = append(kvs, string(reqBody))
 		}
 		if len(resBody) > 0 {
-			kvs = append(kvs, "resp")
-			kvs = append(kvs, string(resBody))
+			// for all responses, if it has a jwt token
+			// remove it before logging
+			if strings.Contains(string(resBody), "token") {
+				ms := jwtRegex.FindAllStringSubmatch(string(resBody), -1)
+				if ms != nil {
+					ss := make([]string, len(ms))
+					for i, m := range ms {
+						ss[i] = m[1]
+					}
+					if ss[1] != "" {
+						result := strings.Replace(string(resBody), ss[1], "", len(ss[1]))
+						kvs = append(kvs, "resp")
+						kvs = append(kvs, result)
+					}
+				}
+
+			} else {
+				kvs = append(kvs, "resp")
+				kvs = append(kvs, resBody)
+			}
 		}
 		kvs = append(kvs, "took")
 		kvs = append(kvs, time.Since(start))
