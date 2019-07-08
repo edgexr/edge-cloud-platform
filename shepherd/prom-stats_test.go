@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/assert"
 )
@@ -230,8 +229,7 @@ func TestPromStats(t *testing.T) {
 	assert.Equal(t, uint64(22222), testPromStats.clusterStat.netRecv)
 
 	// Check callback is called
-	ts, _ := types.TimestampProto(time.Now())
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ClusterStatToMetrics(ts, testPromStats)[0])
+	testPromStats.send(ClusterStatToMetrics(testPromStats)[0])
 	assert.Equal(t, int(1), testMetricSent)
 }
