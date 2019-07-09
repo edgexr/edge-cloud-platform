@@ -295,6 +295,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	roles := VaultRoles{}
 	p.GetAppRole("", "mcorm", &roles.MCRoleID, &roles.MCSecretID, &err)
 	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
+	//	p.GetAppRole("", "shepherd", &roles.ShepherdRoleID, &roles.ShepherdSecretID, &err) - TODO
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)
 	if err != nil {

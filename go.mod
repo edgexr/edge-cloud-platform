@@ -383,3 +383,7 @@ replace github.com/pion/webrtc/v2 => github.com/pion/webrtc/v2 v2.0.7
 replace golang.org/x/text => golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
 
 replace github.com/uber/prototool => github.com/uber/prototool v1.8.0
+
+replace github.com/pseudomuto/protoc-gen-doc => github.com/pseudomuto/protoc-gen-doc v1.3.0
+
+replace golang.org/x/sys => golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb
