@@ -53,7 +53,7 @@ var Env = map[string]string{
 	"INFLUXDB_PASS": "root",
 }
 
-var defaultPormetheusPort = int32(9090)
+var defaultPrometheusPort = int32(9090)
 
 //map keeping track of all the currently running prometheuses
 var promMap map[string]*PromStats
@@ -94,7 +94,7 @@ func appInstCb(old *edgeproto.AppInst, new *edgeproto.AppInst) {
 		if len(new.MappedPorts) > 0 {
 			port = new.MappedPorts[0].PublicPort
 		} else {
-			port = defaultPormetheusPort
+			port = defaultPrometheusPort
 		}
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.DebugLog(log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
