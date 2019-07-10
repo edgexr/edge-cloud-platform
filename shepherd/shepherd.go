@@ -48,11 +48,6 @@ var promQMemPod = "sum(container_memory_working_set_bytes%7Bimage!%3D%22%22%7D)b
 var promQNetRecvRate = "sum(irate(container_network_receive_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod_name)"
 var promQNetSendRate = "sum(irate(container_network_transmit_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod_name)"
 
-var Env = map[string]string{
-	"INFLUXDB_USER": "root",
-	"INFLUXDB_PASS": "root",
-}
-
 var defaultPrometheusPort = int32(9090)
 
 //map keeping track of all the currently running prometheuses
@@ -146,8 +141,7 @@ func main() {
 	// get influxDB credentials from vault
 	influxAuth := cloudcommon.GetInfluxDataAuth(*vaultAddr, *region)
 	if influxAuth == nil {
-		// default to default user/pass
-		influxAuth = &cloudcommon.InfluxCreds{User: "root", Pass: "root"}
+		log.FatalLog("Failed to get influxDB credentials from vault")
 	}
 	influxQ = influxq.NewInfluxQ(InfluxDBName, influxAuth.User, influxAuth.Pass)
 	err = influxQ.Start(*influxdb, "")
