@@ -256,7 +256,7 @@ func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
 	}
 
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
 	return err
 }
 
@@ -295,7 +295,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	roles := VaultRoles{}
 	p.GetAppRole("", "mcorm", &roles.MCRoleID, &roles.MCSecretID, &err)
 	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
-	//	p.GetAppRole("", "shepherd", &roles.ShepherdRoleID, &roles.ShepherdSecretID, &err) - TODO
+	p.GetAppRole("", "shepherd", &roles.ShepherdRoleID, &roles.ShepherdSecretID, &err)
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)
 	if err != nil {
