@@ -19,7 +19,7 @@ func connectController(region string) (*grpc.ClientConn, error) {
 }
 
 func connectControllerAddr(addr string) (*grpc.ClientConn, error) {
-	dialOption, err := tls.GetTLSClientDialOption(addr, serverConfig.ClientCert)
+	dialOption, err := tls.GetTLSClientDialOption(addr, serverConfig.ClientCert, false)
 	if err != nil {
 		return nil, err
 	}
