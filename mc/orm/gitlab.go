@@ -3,6 +3,7 @@ package orm
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -96,13 +97,29 @@ func gitlabCreateGroup(org *ormapi.Organization) {
 		Path:       &name,
 		Visibility: gitlab.Visibility(gitlab.PrivateVisibility),
 	}
-	grp, _, err := gitlabClient.Groups.CreateGroup(&groupOpts)
+	// The "path" argument is used to access the group via a URL,
+	// and so is case-insensitive. If there is a case conflict,
+	// i.e. two orgs named "org1" and "Org1", modify the path so
+	// there is no conflict.
+	var err error
+	var grp *gitlab.Group
+	for ii := 0; ii < 20; ii++ {
+		log.DebugLog(log.DebugLevelApi, "gitlab create group", "data", groupOpts)
+		grp, _, err = gitlabClient.Groups.CreateGroup(&groupOpts)
+		if err != nil && strings.Contains(err.Error(), "path=>[\"has already been taken\"]") {
+			path := *groupOpts.Path + "_"
+			groupOpts.Path = &path
+			continue
+		}
+		break
+	}
 	if err != nil {
 		log.DebugLog(log.DebugLevelApi, "gitlab create group",
 			"org", org, "name", name, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
+
 	attr := gitlab.CustomAttribute{
 		Key:   "createdby",
 		Value: GitlabMCTag,
