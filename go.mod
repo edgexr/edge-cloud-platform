@@ -44,7 +44,7 @@ require (
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pelletier/go-toml v1.3.0
-	github.com/pion/webrtc/v2 v2.0.7
+	github.com/pion/webrtc/v2 v2.0.23
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.4
@@ -52,7 +52,7 @@ require (
 	github.com/xanzy/go-gitlab v0.16.0
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
-	golang.org/x/net v0.0.0-20190328230028-74de082e2cca
+	golang.org/x/net v0.0.0-20190619014844-b5b0513f8c1b
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107
 	google.golang.org/grpc v1.21.0
@@ -70,7 +70,7 @@ replace github.com/mobiledgex/edge-cloud => ../edge-cloud
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
 
-replace golang.org/x/net => golang.org/x/net v0.0.0-20190311183353-d8887717615a
+replace golang.org/x/net => golang.org/x/net v0.0.0-20190619014844-b5b0513f8c1b
 
 replace github.com/AsGz/geo => github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 
@@ -378,11 +378,11 @@ replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.4
 
 replace github.com/kr/pty => github.com/kr/pty v1.1.3
 
-replace github.com/pion/webrtc/v2 => github.com/pion/webrtc/v2 v2.0.7
+replace github.com/pion/webrtc/v2 => github.com/pion/webrtc/v2 v2.0.23
 
 replace golang.org/x/text => golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
 
-replace github.com/uber/prototool => github.com/uber/prototool v1.8.0
+replace github.com/uber/prototool => github.com/uber/prototool v1.8.1
 
 replace github.com/pseudomuto/protoc-gen-doc => github.com/pseudomuto/protoc-gen-doc v1.3.0
 
