@@ -277,10 +277,10 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importHttp = true
 		g.importContext = true
 		g.importOrmapi = true
+		g.importGrpcStatus = true
 		if args.Outstream {
 			g.importIO = true
 			g.importJson = true
-			g.importGrpcStatus = true
 		}
 	}
 	err := tmpl.Execute(g, &args)
@@ -366,6 +366,11 @@ func {{.MethodName}}(c echo.Context) error {
 	return nil
 {{- else}}
 	resp, err := {{.MethodName}}Obj(rc, &in.{{.InName}})
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
 	return setReply(c, err, resp)
 {{- end}}
 }
