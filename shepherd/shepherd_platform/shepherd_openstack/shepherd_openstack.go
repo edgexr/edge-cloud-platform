@@ -6,6 +6,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 type Platform struct {
@@ -30,6 +31,8 @@ func (s *Platform) Init(key *edgeproto.CloudletKey, physicalName, vaultAddr stri
 	if err != nil {
 		return err
 	}
+	log.DebugLog(log.DebugLevelMexos, "init openstack", "rootLB", s.rootLbName,
+		"physicalName", physicalName, "vaultAddr", vaultAddr)
 	return nil
 }
 
