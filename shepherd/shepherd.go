@@ -84,6 +84,7 @@ func appInstCb(old *edgeproto.AppInst, new *edgeproto.AppInst) {
 		clustIP, err := pf.GetClusterIP(&clusterInst)
 		if err != nil {
 			log.DebugLog(log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
+			return
 		}
 		// We don't actually expose prometheus ports - we should default to 9090
 		if len(new.MappedPorts) > 0 {
