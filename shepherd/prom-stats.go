@@ -93,7 +93,7 @@ type PromLables struct {
 
 const platformClientHeaderSize = 3
 
-func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric), clusterInst *edgeproto.ClusterInst, pf platform.Platform) *PromStats {
+func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric), clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*PromStats, error) {
 	var err error
 	p := PromStats{}
 	p.promAddr = promAddr
@@ -107,10 +107,11 @@ func NewPromStats(promAddr string, interval time.Duration, send func(metric *edg
 	p.developer = clusterInst.Key.Developer
 	p.client, err = pf.GetPlatformClient(clusterInst)
 	if err != nil {
-		//should this be a fatal log???
-		log.FatalLog("Failed to acquire platform client", "error", err)
+		// If we cannot get a platform client no point in trying to get metrics
+		log.DebugLog(log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
+		return nil, err
 	}
-	return &p
+	return &p, nil
 }
 
 //trims the output from the pc.PlatformClient.Output request so that to get rid of the header stuff tacked on by it
