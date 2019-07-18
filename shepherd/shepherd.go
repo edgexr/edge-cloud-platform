@@ -95,9 +95,11 @@ func appInstCb(old *edgeproto.AppInst, new *edgeproto.AppInst) {
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.DebugLog(log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats = NewPromStats(promAddress, *collectInterval, sendMetric, &clusterInst, pf)
-			promMap[mapKey] = stats
-			stats.Start()
+			stats, err = NewPromStats(promAddress, *collectInterval, sendMetric, &clusterInst, pf)
+			if err == nil {
+				promMap[mapKey] = stats
+				stats.Start()
+			}
 		} else { //somehow this cluster's prometheus was already registered
 			log.DebugLog(log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
 		}

@@ -207,8 +207,9 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats := NewPromStats(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
-	err := testPromStats.CollectPromStats()
+	testPromStats, err := NewPromStats(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
+	assert.Nil(t, err, "Get a patform client for fake cloudlet")
+	err = testPromStats.CollectPromStats()
 	assert.Nil(t, err, "Fill stats from json")
 	testAppKey.pod = "testPod1"
 	stat, found := testPromStats.appStatsMap[testAppKey]
