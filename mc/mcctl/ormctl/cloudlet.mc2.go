@@ -223,6 +223,27 @@ var CloudletInfraPropertiesAliasArgs = []string{
 	"gcpproperties.serviceaccount=cloudletinfraproperties.gcpproperties.serviceaccount",
 	"gcpproperties.gcpauthkeyurl=cloudletinfraproperties.gcpproperties.gcpauthkeyurl",
 }
+var PlatformConfigRequiredArgs = []string{}
+var PlatformConfigOptionalArgs = []string{
+	"registrypath",
+	"imagepath",
+	"notifyctrladdrs",
+	"vaultaddr",
+	"tlscertfile",
+	"crmroleid",
+	"crmsecretid",
+	"platformtag",
+}
+var PlatformConfigAliasArgs = []string{
+	"registrypath=platformconfig.registrypath",
+	"imagepath=platformconfig.imagepath",
+	"notifyctrladdrs=platformconfig.notifyctrladdrs",
+	"vaultaddr=platformconfig.vaultaddr",
+	"tlscertfile=platformconfig.tlscertfile",
+	"crmroleid=platformconfig.crmroleid",
+	"crmsecretid=platformconfig.crmsecretid",
+	"platformtag=platformconfig.platformtag",
+}
 var CloudletRequiredArgs = []string{
 	"operator",
 	"name",
@@ -237,6 +258,14 @@ var CloudletOptionalArgs = []string{
 	"ipsupport",
 	"staticips",
 	"numdynamicips",
+	"errors",
+	"state",
+	"crmoverride",
+	"deploymentlocal",
+	"platformtype",
+	"notifysrvaddr",
+	"flavor.name",
+	"physicalname",
 }
 var CloudletAliasArgs = []string{
 	"operator=cloudlet.key.operatorkey.name",
@@ -260,6 +289,18 @@ var CloudletAliasArgs = []string{
 	"timelimits.createappinsttimeout=cloudlet.timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout=cloudlet.timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout=cloudlet.timelimits.deleteappinsttimeout",
+	"errors=cloudlet.errors",
+	"status.tasknumber=cloudlet.status.tasknumber",
+	"status.maxtasks=cloudlet.status.maxtasks",
+	"status.taskname=cloudlet.status.taskname",
+	"status.stepname=cloudlet.status.stepname",
+	"state=cloudlet.state",
+	"crmoverride=cloudlet.crmoverride",
+	"deploymentlocal=cloudlet.deploymentlocal",
+	"platformtype=cloudlet.platformtype",
+	"notifysrvaddr=cloudlet.notifysrvaddr",
+	"flavor.name=cloudlet.flavor.name",
+	"physicalname=cloudlet.physicalname",
 }
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{

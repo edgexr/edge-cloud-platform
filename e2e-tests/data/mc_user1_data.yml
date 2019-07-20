@@ -40,6 +40,8 @@ regiondata:
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51001
     - key:
         operatorkey:
           name: dmuus
@@ -50,23 +52,29 @@ regiondata:
         longitude: -95
       ipsupport: IpSupportDynamic
       numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51002
     - key:
         operatorkey:
           name: azure
-        name: azure-cloud-9
-      accessuri: cloud9.azure
+        name: azure-cloud-4
+      accessuri: cloud4.azure
       location:
         latitude: 32
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51004
     - key:
         operatorkey:
           name: gcp
-        name: gcp-cloud-10
-      accessuri: cloud2.gcp
+        name: gcp-cloud-5
+      accessuri: cloud5.gcp
       location:
         latitude: 36
         longitude: -95
       ipsupport: IpSupportDynamic
       numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51005

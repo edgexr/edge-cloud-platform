@@ -6,6 +6,7 @@ import (
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
+	"github.com/tmc/scp"
 )
 
 var sshOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}
@@ -79,4 +80,22 @@ func SetupSSHUser(rootLB *MEXRootLB, user string) (ssh.Client, error) {
 		}
 	}
 	return client, nil
+}
+
+func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
+	client, ok := sshClient.(*ssh.NativeClient)
+	if !ok {
+		return fmt.Errorf("unable to cast client to native client")
+	}
+
+	session, conn, err := client.Session()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	defer conn.Close()
+
+	err = scp.CopyPath(srcPath, dstPath, session)
+
+	return err
 }

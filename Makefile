@@ -100,7 +100,7 @@ test-reset:
 	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/deploy_reset_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
 
 test-stop:
-	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+	e2e-tests -testfile ../edge-cloud/setup-env/e2e-tests/testfiles/delete_stop_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -notimestamp
 
 # QA testing - manual
 test-robot-start:
