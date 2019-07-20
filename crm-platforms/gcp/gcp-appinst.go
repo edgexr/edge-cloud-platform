@@ -53,6 +53,8 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		}
 		action.ExternalIP = externalIP
 		// no patching needed since GCP already does it.
+		// Should only add DNS for external ports
+		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
 	if err = mexos.CreateAppDNS(client, names, getDnsAction); err != nil {
@@ -86,7 +88,10 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if err != nil {
 		return err
 	}
-
+	// No DNS entry if ports are internal
+	if app.InternalPorts {
+		return nil
+	}
 	return mexos.DeleteAppDNS(client, names)
 }
 

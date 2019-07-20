@@ -53,6 +53,8 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return nil, err
 		}
 		action.ExternalIP = externalIP
+		// Should only add DNS for external ports
+		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
 	if err = mexos.CreateAppDNS(client, names, getDnsAction); err != nil {
@@ -74,9 +76,11 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return err
 	}
 
-	// remove DNS entries
-	if err = mexos.DeleteAppDNS(client, names); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+	// remove DNS entries if it was added
+	if !app.InternalPorts {
+		if err = mexos.DeleteAppDNS(client, names); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		}
 	}
 	if err = s.generic.DeleteAppInst(clusterInst, app, appInst); err != nil {
 		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete AppInst", "error", err)

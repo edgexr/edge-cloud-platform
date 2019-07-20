@@ -10,7 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var dnsRegisterRetryDelay time.Duration = 3 * time.Second
@@ -24,6 +24,8 @@ type DnsSvcAction struct {
 	// IP to patch the kubernetes service with. If empty, will use
 	// ExternalIP instead.
 	PatchIP string
+	// Should we add DNS, or not
+	AddDNS bool
 }
 
 // Callback function for callers to control the behavior of DNS changes.
@@ -83,12 +85,14 @@ func CreateAppDNS(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, getSvc
 				return err
 			}
 		}
-		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
+		if action.AddDNS {
+			fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 
-		if err := cloudflare.CreateOrUpdateDNSRecord(GetCloudletDNSZone(), fqdn, "A", action.ExternalIP, 1, false); err != nil {
-			return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, action.ExternalIP, err)
+			if err := cloudflare.CreateOrUpdateDNSRecord(GetCloudletDNSZone(), fqdn, "A", action.ExternalIP, 1, false); err != nil {
+				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, action.ExternalIP, err)
+			}
+			log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 		}
-		log.DebugLog(log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 	}
 	return nil
 }
