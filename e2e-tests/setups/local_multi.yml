@@ -127,117 +127,6 @@ dmes:
   envvars:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
-  
-crms:
-- name: crm1
-  apiaddr: "0.0.0.0:55091"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51101"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm2
-  apiaddr: "0.0.0.0:55092"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51102"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm3
-  apiaddr: "0.0.0.0:55093"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51103"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-3"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm4
-  apiaddr: "0.0.0.0:55094"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51104"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-4"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm5
-  apiaddr: "0.0.0.0:55095"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51105"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-5"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm6
-  apiaddr: "0.0.0.0:55096"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51106"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-6"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm7
-  apiaddr: "0.0.0.0:55097"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51107"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-7"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm8
-  apiaddr: "0.0.0.0:55098"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51108"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-8"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm9
-  apiaddr: "0.0.0.0:55099"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51109"
-  cloudletkey: '{"operator_key":{"name":"azure"},"name":"azure-cloud-9"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: crm10
-  apiaddr: "0.0.0.0:55100"
-  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
-  notifysrvaddr: "127.0.0.1:51110"
-  cloudletkey: '{"operator_key":{"name":"gcp"},"name":"gcp-cloud-10"}'
-  platform: fakecloudlet
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
 
 mcs:
 - name: mc1
@@ -294,7 +183,7 @@ shepherds:
 
 - name: shepherd4
   notifyaddrs: "127.0.0.1:51104"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-4"}'
+  cloudletkey: '{"operator_key":{"name":"azure"},"name":"azure-cloud-4"}'
   platform: fakecloudlet
   vaultaddr: "http://127.0.0.1:8200"
   tls:
@@ -304,57 +193,7 @@ shepherds:
 
 - name: shepherd5
   notifyaddrs: "127.0.0.1:51105"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-5"}'
-  platform: fakecloudlet
-  vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: shepherd6
-  notifyaddrs: "127.0.0.1:51106"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-6"}'
-  platform: fakecloudlet
-  vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: shepherd7
-  notifyaddrs: "127.0.0.1:51107"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-7"}'
-  platform: fakecloudlet
-  vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: shepherd8
-  notifyaddrs: "127.0.0.1:51108"
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-8"}'
-  platform: fakecloudlet
-  vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: shepherd9
-  notifyaddrs: "127.0.0.1:51109"
-  cloudletkey: '{"operator_key":{"name":"azure"},"name":"azure-cloud-9"}'
-  platform: fakecloudlet
-  vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
-  hostname: "127.0.0.1"
-
-- name: shepherd10
-  notifyaddrs: "127.0.0.1:51110"
-  cloudletkey: '{"operator_key":{"name":"gcp"},"name":"gcp-cloud-10"}'
+  cloudletkey: '{"operator_key":{"name":"gcp"},"name":"gcp-cloud-5"}'
   platform: fakecloudlet
   vaultaddr: "http://127.0.0.1:8200"
   tls:

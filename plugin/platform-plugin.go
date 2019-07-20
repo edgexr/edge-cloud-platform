@@ -12,13 +12,13 @@ import (
 
 func GetPlatform(plat string) (platform.Platform, error) {
 	switch plat {
-	case "openstack":
+	case "PLATFORM_TYPE_OPENSTACK":
 		return &openstack.Platform{}, nil
-	case "azure":
+	case "PLATFORM_TYPE_AZURE":
 		return &azure.Platform{}, nil
-	case "gcp":
+	case "PLATFORM_TYPE_GCP":
 		return &gcp.Platform{}, nil
-	case "mexdind":
+	case "PLATFORM_TYPE_MEXDIND":
 		return &mexdind.Platform{}, nil
 	}
 	return nil, fmt.Errorf("unknown platform %s", plat)

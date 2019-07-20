@@ -22,7 +22,7 @@ var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 
 func getVaultCloudletPath(filePath, vaultAddr string) string {
 	return fmt.Sprintf(
-		"https://%s/v1/secret/data/cloudlet/openstack/%s",
+		"%s/v1/secret/data/cloudlet/openstack/%s",
 		vaultAddr, filePath,
 	)
 }

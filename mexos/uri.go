@@ -213,3 +213,17 @@ func DeleteFile(filePath string) error {
 	}
 	return err
 }
+
+// Get the externally visible public IP address
+func GetExternalPublicAddr() (string, error) {
+	resp, err := SendHTTPReq("GET", "http://ifconfig.me")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	ip, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(ip)), err
+}

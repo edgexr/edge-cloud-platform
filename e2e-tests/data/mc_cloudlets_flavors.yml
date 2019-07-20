@@ -14,7 +14,6 @@ regiondata:
         operatorkey:
           name: dmuus
         name: dmuus-cloud-1
-      accessuri: cloud1.tmo
       location:
         latitude: 31
         longitude: -91
@@ -27,11 +26,15 @@ regiondata:
         createappinsttimeout: 3000000000
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
+      state: Ready
+      deploymentlocal: true
+      notifysrvaddr: 127.0.0.1:51001
+      flavor:
+        name: DefaultPlatformFlavor
     - key:
         operatorkey:
           name: dmuus
         name: dmuus-cloud-2
-      accessuri: cloud2.tmo
       location:
         latitude: 35
         longitude: -95
@@ -44,11 +47,15 @@ regiondata:
         createappinsttimeout: 3000000000
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
+      state: Ready
+      deploymentlocal: true
+      notifysrvaddr: 127.0.0.1:51002
+      flavor:
+        name: DefaultPlatformFlavor
     - key:
         operatorkey:
           name: azure
-        name: azure-cloud-9
-      accessuri: cloud9.azure
+        name: azure-cloud-4
       location:
         latitude: 32
         longitude: -91
@@ -61,11 +68,15 @@ regiondata:
         createappinsttimeout: 3000000000
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
+      state: Ready
+      deploymentlocal: true
+      notifysrvaddr: 127.0.0.1:51004
+      flavor:
+        name: DefaultPlatformFlavor
     - key:
         operatorkey:
           name: gcp
-        name: gcp-cloud-10
-      accessuri: cloud2.gcp
+        name: gcp-cloud-5
       location:
         latitude: 36
         longitude: -95
@@ -78,6 +89,11 @@ regiondata:
         createappinsttimeout: 3000000000
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
+      state: Ready
+      deploymentlocal: true
+      notifysrvaddr: 127.0.0.1:51005
+      flavor:
+        name: DefaultPlatformFlavor
     flavors:
     - key:
         name: x1.tiny

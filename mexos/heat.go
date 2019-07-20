@@ -279,7 +279,7 @@ func reindent(str string, indent int) string {
 	return strings.TrimSuffix(out, "\n")
 }
 
-func writeTemplateFile(filename string, buf *bytes.Buffer) error {
+func WriteTemplateFile(filename string, buf *bytes.Buffer) error {
 	outFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("unable to write heat template %s: %s", filename, err.Error())
@@ -424,7 +424,7 @@ func createOrUpdateHeatStackFromTemplate(templateData interface{}, stackName str
 		return err
 	}
 	filename := stackName + "-heat.yaml"
-	err = writeTemplateFile(filename, &buf)
+	err = WriteTemplateFile(filename, &buf)
 	if err != nil {
 		return err
 	}

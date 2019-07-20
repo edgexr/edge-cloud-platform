@@ -9,7 +9,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
-	"github.com/mobiledgex/edge-cloud/setup-env/util"
 )
 
 //when first creating a cluster, it may take a while for the load balancer to get an IP. Usually
@@ -101,31 +100,12 @@ func UpdateAPIAddrs() bool {
 				Deployment.Dmes[0].ApiAddr = addr
 			}
 		}
-		if len(Deployment.Crms) > 0 {
-			addr, err := GetK8sServiceAddr("crm", maxWaitForServiceSeconds)
-			if err != nil {
-				//we may not always deploy CRM with service addresses if it is in
-				//the same cluster as the controller and we don't need the direct api
-				if strings.HasSuffix(err.Error(), "not found") {
-					log.Printf("No CRM service")
-					addr = util.ApiAddrNone
-				} else {
-					fmt.Fprintf(os.Stderr, "unable to get crm service ")
-					return false
-				}
-			}
-			addr = getDNSNameForAddr(addr)
-			Deployment.Crms[0].ApiAddr = addr
-		}
 	} else {
 		for i, ctrl := range Deployment.Controllers {
 			Deployment.Controllers[i].ApiAddr = getExternalApiAddress(ctrl.ApiAddr, ctrl.Hostname)
 		}
 		for i, dme := range Deployment.Dmes {
 			Deployment.Dmes[i].ApiAddr = getExternalApiAddress(dme.ApiAddr, dme.Hostname)
-		}
-		for i, crm := range Deployment.Crms {
-			Deployment.Crms[i].ApiAddr = getExternalApiAddress(crm.ApiAddr, crm.Hostname)
 		}
 	}
 	apiAddrsUpdated = true

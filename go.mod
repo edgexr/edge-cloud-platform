@@ -29,6 +29,7 @@ require (
 	github.com/jinzhu/gorm v1.9.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/julienschmidt/httprouter v1.2.0
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
 	github.com/lib/pq v1.0.0
@@ -49,6 +50,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.4
 	github.com/stretchr/testify v1.3.0
+	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	github.com/xanzy/go-gitlab v0.16.0
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
