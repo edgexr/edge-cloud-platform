@@ -140,6 +140,7 @@ regiondata:
             operatorkey:
               name: developer
             name: default
+          developer: platos
       liveness: LivenessStatic
       uri: default.platosenablement.platos.com
       flavor:
