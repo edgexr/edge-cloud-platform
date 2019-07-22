@@ -113,6 +113,7 @@ var AppInstOptionalArgs = []string{
 	"runtimeinfo.containerids",
 	"runtimeinfo.consoleurl",
 	"autoclusteripaccess",
+	"forceupgrade",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -151,6 +152,8 @@ var AppInstAliasArgs = []string{
 	"status.maxtasks=appinst.status.maxtasks",
 	"status.taskname=appinst.status.taskname",
 	"status.stepname=appinst.status.stepname",
+	"revision=appinst.revision",
+	"forceupgrade=appinst.forceupgrade",
 }
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{

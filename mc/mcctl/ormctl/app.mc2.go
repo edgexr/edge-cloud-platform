@@ -200,4 +200,5 @@ var AppAliasArgs = []string{
 	"configs.config=app.configs.config",
 	"scalewithcluster=app.scalewithcluster",
 	"internalports=app.internalports",
+	"revision=app.revision",
 }

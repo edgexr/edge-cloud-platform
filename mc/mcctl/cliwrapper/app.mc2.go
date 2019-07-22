@@ -91,7 +91,7 @@ var _ = math.Inf
 func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
 	args := []string{"ctrl", "CreateApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Revision", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	return out, st, err
 }
@@ -99,7 +99,7 @@ func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.R
 func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
 	args := []string{"ctrl", "DeleteApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Revision", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	return out, st, err
 }
@@ -107,7 +107,7 @@ func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.R
 func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
 	args := []string{"ctrl", "UpdateApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Revision", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	return out, st, err
 }
@@ -115,7 +115,7 @@ func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.R
 func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error) {
 	args := []string{"ctrl", "ShowApp"}
 	outlist := []edgeproto.App{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Revision", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
