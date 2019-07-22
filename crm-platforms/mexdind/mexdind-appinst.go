@@ -1,6 +1,7 @@
 package mexdind
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
@@ -87,6 +88,10 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return err
 	}
 	return nil
+}
+
+func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Update not supported for dind")
 }
 
 func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {

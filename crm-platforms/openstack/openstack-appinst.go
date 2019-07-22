@@ -281,6 +281,23 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	}
 }
 
+func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	switch deployment := app.Deployment; deployment {
+	case cloudcommon.AppDeploymentTypeKubernetes:
+		client, err := s.GetPlatformClient(clusterInst)
+		if err != nil {
+			return err
+		}
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		if err != nil {
+			return fmt.Errorf("get kube names failed: %s", err)
+		}
+		return k8smgmt.UpdateAppInst(client, names, app, appInst)
+	default:
+		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
+	}
+}
+
 func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 
 	client, err := s.GetPlatformClient(clusterInst)
