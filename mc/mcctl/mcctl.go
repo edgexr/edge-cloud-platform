@@ -21,9 +21,9 @@ func main() {
 	rootCmd.AddCommand(ormctl.GetOrgCommand())
 	rootCmd.AddCommand(ormctl.GetControllerCommand())
 	rootCmd.AddCommand(ormctl.GetAllDataCommand())
-	ctrls := ormctl.GetCtrlCommand()
-	ctrls.AddCommand(ormctl.GetRunCommandCmd())
-	rootCmd.AddCommand(ctrls)
+	regionCmds := ormctl.GetRegionCommand()
+	regionCmds.AddCommand(ormctl.GetRunCommandCmd())
+	rootCmd.AddCommand(regionCmds)
 	rootCmd.AddCommand(ormctl.GetConfigCommand())
 
 	rootCmd.PersistentFlags().StringVar(&ormctl.Addr, "addr", "http://127.0.0.1:9900", "MC address")

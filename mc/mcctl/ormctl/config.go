@@ -15,6 +15,10 @@ func GetConfigCommand() *cobra.Command {
 		Use:       "show",
 		ReplyData: &ormapi.Config{},
 		Path:      "/auth/config/show",
+	}, &Command{
+		Use:       "version",
+		ReplyData: &ormapi.Version{},
+		Path:      "/auth/config/version",
 	}}
 	return genGroup("config", "admin config", cmds)
 }

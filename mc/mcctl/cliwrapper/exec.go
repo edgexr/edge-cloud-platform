@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Client) RunCommandOut(uri, token string, in *ormapi.RegionExecRequest) (string, error) {
-	args := []string{"ctrl", "RunCommand"}
+	args := []string{"region", "RunCommand"}
 	var out string
 	noconfig := strings.Split("Offer,Answer,Err", ",")
 	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

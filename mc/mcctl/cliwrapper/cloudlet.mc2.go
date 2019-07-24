@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "CreateCloudlet"}
+	args := []string{"region", "CreateCloudlet"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
@@ -34,7 +34,7 @@ func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 }
 
 func (s *Client) DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "DeleteCloudlet"}
+	args := []string{"region", "DeleteCloudlet"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
@@ -46,7 +46,7 @@ func (s *Client) DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 }
 
 func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "UpdateCloudlet"}
+	args := []string{"region", "UpdateCloudlet"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
@@ -57,7 +57,7 @@ func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 }
 
 func (s *Client) ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Cloudlet, int, error) {
-	args := []string{"ctrl", "ShowCloudlet"}
+	args := []string{"region", "ShowCloudlet"}
 	outlist := []edgeproto.Cloudlet{}
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
@@ -68,7 +68,7 @@ func (s *Client) ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]e
 }
 
 func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
-	args := []string{"ctrl", "ShowCloudletInfo"}
+	args := []string{"region", "ShowCloudletInfo"}
 	outlist := []edgeproto.CloudletInfo{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

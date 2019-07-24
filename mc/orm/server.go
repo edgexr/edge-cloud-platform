@@ -10,8 +10,11 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/version"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
 )
@@ -213,6 +216,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/artifactory/resync", ArtifactoryResync)
 	auth.POST("/config/update", UpdateConfig)
 	auth.POST("/config/show", ShowConfig)
+	auth.POST("/config/version", ShowVersion)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
 	addControllerApis(auth)
 	// Metrics api route use auth to serve a query to influxDB
@@ -278,4 +282,21 @@ func (s *Server) Stop() {
 	if s.vault != nil {
 		s.vault.StopLocal()
 	}
+}
+
+func ShowVersion(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionView) {
+		return echo.ErrForbidden
+	}
+	ver := ormapi.Version{
+		BuildMaster: version.BuildMaster,
+		BuildHead:   version.BuildHead,
+		BuildAuthor: version.BuildAuthor,
+		Hostname:    cloudcommon.Hostname(),
+	}
+	return c.JSON(http.StatusOK, ver)
 }

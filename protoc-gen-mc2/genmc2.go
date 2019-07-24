@@ -509,7 +509,7 @@ var {{.MethodName}}Cmd = &Command{
 var tmplMethodCliWrapper = `
 {{- if .Outstream}}
 func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) ([]edgeproto.{{.OutName}}, int, error) {
-	args := []string{"ctrl", "{{.MethodName}}"}
+	args := []string{"region", "{{.MethodName}}"}
 	outlist := []edgeproto.{{.OutName}}{}
 	noconfig := strings.Split("{{.NoConfig}}", ",")
 	ops := []runOp{
@@ -523,7 +523,7 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 }
 {{- else}}
 func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}) (edgeproto.{{.OutName}}, int, error) {
-	args := []string{"ctrl", "{{.MethodName}}"}
+	args := []string{"region", "{{.MethodName}}"}
 	out := edgeproto.{{.OutName}}{}
 	noconfig := strings.Split("{{.NoConfig}}", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
