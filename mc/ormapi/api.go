@@ -103,6 +103,13 @@ type Result struct {
 	Code    int    `json:"code,omitempty"`
 }
 
+type Version struct {
+	BuildMaster string `json:"buildmaster,omitempty"`
+	BuildHead   string `json:"buildhead,omitempty"`
+	BuildAuthor string `json:"buildauthor,omitempty"`
+	Hostname    string `json:"hostname,omitempty"`
+}
+
 // Data struct sent back for streaming (chunked) commands.
 // Contains a data payload for incremental data, and a result
 // payload for an error result. Only one of the two will be used

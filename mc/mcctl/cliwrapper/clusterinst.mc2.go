@@ -22,7 +22,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "CreateClusterInst"}
+	args := []string{"region", "CreateClusterInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp,Status", ",")
 	ops := []runOp{
@@ -34,7 +34,7 @@ func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 }
 
 func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "DeleteClusterInst"}
+	args := []string{"region", "DeleteClusterInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp,Status", ",")
 	ops := []runOp{
@@ -46,7 +46,7 @@ func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterIn
 }
 
 func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "UpdateClusterInst"}
+	args := []string{"region", "UpdateClusterInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp,Status", ",")
 	ops := []runOp{
@@ -58,7 +58,7 @@ func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 }
 
 func (s *Client) ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.ClusterInst, int, error) {
-	args := []string{"ctrl", "ShowClusterInst"}
+	args := []string{"region", "ShowClusterInst"}
 	outlist := []edgeproto.ClusterInst{}
 	noconfig := strings.Split("Liveness,Auto,MasterFlavor,NodeFlavor,AllocatedIp,Status", ",")
 	ops := []runOp{

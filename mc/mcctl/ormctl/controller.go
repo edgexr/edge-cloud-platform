@@ -24,12 +24,13 @@ func GetControllerCommand() *cobra.Command {
 	return genGroup("controller", "register country controllers", cmds)
 }
 
-func GetCtrlCommand() *cobra.Command {
+func GetRegionCommand() *cobra.Command {
 	cmds := []*Command{}
 	cmds = append(cmds, FlavorApiCmds...)
 	cmds = append(cmds, CloudletApiCmds...)
 	cmds = append(cmds, ClusterInstApiCmds...)
 	cmds = append(cmds, AppApiCmds...)
 	cmds = append(cmds, AppInstApiCmds...)
-	return genGroup("ctrl", "manage controller objects", cmds)
+	cmds = append(cmds, NodeApiCmds...)
+	return genGroup("region", "manage region data", cmds)
 }

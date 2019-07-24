@@ -24,7 +24,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "CreateAppInst"}
+	args := []string{"region", "CreateAppInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt,Status,Revision", ",")
 	ops := []runOp{
@@ -36,7 +36,7 @@ func (s *Client) CreateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 }
 
 func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "DeleteAppInst"}
+	args := []string{"region", "DeleteAppInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt,Status,Revision", ",")
 	ops := []runOp{
@@ -48,7 +48,7 @@ func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 }
 
 func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
-	args := []string{"ctrl", "UpdateAppInst"}
+	args := []string{"region", "UpdateAppInst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt,Status,Revision", ",")
 	ops := []runOp{
@@ -60,7 +60,7 @@ func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 }
 
 func (s *Client) ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.AppInst, int, error) {
-	args := []string{"ctrl", "ShowAppInst"}
+	args := []string{"region", "ShowAppInst"}
 	outlist := []edgeproto.AppInst{}
 	noconfig := strings.Split("CloudletLoc,MappedPorts,Liveness,ClusterInstKey.CloudletKey,CreatedAt,Status,Revision", ",")
 	ops := []runOp{
