@@ -389,3 +389,9 @@ replace github.com/uber/prototool => github.com/uber/prototool v1.8.1
 replace github.com/pseudomuto/protoc-gen-doc => github.com/pseudomuto/protoc-gen-doc v1.3.0
 
 replace golang.org/x/sys => golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7
+
+replace github.com/opentracing/opentracing-go => github.com/opentracing/opentracing-go v1.1.0
+
+replace github.com/uber/jaeger-client-go => github.com/uber/jaeger-client-go v2.16.1-0.20190705220040-402bec9e6ead+incompatible
+
+replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.0.0+incompatible

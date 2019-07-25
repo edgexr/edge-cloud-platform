@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -60,7 +61,7 @@ var pf platform.Platform
 
 var sigChan chan os.Signal
 
-func appInstCb(old *edgeproto.AppInst, new *edgeproto.AppInst) {
+func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	var port int32
 	//check for prometheus
 	if new.Key.AppKey.Name != MEXPrometheusAppName {
@@ -127,6 +128,9 @@ func getPlatform() (platform.Platform, error) {
 func main() {
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
+	log.InitTracer()
+	defer log.FinishTracer()
+	span := log.StartSpan(log.DebugLevelInfo, "main")
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
 	log.DebugLog(log.DebugLevelMetrics, "Metrics collection", "interval", collectInterval)
@@ -158,6 +162,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt)
 
 	log.DebugLog(log.DebugLevelMetrics, "Ready")
+	span.Finish()
 
 	// wait until process in killed/interrupted
 	sig := <-sigChan

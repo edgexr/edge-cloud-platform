@@ -178,6 +178,7 @@ var AppOptionalArgs = []string{
 	"configs.config",
 	"scalewithcluster",
 	"internalports",
+	"officialfqdn",
 }
 var AppAliasArgs = []string{
 	"developer=app.key.developerkey.name",
@@ -201,4 +202,5 @@ var AppAliasArgs = []string{
 	"scalewithcluster=app.scalewithcluster",
 	"internalports=app.internalports",
 	"revision=app.revision",
+	"officialfqdn=app.officialfqdn",
 }

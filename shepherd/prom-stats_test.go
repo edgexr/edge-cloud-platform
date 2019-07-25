@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -160,7 +162,7 @@ var testPayloadData = map[string]string{
 		}`,
 }
 
-func testMetricSend(metric *edgeproto.Metric) bool {
+func testMetricSend(ctx context.Context, metric *edgeproto.Metric) bool {
 	testMetricSent = 1
 	return true
 }
@@ -175,6 +177,10 @@ func getTestMetrics(addr string, query string) (*PromResp, error) {
 }
 
 func TestPromStats(t *testing.T) {
+	log.InitTracer()
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	testAppKey := MetricAppInstKey{
 		operator:  "testoper",
 		cloudlet:  "testcloudlet",
@@ -232,6 +238,6 @@ func TestPromStats(t *testing.T) {
 
 	// Check callback is called
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ClusterStatToMetrics(testPromStats)[0])
+	testPromStats.send(ctx, ClusterStatToMetrics(testPromStats)[0])
 	assert.Equal(t, int(1), testMetricSent)
 }
