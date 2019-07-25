@@ -78,7 +78,7 @@ install-internal-linux:
 # Test
 #
 
-UNIT_TEST_LOG = /tmp/edge-cloud-infra-unit-test.log
+UNIT_TEST_LOG ?= /tmp/edge-cloud-infra-unit-test.log
 
 unit-test:
 	go test ./... > $(UNIT_TEST_LOG) || !(grep FAIL $(UNIT_TEST_LOG))
