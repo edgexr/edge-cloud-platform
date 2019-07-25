@@ -27,7 +27,6 @@ type Sql struct {
 type Shepherd struct {
 	process.Common `yaml:",inline"`
 	NotifyAddrs    string
-	InfluxAddr     string
 	Interval       string
 	Platform       string
 	VaultAddr      string

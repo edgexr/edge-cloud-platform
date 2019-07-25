@@ -89,21 +89,3 @@ vault write auth/approle/role/mexenv period="720h" policies="mexenv"
 # get mexenv app roleID and generate secretID
 vault read auth/approle/role/mexenv/role-id
 vault write -f auth/approle/role/mexenv/secret-id
-
-# shepherd approle
-# This has access to all influxdb accounts
-cat >/tmp/shepherd-pol.hcl <<EOF
-path "auth/approle/login" {
-  capabilities = [ "create", "read" ]
-}
-
-path "secret/data/+/accounts/influxdb" {
-  capabilities = [ "read" ]
-}
-EOF
-vault policy write shepherd /tmp/shepherd-pol.hcl
-rm /tmp/shepherd-pol.hcl
-vault write auth/approle/role/shepherd period="720h" policies="shepherd"
-# get shepherd app roleID and generate secretID
-vault read auth/approle/role/shepherd/role-id
-vault write -f auth/approle/role/shepherd/secret-id

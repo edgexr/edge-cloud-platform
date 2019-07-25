@@ -160,8 +160,9 @@ var testPayloadData = map[string]string{
 		}`,
 }
 
-func testMetricSend(metric *edgeproto.Metric) {
+func testMetricSend(metric *edgeproto.Metric) bool {
 	testMetricSent = 1
+	return true
 }
 
 func getTestMetrics(addr string, query string) (*PromResp, error) {
