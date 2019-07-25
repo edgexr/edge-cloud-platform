@@ -17,6 +17,7 @@ import (
 // must implement the webrtc protocol.
 
 const runCommandRequiredArgs = "region command appname appvers developer cluster cloudlet operator"
+const runCommandOptionalArgs = "containerid"
 
 var runCommandAliasArgs = []string{
 	"appname=execrequest.appinstkey.appkey.name",
@@ -27,6 +28,7 @@ var runCommandAliasArgs = []string{
 	"cloudlet=execrequest.appinstkey.clusterinstkey.cloudletkey.name",
 	"operator=execrequest.appinstkey.clusterinstkey.cloudletkey.operatorkey.name",
 	"command=execrequest.command",
+	"containerid=execrequest.containerid",
 }
 
 func GetRunCommandCmd() *cobra.Command {
@@ -34,6 +36,7 @@ func GetRunCommandCmd() *cobra.Command {
 		Use:          "RunCommand",
 		RequiredArgs: runCommandRequiredArgs,
 		Run:          runExecRequest,
+		OptionalArgs: runCommandOptionalArgs,
 	})
 	return cmd
 }
