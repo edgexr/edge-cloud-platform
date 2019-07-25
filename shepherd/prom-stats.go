@@ -65,7 +65,7 @@ type PromStats struct {
 	interval     time.Duration
 	appStatsMap  map[MetricAppInstKey]*PodPromStat
 	clusterStat  *ClustPromStat
-	send         func(metric *edgeproto.Metric)
+	send         func(metric *edgeproto.Metric) bool
 	waitGrp      sync.WaitGroup
 	stop         chan struct{}
 	operatorName string
@@ -93,7 +93,7 @@ type PromLables struct {
 
 const platformClientHeaderSize = 3
 
-func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric), clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*PromStats, error) {
+func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*PromStats, error) {
 	var err error
 	p := PromStats{}
 	p.promAddr = promAddr
@@ -125,7 +125,6 @@ func outputTrim(output string) string {
 
 func getPromMetrics(addr string, query string, client pc.PlatformClient) (*PromResp, error) {
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
-
 	resp, err := client.Output("curl " + reqURI)
 	if err != nil {
 		errstr := fmt.Sprintf("Failed to run <%s>", reqURI)
