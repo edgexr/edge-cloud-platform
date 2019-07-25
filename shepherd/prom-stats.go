@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -65,7 +66,7 @@ type PromStats struct {
 	interval     time.Duration
 	appStatsMap  map[MetricAppInstKey]*PodPromStat
 	clusterStat  *ClustPromStat
-	send         func(metric *edgeproto.Metric) bool
+	send         func(ctx context.Context, metric *edgeproto.Metric) bool
 	waitGrp      sync.WaitGroup
 	stop         chan struct{}
 	operatorName string
@@ -93,7 +94,7 @@ type PromLables struct {
 
 const platformClientHeaderSize = 3
 
-func NewPromStats(promAddr string, interval time.Duration, send func(metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*PromStats, error) {
+func NewPromStats(promAddr string, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*PromStats, error) {
 	var err error
 	p := PromStats{}
 	p.promAddr = promAddr
@@ -380,17 +381,23 @@ func (p *PromStats) RunNotify() {
 			if p.CollectPromStats() != nil {
 				continue
 			}
-			log.DebugLog(log.DebugLevelMetrics, fmt.Sprintf("Sending metrics for (%s-%s)%s\n", p.operatorName, p.cloudletName, p.clusterName))
+			span := log.StartSpan(log.DebugLevelSampled, "send-metric")
+			span.SetTag("operator", p.operatorName)
+			span.SetTag("cloudlet", p.cloudletName)
+			span.SetTag("cluster", p.clusterName)
+			ctx := log.ContextWithSpan(context.Background(), span)
+
 			for key, stat := range p.appStatsMap {
 				appMetrics := PodStatToMetrics(&key, stat)
 				for _, metric := range appMetrics {
-					p.send(metric)
+					p.send(ctx, metric)
 				}
 			}
 			clusterMetrics := ClusterStatToMetrics(p)
 			for _, metric := range clusterMetrics {
-				p.send(metric)
+				p.send(ctx, metric)
 			}
+			span.Finish()
 		case <-p.stop:
 			done = true
 		}
