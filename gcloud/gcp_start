@@ -1,0 +1,17 @@
+#!/bin/bash 
+
+if  [ $# -ne 1 ]
+then
+   echo "first argument to the script should be name of the vm to be started."
+   exit 1
+fi
+vm=$1
+
+
+
+status=`gcloud compute instances list --filter="name=($vm)" --format "value(status)"`
+
+if [ "$status" != "RUNNING" ]
+then
+      gcloud compute instances start $vm --async
+fi
