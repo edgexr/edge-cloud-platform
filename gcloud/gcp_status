@@ -1,0 +1,12 @@
+#!/bin/bash 
+
+if  [ $# -ne 1 ]
+then
+   echo "first argument to the script should be name of the vm you want to know the status of."
+   exit 1
+fi
+vm=$1
+
+
+
+gcloud compute instances list --filter="name=($vm)" --format "table(name,status)"
