@@ -28,6 +28,7 @@ func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
+		withStreamOutIncremental(),
 	}
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
@@ -51,6 +52,7 @@ func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,TimeLimits,Status", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
+		withStreamOutIncremental(),
 	}
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err

@@ -151,6 +151,10 @@ func CreateUser(c echo.Context) error {
 	}
 
 	gitlabCreateLDAPUser(&user)
+	if user.Name != DefaultSuperuser {
+		artifactoryCreateUser(&user, nil)
+	}
+
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
 		// just log in case of error
@@ -235,6 +239,7 @@ func DeleteUser(c echo.Context) error {
 		return setReply(c, dbErr(err), nil)
 	}
 	gitlabDeleteLDAPUser(user.Name)
+	artifactoryDeleteUser(user.Name)
 
 	return c.JSON(http.StatusOK, Msg("user deleted"))
 }

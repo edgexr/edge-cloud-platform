@@ -179,6 +179,7 @@ var AppOptionalArgs = []string{
 	"scalewithcluster",
 	"internalports",
 	"officialfqdn",
+	"md5sum",
 }
 var AppAliasArgs = []string{
 	"developer=app.key.developerkey.name",
@@ -203,4 +204,5 @@ var AppAliasArgs = []string{
 	"internalports=app.internalports",
 	"revision=app.revision",
 	"officialfqdn=app.officialfqdn",
+	"md5sum=app.md5sum",
 }

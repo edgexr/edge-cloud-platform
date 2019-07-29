@@ -23,14 +23,15 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateCloudletCmd = &Command{
-	Use:          "CreateCloudlet",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
-	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
-	ReqData:      &ormapi.RegionCloudlet{},
-	ReplyData:    &edgeproto.Result{},
-	Path:         "/auth/ctrl/CreateCloudlet",
-	StreamOut:    true,
+	Use:                  "CreateCloudlet",
+	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
+	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	ReqData:              &ormapi.RegionCloudlet{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/CreateCloudlet",
+	StreamOut:            true,
+	StreamOutIncremental: true,
 }
 
 var DeleteCloudletCmd = &Command{
@@ -46,14 +47,15 @@ var DeleteCloudletCmd = &Command{
 }
 
 var UpdateCloudletCmd = &Command{
-	Use:          "UpdateCloudlet",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
-	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
-	ReqData:      &ormapi.RegionCloudlet{},
-	ReplyData:    &edgeproto.Result{},
-	Path:         "/auth/ctrl/UpdateCloudlet",
-	StreamOut:    true,
+	Use:                  "UpdateCloudlet",
+	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
+	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	ReqData:              &ormapi.RegionCloudlet{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateCloudlet",
+	StreamOut:            true,
+	StreamOutIncremental: true,
 }
 
 var ShowCloudletCmd = &Command{
