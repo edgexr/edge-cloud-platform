@@ -26,14 +26,23 @@ func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto
 	if auth.AuthType != cloudcommon.BasicAuth {
 		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
 	}
-
+	// Note: docker-server must contain port if imagepath contains port,
+	// otherwise imagepullsecrets won't work.
+	// Also secret name includes port in case multiple docker registries
+	// are running on different ports on the same host.
+	secretName := auth.Hostname
+	dockerServer := auth.Hostname
+	if auth.Port != "" {
+		secretName = auth.Hostname + "-" + auth.Port
+		dockerServer = auth.Hostname + ":" + auth.Port
+	}
 	// Note that the registry secret name must be per-app, since a developer
 	// may put multiple apps in the same ClusterInst and they may come
 	// from different registries.
 	cmd := fmt.Sprintf("kubectl create secret docker-registry %s "+
 		"--docker-server=%s --docker-username=%s --docker-password=%s "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
-		auth.Hostname, auth.Hostname, auth.Username, auth.Password,
+		secretName, dockerServer, auth.Username, auth.Password,
 		k8smgmt.GetKconfName(clusterInst))
 	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "cmd", cmd)
 	out, err = client.Output(cmd)
