@@ -24,7 +24,6 @@ func TestLDAPServer(t *testing.T) {
 		IgnoreEnv:       true,
 		LDAPAddr:        "127.0.0.1:9389",
 		SkipVerifyEmail: true,
-		Tag:             "mc-ut",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -90,8 +89,8 @@ func TestLDAPServer(t *testing.T) {
 	memberOfEntries := sr.Entries[0].GetAttributeValues("memberOf")
 	sort.Strings(memberOfEntries)
 	require.Equal(t, len(memberOfEntries), 2, "num of memberOf entries")
-	require.Equal(t, memberOfEntries[0], "cn=bigorg1,ou=orgs,dc=mc-ut", "memberOf bigorg1")
-	require.Equal(t, memberOfEntries[1], "cn=bigorg2,ou=orgs,dc=mc-ut", "memberOf bigorg2")
+	require.Equal(t, memberOfEntries[0], "cn=bigorg1,ou=orgs", "memberOf bigorg1")
+	require.Equal(t, memberOfEntries[1], "cn=bigorg2,ou=orgs", "memberOf bigorg2")
 
 	// Expect Count: 1 (2 orgs)
 	ldapSearchCheck(t, l, "cn=gitlab,ou=users", "gitlab", "", "(objectClass=groupOfUniqueNames)", 2)
@@ -101,9 +100,6 @@ func TestLDAPServer(t *testing.T) {
 
 	// Expect Count: 2 (2 orgs, as worker2 belongs to 2 orgs: bigorg1,bigorg2)
 	ldapSearchCheck(t, l, "cn=orgman1,ou=users", "orgman1-password", "ou=orgs", "(&(objectClass=groupOfUniqueNames)(|(uniqueMember=cn=worker2,ou=users)(uniqueMember=worker2)))", 2)
-
-	// Expect Count: 7 (1 admin entry + 4 users + 2 orgs)
-	ldapSearchCheck(t, l, "cn=worker1,ou=users", "worker1-password", "dc=mc-ut", "(objectClass=*)", 7)
 }
 
 func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, filter string, numEntries int) *ldap.SearchResult {

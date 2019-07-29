@@ -26,7 +26,6 @@ var gitlabAddr = flag.String("gitlabAddr", "http://127.0.0.1:80", "Gitlab server
 var artifactoryAddr = flag.String("artifactoryAddr", "http://127.0.0.1:80", "Artifactory server address")
 var pingInterval = flag.Duration("pingInterval", 20*time.Second, "SQL database ping keep-alive interval")
 var skipVerifyEmail = flag.Bool("skipVerifyEmail", false, "skip email verification, for testing only")
-var tag = flag.String("tag", "mc", "Tag to identify mc server")
 
 var sigChan chan os.Signal
 
@@ -50,7 +49,6 @@ func main() {
 		ClientCert:      *clientCert,
 		PingInterval:    *pingInterval,
 		SkipVerifyEmail: *skipVerifyEmail,
-		Tag:             *tag,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

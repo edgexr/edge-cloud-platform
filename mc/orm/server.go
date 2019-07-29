@@ -47,7 +47,6 @@ type ServerConfig struct {
 	ClientCert      string
 	PingInterval    time.Duration
 	SkipVerifyEmail bool
-	Tag             string
 }
 
 var DefaultDBUser = "mcuser"
