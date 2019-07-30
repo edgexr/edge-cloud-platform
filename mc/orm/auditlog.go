@@ -131,7 +131,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 
 			} else {
 				kvs = append(kvs, "resp")
-				kvs = append(kvs, resBody)
+				kvs = append(kvs, string(resBody))
 			}
 		}
 		kvs = append(kvs, "took")
