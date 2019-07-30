@@ -293,6 +293,12 @@ func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 		return k8smgmt.UpdateAppInst(client, names, app, appInst)
+	case cloudcommon.AppDeploymentTypeDocker:
+		client, err := s.GetPlatformClient(clusterInst)
+		if err != nil {
+			return err
+		}
+		return dockermgmt.UpdateAppInst(client, app, appInst)
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
 	}
