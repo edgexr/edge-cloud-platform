@@ -1,17 +1,19 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
 	"google.golang.org/grpc"
 )
 
-func connectController(region string) (*grpc.ClientConn, error) {
-	addr, err := getControllerAddrForRegion(region)
+func connectController(ctx context.Context, region string) (*grpc.ClientConn, error) {
+	addr, err := getControllerAddrForRegion(ctx, region)
 	if err != nil {
 		return nil, err
 	}
@@ -23,24 +25,28 @@ func connectControllerAddr(addr string) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return grpc.Dial(addr, dialOption)
+	return grpc.Dial(addr, dialOption,
+		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
+		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),
+	)
 }
 
-func getControllerAddrForRegion(region string) (string, error) {
-	ctrl, err := getControllerObj(region)
+func getControllerAddrForRegion(ctx context.Context, region string) (string, error) {
+	ctrl, err := getControllerObj(ctx, region)
 	if err != nil {
 		return "", err
 	}
 	return ctrl.Address, nil
 }
 
-func getControllerObj(region string) (*ormapi.Controller, error) {
+func getControllerObj(ctx context.Context, region string) (*ormapi.Controller, error) {
 	if region == "" {
 		return nil, fmt.Errorf("no region specified")
 	}
 	ctrl := ormapi.Controller{
 		Region: region,
 	}
+	db := loggedDB(ctx)
 	res := db.Where(&ctrl).First(&ctrl)
 	if res.Error != nil {
 		if res.RecordNotFound() {
@@ -56,15 +62,17 @@ func CreateController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid Post data"))
 	}
-	err = CreateControllerObj(claims, &ctrl)
+	err = CreateControllerObj(ctx, claims, &ctrl)
 	return setReply(c, err, Msg("Controller registered"))
 }
 
-func CreateControllerObj(claims *UserClaims, ctrl *ormapi.Controller) error {
+func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
 	if ctrl.Region == "" {
 		return fmt.Errorf("Controller Region not specified")
 	}
@@ -74,6 +82,7 @@ func CreateControllerObj(claims *UserClaims, ctrl *ormapi.Controller) error {
 	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
 		return echo.ErrForbidden
 	}
+	db := loggedDB(ctx)
 	err := db.Create(ctrl).Error
 	if err != nil {
 		return dbErr(err)
@@ -86,18 +95,21 @@ func DeleteController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid Post data"))
 	}
-	err = DeleteControllerObj(claims, &ctrl)
+	err = DeleteControllerObj(ctx, claims, &ctrl)
 	return setReply(c, err, Msg("Controller deregistered"))
 }
 
-func DeleteControllerObj(claims *UserClaims, ctrl *ormapi.Controller) error {
+func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
 	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
 		return echo.ErrForbidden
 	}
+	db := loggedDB(ctx)
 	err := db.Delete(ctrl).Error
 	if err != nil {
 		return dbErr(err)
@@ -106,16 +118,18 @@ func DeleteControllerObj(claims *UserClaims, ctrl *ormapi.Controller) error {
 }
 
 func ShowController(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	ctrls, err := ShowControllerObj(claims)
+	ctrls, err := ShowControllerObj(ctx, claims)
 	return setReply(c, err, ctrls)
 }
 
-func ShowControllerObj(claims *UserClaims) ([]ormapi.Controller, error) {
+func ShowControllerObj(ctx context.Context, claims *UserClaims) ([]ormapi.Controller, error) {
 	ctrls := []ormapi.Controller{}
+	db := loggedDB(ctx)
 	err := db.Find(&ctrls).Error
 	if err != nil {
 		return nil, dbErr(err)

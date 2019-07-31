@@ -32,6 +32,9 @@ var sigChan chan os.Signal
 func main() {
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
+	log.InitTracer()
+	defer log.FinishTracer()
+
 	sigChan = make(chan os.Signal, 1)
 
 	config := orm.ServerConfig{

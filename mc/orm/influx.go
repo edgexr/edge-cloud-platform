@@ -2,6 +2,7 @@ package orm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -52,8 +53,8 @@ func init() {
 	influxDBTemplate = template.Must(template.New("influxquery").Parse(influDBT))
 }
 
-func connectInfluxDB(region string) (influxdb.Client, error) {
-	addr, err := getInfluxDBAddrForRegion(region)
+func connectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
+	addr, err := getInfluxDBAddrForRegion(ctx, region)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func connectInfluxDB(region string) (influxdb.Client, error) {
 		Username: creds.User,
 		Password: creds.Pass,
 	})
-	log.DebugLog(log.DebugLevelMetrics, "connecting to influxdb",
+	log.SpanLog(ctx, log.DebugLevelMetrics, "connecting to influxdb",
 		"addr", addr, "err", err)
 	if err != nil {
 		return nil, err
@@ -76,8 +77,8 @@ func connectInfluxDB(region string) (influxdb.Client, error) {
 
 }
 
-func getInfluxDBAddrForRegion(region string) (string, error) {
-	ctrl, err := getControllerObj(region)
+func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error) {
+	ctrl, err := getControllerObj(ctx, region)
 	if err != nil {
 		return "", err
 	}
@@ -149,9 +150,9 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, selectorStr strin
 
 // TODO: This function should be a streaming fucntion, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
-func metricsStream(rc *InfluxDBContext, dbQuery string, cb func(Data interface{})) error {
+func metricsStream(ctx context.Context, rc *InfluxDBContext, dbQuery string, cb func(Data interface{})) error {
 	if rc.conn == nil {
-		conn, err := connectInfluxDB(rc.region)
+		conn, err := connectInfluxDB(ctx, rc.region)
 		if err != nil {
 			return err
 		}
@@ -170,7 +171,7 @@ func metricsStream(rc *InfluxDBContext, dbQuery string, cb func(Data interface{}
 	}
 	resp, err := rc.conn.Query(query)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMetrics, "InfluxDB query failed",
+		log.SpanLog(ctx, log.DebugLevelMetrics, "InfluxDB query failed",
 			"query", query, "resp", resp, "err", err)
 		// We return a different error, as we don't want to expose a URL-encoded query to influxDB
 		return fmt.Errorf("Connection to InfluxDB failed")
@@ -227,6 +228,7 @@ func GetMetricsCommon(c echo.Context) error {
 		return err
 	}
 	rc.claims = claims
+	ctx := GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
@@ -267,7 +269,7 @@ func GetMetricsCommon(c echo.Context) error {
 	}
 
 	wroteHeader := false
-	err = metricsStream(rc, cmd, func(res interface{}) {
+	err = metricsStream(ctx, rc, cmd, func(res interface{}) {
 		if !wroteHeader {
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			c.Response().WriteHeader(http.StatusOK)

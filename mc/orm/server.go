@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,7 +24,7 @@ import (
 type Server struct {
 	config       *ServerConfig
 	sql          *intprocess.Sql
-	db           *gorm.DB
+	database     *gorm.DB
 	echo         *echo.Echo
 	vault        *process.Vault
 	stopInitData bool
@@ -55,7 +56,7 @@ var DefaultDBPass = ""
 var DefaultSuperuser = "mexadmin"
 var DefaultSuperpass = "mexadmin123"
 
-var db *gorm.DB
+var database *gorm.DB
 var enforcer *casbin.SyncedEnforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
@@ -68,6 +69,10 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
 	// keep global pointer to config stored in server for easy access
 	serverConfig = server.config
+
+	span := log.StartSpan(log.DebugLevelInfo, "main")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
 
 	dbuser := os.Getenv("db_username")
 	dbpass := os.Getenv("db_password")
@@ -158,15 +163,15 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		server.sql = &sql
 	}
 
-	initdb, adapter, err := InitSql(config.SqlAddr, dbuser, dbpass, dbname)
+	initdb, adapter, err := InitSql(ctx, config.SqlAddr, dbuser, dbpass, dbname)
 	if err != nil {
 		return nil, fmt.Errorf("sql init failed, %s", err.Error())
 	}
-	db = initdb
-	server.db = db
+	database = initdb
+	server.database = database
 
 	server.initDataDone = make(chan struct{}, 1)
-	go InitData(superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
+	go InitData(ctx, superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -274,7 +279,7 @@ func (s *Server) WaitUntilReady() error {
 func (s *Server) Stop() {
 	s.stopInitData = true
 	s.echo.Close()
-	s.db.Close()
+	s.database.Close()
 	if s.sql != nil {
 		s.sql.StopLocal()
 	}

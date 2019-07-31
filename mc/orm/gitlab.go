@@ -1,16 +1,15 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	gitlab "github.com/xanzy/go-gitlab"
-	"go.uber.org/zap"
 )
 
 /*
@@ -46,7 +45,7 @@ EOS
 var LDAPProvider = "ldapmain"
 var DefaultProjectName = "images"
 
-func gitlabCreateLDAPUser(user *ormapi.User) {
+func gitlabCreateLDAPUser(ctx context.Context, user *ormapi.User) {
 	dn := ldapdn{
 		cn: user.Name,
 		ou: OUusers,
@@ -66,31 +65,31 @@ func gitlabCreateLDAPUser(user *ormapi.User) {
 	}
 	_, _, err := gitlabClient.Users.CreateUser(&opts)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab create user",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create user",
 			"user", user.Name, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 }
 
-func gitlabDeleteLDAPUser(username string) {
+func gitlabDeleteLDAPUser(ctx context.Context, username string) {
 	user, err := gitlabGetUser(username)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab get user",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab get user",
 			"user", username, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 	_, err = gitlabClient.Users.DeleteUser(user.ID)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab delete user",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab delete user",
 			"user", username, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 }
 
-func gitlabCreateGroup(org *ormapi.Organization) {
+func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 	name := util.GitlabGroupSanitize(org.Name)
 	groupOpts := gitlab.CreateGroupOptions{
 		Name:       &name,
@@ -104,7 +103,7 @@ func gitlabCreateGroup(org *ormapi.Organization) {
 	var err error
 	var grp *gitlab.Group
 	for ii := 0; ii < 20; ii++ {
-		log.DebugLog(log.DebugLevelApi, "gitlab create group", "data", groupOpts)
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create group", "data", groupOpts)
 		grp, _, err = gitlabClient.Groups.CreateGroup(&groupOpts)
 		if err != nil && strings.Contains(err.Error(), "path=>[\"has already been taken\"]") {
 			path := *groupOpts.Path + "_"
@@ -114,7 +113,7 @@ func gitlabCreateGroup(org *ormapi.Organization) {
 		break
 	}
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab create group",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create group",
 			"org", org, "name", name, "err", err)
 		gitlabSync.NeedsSync()
 		return
@@ -126,29 +125,29 @@ func gitlabCreateGroup(org *ormapi.Organization) {
 	}
 	_, _, err = gitlabClient.CustomAttribute.SetCustomGroupAttribute(grp.ID, attr)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab set group attr",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab set group attr",
 			"grp", grp, "attr", attr, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
-	gitlabCreateProject(grp.ID, DefaultProjectName)
+	gitlabCreateProject(ctx, grp.ID, DefaultProjectName)
 }
 
-func gitlabDeleteGroup(org *ormapi.Organization) {
+func gitlabDeleteGroup(ctx context.Context, org *ormapi.Organization) {
 	name := util.GitlabGroupSanitize(org.Name)
 	_, err := gitlabClient.Groups.DeleteGroup(name)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab delete group",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab delete group",
 			"org", org, "name", name, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 }
 
-func gitlabAddGroupMember(role *ormapi.Role) {
+func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role) {
 	user, err := gitlabGetUser(role.Username)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab get user",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab get user",
 			"user", role.Username, "err", err)
 		gitlabSync.NeedsSync()
 		return
@@ -166,17 +165,17 @@ func gitlabAddGroupMember(role *ormapi.Role) {
 	orgname := util.GitlabGroupSanitize(role.Org)
 	_, _, err = gitlabClient.GroupMembers.AddGroupMember(orgname, &opts)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab add group member",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab add group member",
 			"role", role, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 }
 
-func gitlabRemoveGroupMember(role *ormapi.Role) {
+func gitlabRemoveGroupMember(ctx context.Context, role *ormapi.Role) {
 	user, err := gitlabGetUser(role.Username)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab get user",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab get user",
 			"user", role.Username, "err", err)
 		gitlabSync.NeedsSync()
 		return
@@ -184,14 +183,14 @@ func gitlabRemoveGroupMember(role *ormapi.Role) {
 	orgname := util.GitlabGroupSanitize(role.Org)
 	_, err = gitlabClient.GroupMembers.RemoveGroupMember(orgname, user.ID)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab remove group member",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab remove group member",
 			"role", role, "err", err)
 		gitlabSync.NeedsSync()
 		return
 	}
 }
 
-func gitlabCreateProject(groupID int, name string) {
+func gitlabCreateProject(ctx context.Context, groupID int, name string) {
 	approvals := 0
 	opts := gitlab.CreateProjectOptions{
 		Name:                 &name,
@@ -200,7 +199,7 @@ func gitlabCreateProject(groupID int, name string) {
 	}
 	_, _, err := gitlabClient.Projects.CreateProject(&opts)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "gitlab create project",
+		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create project",
 			"opts", opts, "err", err)
 		gitlabSync.NeedsSync()
 		return
@@ -227,28 +226,29 @@ func gitlabGetUser(username string) (*gitlab.User, error) {
 // Wrap default http transport for logging
 type GitlabTransport struct {
 	Transport http.RoundTripper
-	slog      *zap.SugaredLogger
 }
 
 func NewGitlabTransport() *GitlabTransport {
-	logger, _ := zap.NewDevelopment(zap.AddCallerSkip(7))
-	defer logger.Sync()
+	// TODO: caller skip 7
 	return &GitlabTransport{
 		Transport: http.DefaultTransport,
-		slog:      logger.Sugar(),
 	}
 }
 
 func (s *GitlabTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	start := time.Now()
+	span := log.StartSpan(log.DebugLevelApi, "gitlab transport")
+	span.SetTag("url", req.URL)
+	span.SetTag("method", req.Method)
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
 	resp, err := s.transport().RoundTrip(req)
 	status := ""
 	if resp != nil {
 		status = resp.Status
 	}
-	log.DebugSLog(s.slog, log.DebugLevelApi, "Call gitlab",
-		"method", req.Method, "url", req.URL,
-		"status", status, "err", err, "took", time.Since(start))
+	log.SpanLog(ctx, log.DebugLevelApi, "Call gitlab",
+		"status", status, "err", err)
 	return resp, err
 }
 

@@ -331,8 +331,8 @@ func waitServerOnline(addr string) error {
 func dumpTables() {
 	users := []ormapi.User{}
 	orgs := []ormapi.Organization{}
-	db.Find(&users)
-	db.Find(&orgs)
+	database.Find(&users)
+	database.Find(&orgs)
 	for _, user := range users {
 		fmt.Printf("%v\n", user)
 	}

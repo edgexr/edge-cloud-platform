@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -20,15 +21,16 @@ func CreateOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	err = CreateOrgObj(claims, &org)
+	err = CreateOrgObj(ctx, claims, &org)
 	return setReply(c, err, Msg("Organization created"))
 }
 
-func CreateOrgObj(claims *UserClaims, org *ormapi.Organization) error {
+func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
 	if org.Name == "" {
 		return fmt.Errorf("Name not specified")
 	}
@@ -53,6 +55,7 @@ func CreateOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 		return fmt.Errorf("Phone number not specified")
 	}
 	org.AdminUsername = claims.Username
+	db := loggedDB(ctx)
 	err = db.Create(&org).Error
 	if err != nil {
 		return dbErr(err)
@@ -61,16 +64,16 @@ func CreateOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 	psub := getCasbinGroup(org.Name, claims.Username)
 	enforcer.AddGroupingPolicy(psub, role)
 
-	gitlabCreateGroup(org)
+	gitlabCreateGroup(ctx, org)
 	r := ormapi.Role{
 		Org:      org.Name,
 		Username: claims.Username,
 		Role:     role,
 	}
-	gitlabAddGroupMember(&r)
+	gitlabAddGroupMember(ctx, &r)
 
-	artifactoryCreateGroupObjects(org.Name)
-	artifactoryAddUserToGroup(&r)
+	artifactoryCreateGroupObjects(ctx, org.Name)
+	artifactoryAddUserToGroup(ctx, &r)
 
 	return nil
 }
@@ -80,15 +83,16 @@ func DeleteOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	err = DeleteOrgObj(claims, &org)
+	err = DeleteOrgObj(ctx, claims, &org)
 	return setReply(c, err, Msg("Organization deleted"))
 }
 
-func DeleteOrgObj(claims *UserClaims, org *ormapi.Organization) error {
+func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
 	if org.Name == "" {
 		return fmt.Errorf("Organization name not specified")
 	}
@@ -96,6 +100,7 @@ func DeleteOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 		return echo.ErrForbidden
 	}
 	// delete org
+	db := loggedDB(ctx)
 	err := db.Delete(&org).Error
 	if err != nil {
 		return dbErr(err)
@@ -111,23 +116,25 @@ func DeleteOrgObj(claims *UserClaims, org *ormapi.Organization) error {
 			enforcer.RemoveGroupingPolicy(grp[0], grp[1])
 		}
 	}
-	gitlabDeleteGroup(org)
-	artifactoryDeleteGroupObjects(org.Name)
+	gitlabDeleteGroup(ctx, org)
+	artifactoryDeleteGroupObjects(ctx, org.Name)
 	return nil
 }
 
 // Show Organizations that current user belongs to.
 func ShowOrg(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	orgs, err := ShowOrgObj(claims)
+	orgs, err := ShowOrgObj(ctx, claims)
 	return setReply(c, err, orgs)
 }
 
-func ShowOrgObj(claims *UserClaims) ([]ormapi.Organization, error) {
+func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization, error) {
 	orgs := []ormapi.Organization{}
+	db := loggedDB(ctx)
 	if enforcer.Enforce(claims.Username, "", ResourceUsers, ActionView) {
 		// super user, show all orgs
 		err := db.Find(&orgs).Error
@@ -156,10 +163,11 @@ func ShowOrgObj(claims *UserClaims) ([]ormapi.Organization, error) {
 	return orgs, nil
 }
 
-func GetAllOrgs() (map[string]*ormapi.Organization, error) {
+func GetAllOrgs(ctx context.Context) (map[string]*ormapi.Organization, error) {
 	orgsT := make(map[string]*ormapi.Organization)
 	orgs := []ormapi.Organization{}
 
+	db := loggedDB(ctx)
 	err := db.Find(&orgs).Error
 	if err != nil {
 		return orgsT, err

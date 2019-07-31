@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/log"
@@ -20,7 +21,7 @@ type AppStoreSync struct {
 	run          chan bool
 	needsSync    bool
 	appStoreType string
-	syncObjects  func()
+	syncObjects  func(ctx context.Context)
 }
 
 func AppStoreNewSync(appStoreType string) *AppStoreSync {
@@ -53,9 +54,14 @@ func (s *AppStoreSync) runThread() {
 		select {
 		case <-s.run:
 		}
-		log.DebugLog(log.DebugLevelApi, "AppStore Sync running", "AppStore", s.appStoreType)
+		span := log.StartSpan(log.DebugLevelApi, "appstore sync")
+		span.SetTag("type", s.appStoreType)
+		ctx := log.ContextWithSpan(context.Background(), span)
+
 		s.needsSync = false
-		s.syncObjects()
+		s.syncObjects(ctx)
+
+		span.Finish()
 	}
 }
 
@@ -70,7 +76,7 @@ func (s *AppStoreSync) wakeup() {
 	}
 }
 
-func (s *AppStoreSync) syncErr(err error) {
-	log.DebugLog(log.DebugLevelApi, "AppStore Sync failed", "AppStore", s.appStoreType, "err", err)
+func (s *AppStoreSync) syncErr(ctx context.Context, err error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "AppStore Sync failed", "AppStore", s.appStoreType, "err", err)
 	s.NeedsSync()
 }

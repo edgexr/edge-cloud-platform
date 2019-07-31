@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -13,12 +14,11 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
-	"go.uber.org/zap"
 )
 
 var retryInterval = 10 * time.Second
 
-func InitSql(addr, username, password, dbname string) (*gorm.DB, persist.Adapter, error) {
+func InitSql(ctx context.Context, addr, username, password, dbname string) (*gorm.DB, persist.Adapter, error) {
 	hostport := strings.Split(addr, ":")
 	if len(hostport) != 2 {
 		return nil, nil, fmt.Errorf("Invalid postgres address format %s", addr)
@@ -30,7 +30,7 @@ func InitSql(addr, username, password, dbname string) (*gorm.DB, persist.Adapter
 	var err error
 	db, err := gorm.Open("postgres", psqlInfo)
 	if err != nil {
-		log.InfoLog("init sql", "host", hostport[0], "port", hostport[1],
+		log.SpanLog(ctx, log.DebugLevelInfo, "init sql", "host", hostport[0], "port", hostport[1],
 			"dbname", dbname, "err", err)
 		return nil, nil, err
 	}
@@ -38,18 +38,19 @@ func InitSql(addr, username, password, dbname string) (*gorm.DB, persist.Adapter
 	dbSpecified := true
 	adapter := gormadapter.NewAdapter("postgres", psqlInfo, dbSpecified)
 
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
-	db.SetLogger(&sqlLogger{logger.Sugar()})
+	// Without a span defined on this context, any code path that
+	// fails to call loggedDB() will panic (intentionally).
+	db.SetLogger(&sqlLogger{context.Background()})
 	db.LogMode(true)
 
 	return db, &adapterLogger{adapter}, nil
 }
 
-func InitData(superuser, superpass string, pingInterval time.Duration, stop *bool, done chan struct{}) {
-	if db == nil {
+func InitData(ctx context.Context, superuser, superpass string, pingInterval time.Duration, stop *bool, done chan struct{}) {
+	if database == nil {
 		log.FatalLog("db not initialized")
 	}
+	db := loggedDB(ctx)
 	first := true
 	for {
 		if *stop {
@@ -64,39 +65,49 @@ func InitData(superuser, superpass string, pingInterval time.Duration, stop *boo
 		err := db.AutoMigrate(&ormapi.User{}, &ormapi.Organization{},
 			&ormapi.Controller{}, &ormapi.Config{}).Error
 		if err != nil {
-			log.DebugLog(log.DebugLevelApi, "automigrate", "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
 			continue
 		}
 		// create initial database data
-		err = InitRolePerms()
+		err = InitRolePerms(ctx)
 		if err != nil {
-			log.DebugLog(log.DebugLevelApi, "init roles", "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "init roles", "err", err)
 			continue
 		}
-		err = InitAdmin(superuser, superpass)
+		err = InitAdmin(ctx, superuser, superpass)
 		if err != nil {
-			log.DebugLog(log.DebugLevelApi, "init admin", "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "init admin", "err", err)
 			continue
 		}
-		err = InitConfig()
+		err = InitConfig(ctx)
 		if err != nil {
-			log.DebugLog(log.DebugLevelApi, "init config", "err", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "init config", "err", err)
 			continue
 		}
-		log.DebugLog(log.DebugLevelApi, "init data done")
+		log.SpanLog(ctx, log.DebugLevelApi, "init data done")
 		break
 	}
 	go func() {
 		for {
 			time.Sleep(pingInterval)
-			db.DB().Ping()
+			database.DB().Ping()
 		}
 	}()
 	close(done)
 }
 
+// Unfortunately the logger interface used by gorm does not
+// allow any context to be passed in, so each function that
+// calls into the DB must first convert it to a loggedDB.
+func loggedDB(ctx context.Context) *gorm.DB {
+	db := database.New() // clone
+	db.SetLogger(&sqlLogger{ctx})
+	db.LogMode(true)
+	return db
+}
+
 type sqlLogger struct {
-	slog *zap.SugaredLogger
+	ctx context.Context
 }
 
 func (s *sqlLogger) Print(v ...interface{}) {
@@ -113,18 +124,14 @@ func (s *sqlLogger) Print(v ...interface{}) {
 		kvs = append(kvs, v[4])
 		kvs = append(kvs, "rows-affected")
 		kvs = append(kvs, v[5])
-		kvs = append(kvs, "lineno")
-		kvs = append(kvs, v[1])
 		kvs = append(kvs, "took")
 		kvs = append(kvs, v[2])
 		msg = "Call sql"
 	default:
 		kvs = append(kvs, "vals")
 		kvs = append(kvs, v[2:])
-		kvs = append(kvs, "lineno")
-		kvs = append(kvs, v[1])
 	}
-	log.DebugSLog(s.slog, log.DebugLevelApi, msg, kvs...)
+	log.SpanLog(s.ctx, log.DebugLevelApi, msg, kvs...)
 }
 
 type adapterLogger struct {

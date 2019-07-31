@@ -2,6 +2,7 @@ package orm
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"html/template"
@@ -97,12 +98,12 @@ Subject: {{.Subject}}
 {{.Message}}
 `
 
-func sendNotify(to, subject, message string) error {
-	noreply, err := getNoreply()
+func sendNotify(ctx context.Context, to, subject, message string) error {
+	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelApi, "send notify email",
+	log.SpanLog(ctx, log.DebugLevelApi, "send notify email",
 		"from", noreply.Email, "to", to, "subject", subject)
 	arg := notifyTmplArg{
 		From:    noreply.Email,
@@ -139,11 +140,11 @@ Thanks!
 MobiledgeX Team
 `
 
-func sendVerifyEmail(username string, req *ormapi.EmailRequest) error {
+func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequest) error {
 	if serverConfig.SkipVerifyEmail {
 		return nil
 	}
-	noreply, err := getNoreply()
+	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
 	}
@@ -178,7 +179,7 @@ func sendVerifyEmail(username string, req *ormapi.EmailRequest) error {
 	if err := welcomeTmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelApi, "send verify email",
+	log.SpanLog(ctx, log.DebugLevelApi, "send verify email",
 		"from", noreply.Email, "to", req.Email)
 	return sendEmail(noreply, req.Email, &buf)
 }
@@ -189,8 +190,8 @@ type emailAccount struct {
 	Smtp  string `json:"smtp"`
 }
 
-func getNoreply() (*emailAccount, error) {
-	log.DebugLog(log.DebugLevelApi, "lookup Vault email account")
+func getNoreply(ctx context.Context) (*emailAccount, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "lookup Vault email account")
 	noreply := emailAccount{}
 	err := vault.GetData(serverConfig.VaultAddr, roleID, secretID,
 		"/secret/data/accounts/noreplyemail", 0, &noreply)
@@ -284,8 +285,8 @@ User {{.Admin}} has added you ({{.Email}}) to Organization {{.Org}}! Resources a
 MobiledgeX Team
 `
 
-func sendAddedEmail(admin, name, email, org, role string) error {
-	noreply, err := getNoreply()
+func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) error {
+	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
 	}
@@ -301,7 +302,7 @@ func sendAddedEmail(admin, name, email, org, role string) error {
 	if err := addedTmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelApi, "send added email",
+	log.SpanLog(ctx, log.DebugLevelApi, "send added email",
 		"from", noreply.Email, "to", email)
 	return sendEmail(noreply, email, &buf)
 }
