@@ -30,7 +30,7 @@ type PodPromStat struct {
 	cpuTS     *types.Timestamp
 	mem       uint64
 	memTS     *types.Timestamp
-	disk      float64
+	disk      uint64
 	diskTS    *types.Timestamp
 	netSend   uint64
 	netSendTS *types.Timestamp
@@ -187,6 +187,23 @@ func (p *PromStats) CollectPromStats() error {
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
 				stat.mem = val
+			}
+		}
+	}
+	// Get Pod Disk usage
+	resp, err = getPromMetrics(p.promAddr, promQDiskPod, p.client)
+	if err == nil && resp.Status == "success" {
+		for _, metric := range resp.Data.Result {
+			appKey.pod = metric.Labels.PodName
+			stat, found := p.appStatsMap[appKey]
+			if !found {
+				stat = &PodPromStat{}
+				p.appStatsMap[appKey] = stat
+			}
+			stat.diskTS = parseTime(metric.Values[0].(float64))
+			//copy only if we can parse the value
+			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
+				stat.disk = val
 			}
 		}
 	}
@@ -499,7 +516,7 @@ func PodStatToMetrics(key *MetricAppInstKey, stat *PodPromStat) []*edgeproto.Met
 
 	if stat.diskTS != nil {
 		metric = newMetric(key.operator, key.cloudlet, key.cluster, key.developer, "appinst-disk", key, stat.diskTS)
-		metric.AddDoubleVal("disk", stat.disk)
+		metric.AddIntVal("disk", stat.disk)
 		metrics = append(metrics, metric)
 		stat.diskTS = nil
 	}
