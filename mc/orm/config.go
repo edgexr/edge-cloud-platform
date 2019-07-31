@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -10,22 +11,24 @@ import (
 
 const configID = 1
 
-func InitConfig() error {
-	log.DebugLog(log.DebugLevelApi, "init config")
+func InitConfig(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "init config")
 
 	// create config if it doesn't exist
 	config := ormapi.Config{}
 	config.ID = configID
 	config.NotifyEmailAddress = "support@mobiledgex.com"
+	db := loggedDB(ctx)
 	err := db.FirstOrCreate(&config, &ormapi.Config{ID: configID}).Error
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelApi, "using config", "config", config)
+	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil
 }
 
 func UpdateConfig(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -33,7 +36,7 @@ func UpdateConfig(c echo.Context) error {
 	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionManage) {
 		return echo.ErrForbidden
 	}
-	config, err := getConfig()
+	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -42,6 +45,7 @@ func UpdateConfig(c echo.Context) error {
 	if err := c.Bind(&config); err != nil {
 		return bindErr(c, err)
 	}
+	db := loggedDB(ctx)
 	err = db.Save(&config).Error
 	if err != nil {
 		return err
@@ -50,6 +54,7 @@ func UpdateConfig(c echo.Context) error {
 }
 
 func ShowConfig(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -57,16 +62,17 @@ func ShowConfig(c echo.Context) error {
 	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionManage) {
 		return echo.ErrForbidden
 	}
-	config, err := getConfig()
+	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, config)
 }
 
-func getConfig() (*ormapi.Config, error) {
+func getConfig(ctx context.Context) (*ormapi.Config, error) {
 	config := ormapi.Config{}
 	config.ID = configID
+	db := loggedDB(ctx)
 	err := db.First(&config).Error
 	// note: should always exist
 	return &config, err

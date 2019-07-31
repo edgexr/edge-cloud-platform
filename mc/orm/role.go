@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -55,8 +56,8 @@ const RoleAdminViewer = "AdminViewer"
 
 var AdminRoleID int64
 
-func InitRolePerms() error {
-	log.DebugLog(log.DebugLevelApi, "init roleperms")
+func InitRolePerms(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "init roleperms")
 
 	enforcer.AddPolicy(RoleAdminManager, ResourceControllers, ActionManage)
 	enforcer.AddPolicy(RoleAdminManager, ResourceControllers, ActionView)
@@ -222,11 +223,11 @@ func AddUserRole(c echo.Context) error {
 	if err := c.Bind(&role); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	err = AddUserRoleObj(claims, &role)
+	err = AddUserRoleObj(GetContext(c), claims, &role)
 	return setReply(c, err, Msg("Role added to user"))
 }
 
-func AddUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
+func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
 	if role.Username == "" {
 		return fmt.Errorf("Username not specified")
 	}
@@ -235,6 +236,7 @@ func AddUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 	}
 	// check that user/org/role exists
 	targetUser := ormapi.User{}
+	db := loggedDB(ctx)
 	res := db.Where(&ormapi.User{Name: role.Username}).First(&targetUser)
 	if res.RecordNotFound() {
 		return fmt.Errorf("Username not found")
@@ -289,13 +291,13 @@ func AddUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 	psub := getCasbinGroup(role.Org, role.Username)
 	enforcer.AddGroupingPolicy(psub, role.Role)
 	// notify recipient that they were added. don't fail on error
-	senderr := sendAddedEmail(claims.Username, targetUser.Name, targetUser.Email, role.Org, role.Role)
+	senderr := sendAddedEmail(ctx, claims.Username, targetUser.Name, targetUser.Email, role.Org, role.Role)
 	if senderr != nil {
-		log.DebugLog(log.DebugLevelApi, "failed to send role added email", "err", senderr)
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to send role added email", "err", senderr)
 	}
 
-	gitlabAddGroupMember(role)
-	artifactoryAddUserToGroup(role)
+	gitlabAddGroupMember(ctx, role)
+	artifactoryAddUserToGroup(ctx, role)
 	return nil
 }
 
@@ -304,15 +306,17 @@ func RemoveUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
-	err = RemoveUserRoleObj(claims, &role)
+	err = RemoveUserRoleObj(ctx, claims, &role)
 	return setReply(c, err, Msg("Role removed from user"))
 }
 
-func RemoveUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
+func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
 	if role.Username == "" {
 		return fmt.Errorf("Username not specified")
 	}
@@ -338,8 +342,8 @@ func RemoveUserRoleObj(claims *UserClaims, role *ormapi.Role) error {
 
 	enforcer.RemoveGroupingPolicy(psub, role.Role)
 
-	gitlabRemoveGroupMember(role)
-	artifactoryRemoveUserFromGroup(role)
+	gitlabRemoveGroupMember(ctx, role)
+	artifactoryRemoveUserFromGroup(ctx, role)
 
 	return nil
 }

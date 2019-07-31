@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -24,8 +25,12 @@ type ldapHandler struct {
 }
 
 func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDAPResultCode, error) {
-	log.DebugLog(log.DebugLevelApi, "LDAP bind",
-		"bindDN", bindDN)
+	span := log.StartSpan(log.DebugLevelApi, "ldap bind")
+	span.SetTag("dn", bindDN)
+	span.SetTag("remoteaddr", conn.RemoteAddr())
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
 	dn, err := parseDN(bindDN)
 	if err != nil {
 		return ldap.LDAPResultInvalidDNSyntax, nil
@@ -36,31 +41,36 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 	if dn.ou == OUusers {
 		lookup := ormapi.User{Name: dn.cn}
 		user := ormapi.User{}
-		log.DebugLog(log.DebugLevelApi, "LDAP bind", "lookup", lookup)
+		log.SpanLog(ctx, log.DebugLevelApi, "lookup", "user", lookup)
 
+		db := loggedDB(ctx)
 		err := db.Where(&lookup).First(&user).Error
 		if err != nil {
 			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, err
 		}
-		log.DebugLog(log.DebugLevelApi, "LDAP bind pw check", "user", user)
+		// don't log "user", as it contains password hash
+		log.SpanLog(ctx, log.DebugLevelApi, "pw check", "user", lookup)
 		matches, err := PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
 		if err != nil || !matches {
 			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, err
 		}
-		log.DebugLog(log.DebugLevelApi, "LDAP bind success", "user", user)
+		log.SpanLog(ctx, log.DebugLevelApi, "success", "user", lookup)
 		return ldap.LDAPResultSuccess, nil
 	}
 	return ldap.LDAPResultInvalidCredentials, nil
 }
 
 func (s *ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn net.Conn) (ldap.ServerSearchResult, error) {
-	log.DebugLog(log.DebugLevelApi, "LDAP search",
-		"boundDN", boundDN,
-		"req", searchReq)
-	res := ldap.ServerSearchResult{}
+	span := log.StartSpan(log.DebugLevelApi, "ldap search")
+	span.SetTag("dn", boundDN)
+	span.SetTag("remoteaddr", conn.RemoteAddr())
+	span.SetTag("request", searchReq)
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
 
+	res := ldap.ServerSearchResult{}
 	filter, err := ldap.CompileFilter(searchReq.Filter)
 	if err != nil {
 		return res, err
@@ -71,22 +81,23 @@ func (s *ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn 
 		return res, fmt.Errorf("Invalid DN, %s", err.Error())
 	}
 	if dn.ou == "" {
-		ldapLookupUsers(dn.cn, filter, &res)
+		ldapLookupUsers(ctx, dn.cn, filter, &res)
 		ldapLookupOrgs(dn.cn, filter, &res)
 	} else if dn.ou == OUusers {
-		ldapLookupUsers(dn.cn, filter, &res)
+		ldapLookupUsers(ctx, dn.cn, filter, &res)
 	} else if dn.ou == OUorgs {
 		ldapLookupOrgs(dn.cn, filter, &res)
 	} else {
 		return res, fmt.Errorf("Invalid OU %s", dn.ou)
 	}
 	res.ResultCode = ldap.LDAPResultSuccess
-	log.DebugLog(log.DebugLevelApi, "LDAP search result", "res", res)
+	log.SpanLog(ctx, log.DebugLevelApi, "success", "result", res)
 	return res, nil
 }
 
-func ldapLookupUsers(username string, filter *ber.Packet, result *ldap.ServerSearchResult) {
+func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, result *ldap.ServerSearchResult) {
 	users := []ormapi.User{}
+	db := loggedDB(ctx)
 	err := db.Find(&users).Error
 	if err != nil {
 		return

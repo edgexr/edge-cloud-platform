@@ -98,24 +98,27 @@ func GenerateCookie(user *ormapi.User) (string, error) {
 
 func getClaims(c echo.Context) (*UserClaims, error) {
 	user := c.Get("user")
+	ctx := GetContext(c)
 	if user == nil {
-		log.DebugLog(log.DebugLevelApi, "get claims: no user")
+		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no user")
 		return nil, echo.ErrUnauthorized
 	}
 	token, ok := user.(*jwt.Token)
 	if !ok {
-		log.DebugLog(log.DebugLevelApi, "get claims: no token")
+		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no token")
 		return nil, echo.ErrUnauthorized
 	}
 	claims, ok := token.Claims.(*UserClaims)
 	if !ok {
-		log.DebugLog(log.DebugLevelApi, "get claims: bad claims type")
+		log.SpanLog(ctx, log.DebugLevelApi, "get claims: bad claims type")
 		return nil, echo.ErrUnauthorized
 	}
 	if claims.Username == "" {
-		log.DebugLog(log.DebugLevelApi, "get claims: bad claims content")
+		log.SpanLog(ctx, log.DebugLevelApi, "get claims: bad claims content")
 		return nil, echo.ErrUnauthorized
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("username", claims.Username)
 	return claims, nil
 }
 

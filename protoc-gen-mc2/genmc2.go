@@ -323,6 +323,7 @@ type Region{{.InName}} struct {
 
 var tmpl = `
 func {{.MethodName}}(c echo.Context) error {
+	ctx := GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -339,7 +340,7 @@ func {{.MethodName}}(c echo.Context) error {
 	// stream func may return "forbidden", so don't write
 	// header until we know it's ok
 	wroteHeader := false
-	err = {{.MethodName}}Stream(rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
+	err = {{.MethodName}}Stream(ctx, rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
 		if !wroteHeader {
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			c.Response().WriteHeader(http.StatusOK)
@@ -365,7 +366,7 @@ func {{.MethodName}}(c echo.Context) error {
 	}
 	return nil
 {{- else}}
-	resp, err := {{.MethodName}}Obj(rc, &in.{{.InName}})
+	resp, err := {{.MethodName}}Obj(ctx, rc, &in.{{.InName}})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -376,9 +377,9 @@ func {{.MethodName}}(c echo.Context) error {
 }
 
 {{if .Outstream}}
-func {{.MethodName}}Stream(rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
+func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
 {{- else}}
-func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
+func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
 {{- if and (not .Show) (not .SkipEnforce)}}
 	if !enforcer.Enforce(rc.claims.Username, {{.Org}},
@@ -387,7 +388,7 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgepro
 	}
 {{- end}}
 	if rc.conn == nil {
-		conn, err := connectController(rc.region)
+		conn, err := connectController(ctx, rc.region)
 		if err != nil {
 			return {{.ReturnErrArg}}err
 		}
@@ -398,7 +399,6 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgepro
 		}()
 	}
 	api := edgeproto.New{{.Service}}Client(rc.conn)
-	ctx := context.Background()
 {{- if .Outstream}}
 	stream, err := api.{{.MethodName}}(ctx, obj)
 	if err != nil {
@@ -428,9 +428,9 @@ func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgepro
 }
 
 {{ if .Outstream}}
-func {{.MethodName}}Obj(rc *RegionContext, obj *edgeproto.{{.InName}}) ([]edgeproto.{{.OutName}}, error) {
+func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) ([]edgeproto.{{.OutName}}, error) {
 	arr := []edgeproto.{{.OutName}}{}
-	err := {{.MethodName}}Stream(rc, obj, func(res *edgeproto.{{.OutName}}) {
+	err := {{.MethodName}}Stream(ctx, rc, obj, func(res *edgeproto.{{.OutName}}) {
 		arr = append(arr, *res)
 	})
 	return arr, err

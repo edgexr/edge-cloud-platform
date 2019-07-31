@@ -2,6 +2,7 @@ package orm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,8 +18,8 @@ import (
 )
 
 // Init admin creates the admin user and adds the admin role.
-func InitAdmin(superuser, superpass string) error {
-	log.DebugLog(log.DebugLevelApi, "init admin")
+func InitAdmin(ctx context.Context, superuser, superpass string) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "init admin")
 
 	// create superuser if it doesn't exist
 	passhash, salt, iter := NewPasshash(superpass)
@@ -33,6 +34,7 @@ func InitAdmin(superuser, superpass string) error {
 		FamilyName:    superuser,
 		Nickname:      superuser,
 	}
+	db := loggedDB(ctx)
 	err := db.FirstOrCreate(&super, &ormapi.User{Name: superuser}).Error
 	if err != nil {
 		return err
@@ -46,6 +48,7 @@ func InitAdmin(superuser, superpass string) error {
 var BadAuthDelay = time.Second
 
 func Login(c echo.Context) error {
+	ctx := GetContext(c)
 	login := ormapi.UserLogin{}
 	if err := c.Bind(&login); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -55,6 +58,7 @@ func Login(c echo.Context) error {
 	}
 	user := ormapi.User{}
 	lookup := ormapi.User{Name: login.Username}
+	db := loggedDB(ctx)
 	res := db.Where(&lookup).First(&user)
 	if res.RecordNotFound() {
 		// try look-up by email
@@ -64,13 +68,13 @@ func Login(c echo.Context) error {
 	}
 	err := res.Error
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
+		log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
 		time.Sleep(BadAuthDelay)
 		return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
 	}
 	matches, err := PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "password matches err", "err", err)
+		log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
 	}
 	if !matches || err != nil {
 		time.Sleep(BadAuthDelay)
@@ -85,13 +89,14 @@ func Login(c echo.Context) error {
 
 	cookie, err := GenerateCookie(&user)
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "failed to generate cookie", "err", err)
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
 	}
 	return c.JSON(http.StatusOK, M{"token": cookie})
 }
 
 func CreateUser(c echo.Context) error {
+	ctx := GetContext(c)
 	createuser := ormapi.CreateUser{}
 	if err := c.Bind(&createuser); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -122,7 +127,7 @@ func CreateUser(c echo.Context) error {
 		}
 	}
 
-	config, err := getConfig()
+	config, err := getConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -133,6 +138,7 @@ func CreateUser(c echo.Context) error {
 	user.EmailVerified = false
 	// password should be passed through in Passhash field.
 	user.Passhash, user.Salt, user.Iter = NewPasshash(user.Passhash)
+	db := loggedDB(ctx)
 	if err := db.Create(&user).Error; err != nil {
 		//check specifically for duplicate username and/or emails
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_pkey\"" {
@@ -144,24 +150,24 @@ func CreateUser(c echo.Context) error {
 		return setReply(c, dbErr(err), nil)
 	}
 	createuser.Verify.Email = user.Email
-	err = sendVerifyEmail(user.Name, &createuser.Verify)
+	err = sendVerifyEmail(ctx, user.Name, &createuser.Verify)
 	if err != nil {
 		db.Delete(&user)
 		return err
 	}
 
-	gitlabCreateLDAPUser(&user)
+	gitlabCreateLDAPUser(ctx, &user)
 	if user.Name != DefaultSuperuser {
-		artifactoryCreateUser(&user, nil)
+		artifactoryCreateUser(ctx, &user, nil)
 	}
 
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)
 		// just log in case of error
-		senderr := sendNotify(config.NotifyEmailAddress,
+		senderr := sendNotify(ctx, config.NotifyEmailAddress,
 			"Locked account created", msg)
 		if senderr != nil {
-			log.DebugLog(log.DebugLevelApi, "failed to send notify of new locked account", "err", senderr)
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to send notify of new locked account", "err", senderr)
 		}
 	}
 
@@ -169,6 +175,8 @@ func CreateUser(c echo.Context) error {
 }
 
 func ResendVerify(c echo.Context) error {
+	ctx := GetContext(c)
+
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -176,10 +184,11 @@ func ResendVerify(c echo.Context) error {
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
-	return sendVerifyEmail("MobiledgeX user", &req)
+	return sendVerifyEmail(ctx, "MobiledgeX user", &req)
 }
 
 func VerifyEmail(c echo.Context) error {
+	ctx := GetContext(c)
 	tok := ormapi.Token{}
 	if err := c.Bind(&tok); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -194,6 +203,7 @@ func VerifyEmail(c echo.Context) error {
 		}
 	}
 	user := ormapi.User{Email: claims.Email}
+	db := loggedDB(ctx)
 	err = db.Where(&user).First(&user).Error
 	if err != nil {
 		// user got deleted in the meantime?
@@ -211,6 +221,8 @@ func DeleteUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	user := ormapi.User{}
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -234,23 +246,26 @@ func DeleteUser(c echo.Context) error {
 		}
 	}
 	// delete user
+	db := loggedDB(ctx)
 	err = db.Delete(&user).Error
 	if err != nil {
 		return setReply(c, dbErr(err), nil)
 	}
-	gitlabDeleteLDAPUser(user.Name)
-	artifactoryDeleteUser(user.Name)
+	gitlabDeleteLDAPUser(ctx, user.Name)
+	artifactoryDeleteUser(ctx, user.Name)
 
 	return c.JSON(http.StatusOK, Msg("user deleted"))
 }
 
 // Show current user info
 func CurrentUser(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	user := ormapi.User{Name: claims.Username}
+	db := loggedDB(ctx)
 	err = db.Where(&user).First(&user).Error
 	if err != nil {
 		return setReply(c, dbErr(err), nil)
@@ -263,6 +278,7 @@ func CurrentUser(c echo.Context) error {
 
 // Show users by Organization
 func ShowUser(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -282,6 +298,7 @@ func ShowUser(c echo.Context) error {
 		return echo.ErrForbidden
 	}
 	// if filter ID is 0, show all users (super user only)
+	db := loggedDB(ctx)
 	if filter.Name == "" {
 		err = db.Find(&users).Error
 		if err != nil {
@@ -327,11 +344,13 @@ func NewPassword(c echo.Context) error {
 }
 
 func setPassword(c echo.Context, username, password string) error {
+	ctx := GetContext(c)
 	if err := ValidPassword(password); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
 			err.Error()))
 	}
 	user := ormapi.User{Name: username}
+	db := loggedDB(ctx)
 	err := db.Where(&user).First(&user).Error
 	if err != nil {
 		return setReply(c, dbErr(err), nil)
@@ -344,6 +363,7 @@ func setPassword(c echo.Context, username, password string) error {
 }
 
 func PasswordResetRequest(c echo.Context) error {
+	ctx := GetContext(c)
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -351,7 +371,7 @@ func PasswordResetRequest(c echo.Context) error {
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
-	noreply, err := getNoreply()
+	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
 	}
@@ -369,6 +389,7 @@ func PasswordResetRequest(c echo.Context) error {
 	// send an email to the account specified, but the contents
 	// of the email are different if the user was not found.
 	user := ormapi.User{Email: req.Email}
+	db := loggedDB(ctx)
 	res := db.Where(&user).First(&user)
 	if !res.RecordNotFound() && res.Error == nil {
 		info := EmailClaims{
@@ -394,7 +415,7 @@ func PasswordResetRequest(c echo.Context) error {
 	if err := tmpl.Execute(&buf, &arg); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelApi, "send password reset email",
+	log.SpanLog(ctx, log.DebugLevelApi, "send password reset email",
 		"from", noreply.Email, "to", req.Email)
 	return sendEmail(noreply, req.Email, &buf)
 }
@@ -417,6 +438,7 @@ func PasswordReset(c echo.Context) error {
 }
 
 func RestrictedUserUpdate(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -441,6 +463,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 		Email: in.Email,
 	}
 	user := ormapi.User{}
+	db := loggedDB(ctx)
 	res := db.Where(&lookup).First(&user)
 	if res.RecordNotFound() {
 		return c.JSON(http.StatusBadRequest, Msg("user not found"))

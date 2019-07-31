@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -14,34 +15,34 @@ func ArtifactoryNewSync() *AppStoreSync {
 	return aSync
 }
 
-func (s *AppStoreSync) syncArtifactoryObjects() {
-	s.syncGroupObjects()
-	s.syncGroupUsers()
+func (s *AppStoreSync) syncArtifactoryObjects(ctx context.Context) {
+	s.syncGroupObjects(ctx)
+	s.syncGroupUsers(ctx)
 }
 
-func (s *AppStoreSync) syncGroupObjects() {
-	orgsT, err := GetAllOrgs()
+func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
+	orgsT, err := GetAllOrgs(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 
 	// Get Artifactory Objects:
 	//     Groups, Repos, Permission Targets
 
-	groups, err := artifactoryListGroups()
+	groups, err := artifactoryListGroups(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
-	repos, err := artifactoryListRepos()
+	repos, err := artifactoryListRepos(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
-	perms, err := artifactoryListPerms()
+	perms, err := artifactoryListPerms(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 
@@ -50,12 +51,12 @@ func (s *AppStoreSync) syncGroupObjects() {
 		if _, ok := groups[org]; ok {
 			delete(groups, org)
 		} else {
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing group",
 				"name", org)
-			err = artifactoryCreateGroup(org)
+			err = artifactoryCreateGroup(ctx, org)
 			if err != nil {
-				s.syncErr(err)
+				s.syncErr(ctx, err)
 			}
 		}
 
@@ -63,12 +64,12 @@ func (s *AppStoreSync) syncGroupObjects() {
 		if _, ok := repos[repoName]; ok {
 			delete(repos, repoName)
 		} else {
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing repository",
 				"name", repoName)
-			err = artifactoryCreateRepo(org)
+			err = artifactoryCreateRepo(ctx, org)
 			if err != nil {
-				s.syncErr(err)
+				s.syncErr(ctx, err)
 			}
 		}
 
@@ -76,52 +77,53 @@ func (s *AppStoreSync) syncGroupObjects() {
 		if _, ok := perms[permName]; ok {
 			delete(perms, permName)
 		} else {
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing permission targets",
 				"name", permName)
-			err := artifactoryCreateRepoPerms(org)
+			err := artifactoryCreateRepoPerms(ctx, org)
 			if err != nil {
-				s.syncErr(err)
+				s.syncErr(ctx, err)
 			}
 		}
 	}
 
 	// Delete extra objects
 	for group, _ := range groups {
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra group",
 			"name", group)
-		err = artifactoryDeleteGroup(strings.TrimPrefix(group, ArtifactoryPrefix))
+		err = artifactoryDeleteGroup(ctx, strings.TrimPrefix(group, ArtifactoryPrefix))
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 		}
 	}
 	for repo, _ := range repos {
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra repository",
 			"name", repo)
-		err = artifactoryDeleteRepo(strings.TrimPrefix(repo, ArtifactoryRepoPrefix))
+		err = artifactoryDeleteRepo(ctx, strings.TrimPrefix(repo, ArtifactoryRepoPrefix))
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 		}
 	}
 	for perm, _ := range perms {
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra permission target",
 			"name", perm)
-		err = artifactoryDeleteRepoPerms(strings.TrimPrefix(perm, ArtifactoryPrefix))
+		err = artifactoryDeleteRepoPerms(ctx, strings.TrimPrefix(perm, ArtifactoryPrefix))
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 		}
 	}
 }
 
-func (s *AppStoreSync) syncGroupUsers() {
+func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 	// Get MC users
 	mcusers := []ormapi.User{}
+	db := loggedDB(ctx)
 	err := db.Find(&mcusers).Error
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 	mcusersT := make(map[string]*ormapi.User)
@@ -144,9 +146,9 @@ func (s *AppStoreSync) syncGroupUsers() {
 	}
 
 	// Get Artifactory users
-	rtfUsers, err := artifactoryListUsers()
+	rtfUsers, err := artifactoryListUsers(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 
@@ -157,7 +159,7 @@ func (s *AppStoreSync) syncGroupUsers() {
 			delete(rtfUsers, name)
 		} else {
 			// missing from Artifactory, so create
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing LDAP user",
 				"user", name)
 			if groups, ok := groupMembers[name]; ok {
@@ -165,34 +167,34 @@ func (s *AppStoreSync) syncGroupUsers() {
 				for group, _ := range groups {
 					rtfGroups = append(rtfGroups, group)
 				}
-				artifactoryCreateUser(user, &rtfGroups)
+				artifactoryCreateUser(ctx, user, &rtfGroups)
 			} else {
-				artifactoryCreateUser(user, nil)
+				artifactoryCreateUser(ctx, user, nil)
 			}
 		}
 	}
 
 	// Delete extra users
 	for user, _ := range rtfUsers {
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra user",
 			"name", user)
-		artifactoryDeleteUser(user)
+		artifactoryDeleteUser(ctx, user)
 	}
 
 	// Add missing roles
 	for name, _ := range mcusersT {
 		// Get Artifactory roles
-		rtfGroups, err := artifactoryListUserGroups(name)
+		rtfGroups, err := artifactoryListUserGroups(ctx, name)
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 			return
 		}
 		for mcgroup, mcrole := range groupMembers[name] {
 			if _, ok := rtfGroups[mcgroup]; !ok {
 				// Group not part of Artifactory user
 				// Add user to the group
-				artifactoryAddUserToGroup(mcrole)
+				artifactoryAddUserToGroup(ctx, mcrole)
 			}
 		}
 		for rtfgroup, _ := range rtfGroups {
@@ -202,7 +204,7 @@ func (s *AppStoreSync) syncGroupUsers() {
 				role := ormapi.Role{}
 				role.Username = name
 				role.Org = rtfgroup
-				artifactoryRemoveUserFromGroup(&role)
+				artifactoryRemoveUserFromGroup(ctx, &role)
 			}
 		}
 	}

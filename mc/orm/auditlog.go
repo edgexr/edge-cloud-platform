@@ -1,11 +1,10 @@
 package orm
 
 import (
+	"context"
 	"encoding/json"
-	"strings"
-	"sync/atomic"
-	"time"
 	"regexp"
+	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -17,37 +16,34 @@ var AuditId uint64
 var jwtRegex = regexp.MustCompile(`"(.*?)"`) // scrub jwt tokens from responses before logging, find all quoted strings.
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c echo.Context) (nexterr error) {
 		req := c.Request()
 		res := c.Response()
-		if strings.HasSuffix(req.RequestURI, "show") || strings.HasSuffix(req.RequestURI, "showall") {
-			// don't log show commands
-			return next(c)
-		}
-		id := atomic.AddUint64(&AuditId, 1)
-		start := time.Now()
+
+		// All Tags on this span will be exposed to the end-user in
+		// the form of an "audit" log. Anything that should be kept
+		// internal for debugging should be put on log.SpanLog() call.
+		span := log.StartSpan(log.DebugLevelApi, req.RequestURI)
+		span.SetTag("remote-ip", c.RealIP())
+		span.SetTag("level", "audit")
+		defer span.Finish()
+		ctx := log.ContextWithSpan(context.Background(), span)
+		ec := NewEchoContext(c, ctx)
 
 		reqBody := []byte{}
 		resBody := []byte{}
-		var nexterr error
 		// use body dump to capture req/res.
 		bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
 			reqBody = reqB
 			resBody = resB
 		})
-		kvs := []interface{}{}
-		kvs = append(kvs, "id")
-		kvs = append(kvs, id)
-		kvs = append(kvs, "method")
-		kvs = append(kvs, req.Method)
-		kvs = append(kvs, "uri")
-		kvs = append(kvs, req.RequestURI)
-		kvs = append(kvs, "remote-ip")
-		kvs = append(kvs, c.RealIP())
-		log.InfoLog("Audit start", kvs...)
+		span.SetTag("method", req.Method)
 
 		handler := bd(next)
-		nexterr = handler(c)
+		nexterr = handler(ec)
+
+		span.SetTag("status", res.Status)
+
 		// remove passwords from requests so they aren't logged
 		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
@@ -90,27 +86,13 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 				reqBody = []byte{}
 			}
 		}
-
-		kvs = []interface{}{}
-		kvs = append(kvs, "id")
-		kvs = append(kvs, id)
-		if claims, err := getClaims(c); err == nil {
-			kvs = append(kvs, "user")
-			kvs = append(kvs, claims.Username)
-		}
-		kvs = append(kvs, "status")
-		kvs = append(kvs, res.Status)
+		span.SetTag("request", string(reqBody))
 		if nexterr != nil {
-			kvs = append(kvs, "err")
-			kvs = append(kvs, nexterr)
+			span.SetTag("error", nexterr)
 			he, ok := nexterr.(*echo.HTTPError)
 			if ok && he.Internal != nil {
-				kvs = append(kvs, "ierr", he.Internal)
+				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", he.Internal)
 			}
-		}
-		if len(reqBody) > 0 {
-			kvs = append(kvs, "req")
-			kvs = append(kvs, string(reqBody))
 		}
 		if len(resBody) > 0 {
 			// for all responses, if it has a jwt token
@@ -124,20 +106,14 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 					}
 					if ss[1] != "" {
 						result := strings.Replace(string(resBody), ss[1], "", len(ss[1]))
-						kvs = append(kvs, "resp")
-						kvs = append(kvs, result)
+						span.SetTag("response", result)
 					}
 				}
 
 			} else {
-				kvs = append(kvs, "resp")
-				kvs = append(kvs, string(resBody))
+				span.SetTag("response", string(resBody))
 			}
 		}
-		kvs = append(kvs, "took")
-		kvs = append(kvs, time.Since(start))
-
-		log.InfoLog("Audit end", kvs...)
 		return nexterr
 	}
 }

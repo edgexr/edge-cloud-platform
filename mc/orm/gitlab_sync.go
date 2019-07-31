@@ -1,6 +1,8 @@
 package orm
 
 import (
+	"context"
+
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -18,17 +20,17 @@ func GitlabNewSync() *AppStoreSync {
 	return gSync
 }
 
-func (s *AppStoreSync) syncGitlabObjects() {
-	s.syncUsers()
-	s.syncGroups()
-	s.syncGroupMembers()
+func (s *AppStoreSync) syncGitlabObjects(ctx context.Context) {
+	s.syncUsers(ctx)
+	s.syncGroups(ctx)
+	s.syncGroupMembers(ctx)
 }
 
-func (s *AppStoreSync) syncUsers() {
+func (s *AppStoreSync) syncUsers(ctx context.Context) {
 	// get Gitlab users
 	gusers, _, err := gitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{})
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 	gusersT := make(map[string]*gitlab.User)
@@ -37,9 +39,10 @@ func (s *AppStoreSync) syncUsers() {
 	}
 	// get MC users
 	mcusers := []ormapi.User{}
+	db := loggedDB(ctx)
 	err = db.Find(&mcusers).Error
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 	mcusersT := make(map[string]*ormapi.User)
@@ -53,10 +56,10 @@ func (s *AppStoreSync) syncUsers() {
 			delete(gusersT, name)
 		} else {
 			// missing from gitlab, so create
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Gitlab Sync create missing LDAP user",
 				"user", name)
-			gitlabCreateLDAPUser(user)
+			gitlabCreateLDAPUser(ctx, user)
 		}
 	}
 	for _, guser := range gusersT {
@@ -74,26 +77,26 @@ func (s *AppStoreSync) syncUsers() {
 		if !ldapuser {
 			continue
 		}
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Gitlab Sync delete extra LDAP user",
 			"name", guser.Name)
 		_, err = gitlabClient.Users.DeleteUser(guser.ID)
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 		}
 	}
 }
 
-func (s *AppStoreSync) syncGroups() {
-	orgsT, err := GetAllOrgs()
+func (s *AppStoreSync) syncGroups(ctx context.Context) {
+	orgsT, err := GetAllOrgs(ctx)
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 	// get Gitlab groups
 	groups, _, err := gitlabClient.Groups.ListGroups(&gitlab.ListGroupsOptions{})
 	if err != nil {
-		s.syncErr(err)
+		s.syncErr(ctx, err)
 		return
 	}
 	groupsT := make(map[string]*gitlab.Group)
@@ -106,10 +109,10 @@ func (s *AppStoreSync) syncGroups() {
 			delete(groupsT, name)
 		} else {
 			// missing from gitlab, so create
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Gitlab Sync create missing group",
 				"org", name)
-			gitlabCreateGroup(org)
+			gitlabCreateGroup(ctx, org)
 		}
 	}
 	for _, group := range groupsT {
@@ -121,17 +124,17 @@ func (s *AppStoreSync) syncGroups() {
 			continue
 		}
 		// delete extra group created by master controller
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Gitlab Sync delete extra group",
 			"name", group.Name)
 		_, err = gitlabClient.Groups.DeleteGroup(group.ID)
 		if err != nil {
-			s.syncErr(err)
+			s.syncErr(ctx, err)
 		}
 	}
 }
 
-func (s *AppStoreSync) syncGroupMembers() {
+func (s *AppStoreSync) syncGroupMembers(ctx context.Context) {
 	members := make(map[string]map[string]*gitlab.GroupMember)
 	var err error
 
@@ -147,7 +150,7 @@ func (s *AppStoreSync) syncGroupMembers() {
 			gname := util.GitlabGroupSanitize(role.Org)
 			memberlist, _, err := gitlabClient.Groups.ListGroupMembers(gname, &gitlab.ListGroupMembersOptions{})
 			if err != nil {
-				s.syncErr(err)
+				s.syncErr(ctx, err)
 				continue
 			}
 			// convert list to table for easier processing
@@ -169,9 +172,9 @@ func (s *AppStoreSync) syncGroupMembers() {
 			continue
 		}
 		// add member back to group
-		log.DebugLog(log.DebugLevelApi,
+		log.SpanLog(ctx, log.DebugLevelApi,
 			"Gitlab Sync restore role", "role", role)
-		gitlabAddGroupMember(role)
+		gitlabAddGroupMember(ctx, role)
 	}
 	// delete members that shouldn't be part of the group anymore
 	for roleOrg, memberTable := range members {
@@ -180,13 +183,13 @@ func (s *AppStoreSync) syncGroupMembers() {
 				// root is always member of a group
 				continue
 			}
-			log.DebugLog(log.DebugLevelApi,
+			log.SpanLog(ctx, log.DebugLevelApi,
 				"Gitlab Sync remove extra role",
 				"org", roleOrg, "member", groupMember.Username)
 			gname := util.GitlabGroupSanitize(roleOrg)
 			_, err = gitlabClient.GroupMembers.RemoveGroupMember(gname, groupMember.ID)
 			if err != nil {
-				s.syncErr(err)
+				s.syncErr(ctx, err)
 			}
 		}
 	}

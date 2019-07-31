@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
 	"google.golang.org/grpc"
 )
 
@@ -28,6 +27,8 @@ func CreateData(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	data := ormapi.AllData{}
 	if err := c.Bind(&data); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -39,21 +40,21 @@ func CreateData(c echo.Context) error {
 	hadErr := false
 	for _, ctrl := range data.Controllers {
 		desc := fmt.Sprintf("Create Controller region %s", ctrl.Region)
-		err := CreateControllerObj(claims, &ctrl)
+		err := CreateControllerObj(ctx, claims, &ctrl)
 		streamReply(c, desc, err, &hadErr)
 	}
 	for _, org := range data.Orgs {
 		desc := fmt.Sprintf("Create Organization %s", org.Name)
-		err := CreateOrgObj(claims, &org)
+		err := CreateOrgObj(ctx, claims, &org)
 		streamReply(c, desc, err, &hadErr)
 	}
 	for _, role := range data.Roles {
 		desc := fmt.Sprintf("Add User Role %v", role)
-		err := AddUserRoleObj(claims, &role)
+		err := AddUserRoleObj(ctx, claims, &role)
 		streamReply(c, desc, err, &hadErr)
 	}
 	for _, regionData := range data.RegionData {
-		conn, err := connectController(regionData.Region)
+		conn, err := connectController(ctx, regionData.Region)
 		if err != nil {
 			desc := fmt.Sprintf("Connect %s Controller", regionData.Region)
 			streamReply(c, desc, err, &hadErr)
@@ -69,30 +70,30 @@ func CreateData(c echo.Context) error {
 		appdata := &regionData.AppData
 		for _, flavor := range appdata.Flavors {
 			desc := fmt.Sprintf("Create Flavor %s", flavor.Key.Name)
-			_, err = CreateFlavorObj(rc, &flavor)
+			_, err = CreateFlavorObj(ctx, rc, &flavor)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
 			desc := fmt.Sprintf("Create Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
-			err = CreateCloudletStream(rc, &cloudlet, cb)
+			err = CreateCloudletStream(ctx, rc, &cloudlet, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Create ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
-			err = CreateClusterInstStream(rc, &cinst, cb)
+			err = CreateClusterInstStream(ctx, rc, &cinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, app := range appdata.Applications {
 			desc := fmt.Sprintf("Create App %v", app.Key)
-			_, err = CreateAppObj(rc, &app)
+			_, err = CreateAppObj(ctx, rc, &app)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, appinst := range appdata.AppInstances {
 			desc := fmt.Sprintf("Create AppInst %v", appinst.Key)
 			cb := newResCb(c, desc)
-			err = CreateAppInstStream(rc, &appinst, cb)
+			err = CreateAppInstStream(ctx, rc, &appinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 	}
@@ -107,6 +108,8 @@ func DeleteData(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
+
 	data := ormapi.AllData{}
 	if err := c.Bind(&data); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
@@ -117,7 +120,7 @@ func DeleteData(c echo.Context) error {
 
 	hadErr := false
 	for _, regionData := range data.RegionData {
-		conn, err := connectController(regionData.Region)
+		conn, err := connectController(ctx, regionData.Region)
 		if err != nil {
 			desc := fmt.Sprintf("Connect %s Controller", regionData.Region)
 			streamReply(c, desc, err, &hadErr)
@@ -135,29 +138,29 @@ func DeleteData(c echo.Context) error {
 		for _, appinst := range appdata.AppInstances {
 			desc := fmt.Sprintf("Delete AppInst %v", appinst.Key)
 			cb := newResCb(c, desc)
-			err = DeleteAppInstStream(rc, &appinst, cb)
+			err = DeleteAppInstStream(ctx, rc, &appinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, app := range appdata.Applications {
 			desc := fmt.Sprintf("Delete App %v", app.Key)
-			_, err = DeleteAppObj(rc, &app)
+			_, err = DeleteAppObj(ctx, rc, &app)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Delete ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
-			err = DeleteClusterInstStream(rc, &cinst, cb)
+			err = DeleteClusterInstStream(ctx, rc, &cinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
 			desc := fmt.Sprintf("Delete Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
-			err = DeleteCloudletStream(rc, &cloudlet, cb)
+			err = DeleteCloudletStream(ctx, rc, &cloudlet, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, flavor := range appdata.Flavors {
 			desc := fmt.Sprintf("Delete Flavor %s", flavor.Key.Name)
-			_, err = DeleteFlavorObj(rc, &flavor)
+			_, err = DeleteFlavorObj(ctx, rc, &flavor)
 			streamReply(c, desc, err, &hadErr)
 		}
 	}
@@ -165,17 +168,17 @@ func DeleteData(c echo.Context) error {
 	// role that's needed to be able to delete the org.
 	for _, org := range data.Orgs {
 		desc := fmt.Sprintf("Delete Organization %s", org.Name)
-		err := DeleteOrgObj(claims, &org)
+		err := DeleteOrgObj(ctx, claims, &org)
 		streamReply(c, desc, err, &hadErr)
 	}
 	for _, role := range data.Roles {
 		desc := fmt.Sprintf("Remove User Role %v", role)
-		err := RemoveUserRoleObj(claims, &role)
+		err := RemoveUserRoleObj(ctx, claims, &role)
 		streamReply(c, desc, err, &hadErr)
 	}
 	for _, ctrl := range data.Controllers {
 		desc := fmt.Sprintf("Delete Controller region %s", ctrl.Region)
-		err := DeleteControllerObj(claims, &ctrl)
+		err := DeleteControllerObj(ctx, claims, &ctrl)
 		streamReply(c, desc, err, &hadErr)
 	}
 	if hadErr {
@@ -185,17 +188,18 @@ func DeleteData(c echo.Context) error {
 }
 
 func ShowData(c echo.Context) error {
+	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	data := ormapi.AllData{}
 
-	ctrls, err := ShowControllerObj(claims)
+	ctrls, err := ShowControllerObj(ctx, claims)
 	if err == nil {
 		data.Controllers = ctrls
 	}
-	orgs, err := ShowOrgObj(claims)
+	orgs, err := ShowOrgObj(ctx, claims)
 	if err == nil {
 		data.Orgs = orgs
 	}
@@ -207,6 +211,7 @@ func ShowData(c echo.Context) error {
 	// Iterate over all controllers. We need to look up
 	// controllers this time without enforcement check.
 	ctrls = []ormapi.Controller{}
+	db := loggedDB(ctx)
 	err = db.Find(&ctrls).Error
 	if err != nil {
 		return c.JSON(http.StatusOK, data)
@@ -214,7 +219,6 @@ func ShowData(c echo.Context) error {
 	for _, ctrl := range ctrls {
 		conn, err := connectControllerAddr(ctrl.Address)
 		if err != nil {
-			log.DebugLog(log.DebugLevelApi, "ShowData connect controller", "ctrl", ctrl, "err", err)
 			continue
 		}
 		defer conn.Close()
@@ -228,24 +232,23 @@ func ShowData(c echo.Context) error {
 		regionData.Region = ctrl.Region
 		appdata := &regionData.AppData
 
-		log.DebugLog(log.DebugLevelApi, "ShowData controller", "ctrl", ctrl)
-		cloudlets, err := ShowCloudletObj(rc, &edgeproto.Cloudlet{})
+		cloudlets, err := ShowCloudletObj(ctx, rc, &edgeproto.Cloudlet{})
 		if err == nil {
 			appdata.Cloudlets = cloudlets
 		}
-		flavors, err := ShowFlavorObj(rc, &edgeproto.Flavor{})
+		flavors, err := ShowFlavorObj(ctx, rc, &edgeproto.Flavor{})
 		if err == nil {
 			appdata.Flavors = flavors
 		}
-		cinsts, err := ShowClusterInstObj(rc, &edgeproto.ClusterInst{})
+		cinsts, err := ShowClusterInstObj(ctx, rc, &edgeproto.ClusterInst{})
 		if err == nil {
 			appdata.ClusterInsts = cinsts
 		}
-		apps, err := ShowAppObj(rc, &edgeproto.App{})
+		apps, err := ShowAppObj(ctx, rc, &edgeproto.App{})
 		if err == nil {
 			appdata.Applications = apps
 		}
-		appinsts, err := ShowAppInstObj(rc, &edgeproto.AppInst{})
+		appinsts, err := ShowAppInstObj(ctx, rc, &edgeproto.AppInst{})
 		if err == nil {
 			appdata.AppInstances = appinsts
 		}
