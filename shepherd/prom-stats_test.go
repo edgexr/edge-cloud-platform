@@ -126,6 +126,23 @@ var testPayloadData = map[string]string{
   		]
 		}
 		}`,
+	promQDiskPod: `{
+		"status": "success",
+		"data": {
+		  "resultType": "vector",
+		  "result": [
+			{
+			  "metric": {
+				"pod_name": "testPod1"
+			},
+			"value": [
+				1549484450.932,
+				"300000000"
+			]
+			}
+		]
+		}
+		}`,
 	promQNetSendRate: `{
 		"status": "success",
 		"data": {
@@ -225,7 +242,7 @@ func TestPromStats(t *testing.T) {
 	if found {
 		assert.Equal(t, float64(5.0), stat.cpu)
 		assert.Equal(t, uint64(100000000), stat.mem)
-		assert.Equal(t, float64(0), stat.disk)
+		assert.Equal(t, uint64(300000000), stat.disk)
 		assert.Equal(t, uint64(111111), stat.netSend)
 		assert.Equal(t, uint64(222222), stat.netRecv)
 	}
