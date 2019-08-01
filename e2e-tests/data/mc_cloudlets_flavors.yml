@@ -27,7 +27,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
-      deploymentlocal: true
+      deploymentlocal: false
       notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
@@ -48,7 +48,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
-      deploymentlocal: true
+      deploymentlocal: false
       notifysrvaddr: 127.0.0.1:51002
       flavor:
         name: DefaultPlatformFlavor
@@ -69,7 +69,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
-      deploymentlocal: true
+      deploymentlocal: false
       notifysrvaddr: 127.0.0.1:51004
       flavor:
         name: DefaultPlatformFlavor
@@ -90,7 +90,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
-      deploymentlocal: true
+      deploymentlocal: false
       notifysrvaddr: 127.0.0.1:51005
       flavor:
         name: DefaultPlatformFlavor

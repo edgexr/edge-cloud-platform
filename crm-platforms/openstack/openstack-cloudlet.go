@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -20,7 +21,8 @@ const (
 	PlatformMaxWait = 5 * time.Minute
 
 	// Platform services
-	ServiceTypeCRM = "crmserver"
+	ServiceTypeCRM      = "crmserver"
+	ServiceTypeShepherd = "shepherd"
 )
 
 func getPlatformVMName(cloudlet *edgeproto.Cloudlet) string {
@@ -34,6 +36,13 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 	var err error
 
 	switch serviceType {
+	case ServiceTypeShepherd:
+		service_cmd, envVars, err = intprocess.GetShepherdCmd(cloudlet, pfConfig)
+		if err != nil {
+			cDone <- fmt.Errorf("Unable to get shepherd service command: %v", err)
+			return
+		}
+
 	case ServiceTypeCRM:
 		service_cmd, envVars, err = cloudcommon.GetCRMCmd(cloudlet, pfConfig)
 		if err != nil {
@@ -336,12 +345,16 @@ ssh_authorized_keys:
 
 	// Start platform service on PlatformVM
 	crmChan := make(chan error, 1)
+	shepherdChan := make(chan error, 1)
 	go startPlatformService(cloudlet, pfConfig, client, ServiceTypeCRM, updateCallback, crmChan)
-
+	go startPlatformService(cloudlet, pfConfig, client, ServiceTypeShepherd, updateCallback, shepherdChan)
 	// Wait for platform services to come up
-	err = <-crmChan
-
-	return err
+	crmErr := <-crmChan
+	shepherdErr := <-shepherdChan
+	if crmErr != nil {
+		return crmErr
+	}
+	return shepherdErr
 }
 
 func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet) error {

@@ -193,7 +193,7 @@ func (p *Sql) runPsql(args []string) ([]byte, error) {
 	return exec.Command("psql", args...).CombinedOutput()
 }
 
-func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
+func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 	args := []string{}
 	if p.Name != "" {
 		args = append(args, "--name")
@@ -233,27 +233,29 @@ func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "-d")
 		args = append(args, options.Debug)
 	}
-	var envs []string
-	if options.RolesFile != "" {
-		dat, err := ioutil.ReadFile(options.RolesFile)
-		if err != nil {
-			return err
-		}
-		roles := VaultRoles{}
-		err = yaml.Unmarshal(dat, &roles)
-		if err != nil {
-			return err
-		}
-		envs = []string{
-			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.ShepherdRoleID),
-			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.ShepherdSecretID),
-		}
-		log.Printf("Shepherd envs: %v\n", envs)
-	}
-
+	return args
+}
+func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
+	args := p.GetArgs(opts...)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
 	return err
+}
+
+func (p *Shepherd) String(opts ...process.StartOp) string {
+	cmd_str := p.GetExeName()
+	args := p.GetArgs(opts...)
+	key := true
+	for _, v := range args {
+		if key {
+			cmd_str += " " + v
+			key = false
+		} else {
+			cmd_str += " '" + v + "'"
+			key = true
+		}
+	}
+	return cmd_str
 }
 
 func (p *Shepherd) StopLocal() {
