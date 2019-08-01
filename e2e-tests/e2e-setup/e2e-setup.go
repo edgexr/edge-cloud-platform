@@ -246,6 +246,10 @@ func RunAction(actionSpec, outputDir string, config *e2eapi.TestConfig, spec *Te
 				errors = append(errors, "cleanup failed")
 			}
 		}
+		err = intprocess.StopShepherdService(nil)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
 		err = setupmex.Cleanup()
 		if err != nil {
 			errors = append(errors, err.Error())

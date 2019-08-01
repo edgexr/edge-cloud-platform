@@ -20,6 +20,9 @@ var OpenstackProps edgeproto.OpenStackProperties
 var MEXInfraVersion = "v2.0.2" //Stratus
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 
+// Package level test mode variable
+var testMode = false
+
 func getVaultCloudletPath(filePath, vaultAddr string) string {
 	return fmt.Sprintf(
 		"%s/v1/secret/data/cloudlet/openstack/%s",
@@ -34,15 +37,27 @@ func InitInfraCommon(vaultAddr string) error {
 	mexEnvURL := getVaultCloudletPath("mexenv.json", vaultAddr)
 	err := InternVaultEnv(mexEnvURL)
 	if err != nil {
-		return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
+		if testMode {
+			log.DebugLog(log.DebugLevelMexos, "failed to InternVaultEnv", "url", mexEnvURL, "err", err)
+		} else {
+			return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
+		}
 	}
 	CloudletInfraCommon.CfKey = os.Getenv("MEX_CF_KEY")
 	if CloudletInfraCommon.CfKey == "" {
-		return fmt.Errorf("Env variable MEX_CF_KEY not set")
+		if testMode {
+			log.DebugLog(log.DebugLevelMexos, "Env variable MEX_CF_KEY not set")
+		} else {
+			return fmt.Errorf("Env variable MEX_CF_KEY not set")
+		}
 	}
 	CloudletInfraCommon.CfUser = os.Getenv("MEX_CF_USER")
 	if CloudletInfraCommon.CfKey == "" {
-		return fmt.Errorf("Env variable MEX_CF_USER not set")
+		if testMode {
+			log.DebugLog(log.DebugLevelMexos, "Env variable MEX_CF_USER not set")
+		} else {
+			return fmt.Errorf("Env variable MEX_CF_USER not set")
+		}
 	}
 	CloudletInfraCommon.DnsZone = "mobiledgex.net"
 	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
@@ -130,6 +145,10 @@ func GetCloudletCFKey() string {
 
 func GetCloudletCFUser() string {
 	return CloudletInfraCommon.CfUser
+}
+
+func SetTestMode(tMode bool) {
+	testMode = tMode
 }
 
 // GetCleanupOnFailure should be true unless we want to debug the failure,

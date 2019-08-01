@@ -33,6 +33,10 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	if err != nil {
 		return err
 	}
+
+	// Set the test Mode based on what is in PlatformConfig
+	mexos.SetTestMode(platformConfig.TestMode)
+
 	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
