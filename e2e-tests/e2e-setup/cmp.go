@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dmeproto "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
@@ -38,18 +37,6 @@ var IgnoreAdminUser = cmpopts.AcyclicTransformer("removeAdminUser", func(users [
 	return newusers
 })
 
-var IgnoreAppInstUri = cmpopts.AcyclicTransformer("removeAppInstUri", func(inst edgeproto.AppInst) edgeproto.AppInst {
-	// Appinstance URIs usually not provisioned, as they are inherited
-	// from the cloudlet. However they are provioned for the default
-	// appinst. So we cannot use "nocmp". Remove the URIs for
-	// non-defaultCloudlets.
-	out := inst
-	if out.Key.ClusterInstKey.CloudletKey != cloudcommon.DefaultCloudletKey {
-		out.Uri = ""
-	}
-	return out
-})
-
 //compares two yaml files for equivalence
 //TODO need to handle different types of interfaces besides appdata, currently using
 //that to sort
@@ -70,7 +57,6 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		copts = []cmp.Option{
 			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
 			IgnoreAdminRole,
-			IgnoreAppInstUri,
 		}
 		copts = append(copts, edgeproto.IgnoreTaggedFields("nocmp")...)
 		copts = append(copts, edgeproto.CmpSortSlices()...)
