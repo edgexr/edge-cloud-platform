@@ -4,13 +4,18 @@ variable "environ_tag" {
 }
 
 variable "azure_location" {
-  description = "Name of the Azure resource group for the cluster"
+  description = "Azure location for the cluster"
   default     = "Central US"
 }
 
 variable "azure_eu_location" {
-  description = "Name of the Azure resource group for the EU cluster"
+  description = "Azure location for the EU cluster"
   default     = "West Europe"
+}
+
+variable "azure_kr_location" {
+  description = "Azure location for the KR cluster"
+  default     = "Korea Central"
 }
 
 variable "azure_terraform_service_principal_id" {
@@ -51,12 +56,20 @@ variable "eu_cluster_name" {
   default     = "mexdemo-eu-cluster"
 }
 
+variable "kr_cluster_name" {
+  default     = "mexdemo-kr"
+}
+
 variable "resource_group_name" {
   default     = "mexdemo2-resource-group"
 }
 
 variable "eu_resource_group_name" {
   default     = "mexdemo-eu-resource-group"
+}
+
+variable "kr_resource_group_name" {
+  default     = "mexdemo-kr-rg"
 }
 
 variable "azure_vm_size" {
