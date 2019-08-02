@@ -56,6 +56,19 @@ module "k8s_eu" {
   resource_group_name = "${var.eu_resource_group_name}"
 }
 
+module "k8s_kr" {
+  source              = "../../modules/k8s_azure"
+
+  location            = "${var.azure_kr_location}"
+  client_id           = "${var.azure_terraform_service_principal_id}"
+  client_secret       = "${var.azure_terraform_service_principal_secret}"
+  cluster_name        = "${var.kr_cluster_name}"
+  dns_prefix          = "${var.kr_cluster_name}"
+  vm_size             = "${var.azure_vm_size}"
+  cluster_tag         = "mexplat-${var.environ_tag}"
+  resource_group_name = "${var.kr_resource_group_name}"
+}
+
 # Common VM for gitlab, crm, mc, vault, postgres
 module "gitlab" {
   source              = "../../modules/vm_gcp"
