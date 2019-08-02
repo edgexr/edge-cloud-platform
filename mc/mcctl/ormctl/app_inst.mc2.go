@@ -105,7 +105,6 @@ var AppInstRequiredArgs = []string{
 }
 var AppInstOptionalArgs = []string{
 	"clusterdeveloper",
-	"uri",
 	"flavor.name",
 	"state",
 	"errors",
