@@ -48,6 +48,7 @@ type ServerConfig struct {
 	ClientCert      string
 	PingInterval    time.Duration
 	SkipVerifyEmail bool
+	JaegerAddr      string
 }
 
 var DefaultDBUser = "mcuser"
@@ -222,6 +223,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/config/version", ShowVersion)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
+	auth.POST("/audit/showself", ShowAuditSelf)
+	auth.POST("/audit/showorg", ShowAuditOrg)
 	addControllerApis(auth)
 	// Metrics api route use auth to serve a query to influxDB
 	auth.POST("/metrics/app", GetMetricsCommon)

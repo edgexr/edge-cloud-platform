@@ -25,6 +25,7 @@ func main() {
 	regionCmds.AddCommand(ormctl.GetRunCommandCmd())
 	rootCmd.AddCommand(regionCmds)
 	rootCmd.AddCommand(ormctl.GetConfigCommand())
+	rootCmd.AddCommand(ormctl.GetAuditCommand())
 
 	rootCmd.PersistentFlags().StringVar(&ormctl.Addr, "addr", "http://127.0.0.1:9900", "MC address")
 	rootCmd.PersistentFlags().StringVar(&ormctl.Token, "token", "", "JWT token")

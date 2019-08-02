@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
 
@@ -26,6 +27,9 @@ func CreateOrg(c echo.Context) error {
 	if err := c.Bind(&org); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", org.Name)
+
 	err = CreateOrgObj(ctx, claims, &org)
 	return setReply(c, err, Msg("Organization created"))
 }
@@ -88,6 +92,9 @@ func DeleteOrg(c echo.Context) error {
 	if err := c.Bind(&org); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", org.Name)
+
 	err = DeleteOrgObj(ctx, claims, &org)
 	return setReply(c, err, Msg("Organization deleted"))
 }

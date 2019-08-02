@@ -19,12 +19,13 @@ require (
 	github.com/fsouza/go-dockerclient v1.3.6
 	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/googleapis v1.0.0
-	github.com/gogo/protobuf v1.2.0
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.3.1
 	github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42
 	github.com/gophercloud/gophercloud v0.0.0-20190330013820-4d3066f119fa
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/influxdata/influxdb v1.6.2
+	github.com/jaegertracing/jaeger v1.13.1
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/jinzhu/gorm v1.9.1
 	github.com/json-iterator/go v1.1.6 // indirect

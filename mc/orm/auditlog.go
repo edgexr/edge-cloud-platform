@@ -3,9 +3,13 @@ package orm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 
+	jaeger_json "github.com/jaegertracing/jaeger/model/json"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -20,15 +24,36 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		req := c.Request()
 		res := c.Response()
 
+		lvl := log.DebugLevelApi
+
+		if strings.Contains(req.RequestURI, "show") ||
+			strings.Contains(req.RequestURI, "Show") ||
+			strings.Contains(req.RequestURI, "/auth/user/current") ||
+			strings.Contains(req.RequestURI, "/metrics/") {
+			// don't log (fills up Audit logs)
+			lvl = 0
+		}
+
 		// All Tags on this span will be exposed to the end-user in
 		// the form of an "audit" log. Anything that should be kept
 		// internal for debugging should be put on log.SpanLog() call.
-		span := log.StartSpan(log.DebugLevelApi, req.RequestURI)
+		span := log.StartSpan(lvl, req.RequestURI)
 		span.SetTag("remote-ip", c.RealIP())
 		span.SetTag("level", "audit")
 		defer span.Finish()
 		ctx := log.ContextWithSpan(context.Background(), span)
 		ec := NewEchoContext(c, ctx)
+
+		if lvl == 0 {
+			defer func() {
+				if nexterr != nil {
+					// but, log if there was a failure
+					// note logs will not show up in stdout,
+					// but will show up in jaeger.
+					log.ForceLogSpan(span)
+				}
+			}()
+		}
 
 		reqBody := []byte{}
 		resBody := []byte{}
@@ -51,6 +76,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err == nil {
 				login.Password = ""
 				reqBody, err = json.Marshal(login)
+				span.SetTag("username", login.Username)
 			}
 			if err != nil {
 				reqBody = []byte{}
@@ -61,6 +87,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err == nil {
 				user.Passhash = ""
 				reqBody, err = json.Marshal(user)
+				span.SetTag("username", user.User.Name)
 			}
 			if err != nil {
 				reqBody = []byte{}
@@ -116,4 +143,186 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		return nexterr
 	}
+}
+
+func ShowAuditSelf(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+
+	query := ormapi.AuditQuery{}
+	if err := c.Bind(&query); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+
+	tags := make(map[string]string)
+	tags["level"] = "audit"
+	tags["username"] = claims.Username
+	if query.Org != "" {
+		tags["org"] = query.Org
+	}
+
+	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, tags, query.Limit)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	return c.JSON(http.StatusOK, resps)
+}
+
+func ShowAuditOrg(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+
+	query := ormapi.AuditQuery{}
+	if err := c.Bind(&query); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+
+	if !enforcer.Enforce(claims.Username, query.Org, ResourceUsers, ActionView) {
+		if query.Org == "" {
+			return fmt.Errorf("Organization not specified or no permissions")
+		}
+		return echo.ErrForbidden
+	}
+
+	tags := make(map[string]string)
+	tags["level"] = "audit"
+	if query.Org != "" {
+		tags["org"] = query.Org
+	}
+	if query.Username != "" {
+		tags["username"] = query.Username
+	}
+
+	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, tags, query.Limit)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	return c.JSON(http.StatusOK, resps)
+}
+
+// see https://github.com/jaegertracing/jaeger/blob/master/cmd/query/app/http_handler.go
+type jaegerQueryResponse struct {
+	Data   []*jaeger_json.Trace
+	Errors []*jaegerQueryError
+}
+
+type jaegerQueryError struct {
+	Code    int
+	Msg     string
+	TraceID jaeger_json.TraceID
+}
+
+func sendJaegerQuery(addr string, tags map[string]string, limit int) ([]*ormapi.AuditResponse, error) {
+	req, err := jaegerQueryRequest(addr, tags, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Could not reach log server, %v", err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Bad status from log server, %s", http.StatusText(resp.StatusCode))
+	}
+
+	respData := jaegerQueryResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&respData)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot parse log server response, %v", err)
+	}
+
+	return getAuditResponses(&respData), nil
+}
+
+func jaegerQueryRequest(addr string, tags map[string]string, limit int) (*http.Request, error) {
+	if !strings.HasPrefix(addr, "http://") {
+		if serverConfig.TlsCertFile == "" {
+			addr = "http://" + addr
+		} else {
+			addr = "https://" + addr
+		}
+	}
+	addr = addr + "/api/traces"
+	req, err := http.NewRequest("GET", addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	q := req.URL.Query()
+	q.Add("service", log.SpanServiceName)
+	for k, v := range tags {
+		q.Add("tag", fmt.Sprintf("%s:%s", k, v))
+	}
+	if limit == 0 {
+		// reasonable default
+		limit = 100
+	}
+	q.Add("limit", fmt.Sprintf("%d", limit))
+
+	req.URL.RawQuery = q.Encode()
+	return req, nil
+}
+
+func getAuditResponses(resp *jaegerQueryResponse) []*ormapi.AuditResponse {
+	resps := make([]*ormapi.AuditResponse, 0)
+	for _, trace := range resp.Data {
+		resp := &ormapi.AuditResponse{}
+		isAudit := false
+		for _, span := range trace.Spans {
+			if span.References == nil || len(span.References) == 0 {
+				// starting span
+				// could also tell by spanID == traceID
+				isAudit = fillAuditResponse(resp, &span)
+			}
+		}
+		if isAudit {
+			resp.TraceID = string(trace.TraceID)
+			resps = append(resps, resp)
+		}
+	}
+	sort.Slice(resps, func(i, j int) bool {
+		return resps[i].StartTime > resps[j].StartTime
+	})
+	return resps
+}
+
+func fillAuditResponse(resp *ormapi.AuditResponse, span *jaeger_json.Span) bool {
+	isAudit := false
+	for _, kv := range span.Tags {
+		val, ok := kv.Value.(string)
+		if !ok {
+			if ival, ok := kv.Value.(float64); ok && kv.Key == "status" {
+				resp.Status = int(ival)
+			}
+			continue
+		}
+		switch kv.Key {
+		case "level":
+			if val != "audit" {
+				return false
+			}
+			isAudit = true
+		case "request":
+			resp.Request = val
+		case "response":
+			resp.Response = val
+		case "username":
+			resp.Username = val
+		case "remote-ip":
+			resp.ClientIP = val
+		case "error":
+			resp.Error = val
+		}
+	}
+	resp.OperationName = span.OperationName
+	resp.StartTime = ormapi.TimeMicroseconds(span.StartTime)
+	resp.Duration = ormapi.DurationMicroseconds(span.Duration)
+	return isAudit
 }

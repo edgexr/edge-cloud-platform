@@ -40,6 +40,7 @@ type GenMC2 struct {
 	importOrmapi         bool
 	importGrpcStatus     bool
 	importStrings        bool
+	importLog            bool
 }
 
 func (g *GenMC2) Name() string {
@@ -85,6 +86,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importRequire {
 		g.PrintImport("", "github.com/stretchr/testify/require")
 	}
+	if g.importLog {
+		g.PrintImport("", "github.com/mobiledgex/edge-cloud/log")
+	}
 	if g.importOrmclient {
 		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormclient")
 	}
@@ -108,6 +112,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importOrmclient = false
 	g.importOrmapi = false
 	g.importGrpcStatus = false
+	g.importLog = false
 
 	g.support.InitFile()
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
@@ -236,15 +241,18 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		OrgField:             apiVals[2],
 		Org:                  "obj." + apiVals[2],
 		ShowOrg:              "res." + apiVals[2],
+		OrgValid:             true,
 		Outstream:            gensupport.ServerStreaming(method),
 		StreamOutIncremental: GetStreamOutIncremental(method),
 	}
 	if apiVals[2] == "" {
 		args.Org = `""`
 		args.ShowOrg = `""`
+		args.OrgValid = false
 	}
 	if apiVals[2] == "skipenforce" {
 		args.SkipEnforce = true
+		args.OrgValid = false
 	}
 	if args.Action == "ActionView" && strings.HasPrefix(args.MethodName, "Show") {
 		args.Show = true
@@ -278,6 +286,9 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importContext = true
 		g.importOrmapi = true
 		g.importGrpcStatus = true
+		if args.OrgValid {
+			g.importLog = true
+		}
 		if args.Outstream {
 			g.importIO = true
 			g.importJson = true
@@ -303,6 +314,7 @@ type tmplArgs struct {
 	OrgField             string
 	Org                  string
 	ShowOrg              string
+	OrgValid             bool
 	Outstream            bool
 	SkipEnforce          bool
 	Show                 bool
@@ -336,6 +348,10 @@ func {{.MethodName}}(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+{{- if .OrgValid}}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
+{{- end}}
 {{- if .Outstream}}
 	// stream func may return "forbidden", so don't write
 	// header until we know it's ok

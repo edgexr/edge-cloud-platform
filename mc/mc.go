@@ -24,6 +24,7 @@ var localVault = flag.Bool("localVault", false, "Run local Vault")
 var ldapAddr = flag.String("ldapAddr", "127.0.0.1:9389", "LDAP listener address")
 var gitlabAddr = flag.String("gitlabAddr", "http://127.0.0.1:80", "Gitlab server address")
 var artifactoryAddr = flag.String("artifactoryAddr", "http://127.0.0.1:80", "Artifactory server address")
+var jaegerAddr = flag.String("jaegerAddr", "127.0.0.1:16686", "Jaeger server address")
 var pingInterval = flag.Duration("pingInterval", 20*time.Second, "SQL database ping keep-alive interval")
 var skipVerifyEmail = flag.Bool("skipVerifyEmail", false, "skip email verification, for testing only")
 
@@ -52,6 +53,7 @@ func main() {
 		ClientCert:      *clientCert,
 		PingInterval:    *pingInterval,
 		SkipVerifyEmail: *skipVerifyEmail,
+		JaegerAddr:      *jaegerAddr,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {
