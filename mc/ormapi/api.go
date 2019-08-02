@@ -76,6 +76,25 @@ type CreateUser struct {
 	Verify EmailRequest `json:"verify"` // for verifying email
 }
 
+type AuditQuery struct {
+	Username string `json:"username"`
+	Org      string `form:"org" json:"org"`
+	Limit    int    `json:"limit"`
+}
+
+type AuditResponse struct {
+	OperationName string               `json:"operationname"`
+	Username      string               `json:"username"`
+	ClientIP      string               `json:"clientip"`
+	Status        int                  `json:"status"`
+	StartTime     TimeMicroseconds     `json:"starttime"`
+	Duration      DurationMicroseconds `json:"duration"`
+	Request       string               `json:"request"`
+	Response      string               `json:"response"`
+	Error         string               `json:"error"`
+	TraceID       string               `json:"traceid"`
+}
+
 // Email request is used for password reset and to resend welcome
 // verification email. It contains the information need to send
 // some kind of email to the user.

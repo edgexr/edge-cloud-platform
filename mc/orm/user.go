@@ -209,6 +209,9 @@ func VerifyEmail(c echo.Context) error {
 		// user got deleted in the meantime?
 		return nil
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("username", user.Name)
+
 	user.EmailVerified = true
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
 		return setReply(c, dbErr(err), nil)
@@ -434,6 +437,9 @@ func PasswordReset(c echo.Context) error {
 			Internal: err,
 		}
 	}
+	ctx := GetContext(c)
+	span := log.SpanFromContext(ctx)
+	span.SetTag("username", claims.Username)
 	return setPassword(c, claims.Username, pw.Password)
 }
 

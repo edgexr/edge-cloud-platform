@@ -234,6 +234,10 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	if role.Role == "" {
 		return fmt.Errorf("Role not specified")
 	}
+	if role.Org != "" {
+		span := log.SpanFromContext(ctx)
+		span.SetTag("org", role.Org)
+	}
 	// check that user/org/role exists
 	targetUser := ormapi.User{}
 	db := loggedDB(ctx)
@@ -322,6 +326,10 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 	}
 	if role.Role == "" {
 		return fmt.Errorf("Role not specified")
+	}
+	if role.Org != "" {
+		span := log.SpanFromContext(ctx)
+		span.SetTag("org", role.Org)
 	}
 
 	// Special case: if policy does not exist, return success.
