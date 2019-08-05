@@ -142,7 +142,7 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 		if _, ok := groupMembers[role.Username]; !ok {
 			groupMembers[role.Username] = map[string]*ormapi.Role{}
 		}
-		groupMembers[role.Username][role.Org] = role
+		groupMembers[role.Username][getArtifactoryName(role.Org)] = role
 	}
 
 	// Get Artifactory users
