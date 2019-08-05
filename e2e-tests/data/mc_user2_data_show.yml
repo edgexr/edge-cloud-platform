@@ -317,28 +317,6 @@ regiondata:
     - key:
         appkey:
           developerkey:
-            name: platos
-          name: platosEnablingLayer
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: default
-          cloudletkey:
-            operatorkey:
-              name: developer
-            name: default
-          developer: platos
-      uri: default.platosenablement.platos.com
-      liveness: LivenessStatic
-      mappedports:
-      - proto: LProtoTcp
-        internalport: 64000
-      flavor:
-        name: x1.small
-      state: Ready
-    - key:
-        appkey:
-          developerkey:
             name: AcmeAppCo
           name: someapplication1
           version: "1.0"
