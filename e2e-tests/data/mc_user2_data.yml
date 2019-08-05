@@ -127,21 +127,3 @@ regiondata:
       liveness: LivenessStatic
       flavor:
         name: x1.small
-    - key:
-        appkey:
-          developerkey:
-            name: platos
-          name: platosEnablingLayer
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: default
-          cloudletkey:
-            operatorkey:
-              name: developer
-            name: default
-          developer: platos
-      liveness: LivenessStatic
-      uri: default.platosenablement.platos.com
-      flavor:
-        name: x1.small

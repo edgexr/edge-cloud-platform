@@ -54,6 +54,7 @@ func gitlabCreateLDAPUser(ctx context.Context, user *ormapi.User) {
 	// generate long random password for LDAP users, effectively disabling it
 	pw := string(util.RandAscii(128))
 	_true := true
+	_false := false
 	opts := gitlab.CreateUserOptions{
 		Email:            &user.Email,
 		Name:             &user.Name,
@@ -62,6 +63,7 @@ func gitlabCreateLDAPUser(ctx context.Context, user *ormapi.User) {
 		Provider:         &LDAPProvider,
 		Password:         &pw,
 		SkipConfirmation: &_true,
+		CanCreateGroup:   &_false,
 	}
 	_, _, err := gitlabClient.Users.CreateUser(&opts)
 	if err != nil {
@@ -156,7 +158,7 @@ func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role) {
 	if enforcer.Enforce(role.Username, role.Org, ResourceUsers, ActionManage) {
 		access = gitlab.AccessLevel(gitlab.OwnerPermissions)
 	} else {
-		access = gitlab.AccessLevel(gitlab.MaintainerPermissions)
+		access = gitlab.AccessLevel(gitlab.ReporterPermissions)
 	}
 	opts := gitlab.AddGroupMemberOptions{
 		UserID:      &user.ID,
