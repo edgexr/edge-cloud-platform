@@ -48,12 +48,13 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
 
 	// Create missing objects
 	for org, _ := range orgsT {
-		if _, ok := groups[org]; ok {
-			delete(groups, org)
+		groupName := getArtifactoryName(org)
+		if _, ok := groups[groupName]; ok {
+			delete(groups, groupName)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing group",
-				"name", org)
+				"name", groupName)
 			err = artifactoryCreateGroup(ctx, org)
 			if err != nil {
 				s.syncErr(ctx, err)
