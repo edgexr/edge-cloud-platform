@@ -26,6 +26,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/influxdata/influxdb v1.6.2
 	github.com/jaegertracing/jaeger v1.13.1
+	github.com/jarcoal/httpmock v1.0.4
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/jinzhu/gorm v1.9.1
 	github.com/json-iterator/go v1.1.6 // indirect
