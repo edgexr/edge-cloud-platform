@@ -37,6 +37,7 @@ type influxQueryArgs struct {
 	OperatorName string
 	StartTime    string
 	EndTime      string
+	Last         int
 }
 
 // select * from "crm-appinst-cpu"."crm-appinst-mem"."crm-appinst-net"...
@@ -47,7 +48,8 @@ var influDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
 	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}`
+	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
+	`{{if ne .Last 0}} order by time desc limit {{.Last}}{{end}}`
 
 func init() {
 	influxDBTemplate = template.Must(template.New("influxquery").Parse(influDBT))
@@ -94,6 +96,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, selectorStr string) s
 		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		OperatorName: obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
+		Last:         obj.Last,
 	}
 
 	// Figure out the start/end time range for the query
@@ -125,6 +128,7 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, selectorStr strin
 		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		OperatorName: obj.ClusterInst.CloudletKey.OperatorKey.Name,
+		Last:         obj.Last,
 	}
 
 	// Figure out the start/end time range for the query
