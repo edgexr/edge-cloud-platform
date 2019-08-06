@@ -160,6 +160,7 @@ type RegionAppInstMetrics struct {
 	Selector  string
 	StartTime time.Time `json:",omitempty"`
 	EndTime   time.Time `json:",omitempty"`
+	Last      int       `json:",omitempty"`
 }
 
 type RegionClusterInstMetrics struct {
@@ -168,4 +169,5 @@ type RegionClusterInstMetrics struct {
 	Selector    string
 	StartTime   time.Time `json:",omitempty"`
 	EndTime     time.Time `json:",omitempty"`
+	Last        int       `json:",omitempty"`
 }
