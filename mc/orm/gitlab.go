@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -98,22 +97,7 @@ func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 		Path:       &name,
 		Visibility: gitlab.Visibility(gitlab.PrivateVisibility),
 	}
-	// The "path" argument is used to access the group via a URL,
-	// and so is case-insensitive. If there is a case conflict,
-	// i.e. two orgs named "org1" and "Org1", modify the path so
-	// there is no conflict.
-	var err error
-	var grp *gitlab.Group
-	for ii := 0; ii < 20; ii++ {
-		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create group", "data", groupOpts)
-		grp, _, err = gitlabClient.Groups.CreateGroup(&groupOpts)
-		if err != nil && strings.Contains(err.Error(), "path=>[\"has already been taken\"]") {
-			path := *groupOpts.Path + "_"
-			groupOpts.Path = &path
-			continue
-		}
-		break
-	}
+	grp, _, err := gitlabClient.Groups.CreateGroup(&groupOpts)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab create group",
 			"org", org, "name", name, "err", err)

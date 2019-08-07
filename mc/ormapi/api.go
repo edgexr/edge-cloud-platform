@@ -25,7 +25,7 @@ type User struct {
 }
 
 type Organization struct {
-	Name          string `gorm:"primary_key"`
+	Name          string `gorm:"primary_key;type:citext"`
 	Type          string `gorm:"not null"`
 	Address       string
 	Phone         string

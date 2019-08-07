@@ -62,6 +62,9 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	db := loggedDB(ctx)
 	err = db.Create(&org).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"organizations_pkey") {
+			return fmt.Errorf("Organization with name %s (case-insensitive) already exists", org.Name)
+		}
 		return dbErr(err)
 	}
 	// set user to admin role of organization
