@@ -14,6 +14,8 @@ import (
 
 func TestServer(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
+	log.InitTracer()
+	defer log.FinishTracer()
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
 
@@ -123,6 +125,16 @@ func TestServer(t *testing.T) {
 	status, err = mcClient.CreateOrg(uri, tokenMisterY, &org2)
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
+
+	org2ci := ormapi.Organization{
+		Type:    "developer",
+		Name:    "Devy",
+		Address: "123 Y Way",
+		Phone:   "123-321-1234",
+	}
+	status, err = mcClient.CreateOrg(uri, tokenMisterY, &org2ci)
+	require.NotNil(t, err, "create duplicate org (case-insensitive)")
+	require.Equal(t, http.StatusBadRequest, status, "create dup org")
 
 	// create new admin user
 	admin := ormapi.User{

@@ -161,8 +161,19 @@ func (p *Sql) StartLocal(logfile string, opts ...process.StartOp) error {
 		fmt.Println(string(out))
 		if err != nil {
 			p.StopLocal()
-			return fmt.Errorf("sql: failed to create user %s, %s",
-				p.Username, err.Error())
+			return fmt.Errorf("sql: failed to create database %s, %s",
+				p.Dbname, err.Error())
+		}
+		// citext allows columns to be case-insensitive text
+		out, err = p.runPsql([]string{
+			"-c", fmt.Sprintf("\\c %s", p.Dbname),
+			"-c", "create extension if not exists citext",
+			"postgres"})
+		fmt.Println(string(out))
+		if err != nil {
+			p.StopLocal()
+			return fmt.Errorf("sql: failed to enable citext %s, %s",
+				p.Dbname, err.Error())
 		}
 	}
 	return nil
