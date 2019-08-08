@@ -48,7 +48,6 @@ variable "cluster_tag" {
 variable "ssh_public_key" {
   description = "SSH authorized key for admin account"
   type        = "string"
-  default     = "~/.mobiledgex/id_rsa_mex.pub"
 }
 
 variable "agent_pool_name" {
