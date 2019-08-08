@@ -55,5 +55,4 @@ variable "ansible_ssh_user" {
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
-  default     = "~/.mobiledgex/id_rsa_mex.pub"
 }

@@ -83,3 +83,9 @@ variable "gcp_project" {
 variable "gcp_zone" {
   default     = "us-west2-a"
 }
+
+variable "ssh_public_key_file" {
+  description = "SSH public key file for the ansible account"
+  type        = "string"
+  default     = "~/.mobiledgex/id_rsa_mex.pub"
+}

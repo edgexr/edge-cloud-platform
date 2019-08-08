@@ -1,0 +1,101 @@
+#!/bin/bash
+
+USRSHELL=$( dscl . -read /Users/$USER UserShell 2>/dev/null | sed -n 's/^UserShell: //p' )
+ENVIRON=stage
+
+USAGE="$( basename $0 ) [options] [<environ>]
+Launch a developer shell for the specified environment (default: stage)
+
+  -r		Source shell rcfile after setting environment
+  -s <shell>	Shell to spawn (default: $USRSHELL)
+
+  -h	Display this message"
+
+die() {
+	echo -e "[1;31mERROR:[0m $*" >&2
+	exit 2
+}
+
+SOURCE_RCFILE=false
+while getopts ':hrs:' OPT; do
+	case "$OPT" in
+		h) echo "$USAGE"; exit 0 ;;
+		r) SOURCE_RCFILE=true ;;
+		s) USRSHELL=$OPTARG ;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
+[[ $# -gt 0 ]] && ENVIRON="$1"
+[[ -n "$DEVSHELL_ENVIRON" ]] && die "Already in a devshell environment: $DEVSHELL_ENVIRON"
+
+TMPFILE=$( mktemp )
+ENVDIR=$( mktemp -d )
+chmod 700 "$ENVDIR"
+trap 'rm -rf "$TMPFILE" "$ENVDIR"' EXIT
+
+export VAULT_ADDR=https://vault.mobiledgex.net
+VAULT_PATH="secret/ansible/$ENVIRON"
+
+# Check vault access
+LOGIN_CMD_MSG='Run the following command:
+  vault login -method=github token="$MY_GITHUB_TOKEN"'
+
+vault token lookup -format=yaml >"$TMPFILE" 2>/dev/null
+[[ $? -ne 0 ]] && die "Not logged in to vault. $LOGIN_CMD_MSG"
+
+TOKEN_USER=$( grep '^    username:' "$TMPFILE" | awk '{print $2}' )
+GITHUB_DEV=$( grep '^  - github-dev$' "$TMPFILE" )
+
+[[ -z "$TOKEN_USER" || -z "$GITHUB_DEV" ]] && \
+	die "Not logged in to vault as github dev. $LOGIN_CMD_MSG"
+
+# Validate environ
+vault kv list "$VAULT_PATH" >/dev/null || die "Unknown environment: $ENVIRON"
+
+# Set up env
+ANSIBLE_VAULT_PASSWORD_FILE="$ENVDIR/ansible-vault-pw.txt"
+vault kv get -field=value "$VAULT_PATH/ansible-vault-pass" >"$ANSIBLE_VAULT_PASSWORD_FILE"
+
+GCP_SERVICE_ACCOUNT_FILE="$ENVDIR/gcp-sp.txt"
+vault kv get -field=data -format=json "$VAULT_PATH/gcp-terraform-service-principal" >"$GCP_SERVICE_ACCOUNT_FILE"
+
+SSH_KEY='id_rsa_mex'
+SSH_PRIV_KEY_FILE="$ENVDIR/ssh/$SSH_KEY"
+mkdir -p "$( dirname ${SSH_PRIV_KEY_FILE} )"
+chmod 700 "$( dirname ${SSH_PRIV_KEY_FILE} )"
+vault kv get -field=private_key "$VAULT_PATH/ssh_keys/$SSH_KEY" >"$SSH_PRIV_KEY_FILE"
+vault kv get -field=public_key "$VAULT_PATH/ssh_keys/$SSH_KEY" >"${SSH_PRIV_KEY_FILE}.pub"
+chmod 400 "$SSH_PRIV_KEY_FILE"
+
+RCFILE="$ENVDIR/rc"
+cat >"$RCFILE" <<EOT
+export ANSIBLE_VAULT_PASSWORD_FILE="$ANSIBLE_VAULT_PASSWORD_FILE"
+export ARM_ACCESS_KEY=$( vault kv get -field=value "$VAULT_PATH/azure-access-key" )
+export GCP_SERVICE_ACCOUNT_FILE="$GCP_SERVICE_ACCOUNT_FILE"
+export GOOGLE_CLOUD_KEYFILE_JSON="$GCP_SERVICE_ACCOUNT_FILE"
+export ANSIBLE_SSH_PRIVATE_KEY_FILE="$SSH_PRIV_KEY_FILE"
+export TF_VAR_ssh_public_key_file="${SSH_PRIV_KEY_FILE}.pub"
+
+export DEVSHELL_ENVIRON="$ENVIRON"
+EOT
+
+if $SOURCE_RCFILE; then
+	USRSHELLRC=
+	case "$USRSHELL" in
+	*zsh)	USRSHELLRC=.zshrc ;;
+	*bash)	USRSHELLRC=.bashrc ;;
+	*)	echo "WARNING: Unsupported shell ($USRSHELL); not sourcing rcfile" >&2 ;;
+	esac
+
+	if [[ -n "$USRSHELLRC" ]]; then
+		echo "[[ -f ~/${USRSHELLRC} ]] && . ~/${USRSHELLRC}" >>"$RCFILE"
+	fi
+fi
+
+cat >>"$RCFILE" <<EOT
+PS1='devshell:[1;31m${ENVIRON}[0m> '
+cd $PWD
+EOT
+
+${USRSHELL} --rcfile "$RCFILE"

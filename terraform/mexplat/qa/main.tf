@@ -37,6 +37,7 @@ module "gitlab" {
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 20
   tags                = [ "mexplat-${var.environ_tag}", "gitlab-registry", "http-server", "https-server", "pg-5432", "crm", "mc", "stun-turn", "vault-ac" ]
+  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "gitlab_dns" {
@@ -65,6 +66,7 @@ module "console" {
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
   tags                = [ "http-server", "https-server", "console-debug", "mc" ]
+  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "console_dns" {

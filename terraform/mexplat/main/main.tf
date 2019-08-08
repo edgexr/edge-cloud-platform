@@ -39,6 +39,7 @@ module "docker_replica_west_eu" {
   instance_size       = "custom-1-2816"
   boot_disk_size      = 10
   tags                = [ "mexplat-${var.environ_tag}", "http-server", "https-server" ]
+  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "docker_replica_west_eu_dns" {
