@@ -142,7 +142,22 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 }
 
 func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("Update not yet supported for Azure AppInst")
+	updateCallback(edgeproto.UpdateTask, "Updating Azure AppInst")
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	client, err := s.GetPlatformClient(clusterInst)
+	if err != nil {
+		return err
+	}
+
+	err = k8smgmt.UpdateAppInst(client, names, app, appInst)
+	if err == nil {
+		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
+		err = k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
+	}
+	return err
 }
 
 func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
