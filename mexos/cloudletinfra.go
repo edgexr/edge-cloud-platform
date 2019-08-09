@@ -19,6 +19,7 @@ var OpenstackProps edgeproto.OpenStackProperties
 
 var MEXInfraVersion = "v2.0.2" //Stratus
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
+var VaultAddr string
 
 // Package level test mode variable
 var testMode = false
@@ -34,6 +35,7 @@ func InitInfraCommon(vaultAddr string) error {
 	if vaultAddr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
+	VaultAddr = vaultAddr
 	mexEnvURL := getVaultCloudletPath("mexenv.json", vaultAddr)
 	err := InternVaultEnv(mexEnvURL)
 	if err != nil {

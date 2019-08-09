@@ -6,15 +6,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud-infra/artifactory"
+	"github.com/miekg/dns"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
+	"gortc.io/stun"
 )
 
 //validateDomain does strange validation, not strictly domain, due to the data passed from controller.
@@ -113,40 +115,13 @@ func GetSCPFile(uri string) ([]byte, error) {
 // 	return nil
 // }
 
-func SendHTTPReq(method, fileUrlPath string) (*http.Response, error) {
-	fileUrl, err := url.Parse(fileUrlPath)
-	if err != nil {
-		return nil, err
-	}
-	var af_apikey string
-	if fileUrl.Host == "artifactory.mobiledgex.net" {
-		af_apikey, err = artifactory.GetArtifactoryApiKey()
-		if err != nil {
-			return nil, err
-		}
-	}
-	client := &http.Client{}
-	req, err := http.NewRequest(method, fileUrlPath, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed sending request %v", err)
-	}
-	if af_apikey != "" {
-		req.Header.Set("X-JFrog-Art-Api", af_apikey)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed fetching response %v", err)
-	}
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status: %s", resp.Status)
-	}
-	return resp, err
-}
-
 func GetUrlInfo(fileUrlPath string) (time.Time, string, error) {
 	log.DebugLog(log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
-	resp, err := SendHTTPReq("HEAD", fileUrlPath)
+	auth, err := cloudcommon.GetRegistryAuth(fileUrlPath, VaultAddr)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "failed to get auth", "file-url", fileUrlPath, "err", err)
+	}
+	resp, err := cloudcommon.SendHTTPReq("HEAD", fileUrlPath, auth)
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("Error fetching last modified time of URL %s, %v", fileUrlPath, err)
 	}
@@ -185,18 +160,26 @@ func Md5SumFile(filePath string) (string, error) {
 func DownloadFile(fileUrlPath string, filePath string) error {
 	log.DebugLog(log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
 
+	auth, err := cloudcommon.GetRegistryAuth(fileUrlPath, VaultAddr)
+	if err != nil {
+		log.DebugLog(log.DebugLevelMexos, "failed to get auth", "file-url", fileUrlPath, "err", err)
+	}
+	resp, err := cloudcommon.SendHTTPReq("GET", fileUrlPath, auth)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
 	// Create the file
 	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-
-	resp, err := SendHTTPReq("GET", fileUrlPath)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
@@ -216,14 +199,70 @@ func DeleteFile(filePath string) error {
 
 // Get the externally visible public IP address
 func GetExternalPublicAddr() (string, error) {
-	resp, err := SendHTTPReq("GET", "http://ifconfig.me")
+	myip, err := stunGetMyIP()
+	if err == nil {
+		return myip, nil
+	}
+
+	// Alternatively use dns resolver to fetch external IP
+	myip, err = dnsGetMyIP()
+	if err == nil {
+		return myip, nil
+	}
+	return "", err
+}
+
+func stunGetMyIP() (string, error) {
+	log.DebugLog(log.DebugLevelMexos, "get ip from stun server")
+	var myip string
+
+	// Creating a "connection" to STUN server.
+	c, err := stun.Dial("udp", "stun.mobiledgex.net:19302")
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	ip, err := ioutil.ReadAll(resp.Body)
+	// Building binding request with random transaction id.
+	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
+	// Sending request to STUN server, waiting for response message.
+	if c_err := c.Do(message, func(res stun.Event) {
+		if res.Error != nil {
+			err = res.Error
+		}
+		// Decoding XOR-MAPPED-ADDRESS attribute from message.
+		var xorAddr stun.XORMappedAddress
+		if x_err := xorAddr.GetFrom(res.Message); err != nil {
+			err = x_err
+		}
+		myip = xorAddr.IP.String()
+	}); c_err != nil {
+		return "", c_err
+	}
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(ip)), err
+	return myip, nil
+}
+
+func dnsGetMyIP() (string, error) {
+	c := new(dns.Client)
+	m := new(dns.Msg)
+	m.SetQuestion(dns.Fqdn("myip.opendns.com"), dns.TypeANY)
+	m.RecursionDesired = true
+
+	r, _, err := c.Exchange(m, net.JoinHostPort("resolver1.opendns.com", "53"))
+	if r == nil {
+		return "", err
+	}
+
+	if r.Rcode != dns.RcodeSuccess {
+		return "", fmt.Errorf("invalid return code %d", r.Rcode)
+	}
+	// Stuff must be in the answer section
+	for _, a := range r.Answer {
+		f, ok := a.(*dns.A)
+		if ok {
+			return f.A.String(), nil
+		}
+	}
+	return "", fmt.Errorf("unable to find external IP")
 }
