@@ -27,8 +27,8 @@ func (s *Platform) GetType() string {
 	return "mexdind"
 }
 
-func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
-	err := s.generic.Init(platformConfig)
+func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.generic.Init(platformConfig, updateCallback)
 	s.config = *platformConfig
 	if err != nil {
 		return err

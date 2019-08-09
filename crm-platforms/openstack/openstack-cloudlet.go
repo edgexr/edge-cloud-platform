@@ -18,11 +18,10 @@ import (
 )
 
 const (
-	PlatformMaxWait = 5 * time.Minute
-
 	// Platform services
 	ServiceTypeCRM      = "crmserver"
 	ServiceTypeShepherd = "shepherd"
+	PlatformMaxWait     = 10 * time.Second
 )
 
 func getPlatformVMName(cloudlet *edgeproto.Cloudlet) string {
@@ -80,11 +79,10 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 		return
 	}
 
-	// Wait for service to come up: Since we cannot fetch information
-	// regarding service state from docker ouput, we observe container
-	// state for PlatformMaxWait time, if it is Up then we return
-	// successfully and then controller will do the actual
-	// check if service connected to it or not
+	// - Wait for docker container to start running
+	// - And also monitor the UP state for PlatformMaxTime to
+	//   catch early Fatal Logs
+	// - After which controller will monitor it using CloudletInfo
 	start := time.Now()
 	for {
 		out, err := client.Output(`sudo docker ps -a -n 1 --filter name=` + platform_vm_name + ` --format '{{.Status}}'`)
@@ -92,7 +90,9 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 			cDone <- fmt.Errorf("Unable to fetch %s container status: %v, %s\n", serviceType, err, out)
 			return
 		}
-		if !strings.Contains(out, "Up ") {
+		if strings.Contains(out, "Up ") {
+			break
+		} else if !strings.Contains(out, "Created") {
 			// container exited in failure state
 			// Show Fatal Log, if not Fatal log found, then show last 10 lines of error
 			out, err = client.Output(`sudo docker logs ` + platform_vm_name + ` 2>&1 | grep FATAL | awk '{for (i=1; i<=NF-3; i++) $i = $(i+3); NF-=3; print}'`)

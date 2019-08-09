@@ -28,7 +28,7 @@ func (s *Platform) GetType() string {
 	return "openstack"
 }
 
-func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
+func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	rootLBName := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
 	s.cloudletKey = platformConfig.CloudletKey
 	s.config = *platformConfig
@@ -38,6 +38,9 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 		"physicalName", platformConfig.PhysicalName,
 		"vaultAddr", platformConfig.VaultAddr)
 
+	updateCallback(edgeproto.UpdateTask, "Initializing Openstack platform")
+
+	updateCallback(edgeproto.UpdateTask, "Fetching Openstack access credentials")
 	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
 		return err
 	}
@@ -55,6 +58,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	}
 
 	// create rootLB
+	updateCallback(edgeproto.UpdateTask, "Creating RootLB")
 	crmRootLB, cerr := mexos.NewRootLB(rootLBName)
 	if cerr != nil {
 		return cerr
@@ -77,6 +81,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	}
 
 	log.DebugLog(log.DebugLevelMexos, "calling SetupRootLB")
+	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
 	err = mexos.SetupRootLB(rootLBName, flavorName, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
@@ -88,6 +93,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig) error {
 	if err != nil {
 		return err
 	}
+	updateCallback(edgeproto.UpdateTask, "Setting up Nginx Proxy")
 	err = nginx.InitL7Proxy(client, nginx.WithDockerNetwork("host"))
 	if err != nil {
 		return err
