@@ -7,8 +7,8 @@ import (
 	"github.com/atlassian/go-artifactory/v2/artifactory"
 	"github.com/atlassian/go-artifactory/v2/artifactory/transport"
 	v1 "github.com/atlassian/go-artifactory/v2/artifactory/v1"
-	rtf "github.com/mobiledgex/edge-cloud-infra/artifactory"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -26,12 +26,25 @@ func getArtifactoryRepoName(orgName string) string {
 }
 
 func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
-	artifactoryApiKey, err := rtf.GetArtifactoryApiKey()
+	auth, err := cloudcommon.GetRegistryAuth(serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to fetch artifactory AuthKey from Vault",
+			"artifactoryAddr", serverConfig.ArtifactoryAddr,
+			"vaultAddr", serverConfig.VaultAddr,
+			"err", err)
+		return nil, err
+	}
+	if auth.AuthType != cloudcommon.ApiKeyAuth {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Invalid auth type for artifactory",
+			"artifactoryAddr", serverConfig.ArtifactoryAddr,
+			"authType", auth.AuthType)
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
 	tp := transport.ApiKeyAuth{
-		ApiKey: artifactoryApiKey,
+		ApiKey: auth.ApiKey,
 	}
 	client, err := artifactory.NewClient(serverConfig.ArtifactoryAddr, tp.Client())
 	if err != nil {

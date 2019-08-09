@@ -35,6 +35,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
 	github.com/lib/pq v1.0.0
+	github.com/miekg/dns v1.1.15
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.3
@@ -62,6 +63,7 @@ require (
 	google.golang.org/grpc v1.21.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2
+	gortc.io/stun v1.21.0
 	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
@@ -398,3 +400,7 @@ replace github.com/opentracing/opentracing-go => github.com/opentracing/opentrac
 replace github.com/uber/jaeger-client-go => github.com/uber/jaeger-client-go v2.16.1-0.20190705220040-402bec9e6ead+incompatible
 
 replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.0.0+incompatible
+
+replace github.com/miekg/dns => github.com/miekg/dns v1.1.15
+
+replace gortc.io/stun => gortc.io/stun v1.21.0
