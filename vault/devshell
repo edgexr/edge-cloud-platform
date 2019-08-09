@@ -3,6 +3,8 @@
 USRSHELL=$( dscl . -read /Users/$USER UserShell 2>/dev/null | sed -n 's/^UserShell: //p' )
 ENVIRON=stage
 
+: ${USRSHELL:=/bin/bash}
+
 USAGE="$( basename $0 ) [options] [<environ>]
 Launch a developer shell for the specified environment (default: stage)
 
@@ -98,4 +100,12 @@ PS1='devshell:[1;31m${ENVIRON}[0m> '
 cd $PWD
 EOT
 
-${USRSHELL} --rcfile "$RCFILE"
+case "$USRSHELL" in
+*zsh)
+	mv "$RCFILE" "$ENVDIR/.zshrc"
+	ZDOTDIR="$ENVDIR" zsh
+	;;
+*)
+	${USRSHELL} --rcfile "$RCFILE"
+	;;
+esac
