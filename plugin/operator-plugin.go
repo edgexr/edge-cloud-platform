@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/operator-api-gw/defaultoperator"
+	"github.com/mobiledgex/edge-cloud/d-match-engine/operator/defaultoperator"
 	"github.com/mobiledgex/edge-cloud-infra/operator-api-gw/gddt"
 
 	"github.com/mobiledgex/edge-cloud/d-match-engine/operator"

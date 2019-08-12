@@ -1,6 +1,6 @@
 vars:
   - locverurl: "http://127.0.0.1:8888/verifyLocation" 
-  - toksrvurl: "http://127.0.0.1:9999/its?followURL%3Dhttps://dme.mobiledgex.net/verifyLoc" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc" 
 
 tlscerts:
 - commonname: localserver
