@@ -139,6 +139,7 @@ var AppInstAliasArgs = []string{
 	"mappedports.publicport=appinst.mappedports.publicport",
 	"mappedports.pathprefix=appinst.mappedports.pathprefix",
 	"mappedports.fqdnprefix=appinst.mappedports.fqdnprefix",
+	"mappedports.endport=appinst.mappedports.endport",
 	"flavor.name=appinst.flavor.name",
 	"state=appinst.state",
 	"errors=appinst.errors",
