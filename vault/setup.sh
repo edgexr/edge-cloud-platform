@@ -40,6 +40,10 @@ path "secret/data/accounts/noreplyemail" {
 path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
+
+path "secret/data/registry/*" {
+  capabilities = [ "read" ]
+}
 EOF
 vault policy write mcorm /tmp/mcorm-pol.hcl
 rm /tmp/mcorm-pol.hcl

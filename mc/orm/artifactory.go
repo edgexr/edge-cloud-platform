@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/atlassian/go-artifactory/v2/artifactory"
@@ -17,6 +18,9 @@ const (
 	ArtifactoryRepoPrefix string = "repo-"
 )
 
+// Cache Artifactory Auth Key
+var rtfAuth *cloudcommon.RegistryAuth
+
 func getArtifactoryName(orgName string) string {
 	return ArtifactoryPrefix + orgName
 }
@@ -26,25 +30,25 @@ func getArtifactoryRepoName(orgName string) string {
 }
 
 func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
-	auth, err := cloudcommon.GetRegistryAuth(serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to fetch artifactory AuthKey from Vault",
-			"artifactoryAddr", serverConfig.ArtifactoryAddr,
-			"vaultAddr", serverConfig.VaultAddr,
-			"err", err)
-		return nil, err
-	}
-	if auth.AuthType != cloudcommon.ApiKeyAuth {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Invalid auth type for artifactory",
-			"artifactoryAddr", serverConfig.ArtifactoryAddr,
-			"authType", auth.AuthType)
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
+	if rtfAuth == nil {
+		auth, err := cloudcommon.GetRegistryAuth(serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to fetch artifactory AuthKey from Vault",
+				"artifactoryAddr", serverConfig.ArtifactoryAddr,
+				"vaultAddr", serverConfig.VaultAddr,
+				"err", err)
+			return nil, err
+		}
+		if auth.AuthType != cloudcommon.ApiKeyAuth {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Invalid auth type for artifactory",
+				"artifactoryAddr", serverConfig.ArtifactoryAddr,
+				"authType", auth.AuthType)
+			return nil, fmt.Errorf("Invalid auth type for Artifactory")
+		}
+		rtfAuth = auth
 	}
 	tp := transport.ApiKeyAuth{
-		ApiKey: auth.ApiKey,
+		ApiKey: rtfAuth.ApiKey,
 	}
 	client, err := artifactory.NewClient(serverConfig.ArtifactoryAddr, tp.Client())
 	if err != nil {

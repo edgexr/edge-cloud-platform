@@ -254,10 +254,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}()
 
 	gitlabSync = GitlabNewSync()
-	gitlabSync.Start()
-
 	artifactorySync = ArtifactoryNewSync()
-	artifactorySync.Start()
 
 	return &server, nil
 }
@@ -265,6 +262,11 @@ func RunServer(config *ServerConfig) (*Server, error) {
 func (s *Server) WaitUntilReady() error {
 	// wait until init data is done
 	<-s.initDataDone
+
+	// Start sync service
+	gitlabSync.Start()
+	artifactorySync.Start()
+
 	// wait until server is online
 	for ii := 0; ii < 10; ii++ {
 		resp, err := http.Get("http://" + s.config.ServAddr)
