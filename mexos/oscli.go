@@ -3,6 +3,7 @@ package mexos
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -109,20 +110,32 @@ func ListNetworks() ([]OSNetwork, error) {
 	return networks, nil
 }
 
-//ListFlavors lists flavors known to the platform. These vary. On Buckhorn cloudlet the are m4. prefixed.
+//ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
 func ListFlavors() ([]OSFlavor, error) {
+	flavorMatchPattern := GetCloudletFlavorMatchPattern()
+	r, err := regexp.Compile(flavorMatchPattern)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot compile flavor match pattern")
+	}
 	out, err := TimedOpenStackCommand("openstack", "flavor", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get flavor list, %v", err)
 		return nil, err
 	}
 	var flavors []OSFlavor
+	var flavorsMatched []OSFlavor
 	err = json.Unmarshal(out, &flavors)
+
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	return flavors, nil
+	for _, f := range flavors {
+		if r.MatchString(f.Name) {
+			flavorsMatched = append(flavorsMatched, f)
+		}
+	}
+	return flavorsMatched, nil
 }
 
 func ListFloatingIPs() ([]OSFloatingIP, error) {
@@ -626,8 +639,11 @@ func OSGetLimits(info *edgeproto.CloudletInfo) error {
 
 func GetFlavorInfo() ([]*edgeproto.FlavorInfo, error) {
 	osflavors, err := ListFlavors()
-	if err != nil || len(osflavors) == 0 {
-		return nil, fmt.Errorf("failed to get flavors, %s", err.Error())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flavors, %v", err.Error())
+	}
+	if len(osflavors) == 0 {
+		return nil, fmt.Errorf("no flavors found")
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
