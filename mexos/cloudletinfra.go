@@ -181,3 +181,11 @@ func GetCloudletSecurityGroup() string {
 func GetCloudletMexosAgentPort() string {
 	return "18889"
 }
+
+func GetCloudletFlavorMatchPattern() string {
+	pattern := os.Getenv("FLAVOR_MATCH_PATTERN")
+	if pattern == "" {
+		return ".*"
+	}
+	return pattern
+}
