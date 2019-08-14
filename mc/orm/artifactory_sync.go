@@ -16,6 +16,9 @@ func ArtifactoryNewSync() *AppStoreSync {
 }
 
 func (s *AppStoreSync) syncArtifactoryObjects(ctx context.Context) {
+	// Refresh auth cache on sync
+	rtfAuth = nil
+
 	s.syncGroupObjects(ctx)
 	s.syncGroupUsers(ctx)
 }
@@ -129,6 +132,9 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 	}
 	mcusersT := make(map[string]*ormapi.User)
 	for ii, _ := range mcusers {
+		if mcusers[ii].Name == DefaultSuperuser {
+			continue
+		}
 		mcusersT[mcusers[ii].Name] = &mcusers[ii]
 	}
 

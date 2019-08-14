@@ -259,3 +259,7 @@ func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interfa
 	}
 	return resp.StatusCode, nil
 }
+
+func (s *Client) ArtifactoryResync(uri, token string) (int, error) {
+	return s.PostJson(uri+"/auth/artifactory/resync", token, nil, nil)
+}
