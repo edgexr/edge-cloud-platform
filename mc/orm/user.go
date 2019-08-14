@@ -108,6 +108,9 @@ func CreateUser(c echo.Context) error {
 	if strings.Contains(user.Name, "::") {
 		return c.JSON(http.StatusBadRequest, Msg("Name cannot contain ::"))
 	}
+	if strings.Contains(user.Name, "&") {
+		return c.JSON(http.StatusBadRequest, Msg("Name cannot contain &"))
+	}
 	if !util.ValidEmail(user.Email) {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid email address"))
 	}
