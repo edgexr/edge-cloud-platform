@@ -9,7 +9,7 @@ import (
 // Data saved to persistent sql db, also used for API calls
 
 type User struct {
-	Name          string `gorm:"primary_key"`
+	Name          string `gorm:"primary_key;type:citext"`
 	Email         string `gorm:"unique;not null"`
 	EmailVerified bool
 	Passhash      string `gorm:"not null"`
@@ -29,7 +29,7 @@ type Organization struct {
 	Type          string `gorm:"not null"`
 	Address       string
 	Phone         string
-	AdminUsername string    `gorm:"type:text REFERENCES users(name)"`
+	AdminUsername string    `gorm:"type:text;type:citext REFERENCES users(name)"`
 	CreatedAt     time.Time `json:",omitempty"`
 	UpdatedAt     time.Time `json:",omitempty"`
 }

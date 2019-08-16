@@ -18,6 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type entry struct {
+	Org   string            // Organization/Developer
+	Users map[string]string // User:UserType
+}
+
 var (
 	rtfUserStore  map[string]*v1.User
 	rtfGroupStore map[string]*v1.Group
@@ -26,17 +31,19 @@ var (
 
 	testEntries []entry = []entry{
 		entry{
-			Org:      "bigorg1",
-			UserMain: "orgman1",
-			UserContrib: []string{
-				"worker1",
+			Org: "bigorg1",
+			Users: map[string]string{
+				"orgman1":   RoleDeveloperManager,
+				"worker1":   RoleDeveloperContributor,
+				"worKer1.1": RoleDeveloperViewer,
 			},
 		},
 		entry{
-			Org:      "bigorg2",
-			UserMain: "orgman2",
-			UserContrib: []string{
-				"worker2", "worker2.1",
+			Org: "bigOrg2",
+			Users: map[string]string{
+				"orgMan2":   RoleDeveloperManager,
+				"worker2":   RoleDeveloperContributor,
+				"wOrKer2.1": RoleDeveloperViewer,
 			},
 		},
 	}
@@ -44,20 +51,14 @@ var (
 	// Entries only present in Artifactory but not in MC
 	rtfDummyEntries []entry = []entry{
 		entry{
-			Org:      "dummyOrg1",
-			UserMain: "dummyUser1",
-			UserContrib: []string{
-				"dummyWorker1",
+			Org: "dummyOrg1",
+			Users: map[string]string{
+				"dummyUser1":   RoleDeveloperManager,
+				"dummyWorker1": RoleDeveloperContributor,
 			},
 		},
 	}
 )
-
-type entry struct {
-	Org         string   // Organization/Developer
-	UserMain    string   // Developer Maintainer
-	UserContrib []string // Developer Contributors
-}
 
 const (
 	artifactoryAddr   string = "https://dummy-artifactory.mobiledgex.net"
@@ -67,13 +68,16 @@ const (
 	groupApi string = "/api/security/groups/"
 	repoApi  string = "/api/repositories/"
 	permApi  string = "/api/security/permissions/"
+
+	DummyObj string = "dummy"
+	MCObj    string = "mc"
 )
 
 func getApiPath(api, name string) string {
 	if name == "" {
 		return artifactoryAddr + strings.TrimSuffix(api, "/")
 	} else {
-		return artifactoryAddr + api + name
+		return "=~(?i)^" + artifactoryAddr + api + name + "$"
 	}
 }
 
@@ -86,8 +90,11 @@ func registerCreateUser(userName string) {
 				return httpmock.NewStringResponse(500, "Unable to decode JSON body"), nil
 			}
 			realm := "ldap"
+			// As Artifactory stores username in lowercase format
+			username := strings.ToLower(*rtfUser.Name)
 			rtfUser.Realm = &realm
-			rtfUserStore[*rtfUser.Name] = &rtfUser
+			rtfUser.Name = &username
+			rtfUserStore[username] = &rtfUser
 
 			return httpmock.NewStringResponse(200, "Success"), nil
 		},
@@ -97,8 +104,9 @@ func registerCreateUser(userName string) {
 func registerDeleteUser(userName string) {
 	httpmock.RegisterResponder("DELETE", getApiPath(userApi, userName),
 		func(req *http.Request) (*http.Response, error) {
-			if _, ok := rtfUserStore[userName]; ok {
-				delete(rtfUserStore, userName)
+			username := strings.ToLower(userName)
+			if _, ok := rtfUserStore[username]; ok {
+				delete(rtfUserStore, username)
 				return httpmock.NewStringResponse(200, "Success"), nil
 			}
 			return httpmock.NewStringResponse(404, "Unable to find user"), nil
@@ -193,7 +201,7 @@ func registerDeletePerm(orgName string) {
 func registerGetUser(userName string) {
 	httpmock.RegisterResponder("GET", getApiPath(userApi, userName),
 		func(req *http.Request) (*http.Response, error) {
-			if rtfUser, ok := rtfUserStore[userName]; ok {
+			if rtfUser, ok := rtfUserStore[strings.ToLower(userName)]; ok {
 				return httpmock.NewJsonResponse(200, rtfUser)
 			}
 			return httpmock.NewStringResponse(404, "Unable to find user"), nil
@@ -280,7 +288,7 @@ func registerUpdateUser(userName, orgName string) {
 			if err != nil {
 				return httpmock.NewStringResponse(500, "Unable to decode JSON body"), nil
 			}
-			if rtfUser, ok := rtfUserStore[userName]; ok {
+			if rtfUser, ok := rtfUserStore[strings.ToLower(userName)]; ok {
 				rtfUser.Groups = updateUser.Groups
 				return httpmock.NewStringResponse(200, ""), nil
 			}
@@ -294,11 +302,9 @@ func registerMockResponders(e entry) {
 	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 
 	// Create User
-	registerCreateUser(e.UserMain)
-	registerDeleteUser(e.UserMain)
-	for _, userContrib := range e.UserContrib {
-		registerCreateUser(userContrib)
-		registerDeleteUser(userContrib)
+	for user, _ := range e.Users {
+		registerCreateUser(user)
+		registerDeleteUser(user)
 	}
 
 	// Create Group/Repo/Permission-Target
@@ -312,9 +318,8 @@ func registerMockResponders(e entry) {
 	registerDeletePerm(e.Org)
 
 	// Get User
-	registerGetUser(e.UserMain)
-	for _, userContrib := range e.UserContrib {
-		registerGetUser(userContrib)
+	for user, _ := range e.Users {
+		registerGetUser(user)
 	}
 
 	// List all users
@@ -330,9 +335,8 @@ func registerMockResponders(e entry) {
 	registerGetPerms()
 
 	// Add user to group
-	registerUpdateUser(e.UserMain, e.Org)
-	for _, userContrib := range e.UserContrib {
-		registerUpdateUser(userContrib, e.Org)
+	for user, _ := range e.Users {
+		registerUpdateUser(user, e.Org)
 	}
 }
 
@@ -345,7 +349,7 @@ func contains(objects []string, e string) bool {
 	return false
 }
 
-func verifyRtfStore(t *testing.T, v entry) {
+func verifyRtfStore(t *testing.T, v entry, objType string) {
 	// Verify group exists and group name starts with required prefix
 	groupName := getArtifactoryName(v.Org)
 	rtfGroup, ok := rtfGroupStore[groupName]
@@ -365,27 +369,39 @@ func verifyRtfStore(t *testing.T, v entry) {
 	require.True(t, ok, "Permission target exists")
 	require.Equal(t, *rtfPerm.Name, permName, "Permission target name matches")
 	require.Equal(t, (*rtfPerm.Repositories)[0], repoName, "Repository is part of permission target")
+	require.NotNil(t, rtfPerm.Principals.Users, "User permissions exists")
+	require.NotNil(t, rtfPerm.Principals.Groups, "Group permissions exists")
 	for grp, grpPerm := range *rtfPerm.Principals.Groups {
 		require.Equal(t, grp, groupName, "Group is part of permission target")
-		require.True(t, contains(grpPerm, "w"), "Write permission exists")
-		require.True(t, contains(grpPerm, "d"), "Delete permission exists")
-		require.True(t, contains(grpPerm, "r"), "Read permission exists")
-		break
+		require.False(t, contains(grpPerm, "w"), "Group should not have write permission")
+		require.False(t, contains(grpPerm, "d"), "Group should not have delete permission")
+		require.True(t, contains(grpPerm, "r"), "Group should have read permission")
 	}
 
 	// Verify user exists and uses LDAP config
-	rtfUser, ok := rtfUserStore[v.UserMain]
-	require.True(t, ok, "user exists")
-	require.Equal(t, *rtfUser.Name, v.UserMain, "user name matches")
-	require.True(t, *rtfUser.InternalPasswordDisabled, "user must use LDAP")
-	require.Equal(t, (*rtfUser.Groups)[0], getArtifactoryName(v.Org), "user must belong to org")
-
-	for _, userContrib := range v.UserContrib {
-		rtfUser, ok = rtfUserStore[userContrib]
+	for user, userType := range v.Users {
+		userName := strings.ToLower(user)
+		rtfUser, ok := rtfUserStore[userName]
 		require.True(t, ok, "user exists")
-		require.Equal(t, *rtfUser.Name, userContrib, "user name matches")
+		require.Equal(t, *rtfUser.Name, userName, "user name matches")
 		require.True(t, *rtfUser.InternalPasswordDisabled, "user must use LDAP")
+		require.NotNil(t, rtfUser.Groups, "user group exists")
 		require.True(t, contains(*rtfUser.Groups, getArtifactoryName(v.Org)), "user must belong to org")
+
+		if objType == MCObj {
+			usrPerm, ok := (*rtfPerm.Principals.Users)[userName]
+			if userType == RoleDeveloperViewer {
+				require.False(t, ok, fmt.Sprintf("User permission for %s should not exist", userName))
+			} else {
+				require.True(t, ok, fmt.Sprintf("User permission for %s exists", userName))
+				require.True(t, contains(usrPerm, "r"), "User should have read permission")
+				require.True(t, contains(usrPerm, "w"), "User should have write permission")
+				require.True(t, contains(usrPerm, "d"), "User should have delete permission")
+				if userType == RoleDeveloperManager {
+					require.True(t, contains(usrPerm, "m"), "User should have manage permission")
+				}
+			}
+		}
 	}
 }
 
@@ -453,39 +469,44 @@ func TestArtifactoryApi(t *testing.T) {
 
 	// Create new users & orgs from MC
 	for _, v := range testEntries {
-		_, token := testCreateUser(t, mcClient, uri, v.UserMain)
-		org := testCreateOrg(t, mcClient, uri, token, OrgTypeDeveloper, v.Org)
-		for _, userContrib := range v.UserContrib {
-			worker, _ := testCreateUser(t, mcClient, uri, userContrib)
-			testAddUserRole(t, mcClient, uri, token, org.Name, RoleDeveloperContributor, worker.Name, Success)
+		token := ""
+		for user, userType := range v.Users {
+			if userType == RoleDeveloperManager {
+				_, token = testCreateUser(t, mcClient, uri, user)
+				testCreateOrg(t, mcClient, uri, token, OrgTypeDeveloper, v.Org)
+				break
+			}
 		}
-		verifyRtfStore(t, v)
+		for user, userType := range v.Users {
+			if userType != RoleDeveloperManager {
+				worker, _ := testCreateUser(t, mcClient, uri, user)
+				testAddUserRole(t, mcClient, uri, token, v.Org, userType, worker.Name, Success)
+			}
+		}
+		verifyRtfStore(t, v, MCObj)
 	}
 
 	// Create rtf users & orgs which are not present in MC
 	for _, v := range rtfDummyEntries {
 		artifactoryCreateGroupObjects(ctx, v.Org)
-
-		userMain := ormapi.User{
-			Name: v.UserMain,
-		}
-		artifactoryCreateUser(ctx, &userMain, nil)
-
-		roleArg := ormapi.Role{
-			Username: v.UserMain,
-			Org:      v.Org,
-			Role:     RoleDeveloperManager,
-		}
-		artifactoryAddUserToGroup(ctx, &roleArg)
-
 		rtfGroups := []string{getArtifactoryName(v.Org)}
-		for _, userContrib := range v.UserContrib {
-			userContrib := ormapi.User{
-				Name: userContrib,
+		for user, userType := range v.Users {
+			userObj := ormapi.User{
+				Name: user,
 			}
-			artifactoryCreateUser(ctx, &userContrib, &rtfGroups)
+			if userType == RoleDeveloperManager {
+				artifactoryCreateUser(ctx, &userObj, nil)
+				roleArg := ormapi.Role{
+					Username: user,
+					Org:      v.Org,
+					Role:     userType,
+				}
+				artifactoryAddUserToGroup(ctx, &roleArg)
+			} else {
+				artifactoryCreateUser(ctx, &userObj, &rtfGroups)
+			}
 		}
-		verifyRtfStore(t, v)
+		verifyRtfStore(t, v, DummyObj)
 	}
 
 	// Resync should trigger sync and delete above created dummy objects
@@ -495,11 +516,14 @@ func TestArtifactoryApi(t *testing.T) {
 
 	// Delete MC created Objects
 	for _, v := range testEntries {
-		for _, userContrib := range v.UserContrib {
+		for user, userType := range v.Users {
+			if userType == RoleDeveloperManager {
+				continue
+			}
 			roleArg := ormapi.Role{
-				Username: userContrib,
+				Username: user,
 				Org:      v.Org,
-				Role:     RoleDeveloperContributor,
+				Role:     userType,
 			}
 			// admin user can remove role
 			status, err = mcClient.RemoveUserRole(uri, tokenAdmin, &roleArg)
@@ -515,28 +539,20 @@ func TestArtifactoryApi(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 
-		// delete user maintainer
-		userMain := ormapi.User{
-			Name: v.UserMain,
-		}
-		status, err = mcClient.DeleteUser(uri, tokenAdmin, &userMain)
-		require.Nil(t, err)
-		require.Equal(t, http.StatusOK, status)
-
-		// delete user contributors
-		for _, userContrib := range v.UserContrib {
-			userCont := ormapi.User{
-				Name: userContrib,
+		// delete all users
+		for user, _ := range v.Users {
+			userObj := ormapi.User{
+				Name: user,
 			}
-			status, err = mcClient.DeleteUser(uri, tokenAdmin, &userCont)
+			status, err = mcClient.DeleteUser(uri, tokenAdmin, &userObj)
 			require.Nil(t, err)
 			require.Equal(t, http.StatusOK, status)
 		}
 	}
 
 	// By now, artifactory Sync thread should delete all extra objects as well
-	require.Equal(t, len(rtfUserStore), 0, "deleted all users")
-	require.Equal(t, len(rtfGroupStore), 0, "deleted all groups")
-	require.Equal(t, len(rtfRepoStore), 0, "deleted all repos")
-	require.Equal(t, len(rtfPermStore), 0, "deleted all permission targets")
+	require.Equal(t, 0, len(rtfUserStore), "deleted all users")
+	require.Equal(t, 0, len(rtfGroupStore), "deleted all groups")
+	require.Equal(t, 0, len(rtfRepoStore), "deleted all repos")
+	require.Equal(t, 0, len(rtfPermStore), "deleted all permission targets")
 }

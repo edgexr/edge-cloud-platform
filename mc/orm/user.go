@@ -152,11 +152,12 @@ func CreateUser(c echo.Context) error {
 	if err := db.Create(&user).Error; err != nil {
 		//check specifically for duplicate username and/or emails
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_pkey\"" {
-			return setReply(c, fmt.Errorf("Username already exists"), nil)
+			return setReply(c, fmt.Errorf("Username with name %s (case-insensitive) already exists", user.Name), nil)
 		}
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
 			return setReply(c, fmt.Errorf("Email already in use"), nil)
 		}
+
 		return setReply(c, dbErr(err), nil)
 	}
 	createuser.Verify.Email = user.Email
