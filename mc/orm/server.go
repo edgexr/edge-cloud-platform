@@ -256,7 +256,9 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	gitlabSync = GitlabNewSync()
 	artifactorySync = ArtifactoryNewSync()
 
-	return &server, nil
+	err = server.WaitUntilReady()
+
+	return &server, err
 }
 
 func (s *Server) WaitUntilReady() error {

@@ -135,7 +135,8 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 		if mcusers[ii].Name == DefaultSuperuser {
 			continue
 		}
-		mcusersT[mcusers[ii].Name] = &mcusers[ii]
+		// Store username is lowercase format as Artifactory stores it in lowercase
+		mcusersT[strings.ToLower(mcusers[ii].Name)] = &mcusers[ii]
 	}
 
 	// Get MC group members info
@@ -146,10 +147,11 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 		if role == nil || role.Org == "" {
 			continue
 		}
-		if _, ok := groupMembers[role.Username]; !ok {
-			groupMembers[role.Username] = map[string]*ormapi.Role{}
+		username := strings.ToLower(role.Username)
+		if _, ok := groupMembers[username]; !ok {
+			groupMembers[username] = map[string]*ormapi.Role{}
 		}
-		groupMembers[role.Username][getArtifactoryName(role.Org)] = role
+		groupMembers[username][getArtifactoryName(role.Org)] = role
 	}
 
 	// Get Artifactory users
