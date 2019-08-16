@@ -393,7 +393,7 @@ func TestArtifactoryApi(t *testing.T) {
 	var status int
 
 	log.SetDebugLevel(log.DebugLevelApi)
-	log.InitTracer()
+	log.InitTracer("")
 	defer log.FinishTracer()
 
 	ctx := context.Background()

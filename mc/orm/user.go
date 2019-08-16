@@ -72,6 +72,10 @@ func Login(c echo.Context) error {
 		time.Sleep(BadAuthDelay)
 		return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("username", user.Name)
+	span.SetTag("email", user.Email)
+
 	matches, err := PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
@@ -129,6 +133,9 @@ func CreateUser(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, MsgErr(err))
 		}
 	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("username", user.Name)
+	span.SetTag("email", user.Email)
 
 	config, err := getConfig(ctx)
 	if err != nil {

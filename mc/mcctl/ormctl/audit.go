@@ -14,8 +14,7 @@ func GetAuditCommand() *cobra.Command {
 		Path:         "/auth/audit/showself",
 	}, &Command{
 		Use:          "showorg",
-		RequiredArgs: "org",
-		OptionalArgs: "limit",
+		OptionalArgs: "org limit",
 		ReqData:      &ormapi.AuditQuery{},
 		ReplyData:    &[]ormapi.AuditResponse{},
 		Path:         "/auth/audit/showorg",

@@ -158,6 +158,18 @@ func (s *Client) RestrictedUserUpdate(uri, token string, user map[string]interfa
 	return s.PostJson(uri+"/auth/restricted/user/update", token, user, nil)
 }
 
+func (s *Client) ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error) {
+	resp := []ormapi.AuditResponse{}
+	status, err := s.PostJson(uri+"/auth/audit/showself", token, query, &resp)
+	return resp, status, err
+}
+
+func (s *Client) ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error) {
+	resp := []ormapi.AuditResponse{}
+	status, err := s.PostJson(uri+"/auth/audit/showorg", token, query, &resp)
+	return resp, status, err
+}
+
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
 	var body io.Reader
 	if reqData != nil {

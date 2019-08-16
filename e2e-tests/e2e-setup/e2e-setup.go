@@ -138,6 +138,7 @@ func StartProcesses(processName string, outputDir string) bool {
 	}
 
 	for _, p := range Deployment.Sqls {
+		opts := append(opts, process.WithCleanStartup())
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

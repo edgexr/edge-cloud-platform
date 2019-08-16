@@ -194,7 +194,7 @@ func getTestMetrics(addr string, query string) (*PromResp, error) {
 }
 
 func TestPromStats(t *testing.T) {
-	log.InitTracer()
+	log.InitTracer("")
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 

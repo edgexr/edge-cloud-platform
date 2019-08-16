@@ -30,6 +30,9 @@ type Api interface {
 	UpdateConfig(uri, token string, config map[string]interface{}) (int, error)
 	ShowConfig(uri, token string) (*ormapi.Config, int, error)
 
+	ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
+	ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
+
 	FlavorApiClient
 	CloudletApiClient
 	ClusterInstApiClient
