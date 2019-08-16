@@ -1,0 +1,8 @@
+description: setup for mc audit checks
+tests:
+- name: recreate user2 to be able to pull audit logs
+  actions: [mcapi-createusers]
+  apifile: '{{datadir2}}/mc_user2.yml'
+- name: setup user tokens to avoid extra login audit logs
+  actions: [mcapi-auditsetup]
+  apifile: '{{datadir2}}/mc_admin.yml,{{datadir2}}/mc_user2.yml'

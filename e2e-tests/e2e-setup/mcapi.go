@@ -2,6 +2,7 @@ package e2esetup
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -35,6 +36,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods)
+	} else if strings.HasPrefix(api, "audit") {
+		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods)
 	} else if api == "runcommand" {
 		return runMcRunCommand(uri, apiFile, curUserFile, outputDir, mods)
 	}
@@ -176,7 +179,7 @@ func loginCurUser(uri, curUserFile string) (string, bool) {
 	}
 	users := readUsersFiles(curUserFile)
 	if len(users) == 0 {
-		log.Printf("no user to run MC create api\n")
+		log.Printf("no user to run MC api\n")
 		return "", false
 	}
 	token, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash)
@@ -453,4 +456,72 @@ func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string)
 		return false
 	}
 	return true
+}
+
+func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
+
+	if apiFile == "" {
+		log.Println("Error: Cannot run MC audit APIs without API file")
+		return false
+	}
+
+	rc := true
+	if api == "auditsetup" {
+		// because the login command is recorded in the audit logs,
+		// having to log in to switch between admin and user2 ends
+		// up affecting the audit logs that we're trying to validate.
+		// Instead, we log in during setup and record the tokens to
+		// be used later.
+		users := readUsersFiles(apiFile)
+		for _, user := range users {
+			token, err := mcClient.DoLogin(uri, user.Name, user.Passhash)
+			checkMcErr("DoLogin", http.StatusOK, err, &rc)
+			if err == nil && rc {
+				fname := getTokenFile(user.Name, outputDir)
+				err = ioutil.WriteFile(fname, []byte(token), 0644)
+				if err != nil {
+					log.Printf("Write token file %s failed, %v\n", fname, err)
+					rc = false
+				}
+			}
+		}
+		return rc
+	}
+	users := readUsersFiles(curUserFile)
+	if len(users) == 0 {
+		log.Printf("no user to run MC audit api\n")
+		return false
+	}
+	fname := getTokenFile(users[0].Name, outputDir)
+	out, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("Read token file %s failed, %v\n", fname, err)
+		return false
+	}
+	token := string(out)
+
+	query := ormapi.AuditQuery{}
+	err = util.ReadYamlFile(apiFile, &query)
+	if err != nil {
+		if !util.IsYamlOk(err, "mcaudit") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
+			os.Exit(1)
+		}
+	}
+	switch api {
+	case "auditorg":
+		resp, status, err := mcClient.ShowAuditOrg(uri, token, &query)
+		checkMcErr("ShowAuditOrg", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
+	case "auditself":
+		resp, status, err := mcClient.ShowAuditSelf(uri, token, &query)
+		checkMcErr("ShowAuditSelf", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
+	}
+	return rc
+}
+
+func getTokenFile(username, outputDir string) string {
+	return outputDir + "/" + username + ".token"
 }

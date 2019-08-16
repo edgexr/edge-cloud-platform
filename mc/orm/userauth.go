@@ -72,6 +72,7 @@ func PasswordMatches(password, passhash, salt string, iter int) (bool, error) {
 type UserClaims struct {
 	jwt.StandardClaims
 	Username string `json:"username"`
+	Email    string `json:"email"`
 	Kid      int    `json:"kid"`
 }
 
@@ -91,6 +92,7 @@ func GenerateCookie(user *ormapi.User) (string, error) {
 			ExpiresAt: time.Now().AddDate(0, 0, 1).Unix(),
 		},
 		Username: user.Name,
+		Email:    user.Email,
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
 	return cookie, err
@@ -119,6 +121,7 @@ func getClaims(c echo.Context) (*UserClaims, error) {
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("username", claims.Username)
+	span.SetTag("email", claims.Email)
 	return claims, nil
 }
 

@@ -1,0 +1,106 @@
+- operationname: /api/v1/login
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:04.320621-07:00"
+  duration: 12.441ms
+  request: '{"username":"user2","password":""}'
+  response: '{"token":""}'
+  traceid: 230c2137535baf7c
+- operationname: /api/v1/usercreate
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:04.249624-07:00"
+  duration: 13.074ms
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
+  response: '{"message":"user created"}'
+  traceid: 24625321e53de041
+- operationname: /api/v1/login
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.92884-07:00"
+  duration: 11.782ms
+  request: '{"username":"user2","password":""}'
+  response: '{"token":""}'
+  traceid: 635be073ef98bea
+- operationname: /api/v1/auth/role/removeuser
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.92474-07:00"
+  duration: 135µs
+  request: '{"org":"platos","username":"user2","role":"DeveloperManager"}'
+  response: '{"message":"Role removed from user"}'
+  traceid: a1b22a9b86b59a
+- operationname: /api/v1/auth/role/removeuser
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.920549-07:00"
+  duration: 142µs
+  request: '{"org":"AcmeAppCo","username":"user2","role":"DeveloperManager"}'
+  response: '{"message":"Role removed from user"}'
+  traceid: 6e8232a551f56839
+- operationname: /api/v1/auth/org/delete
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.911463-07:00"
+  duration: 5.704ms
+  request: '{"Name":"platos","Type":"developer","Address":"1 Samstreet, platos Town,
+    South Korea","Phone":"123-123-1234","AdminUsername":"user2","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Organization deleted"}'
+  traceid: 7531b8302d84aba7
+- operationname: /api/v1/auth/org/delete
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.901987-07:00"
+  duration: 5.632ms
+  request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
+    FL 32604","Phone":"123-123-1234","AdminUsername":"user2","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Organization deleted"}'
+  traceid: 70aa9663b5c13c3
+- operationname: /api/v1/auth/ctrl/DeleteClusterInst
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.782934-07:00"
+  duration: 114.968ms
+  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
+  response: |
+    {"data":{"message":"Autodeleting appinst MEXPrometheusAppName"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted ClusterInst successfully"}}
+  traceid: 35078d27e23052f5
+- operationname: /api/v1/auth/ctrl/DeleteClusterInst
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.685286-07:00"
+  duration: 93.375ms
+  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
+  response: |
+    {"data":{"message":"Autodeleting appinst MEXPrometheusAppName"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted ClusterInst successfully"}}
+  traceid: 79331c0ec70fb2d6
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-08-11T09:36:02.661684-07:00"
+  duration: 19.931ms
+  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
+  response: '{}'
+  traceid: 47b0b401e7c4768d
