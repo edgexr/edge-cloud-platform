@@ -271,12 +271,13 @@ func (s *Server) WaitUntilReady() error {
 
 	// wait until server is online
 	for ii := 0; ii < 10; ii++ {
+		// if TLS specified, status response will be BadRequest.
+		// In any case, as long as the server is responding,
+		// then it is ready.
 		resp, err := http.Get("http://" + s.config.ServAddr)
 		if err == nil {
 			resp.Body.Close()
-			if resp.StatusCode == http.StatusOK {
-				return nil
-			}
+			return nil
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
