@@ -231,7 +231,8 @@ ssh_authorized_keys:
 
 	// Setup SSH Client
 	auth := ssh.Auth{Keys: []string{keyPairPath}}
-	client, err := ssh.NewNativeClient("ubuntu", external_ip, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, &auth, nil)
+	gwaddr, gwport := mexos.GetCloudletCRMGatewayIPAndPort()
+	client, err := ssh.NewNativeClient("ubuntu", external_ip, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, gwaddr, gwport, &auth, &auth, nil)
 	if err != nil {
 		return fmt.Errorf("cannot get ssh client for server %s with ip %s, %v", platform_vm_name, external_ip, err)
 	}
