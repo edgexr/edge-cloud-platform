@@ -58,3 +58,4 @@ mc/rbac.conf
 *.postgres
 ansible.auto.tfvars
 .terraform.init.done
+vault/letsencrypt-plugin/letsencrypt/version.go

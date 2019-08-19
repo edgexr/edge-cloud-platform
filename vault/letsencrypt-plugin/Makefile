@@ -11,8 +11,10 @@ build: $(VERSION_FILE)
 
 build-linux: build
 
-$(VERSION_FILE): $(VERSION_FILE).tmpl
-	sed -e 's/{{VERSION}}/$(VERSION)/' -e 's/{{GITCOMMIT}}/$(GITCOMMIT)/' $< >$@
+$(VERSION_FILE): FORCE
+	sed -e 's/{{VERSION}}/$(VERSION)/' -e 's/{{GITCOMMIT}}/$(GITCOMMIT)/' $@.tmpl >$@
 
-clean:
+clean: FORCE
 	$(RM) $(VERSION_FILE)
+
+FORCE:
