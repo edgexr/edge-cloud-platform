@@ -16,7 +16,7 @@ func (b *backend) pathCert(_ context.Context, req *logical.Request, d *framework
 	client := resty.New()
 	resp, err := client.R().
 			SetResult(&t).
-			Get("http://127.0.0.1:4567/cert/" + domain)
+			Get("http://127.0.0.1:" + CertGenPort + "/cert/" + domain)
 	if err != nil {
 		b.Logger().Error(err.Error())
 		return logical.ErrorResponse(err.Error()), logical.ErrInvalidRequest

@@ -2,6 +2,7 @@ package letsencrypt
 
 import (
 	"context"
+	"os"
 
 	"github.com/hashicorp/vault/logical"
 	"github.com/hashicorp/vault/logical/framework"
@@ -13,6 +14,8 @@ type tls struct {
 	Key string `json:"key"`
 	Ttl int `json:"ttl"`
 }
+
+var CertGenPort string
 
 // Factory creates a new usable instance of this secrets engine.
 func Factory(ctx context.Context, c *logical.BackendConfig) (logical.Backend, error) {
@@ -31,6 +34,12 @@ type backend struct {
 // Backend creates a new backend.
 func Backend(c *logical.BackendConfig) *backend {
 	var b backend
+	var ok bool
+
+	CertGenPort, ok = os.LookupEnv("CERTGEN_PORT")
+	if ! ok {
+		CertGenPort = "4567"
+	}
 
 	b.Backend = &framework.Backend{
 		BackendType: logical.TypeLogical,
