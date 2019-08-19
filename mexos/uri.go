@@ -227,13 +227,14 @@ func stunGetMyIP() (string, error) {
 	if c_err := c.Do(message, func(res stun.Event) {
 		if res.Error != nil {
 			err = res.Error
+		} else {
+			// Decoding XOR-MAPPED-ADDRESS attribute from message.
+			var xorAddr stun.XORMappedAddress
+			if x_err := xorAddr.GetFrom(res.Message); err != nil {
+				err = x_err
+			}
+			myip = xorAddr.IP.String()
 		}
-		// Decoding XOR-MAPPED-ADDRESS attribute from message.
-		var xorAddr stun.XORMappedAddress
-		if x_err := xorAddr.GetFrom(res.Message); err != nil {
-			err = x_err
-		}
-		myip = xorAddr.IP.String()
 	}); c_err != nil {
 		return "", c_err
 	}

@@ -38,7 +38,8 @@ func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) 
 		return nil, err
 	}
 
-	client, err := ssh.NewNativeClient(userName, addr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, &auth, nil)
+	gwhost, gwport := GetCloudletCRMGatewayIPAndPort()
+	client, err := ssh.NewNativeClient(userName, addr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, gwhost, gwport, &auth, &auth, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get ssh client for server %s on network %s, %v", serverName, networkName, err)
 	}
@@ -48,7 +49,8 @@ func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) 
 
 func GetSSHClientIP(ipaddr, userName string) (ssh.Client, error) {
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
-	client, err := ssh.NewNativeClient(userName, ipaddr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, &auth, nil)
+	gwhost, gwport := GetCloudletCRMGatewayIPAndPort()
+	client, err := ssh.NewNativeClient(userName, ipaddr, "SSH-2.0-mobiledgex-ssh-client-1.0", 22, gwhost, gwport, &auth, &auth, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get ssh client for ipaddr %s, %v", ipaddr, err)
 	}
@@ -88,12 +90,15 @@ func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
 		return fmt.Errorf("unable to cast client to native client")
 	}
 
-	session, conn, err := client.Session()
+	session, proxy, conn, err := client.Session()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 	defer conn.Close()
+	if proxy != nil {
+		defer proxy.Close()
+	}
 
 	err = scp.CopyPath(srcPath, dstPath, session)
 

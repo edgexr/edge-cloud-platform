@@ -129,11 +129,13 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string, updateCallback ed
 	groupName := GetCloudletSecurityGroup()
 	my_ip, err := GetExternalPublicAddr()
 	if err != nil {
-		return fmt.Errorf("unable to fetch public facing IP: %v", err)
-	}
-	if err := AddSecurityRuleCIDR(my_ip, "tcp", groupName, "22"); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add security rule for ssh access", "error", err, "ip", my_ip)
-		return fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
+		// this is not necessarily fatal
+		log.InfoLog("cannot fetch public ip", "err", err)
+	} else {
+		if err := AddSecurityRuleCIDR(my_ip, "tcp", groupName, "22"); err != nil {
+			log.DebugLog(log.DebugLevelMexos, "cannot add security rule for ssh access", "error", err, "ip", my_ip)
+			return fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
+		}
 	}
 
 	err = WaitForRootLB(rootLB)
