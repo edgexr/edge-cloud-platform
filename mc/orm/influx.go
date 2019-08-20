@@ -60,7 +60,10 @@ func connectInfluxDB(ctx context.Context, region string) (influxdb.Client, error
 	if err != nil {
 		return nil, err
 	}
-	creds := cloudcommon.GetInfluxDataAuth(serverConfig.VaultAddr, region)
+	creds, err := cloudcommon.GetInfluxDataAuth(serverConfig.VaultAddr, region)
+	if err != nil {
+		return nil, fmt.Errorf("get influxDB auth failed, %v", err)
+	}
 	if creds == nil {
 		// defeault to empty auth
 		creds = &cloudcommon.InfluxCreds{}

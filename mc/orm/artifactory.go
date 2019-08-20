@@ -30,6 +30,9 @@ func getArtifactoryRepoName(orgName string) string {
 }
 
 func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
+	if serverConfig.ArtifactoryAddr == "" {
+		return nil, fmt.Errorf("no artifactory addr specified")
+	}
 	if rtfAuth == nil {
 		auth, err := cloudcommon.GetRegistryAuth(serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
 		if err != nil {
