@@ -99,6 +99,9 @@ Subject: {{.Subject}}
 `
 
 func sendNotify(ctx context.Context, to, subject, message string) error {
+	if serverConfig.SkipVerifyEmail {
+		return nil
+	}
 	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err
@@ -286,6 +289,9 @@ MobiledgeX Team
 `
 
 func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) error {
+	if serverConfig.SkipVerifyEmail {
+		return nil
+	}
 	noreply, err := getNoreply(ctx)
 	if err != nil {
 		return err

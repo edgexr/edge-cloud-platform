@@ -29,9 +29,9 @@ var PasshashSaltBytes = 8
 
 var Jwks vault.JWKS
 
-func InitVault(addr, roleID, secretID string) {
+func InitVault(addr, roleID, secretID string, updateDone chan struct{}) {
 	Jwks.Init(addr, "", "mcorm", roleID, secretID)
-	Jwks.GoUpdate()
+	Jwks.GoUpdate(updateDone)
 }
 
 func ValidPassword(pw string) error {

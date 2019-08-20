@@ -23,6 +23,8 @@ var Fail = false
 
 func TestController(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
+	log.InitTracer("")
+	defer log.FinishTracer()
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
 
