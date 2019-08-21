@@ -74,6 +74,7 @@ func InitOpenstackProps(operatorName, physicalName, vaultAddr string) error {
 	if err != nil {
 		return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
 	}
+	VaultAddr = vaultAddr
 	authURL := os.Getenv("OS_AUTH_URL")
 	if strings.HasPrefix(authURL, "https") {
 		caCertURL := getVaultCloudletPath(physicalName+"/os_cacert", vaultAddr)
