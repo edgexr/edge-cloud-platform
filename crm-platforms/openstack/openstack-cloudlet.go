@@ -53,8 +53,8 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 		return
 	}
 
-	// Form platform VM name based on cloudletKey
-	platform_vm_name := getPlatformVMName(cloudlet)
+	// Use service type as container name as there can only be one of them inside platform VM
+	container_name := serviceType
 
 	// Pull docker image and start service
 	updateCallback(edgeproto.UpdateTask, "Starting "+serviceType)
@@ -67,9 +67,10 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 	cmd := []string{
 		"sudo docker run",
 		"-d",
+		"--network host",
 		"-v /tmp:/tmp",
 		"--restart=unless-stopped",
-		"--name", platform_vm_name,
+		"--name", container_name,
 		strings.Join(envVarsAr, " "),
 		pfConfig.RegistryPath + ":" + pfConfig.PlatformTag,
 		service_cmd,
@@ -85,7 +86,7 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 	// - After which controller will monitor it using CloudletInfo
 	start := time.Now()
 	for {
-		out, err := client.Output(`sudo docker ps -a -n 1 --filter name=` + platform_vm_name + ` --format '{{.Status}}'`)
+		out, err := client.Output(`sudo docker ps -a -n 1 --filter name=` + container_name + ` --format '{{.Status}}'`)
 		if err != nil {
 			cDone <- fmt.Errorf("Unable to fetch %s container status: %v, %s\n", serviceType, err, out)
 			return
@@ -95,9 +96,9 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 		} else if !strings.Contains(out, "Created") {
 			// container exited in failure state
 			// Show Fatal Log, if not Fatal log found, then show last 10 lines of error
-			out, err = client.Output(`sudo docker logs ` + platform_vm_name + ` 2>&1 | grep FATAL | awk '{for (i=1; i<=NF-3; i++) $i = $(i+3); NF-=3; print}'`)
+			out, err = client.Output(`sudo docker logs ` + container_name + ` 2>&1 | grep FATAL | awk '{for (i=1; i<=NF-3; i++) $i = $(i+3); NF-=3; print}'`)
 			if err != nil || out == "" {
-				out, err = client.Output(`sudo docker logs ` + platform_vm_name + ` 2>&1 | tail -n 10`)
+				out, err = client.Output(`sudo docker logs ` + container_name + ` 2>&1 | tail -n 10`)
 				if err != nil {
 					cDone <- fmt.Errorf("Failed to bringup %s: %s", serviceType, err.Error())
 					return
