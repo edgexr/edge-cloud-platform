@@ -28,6 +28,10 @@ path "secret/data/ansible/${ENVIRON}/*" {
   capabilities = [ "read" ]
 }
 
+path "secret/data/ansible/common/*" {
+  capabilities = [ "read" ]
+}
+
 path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
