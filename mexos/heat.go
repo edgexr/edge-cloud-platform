@@ -22,6 +22,7 @@ type VMParams struct {
 	SecurityGroup       string
 	NetworkName         string
 	SubnetName          string
+	VnicType            string
 	MEXRouterIP         string
 	GatewayIP           string
 	FloatingIPAddressID string
@@ -115,6 +116,9 @@ var vmTemplateResources = `
        type: OS::Neutron::Port
        properties:
            name: {{.VMName}}-port
+          {{if .VnicType}}
+           binding:vnic_type: {{.VnicType}}
+          {{- end}}
            network_id: {{.NetworkName}}
            fixed_ips: 
             - subnet_id: {{.SubnetName}}
@@ -161,6 +165,7 @@ type ClusterParams struct {
 	SecurityGroup  string
 	MEXRouterName  string
 	MEXNetworkName string
+	VnicType       string
 	ClusterName    string
 	CIDR           string
 	GatewayIP      string
@@ -210,6 +215,9 @@ resources:
       type: OS::Neutron::Port
       properties:
          name: k8s-master-port
+        {{if .VnicType}}
+         binding:vnic_type: {{.VnicType}}
+        {{- end}}
          network_id: {{.MEXNetworkName}}
          fixed_ips:
           - subnet: { get_resource: k8s-subnet} 
@@ -241,7 +249,10 @@ resources:
    {{.NodeName}}-port:
       type: OS::Neutron::Port
       properties:
-          name: mex-k8s-master-port-{{$.ClusterName}}
+          name: mex-k8s-{{.NodeName}}-port-{{$.ClusterName}}
+         {{if $.VnicType}}
+          binding:vnic_type: {{$.VnicType}}
+         {{- end}}
           network_id: {{$.MEXNetworkName}}
           fixed_ips:
           - subnet: { get_resource: k8s-subnet}
@@ -390,6 +401,9 @@ func GetVMParams(depType DeploymentType, serverName, flavor, imageName, authPubl
 	} else {
 		vmp.NetworkName = GetCloudletExternalNetwork()
 	}
+	if ni != nil {
+		vmp.VnicType = ni.VnicType
+	}
 	return &vmp, nil
 }
 
@@ -467,6 +481,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, rootLBName string, act
 	if err != nil {
 		return nil, err
 	}
+	cp.VnicType = ni.VnicType
 	if rootLBName != "" {
 		cp.VMParams, err = GetVMParams(
 			RootLBVMDeployment,
@@ -513,7 +528,7 @@ func getClusterParams(clusterInst *edgeproto.ClusterInst, rootLBName string, act
 			found = true
 			cp.CIDR = subnet
 			cp.GatewayIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 1)
-			cp.MasterIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 2)
+			cp.MasterIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 10)
 			nodeIPPrefix = fmt.Sprintf("%s.%s.%d", ni.Octets[0], ni.Octets[1], i)
 			break
 		}
