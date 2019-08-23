@@ -12,6 +12,7 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	"google.golang.org/grpc/status"
@@ -95,7 +96,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, selectorStr string) s
 	arg := influxQueryArgs{
 		Selector:     selectorStr,
 		Measurement:  "appinst-" + obj.Selector,
-		AppInstName:  obj.AppInst.AppKey.Name,
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
 		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		OperatorName: obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
