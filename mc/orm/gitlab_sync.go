@@ -22,13 +22,15 @@ func GitlabNewSync() *AppStoreSync {
 
 func (s *AppStoreSync) syncGitlabObjects(ctx context.Context) {
 	s.syncUsers(ctx)
-	s.syncGroups(ctx)
-	s.syncGroupMembers(ctx)
+	allOrgs := s.syncGroups(ctx)
+	s.syncGroupMembers(ctx, allOrgs)
 }
 
 func (s *AppStoreSync) syncUsers(ctx context.Context) {
 	// get Gitlab users
 	gusers, _, err := gitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{})
+	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab Sync list users",
+		"users", gusers)
 	if err != nil {
 		s.syncErr(ctx, err)
 		return
@@ -87,23 +89,26 @@ func (s *AppStoreSync) syncUsers(ctx context.Context) {
 	}
 }
 
-func (s *AppStoreSync) syncGroups(ctx context.Context) {
+func (s *AppStoreSync) syncGroups(ctx context.Context) map[string]*ormapi.Organization {
 	orgsT, err := GetAllOrgs(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return nil
 	}
 	// get Gitlab groups
 	groups, _, err := gitlabClient.Groups.ListGroups(&gitlab.ListGroupsOptions{})
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return orgsT
 	}
 	groupsT := make(map[string]*gitlab.Group)
 	for ii, _ := range groups {
 		groupsT[groups[ii].Name] = groups[ii]
 	}
 	for name, org := range orgsT {
+		if org.Type == OrgTypeOperator {
+			continue
+		}
 		name = util.GitlabGroupSanitize(name)
 		if _, found := groupsT[name]; found {
 			delete(groupsT, name)
@@ -132,9 +137,10 @@ func (s *AppStoreSync) syncGroups(ctx context.Context) {
 			s.syncErr(ctx, err)
 		}
 	}
+	return orgsT
 }
 
-func (s *AppStoreSync) syncGroupMembers(ctx context.Context) {
+func (s *AppStoreSync) syncGroupMembers(ctx context.Context, allOrgs map[string]*ormapi.Organization) {
 	members := make(map[string]map[string]*gitlab.GroupMember)
 	var err error
 
@@ -171,10 +177,11 @@ func (s *AppStoreSync) syncGroupMembers(ctx context.Context) {
 		if found {
 			continue
 		}
+		orgType := getOrgType(role.Org, allOrgs)
 		// add member back to group
 		log.SpanLog(ctx, log.DebugLevelApi,
-			"Gitlab Sync restore role", "role", role)
-		gitlabAddGroupMember(ctx, role)
+			"Gitlab Sync restore role", "role", role, "orgType", orgType)
+		gitlabAddGroupMember(ctx, role, orgType)
 	}
 	// delete members that shouldn't be part of the group anymore
 	for roleOrg, memberTable := range members {

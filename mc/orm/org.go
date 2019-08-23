@@ -77,10 +77,10 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		Username: claims.Username,
 		Role:     role,
 	}
-	gitlabAddGroupMember(ctx, &r)
+	gitlabAddGroupMember(ctx, &r, org.Type)
 
-	artifactoryCreateGroupObjects(ctx, org.Name)
-	artifactoryAddUserToGroup(ctx, &r)
+	artifactoryCreateGroupObjects(ctx, org.Name, org.Type)
+	artifactoryAddUserToGroup(ctx, &r, org.Type)
 
 	return nil
 }
@@ -127,7 +127,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		}
 	}
 	gitlabDeleteGroup(ctx, org)
-	artifactoryDeleteGroupObjects(ctx, org.Name)
+	artifactoryDeleteGroupObjects(ctx, org.Name, "")
 	return nil
 }
 
@@ -209,4 +209,13 @@ func GetAllOrgs(ctx context.Context) (map[string]*ormapi.Organization, error) {
 		orgsT[orgs[ii].Name] = &orgs[ii]
 	}
 	return orgsT, err
+}
+
+func getOrgType(orgName string, allOrgs map[string]*ormapi.Organization) string {
+	if allOrgs != nil {
+		if org, ok := allOrgs[orgName]; ok {
+			return org.Type
+		}
+	}
+	return ""
 }

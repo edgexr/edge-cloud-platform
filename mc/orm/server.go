@@ -259,19 +259,16 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	gitlabSync = GitlabNewSync()
 	artifactorySync = ArtifactoryNewSync()
 
-	err = server.WaitUntilReady()
+	// gitlab/artifactory sync requires data to be initialized
+	<-server.initDataDone
+	gitlabSync.Start()
+	artifactorySync.Start()
 
 	return &server, err
 }
 
 func (s *Server) WaitUntilReady() error {
-	// wait until init data is done
-	<-s.initDataDone
-
-	// Start sync service
-	gitlabSync.Start()
-	artifactorySync.Start()
-
+	// login won't work until jwt keys are pulled
 	<-s.initJWKDone
 
 	// wait until server is online
