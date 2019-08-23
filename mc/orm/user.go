@@ -168,7 +168,7 @@ func CreateUser(c echo.Context) error {
 	}
 
 	gitlabCreateLDAPUser(ctx, &user)
-	if user.Name != DefaultSuperuser {
+	if user.Name != Superuser {
 		artifactoryCreateUser(ctx, &user, nil)
 	}
 
@@ -248,6 +248,10 @@ func DeleteUser(c echo.Context) error {
 	if user.Name != claims.Username && !enforcer.Enforce(claims.Username, "", ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
+	if user.Name == Superuser {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot delete superuser"))
+	}
+
 	// delete role mappings
 	groups := enforcer.GetGroupingPolicy()
 	for _, grp := range groups {
