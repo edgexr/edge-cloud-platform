@@ -9,17 +9,16 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var defaultPrivateNetRange = "10.101.X.0/24"
-
 type NetSpecInfo struct {
-	Kind, Name, CIDR, Options string
-	NetworkAddress            string
-	NetmaskBits               string
-	Octets                    []string
-	DelimiterOctet            int // this is the X
-	FloatingIPNet             string
-	FloatingIPSubnet          string
-	Extra                     []string
+	Name, CIDR        string
+	NetworkAddress    string
+	NetmaskBits       string
+	Octets            []string
+	MasterIPLastOctet string
+	DelimiterOctet    int // this is the X
+	FloatingIPNet     string
+	FloatingIPSubnet  string
+	VnicType          string
 }
 
 //ParseNetSpec decodes netspec string
@@ -31,28 +30,35 @@ func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 	}
 	log.DebugLog(log.DebugLevelMexos, "parsing netspec", "netspec", netSpec)
 	items := strings.Split(netSpec, ",")
-	if len(items) < 3 {
-		return nil, fmt.Errorf("malformed net spec, insufficient items %v", items)
-	}
-	ni.Kind = items[NetTypeVal]
-	ni.Name = items[NetNameVal]
-	ni.CIDR = items[NetCIDRVal]
-	if len(items) > NetFloatingIPVal {
-		fi := items[NetFloatingIPVal]
-		fs := strings.Split(fi, "|")
-		if len(fs) != 2 {
-			return nil, fmt.Errorf("floating ip format wrong expected: internalnet|internalsubnet")
+	for _, i := range items {
+		kvs := strings.Split(i, "=")
+		if len(kvs) != 2 {
+			return nil, fmt.Errorf("incorrect netspec item format, expect key=value: %s", i)
 		}
-		ni.FloatingIPNet = fs[0]
-		ni.FloatingIPSubnet = fs[1]
-	}
-	if len(items) > NetOptVal {
-		ni.Options = items[NetOptVal]
-	}
-	if len(items) > NetOptVal+1 {
-		ni.Extra = items[NetOptVal+1:]
-	}
+		k := strings.ToLower(kvs[0])
+		v := kvs[1]
 
+		switch k {
+		case "name":
+			ni.Name = v
+		case "cidr":
+			ni.CIDR = v
+		case "floatingipnet":
+			ni.FloatingIPNet = v
+		case "floatingipsubnet":
+			ni.FloatingIPSubnet = v
+		case "vnictype":
+			ni.VnicType = v
+		default:
+			return nil, fmt.Errorf("unknown netspec item key: %s", k)
+		}
+	}
+	if ni.Name == "" {
+		return nil, fmt.Errorf("Missing name=(value) in netspec")
+	}
+	if ni.CIDR == "" {
+		return nil, fmt.Errorf("Missing cidr=(value) in netspec")
+	}
 	sits := strings.Split(ni.CIDR, "/")
 	if len(sits) < 2 {
 		return nil, fmt.Errorf("invalid CIDR, no net mask")
@@ -67,20 +73,12 @@ func ParseNetSpec(netSpec string) (*NetSpecInfo, error) {
 		}
 	}
 	if len(ni.Octets) != 4 {
-		log.DebugLog(log.DebugLevelMexos, "invalid network address, wrong number of octets", items[NetTypeVal])
+		log.DebugLog(log.DebugLevelMexos, "invalid network address, wrong number of octets", "octets", ni.Octets)
 		return nil, fmt.Errorf("invalid network address structure")
 	}
 	if ni.DelimiterOctet != 2 {
-		log.DebugLog(log.DebugLevelMexos, "invalid network address, third octet must be X", items[NetTypeVal])
+		log.DebugLog(log.DebugLevelMexos, "invalid network address, third octet must be X", "delimiterOctet", ni.DelimiterOctet)
 		return nil, fmt.Errorf("invalid network address delimiter")
-	}
-
-	switch items[NetTypeVal] {
-	case "priv-subnet":
-	case "external-ip":
-	default:
-		log.DebugLog(log.DebugLevelMexos, "error, invalid NetTypeVal", "net-type-val", items[NetTypeVal])
-		return nil, fmt.Errorf("unsupported netspec type")
 	}
 
 	log.DebugLog(log.DebugLevelMexos, "netspec info", "ni", ni, "items", items)
