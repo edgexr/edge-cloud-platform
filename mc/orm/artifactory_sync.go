@@ -19,15 +19,15 @@ func (s *AppStoreSync) syncArtifactoryObjects(ctx context.Context) {
 	// Refresh auth cache on sync
 	rtfAuth = nil
 
-	s.syncGroupObjects(ctx)
-	s.syncGroupUsers(ctx)
+	allOrgs := s.syncGroupObjects(ctx)
+	s.syncGroupUsers(ctx, allOrgs)
 }
 
-func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
+func (s *AppStoreSync) syncGroupObjects(ctx context.Context) map[string]*ormapi.Organization {
 	orgsT, err := GetAllOrgs(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return nil
 	}
 
 	// Get Artifactory Objects:
@@ -36,55 +36,58 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
 	groups, err := artifactoryListGroups(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return orgsT
 	}
 	repos, err := artifactoryListRepos(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return orgsT
 	}
 	perms, err := artifactoryListPerms(ctx)
 	if err != nil {
 		s.syncErr(ctx, err)
-		return
+		return orgsT
 	}
 
 	// Create missing objects
-	for org, _ := range orgsT {
-		groupName := getArtifactoryName(org)
+	for orgname, org := range orgsT {
+		if org.Type == OrgTypeOperator {
+			continue
+		}
+		groupName := getArtifactoryName(orgname)
 		if _, ok := groups[groupName]; ok {
 			delete(groups, groupName)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing group",
 				"name", groupName)
-			err = artifactoryCreateGroup(ctx, org)
+			err = artifactoryCreateGroup(ctx, orgname, org.Type)
 			if err != nil {
 				s.syncErr(ctx, err)
 			}
 		}
 
-		repoName := getArtifactoryRepoName(org)
+		repoName := getArtifactoryRepoName(orgname)
 		if _, ok := repos[repoName]; ok {
 			delete(repos, repoName)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing repository",
 				"name", repoName)
-			err = artifactoryCreateRepo(ctx, org)
+			err = artifactoryCreateRepo(ctx, orgname, org.Type)
 			if err != nil {
 				s.syncErr(ctx, err)
 			}
 		}
 
-		permName := getArtifactoryName(org)
+		permName := getArtifactoryName(orgname)
 		if _, ok := perms[permName]; ok {
 			delete(perms, permName)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi,
 				"Artifactory Sync create missing permission targets",
 				"name", permName)
-			err := artifactoryCreateRepoPerms(ctx, org)
+			err := artifactoryCreateRepoPerms(ctx, orgname, org.Type)
 			if err != nil {
 				s.syncErr(ctx, err)
 			}
@@ -96,7 +99,8 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra group",
 			"name", group)
-		err = artifactoryDeleteGroup(ctx, strings.TrimPrefix(group, ArtifactoryPrefix))
+		orgName := strings.TrimPrefix(group, ArtifactoryPrefix)
+		err = artifactoryDeleteGroup(ctx, orgName, "")
 		if err != nil {
 			s.syncErr(ctx, err)
 		}
@@ -105,7 +109,8 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra repository",
 			"name", repo)
-		err = artifactoryDeleteRepo(ctx, strings.TrimPrefix(repo, ArtifactoryRepoPrefix))
+		orgName := strings.TrimPrefix(repo, ArtifactoryRepoPrefix)
+		err = artifactoryDeleteRepo(ctx, orgName, "")
 		if err != nil {
 			s.syncErr(ctx, err)
 		}
@@ -114,14 +119,16 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) {
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra permission target",
 			"name", perm)
-		err = artifactoryDeleteRepoPerms(ctx, strings.TrimPrefix(perm, ArtifactoryPrefix))
+		orgName := strings.TrimPrefix(perm, ArtifactoryPrefix)
+		err = artifactoryDeleteRepoPerms(ctx, orgName, "")
 		if err != nil {
 			s.syncErr(ctx, err)
 		}
 	}
+	return orgsT
 }
 
-func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
+func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*ormapi.Organization) {
 	// Get MC users
 	mcusers := []ormapi.User{}
 	db := loggedDB(ctx)
@@ -145,6 +152,9 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil || role.Org == "" {
+			continue
+		}
+		if org, ok := allOrgs[role.Org]; !ok || org.Type == OrgTypeOperator {
 			continue
 		}
 		username := strings.ToLower(role.Username)
@@ -176,9 +186,9 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 				for group, _ := range groups {
 					rtfGroups = append(rtfGroups, group)
 				}
-				artifactoryCreateUser(ctx, user, &rtfGroups)
+				artifactoryCreateUser(ctx, user, &rtfGroups, allOrgs)
 			} else {
-				artifactoryCreateUser(ctx, user, nil)
+				artifactoryCreateUser(ctx, user, nil, allOrgs)
 			}
 		}
 	}
@@ -203,7 +213,12 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 			if _, ok := rtfGroups[mcgroup]; !ok {
 				// Group not part of Artifactory user
 				// Add user to the group
-				artifactoryAddUserToGroup(ctx, mcrole)
+				log.SpanLog(ctx, log.DebugLevelApi,
+					"Artifactory Sync add missing user to group",
+					"user", name, "group", mcgroup,
+					"role", mcrole)
+				orgType := getOrgType(mcrole.Org, allOrgs)
+				artifactoryAddUserToGroup(ctx, mcrole, orgType)
 			}
 		}
 		for rtfgroup, _ := range rtfGroups {
@@ -212,8 +227,13 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 				// Remove user from the group
 				role := ormapi.Role{}
 				role.Username = name
-				role.Org = rtfgroup
-				artifactoryRemoveUserFromGroup(ctx, &role)
+				role.Org = strings.TrimPrefix(rtfgroup, ArtifactoryPrefix)
+				orgType := getOrgType(role.Org, allOrgs)
+				log.SpanLog(ctx, log.DebugLevelApi,
+					"Artifactory Sync remove extra user from group",
+					"user", name, "group", rtfgroup,
+					"role", role)
+				artifactoryRemoveUserFromGroup(ctx, &role, orgType)
 			}
 		}
 	}

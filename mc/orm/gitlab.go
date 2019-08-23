@@ -91,6 +91,10 @@ func gitlabDeleteLDAPUser(ctx context.Context, username string) {
 }
 
 func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
+	if org.Type == OrgTypeOperator {
+		// no operator orgs needed in gitlab
+		return
+	}
 	name := util.GitlabGroupSanitize(org.Name)
 	groupOpts := gitlab.CreateGroupOptions{
 		Name:       &name,
@@ -120,6 +124,10 @@ func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 }
 
 func gitlabDeleteGroup(ctx context.Context, org *ormapi.Organization) {
+	if org.Type == OrgTypeOperator {
+		// no operator orgs needed in gitlab
+		return
+	}
 	name := util.GitlabGroupSanitize(org.Name)
 	_, err := gitlabClient.Groups.DeleteGroup(name)
 	if err != nil {
@@ -130,7 +138,10 @@ func gitlabDeleteGroup(ctx context.Context, org *ormapi.Organization) {
 	}
 }
 
-func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role) {
+func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role, orgType string) {
+	if orgType == OrgTypeOperator {
+		return
+	}
 	user, err := gitlabGetUser(role.Username)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab get user",
@@ -139,7 +150,7 @@ func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role) {
 		return
 	}
 	var access *gitlab.AccessLevelValue
-	if enforcer.Enforce(role.Username, role.Org, ResourceUsers, ActionManage) {
+	if role.Role == RoleDeveloperManager {
 		access = gitlab.AccessLevel(gitlab.OwnerPermissions)
 	} else {
 		access = gitlab.AccessLevel(gitlab.ReporterPermissions)
@@ -158,7 +169,10 @@ func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role) {
 	}
 }
 
-func gitlabRemoveGroupMember(ctx context.Context, role *ormapi.Role) {
+func gitlabRemoveGroupMember(ctx context.Context, role *ormapi.Role, orgType string) {
+	if orgType == OrgTypeOperator {
+		return
+	}
 	user, err := gitlabGetUser(role.Username)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab get user",

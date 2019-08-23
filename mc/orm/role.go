@@ -262,8 +262,9 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	if !roleFound {
 		return fmt.Errorf("Role not found")
 	}
+	orgType := ""
 	if role.Org != "" {
-		org := &ormapi.Organization{}
+		org := ormapi.Organization{}
 		res = db.Where(&ormapi.Organization{Name: role.Org}).First(&org)
 		if res.RecordNotFound() {
 			return fmt.Errorf("Organization not found")
@@ -283,6 +284,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 		if org.Type == OrgTypeOperator && !isOperatorRole(role.Role) {
 			return fmt.Errorf("Can only assign operator roles for operator organization")
 		}
+		orgType = org.Type
 	}
 
 	// make sure caller has perms to modify users of target org
@@ -300,8 +302,8 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to send role added email", "err", senderr)
 	}
 
-	gitlabAddGroupMember(ctx, role)
-	artifactoryAddUserToGroup(ctx, role)
+	gitlabAddGroupMember(ctx, role, orgType)
+	artifactoryAddUserToGroup(ctx, role, orgType)
 	return nil
 }
 
@@ -350,8 +352,13 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 
 	enforcer.RemoveGroupingPolicy(psub, role.Role)
 
-	gitlabRemoveGroupMember(ctx, role)
-	artifactoryRemoveUserFromGroup(ctx, role)
+	org := ormapi.Organization{}
+	// ignore any error
+	db := loggedDB(ctx)
+	db.Where(&ormapi.Organization{Name: role.Org}).First(&org)
+
+	gitlabRemoveGroupMember(ctx, role, org.Type)
+	artifactoryRemoveUserFromGroup(ctx, role, org.Type)
 
 	return nil
 }

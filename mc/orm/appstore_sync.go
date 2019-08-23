@@ -22,6 +22,7 @@ type AppStoreSync struct {
 	needsSync    bool
 	appStoreType string
 	syncObjects  func(ctx context.Context)
+	count        int64
 }
 
 func AppStoreNewSync(appStoreType string) *AppStoreSync {
@@ -60,6 +61,7 @@ func (s *AppStoreSync) runThread() {
 
 		s.needsSync = false
 		s.syncObjects(ctx)
+		s.count++
 
 		span.Finish()
 	}
