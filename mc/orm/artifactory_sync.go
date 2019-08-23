@@ -132,7 +132,7 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context) {
 	}
 	mcusersT := make(map[string]*ormapi.User)
 	for ii, _ := range mcusers {
-		if mcusers[ii].Name == DefaultSuperuser {
+		if mcusers[ii].Name == Superuser {
 			continue
 		}
 		// Store username is lowercase format as Artifactory stores it in lowercase
