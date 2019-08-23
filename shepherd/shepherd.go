@@ -31,27 +31,10 @@ var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted clou
 var region = flag.String("region", "local", "region name")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 
-var promQCpuClust = "sum(rate(container_cpu_usage_seconds_total%7Bid%3D%22%2F%22%7D%5B1m%5D))%2Fsum(machine_cpu_cores)*100"
-var promQMemClust = "sum(container_memory_working_set_bytes%7Bid%3D%22%2F%22%7D)%2Fsum(machine_memory_bytes)*100"
-var promQDiskClust = "sum(container_fs_usage_bytes%7Bdevice%3D~%22%5E%2Fdev%2F%5Bsv%5Dd%5Ba-z%5D%5B1-9%5D%24%22%2Cid%3D%22%2F%22%7D)%2Fsum(container_fs_limit_bytes%7Bdevice%3D~%22%5E%2Fdev%2F%5Bsv%5Dd%5Ba-z%5D%5B1-9%5D%24%22%2Cid%3D%22%2F%22%7D)*100"
-var promQSendBytesRateClust = "sum(irate(container_network_transmit_bytes_total%5B1m%5D))"
-var promQRecvBytesRateClust = "sum(irate(container_network_receive_bytes_total%5B1m%5D))"
-var promQTcpConnClust = "node_netstat_Tcp_CurrEstab"
-var promQTcpRetransClust = "node_netstat_Tcp_RetransSegs"
-var promQUdpSendPktsClust = "node_netstat_Udp_OutDatagrams"
-var promQUdpRecvPktsClust = "node_netstat_Udp_InDatagrams"
-var promQUdpRecvErr = "node_netstat_Udp_InErrors"
-
-var promQCpuPod = "sum(rate(container_cpu_usage_seconds_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod_name)"
-var promQMemPod = "sum(container_memory_working_set_bytes%7Bimage!%3D%22%22%7D)by(pod_name)"
-var promQDiskPod = "sum(container_fs_usage_bytes%7Bimage!%3D%22%22%7D)by(pod_name)"
-var promQNetRecvRate = "sum(irate(container_network_receive_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod_name)"
-var promQNetSendRate = "sum(irate(container_network_transmit_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod_name)"
-
 var defaultPrometheusPort = int32(9090)
 
 //map keeping track of all the currently running prometheuses
-var promMap map[string]*PromStats
+var promMap map[string]*ClusterWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
@@ -71,17 +54,17 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key.ClusterInstKey)
 	stats, exists := promMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
-		log.DebugLog(log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
 		//get address of prometheus.
 		clusterInst := edgeproto.ClusterInst{}
 		found := ClusterInstCache.Get(&new.Key.ClusterInstKey, &clusterInst)
 		if !found {
-			log.DebugLog(log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return
 		}
 		clustIP, err := pf.GetClusterIP(&clusterInst)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
+			log.SpanLog(ctx, log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
 			return
 		}
 		// We don't actually expose prometheus ports - we should default to 9090
@@ -91,15 +74,42 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 			port = defaultPrometheusPort
 		}
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
-		log.DebugLog(log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewPromStats(promAddress, *collectInterval, metricSender.Update, &clusterInst, pf)
+			stats, err = NewClusterWorker(promAddress, *collectInterval, metricSender.Update, &clusterInst, pf)
 			if err == nil {
 				promMap[mapKey] = stats
 				stats.Start()
 			}
 		} else { //somehow this cluster's prometheus was already registered
-			log.DebugLog(log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
+		}
+	} else { //if its anything other than ready just stop it
+		//try to remove it from the prommap
+		if exists {
+			delete(promMap, mapKey)
+			stats.Stop()
+		}
+	}
+}
+
+func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
+	// This is for Docker deployments only
+	if new.Deployment != cloudcommon.AppDeploymentTypeDocker {
+		return
+	}
+	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
+	stats, exists := promMap[mapKey]
+	if new.State == edgeproto.TrackedState_READY {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
+		if !exists {
+			stats, err := NewClusterWorker("", *collectInterval, metricSender.Update, new, pf)
+			if err == nil {
+				promMap[mapKey] = stats
+				stats.Start()
+			}
+		} else { //somehow this cluster's prometheus was already registered
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, This cluster is already registered")
 		}
 	} else { //if its anything other than ready just stop it
 		//try to remove it from the prommap
@@ -142,11 +152,12 @@ func main() {
 	}
 	pf.Init(&cloudletKey, *physicalName, *vaultAddr)
 
-	promMap = make(map[string]*PromStats)
+	promMap = make(map[string]*ClusterWorker)
 
 	//register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.SetUpdatedCb(appInstCb)
+	ClusterInstCache.SetUpdatedCb(clusterInstCb)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient := notify.NewClient(addrs, *tlsCertFile)

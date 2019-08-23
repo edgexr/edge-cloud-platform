@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
@@ -199,10 +200,18 @@ func TestPromStats(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	testAppKey := MetricAppInstKey{
-		operator:  "testoper",
-		cloudlet:  "testcloudlet",
-		cluster:   "testcluster",
-		developer: "",
+		clusterInstKey: edgeproto.ClusterInstKey{
+			ClusterKey: edgeproto.ClusterKey{
+				Name: "testcluster",
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				OperatorKey: edgeproto.OperatorKey{
+					Name: "testoper",
+				},
+				Name: "testcloudlet",
+			},
+			Developer: "",
+		},
 	}
 
 	testOperatorKey := edgeproto.OperatorKey{Name: "testoper"}
@@ -217,7 +226,12 @@ func TestPromStats(t *testing.T) {
 		Developer:   "",
 	}
 	testClusterInst := edgeproto.ClusterInst{
-		Key: testClusterInstKey,
+		Key:        testClusterInstKey,
+		Deployment: cloudcommon.AppDeploymentTypeKubernetes,
+	}
+	testClusterInstUnsupported := edgeproto.ClusterInst{
+		Key:        testClusterInstKey,
+		Deployment: cloudcommon.AppDeploymentTypeDocker,
 	}
 
 	*platformName = "PLATFORM_TYPE_FAKE"
@@ -231,12 +245,17 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats, err := NewPromStats(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
+	testPromStats, err := NewClusterWorker(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
+	assert.NotNil(t, err, "Unsupported deployment type")
+	assert.Contains(t, err.Error(), "Unsupported deployment")
+	testPromStats, err = NewClusterWorker(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
 	assert.Nil(t, err, "Get a patform client for fake cloudlet")
-	err = testPromStats.CollectPromStats()
-	assert.Nil(t, err, "Fill stats from json")
+	clusterMetrics := testPromStats.clusterStat.GetClusterStats()
+	appsMetrics := testPromStats.clusterStat.GetAppStats()
+	assert.NotNil(t, clusterMetrics, "Fill stats from json")
+	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.pod = "testPod1"
-	stat, found := testPromStats.appStatsMap[testAppKey]
+	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	assert.True(t, found, "Pod testPod1 is not found")
 	if found {
@@ -247,14 +266,14 @@ func TestPromStats(t *testing.T) {
 		assert.Equal(t, uint64(222222), stat.netRecv)
 	}
 	// Check ClusterStats
-	assert.Equal(t, float64(10.01), testPromStats.clusterStat.cpu)
-	assert.Equal(t, float64(99.99), testPromStats.clusterStat.mem)
-	assert.Equal(t, float64(50.0), testPromStats.clusterStat.disk)
-	assert.Equal(t, uint64(11111), testPromStats.clusterStat.netSend)
-	assert.Equal(t, uint64(22222), testPromStats.clusterStat.netRecv)
+	assert.Equal(t, float64(10.01), clusterMetrics.cpu)
+	assert.Equal(t, float64(99.99), clusterMetrics.mem)
+	assert.Equal(t, float64(50.0), clusterMetrics.disk)
+	assert.Equal(t, uint64(11111), clusterMetrics.netSend)
+	assert.Equal(t, uint64(22222), clusterMetrics.netRecv)
 
 	// Check callback is called
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ctx, ClusterStatToMetrics(testPromStats)[0])
+	testPromStats.send(ctx, MarshalClusterMetrics(clusterMetrics, testPromStats.clusterInstKey)[0])
 	assert.Equal(t, int(1), testMetricSent)
 }
