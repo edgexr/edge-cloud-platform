@@ -359,9 +359,10 @@ ssh_authorized_keys:
 	return shepherdErr
 }
 
-func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet) error {
+func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelMexos, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
 	platform_vm_name := getPlatformVMName(cloudlet)
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting HEAT Stack %s", platform_vm_name))
 	err := mexos.HeatDeleteStack(platform_vm_name)
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)

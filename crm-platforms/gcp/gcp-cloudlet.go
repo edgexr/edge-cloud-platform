@@ -10,7 +10,7 @@ func (s *Platform) CreateCloudlet(cloudlet *edgeproto.Cloudlet, pfConfig *edgepr
 	return nil
 }
 
-func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet) error {
+func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelMexos, "delete cloudlet for GCP")
 	return nil
 }
