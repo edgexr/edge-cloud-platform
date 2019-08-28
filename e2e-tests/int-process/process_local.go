@@ -275,7 +275,11 @@ func (p *Shepherd) StopLocal() {
 
 func (p *Shepherd) GetExeName() string { return "shepherd" }
 
-func (p *Shepherd) LookupArgs() string { return "--name " + p.Name }
+func (p *Shepherd) LookupArgs() string { return "--cloudletKey " + p.CloudletKey }
+
+func (p *Shepherd) Wait() {
+	p.cmd.Wait()
+}
 
 type VaultRoles struct {
 	MCRoleID         string `json:"mcroleid"`

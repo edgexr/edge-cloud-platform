@@ -58,19 +58,19 @@ func GetShepherdCmd(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformCo
 	return ShepherdProc.String(opts...), &ShepherdProc.Common.EnvVars, nil
 }
 
-func StartShepherdService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) error {
-	ShepherdProc, opts, err := getShepherdProc(cloudlet, pfConfig)
+func StartShepherdService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (*Shepherd, error) {
+	shepherdProc, opts, err := getShepherdProc(cloudlet, pfConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = ShepherdProc.StartLocal("/tmp/"+cloudlet.Key.Name+".shepherd.log", opts...)
+	err = shepherdProc.StartLocal("/tmp/"+cloudlet.Key.Name+".shepherd.log", opts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	log.DebugLog(log.DebugLevelMexos, "started "+ShepherdProc.GetExeName())
+	log.DebugLog(log.DebugLevelMexos, "started "+shepherdProc.GetExeName())
 
-	return nil
+	return shepherdProc, nil
 }
 
 func StopShepherdService(cloudlet *edgeproto.Cloudlet) error {
