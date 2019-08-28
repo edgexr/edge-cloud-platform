@@ -47,3 +47,20 @@ module "docker_replica_west_eu_dns" {
   hostname                      = "docker-eu.mobiledgex.net"
   ip                            = "${module.docker_replica_west_eu.external_ip}"
 }
+
+# Vault VM
+module "vault" {
+  source              = "../../modules/vm_gcp"
+
+  instance_name       = "${var.vault_vm_name}"
+  zone                = "${var.gcp_zone}"
+  boot_disk_size      = 20
+  tags                = [ "mexplat-${var.environ_tag}", "https-server" ]
+  ssh_public_key_file = "${var.ssh_public_key_file}"
+}
+
+module "vault_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.vault_domain_name}"
+  ip                            = "${module.vault.external_ip}"
+}

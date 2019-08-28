@@ -45,6 +45,14 @@ variable "gcp_zone" {
   default     = "us-west2-a"
 }
 
+variable "vault_vm_name" {
+  default     = "vault-main"
+}
+
+variable "vault_domain_name" {
+  default     = "vault-main.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
