@@ -35,6 +35,10 @@ path "secret/data/ansible/common/*" {
 path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
+
+path "secret/data/registry/*" {
+  capabilities = [ "read" ]
+}
 EOF
 vault policy write ${ENVIRON}.ansible /tmp/ansible-pol.hcl
 rm /tmp/ansible-pol.hcl

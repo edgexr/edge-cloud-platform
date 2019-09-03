@@ -53,6 +53,15 @@ variable "vault_domain_name" {
   default     = "vault-main.mobiledgex.net"
 }
 
+variable "mc_instance_name" {
+  default     = "mc-main"
+}
+
+variable "mc_vm_domain_name" {
+  type        = "string"
+  default     = "mc.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
