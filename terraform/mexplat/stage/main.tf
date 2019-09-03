@@ -30,48 +30,6 @@ terraform {
   }
 }
 
-module "k8s" {
-  source              = "../../modules/k8s_azure"
-
-  location            = "${var.azure_location}"
-  client_id           = "${var.azure_terraform_service_principal_id}"
-  client_secret       = "${var.azure_terraform_service_principal_secret}"
-  cluster_name        = "${var.cluster_name}"
-  dns_prefix          = "${var.cluster_name}"
-  vm_size             = "${var.azure_vm_size}"
-  cluster_tag         = "mexplat-${var.environ_tag}"
-  resource_group_name = "${var.resource_group_name}"
-  ssh_public_key      = "${var.ssh_public_key_file}"
-}
-
-module "k8s_eu" {
-  source              = "../../modules/k8s_azure"
-
-  location            = "${var.azure_eu_location}"
-  client_id           = "${var.azure_terraform_service_principal_id}"
-  client_secret       = "${var.azure_terraform_service_principal_secret}"
-  cluster_name        = "${var.eu_cluster_name}"
-  dns_prefix          = "${var.eu_cluster_name}"
-  vm_size             = "${var.azure_vm_size}"
-  cluster_tag         = "mexplat-${var.environ_tag}"
-  resource_group_name = "${var.eu_resource_group_name}"
-  ssh_public_key      = "${var.ssh_public_key_file}"
-}
-
-module "k8s_kr" {
-  source              = "../../modules/k8s_azure"
-
-  location            = "${var.azure_kr_location}"
-  client_id           = "${var.azure_terraform_service_principal_id}"
-  client_secret       = "${var.azure_terraform_service_principal_secret}"
-  cluster_name        = "${var.kr_cluster_name}"
-  dns_prefix          = "${var.kr_cluster_name}"
-  vm_size             = "${var.azure_vm_size}"
-  cluster_tag         = "mexplat-${var.environ_tag}"
-  resource_group_name = "${var.kr_resource_group_name}"
-  ssh_public_key      = "${var.ssh_public_key_file}"
-}
-
 # Common VM for gitlab, crm, mc, vault, postgres
 module "gitlab" {
   source              = "../../modules/vm_gcp"

@@ -43,22 +43,6 @@ variable "cloudflare_account_api_token" {
   type        = "string"
 }
 
-variable "cluster_name" {
-  default     = "mexplat-dev"
-}
-
-variable "eu_cluster_name" {
-  default     = "mexplat-dev-eu"
-}
-
-variable "resource_group_name" {
-  default     = "mexplat-dev-rg"
-}
-
-variable "eu_resource_group_name" {
-  default     = "mexplat-dev-eu-rg"
-}
-
 variable "azure_vm_size" {
   default     = "Standard_DS1_v2"
 }
