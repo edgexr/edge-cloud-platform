@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
+	log "github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
@@ -32,6 +34,9 @@ func init() {
 
 func main() {
 	flag.Parse()
+	log.InitTracer("")
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
 
 	config := e2eapi.TestConfig{}
 	spec := e2esetup.TestSpec{}
@@ -70,7 +75,7 @@ func main() {
 	ranTest := false
 	for _, a := range spec.Actions {
 		util.PrintStepBanner("running action: " + a)
-		errs := e2esetup.RunAction(a, outputDir, &config, &spec, *specStr, mods)
+		errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods)
 		errors = append(errors, errs...)
 		ranTest = true
 	}

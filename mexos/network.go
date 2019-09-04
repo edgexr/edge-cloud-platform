@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,8 +13,8 @@ import (
 //  network information. Using that it further gets subnet information. Inside that subnet information
 //  there should be gateway IP if the network is set up correctly.
 // Not to be confused with GetRouterDetailExternalGateway.
-func GetExternalGateway(extNetName string) (string, error) {
-	nd, err := GetNetworkDetail(extNetName)
+func GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
+	nd, err := GetNetworkDetail(ctx, extNetName)
 	if err != nil {
 		return "", fmt.Errorf("can't get details for external network %s, %v", extNetName, err)
 	}
@@ -30,7 +31,7 @@ func GetExternalGateway(extNetName string) (string, error) {
 		return "", fmt.Errorf("no subnets for %s", extNetName)
 	}
 	//XXX just use first subnet -- may not work in all cases, but there is no tagging done rightly yet
-	sd, err := GetSubnetDetail(subnets[0])
+	sd, err := GetSubnetDetail(ctx, subnets[0])
 	if err != nil {
 		return "", fmt.Errorf("cannot get details for subnet %s, %v", subnets[0], err)
 	}
@@ -38,7 +39,7 @@ func GetExternalGateway(extNetName string) (string, error) {
 	if sd.GatewayIP == "" {
 		return "", fmt.Errorf("cannot get external network's gateway IP")
 	}
-	log.DebugLog(log.DebugLevelMexos, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
+	log.SpanLog(ctx, log.DebugLevelMexos, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
 	return sd.GatewayIP, nil
 }
 
@@ -56,13 +57,13 @@ func GetRouterDetailExternalGateway(rd *OSRouterDetail) (*OSExternalGateway, err
 	if err != nil {
 		return nil, fmt.Errorf("can't get unmarshal external gateway info, %v", err)
 	}
-	//log.DebugLog(log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
+	//log.SpanLog(ctx,log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
 	return externalGateway, nil
 }
 
 // GetRouterDetailInterfaces gets the list of interfaces on the router. For example, each private
 // subnet connected to the router will be listed here with own interface definition.
-func GetRouterDetailInterfaces(rd *OSRouterDetail) ([]OSRouterInterface, error) {
+func GetRouterDetailInterfaces(ctx context.Context, rd *OSRouterDetail) ([]OSRouterInterface, error) {
 	if rd.InterfacesInfo == "" {
 		return nil, fmt.Errorf("missing interfaces info in router details")
 	}
@@ -71,17 +72,17 @@ func GetRouterDetailInterfaces(rd *OSRouterDetail) ([]OSRouterInterface, error) 
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal router detail interfaces")
 	}
-	log.DebugLog(log.DebugLevelMexos, "get router detail interfaces", "interfaces", interfaces)
+	log.SpanLog(ctx, log.DebugLevelMexos, "get router detail interfaces", "interfaces", interfaces)
 	return interfaces, nil
 }
 
-func GetMexRouterIP() (string, error) {
+func GetMexRouterIP(ctx context.Context) (string, error) {
 	rtr := GetCloudletExternalRouter()
-	rd, rderr := GetRouterDetail(rtr)
+	rd, rderr := GetRouterDetail(ctx, rtr)
 	if rderr != nil {
 		return "", fmt.Errorf("can't get router detail for %s, %v", rtr, rderr)
 	}
-	log.DebugLog(log.DebugLevelMexos, "router detail", "detail", rd)
+	log.SpanLog(ctx, log.DebugLevelMexos, "router detail", "detail", rd)
 	reg, regerr := GetRouterDetailExternalGateway(rd)
 	if regerr != nil {
 		log.InfoLog("can't get router detail")
@@ -89,7 +90,7 @@ func GetMexRouterIP() (string, error) {
 	}
 	if reg != nil && len(reg.ExternalFixedIPs) > 0 {
 		fip := reg.ExternalFixedIPs[0]
-		log.DebugLog(log.DebugLevelMexos, "external fixed ips", "ips", fip)
+		log.SpanLog(ctx, log.DebugLevelMexos, "external fixed ips", "ips", fip)
 		return fip.IPAddress, nil
 
 	} else {
@@ -98,8 +99,8 @@ func GetMexRouterIP() (string, error) {
 	}
 }
 
-func ValidateNetwork() error {
-	nets, err := ListNetworks()
+func ValidateNetwork(ctx context.Context) error {
+	nets, err := ListNetworks(ctx)
 	if err != nil {
 		return err
 	}
@@ -126,7 +127,7 @@ func ValidateNetwork() error {
 		return fmt.Errorf("cannot find network %s", GetCloudletMexNetwork())
 	}
 
-	routers, err := ListRouters()
+	routers, err := ListRouters(ctx)
 	if err != nil {
 		return err
 	}
@@ -146,8 +147,8 @@ func ValidateNetwork() error {
 }
 
 //PrepNetwork validates and does the work needed to ensure MEX network setup
-func PrepNetwork() error {
-	nets, err := ListNetworks()
+func PrepNetwork(ctx context.Context) error {
+	nets, err := ListNetworks(ctx)
 	if err != nil {
 		return err
 	}
@@ -179,13 +180,13 @@ func PrepNetwork() error {
 	}
 	if !found {
 		// We need at least one network for `mex` clusters
-		err = CreateNetwork(GetCloudletMexNetwork())
+		err = CreateNetwork(ctx, GetCloudletMexNetwork())
 		if err != nil {
 			return fmt.Errorf("cannot create mex network %s, %v", GetCloudletMexNetwork(), err)
 		}
 	}
 
-	routers, err := ListRouters()
+	routers, err := ListRouters(ctx)
 	if err != nil {
 		return err
 	}
@@ -199,11 +200,11 @@ func PrepNetwork() error {
 	}
 	if !found {
 		// We need at least one router for our `mex` network and external network
-		err = CreateRouter(GetCloudletExternalRouter())
+		err = CreateRouter(ctx, GetCloudletExternalRouter())
 		if err != nil {
 			return fmt.Errorf("cannot create the ext router %s, %v", GetCloudletExternalRouter(), err)
 		}
-		err = SetRouter(GetCloudletExternalRouter(), GetCloudletExternalNetwork())
+		err = SetRouter(ctx, GetCloudletExternalRouter(), GetCloudletExternalNetwork())
 		if err != nil {
 			return fmt.Errorf("cannot set default network to router %s, %v", GetCloudletExternalRouter(), err)
 		}
@@ -213,8 +214,8 @@ func PrepNetwork() error {
 }
 
 //GetCloudletSubnets returns subnets inside MEX Network
-func GetCloudletSubnets() ([]string, error) {
-	nd, err := GetNetworkDetail(GetCloudletMexNetwork())
+func GetCloudletSubnets(ctx context.Context) ([]string, error) {
+	nd, err := GetNetworkDetail(ctx, GetCloudletMexNetwork())
 	if err != nil {
 		return nil, fmt.Errorf("can't get MEX network detail, %v", err)
 	}

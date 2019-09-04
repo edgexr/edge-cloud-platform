@@ -1,12 +1,13 @@
 package cloudflare
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var mexTestInfra = os.Getenv("MEX_TEST_INFRA")
@@ -17,7 +18,7 @@ func TestInit(t *testing.T) {
 	if mexTestInfra == "" {
 		return
 	}
-	log.SetLevel(log.DebugLevel)
+	log.SetDebugLevel(log.DebugLevelMexos)
 
 	user = os.Getenv("CF_USER")
 	key = os.Getenv("CF_KEY")
@@ -53,11 +54,16 @@ func TestGetAPI(t *testing.T) {
 }
 
 func TestGetDNSRecords(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelMexos)
+	log.InitTracer("")
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	if mexTestInfra == "" {
 		return
 	}
 	// XXX not sure if domain is zone or name, but guessing zone
-	recs, err := GetDNSRecords(domain, "")
+	recs, err := GetDNSRecords(ctx, domain, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}
@@ -68,22 +74,27 @@ func TestGetDNSRecords(t *testing.T) {
 }
 
 func TestCreateDNSRecord(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelMexos)
+	log.InitTracer("")
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	if mexTestInfra == "" {
 		return
 	}
 	cname := "name-test-1"
-	err := CreateDNSRecord(domain, cname, "cname", domain, 1, false)
+	err := CreateDNSRecord(ctx, domain, cname, "cname", domain, 1, false)
 	if err != nil {
 		t.Errorf("cannot create DNS record, %v", err)
 	}
 
 	//try to recreate -- should produce error
-	err = CreateDNSRecord(domain, cname, "cname", domain, 1, false)
+	err = CreateDNSRecord(ctx, domain, cname, "cname", domain, 1, false)
 	if err == nil {
 		t.Errorf("should have failed")
 	}
 
-	recs, err := GetDNSRecords(domain, "")
+	recs, err := GetDNSRecords(ctx, domain, "")
 	if err != nil {
 		t.Errorf("can not get dns records for %s, %v", domain, err)
 	}

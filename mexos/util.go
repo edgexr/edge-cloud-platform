@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -11,13 +12,13 @@ import (
 )
 
 // AddProxySecurityRulesAndPatchDNS Adds security rules and dns records in parallel
-func AddProxySecurityRulesAndPatchDNS(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, masterIP string, addProxy bool, ops ...nginx.Op) error {
+func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, masterIP string, addProxy bool, ops ...nginx.Op) error {
 	secchan := make(chan string)
 	dnschan := make(chan string)
 	proxychan := make(chan string)
 
 	if len(appInst.MappedPorts) == 0 {
-		log.DebugLog(log.DebugLevelMexos, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
+		log.SpanLog(ctx, log.DebugLevelMexos, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
 		return nil
 	}
 	go func() {
@@ -33,7 +34,7 @@ func AddProxySecurityRulesAndPatchDNS(client pc.PlatformClient, kubeNames *k8smg
 		}
 	}()
 	go func() {
-		err := AddSecurityRules(appInst.MappedPorts)
+		err := AddSecurityRules(ctx, appInst.MappedPorts)
 		if err == nil {
 			secchan <- ""
 		} else {
@@ -41,7 +42,7 @@ func AddProxySecurityRulesAndPatchDNS(client pc.PlatformClient, kubeNames *k8smg
 		}
 	}()
 	go func() {
-		err := CreateAppDNS(client, kubeNames, getDnsSvcAction)
+		err := CreateAppDNS(ctx, client, kubeNames, getDnsSvcAction)
 		if err == nil {
 			dnschan <- ""
 		} else {

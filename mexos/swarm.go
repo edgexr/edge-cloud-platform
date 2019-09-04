@@ -1,9 +1,9 @@
 package mexos
 
 /*
-func CreateDockerSwarm(clusterName, rootLBName) error {
+func CreateDockerSwarm(ctx context.Context, clusterName, rootLBName) error {
 	//TODO independent swarm cluster without k8s
-	log.DebugLog(log.DebugLevelMexos, "creating docker swarm", "name", clusterName)
+	log.SpanLog(ctx,log.DebugLevelMexos, "creating docker swarm", "name", clusterName)
 	name, err := FindClusterWithKey(clusterName)
 	if err != nil {
 		return err
@@ -17,16 +17,16 @@ func CreateDockerSwarm(clusterName, rootLBName) error {
 		return err
 	}
 	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s docker swarm init --advertise-addr %s", sshOpts[0], sshOpts[1], sshOpts[2], sshUser, masteraddr, masteraddr)
-	log.DebugLog(log.DebugLevelMexos, "running docker swarm init", "cmd", cmd)
+	log.SpanLog(ctx,log.DebugLevelMexos, "running docker swarm init", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "error, docker swarm init", "out", out, "err", err)
+		log.SpanLog(ctx,log.DebugLevelMexos, "error, docker swarm init", "out", out, "err", err)
 		return fmt.Errorf("cannot docker swarm init, %v, %s", err, out)
 	}
 	cmd = fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s docker swarm join-token worker -q", sshOpts[0], sshOpts[1], sshOpts[2], sshUser, masteraddr)
 	out, err = client.Output(cmd)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "error, docker swarm join-token", "out", out, "err", err)
+		log.SpanLog(ctx,log.DebugLevelMexos, "error, docker swarm join-token", "out", out, "err", err)
 		return fmt.Errorf("cannot docker swarm join-token worker, %v, %s", err, out)
 	}
 	token := strings.TrimSpace(out)
@@ -44,20 +44,20 @@ func CreateDockerSwarm(clusterName, rootLBName) error {
 		}
 		if n.Addr == "" {
 			errmsg := fmt.Sprintf("missing address for kubernetes node, %v", n)
-			log.DebugLog(log.DebugLevelMexos, errmsg)
+			log.SpanLog(ctx,log.DebugLevelMexos, errmsg)
 			return fmt.Errorf(errmsg)
 		}
-		log.DebugLog(log.DebugLevelMexos, "docker worker node join", "node", n)
+		log.SpanLog(ctx,log.DebugLevelMexos, "docker worker node join", "node", n)
 		cmd = fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s docker swarm join --token %s %s:2377", sshOpts[0], sshOpts[1], sshOpts[2], sshUser, n.Addr, token, masteraddr)
 		out, err = client.Output(cmd)
 		if err != nil {
 			errmsg := fmt.Sprintf("cannot docker swarm join, %v, %s, cmd %s", err, out, cmd)
-			log.DebugLog(log.DebugLevelMexos, errmsg)
+			log.SpanLog(ctx,log.DebugLevelMexos, errmsg)
 			return fmt.Errorf(errmsg)
 		}
 		nodesJoined++
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, docker swarm nodes joined", "num worker nodes", nodesJoined)
+	log.SpanLog(ctx,log.DebugLevelMexos, "ok, docker swarm nodes joined", "num worker nodes", nodesJoined)
 	return nil
 }
 
@@ -76,8 +76,8 @@ type DockerCompose struct {
 }
 
 
-func CreateDockerSwarmAppManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "create docker-swarm app")
+func CreateDockerSwarmAppManifest(ctx context.Context, mf *Manifest) error {
+	log.SpanLog(ctx,log.DebugLevelMexos, "create docker-swarm app")
 	rootLB, err := getRootLB(mf.Spec.RootLB)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func CreateDockerSwarmAppManifest(mf *Manifest) error {
 	}
 	base := rootLB.PlatConf.Base
 	if base == "" {
-		log.DebugLog(log.DebugLevelMexos, "base is empty, using default")
+		log.SpanLog(ctx,log.DebugLevelMexos, "base is empty, using default")
 		base = GetDefaultRegistryBase(mf, base)
 	}
 	mani := mf.Config.ConfigDetail.Manifest
@@ -117,7 +117,7 @@ func CreateDockerSwarmAppManifest(mf *Manifest) error {
 		return fmt.Errorf("cannot unmarshal docker compose file, %v", err)
 	}
 	dcfn := fmt.Sprintf("docker-compose-%s.yaml", mf.Metadata.Name)
-	log.DebugLog(log.DebugLevelMexos, "writing docker-compose file", "fn", dcfn)
+	log.SpanLog(ctx,log.DebugLevelMexos, "writing docker-compose file", "fn", dcfn)
 	cmd = fmt.Sprintf("cat <<'EOF'> %s \n%s\nEOF", dcfn, string(res))
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -128,7 +128,7 @@ func CreateDockerSwarmAppManifest(mf *Manifest) error {
 	if err != nil {
 		return fmt.Errorf("error copying docker-compose yaml, %s, %v", out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "deploying docker stack", "name", mf.Metadata.Name)
+	log.SpanLog(ctx,log.DebugLevelMexos, "deploying docker stack", "name", mf.Metadata.Name)
 	cmd = fmt.Sprintf("ssh -i id_rsa_mex %s docker stack deploy --compose-file %s %s", masteraddr, dcfn, mf.Metadata.Name)
 	out, err = client.Output(cmd)
 	if err != nil {
@@ -137,12 +137,12 @@ func CreateDockerSwarmAppManifest(mf *Manifest) error {
 	if err := DockerComposePorts(mf, dc); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "adding proxy and security rules", "name", mf.Metadata.Name)
+	log.SpanLog(ctx,log.DebugLevelMexos, "adding proxy and security rules", "name", mf.Metadata.Name)
 	if err = AddProxySecurityRules(rootLB, mf, masteraddr); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
+		log.SpanLog(ctx,log.DebugLevelMexos, "cannot create security rules", "error", err)
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, docker stack deployed", "name", mf.Metadata.Name, "fn", dcfn, "ports", mf.Spec.Ports)
+	log.SpanLog(ctx,log.DebugLevelMexos, "ok, docker stack deployed", "name", mf.Metadata.Name, "fn", dcfn, "ports", mf.Spec.Ports)
 	// TODO add custom DNS entries per app service endpoints
 	return nil
 }
@@ -180,8 +180,8 @@ func DockerComposePorts(mf *Manifest, dc *DockerCompose) error {
 	return nil
 }
 
-func DeleteDockerSwarmAppManifest(mf *Manifest) error {
-	log.DebugLog(log.DebugLevelMexos, "delete docker-swarm app")
+func DeleteDockerSwarmAppManifest(ctx context.Context, mf *Manifest) error {
+	log.SpanLog(ctx,log.DebugLevelMexos, "delete docker-swarm app")
 	rootLB, err := getRootLB(mf.Spec.RootLB)
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 	}
 	base := rootLB.PlatConf.Base
 	if base == "" {
-		log.DebugLog(log.DebugLevelMexos, "base is empty, using default")
+		log.SpanLog(ctx,log.DebugLevelMexos, "base is empty, using default")
 		base = GetDefaultRegistryBase(mf, base)
 	}
 	mani := mf.Config.ConfigDetail.Manifest
@@ -220,7 +220,7 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 	if err := yaml.Unmarshal(res, dc); err != nil {
 		return fmt.Errorf("cannot unmarshal docker compose file, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "removing docker stack", "name", mf.Metadata.Name)
+	log.SpanLog(ctx,log.DebugLevelMexos, "removing docker stack", "name", mf.Metadata.Name)
 	cmd = fmt.Sprintf("ssh -i id_rsa_mex %s docker stack rm  %s", masteraddr, mf.Metadata.Name)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -229,12 +229,12 @@ func DeleteDockerSwarmAppManifest(mf *Manifest) error {
 	if err := DockerComposePorts(mf, dc); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "removing proxy and security rules", "name", mf.Metadata.Name)
+	log.SpanLog(ctx,log.DebugLevelMexos, "removing proxy and security rules", "name", mf.Metadata.Name)
 	if err = DeleteProxySecurityRules(rootLB, mf, masteraddr, appInst); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot create security rules", "error", err)
+		log.SpanLog(ctx,log.DebugLevelMexos, "cannot create security rules", "error", err)
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, docker stack removed", "name", mf.Metadata.Name)
+	log.SpanLog(ctx,log.DebugLevelMexos, "ok, docker stack removed", "name", mf.Metadata.Name)
 	// TODO add custom DNS entries per app service endpoints
 	return nil
 }

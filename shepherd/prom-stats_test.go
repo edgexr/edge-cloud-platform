@@ -245,13 +245,13 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats, err := NewClusterWorker(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
+	testPromStats, err := NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
 	assert.NotNil(t, err, "Unsupported deployment type")
 	assert.Contains(t, err.Error(), "Unsupported deployment")
-	testPromStats, err = NewClusterWorker(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
+	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
 	assert.Nil(t, err, "Get a platform client for fake cloudlet")
-	clusterMetrics := testPromStats.clusterStat.GetClusterStats()
-	appsMetrics := testPromStats.clusterStat.GetAppStats()
+	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
+	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.pod = "testPod1"

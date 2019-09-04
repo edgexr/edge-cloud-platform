@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,8 +18,7 @@ import (
 var GCPServiceAccount string //temp
 
 type Platform struct {
-	// GcpProperties needs to move to edge-cloud-infra
-	props        edgeproto.GcpProperties
+	props        edgeproto.GcpProperties // GcpProperties needs to move to edge-cloud-infra
 	config       platform.PlatformConfig
 	clusterCache *edgeproto.ClusterInstInfoCache
 }
@@ -43,8 +43,8 @@ func (s *Platform) GetType() string {
 	return "gcp"
 }
 
-func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
+func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
 		return err
 	}
 	s.config = *platformConfig
@@ -65,14 +65,14 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 	if s.props.GcpAuthKeyUrl == "" {
 		//default it
 		s.props.GcpAuthKeyUrl = "https://" + platformConfig.VaultAddr + "/v1/secret/data/cloudlet/gcp/auth_key.json"
-		log.DebugLog(log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
+		log.SpanLog(ctx, log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
 	}
 	return nil
 }
 
-func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
-	log.DebugLog(log.DebugLevelMexos, "GetLimits (GCP)")
-	err := s.GCPLogin()
+func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (GCP)")
+	err := s.GCPLogin(ctx)
 	if err != nil {
 		return err
 	}
@@ -141,6 +141,6 @@ func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
 	return nil
 }
 
-func (s *Platform) GetPlatformClient(clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
 	return &pc.LocalClient{}, nil
 }

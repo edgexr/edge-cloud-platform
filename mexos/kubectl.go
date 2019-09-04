@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -15,12 +16,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
+func CreateDockerRegistrySecret(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
 	var out string
-	log.DebugLog(log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
-	auth, err := cloudcommon.GetRegistryAuth(app.ImagePath, vaultAddr)
+	log.SpanLog(ctx, log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
+	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultAddr)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
 		return nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
@@ -44,24 +45,24 @@ func CreateDockerRegistrySecret(client pc.PlatformClient, clusterInst *edgeproto
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
 		secretName, dockerServer, auth.Username, auth.Password,
 		k8smgmt.GetKconfName(clusterInst))
-	log.DebugLog(log.DebugLevelMexos, "CreateDockerRegistrySecret", "cmd", cmd)
+	log.SpanLog(ctx, log.DebugLevelMexos, "CreateDockerRegistrySecret", "cmd", cmd)
 	out, err = client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
 		} else {
-			log.DebugLog(log.DebugLevelMexos, "warning, docker registry secret already exists.")
+			log.SpanLog(ctx, log.DebugLevelMexos, "warning, docker registry secret already exists.")
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, created registry secret", "out", out)
+	log.SpanLog(ctx, log.DebugLevelMexos, "ok, created registry secret", "out", out)
 	return nil
 }
 
 // ConfigMap of cluster instance details such as cluster name, cloudlet name, and operator name
-func CreateClusterConfigMap(client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
+func CreateClusterConfigMap(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
 	var out string
 
-	log.DebugLog(log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
+	log.SpanLog(ctx, log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
 
 	cmd := fmt.Sprintf("kubectl create configmap mexcluster-info "+
 		"--from-literal=ClusterName=%s "+
@@ -76,15 +77,15 @@ func CreateClusterConfigMap(client pc.PlatformClient, clusterInst *edgeproto.Clu
 		if !strings.Contains(out, "AlreadyExists") {
 			return fmt.Errorf("can't add cluster ConfigMap, %s, %v", out, err)
 		} else {
-			log.DebugLog(log.DebugLevelMexos, "warning, Cluster ConfigMap already exists.")
+			log.SpanLog(ctx, log.DebugLevelMexos, "warning, Cluster ConfigMap already exists.")
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, created mexcluster-info configmap")
+	log.SpanLog(ctx, log.DebugLevelMexos, "ok, created mexcluster-info configmap")
 	return nil
 }
 
-func GetSvcExternalIP(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get service external IP", "name", name)
+func GetSvcExternalIP(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get service external IP", "name", name)
 	externalIP := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
@@ -93,22 +94,22 @@ func GetSvcExternalIP(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, na
 		if err != nil {
 			return "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
 		}
-		svcs, err := GetServices(client, kubeNames)
+		svcs, err := GetServices(ctx, client, kubeNames)
 		if err != nil {
 			return "", err
 		}
-		log.DebugLog(log.DebugLevelMexos, "getting externalIP, examine list of services", "name", name, "svcs", svcs)
+		log.SpanLog(ctx, log.DebugLevelMexos, "getting externalIP, examine list of services", "name", name, "svcs", svcs)
 		for _, svc := range svcs {
-			log.DebugLog(log.DebugLevelMexos, "svc item", "item", svc, "name", name)
+			log.SpanLog(ctx, log.DebugLevelMexos, "svc item", "item", svc, "name", name)
 			if svc.ObjectMeta.Name != name {
-				log.DebugLog(log.DebugLevelMexos, "service name mismatch", "name", name, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
+				log.SpanLog(ctx, log.DebugLevelMexos, "service name mismatch", "name", name, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
 				continue
 			}
 			for _, ingress := range svc.Status.LoadBalancer.Ingress {
-				log.DebugLog(log.DebugLevelMexos, "found ingress ip", "ingress.IP", ingress.IP, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
+				log.SpanLog(ctx, log.DebugLevelMexos, "found ingress ip", "ingress.IP", ingress.IP, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
 				if ingress.IP != "" {
 					externalIP = ingress.IP
-					log.DebugLog(log.DebugLevelMexos, "got externaIP for app", "externalIP", externalIP)
+					log.SpanLog(ctx, log.DebugLevelMexos, "got externaIP for app", "externalIP", externalIP)
 					return externalIP, nil
 				}
 			}
@@ -121,8 +122,8 @@ func GetSvcExternalIP(client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, na
 	return externalIP, nil
 }
 
-func GetServices(client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Service, error) {
-	log.DebugLog(log.DebugLevelMexos, "get services", "kconf", names.KconfName)
+func GetServices(ctx context.Context, client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Service, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get services", "kconf", names.KconfName)
 	svcs := svcItems{}
 	if names.DeploymentType == cloudcommon.AppDeploymentTypeDocker {
 		// just populate the service names
@@ -141,18 +142,18 @@ func GetServices(client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Servi
 	}
 	err = json.Unmarshal([]byte(out), &svcs)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot unmarshal svc json", "out", out, "err", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "cannot unmarshal svc json", "out", out, "err", err)
 		return nil, fmt.Errorf("cannot unmarshal svc json, %s", err.Error())
 	}
 	return svcs.Items, nil
 }
 
-func BackupKubeconfig(client pc.PlatformClient) {
+func BackupKubeconfig(ctx context.Context, client pc.PlatformClient) {
 	kc := DefaultKubeconfig()
 	cmd := fmt.Sprintf("mv %s %s.save", kc, kc)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "can't rename", "name", kc, "err", err, "out", out)
+		log.SpanLog(ctx, log.DebugLevelMexos, "can't rename", "name", kc, "err", err, "out", out)
 	}
 }
 

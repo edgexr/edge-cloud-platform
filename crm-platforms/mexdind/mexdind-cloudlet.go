@@ -1,6 +1,7 @@
 package mexdind
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -11,14 +12,14 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func (s *Platform) CreateCloudlet(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelMexos, "create cloudlet for mexdind")
-	err := s.generic.CreateCloudlet(cloudlet, pfConfig, flavor, updateCallback)
+func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "create cloudlet for mexdind")
+	err := s.generic.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, updateCallback)
 	if err != nil {
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Starting Shepherd")
-	shProc, err := intprocess.StartShepherdService(cloudlet, pfConfig)
+	shProc, err := intprocess.StartShepherdService(ctx, cloudlet, pfConfig)
 	if err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ func (s *Platform) CreateCloudlet(cloudlet *edgeproto.Cloudlet, pfConfig *edgepr
 	select {
 	case <-fatal:
 		out := ""
-		out, err = cloudcommon.GetCloudletLog(&cloudlet.Key)
+		out, err = cloudcommon.GetCloudletLog(ctx, &cloudlet.Key)
 		if err != nil || out == "" {
 			out = fmt.Sprintf("Please look at %s for more details", cloudcommon.GetCloudletLogFile(cloudlet.Key.Name+".shepherd"))
 		} else {
@@ -45,13 +46,13 @@ func (s *Platform) CreateCloudlet(cloudlet *edgeproto.Cloudlet, pfConfig *edgepr
 
 }
 
-func (s *Platform) DeleteCloudlet(cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelMexos, "delete cloudlet for mexdind")
-	err := s.generic.DeleteCloudlet(cloudlet, updateCallback)
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "delete cloudlet for mexdind")
+	err := s.generic.DeleteCloudlet(ctx, cloudlet, updateCallback)
 	if err != nil {
 		return err
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Stopping Shepherd")
-	return intprocess.StopShepherdService(cloudlet)
+	return intprocess.StopShepherdService(ctx, cloudlet)
 }

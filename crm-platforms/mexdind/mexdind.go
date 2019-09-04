@@ -1,6 +1,7 @@
 package mexdind
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -27,8 +28,8 @@ func (s *Platform) GetType() string {
 	return "mexdind"
 }
 
-func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.generic.Init(platformConfig, updateCallback)
+func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.generic.Init(ctx, platformConfig, updateCallback)
 	s.config = *platformConfig
 	if err != nil {
 		return err
@@ -37,7 +38,7 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 	// Set the test Mode based on what is in PlatformConfig
 	mexos.SetTestMode(platformConfig.TestMode)
 
-	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
+	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
 		return err
 	}
 
@@ -52,24 +53,24 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 	mexos.CloudletInfraCommon.NetworkScheme = s.NetworkScheme
 
 	fqdn := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
-	ipaddr, err := s.GetDINDServiceIP()
+	ipaddr, err := s.GetDINDServiceIP(ctx, )
 	if err != nil {
 		return fmt.Errorf("init cannot get service ip, %s", err.Error())
 	}
 	if mexos.GetCloudletNetworkScheme() == cloudcommon.NetworkSchemePublicIP {
-		if err := mexos.ActivateFQDNA(fqdn, ipaddr); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error in ActivateFQDNA", "err", err)
+		if err := mexos.ActivateFQDNA(ctx, fqdn, ipaddr); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "error in ActivateFQDNA", "err", err)
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "done init mexdind")
+	log.SpanLog(ctx, log.DebugLevelMexos, "done init mexdind")
 	return nil
 }
 
-func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
-	return s.generic.GatherCloudletInfo(info)
+func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	return s.generic.GatherCloudletInfo(ctx, info)
 }
 
-func (s *Platform) GetPlatformClient(clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
-	return s.generic.GetPlatformClient(clusterInst)
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+	return s.generic.GetPlatformClient(ctx, clusterInst)
 }

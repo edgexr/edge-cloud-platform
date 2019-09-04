@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,15 +10,15 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return mexos.UpdateCluster(lbName, clusterInst, updateCallback)
+	return mexos.UpdateCluster(ctx, lbName, clusterInst, updateCallback)
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
@@ -32,13 +33,13 @@ func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 	//adjust the timeout just a bit to give some buffer for the API exchange and also sleep loops
 	timeout -= time.Minute
 
-	return mexos.CreateCluster(lbName, clusterInst, updateCallback, timeout)
+	return mexos.CreateCluster(ctx, lbName, clusterInst, updateCallback, timeout)
 }
 
-func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return mexos.DeleteCluster(lbName, clusterInst)
+	return mexos.DeleteCluster(ctx, lbName, clusterInst)
 }

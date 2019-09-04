@@ -189,6 +189,7 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	if err != nil {
 		return nil, fmt.Errorf("post %s http req failed, %s", uri, err.Error())
 	}
+	req.Close = true
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Add("Authorization", "Bearer "+token)

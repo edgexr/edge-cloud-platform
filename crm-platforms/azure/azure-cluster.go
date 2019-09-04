@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -14,8 +15,8 @@ import (
 )
 
 // AzureLogin logs into azure
-func (s *Platform) AzureLogin() error {
-	log.DebugLog(log.DebugLevelMexos, "doing azure login")
+func (s *Platform) AzureLogin(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "doing azure login")
 	out, err := sh.Command("az", "login", "--username", s.props.UserName, "--password", s.props.Password).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("Login Failed: %s %v", out, err)
@@ -27,14 +28,14 @@ func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }
 
-func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	var err error
 
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	clusterName := AzureSanitize(clusterInst.Key.ClusterKey.Name)
 	location := s.props.Location
 
-	if err = s.AzureLogin(); err != nil {
+	if err = s.AzureLogin(ctx); err != nil {
 		return err
 	}
 	if err = CreateResourceGroup(resourceGroup, location); err != nil {
@@ -47,34 +48,34 @@ func (s *Platform) CreateClusterInst(clusterInst *edgeproto.ClusterInst, updateC
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done
 	time.Sleep(3 * time.Second)
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
-	mexos.BackupKubeconfig(client)
+	mexos.BackupKubeconfig(ctx, client)
 	if err = GetAKSCredentials(resourceGroup, clusterName); err != nil {
 		return err
 	}
 	kconf := k8smgmt.GetKconfName(clusterInst) // XXX
 
-	log.DebugLog(log.DebugLevelMexos, "warning, using default config") //XXX
+	log.SpanLog(ctx, log.DebugLevelMexos, "warning, using default config") //XXX
 	//XXX watch out for multiple cluster contexts
 	if err = pc.CopyFile(client, mexos.DefaultKubeconfig(), kconf); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "created aks", "name", clusterName)
+	log.SpanLog(ctx, log.DebugLevelMexos, "created aks", "name", clusterName)
 	return nil
 }
 
-func (s *Platform) DeleteClusterInst(clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
-	if err := s.AzureLogin(); err != nil {
+	if err := s.AzureLogin(ctx); err != nil {
 		return err
 	}
 	return DeleteAKSCluster(resourceGroup)
 }
 
-func (s *Platform) UpdateClusterInst(clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Update cluster inst not implemented for Azure")
 }
 

@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -11,13 +12,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
 	if err = SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -26,7 +27,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if err != nil {
 		return err
 	}
-	err = mexos.CreateDockerRegistrySecret(client, clusterInst, app, s.config.VaultAddr)
+	err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.config.VaultAddr)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	// set up dns
 	getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 		action := mexos.DnsSvcAction{}
-		externalIP, err := mexos.GetSvcExternalIP(client, names, svc.ObjectMeta.Name)
+		externalIP, err := mexos.GetSvcExternalIP(ctx, client, names, svc.ObjectMeta.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -57,19 +58,19 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
-	if err = mexos.CreateAppDNS(client, names, getDnsAction); err != nil {
+	if err = mexos.CreateAppDNS(ctx, client, names, getDnsAction); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
 	if err = SetupKconf(clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if app.InternalPorts {
 		return nil
 	}
-	return mexos.DeleteAppDNS(client, names)
+	return mexos.DeleteAppDNS(ctx, client, names)
 }
 
 func SetupKconf(clusterInst *edgeproto.ClusterInst) error {
@@ -112,13 +113,13 @@ func SetupKconf(clusterInst *edgeproto.ClusterInst) error {
 	return nil
 }
 
-func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	updateCallback(edgeproto.UpdateTask, "Updating GCP AppInst")
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return err
 	}
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -131,12 +132,12 @@ func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	return err
 }
 
-func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	// regenerate kconf if missing because CRM in container was restarted
 	if err := SetupKconf(clusterInst); err != nil {
 		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +149,6 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 	return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
 }
 
-func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
 }

@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -28,11 +29,11 @@ func (s *Platform) GetType() string {
 	return "openstack"
 }
 
-func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	rootLBName := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
 	s.cloudletKey = platformConfig.CloudletKey
 	s.config = *platformConfig
-	log.DebugLog(
+	log.SpanLog(ctx,
 		log.DebugLevelMexos, "init openstack",
 		"rootLB", rootLBName,
 		"physicalName", platformConfig.PhysicalName,
@@ -41,10 +42,10 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 	updateCallback(edgeproto.UpdateTask, "Initializing Openstack platform")
 
 	updateCallback(edgeproto.UpdateTask, "Fetching Openstack access credentials")
-	if err := mexos.InitInfraCommon(platformConfig.VaultAddr); err != nil {
+	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
 		return err
 	}
-	if err := mexos.InitOpenstackProps(platformConfig.CloudletKey.OperatorKey.Name, platformConfig.PhysicalName, platformConfig.VaultAddr); err != nil {
+	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey.OperatorKey.Name, platformConfig.PhysicalName, platformConfig.VaultAddr); err != nil {
 		return err
 	}
 	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
@@ -52,21 +53,21 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 		mexos.CloudletInfraCommon.NetworkScheme = "name=mex-k8s-net-1,cidr=10.101.X.0/24"
 	}
 	var err error
-	s.flavorList, err = mexos.GetFlavorInfo()
+	s.flavorList, err = mexos.GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
 
 	// create rootLB
 	updateCallback(edgeproto.UpdateTask, "Creating RootLB")
-	crmRootLB, cerr := mexos.NewRootLB(rootLBName)
+	crmRootLB, cerr := mexos.NewRootLB(ctx, rootLBName)
 	if cerr != nil {
 		return cerr
 	}
 	if crmRootLB == nil {
 		return fmt.Errorf("rootLB is not initialized")
 	}
-	log.DebugLog(log.DebugLevelMexos, "created rootLB", "rootlb", crmRootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelMexos, "created rootLB", "rootlb", crmRootLB.Name)
 	s.rootLB = crmRootLB
 	s.rootLBName = rootLBName
 
@@ -80,16 +81,16 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 		return fmt.Errorf("unable to find closest flavor for Shared RootLB: %v", err)
 	}
 
-	log.DebugLog(log.DebugLevelMexos, "calling SetupRootLB")
+	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = mexos.SetupRootLB(rootLBName, flavorName, edgeproto.DummyUpdateCallback)
+	err = mexos.SetupRootLB(ctx, rootLBName, flavorName, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "ok, SetupRootLB")
+	log.SpanLog(ctx, log.DebugLevelMexos, "ok, SetupRootLB")
 
 	// set up L7 load balancer
-	client, err := s.GetPlatformClientRootLB(rootLBName)
+	client, err := s.GetPlatformClientRootLB(ctx, rootLBName)
 	if err != nil {
 		return err
 	}
@@ -101,12 +102,12 @@ func (s *Platform) Init(platformConfig *platform.PlatformConfig, updateCallback 
 	return nil
 }
 
-func (s *Platform) GatherCloudletInfo(info *edgeproto.CloudletInfo) error {
-	return mexos.OSGetLimits(info)
+func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	return mexos.OSGetLimits(ctx, info)
 }
 
-func (s *Platform) GetPlatformClientRootLB(rootLBName string) (pc.PlatformClient, error) {
-	log.DebugLog(log.DebugLevelMexos, "GetPlatformClientRootLB", "rootLBName", rootLBName)
+func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName string) (pc.PlatformClient, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetPlatformClientRootLB", "rootLBName", rootLBName)
 
 	if rootLBName == "" {
 		return nil, fmt.Errorf("cannot GetPlatformClientRootLB, rootLB is empty")
@@ -114,13 +115,13 @@ func (s *Platform) GetPlatformClientRootLB(rootLBName string) (pc.PlatformClient
 	if mexos.GetCloudletExternalNetwork() == "" {
 		return nil, fmt.Errorf("GetPlatformClientRootLB, missing external network in platform config")
 	}
-	return mexos.GetSSHClient(rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	return mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 }
 
-func (s *Platform) GetPlatformClient(clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return s.GetPlatformClientRootLB(rootLBName)
+	return s.GetPlatformClientRootLB(ctx, rootLBName)
 }
