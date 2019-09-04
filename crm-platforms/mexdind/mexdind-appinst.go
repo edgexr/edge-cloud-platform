@@ -1,6 +1,7 @@
 package mexdind
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -13,8 +14,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	client, err := s.generic.GetPlatformClient(clusterInst)
+func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+	client, err := s.generic.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -23,13 +24,13 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	if err != nil {
 		return err
 	}
-	err = mexos.CreateDockerRegistrySecret(client, clusterInst, app, s.config.VaultAddr)
+	err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.config.VaultAddr)
 	if err != nil {
 		return err
 	}
 
 	// Use generic DIND to create the AppInst
-	err = s.generic.CreateAppInst(clusterInst, app, appInst, flavor, updateCallback)
+	err = s.generic.CreateAppInst(ctx, clusterInst, app, appInst, flavor, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -40,12 +41,12 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		return err
 	}
 	masterIP := cluster.MasterAddr
-	externalIP, err := s.GetDINDServiceIP()
+	externalIP, err := s.GetDINDServiceIP(ctx, )
 	getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 		action := mexos.DnsSvcAction{}
 
 		if len(svc.Spec.ExternalIPs) > 0 && svc.Spec.ExternalIPs[0] == masterIP {
-			log.DebugLog(log.DebugLevelMexos, "external IP already present in DIND, no patch required", "addr", masterIP)
+			log.SpanLog(ctx, log.DebugLevelMexos, "external IP already present in DIND, no patch required", "addr", masterIP)
 		} else {
 			action.PatchKube = true
 			action.PatchIP = masterIP
@@ -58,16 +59,16 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
-	if err = mexos.CreateAppDNS(client, names, getDnsAction); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot add DNS entries", "error", err)
+	if err = mexos.CreateAppDNS(ctx, client, names, getDnsAction); err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 		return err
 	}
 	return nil
 }
 
-func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	var err error
-	client, err := s.generic.GetPlatformClient(clusterInst)
+	client, err := s.generic.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -79,35 +80,35 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 
 	// remove DNS entries if it was added
 	if !app.InternalPorts {
-		if err = mexos.DeleteAppDNS(client, names); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
+		if err = mexos.DeleteAppDNS(ctx, client, names); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
 		}
 	}
-	if err = s.generic.DeleteAppInst(clusterInst, app, appInst); err != nil {
-		log.DebugLog(log.DebugLevelMexos, "warning, cannot delete AppInst", "error", err)
+	if err = s.generic.DeleteAppInst(ctx, clusterInst, app, appInst); err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot delete AppInst", "error", err)
 		return err
 	}
 	return nil
 }
 
-func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Update not supported for dind")
 }
 
-func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
-	return s.generic.GetAppInstRuntime(clusterInst, app, appInst)
+func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+	return s.generic.GetAppInstRuntime(ctx, clusterInst, app, appInst)
 }
 
-func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
-	return s.generic.GetContainerCommand(clusterInst, app, appInst, req)
+func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+	return s.generic.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 }
 
 // GetDINDServiceIP depending on the type of DIND cluster will return either the interface or external address
-func (s *Platform) GetDINDServiceIP() (string, error) {
+func (s *Platform) GetDINDServiceIP(ctx context.Context) (string, error) {
 	if s.NetworkScheme == cloudcommon.NetworkSchemePrivateIP {
 		return GetLocalAddr()
 	}
-	return mexos.GetExternalPublicAddr()
+	return mexos.GetExternalPublicAddr(ctx)
 }
 
 // GetLocalAddr gets the IP address the machine uses for outbound comms

@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 
 	switch deployment := app.Deployment; deployment {
@@ -27,9 +28,9 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
-			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
+			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 		}
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -38,7 +39,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
-		err = mexos.CreateDockerRegistrySecret(client, clusterInst, app, s.config.VaultAddr)
+		err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.config.VaultAddr)
 		if err != nil {
 			return err
 		}
@@ -68,9 +69,9 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 
 		// set up DNS
 		var rootLBIPaddr string
-		_, masterIP, err := mexos.GetMasterNameAndIP(clusterInst)
+		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
 		if err == nil {
-			rootLBIPaddr, err = mexos.GetServerIPAddr(mexos.GetCloudletExternalNetwork(), rootLBName)
+			rootLBIPaddr, err = mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), rootLBName)
 			if err == nil {
 				getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 					action := mexos.DnsSvcAction{}
@@ -83,10 +84,10 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 				}
 				// If this is an internal ports, all we need is patch of kube service
 				if app.InternalPorts {
-					err = mexos.CreateAppDNS(client, names, getDnsAction)
+					err = mexos.CreateAppDNS(ctx, client, names, getDnsAction)
 				} else {
 					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerNetwork("host"))
+					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerNetwork("host"))
 				}
 			}
 		}
@@ -102,16 +103,16 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		if err != nil {
 			return fmt.Errorf("CreateVMAppInst error: %v", err)
 		}
-		sourceImageTime, md5Sum, err := mexos.GetUrlInfo(app.ImagePath)
+		sourceImageTime, md5Sum, err := mexos.GetUrlInfo(ctx, app.ImagePath)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "failed to fetch source image info, skip image validity checks")
+			log.SpanLog(ctx, log.DebugLevelMexos, "failed to fetch source image info, skip image validity checks")
 		}
-		glanceImageTime, err := mexos.GetImageUpdatedTime(imageName)
+		glanceImageTime, err := mexos.GetImageUpdatedTime(ctx, imageName)
 		createImage := false
 		if err != nil {
 			if strings.Contains(err.Error(), "Could not find resource") {
 				// Add image to Glance
-				log.DebugLog(log.DebugLevelMexos, "image is not present in glance, add image")
+				log.SpanLog(ctx, log.DebugLevelMexos, "image is not present in glance, add image")
 				createImage = true
 			} else {
 				return fmt.Errorf("CreateVMAppInst error: %v", err)
@@ -120,8 +121,8 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			if !sourceImageTime.IsZero() {
 				if sourceImageTime.Sub(glanceImageTime) > 0 {
 					// Update the image in Glance
-					log.DebugLog(log.DebugLevelMexos, "image in glance is no longer valid, update image")
-					err = mexos.DeleteImage(imageName)
+					log.SpanLog(ctx, log.DebugLevelMexos, "image in glance is no longer valid, update image")
+					err = mexos.DeleteImage(ctx, imageName)
 					if err != nil {
 						return fmt.Errorf("CreateVMAppInst error: %v", err)
 					}
@@ -131,13 +132,13 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		}
 		if createImage {
 			updateCallback(edgeproto.UpdateTask, "Creating VM Image from URL")
-			err = mexos.CreateImageFromUrl(imageName, app.ImagePath, md5Sum)
+			err = mexos.CreateImageFromUrl(ctx, imageName, app.ImagePath, md5Sum)
 			if err != nil {
 				return fmt.Errorf("CreateVMAppInst error: %v", err)
 			}
 		}
 
-		finfo, err := mexos.GetFlavorInfo()
+		finfo, err := mexos.GetFlavorInfo(ctx)
 		if err != nil {
 			return err
 		}
@@ -145,7 +146,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		if err != nil {
 			return fmt.Errorf("unable to find closest flavor for app: %v", err)
 		}
-		vmp, err := mexos.GetVMParams(
+		vmp, err := mexos.GetVMParams(ctx,
 			mexos.UserVMDeployment,
 			app.Key.Name,
 			appFlavorName,
@@ -160,21 +161,21 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("unable to get vm params: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying VM")
-		log.DebugLog(log.DebugLevelMexos, "Deploying VM", "stackName", app.Key.Name, "flavor", appFlavorName)
-		err = mexos.CreateHeatStackFromTemplate(vmp, app.Key.Name, mexos.VmTemplate, updateCallback)
+		log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", app.Key.Name, "flavor", appFlavorName)
+		err = mexos.CreateHeatStackFromTemplate(ctx, vmp, app.Key.Name, mexos.VmTemplate, updateCallback)
 		if err != nil {
 			return fmt.Errorf("CreateVMAppInst error: %v", err)
 		}
-		external_ip, err := mexos.GetServerIPAddr(mexos.GetCloudletExternalNetwork(), app.Key.Name)
+		external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), app.Key.Name)
 		if err != nil {
 			return err
 		}
 		if appInst.Uri != "" && external_ip != "" {
 			fqdn := appInst.Uri
-			if err = mexos.ActivateFQDNA(fqdn, external_ip); err != nil {
+			if err = mexos.ActivateFQDNA(ctx, fqdn, external_ip); err != nil {
 				return err
 			}
-			log.DebugLog(log.DebugLevelMexos, "DNS A record activated",
+			log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated",
 				"name", app.Key.Name,
 				"fqdn", fqdn,
 				"IP", external_ip)
@@ -184,13 +185,13 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		rootLBName := s.rootLBName
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
-			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
+			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 		}
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
-		rootLBIPaddr, err := mexos.GetServerIPAddr(mexos.GetCloudletExternalNetwork(), rootLBName)
+		rootLBIPaddr, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), rootLBName)
 		if err != nil {
 			return err
 		}
@@ -199,7 +200,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("get kube names failed, %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
-		err = mexos.SeedDockerSecret(client, clusterInst, app, s.config.VaultAddr)
+		err = mexos.SeedDockerSecret(ctx, client, clusterInst, app, s.config.VaultAddr)
 		if err != nil {
 			return fmt.Errorf("seeding docker secret failed, %v", err)
 		}
@@ -215,7 +216,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return &action, nil
 		}
 		updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules and DNS")
-		err = mexos.AddProxySecurityRulesAndPatchDNS(client, names, appInst, getDnsAction, rootLBName, rootLBIPaddr, false)
+		err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, rootLBIPaddr, false)
 		if err != nil {
 			return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 		}
@@ -225,7 +226,7 @@ func (s *Platform) CreateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	return err
 }
 
-func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
@@ -234,9 +235,9 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		rootLBName := s.rootLBName
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
-			log.DebugLog(log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
+			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
 		}
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -245,17 +246,17 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 
-		_, masterIP, err := mexos.GetMasterNameAndIP(clusterInst)
+		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
 		if err != nil {
 			return err
 		} // Clean up security rules and nginx proxy if app is external
 		if !app.InternalPorts {
-			if err := mexos.DeleteProxySecurityRules(client, masterIP, names.AppName); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot clean up security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
+			if err := mexos.DeleteProxySecurityRules(ctx, client, masterIP, names.AppName); err != nil {
+				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 			// Clean up DNS entries
-			if err := mexos.DeleteAppDNS(client, names); err != nil {
-				log.DebugLog(log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
+			if err := mexos.DeleteAppDNS(ctx, client, names); err != nil {
+				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
 		if deployment == cloudcommon.AppDeploymentTypeKubernetes {
@@ -264,14 +265,14 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 			return k8smgmt.DeleteHelmAppInst(client, names, clusterInst)
 		}
 	case cloudcommon.AppDeploymentTypeVM:
-		log.DebugLog(log.DebugLevelMexos, "Deleting VM", "stackName", app.Key.Name)
-		err := mexos.HeatDeleteStack(app.Key.Name)
+		log.SpanLog(ctx, log.DebugLevelMexos, "Deleting VM", "stackName", app.Key.Name)
+		err := mexos.HeatDeleteStack(ctx, app.Key.Name)
 		if err != nil {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
 		return nil
 	case cloudcommon.AppDeploymentTypeDocker:
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -281,10 +282,10 @@ func (s *Platform) DeleteAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	}
 }
 
-func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -294,7 +295,7 @@ func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 		}
 		return k8smgmt.UpdateAppInst(client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
-		client, err := s.GetPlatformClient(clusterInst)
+		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -304,9 +305,9 @@ func (s *Platform) UpdateAppInst(clusterInst *edgeproto.ClusterInst, app *edgepr
 	}
 }
 
-func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 
-	client, err := s.GetPlatformClient(clusterInst)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +324,7 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 	case cloudcommon.AppDeploymentTypeDocker:
 		return dockermgmt.GetAppInstRuntime(client, app, appInst)
 	case cloudcommon.AppDeploymentTypeVM:
-		consoleUrl, err := mexos.OSGetConsoleUrl(app.Key.Name)
+		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, app.Key.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +336,7 @@ func (s *Platform) GetAppInstRuntime(clusterInst *edgeproto.ClusterInst, app *ed
 	}
 }
 
-func (s *Platform) GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
 		fallthrough

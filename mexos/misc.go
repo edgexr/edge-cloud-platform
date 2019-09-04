@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -37,10 +38,10 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
-	log.DebugLog(log.DebugLevelMexos, "seed docker secret")
+func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret")
 
-	auth, err := cloudcommon.GetRegistryAuth(app.ImagePath, vaultAddr)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultAddr)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst, app
 	if err != nil {
 		return fmt.Errorf("can't store docker password, %s, %v", out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "stored docker password")
+	log.SpanLog(ctx, log.DebugLevelMexos, "stored docker password")
 	defer func() {
 		cmd := fmt.Sprintf("rm .docker-pass")
 		client.Output(cmd)
@@ -66,13 +67,13 @@ func SeedDockerSecret(client pc.PlatformClient, inst *edgeproto.ClusterInst, app
 	if err != nil {
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "docker login ok")
+	log.SpanLog(ctx, log.DebugLevelMexos, "docker login ok")
 	return nil
 }
 
-func GetHTPassword(rootLBName string) error {
-	log.DebugLog(log.DebugLevelMexos, "get htpasswd")
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+func GetHTPassword(ctx context.Context, rootLBName string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get htpasswd")
+	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
 	}
@@ -81,6 +82,6 @@ func GetHTPassword(rootLBName string) error {
 	if err != nil {
 		return fmt.Errorf("can't get htpasswd file, %v, %s", err, out)
 	}
-	log.DebugLog(log.DebugLevelMexos, "downloaded htpasswd")
+	log.SpanLog(ctx, log.DebugLevelMexos, "downloaded htpasswd")
 	return nil
 }

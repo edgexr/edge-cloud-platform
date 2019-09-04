@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,8 +10,8 @@ import (
 )
 
 //AddPathReverseProxy adds a new route to origin on the reverse proxy
-func AddPathReverseProxy(rootLBName, path, origin string) []error {
-	log.DebugLog(log.DebugLevelMexos, "add path to reverse proxy", "rootlbname", rootLBName, "path", path, "origin", origin)
+func AddPathReverseProxy(ctx context.Context, rootLBName, path, origin string) []error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "add path to reverse proxy", "rootlbname", rootLBName, "path", path, "origin", origin)
 	if path == "" {
 		return []error{fmt.Errorf("empty path")}
 	}
@@ -26,7 +27,7 @@ func AddPathReverseProxy(rootLBName, path, origin string) []error {
 		return errs
 	}
 	if strings.Contains(body, "OK") {
-		log.DebugLog(log.DebugLevelMexos, "added path to revproxy")
+		log.SpanLog(ctx, log.DebugLevelMexos, "added path to revproxy")
 		return nil
 	}
 	errs = append(errs, fmt.Errorf("resp %v, body %s", resp, body))
@@ -34,8 +35,8 @@ func AddPathReverseProxy(rootLBName, path, origin string) []error {
 }
 
 //DeletePathReverseProxy Deletes a new route to origin on the reverse proxy
-func DeletePathReverseProxy(rootLBName, path, origin string) []error {
-	log.DebugLog(log.DebugLevelMexos, "delete path reverse proxy", "path", path, "origin", origin)
+func DeletePathReverseProxy(ctx context.Context, rootLBName, path, origin string) []error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "delete path reverse proxy", "path", path, "origin", origin)
 	//TODO
 	return nil
 }

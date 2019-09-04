@@ -64,7 +64,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return
 		}
-		clustIP, err := pf.GetClusterIP(&clusterInst)
+		clustIP, err := pf.GetClusterIP(ctx, &clusterInst)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
 			return
@@ -78,10 +78,10 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewClusterWorker(promAddress, *collectInterval, MetricSender.Update, &clusterInst, pf)
+			stats, err = NewClusterWorker(ctx, promAddress, *collectInterval, MetricSender.Update, &clusterInst, pf)
 			if err == nil {
 				promMap[mapKey] = stats
-				stats.Start()
+				stats.Start(ctx)
 			}
 		} else { //somehow this cluster's prometheus was already registered
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
@@ -90,7 +90,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		//try to remove it from the prommap
 		if exists {
 			delete(promMap, mapKey)
-			stats.Stop()
+			stats.Stop(ctx)
 		}
 	}
 }
@@ -105,10 +105,10 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
 		if !exists {
-			stats, err := NewClusterWorker("", *collectInterval, MetricSender.Update, new, pf)
+			stats, err := NewClusterWorker(ctx, "", *collectInterval, MetricSender.Update, new, pf)
 			if err == nil {
 				promMap[mapKey] = stats
-				stats.Start()
+				stats.Start(ctx)
 			}
 		} else { //somehow this cluster's prometheus was already registered
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, This cluster is already registered")
@@ -117,7 +117,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 		//try to remove it from the prommap
 		if exists {
 			delete(promMap, mapKey)
-			stats.Stop()
+			stats.Stop(ctx)
 		}
 	}
 }
@@ -144,15 +144,16 @@ func main() {
 	log.InitTracer(*tlsCertFile)
 	defer log.FinishTracer()
 	span := log.StartSpan(log.DebugLevelInfo, "main")
+	ctx := log.ContextWithSpan(context.Background(), span)
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
-	log.DebugLog(log.DebugLevelMetrics, "Metrics collection", "interval", collectInterval)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Metrics collection", "interval", collectInterval)
 	var err error
 	pf, err = getPlatform()
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	pf.Init(&cloudletKey, *physicalName, *vaultAddr)
+	pf.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
@@ -180,7 +181,7 @@ func main() {
 	sigChan = make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
-	log.DebugLog(log.DebugLevelMetrics, "Ready")
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Ready")
 	span.Finish()
 
 	// wait until process in killed/interrupted

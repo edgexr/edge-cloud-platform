@@ -49,6 +49,7 @@ require (
 	github.com/nanobox-io/golang-ssh v0.0.0-20190309194042-12ea65d3a59d
 	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pelletier/go-toml v1.3.0
 	github.com/pion/stun v0.3.1

@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -32,23 +33,23 @@ func validateDomain(uri string) error {
 	return fmt.Errorf("URI %s is not a valid domain name", uri)
 }
 
-func GetURIFile(uri string) ([]byte, error) {
-	log.DebugLog(log.DebugLevelMexos, "attempt to get uri file", "uri", uri)
+func GetURIFile(ctx context.Context, uri string) ([]byte, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get uri file", "uri", uri)
 	// if _, err := url.ParseRequestURI(uri); err != nil {
 	// 	return nil, err
 	// }
 	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		res, err := GetHTTPFile(uri)
+		res, err := GetHTTPFile(ctx, uri)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error getting http uri file", "uri", uri, "error", err)
+			log.SpanLog(ctx, log.DebugLevelMexos, "error getting http uri file", "uri", uri, "error", err)
 			return nil, err
 		}
 		return res, nil
 	}
 	if strings.HasPrefix(uri, "scp://") {
-		res, err := GetSCPFile(uri)
+		res, err := GetSCPFile(ctx, uri)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error getting scp uri file", "uri", uri, "error", err)
+			log.SpanLog(ctx, log.DebugLevelMexos, "error getting scp uri file", "uri", uri, "error", err)
 			return nil, err
 		}
 		return res, nil
@@ -59,17 +60,17 @@ func GetURIFile(uri string) ([]byte, error) {
 	// if err := validateDomain(uri); err != nil {
 	// 	return ioutil.ReadFile(uri)
 	// }
-	log.DebugLog(log.DebugLevelMexos, "attempt to read uri as normal file", "uri", uri)
+	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to read uri as normal file", "uri", uri)
 	res, err := ioutil.ReadFile(uri)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "error getting file uri file", "uri", uri, "error", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "error getting file uri file", "uri", uri, "error", err)
 		return nil, err
 	}
 	return res, nil
 }
 
-func GetHTTPFile(uri string) ([]byte, error) {
-	log.DebugLog(log.DebugLevelMexos, "attempt to get http uri file", "uri", uri)
+func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get http uri file", "uri", uri)
 	resp, err := http.Get(uri)
 	if err != nil {
 		return nil, err
@@ -85,8 +86,8 @@ func GetHTTPFile(uri string) ([]byte, error) {
 	return nil, fmt.Errorf("http status not OK, %v", resp.StatusCode)
 }
 
-func GetSCPFile(uri string) ([]byte, error) {
-	log.DebugLog(log.DebugLevelMexos, "attempt to get scp uri file", "uri", uri)
+func GetSCPFile(ctx context.Context, uri string) ([]byte, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get scp uri file", "uri", uri)
 	part1 := strings.Replace(uri, "scp://", "mobiledgex@", -1)
 	slashindex := strings.Index(part1, "/")
 	if slashindex < 0 {
@@ -115,13 +116,9 @@ func GetSCPFile(uri string) ([]byte, error) {
 // 	return nil
 // }
 
-func GetUrlInfo(fileUrlPath string) (time.Time, string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
-	auth, err := cloudcommon.GetRegistryAuth(fileUrlPath, VaultAddr)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "failed to get auth", "file-url", fileUrlPath, "err", err)
-	}
-	resp, err := cloudcommon.SendHTTPReq("HEAD", fileUrlPath, auth)
+func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultAddr)
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("Error fetching last modified time of URL %s, %v", fileUrlPath, err)
 	}
@@ -157,14 +154,10 @@ func Md5SumFile(filePath string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func DownloadFile(fileUrlPath string, filePath string) error {
-	log.DebugLog(log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
+func DownloadFile(ctx context.Context, fileUrlPath string, filePath string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
 
-	auth, err := cloudcommon.GetRegistryAuth(fileUrlPath, VaultAddr)
-	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "failed to get auth", "file-url", fileUrlPath, "err", err)
-	}
-	resp, err := cloudcommon.SendHTTPReq("GET", fileUrlPath, auth)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultAddr)
 	if err != nil {
 		return err
 	}
@@ -198,8 +191,8 @@ func DeleteFile(filePath string) error {
 }
 
 // Get the externally visible public IP address
-func GetExternalPublicAddr() (string, error) {
-	myip, err := stunGetMyIP()
+func GetExternalPublicAddr(ctx context.Context) (string, error) {
+	myip, err := stunGetMyIP(ctx)
 	if err == nil {
 		return myip, nil
 	}
@@ -212,8 +205,8 @@ func GetExternalPublicAddr() (string, error) {
 	return "", err
 }
 
-func stunGetMyIP() (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "get ip from stun server")
+func stunGetMyIP(ctx context.Context) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get ip from stun server")
 	var myip string
 
 	// Creating a "connection" to STUN server.

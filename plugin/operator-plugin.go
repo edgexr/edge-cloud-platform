@@ -1,21 +1,25 @@
 package main
 
 import (
-	"github.com/mobiledgex/edge-cloud/d-match-engine/operator/defaultoperator"
-	"github.com/mobiledgex/edge-cloud-infra/operator-api-gw/gddt"
+	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/operator-api-gw/gddt"
 	"github.com/mobiledgex/edge-cloud/d-match-engine/operator"
+	"github.com/mobiledgex/edge-cloud/d-match-engine/operator/defaultoperator"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func GetOperatorApiGw(operatorName string) (operator.OperatorApiGw, error) {
-	log.DebugLog(log.DebugLevelMexos, "GetOperatorApiGw", "operatorName", operatorName)
+func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetOperatorApiGw", "operatorName", operatorName)
 
+	var outApiGw operator.OperatorApiGw
 	switch operatorName {
 	case "gddt":
 		fallthrough
 	case "GDDT":
-		return &gddt.OperatorApiGw{}, nil
+		outApiGw = &gddt.OperatorApiGw{}
+	default:
+		outApiGw = &defaultoperator.OperatorApiGw{}
 	}
-	return &defaultoperator.OperatorApiGw{}, nil
+	return outApiGw, nil
 }

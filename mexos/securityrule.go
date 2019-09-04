@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func AddSecurityRules(ports []dme.AppPort) error {
+func AddSecurityRules(ctx context.Context, ports []dme.AppPort) error {
 	sg := GetCloudletSecurityGroup()
 	allowedClientCIDR := GetAllowedClientCIDR()
 	for _, port := range ports {
@@ -22,33 +23,33 @@ func AddSecurityRules(ports []dme.AppPort) error {
 		if err != nil {
 			return err
 		}
-		if err := AddSecurityRuleCIDR(allowedClientCIDR, proto, sg, portString); err != nil {
+		if err := AddSecurityRuleCIDR(ctx, allowedClientCIDR, proto, sg, portString); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DeleteProxySecurityRules(client pc.PlatformClient, ipaddr string, appName string) error {
+func DeleteProxySecurityRules(ctx context.Context, client pc.PlatformClient, ipaddr string, appName string) error {
 
-	log.DebugLog(log.DebugLevelMexos, "delete proxy rules", "name", appName)
+	log.SpanLog(ctx, log.DebugLevelMexos, "delete proxy rules", "name", appName)
 	err := nginx.DeleteNginxProxy(client, appName)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "error", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "error", err)
 	}
-	if err := DeleteSecurityRule(ipaddr); err != nil {
+	if err := DeleteSecurityRule(ctx, ipaddr); err != nil {
 		return err
 	}
 	// TODO - implement the clean up of security rules
 	return nil
 }
 
-func AddSecurityRuleCIDR(cidr string, proto string, name string, port string) error {
+func AddSecurityRuleCIDR(ctx context.Context, cidr string, proto string, name string, port string) error {
 
-	out, err := TimedOpenStackCommand("openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", name)
+	out, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", name)
 	if err != nil {
 		if strings.Contains(string(out), "Security group rule already exists") {
-			log.DebugLog(log.DebugLevelMexos, "security group already exists, proceeding")
+			log.SpanLog(ctx, log.DebugLevelMexos, "security group already exists, proceeding")
 		} else {
 			return fmt.Errorf("can't add security group rule for port %s to %s,%s,%v", port, name, string(out), err)
 		}
@@ -64,9 +65,9 @@ type SecurityRule struct {
 	Proto     string `json:"IP Protocol"`
 }
 
-func DeleteSecurityRule(sip string) error {
+func DeleteSecurityRule(ctx context.Context, sip string) error {
 	sr := []SecurityRule{}
-	dat, err := TimedOpenStackCommand("openstack", "security", "group", "rule", "list", "-f", "json")
+	dat, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "list", "-f", "json")
 	if err != nil {
 		return fmt.Errorf("cannot get list of security group rules, %v", err)
 	}
@@ -77,9 +78,9 @@ func DeleteSecurityRule(sip string) error {
 		if strings.HasSuffix(s.IPRange, "/32") {
 			adr := strings.Replace(s.IPRange, "/32", "", -1)
 			if adr == sip {
-				_, err := TimedOpenStackCommand("openstack", "security", "group", "rule", "delete", s.ID)
+				_, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "delete", s.ID)
 				if err != nil {
-					log.DebugLog(log.DebugLevelMexos, "warning, cannot delete security rule", "id", s.ID, "error", err)
+					log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot delete security rule", "id", s.ID, "error", err)
 				}
 			}
 		}

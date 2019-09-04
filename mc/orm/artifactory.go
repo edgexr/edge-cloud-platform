@@ -34,7 +34,7 @@ func artifactoryClient(ctx context.Context) (*artifactory.Artifactory, error) {
 		return nil, fmt.Errorf("no artifactory addr specified")
 	}
 	if rtfAuth == nil {
-		auth, err := cloudcommon.GetRegistryAuth(serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
+		auth, err := cloudcommon.GetRegistryAuth(ctx, serverConfig.ArtifactoryAddr, serverConfig.VaultAddr)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to fetch artifactory AuthKey from Vault",
 				"artifactoryAddr", serverConfig.ArtifactoryAddr,
@@ -139,11 +139,11 @@ func artifactoryDeleteUser(ctx context.Context, userName string) {
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "Status:404") {
-			log.DebugLog(log.DebugLevelApi, "artifactory delete user",
+			log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user",
 				"user", userName, "err", "user does not exists")
 			return
 		}
-		log.DebugLog(log.DebugLevelApi, "artifactory delete user",
+		log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user",
 			"user", userName, "err", err)
 		artifactorySync.NeedsSync()
 		return
@@ -157,7 +157,7 @@ func artifactoryAddUserToGroup(ctx context.Context, role *ormapi.Role, orgType s
 	client, err := artifactoryClient(ctx)
 	userName := role.Username
 	orgName := getArtifactoryName(role.Org)
-	log.DebugLog(log.DebugLevelApi, "artifactory add user to group",
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory add user to group",
 		"user", userName, "group", orgName)
 	if err == nil {
 		var userInfo *v1.User
@@ -176,7 +176,7 @@ func artifactoryAddUserToGroup(ctx context.Context, role *ormapi.Role, orgType s
 		}
 	}
 	if err != nil {
-		log.DebugLog(log.DebugLevelApi, "artifactory add user to group",
+		log.SpanLog(ctx, log.DebugLevelApi, "artifactory add user to group",
 			"user", userName, "group", orgName, "err", err)
 		artifactorySync.NeedsSync()
 		return

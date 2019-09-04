@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -65,25 +66,25 @@ type ClusterNodeFlavor struct {
 	Name string
 }
 
-func waitClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 
 	start := time.Now()
 	masterName := ""
 	masterIP := ""
 	var currReadyCount uint32
-	log.DebugLog(log.DebugLevelMexos, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
+	log.SpanLog(ctx, log.DebugLevelMexos, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
 
 	for {
 		if masterIP == "" {
-			masterName, masterIP, _ = GetMasterNameAndIP(clusterInst)
+			masterName, masterIP, _ = GetMasterNameAndIP(ctx, clusterInst)
 			if masterIP != "" {
 				updateCallback(edgeproto.UpdateStep, "Checking Master for Available Nodes")
 			}
 		}
 		if masterIP == "" {
-			log.DebugLog(log.DebugLevelMexos, "master IP not available yet")
+			log.SpanLog(ctx, log.DebugLevelMexos, "master IP not available yet")
 		} else {
-			ready, readyCount, err := IsClusterReady(clusterInst, masterName, masterIP, rootLBName, updateCallback)
+			ready, readyCount, err := IsClusterReady(ctx, clusterInst, masterName, masterIP, rootLBName, updateCallback)
 			if readyCount != currReadyCount {
 				numNodes := readyCount - 1
 				updateCallback(edgeproto.UpdateStep, fmt.Sprintf("%d of %d nodes active", numNodes, clusterInst.NumNodes))
@@ -93,51 +94,51 @@ func waitClusterReady(clusterInst *edgeproto.ClusterInst, rootLBName string, upd
 				return err
 			}
 			if ready {
-				log.DebugLog(log.DebugLevelMexos, "kubernetes cluster ready")
+				log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster ready")
 				return nil
 			}
 			if time.Since(start) > timeout {
 				return fmt.Errorf("cluster not ready (yet)")
 			}
 		}
-		log.DebugLog(log.DebugLevelMexos, "waiting for kubernetes cluster to be ready...")
+		log.SpanLog(ctx, log.DebugLevelMexos, "waiting for kubernetes cluster to be ready...")
 		time.Sleep(30 * time.Second)
 	}
 }
 
-func UpdateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func UpdateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources with Heat")
 
-	err := HeatUpdateClusterKubernetes(clusterInst, "", updateCallback)
+	err := HeatUpdateClusterKubernetes(ctx, clusterInst, "", updateCallback)
 	if err != nil {
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Update")
 	//todo: calculate timeouts instead of hardcoded value
-	return waitClusterReady(clusterInst, rootLBName, updateCallback, time.Minute*15)
+	return waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, time.Minute*15)
 }
 
-func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
+func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
 	// clean-up func
 	defer func() {
 		if reterr == nil {
 			return
 		}
 
-		log.DebugLog(log.DebugLevelMexos, "error in CreateCluster", "err", reterr)
-		if GetCleanupOnFailure() {
-			log.DebugLog(log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
-			delerr := DeleteCluster(rootLBName, clusterInst)
+		log.SpanLog(ctx, log.DebugLevelMexos, "error in CreateCluster", "err", reterr)
+		if GetCleanupOnFailure(ctx) {
+			log.SpanLog(ctx, log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
+			delerr := DeleteCluster(ctx, rootLBName, clusterInst)
 			if delerr != nil {
-				log.DebugLog(log.DebugLevelMexos, "fail to cleanup cluster")
+				log.SpanLog(ctx, log.DebugLevelMexos, "fail to cleanup cluster")
 			}
 		} else {
-			log.DebugLog(log.DebugLevelMexos, "skipping cleanup on failure")
+			log.SpanLog(ctx, log.DebugLevelMexos, "skipping cleanup on failure")
 		}
 	}()
 
 	start := time.Now()
-	log.DebugLog(log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "timeout", timeout)
+	log.SpanLog(ctx, log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "timeout", timeout)
 
 	dedicatedRootLBName := ""
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
@@ -147,11 +148,11 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 	var err error
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
 		//suitable for docker only
-		log.DebugLog(log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
+		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-		err = HeatCreateRootLBVM(dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
+		err = HeatCreateRootLBVM(ctx, dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
 	} else {
-		err = HeatCreateClusterKubernetes(clusterInst, dedicatedRootLBName, updateCallback)
+		err = HeatCreateClusterKubernetes(ctx, clusterInst, dedicatedRootLBName, updateCallback)
 	}
 	if err != nil {
 		return err
@@ -159,19 +160,19 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 	// the root LB was created as part of cluster creation, but it needs to be prepped and
 	// mex agent started
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		log.DebugLog(log.DebugLevelMexos, "need dedicated rootLB", "IpAccess", clusterInst.IpAccess)
-		_, err := NewRootLB(rootLBName)
+		log.SpanLog(ctx, log.DebugLevelMexos, "need dedicated rootLB", "IpAccess", clusterInst.IpAccess)
+		_, err := NewRootLB(ctx, rootLBName)
 		if err != nil {
 			// likely already exists which means something went really wrong
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = SetupRootLB(rootLBName, "", updateCallback)
+		err = SetupRootLB(ctx, rootLBName, "", updateCallback)
 		if err != nil {
 			return err
 		}
 	}
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
@@ -180,24 +181,24 @@ func CreateCluster(rootLBName string, clusterInst *edgeproto.ClusterInst, update
 		// subtract elapsed time from total time to get remaining time
 		timeout -= elapsed
 		updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Initialize")
-		err := waitClusterReady(clusterInst, rootLBName, updateCallback, timeout)
+		err := waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
 		if err != nil {
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Creating config map")
-		if err := CreateClusterConfigMap(client, clusterInst); err != nil {
+		if err := CreateClusterConfigMap(ctx, client, clusterInst); err != nil {
 			return err
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "created kubernetes cluster")
+	log.SpanLog(ctx, log.DebugLevelMexos, "created kubernetes cluster")
 	return nil
 }
 
 //DeleteCluster deletes kubernetes cluster
-func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error {
-	log.DebugLog(log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
+func DeleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
 	clusterName := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	err := HeatDeleteStack(clusterName)
+	err := HeatDeleteStack(ctx, clusterName)
 	if err != nil {
 		return err
 	}
@@ -208,19 +209,19 @@ func DeleteCluster(rootLBName string, clusterInst *edgeproto.ClusterInst) error 
 }
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
-func IsClusterReady(clusterInst *edgeproto.ClusterInst, masterName, masterIP string, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
-	log.DebugLog(log.DebugLevelMexos, "checking if cluster is ready")
+func IsClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName, masterIP string, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "checking if cluster is ready")
 
-	client, err := GetSSHClient(rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return false, 0, fmt.Errorf("can't get ssh client for cluser ready check, %v", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "checking master k8s node for available nodes", "ipaddr", masterIP)
+	log.SpanLog(ctx, log.DebugLevelMexos, "checking master k8s node for available nodes", "ipaddr", masterIP)
 	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes -o json", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP)
-	//log.DebugLog(log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
+	//log.SpanLog(ctx,log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "error checking for kubernetes nodes", "out", out, "err", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "error checking for kubernetes nodes", "out", out, "err", err)
 		return false, 0, nil //This is intentional
 	}
 	gitems := &genericItems{}
@@ -228,17 +229,17 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, masterName, masterIP str
 	if err != nil {
 		return false, 0, fmt.Errorf("failed to json unmarshal kubectl get nodes output, %v, %v", err, out)
 	}
-	log.DebugLog(log.DebugLevelMexos, "kubectl reports nodes", "numnodes", len(gitems.Items))
+	log.SpanLog(ctx, log.DebugLevelMexos, "kubectl reports nodes", "numnodes", len(gitems.Items))
 	readyCount := uint32(len(gitems.Items))
 
 	if readyCount < (clusterInst.NumNodes + clusterInst.NumMasters) {
-		//log.DebugLog(log.DebugLevelMexos, "kubernetes cluster not ready", "log", out)
-		log.DebugLog(log.DebugLevelMexos, "kubernetes cluster not ready", "len items", len(gitems.Items))
+		//log.SpanLog(ctx,log.DebugLevelMexos, "kubernetes cluster not ready", "log", out)
+		log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster not ready", "len items", len(gitems.Items))
 		return false, 0, nil
 	}
-	log.DebugLog(log.DebugLevelMexos, "cluster nodes", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters)
+	log.SpanLog(ctx, log.DebugLevelMexos, "cluster nodes", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
-	if err := CopyKubeConfig(client, clusterInst, rootLBName, masterIP); err != nil {
+	if err := CopyKubeConfig(ctx, client, clusterInst, rootLBName, masterIP); err != nil {
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
@@ -246,31 +247,31 @@ func IsClusterReady(clusterInst *edgeproto.ClusterInst, masterName, masterIP str
 		// becomes very busy but is useful for testing and PoC type clusters.
 		// TODO: if the cluster is subsequently increased in size do we need to add the taint?
 		//For now leaving that alone since an increased cluster size means we needed more capacity.
-		log.DebugLog(log.DebugLevelMexos, "removing NoSchedule taint from master", "master", masterName)
+		log.SpanLog(ctx, log.DebugLevelMexos, "removing NoSchedule taint from master", "master", masterName)
 		cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP, masterName)
 		out, err := client.Output(cmd)
 		if err != nil {
 			if strings.Contains(out, "not found") {
-				log.DebugLog(log.DebugLevelMexos, "master taint already gone")
+				log.SpanLog(ctx, log.DebugLevelMexos, "master taint already gone")
 			} else {
 				log.InfoLog("error removing master taint", "out", out, "err", err)
 				return false, 0, fmt.Errorf("Cannot remove NoSchedule taint from master, %v", err)
 			}
 		}
 	}
-	log.DebugLog(log.DebugLevelMexos, "cluster ready.")
+	log.SpanLog(ctx, log.DebugLevelMexos, "cluster ready.")
 	return true, readyCount, nil
 }
 
 //FindClusterWithKey finds cluster given a key string
-func FindClusterMaster(key string, srvs []OSServer) (string, error) {
-	log.DebugLog(log.DebugLevelMexos, "FindClusterMaster", "key", key)
+func FindClusterMaster(ctx context.Context, key string, srvs []OSServer) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "FindClusterMaster", "key", key)
 	if key == "" {
 		return "", fmt.Errorf("empty key")
 	}
 	for _, s := range srvs {
 		if s.Status == "ACTIVE" && strings.HasSuffix(s.Name, key) && strings.HasPrefix(s.Name, "mex-k8s-master") {
-			//log.DebugLog(log.DebugLevelMexos, "find cluster with key", "key", key, "found", s.Name)
+			//log.SpanLog(ctx,log.DebugLevelMexos, "find cluster with key", "key", key, "found", s.Name)
 			return s.Name, nil
 		}
 	}

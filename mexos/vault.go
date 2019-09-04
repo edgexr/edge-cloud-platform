@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -48,13 +49,13 @@ func internEnv(envs []EnvData) error {
 		if err != nil {
 			return err
 		}
-		//log.DebugLog(log.DebugLevelMexos, "setenv", "name", e.Name, "value", val)
+		//log.SpanLog(ctx,log.DebugLevelMexos, "setenv", "name", e.Name, "value", val)
 	}
 	return nil
 }
 
-func InternVaultEnv(keyURL string) error {
-	log.DebugLog(log.DebugLevelMexos, "interning vault", "keyURL", keyURL)
+func InternVaultEnv(ctx context.Context, keyURL string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "interning vault", "keyURL", keyURL)
 	dat, err := vault.GetVaultData(keyURL)
 	if err != nil {
 		return err

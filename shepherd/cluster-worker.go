@@ -27,7 +27,7 @@ type ClusterWorker struct {
 	client         pc.PlatformClient
 }
 
-func NewClusterWorker(promAddr string, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*ClusterWorker, error) {
+func NewClusterWorker(ctx context.Context, promAddr string, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*ClusterWorker, error) {
 	var err error
 	p := ClusterWorker{}
 	p.promAddr = promAddr
@@ -35,10 +35,10 @@ func NewClusterWorker(promAddr string, interval time.Duration, send func(ctx con
 	p.interval = interval
 	p.send = send
 	p.clusterInstKey = clusterInst.Key
-	p.client, err = pf.GetPlatformClient(clusterInst)
+	p.client, err = pf.GetPlatformClient(ctx, clusterInst)
 	if err != nil {
 		// If we cannot get a platform client no point in trying to get metrics
-		log.DebugLog(log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
 		return nil, err
 	}
 	// only support K8s deployments
@@ -55,31 +55,31 @@ func NewClusterWorker(promAddr string, interval time.Duration, send func(ctx con
 	return &p, nil
 }
 
-func (p *ClusterWorker) Start() {
+func (p *ClusterWorker) Start(ctx context.Context) {
 	p.stop = make(chan struct{})
 	p.waitGrp.Add(1)
 	go p.RunNotify()
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Started ClusterWorker thread\n")
 }
 
-func (p *ClusterWorker) Stop() {
-	log.DebugLog(log.DebugLevelMetrics, "Stopping ClusterWorker thread\n")
+func (p *ClusterWorker) Stop(ctx context.Context) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Stopping ClusterWorker thread\n")
 	close(p.stop)
 	p.waitGrp.Wait()
 }
 
 func (p *ClusterWorker) RunNotify() {
-	log.DebugLog(log.DebugLevelMetrics, "Started ClusterWorker thread\n")
 	done := false
 	for !done {
 		select {
 		case <-time.After(p.interval):
-			clusterStats := p.clusterStat.GetClusterStats()
-			appStatsMap := p.clusterStat.GetAppStats()
 			span := log.StartSpan(log.DebugLevelSampled, "send-metric")
 			span.SetTag("operator", p.clusterInstKey.CloudletKey.OperatorKey.Name)
 			span.SetTag("cloudlet", p.clusterInstKey.CloudletKey.Name)
 			span.SetTag("cluster", p.clusterInstKey.ClusterKey.Name)
 			ctx := log.ContextWithSpan(context.Background(), span)
+			clusterStats := p.clusterStat.GetClusterStats(ctx)
+			appStatsMap := p.clusterStat.GetAppStats(ctx)
 
 			for key, stat := range appStatsMap {
 				appMetrics := MarshalAppMetrics(&key, stat)

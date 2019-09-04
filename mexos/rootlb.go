@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -24,11 +25,11 @@ var rootLBLock sync.Mutex
 var MEXRootLBMap = make(map[string]*MEXRootLB)
 
 //NewRootLB gets a new rootLB instance
-func NewRootLB(rootLBName string) (*MEXRootLB, error) {
+func NewRootLB(ctx context.Context, rootLBName string) (*MEXRootLB, error) {
 	rootLBLock.Lock()
 	defer rootLBLock.Unlock()
 
-	log.DebugLog(log.DebugLevelMexos, "getting new rootLB", "rootLBName", rootLBName)
+	log.SpanLog(ctx, log.DebugLevelMexos, "getting new rootLB", "rootLBName", rootLBName)
 	if _, ok := MEXRootLBMap[rootLBName]; ok {
 		return nil, fmt.Errorf("rootlb %s already exists", rootLBName)
 	}
@@ -44,13 +45,13 @@ func DeleteRootLB(rootLBName string) {
 	delete(MEXRootLBMap, rootLBName)
 }
 
-func getRootLB(name string) (*MEXRootLB, error) {
+func getRootLB(ctx context.Context, name string) (*MEXRootLB, error) {
 	rootLB, ok := MEXRootLBMap[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find rootlb %s", name)
 	}
 	if rootLB == nil {
-		log.DebugLog(log.DebugLevelMexos, "getrootlb, rootLB is null")
+		log.SpanLog(ctx, log.DebugLevelMexos, "getrootlb, rootLB is null")
 	}
 	return rootLB, nil
 }
@@ -61,8 +62,8 @@ var rootLBPorts = []int{
 
 //CreateRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
 //  It also sets up first basic network router and subnet, ready for running first MEX agent.
-func CreateRootLB(rootLB *MEXRootLB, platformFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name)
+func CreateRootLB(ctx context.Context, rootLB *MEXRootLB, platformFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name)
 	if rootLB == nil {
 		return fmt.Errorf("cannot enable rootLB, rootLB is null")
 	}
@@ -70,54 +71,54 @@ func CreateRootLB(rootLB *MEXRootLB, platformFlavor string, updateCallback edgep
 		return fmt.Errorf("enable rootlb, missing external network in manifest")
 	}
 
-	err := PrepNetwork()
+	err := PrepNetwork(ctx)
 	if err != nil {
 		return err
 	}
-	sl, err := ListServers()
+	sl, err := ListServers(ctx)
 	if err != nil {
 		return err
 	}
 	found := 0
 	for _, s := range sl {
 		if s.Name == rootLB.Name {
-			log.DebugLog(log.DebugLevelMexos, "found existing rootlb", "server", s)
+			log.SpanLog(ctx, log.DebugLevelMexos, "found existing rootlb", "server", s)
 			found++
 		}
 	}
 	if found == 0 {
-		log.DebugLog(log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
-		err := HeatCreateRootLBVM(rootLB.Name, rootLB.Name, platformFlavor, updateCallback)
+		log.SpanLog(ctx, log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
+		err := HeatCreateRootLBVM(ctx, rootLB.Name, rootLB.Name, platformFlavor, updateCallback)
 		if err != nil {
 			log.InfoLog("error while creating RootLB VM", "name", rootLB.Name, "error", err)
 			return err
 		}
-		log.DebugLog(log.DebugLevelMexos, "created VM", "name", rootLB.Name)
+		log.SpanLog(ctx, log.DebugLevelMexos, "created VM", "name", rootLB.Name)
 	} else {
-		log.DebugLog(log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
+		log.SpanLog(ctx, log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
 	}
-	log.DebugLog(log.DebugLevelMexos, "done enabling rootlb", "name", rootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelMexos, "done enabling rootlb", "name", rootLB.Name)
 
 	return nil
 }
 
 //SetupRootLB prepares the RootLB. It will optionally create the rootlb if the createRootLBFlavor
 // is not blank and no existing server found
-func SetupRootLB(rootLBName string, createRootLBFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelMexos, "SetupRootLB", "createRootLBFlavor", createRootLBFlavor)
+func SetupRootLB(ctx context.Context, rootLBName string, createRootLBFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "SetupRootLB", "createRootLBFlavor", createRootLBFlavor)
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(rootLBName) {
 		return fmt.Errorf("fqdn %s is not valid", rootLBName)
 	}
-	rootLB, err := getRootLB(rootLBName)
+	rootLB, err := getRootLB(ctx, rootLBName)
 	if err != nil {
 		return fmt.Errorf("cannot find rootlb in map %s", rootLBName)
 	}
-	sd, err := GetServerDetails(rootLBName)
+	sd, err := GetServerDetails(ctx, rootLBName)
 	if err == nil && sd.Name == rootLBName {
-		log.DebugLog(log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
+		log.SpanLog(ctx, log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
 	} else if createRootLBFlavor != "" {
-		err = CreateRootLB(rootLB, createRootLBFlavor, updateCallback)
+		err = CreateRootLB(ctx, rootLB, createRootLBFlavor, updateCallback)
 		if err != nil {
 			log.InfoLog("can't create agent", "name", rootLB.Name, "err", err)
 			return fmt.Errorf("Failed to enable root LB %v", err)
@@ -125,44 +126,44 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string, updateCallback ed
 	}
 
 	// setup SSH access to cloudlet for CRM
-	log.DebugLog(log.DebugLevelMexos, "setup security group for SSH access")
+	log.SpanLog(ctx, log.DebugLevelMexos, "setup security group for SSH access")
 	groupName := GetCloudletSecurityGroup()
-	my_ip, err := GetExternalPublicAddr()
+	my_ip, err := GetExternalPublicAddr(ctx)
 	if err != nil {
 		// this is not necessarily fatal
 		log.InfoLog("cannot fetch public ip", "err", err)
 	} else {
-		if err := AddSecurityRuleCIDR(my_ip, "tcp", groupName, "22"); err != nil {
-			log.DebugLog(log.DebugLevelMexos, "cannot add security rule for ssh access", "error", err, "ip", my_ip)
+		if err := AddSecurityRuleCIDR(ctx, my_ip, "tcp", groupName, "22"); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "cannot add security rule for ssh access", "error", err, "ip", my_ip)
 			return fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
 		}
 	}
 
-	err = WaitForRootLB(rootLB)
+	err = WaitForRootLB(ctx, rootLB)
 	if err != nil {
-		log.DebugLog(log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
+		log.SpanLog(ctx, log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
-	extIP, err := GetServerIPAddr(GetCloudletExternalNetwork(), rootLBName)
+	extIP, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
 	}
-	log.DebugLog(log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
+	log.SpanLog(ctx, log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
 	rootLB.IP = extIP
 
-	client, err := SetupSSHUser(rootLB, SSHUser)
+	client, err := SetupSSHUser(ctx, rootLB, SSHUser)
 	if err != nil {
 		return err
 	}
-	err = LBAddRouteAndSecRules(client, rootLBName)
+	err = LBAddRouteAndSecRules(ctx, client, rootLBName)
 	if err != nil {
 		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
 	}
-	if err = ActivateFQDNA(rootLBName, extIP); err != nil {
+	if err = ActivateFQDNA(ctx, rootLBName, extIP); err != nil {
 		return err
 	}
-	log.DebugLog(log.DebugLevelMexos, "DNS A record activated", "name", rootLB.Name)
-	err = GetHTPassword(rootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated", "name", rootLB.Name)
+	err = GetHTPassword(ctx, rootLB.Name)
 	if err != nil {
 		return fmt.Errorf("can't download htpassword %v", err)
 	}
@@ -171,8 +172,8 @@ func SetupRootLB(rootLBName string, createRootLBFlavor string, updateCallback ed
 
 //WaitForRootLB waits for the RootLB instance to be up and copies of SSH credentials for internal networks.
 //  Idempotent, but don't call all the time.
-func WaitForRootLB(rootLB *MEXRootLB) error {
-	log.DebugLog(log.DebugLevelMexos, "wait for rootlb", "name", rootLB.Name)
+func WaitForRootLB(ctx context.Context, rootLB *MEXRootLB) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "wait for rootlb", "name", rootLB.Name)
 	if rootLB == nil {
 		return fmt.Errorf("cannot wait for lb, rootLB is null")
 	}
@@ -181,16 +182,16 @@ func WaitForRootLB(rootLB *MEXRootLB) error {
 	if extNet == "" {
 		return fmt.Errorf("waiting for lb, missing external network in manifest")
 	}
-	client, err := GetSSHClient(rootLB.Name, extNet, SSHUser)
+	client, err := GetSSHClient(ctx, rootLB.Name, extNet, SSHUser)
 	if err != nil {
 		return err
 	}
 	running := false
 	for i := 0; i < 10; i++ {
-		log.DebugLog(log.DebugLevelMexos, "waiting for rootlb...")
+		log.SpanLog(ctx, log.DebugLevelMexos, "waiting for rootlb...")
 		_, err := client.Output("sudo grep -i 'Finished mobiledgex init' /var/log/mobiledgex.log")
 		if err == nil {
-			log.DebugLog(log.DebugLevelMexos, "rootlb is running", "name", rootLB.Name)
+			log.SpanLog(ctx, log.DebugLevelMexos, "rootlb is running", "name", rootLB.Name)
 			running = true
 			//if err := CopySSHCredential(mf, rootLB.Name, GetCloudletExternalNetwork(), "root"); err != nil {
 			//	return fmt.Errorf("can't copy ssh credential to RootLB, %v", err)
@@ -202,7 +203,7 @@ func WaitForRootLB(rootLB *MEXRootLB) error {
 	if !running {
 		return fmt.Errorf("while creating cluster, timeout waiting for RootLB")
 	}
-	log.DebugLog(log.DebugLevelMexos, "done waiting for rootlb", "name", rootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelMexos, "done waiting for rootlb", "name", rootLB.Name)
 
 	return nil
 }

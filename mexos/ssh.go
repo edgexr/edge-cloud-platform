@@ -1,6 +1,7 @@
 package mexos
 
 import (
+	"context"
 	"fmt"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -13,10 +14,10 @@ var sshOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null
 var SSHUser = "ubuntu"
 
 //CopySSHCredential copies over the ssh credential for mex to LB
-func CopySSHCredential(serverName, networkName, userName string) error {
+func CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
-	log.DebugLog(log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	addr, err := GetServerIPAddr(networkName, serverName)
+	log.SpanLog(ctx, log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
+	addr, err := GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return err
 	}
@@ -29,11 +30,11 @@ func CopySSHCredential(serverName, networkName, userName string) error {
 }
 
 //GetSSHClient returns ssh client handle for the server
-func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) {
+func GetSSHClient(ctx context.Context, serverName, networkName, userName string) (ssh.Client, error) {
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
-	log.DebugLog(log.DebugLevelMexos, "GetSSHClient", "serverName", serverName)
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetSSHClient", "serverName", serverName)
 
-	addr, err := GetServerIPAddr(networkName, serverName)
+	addr, err := GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func GetSSHClient(serverName, networkName, userName string) (ssh.Client, error) 
 	if err != nil {
 		return nil, fmt.Errorf("cannot get ssh client for server %s on network %s, %v", serverName, networkName, err)
 	}
-	//log.DebugLog(log.DebugLevelMexos, "got ssh client", "addr", addr, "key", auth)
+	//log.SpanLog(ctx,log.DebugLevelMexos, "got ssh client", "addr", addr, "key", auth)
 	return client, nil
 }
 
@@ -57,9 +58,9 @@ func GetSSHClientIP(ipaddr, userName string) (ssh.Client, error) {
 	return client, nil
 }
 
-func SetupSSHUser(rootLB *MEXRootLB, user string) (ssh.Client, error) {
-	log.DebugLog(log.DebugLevelMexos, "setting up ssh user", "user", user)
-	client, err := GetSSHClient(rootLB.Name, GetCloudletExternalNetwork(), user)
+func SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Client, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "setting up ssh user", "user", user)
+	client, err := GetSSHClient(ctx, rootLB.Name, GetCloudletExternalNetwork(), user)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func SetupSSHUser(rootLB *MEXRootLB, user string) (ssh.Client, error) {
 	} {
 		out, err := client.Output(cmd)
 		if err != nil {
-			log.DebugLog(log.DebugLevelMexos, "error setting up ssh user",
+			log.SpanLog(ctx, log.DebugLevelMexos, "error setting up ssh user",
 				"user", user, "error", err, "out", out)
 			return nil, err
 		}

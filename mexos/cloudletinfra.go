@@ -6,6 +6,7 @@ package mexos
 // is still directly accessed here as are env variable to populate some variables
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -33,16 +34,16 @@ func getVaultCloudletPath(filePath, vaultAddr string) string {
 	)
 }
 
-func InitInfraCommon(vaultAddr string) error {
+func InitInfraCommon(ctx context.Context, vaultAddr string) error {
 	if vaultAddr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
 	VaultAddr = vaultAddr
 	mexEnvURL := getVaultCloudletPath("mexenv.json", vaultAddr)
-	err := InternVaultEnv(mexEnvURL)
+	err := InternVaultEnv(ctx, mexEnvURL)
 	if err != nil {
 		if testMode {
-			log.DebugLog(log.DebugLevelMexos, "failed to InternVaultEnv", "url", mexEnvURL, "err", err)
+			log.SpanLog(ctx, log.DebugLevelMexos, "failed to InternVaultEnv", "url", mexEnvURL, "err", err)
 		} else {
 			return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
 		}
@@ -50,7 +51,7 @@ func InitInfraCommon(vaultAddr string) error {
 	CloudletInfraCommon.CfKey = os.Getenv("MEX_CF_KEY")
 	if CloudletInfraCommon.CfKey == "" {
 		if testMode {
-			log.DebugLog(log.DebugLevelMexos, "Env variable MEX_CF_KEY not set")
+			log.SpanLog(ctx, log.DebugLevelMexos, "Env variable MEX_CF_KEY not set")
 		} else {
 			return fmt.Errorf("Env variable MEX_CF_KEY not set")
 		}
@@ -58,7 +59,7 @@ func InitInfraCommon(vaultAddr string) error {
 	CloudletInfraCommon.CfUser = os.Getenv("MEX_CF_USER")
 	if CloudletInfraCommon.CfKey == "" {
 		if testMode {
-			log.DebugLog(log.DebugLevelMexos, "Env variable MEX_CF_USER not set")
+			log.SpanLog(ctx, log.DebugLevelMexos, "Env variable MEX_CF_USER not set")
 		} else {
 			return fmt.Errorf("Env variable MEX_CF_USER not set")
 		}
@@ -68,9 +69,9 @@ func InitInfraCommon(vaultAddr string) error {
 	return nil
 }
 
-func InitOpenstackProps(operatorName, physicalName, vaultAddr string) error {
+func InitOpenstackProps(ctx context.Context, operatorName, physicalName, vaultAddr string) error {
 	openRcURL := getVaultCloudletPath(physicalName+"/openrc.json", vaultAddr)
-	err := InternVaultEnv(openRcURL)
+	err := InternVaultEnv(ctx, openRcURL)
 	if err != nil {
 		return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
 	}
@@ -159,9 +160,9 @@ func SetTestMode(tMode bool) {
 // GetCleanupOnFailure should be true unless we want to debug the failure,
 // in which case this env var can be set to no.  We could consider making
 // this configurable at the controller but really is only needed for debugging.
-func GetCleanupOnFailure() bool {
+func GetCleanupOnFailure(ctx context.Context) bool {
 	cleanup := os.Getenv("CLEANUP_ON_FAILURE")
-	log.DebugLog(log.DebugLevelMexos, "GetCleanupOnFailure", "cleanup", cleanup)
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetCleanupOnFailure", "cleanup", cleanup)
 	cleanup = strings.ToLower(cleanup)
 	cleanup = strings.ReplaceAll(cleanup, "'", "")
 	if cleanup == "no" || cleanup == "false" {
