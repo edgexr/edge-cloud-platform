@@ -47,7 +47,7 @@ func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto
 	if clusterInst != nil && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLb := cloudcommon.GetDedicatedLBFQDN(&clusterInst.Key.CloudletKey, &clusterInst.Key.ClusterKey)
 		pc, err := s.pf.GetPlatformClientRootLB(ctx, rootLb)
-		return pc, err //this is not ok, pc will go away when the func returns
+		return pc, err
 	} else {
 		return s.SharedClient, nil
 	}

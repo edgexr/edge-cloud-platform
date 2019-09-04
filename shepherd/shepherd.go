@@ -153,7 +153,7 @@ func main() {
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	pf.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
+	err = pf.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
