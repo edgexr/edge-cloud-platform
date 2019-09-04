@@ -38,7 +38,8 @@ var promMap map[string]*ClusterWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
-var metricSender *notify.MetricSend
+var AppCache edgeproto.AppCache
+var MetricSender *notify.MetricSend
 
 var cloudletKey edgeproto.CloudletKey
 var pf platform.Platform
@@ -46,6 +47,7 @@ var pf platform.Platform
 var sigChan chan os.Signal
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
+	CollectNginxStats(ctx, new)
 	var port int32
 	//check for prometheus
 	if new.Key.AppKey.Name != MEXPrometheusAppName {
@@ -76,7 +78,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewClusterWorker(promAddress, *collectInterval, metricSender.Update, &clusterInst, pf)
+			stats, err = NewClusterWorker(promAddress, *collectInterval, MetricSender.Update, &clusterInst, pf)
 			if err == nil {
 				promMap[mapKey] = stats
 				stats.Start()
@@ -103,7 +105,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
 		if !exists {
-			stats, err := NewClusterWorker("", *collectInterval, metricSender.Update, new, pf)
+			stats, err := NewClusterWorker("", *collectInterval, MetricSender.Update, new, pf)
 			if err == nil {
 				promMap[mapKey] = stats
 				stats.Start()
@@ -151,21 +153,26 @@ func main() {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
 	pf.Init(&cloudletKey, *physicalName, *vaultAddr)
-
+	if err != nil {
+		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
+	}
 	promMap = make(map[string]*ClusterWorker)
+	InitNginxScraper()
 
 	//register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.SetUpdatedCb(appInstCb)
 	ClusterInstCache.SetUpdatedCb(clusterInstCb)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
+	edgeproto.InitAppCache(&AppCache)
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient := notify.NewClient(addrs, *tlsCertFile)
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
+	notifyClient.RegisterRecvAppCache(&AppCache)
 	//register to send metrics
-	metricSender = notify.NewMetricSend()
-	notifyClient.RegisterSend(metricSender)
+	MetricSender = notify.NewMetricSend()
+	notifyClient.RegisterSend(MetricSender)
 
 	notifyClient.Start()
 	defer notifyClient.Stop()
