@@ -55,6 +55,17 @@ type ClusterMetrics struct {
 	udpRecvErrTS *types.Timestamp
 }
 
+type NginxMetrics struct {
+	ActiveConn  uint64
+	Accepts     uint64
+	HandledConn uint64
+	Requests    uint64
+	Reading     uint64
+	Writing     uint64
+	Waiting     uint64
+	Ts          *types.Timestamp
+}
+
 // We keep the name of the pod+ClusterInstKey rather than AppInstKey
 // The reson is that we do not have a way to differentiate between different pods in a k8s cluster
 // See EDGECLOUD-1183

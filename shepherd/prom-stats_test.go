@@ -249,7 +249,7 @@ func TestPromStats(t *testing.T) {
 	assert.NotNil(t, err, "Unsupported deployment type")
 	assert.Contains(t, err.Error(), "Unsupported deployment")
 	testPromStats, err = NewClusterWorker(tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
-	assert.Nil(t, err, "Get a patform client for fake cloudlet")
+	assert.Nil(t, err, "Get a platform client for fake cloudlet")
 	clusterMetrics := testPromStats.clusterStat.GetClusterStats()
 	appsMetrics := testPromStats.clusterStat.GetAppStats()
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
