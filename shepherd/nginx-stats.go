@@ -184,6 +184,7 @@ func parseNginxResp(resp string, metrics *NginxMetrics) error {
 }
 
 func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *NginxMetrics) *edgeproto.Metric {
+	RemoveShepherdMetrics(data)
 	metric := edgeproto.Metric{}
 	metric.Name = "appinst-nginx"
 	metric.Timestamp = *data.Ts
@@ -196,9 +197,11 @@ func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *NginxMetrics) *edge
 	metric.AddIntVal("active", data.ActiveConn)
 	metric.AddIntVal("accepts", data.Accepts)
 	metric.AddIntVal("handled", data.HandledConn)
-	metric.AddIntVal("requests", data.Requests)
-	metric.AddIntVal("reading", data.Reading)
-	metric.AddIntVal("writing", data.Writing)
-	metric.AddIntVal("waiting", data.Waiting)
 	return &metric
+}
+
+func RemoveShepherdMetrics(data *NginxMetrics) {
+	data.ActiveConn = data.ActiveConn - 1
+	data.Accepts = data.Accepts - data.Requests
+	data.HandledConn = data.HandledConn - data.Requests
 }
