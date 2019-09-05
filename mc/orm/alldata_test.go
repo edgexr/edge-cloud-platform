@@ -127,6 +127,7 @@ func testData(t *testing.T, mcClient *ormclient.Client, uri string, user *ormapi
 
 	// run show and compare
 	showData, status, err := mcClient.ShowData(uri, token)
+
 	if !cmp.Equal(data, showData, copts...) {
 		mismatch := cmp.Diff(data, showData, copts...)
 		require.True(t, false, "show data mismatch\n%s", mismatch)

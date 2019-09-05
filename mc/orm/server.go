@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/casbin/casbin"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -39,7 +39,6 @@ type ServerConfig struct {
 	RunLocal        bool
 	InitLocal       bool
 	IgnoreEnv       bool
-	RbacModelPath   string
 	TlsCertFile     string
 	TlsKeyFile      string
 	LocalVault      bool
@@ -60,7 +59,9 @@ var DefaultSuperpass = "mexadmin123"
 var Superuser string
 
 var database *gorm.DB
-var enforcer *casbin.SyncedEnforcer
+
+//var enforcer *casbin.SyncedEnforcer
+var enforcer *rbac.Enforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
 var gitlabSync *AppStoreSync
@@ -97,13 +98,6 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}
 	if superpass == "" || config.IgnoreEnv {
 		superpass = DefaultSuperpass
-	}
-	if config.RbacModelPath == "" {
-		config.RbacModelPath = "./rbac.conf"
-		err := createRbacModel(config.RbacModelPath)
-		if err != nil {
-			return nil, fmt.Errorf("create default rbac model failed, %s", err.Error())
-		}
 	}
 
 	// roleID and secretID could also come from RAM disk.
@@ -167,12 +161,18 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		server.sql = &sql
 	}
 
-	initdb, adapter, err := InitSql(ctx, config.SqlAddr, dbuser, dbpass, dbname)
+	initdb, err := InitSql(ctx, config.SqlAddr, dbuser, dbpass, dbname)
 	if err != nil {
 		return nil, fmt.Errorf("sql init failed, %s", err.Error())
 	}
 	database = initdb
 	server.database = database
+
+	enforcer = rbac.NewEnforcer(initdb)
+	err = enforcer.Init(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("enforcer init failed, %v", err)
+	}
 
 	server.initDataDone = make(chan struct{}, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
@@ -198,8 +198,6 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	// authenticated routes - jwt middleware
 	auth := e.Group(root + "/auth")
 	auth.Use(AuthCookie)
-	// authenticated routes - rbac via casbin (false arg disables logging)
-	enforcer = casbin.NewSyncedEnforcer(config.RbacModelPath, adapter, false)
 	// authenticated routes - gorm router
 	auth.POST("/user/show", ShowUser)
 	auth.POST("/user/current", CurrentUser)
@@ -303,7 +301,9 @@ func ShowVersion(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionView) {
+	ctx := GetContext(c)
+
+	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionView) {
 		return echo.ErrForbidden
 	}
 	ver := ormapi.Version{

@@ -147,7 +147,11 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 	}
 
 	// Get MC group members info
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		s.syncErr(ctx, err)
+		return
+	}
 	groupMembers := make(map[string]map[string]*ormapi.Role)
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])

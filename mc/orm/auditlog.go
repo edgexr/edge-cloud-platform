@@ -175,19 +175,24 @@ func ShowAuditOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 
-	if !enforcer.Enforce(claims.Username, query.Org, ResourceUsers, ActionView) {
+	if !authorized(ctx, claims.Username, query.Org, ResourceUsers, ActionView) {
 		if query.Org == "" {
 			return fmt.Errorf("Organization not specified or no permissions")
 		}
 		return echo.ErrForbidden
 	}
-	admin, orgnames := getUserOrgnames(claims.Username)
+	admin, orgnames, err := getUserOrgnames(claims.Username)
+	if err != nil {
+		// leave orgnames blank so it will be filtered, continue anyway
+		log.SpanLog(ctx, log.DebugLevelApi, "get user orgnames failed", "err", err)
+	}
 	filter := &AllDataFilter{
 		admin:    admin,
 		orgnames: orgnames,

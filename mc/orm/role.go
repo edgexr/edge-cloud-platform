@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -58,76 +59,86 @@ var AdminRoleID int64
 
 func InitRolePerms(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init roleperms")
+	var err error
 
-	enforcer.AddPolicy(RoleAdminManager, ResourceControllers, ActionManage)
-	enforcer.AddPolicy(RoleAdminManager, ResourceControllers, ActionView)
-	enforcer.AddPolicy(RoleAdminManager, ResourceClusterFlavors, ActionManage)
-	enforcer.AddPolicy(RoleAdminManager, ResourceClusterFlavors, ActionView)
-	enforcer.AddPolicy(RoleAdminManager, ResourceFlavors, ActionManage)
-	enforcer.AddPolicy(RoleAdminManager, ResourceFlavors, ActionView)
-	enforcer.AddPolicy(RoleAdminManager, ResourceConfig, ActionManage)
-	enforcer.AddPolicy(RoleAdminManager, ResourceConfig, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceControllers, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceControllers, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceClusterFlavors, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceClusterFlavors, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceFlavors, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceFlavors, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceConfig, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceConfig, ActionView)
 
-	enforcer.AddPolicy(RoleDeveloperManager, ResourceUsers, ActionManage)
-	enforcer.AddPolicy(RoleDeveloperManager, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleDeveloperContributor, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleDeveloperViewer, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionManage)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperContributor, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperViewer, ResourceUsers, ActionView)
 
-	enforcer.AddPolicy(RoleOperatorManager, ResourceUsers, ActionManage)
-	enforcer.AddPolicy(RoleOperatorManager, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleOperatorContributor, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleOperatorViewer, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleOperatorManager, ResourceUsers, ActionManage)
+	addPolicy(ctx, &err, RoleOperatorManager, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleOperatorContributor, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleOperatorViewer, ResourceUsers, ActionView)
 
-	enforcer.AddPolicy(RoleAdminManager, ResourceUsers, ActionManage)
-	enforcer.AddPolicy(RoleAdminManager, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleAdminContributor, ResourceUsers, ActionView)
-	enforcer.AddPolicy(RoleAdminViewer, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceUsers, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleAdminContributor, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleAdminViewer, ResourceUsers, ActionView)
 
 	for _, str := range DeveloperResources {
-		enforcer.AddPolicy(RoleDeveloperManager, str, ActionManage)
-		enforcer.AddPolicy(RoleDeveloperManager, str, ActionView)
-		enforcer.AddPolicy(RoleDeveloperContributor, str, ActionManage)
-		enforcer.AddPolicy(RoleDeveloperContributor, str, ActionView)
-		enforcer.AddPolicy(RoleDeveloperViewer, str, ActionView)
-		enforcer.AddPolicy(RoleAdminManager, str, ActionManage)
-		enforcer.AddPolicy(RoleAdminManager, str, ActionView)
-		enforcer.AddPolicy(RoleAdminContributor, str, ActionManage)
-		enforcer.AddPolicy(RoleAdminContributor, str, ActionView)
-		enforcer.AddPolicy(RoleAdminViewer, str, ActionView)
+		addPolicy(ctx, &err, RoleDeveloperManager, str, ActionManage)
+		addPolicy(ctx, &err, RoleDeveloperManager, str, ActionView)
+		addPolicy(ctx, &err, RoleDeveloperContributor, str, ActionManage)
+		addPolicy(ctx, &err, RoleDeveloperContributor, str, ActionView)
+		addPolicy(ctx, &err, RoleDeveloperViewer, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminManager, str, ActionManage)
+		addPolicy(ctx, &err, RoleAdminManager, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminContributor, str, ActionManage)
+		addPolicy(ctx, &err, RoleAdminContributor, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminViewer, str, ActionView)
 	}
-	enforcer.AddPolicy(RoleDeveloperManager, ResourceCloudlets, ActionView)
-	enforcer.AddPolicy(RoleDeveloperContributor, ResourceCloudlets, ActionView)
-	enforcer.AddPolicy(RoleDeveloperViewer, ResourceCloudlets, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceCloudlets, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperContributor, ResourceCloudlets, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperViewer, ResourceCloudlets, ActionView)
 
-	enforcer.AddPolicy(RoleDeveloperManager, ResourceFlavors, ActionView)
-	enforcer.AddPolicy(RoleDeveloperContributor, ResourceFlavors, ActionView)
-	enforcer.AddPolicy(RoleDeveloperViewer, ResourceFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperContributor, ResourceFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperViewer, ResourceFlavors, ActionView)
 
-	enforcer.AddPolicy(RoleDeveloperManager, ResourceClusterFlavors, ActionView)
-	enforcer.AddPolicy(RoleDeveloperContributor, ResourceClusterFlavors, ActionView)
-	enforcer.AddPolicy(RoleDeveloperViewer, ResourceClusterFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceClusterFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperContributor, ResourceClusterFlavors, ActionView)
+	addPolicy(ctx, &err, RoleDeveloperViewer, ResourceClusterFlavors, ActionView)
 
 	for _, str := range OperatorResources {
-		enforcer.AddPolicy(RoleOperatorManager, str, ActionManage)
-		enforcer.AddPolicy(RoleOperatorManager, str, ActionView)
-		enforcer.AddPolicy(RoleOperatorContributor, str, ActionManage)
-		enforcer.AddPolicy(RoleOperatorContributor, str, ActionView)
-		enforcer.AddPolicy(RoleOperatorViewer, str, ActionView)
-		enforcer.AddPolicy(RoleAdminManager, str, ActionManage)
-		enforcer.AddPolicy(RoleAdminManager, str, ActionView)
-		enforcer.AddPolicy(RoleAdminContributor, str, ActionManage)
-		enforcer.AddPolicy(RoleAdminContributor, str, ActionView)
-		enforcer.AddPolicy(RoleAdminViewer, str, ActionView)
+		addPolicy(ctx, &err, RoleOperatorManager, str, ActionManage)
+		addPolicy(ctx, &err, RoleOperatorManager, str, ActionView)
+		addPolicy(ctx, &err, RoleOperatorContributor, str, ActionManage)
+		addPolicy(ctx, &err, RoleOperatorContributor, str, ActionView)
+		addPolicy(ctx, &err, RoleOperatorViewer, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminManager, str, ActionManage)
+		addPolicy(ctx, &err, RoleAdminManager, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminContributor, str, ActionManage)
+		addPolicy(ctx, &err, RoleAdminContributor, str, ActionView)
+		addPolicy(ctx, &err, RoleAdminViewer, str, ActionView)
 	}
-	return nil
+	return err
+}
+
+func addPolicy(ctx context.Context, err *error, params ...string) {
+	if *err == nil {
+		*err = enforcer.AddPolicy(ctx, params...)
+	}
 }
 
 func ShowRolePerms(c echo.Context) error {
 	_, err := getClaims(c)
 	if err != nil {
-		return nil
+		return err
 	}
-	policies := enforcer.GetPolicy()
+	policies, err := enforcer.GetPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	ret := []*ormapi.RolePerm{}
 	for ii, _ := range policies {
 		if len(policies[ii]) < 3 {
@@ -147,16 +158,20 @@ func ShowRolePerms(c echo.Context) error {
 func ShowRoleAssignment(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
-		return nil
+		return err
 	}
+	ctx := GetContext(c)
 
 	super := false
-	if enforcer.Enforce(claims.Username, "", ResourceUsers, ActionView) {
+	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) {
 		// super user, show all roles
 		super = true
 	}
 
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	ret := []*ormapi.Role{}
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
@@ -190,16 +205,12 @@ func parseRole(grp []string) *ormapi.Role {
 	return &role
 }
 
-func getCasbinGroup(org, username string) string {
-	if org == "" {
-		return username
-	}
-	return org + "::" + username
-}
-
 func ShowRole(c echo.Context) error {
 	rolemap := make(map[string]struct{})
-	policies := enforcer.GetPolicy()
+	policies, err := enforcer.GetPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	for _, policy := range policies {
 		if len(policy) < 1 {
 			continue
@@ -248,7 +259,10 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	if res.Error != nil {
 		return dbErr(res.Error)
 	}
-	policies := enforcer.GetPolicy()
+	policies, err := enforcer.GetPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	roleFound := false
 	for _, policy := range policies {
 		if len(policy) < 1 {
@@ -288,14 +302,17 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	}
 
 	// make sure caller has perms to modify users of target org
-	if !enforcer.Enforce(claims.Username, role.Org, ResourceUsers, ActionManage) {
+	if !authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage) {
 		if role.Org == "" {
 			return fmt.Errorf("Organization not specified or no permissions")
 		}
 		return echo.ErrForbidden
 	}
-	psub := getCasbinGroup(role.Org, role.Username)
-	enforcer.AddGroupingPolicy(psub, role.Role)
+	psub := rbac.GetCasbinGroup(role.Org, role.Username)
+	err = enforcer.AddGroupingPolicy(ctx, psub, role.Role)
+	if err != nil {
+		return dbErr(err)
+	}
 	// notify recipient that they were added. don't fail on error
 	senderr := sendAddedEmail(ctx, claims.Username, targetUser.Name, targetUser.Email, role.Org, role.Role)
 	if senderr != nil {
@@ -340,17 +357,24 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 	// to delete the manager role for the Org (which has already
 	// been delete). Since it's deleted, the enforcer fails, causing
 	// a forbidden error.
-	psub := getCasbinGroup(role.Org, role.Username)
-	if !enforcer.HasGroupingPolicy(psub, role.Role) {
+	psub := rbac.GetCasbinGroup(role.Org, role.Username)
+	found, err := enforcer.HasGroupingPolicy(psub, role.Role)
+	if err != nil {
+		return dbErr(err)
+	}
+	if !found {
 		return nil
 	}
 
 	// make sure caller has perms to modify users of target org
-	if !enforcer.Enforce(claims.Username, role.Org, ResourceUsers, ActionManage) {
+	if !authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
 
-	enforcer.RemoveGroupingPolicy(psub, role.Role)
+	err = enforcer.RemoveGroupingPolicy(ctx, psub, role.Role)
+	if err != nil {
+		return dbErr(err)
+	}
 
 	org := ormapi.Organization{}
 	// ignore any error
@@ -368,23 +392,28 @@ func ShowUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	roles, err := ShowUserRoleObj(claims.Username)
+	ctx := GetContext(c)
+
+	roles, err := ShowUserRoleObj(ctx, claims.Username)
 	return setReply(c, err, roles)
 }
 
 // show roles for organizations the current user has permission to
 // add/remove roles to. This "shows" all the actions taken by
 // Add/RemoveUserRole.
-func ShowUserRoleObj(username string) ([]ormapi.Role, error) {
+func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error) {
 	roles := []ormapi.Role{}
 
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return nil, dbErr(err)
+	}
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil {
 			continue
 		}
-		if !enforcer.Enforce(username, role.Org, ResourceUsers, ActionView) {
+		if !authorized(ctx, username, role.Org, ResourceUsers, ActionView) {
 			continue
 		}
 		roles = append(roles, *role)
@@ -397,7 +426,9 @@ func SyncAccessCheck(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
+	ctx := GetContext(c)
+
+	if !authorized(ctx, claims.Username, "", ResourceControllers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	return nil
@@ -405,13 +436,21 @@ func SyncAccessCheck(c echo.Context) error {
 
 // for debugging
 func dumpRbac() {
-	policies := enforcer.GetPolicy()
-	for _, p := range policies {
-		fmt.Printf("policy: %+v\n", p)
+	policies, err := enforcer.GetPolicy()
+	if err != nil {
+		fmt.Printf("get policy failed: %v\n", err)
+	} else {
+		for _, p := range policies {
+			fmt.Printf("policy: %+v\n", p)
+		}
 	}
-	groups := enforcer.GetGroupingPolicy()
-	for _, grp := range groups {
-		fmt.Printf("group: %+v\n", grp)
+	groups, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		fmt.Printf("get grouping policy failed: %v\n", err)
+	} else {
+		for _, grp := range groups {
+			fmt.Printf("group: %+v\n", grp)
+		}
 	}
 }
 

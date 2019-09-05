@@ -144,7 +144,11 @@ func (s *AppStoreSync) syncGroupMembers(ctx context.Context, allOrgs map[string]
 	members := make(map[string]map[string]*gitlab.GroupMember)
 	var err error
 
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		s.syncErr(ctx, err)
+		return
+	}
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil || role.Org == "" {

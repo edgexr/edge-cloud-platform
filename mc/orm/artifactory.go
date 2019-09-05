@@ -393,7 +393,10 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 	}
 
 	userPerms := map[string][]string{}
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return err
+	}
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil {
