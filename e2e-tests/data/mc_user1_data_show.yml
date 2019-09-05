@@ -62,6 +62,7 @@ regiondata:
       tlscertfile: /Users/ashishjain/go/src/github.com/mobiledgex/edge-cloud/tls/out/mex-server.crt
       flavor:
         name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-1
     - key:
         operatorkey:
           name: dmuus
@@ -88,6 +89,7 @@ regiondata:
       tlscertfile: /Users/ashishjain/go/src/github.com/mobiledgex/edge-cloud/tls/out/mex-server.crt
       flavor:
         name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-2
     - key:
         operatorkey:
           name: azure
@@ -114,6 +116,7 @@ regiondata:
       tlscertfile: /Users/ashishjain/go/src/github.com/mobiledgex/edge-cloud/tls/out/mex-server.crt
       flavor:
         name: DefaultPlatformFlavor
+      physicalname: azure-cloud-4
     - key:
         operatorkey:
           name: gcp
@@ -140,6 +143,7 @@ regiondata:
       tlscertfile: /Users/ashishjain/go/src/github.com/mobiledgex/edge-cloud/tls/out/mex-server.crt
       flavor:
         name: DefaultPlatformFlavor
+      physicalname: gcp-cloud-5
     flavors:
     - key:
         name: x1.small
