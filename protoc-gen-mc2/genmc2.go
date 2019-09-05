@@ -398,7 +398,7 @@ func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeprot
 func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
 {{- if and (not .Show) (not .SkipEnforce)}}
-	if !enforcer.Enforce(rc.claims.Username, {{.Org}},
+	if !authorized(ctx, rc.claims.Username, {{.Org}},
 		{{.Resource}}, {{.Action}}) {
 		return {{.ReturnErrArg}}echo.ErrForbidden
 	}
@@ -430,7 +430,7 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 			return {{.ReturnErrArg}}err
 		}
 {{- if and (.Show) (not .SkipEnforce)}}
-		if !enforcer.Enforce(rc.claims.Username, {{.ShowOrg}},
+		if !authorized(ctx, rc.claims.Username, {{.ShowOrg}},
 			{{.Resource}}, {{.Action}}) {
 			continue
 		}

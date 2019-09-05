@@ -6,8 +6,10 @@ require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 	github.com/atlassian/go-artifactory/v2 v2.3.0
-	github.com/casbin/casbin v1.6.0
-	github.com/casbin/gorm-adapter v0.0.0-20171006093545-e56c6daebd5e
+	github.com/casbin/casbin v1.9.1 // indirect
+	github.com/casbin/casbin/v2 v2.0.1
+	github.com/casbin/gorm-adapter v1.0.0
+	github.com/casbin/gorm-adapter/v2 v2.0.0
 	github.com/cloudflare/cloudflare-go v0.8.5
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
@@ -31,13 +33,13 @@ require (
 	github.com/jaegertracing/jaeger v1.13.1
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
-	github.com/jinzhu/gorm v1.9.1
+	github.com/jinzhu/gorm v1.9.10
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
-	github.com/lib/pq v1.0.0
+	github.com/lib/pq v1.1.1
 	github.com/miekg/dns v1.1.15
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
@@ -120,10 +122,6 @@ replace github.com/asaskevich/govalidator => github.com/asaskevich/govalidator v
 replace github.com/bitly/go-hostpool => github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932
 
 replace github.com/bmizerany/assert => github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
-
-replace github.com/casbin/casbin => github.com/casbin/casbin v1.6.0
-
-replace github.com/casbin/gorm-adapter => github.com/casbin/gorm-adapter v0.0.0-20171006093545-e56c6daebd5e
 
 replace github.com/cenkalti/backoff => github.com/cenkalti/backoff v2.1.1+incompatible
 

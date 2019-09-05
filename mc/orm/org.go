@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -68,8 +69,11 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		return dbErr(err)
 	}
 	// set user to admin role of organization
-	psub := getCasbinGroup(org.Name, claims.Username)
-	enforcer.AddGroupingPolicy(psub, role)
+	psub := rbac.GetCasbinGroup(org.Name, claims.Username)
+	err = enforcer.AddGroupingPolicy(ctx, psub, role)
+	if err != nil {
+		return dbErr(err)
+	}
 
 	gitlabCreateGroup(ctx, org)
 	r := ormapi.Role{
@@ -106,7 +110,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if org.Name == "" {
 		return fmt.Errorf("Organization name not specified")
 	}
-	if !enforcer.Enforce(claims.Username, org.Name, ResourceUsers, ActionManage) {
+	if !authorized(ctx, claims.Username, org.Name, ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	// delete org
@@ -116,14 +120,20 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		return dbErr(err)
 	}
 	// delete all casbin groups associated with org
-	groups := enforcer.GetGroupingPolicy()
+	groups, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	for _, grp := range groups {
 		if len(grp) < 2 {
 			continue
 		}
 		strs := strings.Split(grp[0], "::")
 		if len(strs) == 2 && strs[0] == org.Name {
-			enforcer.RemoveGroupingPolicy(grp[0], grp[1])
+			err = enforcer.RemoveGroupingPolicy(ctx, grp[0], grp[1])
+			if err != nil {
+				return dbErr(err)
+			}
 		}
 	}
 	gitlabDeleteGroup(ctx, org)
@@ -145,7 +155,7 @@ func ShowOrg(c echo.Context) error {
 func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization, error) {
 	orgs := []ormapi.Organization{}
 	db := loggedDB(ctx)
-	if enforcer.Enforce(claims.Username, "", ResourceUsers, ActionView) {
+	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) {
 		// super user, show all orgs
 		err := db.Find(&orgs).Error
 		if err != nil {
@@ -153,7 +163,10 @@ func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization,
 		}
 	} else {
 		// show orgs for current user
-		groupings := enforcer.GetGroupingPolicy()
+		groupings, err := enforcer.GetGroupingPolicy()
+		if err != nil {
+			return nil, dbErr(err)
+		}
 		for _, grp := range groupings {
 			if len(grp) < 2 {
 				continue
@@ -175,11 +188,14 @@ func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization,
 
 // getUserOrgnames gets a map of all the org names the user belongs to.
 // If this is an admin, return boolean will be true.
-func getUserOrgnames(username string) (bool, map[string]struct{}) {
+func getUserOrgnames(username string) (bool, map[string]struct{}, error) {
 	orgnames := make(map[string]struct{})
 	admin := false
 
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return false, nil, err
+	}
 	for _, grp := range groupings {
 		if len(grp) < 2 {
 			continue
@@ -193,7 +209,7 @@ func getUserOrgnames(username string) (bool, map[string]struct{}) {
 			orgnames[orguser[0]] = struct{}{}
 		}
 	}
-	return admin, orgnames
+	return admin, orgnames, nil
 }
 
 func GetAllOrgs(ctx context.Context) (map[string]*ormapi.Organization, error) {

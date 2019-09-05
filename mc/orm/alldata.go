@@ -203,7 +203,7 @@ func ShowData(c echo.Context) error {
 	if err == nil {
 		data.Orgs = orgs
 	}
-	roles, err := ShowUserRoleObj(claims.Username)
+	roles, err := ShowUserRoleObj(ctx, claims.Username)
 	if err == nil {
 		data.Roles = roles
 	}

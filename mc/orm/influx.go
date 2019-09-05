@@ -272,7 +272,7 @@ func GetMetricsCommon(c echo.Context) error {
 		return echo.ErrNotFound
 	}
 	// Check the developer against who is logged in
-	if !enforcer.Enforce(rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
+	if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
 		return echo.ErrForbidden
 	}
 

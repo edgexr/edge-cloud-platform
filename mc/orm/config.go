@@ -33,7 +33,7 @@ func UpdateConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionManage) {
+	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionManage) {
 		return echo.ErrForbidden
 	}
 	config, err := getConfig(ctx)
@@ -59,7 +59,7 @@ func ShowConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !enforcer.Enforce(claims.Username, "", ResourceConfig, ActionManage) {
+	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionManage) {
 		return echo.ErrForbidden
 	}
 	config, err := getConfig(ctx)

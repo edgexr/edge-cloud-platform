@@ -82,11 +82,11 @@ func (s *ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn 
 	}
 	if dn.ou == "" {
 		ldapLookupUsers(ctx, dn.cn, filter, &res)
-		ldapLookupOrgs(dn.cn, filter, &res)
+		ldapLookupOrgs(ctx, dn.cn, filter, &res)
 	} else if dn.ou == OUusers {
 		ldapLookupUsers(ctx, dn.cn, filter, &res)
 	} else if dn.ou == OUorgs {
-		ldapLookupOrgs(dn.cn, filter, &res)
+		ldapLookupOrgs(ctx, dn.cn, filter, &res)
 	} else {
 		return res, fmt.Errorf("Invalid OU %s", dn.ou)
 	}
@@ -100,6 +100,12 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 	db := loggedDB(ctx)
 	err := db.Find(&users).Error
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "db find users", "err", err)
+		return
+	}
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "ldap get grouping policy failed", "err", err)
 		return
 	}
 	for _, user := range users {
@@ -139,7 +145,6 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 				},
 			},
 		}
-		groupings := enforcer.GetGroupingPolicy()
 		roles := []*ormapi.Role{}
 		for ii, _ := range groupings {
 			role := parseRole(groupings[ii])
@@ -180,10 +185,14 @@ func ldapLookupUsers(ctx context.Context, username string, filter *ber.Packet, r
 	}
 }
 
-func ldapLookupOrgs(orgname string, filter *ber.Packet, result *ldap.ServerSearchResult) {
+func ldapLookupOrgs(ctx context.Context, orgname string, filter *ber.Packet, result *ldap.ServerSearchResult) {
 	orgusers := make(map[string][]string)
 
-	groupings := enforcer.GetGroupingPolicy()
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "ldap get grouping policy failed", "err", err)
+		return
+	}
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil || role.Org == "" {

@@ -79,7 +79,7 @@ func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.C
 	if ctrl.Address == "" {
 		return fmt.Errorf("Controller Address not specified")
 	}
-	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
+	if !authorized(ctx, claims.Username, "", ResourceControllers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	db := loggedDB(ctx)
@@ -106,7 +106,7 @@ func DeleteController(c echo.Context) error {
 }
 
 func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
-	if !enforcer.Enforce(claims.Username, "", ResourceControllers, ActionManage) {
+	if !authorized(ctx, claims.Username, "", ResourceControllers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	db := loggedDB(ctx)

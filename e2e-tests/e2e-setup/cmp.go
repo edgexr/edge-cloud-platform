@@ -2,6 +2,7 @@ package e2esetup
 
 import (
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -23,6 +24,21 @@ var IgnoreAdminRole = cmpopts.AcyclicTransformer("removeAdminRole", func(roles [
 		}
 		newroles = append(newroles, role)
 	}
+	sort.Slice(newroles, func(i, j int) bool {
+		if newroles[i].Org < newroles[j].Org {
+			return true
+		}
+		if newroles[i].Org > newroles[j].Org {
+			return false
+		}
+		if newroles[i].Username < newroles[j].Username {
+			return true
+		}
+		if newroles[i].Username > newroles[j].Username {
+			return false
+		}
+		return newroles[i].Role < newroles[j].Role
+	})
 	return newroles
 })
 
@@ -74,6 +90,10 @@ var IgnoreTaskStatusMessages = cmpopts.AcyclicTransformer("ignoreTaskStatus", fu
 	return ar
 })
 
+func CmpSortOrgs(a ormapi.Organization, b ormapi.Organization) bool {
+	return a.Name < b.Name
+}
+
 //compares two yaml files for equivalence
 //TODO need to handle different types of interfaces besides appdata, currently using
 //that to sort
@@ -97,6 +117,7 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		}
 		copts = append(copts, edgeproto.IgnoreTaggedFields("nocmp")...)
 		copts = append(copts, edgeproto.CmpSortSlices()...)
+		copts = append(copts, cmpopts.SortSlices(CmpSortOrgs))
 
 		y1 = a1
 		y2 = a2

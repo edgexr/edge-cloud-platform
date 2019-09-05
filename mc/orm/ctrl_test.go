@@ -39,6 +39,7 @@ func TestController(t *testing.T) {
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 	defer server.Stop()
+	enforcer.LogEnforce(true)
 
 	Jwks.Init("addr", "region", "mcorm", "roleID", "secretID")
 	Jwks.Meta.CurrentVersion = 1

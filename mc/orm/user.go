@@ -41,7 +41,10 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	}
 
 	// set role of superuser to admin manager
-	enforcer.AddGroupingPolicy(super.Name, RoleAdminManager)
+	err = enforcer.AddGroupingPolicy(ctx, super.Name, RoleAdminManager)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -245,7 +248,7 @@ func DeleteUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("User Name not specified"))
 	}
 	// Only user themself or super-user can delete user.
-	if user.Name != claims.Username && !enforcer.Enforce(claims.Username, "", ResourceUsers, ActionManage) {
+	if user.Name != claims.Username && !authorized(ctx, claims.Username, "", ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	if user.Name == Superuser {
@@ -253,14 +256,20 @@ func DeleteUser(c echo.Context) error {
 	}
 
 	// delete role mappings
-	groups := enforcer.GetGroupingPolicy()
+	groups, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return dbErr(err)
+	}
 	for _, grp := range groups {
 		if len(grp) < 2 {
 			continue
 		}
 		strs := strings.Split(grp[0], "::")
 		if grp[0] == user.Name || (len(strs) == 2 && strs[1] == user.Name) {
-			enforcer.RemoveGroupingPolicy(grp[0], grp[1])
+			err := enforcer.RemoveGroupingPolicy(ctx, grp[0], grp[1])
+			if err != nil {
+				return dbErr(err)
+			}
 		}
 	}
 	// delete user
@@ -308,7 +317,7 @@ func ShowUser(c echo.Context) error {
 		}
 	}
 	users := []ormapi.User{}
-	if !enforcer.Enforce(claims.Username, filter.Name, ResourceUsers, ActionView) {
+	if !authorized(ctx, claims.Username, filter.Name, ResourceUsers, ActionView) {
 		if filter.Name == "" && c.Request().ContentLength == 0 {
 			// user probably forgot to specify orgname
 			return c.JSON(http.StatusBadRequest, Msg("No organization name specified"))
@@ -323,7 +332,10 @@ func ShowUser(c echo.Context) error {
 			return setReply(c, dbErr(err), nil)
 		}
 	} else {
-		groupings := enforcer.GetGroupingPolicy()
+		groupings, err := enforcer.GetGroupingPolicy()
+		if err != nil {
+			return dbErr(err)
+		}
 		for _, grp := range groupings {
 			if len(grp) < 2 {
 				continue
@@ -465,7 +477,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 		return err
 	}
 	// Only admin user allowed to update user data.
-	if !enforcer.Enforce(claims.Username, "", ResourceUsers, ActionManage) {
+	if !authorized(ctx, claims.Username, "", ResourceUsers, ActionManage) {
 		return echo.ErrForbidden
 	}
 	// Pull json directly so we can unmarshal twice.
