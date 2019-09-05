@@ -1,4 +1,4 @@
-package main
+package shepherd_common
 
 import (
 	"context"
@@ -22,39 +22,39 @@ type ClusterStats interface {
 }
 
 type AppMetrics struct {
-	cpu       float64
-	cpuTS     *types.Timestamp
-	mem       uint64
-	memTS     *types.Timestamp
-	disk      uint64
-	diskTS    *types.Timestamp
-	netSend   uint64
-	netSendTS *types.Timestamp
-	netRecv   uint64
-	netRecvTS *types.Timestamp
+	Cpu       float64
+	CpuTS     *types.Timestamp
+	Mem       uint64
+	MemTS     *types.Timestamp
+	Disk      uint64
+	DiskTS    *types.Timestamp
+	NetSent   uint64
+	NetSentTS *types.Timestamp
+	NetRecv   uint64
+	NetRecvTS *types.Timestamp
 }
 
 type ClusterMetrics struct {
-	cpu          float64
-	cpuTS        *types.Timestamp
-	mem          float64
-	memTS        *types.Timestamp
-	disk         float64
-	diskTS       *types.Timestamp
-	netSend      uint64
-	netSendTS    *types.Timestamp
-	netRecv      uint64
-	netRecvTS    *types.Timestamp
-	tcpConns     uint64
-	tcpConnsTS   *types.Timestamp
-	tcpRetrans   uint64
-	tcpRetransTS *types.Timestamp
-	udpSend      uint64
-	udpSendTS    *types.Timestamp
-	udpRecv      uint64
-	udpRecvTS    *types.Timestamp
-	udpRecvErr   uint64
-	udpRecvErrTS *types.Timestamp
+	Cpu          float64
+	CpuTS        *types.Timestamp
+	Mem          float64
+	MemTS        *types.Timestamp
+	Disk         float64
+	DiskTS       *types.Timestamp
+	NetSent      uint64
+	NetSentTS    *types.Timestamp
+	NetRecv      uint64
+	NetRecvTS    *types.Timestamp
+	TcpConns     uint64
+	TcpConnsTS   *types.Timestamp
+	TcpRetrans   uint64
+	TcpRetransTS *types.Timestamp
+	UdpSent      uint64
+	UdpSentTS    *types.Timestamp
+	UdpRecv      uint64
+	UdpRecvTS    *types.Timestamp
+	UdpRecvErr   uint64
+	UdpRecvErrTS *types.Timestamp
 }
 
 type NginxMetrics struct {
@@ -72,6 +72,6 @@ type NginxMetrics struct {
 // The reson is that we do not have a way to differentiate between different pods in a k8s cluster
 // See EDGECLOUD-1183
 type MetricAppInstKey struct {
-	clusterInstKey edgeproto.ClusterInstKey
-	pod            string
+	ClusterInstKey edgeproto.ClusterInstKey
+	Pod            string
 }

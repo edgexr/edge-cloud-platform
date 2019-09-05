@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -62,7 +62,7 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-	promQSendBytesRateClust: `{
+	promQSentBytesRateClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -144,7 +144,7 @@ var testPayloadData = map[string]string{
 		]
 		}
 		}`,
-	promQNetSendRate: `{
+	promQNetSentRate: `{
 		"status": "success",
 		"data": {
   		"resultType": "vector",
@@ -185,22 +185,13 @@ func testMetricSend(ctx context.Context, metric *edgeproto.Metric) bool {
 	return true
 }
 
-func getTestMetrics(addr string, query string) (*PromResp, error) {
-	input := []byte(testPayloadData[query])
-	promResp := &PromResp{}
-	if err := json.Unmarshal(input, &promResp); err != nil {
-		return nil, err
-	}
-	return promResp, nil
-}
-
 func TestPromStats(t *testing.T) {
 	log.InitTracer("")
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	testAppKey := MetricAppInstKey{
-		clusterInstKey: edgeproto.ClusterInstKey{
+	testAppKey := shepherd_common.MetricAppInstKey{
+		ClusterInstKey: edgeproto.ClusterInstKey{
 			ClusterKey: edgeproto.ClusterKey{
 				Name: "testcluster",
 			},
@@ -231,7 +222,7 @@ func TestPromStats(t *testing.T) {
 	}
 	testClusterInstUnsupported := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
-		Deployment: cloudcommon.AppDeploymentTypeDocker,
+		Deployment: cloudcommon.AppDeploymentTypeHelm,
 	}
 
 	*platformName = "PLATFORM_TYPE_FAKE"
@@ -254,23 +245,23 @@ func TestPromStats(t *testing.T) {
 	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
-	testAppKey.pod = "testPod1"
+	testAppKey.Pod = "testPod1"
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	assert.True(t, found, "Pod testPod1 is not found")
 	if found {
-		assert.Equal(t, float64(5.0), stat.cpu)
-		assert.Equal(t, uint64(100000000), stat.mem)
-		assert.Equal(t, uint64(300000000), stat.disk)
-		assert.Equal(t, uint64(111111), stat.netSend)
-		assert.Equal(t, uint64(222222), stat.netRecv)
+		assert.Equal(t, float64(5.0), stat.Cpu)
+		assert.Equal(t, uint64(100000000), stat.Mem)
+		assert.Equal(t, uint64(300000000), stat.Disk)
+		assert.Equal(t, uint64(111111), stat.NetSent)
+		assert.Equal(t, uint64(222222), stat.NetRecv)
 	}
 	// Check ClusterStats
-	assert.Equal(t, float64(10.01), clusterMetrics.cpu)
-	assert.Equal(t, float64(99.99), clusterMetrics.mem)
-	assert.Equal(t, float64(50.0), clusterMetrics.disk)
-	assert.Equal(t, uint64(11111), clusterMetrics.netSend)
-	assert.Equal(t, uint64(22222), clusterMetrics.netRecv)
+	assert.Equal(t, float64(10.01), clusterMetrics.Cpu)
+	assert.Equal(t, float64(99.99), clusterMetrics.Mem)
+	assert.Equal(t, float64(50.0), clusterMetrics.Disk)
+	assert.Equal(t, uint64(11111), clusterMetrics.NetSent)
+	assert.Equal(t, uint64(22222), clusterMetrics.NetRecv)
 
 	// Check callback is called
 	assert.Equal(t, int(0), testMetricSent)
