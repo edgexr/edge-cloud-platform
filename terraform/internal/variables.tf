@@ -54,6 +54,22 @@ variable "influxdb_vm_hostname" {
   type        = "string"
 }
 
+variable "vouch_domain_name" {
+  default     = "vouch.mobiledgex.net"
+}
+
+variable "jaeger_instance_name" {
+  default     = "jaeger"
+}
+
+variable "jaeger_gcp_zone" {
+  default     = "us-central1-a"
+}
+
+variable "jaeger_domain_name" {
+  default     = "jaeger.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"

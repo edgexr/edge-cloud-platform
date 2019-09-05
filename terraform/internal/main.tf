@@ -45,3 +45,25 @@ module "influxdb_dns" {
   hostname                      = "${var.influxdb_vm_hostname}"
   ip                            = "${module.influxdb.external_ip}"
 }
+
+module "vouch_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.vouch_domain_name}"
+  ip                            = "${module.influxdb.external_ip}"
+}
+
+module "jaeger" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                 = "${var.jaeger_instance_name}"
+  zone                          = "${var.jaeger_gcp_zone}"
+  boot_disk_size                = 20
+  tags                          = [ "mexplat-${var.environ_tag}", "http-server", "https-server", "jaeger" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "jaeger_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.jaeger_domain_name}"
+  ip                            = "${module.jaeger.external_ip}"
+}
