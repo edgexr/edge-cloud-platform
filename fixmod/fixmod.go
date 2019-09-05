@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var keepReplaces = make(mapFlags)
+
 var srcRepo = flag.String("srcRepo", "", "source repo from which to pull modules dependencies")
 var dstRepo = flag.String("dstRepo", ".", "destination repo from which to write modules replace dependencies")
 var print = flag.Bool("print", false, "print replace commands for target module only")
@@ -42,49 +44,97 @@ type Replace struct {
 }
 
 func main() {
+	flag.Var(keepReplaces, "keep", "Keep custom replace for path")
 	flag.Parse()
 	if *srcRepo == "" {
 		log.Fatal("source repo not specified\n")
 	}
 
-	srcCmd := exec.Command("go", "mod", "edit", "-json")
-	srcCmd.Dir = *srcRepo
-	srcCmd.Env = append(os.Environ(), "GO111MODULE=on")
-	out, err := srcCmd.Output()
+	srcMod, err := getGoMod(*srcRepo)
 	if err != nil {
-		fmt.Printf("go mod edit -json failed, %v, %s\n", err, out)
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-	srcMod := GoMod{}
-	err = json.Unmarshal([]byte(out), &srcMod)
+	dstMod, err := getGoMod(*dstRepo)
 	if err != nil {
-		fmt.Printf("failed to parse output, %v\n", err)
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
+
+	dstReplaces := make(map[string]struct{})
+	for _, rep := range dstMod.Replace {
+		dstReplaces[rep.Old.Path] = struct{}{}
+	}
+
 	replaces := []string{}
 
 	for _, req := range srcMod.Require {
 		replace := fmt.Sprintf("%s=%s@%s", req.Path, req.Path, req.Version)
 		replaces = append(replaces, replace)
+		delete(dstReplaces, req.Path)
 	}
 	for _, rep := range srcMod.Replace {
 		replace := fmt.Sprintf("%s=%s", rep.Old, rep.New)
 		replaces = append(replaces, replace)
+		delete(dstReplaces, rep.Old.Path)
 	}
 	for _, replace := range replaces {
 		args := []string{"mod", "edit", "-replace", replace}
-		if *print {
-			fmt.Printf("go %s\n", strings.Join(args, " "))
-			continue
-		}
-		cmd := exec.Command("go", args...)
-		cmd.Dir = *dstRepo
-		cmd.Env = append(os.Environ(), "GO111MODULE=on")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("run go %s failed, %s, %s\n",
-				strings.Join(args, " "), err, out)
+		if err := runGo(*dstRepo, args); err != nil {
+			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
 	}
+	for old, _ := range dstReplaces {
+		// remove stale replaces
+		if _, found := keepReplaces[old]; found {
+			continue
+		}
+		args := []string{"mod", "edit", "-dropreplace", old}
+		if err := runGo(*dstRepo, args); err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func getGoMod(dir string) (*GoMod, error) {
+	cmd := exec.Command("go", "mod", "edit", "-json")
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GO111MODULE=on")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("go mod edit -json (%s) failed, %v, %s", dir, err, out)
+	}
+	mod := GoMod{}
+	err = json.Unmarshal([]byte(out), &mod)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse output, %v", err)
+	}
+	return &mod, nil
+}
+
+func runGo(dir string, args []string) error {
+	if *print {
+		fmt.Printf("go %s\n", strings.Join(args, " "))
+		return nil
+	}
+	cmd := exec.Command("go", args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GO111MODULE=on")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("run go %s failed, %s, %s\n",
+			strings.Join(args, " "), err, out)
+	}
+	return nil
+}
+
+type mapFlags map[string]struct{}
+
+func (m mapFlags) String() string { return "map of strings" }
+
+func (m mapFlags) Set(value string) error {
+	m[value] = struct{}{}
+	return nil
 }

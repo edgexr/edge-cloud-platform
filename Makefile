@@ -37,7 +37,7 @@ edge-cloud-version-set:
 
 build-internal:
 	go install ./fixmod
-	fixmod -srcRepo ../edge-cloud
+	fixmod -srcRepo ../edge-cloud -keep github.com/mobiledgex/edge-cloud
 	go install ./protoc-gen-mc2
 	make -f proto.make
 	make -C vault/letsencrypt-plugin letsencrypt/version.go
