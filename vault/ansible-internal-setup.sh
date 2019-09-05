@@ -19,6 +19,14 @@ path "auth/approle/login" {
 path "secret/data/ansible/internal/*" {
   capabilities = [ "read" ]
 }
+
+path "secret/data/ansible/common/*" {
+  capabilities = [ "read" ]
+}
+
+path "secret/data/certs/*" {
+  capabilities = [ "read" ]
+}
 EOF
 vault policy write internal.ansible /tmp/ansible-pol.hcl
 rm /tmp/ansible-pol.hcl
