@@ -57,6 +57,7 @@ require (
 	github.com/pion/stun v0.3.1
 	github.com/pion/webrtc/v2 v2.0.24
 	github.com/pkg/errors v0.8.1
+	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/sirupsen/logrus v1.4.1
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.4

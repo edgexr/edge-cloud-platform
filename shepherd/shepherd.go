@@ -34,7 +34,7 @@ var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var defaultPrometheusPort = int32(9090)
 
 //map keeping track of all the currently running prometheuses
-var promMap map[string]*ClusterWorker
+var workerMap map[string]*ClusterWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
@@ -54,7 +54,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		return
 	}
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key.ClusterInstKey)
-	stats, exists := promMap[mapKey]
+	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
 		//get address of prometheus.
@@ -80,16 +80,16 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		if !exists {
 			stats, err = NewClusterWorker(ctx, promAddress, *collectInterval, MetricSender.Update, &clusterInst, pf)
 			if err == nil {
-				promMap[mapKey] = stats
+				workerMap[mapKey] = stats
 				stats.Start(ctx)
 			}
 		} else { //somehow this cluster's prometheus was already registered
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
 		}
 	} else { //if its anything other than ready just stop it
-		//try to remove it from the prommap
+		//try to remove it from the workerMap
 		if exists {
-			delete(promMap, mapKey)
+			delete(workerMap, mapKey)
 			stats.Stop(ctx)
 		}
 	}
@@ -98,25 +98,26 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
 	// This is for Docker deployments only
 	if new.Deployment != cloudcommon.AppDeploymentTypeDocker {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "New cluster instace", "clusterInst", new)
 		return
 	}
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
-	stats, exists := promMap[mapKey]
+	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
 		if !exists {
 			stats, err := NewClusterWorker(ctx, "", *collectInterval, MetricSender.Update, new, pf)
 			if err == nil {
-				promMap[mapKey] = stats
+				workerMap[mapKey] = stats
 				stats.Start(ctx)
 			}
 		} else { //somehow this cluster's prometheus was already registered
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, This cluster is already registered")
 		}
 	} else { //if its anything other than ready just stop it
-		//try to remove it from the prommap
+		//try to remove it from the workerMap
 		if exists {
-			delete(promMap, mapKey)
+			delete(workerMap, mapKey)
 			stats.Stop(ctx)
 		}
 	}
@@ -157,7 +158,7 @@ func main() {
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
-	promMap = make(map[string]*ClusterWorker)
+	workerMap = make(map[string]*ClusterWorker)
 	InitNginxScraper()
 
 	//register shepherd to receive appinst and clusterinst notifications from crm

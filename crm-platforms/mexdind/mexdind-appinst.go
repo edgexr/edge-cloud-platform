@@ -35,13 +35,18 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		return err
 	}
 
+	// The rest is k8s specific
+	if clusterInst.Deployment != cloudcommon.AppDeploymentTypeKubernetes {
+		return nil
+	}
+
 	// set up DNS
 	cluster, err := dind.FindCluster(names.ClusterName)
 	if err != nil {
 		return err
 	}
 	masterIP := cluster.MasterAddr
-	externalIP, err := s.GetDINDServiceIP(ctx, )
+	externalIP, err := s.GetDINDServiceIP(ctx)
 	getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 		action := mexos.DnsSvcAction{}
 
