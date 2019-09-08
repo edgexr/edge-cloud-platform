@@ -95,6 +95,10 @@ variable "console_domain_name" {
   type        = "string"
 }
 
+variable "jaeger_domain_name" {
+  default     = "jaeger-dev.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
