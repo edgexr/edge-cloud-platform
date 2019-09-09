@@ -20,7 +20,7 @@ import (
 var CloudletInfraCommon edgeproto.CloudletInfraCommon
 var OpenstackProps edgeproto.OpenStackProperties
 
-var MEXInfraVersion = "v2.0.2" //Stratus
+var MEXInfraVersion = "v2.0.3" //Stratus
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 var VaultAddr string
 
