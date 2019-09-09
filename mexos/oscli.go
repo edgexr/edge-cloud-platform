@@ -630,12 +630,28 @@ func OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
 		}
 	}
 
-	finfo, err := GetFlavorInfo(ctx, )
+	finfo, err := GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
 	info.Flavors = finfo
 	return nil
+}
+
+func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (Openstack) - Resources info and usage")
+	var limits []OSLimit
+	out, err := TimedOpenStackCommand(ctx, "openstack", "limits", "show", "--absolute", "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("cannot get limits from openstack, %v", err)
+		return nil, err
+	}
+	err = json.Unmarshal(out, &limits)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	return limits, nil
 }
 
 func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {

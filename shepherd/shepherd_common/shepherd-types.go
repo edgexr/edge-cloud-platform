@@ -7,6 +7,9 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
+// Prerequisite - install small edge-cloud utility on the VM running this docker containers
+var ResTrackerCmd = "resource-tracker"
+
 // Common interface to deal with AppMetrics
 // Pending EDGECLOUD-1183 implementation
 type AppStats interface {
@@ -55,6 +58,30 @@ type ClusterMetrics struct {
 	UdpRecvTS    *types.Timestamp
 	UdpRecvErr   uint64
 	UdpRecvErrTS *types.Timestamp
+}
+
+// This structure represents cloudlet utilization stats
+// It tracks the Max Available and currently used set of
+// resources
+type CloudletMetrics struct {
+	ComputeTS *types.Timestamp
+	// Total number of CPUs
+	VCpuMax uint64
+	// Current number of CPUs used
+	VCpuUsed uint64
+	// Total amount of RAM(in MB)
+	MemMax uint64
+	// Currently used RAM(in MB)
+	MemUsed uint64
+	// Total amount of Storage(in GB)
+	DiskUsed uint64
+	// Currently used Storage(in GB)
+	DiskMax   uint64
+	NetworkTS *types.Timestamp
+	// Total KBytes received
+	NetRecv uint64
+	// Total KBytes sent
+	NetSent uint64
 }
 
 type NginxMetrics struct {

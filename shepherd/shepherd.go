@@ -160,6 +160,7 @@ func main() {
 	}
 	workerMap = make(map[string]*ClusterWorker)
 	InitNginxScraper()
+	InitPlatformMetrics()
 
 	//register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitAppInstCache(&AppInstCache)

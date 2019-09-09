@@ -86,10 +86,10 @@ func TestDockerStats(t *testing.T) {
 		DockerClusterMetrics: string(buf),
 	}
 
-	testPromStats, err := NewClusterWorker(ctx, "", time.Second*1, nil, &testClusterInst, &platform)
+	testDockerStats, err := NewClusterWorker(ctx, "", time.Second*1, nil, &testClusterInst, &platform)
 	assert.Nil(t, err, "Get a patform client for unit test cloudlet")
-	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
-	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
+	clusterMetrics := testDockerStats.clusterStat.GetClusterStats(ctx)
+	appsMetrics := testDockerStats.clusterStat.GetAppStats(ctx)
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp1")

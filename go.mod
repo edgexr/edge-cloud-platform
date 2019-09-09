@@ -25,6 +25,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.8.5
 	github.com/hashicorp/vault v0.11.5
+	github.com/hashicorp/vault/sdk v0.1.13
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/influxdata/influxdb v1.6.2
 	github.com/jaegertracing/jaeger v1.13.1
@@ -60,7 +61,7 @@ require (
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107
-	google.golang.org/grpc v1.21.0
+	google.golang.org/grpc v1.22.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2
 	gortc.io/stun v1.21.0

@@ -20,9 +20,6 @@ import (
 var dockerStatsFormat = `"{\"App\":\"{{.Name}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
 var dockerStatsCmd = "docker stats --no-stream --format " + dockerStatsFormat
 
-// Prerequisite - install small edge-cloud utility on the VM running this docker containers
-var resTrackerCmd = "resource-tracker"
-
 type ContainerMem struct {
 	Raw     string
 	Percent string
@@ -214,9 +211,9 @@ func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[she
 
 func collectDockerClusterMetrics(ctx context.Context, p *DockerClusterStats) error {
 	// VM stats from Openstack might be a better idea going forward, but for now use a simple script to scrape the metrics on the RootLB
-	resp, err := p.client.Output(resTrackerCmd)
+	resp, err := p.client.Output(shepherd_common.ResTrackerCmd)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run", "cmd", resTrackerCmd, "err", err.Error())
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run", "cmd", shepherd_common.ResTrackerCmd, "err", err.Error())
 		return err
 	}
 	if err = json.Unmarshal([]byte(resp), &p.ClusterMetrics); err != nil {
