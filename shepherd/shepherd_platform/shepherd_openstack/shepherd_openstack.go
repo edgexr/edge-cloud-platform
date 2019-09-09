@@ -2,9 +2,12 @@ package shepherd_openstack
 
 import (
 	"context"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -51,4 +54,36 @@ func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto
 	} else {
 		return s.SharedClient, nil
 	}
+}
+
+//func (s *Platform) GetPlatformStats(ctx context.Context) ([]*edgeproto.Metric, error) {
+func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
+	cloudletMetric := shepherd_common.CloudletMetrics{}
+	limits, err := mexos.OSGetAllLimits(ctx)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "openstack limits", "error", err)
+		return cloudletMetric, err
+	}
+
+	cloudletMetric.ComputeTS, _ = types.TimestampProto(time.Now())
+	// Openstack limits for RAM and Disk is in GBs
+	for _, l := range limits {
+
+		if l.Name == "maxTotalRAMSize" {
+			cloudletMetric.MemMax = uint64(l.Value)
+		} else if l.Name == "totalRAMUsed" {
+			cloudletMetric.MemUsed = uint64(l.Value)
+		} else if l.Name == "maxTotalCores" {
+			cloudletMetric.VCpuMax = uint64(l.Value)
+		} else if l.Name == "totalCoresUsed" {
+			cloudletMetric.VCpuUsed = uint64(l.Value)
+		} else if l.Name == "maxTotalVolumeGigabytes" {
+			cloudletMetric.DiskMax = uint64(l.Value)
+		} else if l.Name == "totalGigabytesUsed" {
+			cloudletMetric.DiskUsed = uint64(l.Value)
+		}
+	}
+	// TODO - collect network data for all the VM instances
+
+	return cloudletMetric, nil
 }

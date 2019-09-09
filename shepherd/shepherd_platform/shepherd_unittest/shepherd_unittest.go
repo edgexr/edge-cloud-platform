@@ -7,14 +7,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 type Platform struct {
 	// Contains the response string for a given type of a request
 	DockerAppMetrics     string
 	DockerClusterMetrics string
+	// Cloudlet-level test data
+	CloudletMetrics string
 	// TODO - add Prometheus/nginx strings here EDGECLOUD-1252
 }
 
@@ -32,6 +36,16 @@ func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.Clus
 
 func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
 	return &UTClient{pf: s}, nil
+}
+
+// Query local system for the resource usage
+func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
+	metrics := shepherd_common.CloudletMetrics{}
+	if err := json.Unmarshal([]byte(s.CloudletMetrics), &metrics); err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to marshal unit test metrics", "stats", s.CloudletMetrics, "err", err.Error())
+		return metrics, err
+	}
+	return metrics, nil
 }
 
 // UTClient hijacks a set of commands and returns predetermined output
@@ -55,7 +69,7 @@ func (s *UTClient) getUTData(command string) (string, error) {
 	if strings.Contains(command, "docker stats ") {
 		// take the json with line breaks and compact it, as that's what the command expects
 		str = s.pf.DockerAppMetrics
-	} else if strings.Contains(command, "resource-tracker") {
+	} else if strings.Contains(command, shepherd_common.ResTrackerCmd) {
 		str = s.pf.DockerClusterMetrics
 	}
 	if str != "" {
