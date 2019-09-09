@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/vault/helper/pluginutil"
-	"github.com/hashicorp/vault/logical/plugin"
+	"github.com/hashicorp/vault/sdk/plugin"
 	"github.com/mobiledgex/edge-cloud-infra/vault/letsencrypt-plugin/letsencrypt"
 )
 

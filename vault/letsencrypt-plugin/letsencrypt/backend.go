@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/hashicorp/vault/logical"
-	"github.com/hashicorp/vault/logical/framework"
+	"github.com/hashicorp/vault/sdk/logical"
+	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/pkg/errors"
 )
 
@@ -64,17 +64,17 @@ Displays information about the plugin, such as the plugin version and git commit
 			},
 
 			&framework.Path{
-				Pattern:      "cert/" + framework.GenericNameRegex("domain"),
+				Pattern:      "cert/" + framework.MatchAllRegex("domain"),
 				HelpSynopsis: "Retrieve a letsencrypt cert",
 				HelpDescription: `
 
-Return the letsencrypt cert for the given domain, generating it if it is not present.
+Return the letsencrypt cert for the given domain(s), generating it if it is not present.
 
 `,
 				Fields: map[string]*framework.FieldSchema{
 					"domain": {
 						Type:		framework.TypeString,
-						Description:	"Domain for the cert",
+						Description:	"Domain(s) (comma-separated) for the cert",
 					},
 				},
 				Callbacks: map[logical.Operation]framework.OperationFunc{
