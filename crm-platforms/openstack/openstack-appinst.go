@@ -87,7 +87,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 					err = mexos.CreateAppDNS(ctx, client, names, getDnsAction)
 				} else {
 					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerNetwork("host"))
+					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerPublishPorts(), nginx.WithDockerNetwork(""))
 				}
 			}
 		}
