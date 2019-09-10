@@ -205,7 +205,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return fmt.Errorf("seeding docker secret failed, %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
-		err = dockermgmt.CreateAppInst(client, app, appInst)
+		err = dockermgmt.CreateAppInst(ctx, client, app, appInst)
 		if err != nil {
 			return fmt.Errorf("createAppInst error for docker %v", err)
 		}
@@ -276,7 +276,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-		return dockermgmt.DeleteAppInst(client, app, appInst)
+		return dockermgmt.DeleteAppInst(ctx, client, app, appInst)
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -299,7 +299,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-		return dockermgmt.UpdateAppInst(client, app, appInst)
+		return dockermgmt.UpdateAppInst(ctx, client, app, appInst)
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
 	}
