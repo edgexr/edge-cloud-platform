@@ -197,7 +197,7 @@ func parseNginxResp(resp string, metrics *shepherd_common.NginxMetrics) error {
 func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *shepherd_common.NginxMetrics) *edgeproto.Metric {
 	RemoveShepherdMetrics(data)
 	metric := edgeproto.Metric{}
-	metric.Name = "appinst-nginx"
+	metric.Name = "appinst-connections"
 	metric.Timestamp = *data.Ts
 	metric.AddTag("operator", cloudletKey.OperatorKey.Name)
 	metric.AddTag("cloudlet", cloudletKey.Name)
