@@ -44,16 +44,40 @@ func testPermShowAppInstMetrics(mcClient *ormclient.Client, uri, token, region, 
 	return data, status, err
 }
 
+func testPermShowCloudletMetrics(mcClient *ormclient.Client, uri, token, region, org, selector string) ([]interface{}, int, error) {
+	var out interface{}
+	var data []interface{}
+
+	in := &edgeproto.CloudletKey{}
+	in.Name = "testcloudlet"
+	in.OperatorKey.Name = org
+	dat := &ormapi.RegionCloudletMetrics{}
+	dat.Region = region
+	dat.Selector = selector
+	dat.Cloudlet = *in
+	status, err := mcClient.PostJsonStreamOut(uri+"/auth/metrics/cloudlet", token, dat, &out, func() {
+		data = append(data, out)
+	})
+	return data, status, err
+}
+
 func badPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	// AppInst Metrics tests
 	_, status, err := testPermShowAppInstMetrics(mcClient, uri, token, region, org, "cpu")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+	// ClusterInst Metrics tests
 	_, status, err = testPermShowClusterMetrics(mcClient, uri, token, region, org, "cpu")
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Cloudlet Metrics tests
+	_, status, err = testPermShowCloudletMetrics(mcClient, uri, token, region, org, "utilization")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
 func goodPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	// AppInst Metrics tests
 	list, status, err := testPermShowAppInstMetrics(mcClient, uri, token, region, org, "cpu")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -77,6 +101,7 @@ func goodPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Equal(t, 0, len(list))
 
+	// ClusterInst Metrics tests
 	list, status, err = testPermShowClusterMetrics(mcClient, uri, token, region, org, "cpu")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -93,4 +118,28 @@ func goodPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Contains(t, err.Error(), "Invalid selector in a request")
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Equal(t, 0, len(list))
+
+	// Cloudlet Metrics tests
+	list, status, err = testPermShowCloudletMetrics(mcClient, uri, token, region, org, "utilization")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotEqual(t, 0, len(list))
+	list, status, err = testPermShowCloudletMetrics(mcClient, uri, token, region, org, "network")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotEqual(t, 0, len(list))
+
+	// bad region check
+	list, status, err = testPermShowCloudletMetrics(mcClient, uri, token, "bad region", org, "utilization")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, 0, len(list))
+	// bad selector check
+	list, status, err = testPermShowCloudletMetrics(mcClient, uri, token, region, org, "bad selector")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Invalid selector in a request")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, 0, len(list))
+
 }

@@ -171,3 +171,12 @@ type RegionClusterInstMetrics struct {
 	EndTime     time.Time `json:",omitempty"`
 	Last        int       `json:",omitempty"`
 }
+
+type RegionCloudletMetrics struct {
+	Region    string
+	Cloudlet  edgeproto.CloudletKey
+	Selector  string
+	StartTime time.Time `json:",omitempty"`
+	EndTime   time.Time `json:",omitempty"`
+	Last      int       `json:",omitempty"`
+}
