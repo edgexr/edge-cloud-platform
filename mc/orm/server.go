@@ -230,6 +230,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	// Metrics api route use auth to serve a query to influxDB
 	auth.POST("/metrics/app", GetMetricsCommon)
 	auth.POST("/metrics/cluster", GetMetricsCommon)
+	auth.POST("/metrics/cloudlet", GetMetricsCommon)
+
 	go func() {
 		var err error
 		if config.TlsCertFile != "" {

@@ -156,6 +156,39 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, selectorStr strin
 	return buf.String()
 }
 
+// Query is a template with a specific set of if/else
+func CloudldetMetricsQuery(obj *ormapi.RegionCloudletMetrics, selectorStr string) string {
+	arg := influxQueryArgs{
+		Selector:     selectorStr,
+		Measurement:  "cloudlet-" + obj.Selector,
+		CloudletName: obj.Cloudlet.Name,
+		OperatorName: obj.Cloudlet.OperatorKey.Name,
+		Last:         obj.Last,
+	}
+
+	// Figure out the start/end time range for the query
+	if !obj.StartTime.IsZero() {
+		buf, err := obj.StartTime.MarshalText()
+		if err == nil {
+			arg.StartTime = string(buf)
+		}
+	}
+	if !obj.EndTime.IsZero() {
+		buf, err := obj.EndTime.MarshalText()
+		if err == nil {
+			arg.EndTime = string(buf)
+		}
+	}
+
+	// now that we know all the details of the query - build it
+	buf := bytes.Buffer{}
+	if err := influxDBTemplate.Execute(&buf, &arg); err != nil {
+		return ""
+	}
+	return buf.String()
+
+}
+
 // TODO: This function should be a streaming fucntion, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
 func metricsStream(ctx context.Context, rc *InfluxDBContext, dbQuery string, cb func(Data interface{})) error {
@@ -228,6 +261,16 @@ func parseAppSelectorString(selector string) (string, error) {
 	return "", fmt.Errorf("Invalid selector in a request")
 }
 
+func parseCloudletSelectorString(selector string) (string, error) {
+	switch selector {
+	case "utilization":
+		fallthrough
+	case "network":
+		return "*", nil
+	}
+	return "", fmt.Errorf("Invalid selector in a request")
+}
+
 // Common method to handle both app and cluster metrics
 func GetMetricsCommon(c echo.Context) error {
 	var cmd, org, selectorStr string
@@ -270,6 +313,22 @@ func GetMetricsCommon(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
 		cmd = ClusterMetricsQuery(&in, selectorStr)
+	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
+		in := ormapi.RegionCloudletMetrics{}
+		if err := c.Bind(&in); err != nil {
+			return c.JSON(http.StatusBadRequest, Msg("Invalid GET data"))
+		}
+		// Cloudlet details are required
+		if in.Cloudlet.Name == "" || in.Cloudlet.OperatorKey.Name == "" {
+			return c.JSON(http.StatusBadRequest, Msg("Cloudlet details must be present"))
+		}
+		rc.region = in.Region
+		org = in.Cloudlet.OperatorKey.Name
+		if selectorStr, err = parseCloudletSelectorString(in.Selector); err != nil {
+			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+		}
+		cmd = CloudldetMetricsQuery(&in, selectorStr)
+
 	} else {
 		return echo.ErrNotFound
 	}
