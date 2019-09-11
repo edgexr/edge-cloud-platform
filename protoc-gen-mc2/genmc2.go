@@ -510,6 +510,7 @@ var {{.MethodName}}Cmd = &Command{
 	OptionalArgs: strings.Join({{.InName}}OptionalArgs, " "),
 {{- end}}
 	AliasArgs: strings.Join({{.InName}}AliasArgs, " "),
+	SpecialArgs: &{{.InName}}SpecialArgs,
 	ReqData: &ormapi.Region{{.InName}}{},
 	ReplyData: &edgeproto.{{.OutName}}{},
 	Path: "/auth/ctrl/{{.MethodName}}",
@@ -674,7 +675,7 @@ func (g *GenMC2) generateMessageArgs(desc *generator.Descriptor, count int) {
 	}
 
 	// find all possible args
-	allargs := g.getArgs([]string{}, desc)
+	allargs, specialArgs := g.getArgs([]string{}, desc)
 
 	// generate required args (set by Key)
 	requiredMap := make(map[string]struct{})
@@ -744,26 +745,42 @@ func (g *GenMC2) generateMessageArgs(desc *generator.Descriptor, count int) {
 		g.P("\"", alias, "=", strings.ToLower(*message.Name), ".", arg, "\",")
 	}
 	g.P("}")
+
+	// generate special args
+	g.P("var ", message.Name, "SpecialArgs = map[string]string{")
+	for arg, argType := range specialArgs {
+		g.P("\"", strings.ToLower(arg), "\": \"", argType, "\",")
+	}
+	g.P("}")
 }
 
-func (g *GenMC2) getArgs(parents []string, desc *generator.Descriptor) []string {
+func (g *GenMC2) getArgs(parents []string, desc *generator.Descriptor) ([]string, map[string]string) {
 	allargs := []string{}
+	specialArgs := make(map[string]string)
 	msg := desc.DescriptorProto
 	for _, field := range msg.Field {
 		if field.Type == nil || field.OneofIndex != nil {
 			continue
 		}
 		name := generator.CamelCase(*field.Name)
-		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+		mapType := g.support.GetMapType(g.Generator, field)
+		if mapType != nil && mapType.FlagType != "" {
+			hierName := strings.Join(append(parents, name), ".")
+			specialArgs[hierName] = mapType.FlagType
+			allargs = append(allargs, hierName)
+		} else if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 			subDesc := gensupport.GetDesc(g.Generator, field.GetTypeName())
-			subArgs := g.getArgs(append(parents, name), subDesc)
+			subArgs, subSpecialArgs := g.getArgs(append(parents, name), subDesc)
 			allargs = append(allargs, subArgs...)
+			for k, v := range subSpecialArgs {
+				specialArgs[k] = v
+			}
 		} else {
 			hierName := strings.Join(append(parents, name), ".")
 			allargs = append(allargs, hierName)
 		}
 	}
-	return allargs
+	return allargs, specialArgs
 }
 
 func (g *GenMC2) generateClientInterface(service *descriptor.ServiceDescriptorProto) {

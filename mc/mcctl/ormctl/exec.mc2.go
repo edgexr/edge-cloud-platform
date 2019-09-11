@@ -26,6 +26,7 @@ var RunCommandCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, ExecRequestRequiredArgs...), " "),
 	OptionalArgs: strings.Join(ExecRequestOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
+	SpecialArgs:  &ExecRequestSpecialArgs,
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
 	Path:         "/auth/ctrl/RunCommand",
@@ -60,3 +61,4 @@ var ExecRequestAliasArgs = []string{
 	"answer=execrequest.answer",
 	"err=execrequest.err",
 }
+var ExecRequestSpecialArgs = map[string]string{}

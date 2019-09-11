@@ -23,6 +23,8 @@ type Input struct {
 	RequiredArgs []string
 	// Alias argument names, format is alias=real
 	AliasArgs []string
+	// Special argument names, format is arg=argType
+	SpecialArgs *map[string]string
 	// Password arg will prompt for password if not in args list
 	PasswordArg string
 	// Verify password if prompting
@@ -67,15 +69,31 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (map[string]interface{
 
 	// create generic data map from args
 	passwordFound := false
+	specialArgType := ""
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) != 2 {
 			return dat, fmt.Errorf("arg \"%s\" not name=val format", arg)
 		}
-		key := resolveAlias(kv[0], aliases)
+		var argVal interface{}
+		argKey, argVal := kv[0], kv[1]
+		if s.SpecialArgs != nil {
+			if argType, found := (*s.SpecialArgs)[argKey]; found {
+				specialArgType = argType
+				if argType == "StringToString" {
+					pair := argVal.(string)
+					kv := strings.SplitN(pair, "=", 2)
+					if len(kv) != 2 {
+						return dat, fmt.Errorf("value \"%s\" of arg \"%s\" must be formatted as key=value", pair, arg)
+					}
+					argVal = kv
+				}
+			}
+		}
+		key := resolveAlias(argKey, aliases)
 		delete(required, key)
-		setKeyVal(dat, key, kv[1])
+		setKeyVal(dat, key, argVal, specialArgType)
 		if key == s.PasswordArg {
 			passwordFound = true
 		}
@@ -97,7 +115,7 @@ func (s *Input) ParseArgs(args []string, obj interface{}) (map[string]interface{
 		if err != nil {
 			return dat, err
 		}
-		setKeyVal(dat, resolveAlias(s.PasswordArg, aliases), pw)
+		setKeyVal(dat, resolveAlias(s.PasswordArg, aliases), pw, "")
 	}
 
 	// Fill in obj with values. Also checks for args that
@@ -193,12 +211,16 @@ func MapJsonNamesT(args, js map[string]interface{}, t reflect.Type) error {
 			if v.Elem().Kind() == reflect.String {
 				strval = strconv.Quote(strval)
 			}
-			err := yaml.Unmarshal([]byte(strval), v.Interface())
-			if err != nil {
-				return fmt.Errorf("unmarshal err on %s, %v", key, err)
+			if sf.Type.Kind() == reflect.Map {
+				js[jsonName] = val
+			} else {
+				err := yaml.Unmarshal([]byte(strval), v.Interface())
+				if err != nil {
+					return fmt.Errorf("unmarshal err on %s, %v", key, err)
+				}
+				// elem to dereference it
+				js[jsonName] = v.Elem().Interface()
 			}
-			// elem to dereference it
-			js[jsonName] = v.Elem().Interface()
 		}
 	}
 	return nil
@@ -239,17 +261,31 @@ func resolveAlias(name string, aliases map[string]string) string {
 	return name
 }
 
-func setKeyVal(dat map[string]interface{}, key, val string) {
+func setKeyVal(dat map[string]interface{}, key string, val interface{}, argType string) {
 	parts := strings.Split(key, ".")
 	for ii, part := range parts {
 		if ii == len(parts)-1 {
 			// values passed in on the command line that
 			// have spaces will be quoted.
-			valnew, err := strconv.Unquote(val)
-			if err == nil {
-				dat[part] = valnew
+			if readVal, ok := val.(string); ok {
+				valnew, err := strconv.Unquote(readVal)
+				if err == nil {
+					dat[part] = valnew
+				} else {
+					dat[part] = readVal
+				}
 			} else {
-				dat[part] = val
+				if argType == "StringToString" {
+					if _, ok := dat[part]; !ok {
+						dat[part] = make(map[string]string)
+					}
+					valSlice := val.([]string)
+					mapVal := dat[part].(map[string]string)
+					mapVal[valSlice[0]] = valSlice[1]
+					dat[part] = mapVal
+				} else {
+					dat[part] = val
+				}
 			}
 		} else {
 			dat = getSubMap(dat, part)
