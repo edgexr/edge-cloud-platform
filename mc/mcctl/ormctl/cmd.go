@@ -33,6 +33,7 @@ type Command struct {
 	RequiredArgs         string
 	OptionalArgs         string
 	AliasArgs            string
+	SpecialArgs          *map[string]string
 	ReqData              interface{}
 	ReplyData            interface{}
 	Path                 string
@@ -114,6 +115,7 @@ func runE(c *Command) func(cmd *cobra.Command, args []string) error {
 			input := cli.Input{
 				RequiredArgs:   strings.Fields(c.RequiredArgs),
 				AliasArgs:      strings.Fields(c.AliasArgs),
+				SpecialArgs:    c.SpecialArgs,
 				PasswordArg:    c.PasswordArg,
 				VerifyPassword: c.VerifyPassword,
 				DecodeHook:     edgeproto.EnumDecodeHook,

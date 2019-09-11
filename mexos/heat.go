@@ -385,7 +385,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 	}
 	if ni != nil && ni.FloatingIPNet != "" {
 
-		fips, err := ListFloatingIPs(ctx, )
+		fips, err := ListFloatingIPs(ctx)
 		for _, f := range fips {
 			if f.Port == "" && f.FloatingIPAddress != "" {
 				vmp.FloatingIPAddressID = f.ID

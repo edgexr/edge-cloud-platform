@@ -28,6 +28,7 @@ var CreateAppInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:          &AppInstSpecialArgs,
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateAppInst",
@@ -40,6 +41,7 @@ var DeleteAppInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:          &AppInstSpecialArgs,
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteAppInst",
@@ -52,6 +54,7 @@ var UpdateAppInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:          &AppInstSpecialArgs,
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateAppInst",
@@ -64,6 +67,7 @@ var ShowAppInstCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppInstRequiredArgs, AppInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:  &AppInstSpecialArgs,
 	ReqData:      &ormapi.RegionAppInst{},
 	ReplyData:    &edgeproto.AppInst{},
 	Path:         "/auth/ctrl/ShowAppInst",
@@ -95,6 +99,7 @@ var AppInstKeyAliasArgs = []string{
 	"clusterinstkey.cloudletkey.name=appinstkey.clusterinstkey.cloudletkey.name",
 	"clusterinstkey.developer=appinstkey.clusterinstkey.developer",
 }
+var AppInstKeySpecialArgs = map[string]string{}
 var AppInstRequiredArgs = []string{
 	"developer",
 	"appname",
@@ -157,6 +162,7 @@ var AppInstAliasArgs = []string{
 	"forceupdate=appinst.forceupdate",
 	"updatemultiple=appinst.updatemultiple",
 }
+var AppInstSpecialArgs = map[string]string{}
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
 	"containerids",
@@ -166,6 +172,7 @@ var AppInstRuntimeAliasArgs = []string{
 	"containerids=appinstruntime.containerids",
 	"consoleurl=appinstruntime.consoleurl",
 }
+var AppInstRuntimeSpecialArgs = map[string]string{}
 var AppInstInfoRequiredArgs = []string{
 	"key.appkey.developerkey.name",
 	"key.appkey.name",
@@ -204,6 +211,7 @@ var AppInstInfoAliasArgs = []string{
 	"status.taskname=appinstinfo.status.taskname",
 	"status.stepname=appinstinfo.status.stepname",
 }
+var AppInstInfoSpecialArgs = map[string]string{}
 var AppInstMetricsRequiredArgs = []string{}
 var AppInstMetricsOptionalArgs = []string{
 	"something",
@@ -211,3 +219,4 @@ var AppInstMetricsOptionalArgs = []string{
 var AppInstMetricsAliasArgs = []string{
 	"something=appinstmetrics.something",
 }
+var AppInstMetricsSpecialArgs = map[string]string{}

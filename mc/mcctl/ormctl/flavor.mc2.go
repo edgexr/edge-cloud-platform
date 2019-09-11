@@ -26,6 +26,7 @@ var CreateFlavorCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateFlavor",
@@ -36,6 +37,7 @@ var DeleteFlavorCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteFlavor",
@@ -46,6 +48,7 @@ var UpdateFlavorCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateFlavor",
@@ -56,6 +59,7 @@ var ShowFlavorCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(FlavorRequiredArgs, FlavorOptionalArgs...), " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Flavor{},
 	Path:         "/auth/ctrl/ShowFlavor",
@@ -75,6 +79,7 @@ var FlavorKeyOptionalArgs = []string{
 var FlavorKeyAliasArgs = []string{
 	"name=flavorkey.name",
 }
+var FlavorKeySpecialArgs = map[string]string{}
 var FlavorRequiredArgs = []string{
 	"name",
 }
@@ -89,3 +94,4 @@ var FlavorAliasArgs = []string{
 	"vcpus=flavor.vcpus",
 	"disk=flavor.disk",
 }
+var FlavorSpecialArgs = map[string]string{}

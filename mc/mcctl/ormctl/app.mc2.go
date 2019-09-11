@@ -93,6 +93,7 @@ var CreateAppCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/CreateApp",
@@ -103,6 +104,7 @@ var DeleteAppCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/DeleteApp",
@@ -113,6 +115,7 @@ var UpdateAppCmd = &Command{
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
 	Path:         "/auth/ctrl/UpdateApp",
@@ -123,6 +126,7 @@ var ShowAppCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppRequiredArgs, AppOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.App{},
 	Path:         "/auth/ctrl/ShowApp",
@@ -146,6 +150,7 @@ var AppKeyAliasArgs = []string{
 	"name=appkey.name",
 	"version=appkey.version",
 }
+var AppKeySpecialArgs = map[string]string{}
 var ConfigFileRequiredArgs = []string{}
 var ConfigFileOptionalArgs = []string{
 	"kind",
@@ -155,6 +160,7 @@ var ConfigFileAliasArgs = []string{
 	"kind=configfile.kind",
 	"config=configfile.config",
 }
+var ConfigFileSpecialArgs = map[string]string{}
 var AppRequiredArgs = []string{
 	"developer",
 	"appname",
@@ -204,3 +210,4 @@ var AppAliasArgs = []string{
 	"officialfqdn=app.officialfqdn",
 	"md5sum=app.md5sum",
 }
+var AppSpecialArgs = map[string]string{}

@@ -26,6 +26,7 @@ var ShowCloudletRefsCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletRefsRequiredArgs, CloudletRefsOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletRefsAliasArgs, " "),
+	SpecialArgs:  &CloudletRefsSpecialArgs,
 	ReqData:      &ormapi.RegionCloudletRefs{},
 	ReplyData:    &edgeproto.CloudletRefs{},
 	Path:         "/auth/ctrl/ShowCloudletRefs",
@@ -40,6 +41,7 @@ var ShowClusterRefsCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ClusterRefsRequiredArgs, ClusterRefsOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ClusterRefsAliasArgs, " "),
+	SpecialArgs:  &ClusterRefsSpecialArgs,
 	ReqData:      &ormapi.RegionClusterRefs{},
 	ReplyData:    &edgeproto.ClusterRefs{},
 	Path:         "/auth/ctrl/ShowClusterRefs",
@@ -75,6 +77,7 @@ var CloudletRefsAliasArgs = []string{
 	"useddynamicips=cloudletrefs.useddynamicips",
 	"usedstaticips=cloudletrefs.usedstaticips",
 }
+var CloudletRefsSpecialArgs = map[string]string{}
 var RootLbPortsEntryRequiredArgs = []string{}
 var RootLbPortsEntryOptionalArgs = []string{
 	"key",
@@ -84,6 +87,7 @@ var RootLbPortsEntryAliasArgs = []string{
 	"key=rootlbportsentry.key",
 	"value=rootlbportsentry.value",
 }
+var RootLbPortsEntrySpecialArgs = map[string]string{}
 var ClusterRefsRequiredArgs = []string{
 	"key.clusterkey.name",
 	"key.cloudletkey.operatorkey.name",
@@ -110,3 +114,4 @@ var ClusterRefsAliasArgs = []string{
 	"usedvcores=clusterrefs.usedvcores",
 	"useddisk=clusterrefs.useddisk",
 }
+var ClusterRefsSpecialArgs = map[string]string{}

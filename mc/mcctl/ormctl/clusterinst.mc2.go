@@ -26,6 +26,7 @@ var CreateClusterInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:          &ClusterInstSpecialArgs,
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateClusterInst",
@@ -38,6 +39,7 @@ var DeleteClusterInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:          &ClusterInstSpecialArgs,
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteClusterInst",
@@ -50,6 +52,7 @@ var UpdateClusterInstCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:          &ClusterInstSpecialArgs,
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateClusterInst",
@@ -62,6 +65,7 @@ var ShowClusterInstCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ClusterInstRequiredArgs, ClusterInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:  &ClusterInstSpecialArgs,
 	ReqData:      &ormapi.RegionClusterInst{},
 	ReplyData:    &edgeproto.ClusterInst{},
 	Path:         "/auth/ctrl/ShowClusterInst",
@@ -87,6 +91,7 @@ var ClusterInstKeyAliasArgs = []string{
 	"cloudletkey.name=clusterinstkey.cloudletkey.name",
 	"developer=clusterinstkey.developer",
 }
+var ClusterInstKeySpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
 	"cluster",
 	"operator",
@@ -125,6 +130,7 @@ var ClusterInstAliasArgs = []string{
 	"status.taskname=clusterinst.status.taskname",
 	"status.stepname=clusterinst.status.stepname",
 }
+var ClusterInstSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
 	"key.cloudletkey.operatorkey.name",
@@ -153,3 +159,4 @@ var ClusterInstInfoAliasArgs = []string{
 	"status.taskname=clusterinstinfo.status.taskname",
 	"status.stepname=clusterinstinfo.status.stepname",
 }
+var ClusterInstInfoSpecialArgs = map[string]string{}

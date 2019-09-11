@@ -27,6 +27,7 @@ var CreateCloudletCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:          &CloudletSpecialArgs,
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateCloudlet",
@@ -39,6 +40,7 @@ var DeleteCloudletCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:          &CloudletSpecialArgs,
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteCloudlet",
@@ -51,6 +53,7 @@ var UpdateCloudletCmd = &Command{
 	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:          &CloudletSpecialArgs,
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateCloudlet",
@@ -63,6 +66,7 @@ var ShowCloudletCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletRequiredArgs, CloudletOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
 	ReqData:      &ormapi.RegionCloudlet{},
 	ReplyData:    &edgeproto.Cloudlet{},
 	Path:         "/auth/ctrl/ShowCloudlet",
@@ -80,6 +84,7 @@ var ShowCloudletInfoCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletInfoRequiredArgs, CloudletInfoOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
+	SpecialArgs:  &CloudletInfoSpecialArgs,
 	ReqData:      &ormapi.RegionCloudletInfo{},
 	ReplyData:    &edgeproto.CloudletInfo{},
 	Path:         "/auth/ctrl/ShowCloudletInfo",
@@ -98,6 +103,7 @@ var CloudletKeyAliasArgs = []string{
 	"operatorkey.name=cloudletkey.operatorkey.name",
 	"name=cloudletkey.name",
 }
+var CloudletKeySpecialArgs = map[string]string{}
 var OperationTimeLimitsRequiredArgs = []string{}
 var OperationTimeLimitsOptionalArgs = []string{
 	"createclusterinsttimeout",
@@ -115,6 +121,7 @@ var OperationTimeLimitsAliasArgs = []string{
 	"updateappinsttimeout=operationtimelimits.updateappinsttimeout",
 	"deleteappinsttimeout=operationtimelimits.deleteappinsttimeout",
 }
+var OperationTimeLimitsSpecialArgs = map[string]string{}
 var CloudletInfraCommonRequiredArgs = []string{}
 var CloudletInfraCommonOptionalArgs = []string{
 	"dockerregistry",
@@ -136,6 +143,7 @@ var CloudletInfraCommonAliasArgs = []string{
 	"networkscheme=cloudletinfracommon.networkscheme",
 	"dockerregistrysecret=cloudletinfracommon.dockerregistrysecret",
 }
+var CloudletInfraCommonSpecialArgs = map[string]string{}
 var AzurePropertiesRequiredArgs = []string{}
 var AzurePropertiesOptionalArgs = []string{
 	"location",
@@ -149,6 +157,7 @@ var AzurePropertiesAliasArgs = []string{
 	"username=azureproperties.username",
 	"password=azureproperties.password",
 }
+var AzurePropertiesSpecialArgs = map[string]string{}
 var GcpPropertiesRequiredArgs = []string{}
 var GcpPropertiesOptionalArgs = []string{
 	"project",
@@ -162,22 +171,24 @@ var GcpPropertiesAliasArgs = []string{
 	"serviceaccount=gcpproperties.serviceaccount",
 	"gcpauthkeyurl=gcpproperties.gcpauthkeyurl",
 }
+var GcpPropertiesSpecialArgs = map[string]string{}
 var OpenStackPropertiesRequiredArgs = []string{}
 var OpenStackPropertiesOptionalArgs = []string{
 	"osexternalnetworkname",
 	"osimagename",
 	"osexternalroutername",
 	"osmexnetwork",
-	"openrcvars.key",
-	"openrcvars.value",
+	"openrcvars",
 }
 var OpenStackPropertiesAliasArgs = []string{
 	"osexternalnetworkname=openstackproperties.osexternalnetworkname",
 	"osimagename=openstackproperties.osimagename",
 	"osexternalroutername=openstackproperties.osexternalroutername",
 	"osmexnetwork=openstackproperties.osmexnetwork",
-	"openrcvars.key=openstackproperties.openrcvars.key",
-	"openrcvars.value=openstackproperties.openrcvars.value",
+	"openrcvars=openstackproperties.openrcvars",
+}
+var OpenStackPropertiesSpecialArgs = map[string]string{
+	"openrcvars": "StringToString",
 }
 var OpenRcVarsEntryRequiredArgs = []string{}
 var OpenRcVarsEntryOptionalArgs = []string{
@@ -188,6 +199,7 @@ var OpenRcVarsEntryAliasArgs = []string{
 	"key=openrcvarsentry.key",
 	"value=openrcvarsentry.value",
 }
+var OpenRcVarsEntrySpecialArgs = map[string]string{}
 var CloudletInfraPropertiesRequiredArgs = []string{}
 var CloudletInfraPropertiesOptionalArgs = []string{
 	"cloudletkind",
@@ -196,8 +208,7 @@ var CloudletInfraPropertiesOptionalArgs = []string{
 	"openstackproperties.osimagename",
 	"openstackproperties.osexternalroutername",
 	"openstackproperties.osmexnetwork",
-	"openstackproperties.openrcvars.key",
-	"openstackproperties.openrcvars.value",
+	"openstackproperties.openrcvars",
 	"azureproperties.location",
 	"azureproperties.resourcegroup",
 	"azureproperties.username",
@@ -214,8 +225,7 @@ var CloudletInfraPropertiesAliasArgs = []string{
 	"openstackproperties.osimagename=cloudletinfraproperties.openstackproperties.osimagename",
 	"openstackproperties.osexternalroutername=cloudletinfraproperties.openstackproperties.osexternalroutername",
 	"openstackproperties.osmexnetwork=cloudletinfraproperties.openstackproperties.osmexnetwork",
-	"openstackproperties.openrcvars.key=cloudletinfraproperties.openstackproperties.openrcvars.key",
-	"openstackproperties.openrcvars.value=cloudletinfraproperties.openstackproperties.openrcvars.value",
+	"openstackproperties.openrcvars=cloudletinfraproperties.openstackproperties.openrcvars",
 	"azureproperties.location=cloudletinfraproperties.azureproperties.location",
 	"azureproperties.resourcegroup=cloudletinfraproperties.azureproperties.resourcegroup",
 	"azureproperties.username=cloudletinfraproperties.azureproperties.username",
@@ -224,6 +234,9 @@ var CloudletInfraPropertiesAliasArgs = []string{
 	"gcpproperties.zone=cloudletinfraproperties.gcpproperties.zone",
 	"gcpproperties.serviceaccount=cloudletinfraproperties.gcpproperties.serviceaccount",
 	"gcpproperties.gcpauthkeyurl=cloudletinfraproperties.gcpproperties.gcpauthkeyurl",
+}
+var CloudletInfraPropertiesSpecialArgs = map[string]string{
+	"openstackproperties.openrcvars": "StringToString",
 }
 var PlatformConfigRequiredArgs = []string{}
 var PlatformConfigOptionalArgs = []string{
@@ -250,6 +263,7 @@ var PlatformConfigAliasArgs = []string{
 	"testmode=platformconfig.testmode",
 	"span=platformconfig.span",
 }
+var PlatformConfigSpecialArgs = map[string]string{}
 var CloudletRequiredArgs = []string{
 	"operator",
 	"name",
@@ -272,6 +286,7 @@ var CloudletOptionalArgs = []string{
 	"notifysrvaddr",
 	"flavor.name",
 	"physicalname",
+	"envvar",
 }
 var CloudletAliasArgs = []string{
 	"operator=cloudlet.key.operatorkey.name",
@@ -307,7 +322,21 @@ var CloudletAliasArgs = []string{
 	"notifysrvaddr=cloudlet.notifysrvaddr",
 	"flavor.name=cloudlet.flavor.name",
 	"physicalname=cloudlet.physicalname",
+	"envvar=cloudlet.envvar",
 }
+var CloudletSpecialArgs = map[string]string{
+	"envvar": "StringToString",
+}
+var EnvVarEntryRequiredArgs = []string{}
+var EnvVarEntryOptionalArgs = []string{
+	"key",
+	"value",
+}
+var EnvVarEntryAliasArgs = []string{
+	"key=envvarentry.key",
+	"value=envvarentry.value",
+}
+var EnvVarEntrySpecialArgs = map[string]string{}
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{
 	"name",
@@ -321,6 +350,7 @@ var FlavorInfoAliasArgs = []string{
 	"ram=flavorinfo.ram",
 	"disk=flavorinfo.disk",
 }
+var FlavorInfoSpecialArgs = map[string]string{}
 var CloudletInfoRequiredArgs = []string{
 	"operator",
 	"name",
@@ -361,6 +391,7 @@ var CloudletInfoAliasArgs = []string{
 	"status.taskname=cloudletinfo.status.taskname",
 	"status.stepname=cloudletinfo.status.stepname",
 }
+var CloudletInfoSpecialArgs = map[string]string{}
 var CloudletMetricsRequiredArgs = []string{}
 var CloudletMetricsOptionalArgs = []string{
 	"foo",
@@ -368,3 +399,4 @@ var CloudletMetricsOptionalArgs = []string{
 var CloudletMetricsAliasArgs = []string{
 	"foo=cloudletmetrics.foo",
 }
+var CloudletMetricsSpecialArgs = map[string]string{}

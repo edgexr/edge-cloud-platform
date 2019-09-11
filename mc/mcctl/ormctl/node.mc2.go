@@ -26,6 +26,7 @@ var ShowNodeCmd = &Command{
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
 	AliasArgs:    strings.Join(NodeAliasArgs, " "),
+	SpecialArgs:  &NodeSpecialArgs,
 	ReqData:      &ormapi.RegionNode{},
 	ReplyData:    &edgeproto.Node{},
 	Path:         "/auth/ctrl/ShowNode",
@@ -48,6 +49,7 @@ var NodeKeyAliasArgs = []string{
 	"cloudletkey.operatorkey.name=nodekey.cloudletkey.operatorkey.name",
 	"cloudletkey.name=nodekey.cloudletkey.name",
 }
+var NodeKeySpecialArgs = map[string]string{}
 var NodeRequiredArgs = []string{
 	"key.name",
 	"key.nodetype",
@@ -72,3 +74,4 @@ var NodeAliasArgs = []string{
 	"buildauthor=node.buildauthor",
 	"hostname=node.hostname",
 }
+var NodeSpecialArgs = map[string]string{}
