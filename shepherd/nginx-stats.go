@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -51,7 +51,7 @@ func CollectNginxStats(ctx context.Context, appInst *edgeproto.AppInst) {
 	// add/remove from the list of nginx endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
 		scrapePoint := NginxScrapePoint{
-			App:     appInst.Key.AppKey.Name,
+			App:     k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
 			Cluster: appInst.Key.ClusterInstKey.ClusterKey.Name,
 			Dev:     appInst.Key.AppKey.DeveloperKey.Name,
 		}
@@ -120,16 +120,15 @@ func NginxScraper() {
 
 func QueryNginx(scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, error) {
 	// build the query
-	container := k8smgmt.NormalizeName(scrapePoint.App)
-	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", container, cloudcommon.NginxMetricsPort)
+	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.NginxMetricsPort)
 	if nginxUnitTest {
 		request = fmt.Sprintf("curl http://127.0.0.1:%d/nginx_metrics", nginxUnitTestPort)
 	}
 	resp, err := scrapePoint.Client.Output(request)
 	// if this is the first time, or the container got restarted, install curl (for old deployments)
 	if strings.Contains(resp, "executable file not found") {
-		log.DebugLog(log.DebugLevelMexos, "Installing curl onto docker container ", "Container", container)
-		installer := fmt.Sprintf("docker exec %s apt-get update; docker exec %s apt-get --assume-yes install curl", container, container)
+		log.DebugLog(log.DebugLevelMexos, "Installing curl onto docker container ", "Container", scrapePoint.App)
+		installer := fmt.Sprintf("docker exec %s apt-get update; docker exec %s apt-get --assume-yes install curl", scrapePoint.App, scrapePoint.App)
 		resp, err = scrapePoint.Client.Output(installer)
 		if err != nil {
 			return nil, fmt.Errorf("can't install curl on nginx container %s, %s, %v", *name, resp, err)

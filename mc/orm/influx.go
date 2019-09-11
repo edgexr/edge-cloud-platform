@@ -221,6 +221,8 @@ func parseAppSelectorString(selector string) (string, error) {
 	case "disk":
 		fallthrough
 	case "network":
+		fallthrough
+	case "nginx":
 		return "*", nil
 	}
 	return "", fmt.Errorf("Invalid selector in a request")
