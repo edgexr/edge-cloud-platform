@@ -91,7 +91,9 @@ var vmTemplateResources = `
             role: mex-agent-node 
             edgeproxy: {{.GatewayIP}}
             mex-flavor: {{.Flavor}}
+           {{if .MEXRouterIP}}
             privaterouter: {{.MEXRouterIP}}
+           {{- end}}
          user_data: |
 ` + reindent(vmCloudConfig, 12) + `
         {{- end}}
@@ -194,7 +196,7 @@ resources:
        {{end}}
         name: 
            mex-k8s-subnet-{{.ClusterName}}
-
+  {{if .MEXRouterName}}
    router-port:
        type: OS::Neutron::Port
        properties:
@@ -211,7 +213,7 @@ resources:
       properties:
          router:  {{.MEXRouterName}}
          port: { get_resource: router-port }
-
+  {{- end}}
    k8s-master-port:
       type: OS::Neutron::Port
       properties:
@@ -500,7 +502,10 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 		}
 	}
 	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	cp.MEXRouterName = GetCloudletExternalRouter()
+	rtr := GetCloudletExternalRouter()
+	if rtr != NoConfigExternalRouter {
+		cp.MEXRouterName = rtr
+	}
 	cp.MEXNetworkName = GetCloudletMexNetwork()
 	cp.ImageName = GetCloudletOSImage()
 	cp.SecurityGroup = GetCloudletSecurityGroup()
