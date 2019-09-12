@@ -45,6 +45,11 @@ func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.
 	cMetric := edgeproto.Metric{}
 	nMetric := edgeproto.Metric{}
 
+	// bail out if we get no metrics
+	if data == nil {
+		return nil
+	}
+
 	// If the timestamp for any given metric is null, don't send anything
 	if data.ComputeTS != nil {
 		cMetric.Name = "cloudlet-utilization"

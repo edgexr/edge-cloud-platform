@@ -265,6 +265,10 @@ func TestPromStats(t *testing.T) {
 
 	// Check callback is called
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ctx, MarshalClusterMetrics(clusterMetrics, testPromStats.clusterInstKey)[0])
+	testPromStats.send(ctx, MarshalClusterMetrics(testPromStats.clusterInstKey, clusterMetrics)[0])
 	assert.Equal(t, int(1), testMetricSent)
+
+	// Check null handling for Marshal functions
+	assert.Nil(t, MarshalClusterMetrics(testPromStats.clusterInstKey, nil), "Nil metrics should marshal into a nil")
+	assert.Nil(t, MarshalAppMetrics(&testAppKey, nil), "Nil metrics should marshal into a nil")
 }

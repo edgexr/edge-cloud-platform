@@ -28,7 +28,6 @@ var platformName = flag.String("platform", "", "Platform type of Cloudlet")
 var vaultAddr = flag.String("vaultAddr", "", "Address to vault")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
-var region = flag.String("region", "local", "region name")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 
 var defaultPrometheusPort = int32(9090)
