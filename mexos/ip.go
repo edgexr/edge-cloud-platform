@@ -20,6 +20,7 @@ type NetSpecInfo struct {
 	FloatingIPNet     string
 	FloatingIPSubnet  string
 	VnicType          string
+	RouterGatewayIP   string
 }
 
 //ParseNetSpec decodes netspec string
@@ -50,6 +51,8 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 			ni.FloatingIPSubnet = v
 		case "vnictype":
 			ni.VnicType = v
+		case "routergateway":
+			ni.RouterGatewayIP = v
 		default:
 			return nil, fmt.Errorf("unknown netspec item key: %s", k)
 		}

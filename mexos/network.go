@@ -78,6 +78,9 @@ func GetRouterDetailInterfaces(ctx context.Context, rd *OSRouterDetail) ([]OSRou
 
 func GetMexRouterIP(ctx context.Context) (string, error) {
 	rtr := GetCloudletExternalRouter()
+	if rtr == NoConfigExternalRouter {
+		return "", nil
+	}
 	rd, rderr := GetRouterDetail(ctx, rtr)
 	if rderr != nil {
 		return "", fmt.Errorf("can't get router detail for %s, %v", rtr, rderr)
@@ -127,20 +130,23 @@ func ValidateNetwork(ctx context.Context) error {
 		return fmt.Errorf("cannot find network %s", GetCloudletMexNetwork())
 	}
 
-	routers, err := ListRouters(ctx)
-	if err != nil {
-		return err
-	}
-
-	found = false
-	for _, r := range routers {
-		if r.Name == GetCloudletExternalRouter() {
-			found = true
-			break
+	rtr := GetCloudletExternalRouter()
+	if rtr != NoConfigExternalRouter {
+		routers, err := ListRouters(ctx)
+		if err != nil {
+			return err
 		}
-	}
-	if !found {
-		return fmt.Errorf("ext router %s not found", GetCloudletExternalRouter())
+
+		found = false
+		for _, r := range routers {
+			if r.Name == GetCloudletExternalRouter() {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("ext router %s not found", GetCloudletExternalRouter())
+		}
 	}
 
 	return nil
@@ -186,27 +192,30 @@ func PrepNetwork(ctx context.Context) error {
 		}
 	}
 
-	routers, err := ListRouters(ctx)
-	if err != nil {
-		return err
-	}
+	rtr := GetCloudletExternalRouter()
+	if rtr != NoConfigExternalRouter {
+		routers, err := ListRouters(ctx)
+		if err != nil {
+			return err
+		}
 
-	found = false
-	for _, r := range routers {
-		if r.Name == GetCloudletExternalRouter() {
-			found = true
-			break
+		found = false
+		for _, r := range routers {
+			if r.Name == GetCloudletExternalRouter() {
+				found = true
+				break
+			}
 		}
-	}
-	if !found {
-		// We need at least one router for our `mex` network and external network
-		err = CreateRouter(ctx, GetCloudletExternalRouter())
-		if err != nil {
-			return fmt.Errorf("cannot create the ext router %s, %v", GetCloudletExternalRouter(), err)
-		}
-		err = SetRouter(ctx, GetCloudletExternalRouter(), GetCloudletExternalNetwork())
-		if err != nil {
-			return fmt.Errorf("cannot set default network to router %s, %v", GetCloudletExternalRouter(), err)
+		if !found {
+			// We need at least one router for our `mex` network and external network
+			err = CreateRouter(ctx, GetCloudletExternalRouter())
+			if err != nil {
+				return fmt.Errorf("cannot create the ext router %s, %v", GetCloudletExternalRouter(), err)
+			}
+			err = SetRouter(ctx, GetCloudletExternalRouter(), GetCloudletExternalNetwork())
+			if err != nil {
+				return fmt.Errorf("cannot set default network to router %s, %v", GetCloudletExternalRouter(), err)
+			}
 		}
 	}
 

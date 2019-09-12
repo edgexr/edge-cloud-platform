@@ -32,25 +32,30 @@ func LBAddRouteAndSecRules(ctx context.Context, client pc.PlatformClient, rootLB
 	subnetNomask := fmt.Sprintf("%s.%s.0.0", ni.Octets[0], ni.Octets[1])
 	mask := "255.255.0.0"
 
-	rd, err := GetRouterDetail(ctx, GetCloudletExternalRouter())
-	if err != nil {
-		return err
-	}
-	gw, err := GetRouterDetailExternalGateway(rd)
-	if err != nil {
-		return err
-	}
-	fip := gw.ExternalFixedIPs
-	log.SpanLog(ctx, log.DebugLevelMexos, "external fixed ips", "ips", fip)
+	gatewayIP := ni.RouterGatewayIP
+	if gatewayIP == "" {
+		rd, err := GetRouterDetail(ctx, GetCloudletExternalRouter())
+		if err != nil {
+			return err
+		}
+		gw, err := GetRouterDetailExternalGateway(rd)
+		if err != nil {
+			return err
+		}
+		fip := gw.ExternalFixedIPs
+		log.SpanLog(ctx, log.DebugLevelMexos, "external fixed ips", "ips", fip)
 
-	if len(fip) != 1 {
-		return fmt.Errorf("Unexpected fixed ips for mex router %v", fip)
+		if len(fip) != 1 {
+			return fmt.Errorf("Unexpected fixed ips for mex router %v", fip)
+		}
+		gatewayIP = fip[0].IPAddress
 	}
 	//TODO: remote the hardcoded device name here; it should not be needed anyway
-	cmd := fmt.Sprintf("sudo ip route add %s via %s dev ens3", subnet, fip[0].IPAddress)
+	cmd := fmt.Sprintf("sudo ip route add %s via %s dev ens3", subnet, gatewayIP)
 	if err != nil {
 		return err
 	}
+
 	out, err := client.Output(cmd)
 	if err != nil {
 		if strings.Contains(out, "RTNETLINK") && strings.Contains(out, " exists") {
@@ -59,8 +64,9 @@ func LBAddRouteAndSecRules(ctx context.Context, client pc.PlatformClient, rootLB
 			return fmt.Errorf("can't add route to rootlb, %s, %s, %v", cmd, out, err)
 		}
 	}
+
 	// make the route persist by adding the following line if not already present via grep.
-	routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", subnetNomask, mask, fip[0].IPAddress)
+	routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", subnetNomask, mask, gatewayIP)
 	interfacesFile := "/etc/network/interfaces.d/50-cloud-init.cfg"
 	cmd = fmt.Sprintf("grep -l '%s' %s", routeAddLine, interfacesFile)
 	out, err = client.Output(cmd)
