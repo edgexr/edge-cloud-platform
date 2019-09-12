@@ -39,6 +39,8 @@ func TestCloudletStats(t *testing.T) {
 		Name:        "testcloudlet",
 	}
 
+	// Test null handling
+	assert.Nil(t, MarshalCloudletMetrics(nil))
 	testCloudletData.ComputeTS, err = types.TimestampProto(time.Now())
 	assert.Nil(t, err, "Couldn't get current timestamp")
 	testCloudletData.NetworkTS = testCloudletData.ComputeTS

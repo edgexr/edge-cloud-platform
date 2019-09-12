@@ -94,7 +94,7 @@ func (p *ClusterWorker) RunNotify() {
 					p.send(ctx, metric)
 				}
 			}
-			clusterMetrics := MarshalClusterMetrics(clusterStats, p.clusterInstKey)
+			clusterMetrics := MarshalClusterMetrics(p.clusterInstKey, clusterStats)
 			for _, metric := range clusterMetrics {
 				p.send(ctx, metric)
 			}
@@ -120,9 +120,14 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, name string, key *shephe
 	return &metric
 }
 
-func MarshalClusterMetrics(cm *shepherd_common.ClusterMetrics, key edgeproto.ClusterInstKey) []*edgeproto.Metric {
+func MarshalClusterMetrics(key edgeproto.ClusterInstKey, cm *shepherd_common.ClusterMetrics) []*edgeproto.Metric {
 	var metrics []*edgeproto.Metric
 	var metric *edgeproto.Metric
+
+	// bail out if we get no metrics
+	if cm == nil {
+		return nil
+	}
 
 	//nil timestamps mean the curl request failed. So do not write the metric in
 	if cm.CpuTS != nil {
@@ -183,6 +188,11 @@ func MarshalClusterMetrics(cm *shepherd_common.ClusterMetrics, key edgeproto.Clu
 func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_common.AppMetrics) []*edgeproto.Metric {
 	var metrics []*edgeproto.Metric
 	var metric *edgeproto.Metric
+
+	// bail out if we get no metrics
+	if stat == nil {
+		return nil
+	}
 
 	if stat.CpuTS != nil {
 		metric = newMetric(key.ClusterInstKey, "appinst-cpu", key, stat.CpuTS)
