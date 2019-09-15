@@ -9,6 +9,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (*Shepherd, []process.StartOp, error) {
@@ -82,7 +83,7 @@ func StopShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet) erro
 			log.SpanLog(ctx, log.DebugLevelMexos, "cannot stop Shepherdserver", "err", err)
 			return err
 		}
-		args = ShepherdProc.LookupArgs()
+		args = util.EscapeJson(ShepherdProc.LookupArgs())
 	}
 
 	// max wait time for process to go down gracefully, after which it is killed forcefully
