@@ -2,24 +2,25 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 
 func GetOrgCommand() *cobra.Command {
-	cmds := []*Command{&Command{
+	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
 		RequiredArgs: "name address phone type",
 		ReqData:      &ormapi.Organization{},
-		Path:         "/auth/org/create",
-	}, &Command{
+		Run:          runRest("/auth/org/create"),
+	}, &cli.Command{
 		Use:          "delete",
 		RequiredArgs: "name",
 		ReqData:      &ormapi.Organization{},
-		Path:         "/auth/org/delete",
-	}, &Command{
+		Run:          runRest("/auth/org/delete"),
+	}, &cli.Command{
 		Use:       "show",
 		ReplyData: &[]ormapi.Organization{},
-		Path:      "/auth/org/show",
+		Run:       runRest("/auth/org/show"),
 	}}
-	return genGroup("org", "manage organizations", cmds)
+	return cli.GenGroup("org", "manage organizations", cmds)
 }

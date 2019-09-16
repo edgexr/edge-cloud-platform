@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cli"
+	"github.com/mobiledgex/edge-cloud/cli"
 )
 
 // These functions wrap around mcctl and implement ormclient.Api.

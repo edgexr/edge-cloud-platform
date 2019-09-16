@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cli"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 
 func GetUserCommand() *cobra.Command {
-	cmds := []*Command{&Command{
+	cmds := []*cli.Command{&cli.Command{
 		Use:            "create",
 		RequiredArgs:   "name email",
 		OptionalArgs:   "nickname familyname givenname callbackurl",
@@ -18,71 +18,70 @@ func GetUserCommand() *cobra.Command {
 		PasswordArg:    "user.passhash",
 		VerifyPassword: true,
 		ReqData:        &ormapi.CreateUser{},
-		SendObj:        true,
-		Path:           "/usercreate",
-	}, &Command{
+		Run:            runRest("/usercreate"),
+	}, &cli.Command{
 		Use:          "delete",
 		RequiredArgs: "name",
 		ReqData:      &ormapi.User{},
-		Path:         "/auth/user/delete",
-	}, &Command{
+		Run:          runRest("/auth/user/delete"),
+	}, &cli.Command{
 		Use:          "show",
 		ReqData:      &ormapi.Organization{},
 		OptionalArgs: "orgname",
 		AliasArgs:    "orgname=name",
 		ReplyData:    &[]ormapi.User{},
-		Path:         "/auth/user/show",
-	}, &Command{
+		Run:          runRest("/auth/user/show"),
+	}, &cli.Command{
 		Use:       "current",
 		ReplyData: &ormapi.User{},
-		Path:      "/auth/user/current",
-	}, &Command{
+		Run:       runRest("/auth/user/current"),
+	}, &cli.Command{
 		Use:            "newpass",
 		PasswordArg:    "password",
 		VerifyPassword: true,
 		ReqData:        &ormapi.NewPassword{},
-		Path:           "/auth/user/newpass",
-	}, &Command{
+		Run:            runRest("/auth/user/newpass"),
+	}, &cli.Command{
 		Use:          "resendverify",
 		RequiredArgs: "email",
 		ReqData:      &ormapi.EmailRequest{},
-		Path:         "/resendverify",
-	}, &Command{
+		Run:          runRest("/resendverify"),
+	}, &cli.Command{
 		Use:          "verifyemail",
 		RequiredArgs: "token",
 		ReqData:      &ormapi.Token{},
-		Path:         "/verifyemail",
-	}, &Command{
+		Run:          runRest("/verifyemail"),
+	}, &cli.Command{
 		Use:          "passwordresetrequest",
 		RequiredArgs: "email",
 		ReqData:      &ormapi.EmailRequest{},
-		Path:         "/passwordresetrequest",
-	}, &Command{
+		Run:          runRest("/passwordresetrequest"),
+	}, &cli.Command{
 		Use:            "passwordreset",
 		RequiredArgs:   "token",
 		PasswordArg:    "password",
 		VerifyPassword: true,
 		ReqData:        &ormapi.PasswordReset{},
-		Path:           "/passwordreset",
-	}, &Command{
+		Run:            runRest("/passwordreset"),
+	}, &cli.Command{
 		Use:          "restricteduserupdate",
 		OptionalArgs: "name email emailverified familyname givenname nickname locked",
 		ReqData:      &ormapi.User{},
-		Path:         "/auth/restricted/user/update",
+		Run:          runRest("/auth/restricted/user/update"),
 	}}
-	return genGroup("user", "manage users", cmds)
+	return cli.GenGroup("user", "manage users", cmds)
 }
 
 func GetLoginCmd() *cobra.Command {
-	cmd := genCmd(&Command{
+	cmd := cli.Command{
 		Use:          "login",
 		RequiredArgs: "name",
 		Run:          runLogin,
-	})
-	return cmd
+	}
+	return cmd.GenCmd()
 }
 
-func runLogin(cmd *cobra.Command, args []string) error {
+func runLogin(c *cli.Command, args []string) error {
 	input := cli.Input{
 		RequiredArgs: []string{"name"},
 		PasswordArg:  "password",
@@ -98,7 +97,7 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if Parsable {
+	if cli.Parsable {
 		fmt.Printf("%s\n", token)
 		return nil
 	}
