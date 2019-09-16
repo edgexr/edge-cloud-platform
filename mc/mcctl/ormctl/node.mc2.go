@@ -6,13 +6,13 @@ package ormctl
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/googleapis/google/api"
 import _ "github.com/gogo/protobuf/gogoproto"
 import _ "github.com/mobiledgex/edge-cloud/protogen"
-import _ "github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,18 +21,19 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var ShowNodeCmd = &Command{
+var ShowNodeCmd = &cli.Command{
 	Use:          "ShowNode",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
 	AliasArgs:    strings.Join(NodeAliasArgs, " "),
 	SpecialArgs:  &NodeSpecialArgs,
+	Comments:     addRegionComment(NodeComments),
 	ReqData:      &ormapi.RegionNode{},
 	ReplyData:    &edgeproto.Node{},
-	Path:         "/auth/ctrl/ShowNode",
+	Run:          runRest("/auth/ctrl/ShowNode"),
 	StreamOut:    true,
 }
-var NodeApiCmds = []*Command{
+var NodeApiCmds = []*cli.Command{
 	ShowNodeCmd,
 }
 
@@ -48,6 +49,12 @@ var NodeKeyAliasArgs = []string{
 	"nodetype=nodekey.nodetype",
 	"cloudletkey.operatorkey.name=nodekey.cloudletkey.operatorkey.name",
 	"cloudletkey.name=nodekey.cloudletkey.name",
+}
+var NodeKeyComments = map[string]string{
+	"name":                         "Name or hostname of node",
+	"nodetype":                     "Node type, one of NodeUnknown, NodeDme, NodeCrm, NodeController",
+	"cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"cloudletkey.name":             "Name of the cloudlet",
 }
 var NodeKeySpecialArgs = map[string]string{}
 var NodeRequiredArgs = []string{
@@ -73,5 +80,16 @@ var NodeAliasArgs = []string{
 	"buildhead=node.buildhead",
 	"buildauthor=node.buildauthor",
 	"hostname=node.hostname",
+}
+var NodeComments = map[string]string{
+	"key.name":                         "Name or hostname of node",
+	"key.nodetype":                     "Node type, one of NodeUnknown, NodeDme, NodeCrm, NodeController",
+	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"key.cloudletkey.name":             "Name of the cloudlet",
+	"notifyid":                         "Id of client assigned by server (internal use only)",
+	"buildmaster":                      "Build Master Version",
+	"buildhead":                        "Build Head Version",
+	"buildauthor":                      "Build Author",
+	"hostname":                         "Hostname",
 }
 var NodeSpecialArgs = map[string]string{}

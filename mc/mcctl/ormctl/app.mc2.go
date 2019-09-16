@@ -73,12 +73,12 @@ package ormctl
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/googleapis/google/api"
 import _ "github.com/mobiledgex/edge-cloud/protogen"
-import _ "github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 import _ "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -88,51 +88,55 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAppCmd = &Command{
+var CreateAppCmd = &cli.Command{
 	Use:          "CreateApp",
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
+	Comments:     addRegionComment(AppComments),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Path:         "/auth/ctrl/CreateApp",
+	Run:          runRest("/auth/ctrl/CreateApp"),
 }
 
-var DeleteAppCmd = &Command{
+var DeleteAppCmd = &cli.Command{
 	Use:          "DeleteApp",
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
+	Comments:     addRegionComment(AppComments),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Path:         "/auth/ctrl/DeleteApp",
+	Run:          runRest("/auth/ctrl/DeleteApp"),
 }
 
-var UpdateAppCmd = &Command{
+var UpdateAppCmd = &cli.Command{
 	Use:          "UpdateApp",
 	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
+	Comments:     addRegionComment(AppComments),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Path:         "/auth/ctrl/UpdateApp",
+	Run:          runRest("/auth/ctrl/UpdateApp"),
 }
 
-var ShowAppCmd = &Command{
+var ShowAppCmd = &cli.Command{
 	Use:          "ShowApp",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppRequiredArgs, AppOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
+	Comments:     addRegionComment(AppComments),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.App{},
-	Path:         "/auth/ctrl/ShowApp",
+	Run:          runRest("/auth/ctrl/ShowApp"),
 	StreamOut:    true,
 }
-var AppApiCmds = []*Command{
+var AppApiCmds = []*cli.Command{
 	CreateAppCmd,
 	DeleteAppCmd,
 	UpdateAppCmd,
@@ -150,6 +154,11 @@ var AppKeyAliasArgs = []string{
 	"name=appkey.name",
 	"version=appkey.version",
 }
+var AppKeyComments = map[string]string{
+	"developerkey.name": "Organization or Company Name that a Developer is part of",
+	"name":              "App name",
+	"version":           "App version",
+}
 var AppKeySpecialArgs = map[string]string{}
 var ConfigFileRequiredArgs = []string{}
 var ConfigFileOptionalArgs = []string{
@@ -159,6 +168,10 @@ var ConfigFileOptionalArgs = []string{
 var ConfigFileAliasArgs = []string{
 	"kind=configfile.kind",
 	"config=configfile.config",
+}
+var ConfigFileComments = map[string]string{
+	"kind":   "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
+	"config": "config file contents or URI reference",
 }
 var ConfigFileSpecialArgs = map[string]string{}
 var AppRequiredArgs = []string{
@@ -170,7 +183,7 @@ var AppOptionalArgs = []string{
 	"imagepath",
 	"imagetype",
 	"accessports",
-	"defaultflavor.name",
+	"defaultflavor",
 	"authpublickey",
 	"command",
 	"annotations",
@@ -193,7 +206,7 @@ var AppAliasArgs = []string{
 	"imagepath=app.imagepath",
 	"imagetype=app.imagetype",
 	"accessports=app.accessports",
-	"defaultflavor.name=app.defaultflavor.name",
+	"defaultflavor=app.defaultflavor.name",
 	"authpublickey=app.authpublickey",
 	"command=app.command",
 	"annotations=app.annotations",
@@ -209,5 +222,29 @@ var AppAliasArgs = []string{
 	"revision=app.revision",
 	"officialfqdn=app.officialfqdn",
 	"md5sum=app.md5sum",
+}
+var AppComments = map[string]string{
+	"developer":           "Organization or Company Name that a Developer is part of",
+	"appname":             "App name",
+	"appvers":             "App version",
+	"imagepath":           "URI of where image resides",
+	"imagetype":           "Image type (see ImageType), one of ImageTypeUnknown, ImageTypeDocker, ImageTypeQcow",
+	"accessports":         "Comma separated list of protocol:port pairs that the App listens on. Numerical values must be decimal format. i.e. tcp:80,udp:10002,http:443",
+	"defaultflavor":       "Flavor name",
+	"authpublickey":       "public key used for authentication",
+	"command":             "Command that the container runs to start service",
+	"annotations":         "Annotations is a comma separated map of arbitrary key value pairs, for example: key1=val1,key2=val2,key3=val 3",
+	"deployment":          "Deployment type (kubernetes, docker, or vm)",
+	"deploymentmanifest":  "Deployment manifest is the deployment specific manifest file/config For docker deployment, this can be a docker-compose or docker run file For kubernetes deployment, this can be a kubernetes yaml or helm chart file",
+	"deploymentgenerator": "Deployment generator target to generate a basic deployment manifest",
+	"androidpackagename":  "Android package name used to match the App name from the Android package",
+	"delopt":              "Override actions to Controller, one of NoAutoDelete, AutoDelete",
+	"configs.kind":        "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
+	"configs.config":      "config file contents or URI reference",
+	"scalewithcluster":    "Option to run App on all nodes of the cluster",
+	"internalports":       "Should this app have access to outside world?",
+	"revision":            "Revision increments each time the App is updated",
+	"officialfqdn":        "Official FQDN is the FQDN that the app uses to connect by default",
+	"md5sum":              "MD5Sum of the VM-based app image",
 }
 var AppSpecialArgs = map[string]string{}

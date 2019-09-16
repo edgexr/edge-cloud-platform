@@ -6,12 +6,12 @@ package ormctl
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/googleapis/google/api"
 import _ "github.com/mobiledgex/edge-cloud/protogen"
-import _ "github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 import _ "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,57 +21,61 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateClusterInstCmd = &Command{
+var CreateClusterInstCmd = &cli.Command{
 	Use:                  "CreateClusterInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
+	Comments:             addRegionComment(ClusterInstComments),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/CreateClusterInst",
+	Run:                  runRest("/auth/ctrl/CreateClusterInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var DeleteClusterInstCmd = &Command{
+var DeleteClusterInstCmd = &cli.Command{
 	Use:                  "DeleteClusterInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
+	Comments:             addRegionComment(ClusterInstComments),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/DeleteClusterInst",
+	Run:                  runRest("/auth/ctrl/DeleteClusterInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var UpdateClusterInstCmd = &Command{
+var UpdateClusterInstCmd = &cli.Command{
 	Use:                  "UpdateClusterInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
+	Comments:             addRegionComment(ClusterInstComments),
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/UpdateClusterInst",
+	Run:                  runRest("/auth/ctrl/UpdateClusterInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var ShowClusterInstCmd = &Command{
+var ShowClusterInstCmd = &cli.Command{
 	Use:          "ShowClusterInst",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ClusterInstRequiredArgs, ClusterInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:  &ClusterInstSpecialArgs,
+	Comments:     addRegionComment(ClusterInstComments),
 	ReqData:      &ormapi.RegionClusterInst{},
 	ReplyData:    &edgeproto.ClusterInst{},
-	Path:         "/auth/ctrl/ShowClusterInst",
+	Run:          runRest("/auth/ctrl/ShowClusterInst"),
 	StreamOut:    true,
 }
-var ClusterInstApiCmds = []*Command{
+var ClusterInstApiCmds = []*cli.Command{
 	CreateClusterInstCmd,
 	DeleteClusterInstCmd,
 	UpdateClusterInstCmd,
@@ -90,6 +94,12 @@ var ClusterInstKeyAliasArgs = []string{
 	"cloudletkey.operatorkey.name=clusterinstkey.cloudletkey.operatorkey.name",
 	"cloudletkey.name=clusterinstkey.cloudletkey.name",
 	"developer=clusterinstkey.developer",
+}
+var ClusterInstKeyComments = map[string]string{
+	"clusterkey.name":              "Cluster name",
+	"cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"cloudletkey.name":             "Name of the cloudlet",
+	"developer":                    "Name of Developer that this cluster belongs to",
 }
 var ClusterInstKeySpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
@@ -130,6 +140,24 @@ var ClusterInstAliasArgs = []string{
 	"status.taskname=clusterinst.status.taskname",
 	"status.stepname=clusterinst.status.stepname",
 }
+var ClusterInstComments = map[string]string{
+	"cluster":     "Cluster name",
+	"operator":    "Company or Organization name of the operator",
+	"cloudlet":    "Name of the cloudlet",
+	"developer":   "Name of Developer that this cluster belongs to",
+	"flavor":      "Flavor name",
+	"liveness":    "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic",
+	"auto":        "Auto is set to true when automatically created by back-end (internal use only)",
+	"state":       "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare",
+	"errors":      "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
+	"crmoverride": "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"ipaccess":    "IP access type (RootLB Type), one of IpAccessUnknown, IpAccessDedicated, IpAccessDedicatedOrShared, IpAccessShared",
+	"allocatedip": "Allocated IP for dedicated access",
+	"nodeflavor":  "Cloudlet specific node flavor",
+	"deployment":  "Deployment type (kubernetes or docker)",
+	"nummasters":  "Number of k8s masters (In case of docker deployment, this field is not required)",
+	"numnodes":    "Number of k8s nodes (In case of docker deployment, this field is not required)",
+}
 var ClusterInstSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
@@ -158,5 +186,14 @@ var ClusterInstInfoAliasArgs = []string{
 	"status.maxtasks=clusterinstinfo.status.maxtasks",
 	"status.taskname=clusterinstinfo.status.taskname",
 	"status.stepname=clusterinstinfo.status.stepname",
+}
+var ClusterInstInfoComments = map[string]string{
+	"key.clusterkey.name":              "Cluster name",
+	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"key.cloudletkey.name":             "Name of the cloudlet",
+	"key.developer":                    "Name of Developer that this cluster belongs to",
+	"notifyid":                         "Id of client assigned by server (internal use only)",
+	"state":                            "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare",
+	"errors":                           "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{}

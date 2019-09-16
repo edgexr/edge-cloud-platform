@@ -6,12 +6,12 @@ package ormctl
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/googleapis/google/api"
 import _ "github.com/mobiledgex/edge-cloud/protogen"
-import _ "github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 import _ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 import _ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 import _ "github.com/gogo/protobuf/gogoproto"
@@ -23,57 +23,61 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAppInstCmd = &Command{
+var CreateAppInstCmd = &cli.Command{
 	Use:                  "CreateAppInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
+	Comments:             addRegionComment(AppInstComments),
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/CreateAppInst",
+	Run:                  runRest("/auth/ctrl/CreateAppInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var DeleteAppInstCmd = &Command{
+var DeleteAppInstCmd = &cli.Command{
 	Use:                  "DeleteAppInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
+	Comments:             addRegionComment(AppInstComments),
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/DeleteAppInst",
+	Run:                  runRest("/auth/ctrl/DeleteAppInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var UpdateAppInstCmd = &Command{
+var UpdateAppInstCmd = &cli.Command{
 	Use:                  "UpdateAppInst",
 	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
+	Comments:             addRegionComment(AppInstComments),
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Path:                 "/auth/ctrl/UpdateAppInst",
+	Run:                  runRest("/auth/ctrl/UpdateAppInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
 }
 
-var ShowAppInstCmd = &Command{
+var ShowAppInstCmd = &cli.Command{
 	Use:          "ShowAppInst",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppInstRequiredArgs, AppInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:  &AppInstSpecialArgs,
+	Comments:     addRegionComment(AppInstComments),
 	ReqData:      &ormapi.RegionAppInst{},
 	ReplyData:    &edgeproto.AppInst{},
-	Path:         "/auth/ctrl/ShowAppInst",
+	Run:          runRest("/auth/ctrl/ShowAppInst"),
 	StreamOut:    true,
 }
-var AppInstApiCmds = []*Command{
+var AppInstApiCmds = []*cli.Command{
 	CreateAppInstCmd,
 	DeleteAppInstCmd,
 	UpdateAppInstCmd,
@@ -98,6 +102,15 @@ var AppInstKeyAliasArgs = []string{
 	"clusterinstkey.cloudletkey.operatorkey.name=appinstkey.clusterinstkey.cloudletkey.operatorkey.name",
 	"clusterinstkey.cloudletkey.name=appinstkey.clusterinstkey.cloudletkey.name",
 	"clusterinstkey.developer=appinstkey.clusterinstkey.developer",
+}
+var AppInstKeyComments = map[string]string{
+	"appkey.developerkey.name":                    "Organization or Company Name that a Developer is part of",
+	"appkey.name":                                 "App name",
+	"appkey.version":                              "App version",
+	"clusterinstkey.clusterkey.name":              "Cluster name",
+	"clusterinstkey.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"clusterinstkey.cloudletkey.name":             "Name of the cloudlet",
+	"clusterinstkey.developer":                    "Name of Developer that this cluster belongs to",
 }
 var AppInstKeySpecialArgs = map[string]string{}
 var AppInstRequiredArgs = []string{
@@ -162,6 +175,40 @@ var AppInstAliasArgs = []string{
 	"forceupdate=appinst.forceupdate",
 	"updatemultiple=appinst.updatemultiple",
 }
+var AppInstComments = map[string]string{
+	"developer":                      "Organization or Company Name that a Developer is part of",
+	"appname":                        "App name",
+	"appvers":                        "App version",
+	"cluster":                        "Cluster name",
+	"operator":                       "Company or Organization name of the operator",
+	"cloudlet":                       "Name of the cloudlet",
+	"clusterdeveloper":               "Name of Developer that this cluster belongs to",
+	"cloudletloc.latitude":           "latitude in WGS 84 coordinates",
+	"cloudletloc.longitude":          "longitude in WGS 84 coordinates",
+	"cloudletloc.horizontalaccuracy": "horizontal accuracy (radius in meters)",
+	"cloudletloc.verticalaccuracy":   "veritical accuracy (meters)",
+	"cloudletloc.altitude":           "On android only lat and long are guaranteed to be supplied altitude in meters",
+	"cloudletloc.course":             "course (IOS) / bearing (Android) (degrees east relative to true north)",
+	"cloudletloc.speed":              "speed (IOS) / velocity (Android) (meters/sec)",
+	"uri":                            "Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.",
+	"liveness":                       "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic",
+	"mappedports.proto":              "TCP (L4), UDP (L4), or HTTP (L7) protocol, one of LProtoUnknown, LProtoTcp, LProtoUdp, LProtoHttp",
+	"mappedports.internalport":       "Container port",
+	"mappedports.publicport":         "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"mappedports.pathprefix":         "Public facing path for HTTP L7 access.",
+	"mappedports.fqdnprefix":         "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
+	"mappedports.endport":            "A non-zero end port indicates this is a port range from internal port to end port, inclusive.",
+	"flavor.name":                    "Flavor name",
+	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare",
+	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
+	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"runtimeinfo.containerids":       "List of container names",
+	"runtimeinfo.consoleurl":         "URL to access VM console",
+	"autoclusteripaccess":            "IpAccess for auto-clusters. Ignored otherwise., one of IpAccessUnknown, IpAccessDedicated, IpAccessDedicatedOrShared, IpAccessShared",
+	"revision":                       "Revision increments each time the App is updated.  Updating the App Instance will sync the revision with that of the App",
+	"forceupdate":                    "Force Appinst update when UpdateAppInst is done if revision matches",
+	"updatemultiple":                 "Allow multiple instances to be updated at once",
+}
 var AppInstSpecialArgs = map[string]string{}
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
@@ -171,6 +218,10 @@ var AppInstRuntimeOptionalArgs = []string{
 var AppInstRuntimeAliasArgs = []string{
 	"containerids=appinstruntime.containerids",
 	"consoleurl=appinstruntime.consoleurl",
+}
+var AppInstRuntimeComments = map[string]string{
+	"containerids": "List of container names",
+	"consoleurl":   "URL to access VM console",
 }
 var AppInstRuntimeSpecialArgs = map[string]string{}
 var AppInstInfoRequiredArgs = []string{
@@ -211,6 +262,20 @@ var AppInstInfoAliasArgs = []string{
 	"status.taskname=appinstinfo.status.taskname",
 	"status.stepname=appinstinfo.status.stepname",
 }
+var AppInstInfoComments = map[string]string{
+	"key.appkey.developerkey.name":                    "Organization or Company Name that a Developer is part of",
+	"key.appkey.name":                                 "App name",
+	"key.appkey.version":                              "App version",
+	"key.clusterinstkey.clusterkey.name":              "Cluster name",
+	"key.clusterinstkey.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"key.clusterinstkey.cloudletkey.name":             "Name of the cloudlet",
+	"key.clusterinstkey.developer":                    "Name of Developer that this cluster belongs to",
+	"notifyid":                                        "Id of client assigned by server (internal use only)",
+	"state":                                           "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare",
+	"errors":                                          "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
+	"runtimeinfo.containerids":                        "List of container names",
+	"runtimeinfo.consoleurl":                          "URL to access VM console",
+}
 var AppInstInfoSpecialArgs = map[string]string{}
 var AppInstMetricsRequiredArgs = []string{}
 var AppInstMetricsOptionalArgs = []string{
@@ -218,5 +283,8 @@ var AppInstMetricsOptionalArgs = []string{
 }
 var AppInstMetricsAliasArgs = []string{
 	"something=appinstmetrics.something",
+}
+var AppInstMetricsComments = map[string]string{
+	"something": "what goes here? Note that metrics for grpc calls can be done by a prometheus interceptor in grpc, so adding call metrics here may be redundant unless theyre needed for billing.",
 }
 var AppInstMetricsSpecialArgs = map[string]string{}

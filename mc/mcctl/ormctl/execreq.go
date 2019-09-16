@@ -5,8 +5,8 @@ import (
 	fmt "fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cli"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	edgecli "github.com/mobiledgex/edge-cloud/edgectl/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	webrtc "github.com/pion/webrtc/v2"
@@ -32,16 +32,13 @@ var runCommandAliasArgs = []string{
 }
 
 func GetRunCommandCmd() *cobra.Command {
-	cmd := genCmd(&Command{
-		Use:          "RunCommand",
-		RequiredArgs: runCommandRequiredArgs,
-		Run:          runExecRequest,
-		OptionalArgs: runCommandOptionalArgs,
-	})
-	return cmd
+	RunCommandCmd.Run = runExecRequest
+	RunCommandCmd.RequiredArgs = runCommandRequiredArgs
+	RunCommandCmd.OptionalArgs = runCommandOptionalArgs
+	return RunCommandCmd.GenCmd()
 }
 
-func runExecRequest(cmd *cobra.Command, args []string) error {
+func runExecRequest(c *cli.Command, args []string) error {
 	input := cli.Input{
 		RequiredArgs: strings.Split(runCommandRequiredArgs, " "),
 		AliasArgs:    runCommandAliasArgs,
@@ -77,7 +74,7 @@ func runExecRequest(cmd *cobra.Command, args []string) error {
 
 		reply := edgeproto.ExecRequest{}
 		st, err := client.PostJson(getUri()+"/auth/ctrl/RunCommand", Token, &req, &reply)
-		err = check(st, err, nil)
+		err = check(c, st, err, nil)
 		if err != nil {
 			return nil, err
 		}

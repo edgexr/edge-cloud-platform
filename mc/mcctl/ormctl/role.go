@@ -2,36 +2,37 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 
 func GetRoleCommand() *cobra.Command {
-	cmds := []*Command{&Command{
+	cmds := []*cli.Command{&cli.Command{
 		Use:       "names",
 		ReplyData: &[]string{},
-		Path:      "/auth/role/show",
-	}, &Command{
+		Run:       runRest("/auth/role/show"),
+	}, &cli.Command{
 		Use:          "add",
 		RequiredArgs: "org username role",
 		ReqData:      &ormapi.Role{},
-		Path:         "/auth/role/adduser",
-	}, &Command{
+		Run:          runRest("/auth/role/adduser"),
+	}, &cli.Command{
 		Use:          "remove",
 		RequiredArgs: "org username role",
 		ReqData:      &ormapi.Role{},
-		Path:         "/auth/role/removeuser",
-	}, &Command{
+		Run:          runRest("/auth/role/removeuser"),
+	}, &cli.Command{
 		Use:       "show",
 		ReplyData: &[]ormapi.Role{},
-		Path:      "/auth/role/showuser",
-	}, &Command{
+		Run:       runRest("/auth/role/showuser"),
+	}, &cli.Command{
 		Use:       "assignment",
 		ReplyData: &[]ormapi.Role{},
-		Path:      "/auth/role/assignment/show",
-	}, &Command{
+		Run:       runRest("/auth/role/assignment/show"),
+	}, &cli.Command{
 		Use:       "perms",
 		ReplyData: &[]ormapi.RolePerm{},
-		Path:      "/auth/role/perms/show",
+		Run:       runRest("/auth/role/perms/show"),
 	}}
-	return genGroup("role", "manage user roles", cmds)
+	return cli.GenGroup("role", "manage user roles", cmds)
 }

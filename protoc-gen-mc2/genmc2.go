@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 	"github.com/mobiledgex/edge-cloud/gensupport"
-	"github.com/mobiledgex/edge-cloud/protoc-gen-cmd/protocmd"
 	"github.com/mobiledgex/edge-cloud/protogen"
 )
 
@@ -41,6 +40,7 @@ type GenMC2 struct {
 	importGrpcStatus     bool
 	importStrings        bool
 	importLog            bool
+	importCli            bool
 }
 
 func (g *GenMC2) Name() string {
@@ -95,6 +95,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importOrmapi {
 		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormapi")
 	}
+	if g.importCli {
+		g.PrintImport("", "github.com/mobiledgex/edge-cloud/cli")
+	}
 	if g.importGrpcStatus {
 		g.PrintImport("", "google.golang.org/grpc/status")
 	}
@@ -113,6 +116,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importOrmapi = false
 	g.importGrpcStatus = false
 	g.importLog = false
+	g.importCli = false
 
 	g.support.InitFile()
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
@@ -140,7 +144,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	}
 	if g.genctl {
 		for ii, msg := range file.Messages() {
-			g.generateMessageArgs(msg, ii)
+			gensupport.GenerateMessageArgs(g.Generator, &g.support, msg, true, ii)
 		}
 	}
 
@@ -243,7 +247,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		ShowOrg:              "res." + apiVals[2],
 		OrgValid:             true,
 		Outstream:            gensupport.ServerStreaming(method),
-		StreamOutIncremental: GetStreamOutIncremental(method),
+		StreamOutIncremental: gensupport.GetStreamOutIncremental(method),
 	}
 	if apiVals[2] == "" {
 		args.Org = `""`
@@ -274,9 +278,10 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		tmpl = g.tmplMethodCtl
 		g.importOrmapi = true
 		g.importStrings = true
+		g.importCli = true
 	} else if g.gencliwrapper {
 		tmpl = g.tmplMethodCliWrapper
-		args.NoConfig = GetNoConfig(in.DescriptorProto)
+		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto)
 		g.importOrmapi = true
 		g.importStrings = true
 	} else {
@@ -500,7 +505,7 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 `
 
 var tmplMethodCtl = `
-var {{.MethodName}}Cmd = &Command{
+var {{.MethodName}}Cmd = &cli.Command{
 	Use: "{{.MethodName}}",
 {{- if .Show}}
 	RequiredArgs: "region",
@@ -511,9 +516,10 @@ var {{.MethodName}}Cmd = &Command{
 {{- end}}
 	AliasArgs: strings.Join({{.InName}}AliasArgs, " "),
 	SpecialArgs: &{{.InName}}SpecialArgs,
+	Comments: addRegionComment({{.InName}}Comments),
 	ReqData: &ormapi.Region{{.InName}}{},
 	ReplyData: &edgeproto.{{.OutName}}{},
-	Path: "/auth/ctrl/{{.MethodName}}",
+	Run: runRest("/auth/ctrl/{{.MethodName}}"),
 {{- if .Outstream}}
 	StreamOut: true,
 {{- end}}
@@ -649,140 +655,6 @@ func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1,
 }
 `
 
-func (g *GenMC2) generateMessageArgs(desc *generator.Descriptor, count int) {
-	message := desc.DescriptorProto
-
-	aliasSpec := GetAlias(message)
-	aliasMap := make(map[string]string)
-	for _, a := range strings.Split(aliasSpec, ",") {
-		// format is alias=real
-		kv := strings.SplitN(strings.TrimSpace(a), "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		// real -> alias
-		aliasMap[kv[1]] = kv[0]
-	}
-	noconfig := GetNoConfig(message)
-	noconfigMap := make(map[string]struct{})
-	for _, nc := range strings.Split(noconfig, ",") {
-		noconfigMap[nc] = struct{}{}
-	}
-	notreq := GetNotreq(message)
-	notreqMap := make(map[string]struct{})
-	for _, nr := range strings.Split(notreq, ",") {
-		notreqMap[nr] = struct{}{}
-	}
-
-	// find all possible args
-	allargs, specialArgs := g.getArgs([]string{}, desc)
-
-	// generate required args (set by Key)
-	requiredMap := make(map[string]struct{})
-	g.P("var ", message.Name, "RequiredArgs = []string{")
-	for _, arg := range allargs {
-		if !strings.HasPrefix(arg, "Key.") {
-			continue
-		}
-		if _, found := notreqMap[arg]; found {
-			continue
-		}
-		parts := strings.Split(arg, ".")
-		if _, found := notreqMap[parts[0]]; found {
-			continue
-		}
-
-		requiredMap[arg] = struct{}{}
-		// use alias if exists
-		str, ok := aliasMap[arg]
-		if !ok {
-			str = arg
-		}
-		g.P("\"", strings.ToLower(str), "\",")
-	}
-	g.P("}")
-
-	// generate optional args
-	g.P("var ", message.Name, "OptionalArgs = []string{")
-	for _, arg := range allargs {
-		if arg == "Fields" {
-			continue
-		}
-		if _, found := requiredMap[arg]; found {
-			continue
-		}
-		if _, found := noconfigMap[arg]; found {
-			continue
-		}
-		parts := strings.Split(arg, ".")
-		if _, found := noconfigMap[parts[0]]; found {
-			continue
-		}
-		str, ok := aliasMap[arg]
-		if !ok {
-			str = arg
-		}
-		g.P("\"", strings.ToLower(str), "\",")
-	}
-	g.P("}")
-
-	// generate aliases - flatten region hierarchy as well
-	g.P("var ", message.Name, "AliasArgs = []string{")
-	for _, arg := range allargs {
-		if arg == "Fields" {
-			continue
-		}
-		// keep noconfig ones here because aliases
-		// may be used for tabular output later.
-
-		alias, ok := aliasMap[arg]
-		if !ok {
-			alias = arg
-		}
-		arg = strings.ToLower(arg)
-		alias = strings.ToLower(alias)
-
-		g.P("\"", alias, "=", strings.ToLower(*message.Name), ".", arg, "\",")
-	}
-	g.P("}")
-
-	// generate special args
-	g.P("var ", message.Name, "SpecialArgs = map[string]string{")
-	for arg, argType := range specialArgs {
-		g.P("\"", strings.ToLower(arg), "\": \"", argType, "\",")
-	}
-	g.P("}")
-}
-
-func (g *GenMC2) getArgs(parents []string, desc *generator.Descriptor) ([]string, map[string]string) {
-	allargs := []string{}
-	specialArgs := make(map[string]string)
-	msg := desc.DescriptorProto
-	for _, field := range msg.Field {
-		if field.Type == nil || field.OneofIndex != nil {
-			continue
-		}
-		name := generator.CamelCase(*field.Name)
-		mapType := g.support.GetMapType(g.Generator, field)
-		if mapType != nil && mapType.FlagType != "" {
-			hierName := strings.Join(append(parents, name), ".")
-			specialArgs[hierName] = mapType.FlagType
-			allargs = append(allargs, hierName)
-		} else if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-			subDesc := gensupport.GetDesc(g.Generator, field.GetTypeName())
-			subArgs, subSpecialArgs := g.getArgs(append(parents, name), subDesc)
-			allargs = append(allargs, subArgs...)
-			for k, v := range subSpecialArgs {
-				specialArgs[k] = v
-			}
-		} else {
-			hierName := strings.Join(append(parents, name), ".")
-			allargs = append(allargs, hierName)
-		}
-	}
-	return allargs, specialArgs
-}
-
 func (g *GenMC2) generateClientInterface(service *descriptor.ServiceDescriptorProto) {
 	if !hasMc2Api(service) {
 		return
@@ -812,7 +684,7 @@ func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
 	if !hasMc2Api(service) {
 		return
 	}
-	g.P("var ", service.Name, "Cmds = []*Command{")
+	g.P("var ", service.Name, "Cmds = []*cli.Command{")
 	for _, method := range service.Method {
 		if GetMc2Api(method) == "" {
 			continue
@@ -850,20 +722,4 @@ func GetGenerateCud(message *descriptor.DescriptorProto) bool {
 
 func GetGenerateShowTest(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateShowTest, false)
-}
-
-func GetStreamOutIncremental(method *descriptor.MethodDescriptorProto) bool {
-	return proto.GetBoolExtension(method.Options, protocmd.E_StreamOutIncremental, false)
-}
-
-func GetNoConfig(message *descriptor.DescriptorProto) string {
-	return gensupport.GetStringExtension(message.Options, protocmd.E_Noconfig, "")
-}
-
-func GetNotreq(message *descriptor.DescriptorProto) string {
-	return gensupport.GetStringExtension(message.Options, protocmd.E_Notreq, "")
-}
-
-func GetAlias(message *descriptor.DescriptorProto) string {
-	return gensupport.GetStringExtension(message.Options, protocmd.E_Alias, "")
 }

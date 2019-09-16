@@ -2,23 +2,24 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 
 func GetConfigCommand() *cobra.Command {
-	cmds := []*Command{&Command{
+	cmds := []*cli.Command{&cli.Command{
 		Use:          "update",
 		OptionalArgs: "locknewaccounts notifyemailaddress",
 		ReqData:      &ormapi.Config{},
-		Path:         "/auth/config/update",
-	}, &Command{
+		Run:          runRest("/auth/config/update"),
+	}, &cli.Command{
 		Use:       "show",
 		ReplyData: &ormapi.Config{},
-		Path:      "/auth/config/show",
-	}, &Command{
+		Run:       runRest("/auth/config/show"),
+	}, &cli.Command{
 		Use:       "version",
 		ReplyData: &ormapi.Version{},
-		Path:      "/auth/config/version",
+		Run:       runRest("/auth/config/version"),
 	}}
-	return genGroup("config", "admin config", cmds)
+	return cli.GenGroup("config", "admin config", cmds)
 }
