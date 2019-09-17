@@ -5,8 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"html/template"
 	"net/smtp"
+	"text/template"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
