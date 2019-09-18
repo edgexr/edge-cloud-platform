@@ -365,16 +365,14 @@ func (s *ArtifactoryMock) verify(t *testing.T, v entry, objType string) {
 		}
 		if objType == MCObj && v.OrgType != OrgTypeOperator {
 			usrPerm, ok := (*rtfPerm.Principals.Users)[userName]
-			if userType == RoleDeveloperViewer {
-				require.False(t, ok, fmt.Sprintf("User permission for %s should not exist", userName))
-			} else {
-				require.True(t, ok, fmt.Sprintf("User permission for %s exists", userName))
-				require.True(t, contains(usrPerm, "r"), "User should have read permission")
-				require.True(t, contains(usrPerm, "w"), "User should have write permission")
-				require.True(t, contains(usrPerm, "d"), "User should have delete permission")
-				if userType == RoleDeveloperManager {
-					require.True(t, contains(usrPerm, "m"), "User should have manage permission")
-				}
+			require.True(t, ok, fmt.Sprintf("User permission for %s exists", userName))
+			switch userType {
+			case RoleDeveloperManager:
+				checkRtfPerms(t, usrPerm, "r", "w", "d", "m")
+			case RoleDeveloperContributor:
+				checkRtfPerms(t, usrPerm, "r", "w", "d")
+			case RoleDeveloperViewer:
+				checkRtfPerms(t, usrPerm, "r")
 			}
 		}
 	}
@@ -385,4 +383,11 @@ func (s *ArtifactoryMock) verifyEmpty(t *testing.T) {
 	require.Equal(t, 0, len(s.groupStore), "deleted all artifactory groups")
 	require.Equal(t, 0, len(s.repoStore), "deleted all artifactory repos")
 	require.Equal(t, 0, len(s.permStore), "deleted all artifactory permission targets")
+}
+
+func checkRtfPerms(t *testing.T, perms []string, expected ...string) {
+	for _, p := range expected {
+		require.True(t, contains(perms, p), "User should have perm %s", p)
+	}
+	require.Equal(t, len(expected), len(perms), "User should not have extra perms")
 }

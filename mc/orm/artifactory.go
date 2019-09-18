@@ -409,6 +409,9 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 		if role.Role == RoleDeveloperContributor {
 			userPerms[userName] = []string{"w", "d", "r"}
 		}
+		if role.Role == RoleDeveloperViewer {
+			userPerms[userName] = []string{"r"}
+		}
 	}
 	permTargets.Principals.Users = &userPerms
 
