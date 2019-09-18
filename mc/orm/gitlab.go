@@ -152,6 +152,8 @@ func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role, orgType string
 	var access *gitlab.AccessLevelValue
 	if role.Role == RoleDeveloperManager {
 		access = gitlab.AccessLevel(gitlab.OwnerPermissions)
+	} else if role.Role == RoleDeveloperContributor {
+		access = gitlab.AccessLevel(gitlab.DeveloperPermissions)
 	} else {
 		access = gitlab.AccessLevel(gitlab.ReporterPermissions)
 	}

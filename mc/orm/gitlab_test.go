@@ -100,6 +100,8 @@ func (s *GitlabMock) verify(t *testing.T, v entry, objType string) {
 		require.NotNil(t, mygm, "user group membership")
 		if userType == RoleDeveloperManager {
 			require.Equal(t, gitlab.OwnerPermissions, mygm.AccessLevel, "org manager")
+		} else if userType == RoleDeveloperContributor {
+			require.Equal(t, gitlab.DeveloperPermissions, mygm.AccessLevel, "org contributor")
 		} else {
 			require.Equal(t, gitlab.ReporterPermissions, mygm.AccessLevel, "org viewer")
 		}
