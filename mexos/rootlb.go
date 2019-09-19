@@ -172,10 +172,6 @@ func SetupRootLB(ctx context.Context, rootLBName string, createRootLBFlavor stri
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated", "name", rootLB.Name)
-	err = GetHTPassword(ctx, rootLB.Name)
-	if err != nil {
-		return fmt.Errorf("can't download htpassword %v", err)
-	}
 	return nil
 }
 

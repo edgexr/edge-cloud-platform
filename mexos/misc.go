@@ -12,8 +12,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-const HTPasswdFile = "nginx.htpasswd"
-
 func PrivateSSHKey() string {
 	return MEXDir() + "/id_rsa_mex"
 }
@@ -68,20 +66,5 @@ func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgep
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "docker login ok")
-	return nil
-}
-
-func GetHTPassword(ctx context.Context, rootLBName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get htpasswd")
-	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
-	if err != nil {
-		return fmt.Errorf("can't get ssh client for docker swarm, %v", err)
-	}
-	cmd := fmt.Sprintf("scp -o %s -o %s -i id_rsa_mex mobiledgex@%s:files-repo/mobiledgex/%s .", sshOpts[0], sshOpts[1], GetCloudletRegistryFileServer(), HTPasswdFile)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("can't get htpasswd file, %v, %s", err, out)
-	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "downloaded htpasswd")
 	return nil
 }
