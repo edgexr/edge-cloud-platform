@@ -1,4 +1,0 @@
-#apiVersion: v1beta1
-#kind: docker-swarm-app
-#metadata:
-#  name: docker-swarm-example
