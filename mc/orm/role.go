@@ -26,6 +26,7 @@ const ResourceAppAnalytics = "appanalytics"
 const ResourceClusterAnalytics = "clusteranalytics"
 const ResourcePlatforms = "platforms"
 const ResourceCloudlets = "cloudlets"
+const ResourceCloudletPools = "cloudletpools"
 const ResourceCloudletAnalytics = "cloudletanalytics"
 const ResourceClusterFlavors = "clusterflavors"
 const ResourceFlavors = "flavors"
@@ -69,6 +70,8 @@ func InitRolePerms(ctx context.Context) error {
 	addPolicy(ctx, &err, RoleAdminManager, ResourceFlavors, ActionView)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceConfig, ActionManage)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceConfig, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceCloudletPools, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceCloudletPools, ActionView)
 
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionManage)
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionView)
