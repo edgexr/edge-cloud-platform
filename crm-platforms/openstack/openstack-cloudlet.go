@@ -360,11 +360,19 @@ ssh_authorized_keys:
 	return shepherdErr
 }
 
-func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
+
+	// Soure OpenRC file to access openstack API endpoint
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Sourcing platform variables for %s cloudlet", cloudlet.PhysicalName))
+	err := mexos.InitOpenstackProps(ctx, cloudlet.Key.OperatorKey.Name, cloudlet.PhysicalName, pfConfig.VaultAddr)
+	if err != nil {
+		return err
+	}
+
 	platform_vm_name := getPlatformVMName(cloudlet)
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting HEAT Stack %s", platform_vm_name))
-	err := mexos.HeatDeleteStack(ctx, platform_vm_name)
+	err = mexos.HeatDeleteStack(ctx, platform_vm_name)
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
 	}

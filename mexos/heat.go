@@ -470,7 +470,10 @@ func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, 
 // HeatDeleteStack deletes the VM resources
 func HeatDeleteStack(ctx context.Context, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "deleting heat stack for stack", "stackName", stackName)
-	deleteHeatStack(ctx, stackName)
+	err := deleteHeatStack(ctx, stackName)
+	if err != nil {
+		return err
+	}
 	return waitForStack(ctx, stackName, heatDelete, edgeproto.DummyUpdateCallback)
 }
 

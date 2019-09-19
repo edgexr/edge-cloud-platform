@@ -46,9 +46,9 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 
 }
 
-func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "delete cloudlet for mexdind")
-	err := s.generic.DeleteCloudlet(ctx, cloudlet, updateCallback)
+	err := s.generic.DeleteCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	if err != nil {
 		return err
 	}
