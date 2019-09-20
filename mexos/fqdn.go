@@ -62,8 +62,10 @@ func uri2fqdn(uri string) string {
 
 //ActivateFQDNA updates and ensures Fqdn is registered properly
 func ActivateFQDNA(ctx context.Context, fqdn, addr string) error {
+
+	mappedAddr := GetMappedExternalIP(addr)
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	return cloudflare.CreateOrUpdateDNSRecord(ctx, GetCloudletDNSZone(), fqdn, "A", addr, 1, false)
+	return cloudflare.CreateOrUpdateDNSRecord(ctx, GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false)
 }

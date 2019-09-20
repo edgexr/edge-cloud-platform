@@ -31,6 +31,11 @@ var NoConfigExternalRouter = "NOCONFIG"
 // Package level test mode variable
 var testMode = false
 
+// mapping of FQDNs the CRM knows about to externally mapped IPs. This
+// is used mainly in lab environments that have NATed IPs which can be used to
+// access the cloudlet externally but are not visible in any way to OpenStack
+var mappedExternalIPs map[string]string
+
 func getVaultCloudletPath(filePath, vaultAddr string) string {
 	return fmt.Sprintf(
 		"%s/v1/secret/data/cloudlet/openstack/%s",
@@ -70,6 +75,10 @@ func InitInfraCommon(ctx context.Context, vaultAddr string) error {
 	}
 	CloudletInfraCommon.DnsZone = "mobiledgex.net"
 	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
+	err = initMappedIPs()
+	if err != nil {
+		return fmt.Errorf("unable to init Mapped IPs: %v", err)
+	}
 	return nil
 }
 
@@ -212,4 +221,35 @@ func GetCloudletCRMGatewayIPAndPort() (string, int) {
 		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
 	}
 	return host, port
+}
+
+// initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:
+// fromip1=toip1,fromip2=toip2 and populates mappedExternalIPs
+func initMappedIPs() error {
+	mappedExternalIPs = make(map[string]string)
+	meip := os.Getenv("MEX_EXTERNAL_IP_MAP")
+	if meip != "" {
+		ippair := strings.Split(meip, ",")
+		for _, i := range ippair {
+			ia := strings.Split(i, "=")
+			if len(ia) != 2 {
+				return fmt.Errorf("invalid format for mapped ip, expect fromip=destip")
+			}
+			fromip := ia[0]
+			toip := ia[1]
+			mappedExternalIPs[fromip] = toip
+		}
+
+	}
+	return nil
+}
+
+// GetMappedExternalIP returns the IP that the input IP should be mapped to. This
+// is used for environments which used NATted external IPs
+func GetMappedExternalIP(ip string) string {
+	mappedip, ok := mappedExternalIPs[ip]
+	if ok {
+		return mappedip
+	}
+	return ip
 }
