@@ -33,6 +33,7 @@ var ShowCloudletRefsCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowCloudletRefs"),
 	StreamOut:    true,
 }
+
 var CloudletRefsApiCmds = []*cli.Command{
 	ShowCloudletRefsCmd,
 }
@@ -49,6 +50,7 @@ var ShowClusterRefsCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowClusterRefs"),
 	StreamOut:    true,
 }
+
 var ClusterRefsApiCmds = []*cli.Command{
 	ShowClusterRefsCmd,
 }

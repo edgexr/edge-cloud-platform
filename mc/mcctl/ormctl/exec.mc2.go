@@ -32,6 +32,7 @@ var RunCommandCmd = &cli.Command{
 	ReplyData:    &edgeproto.ExecRequest{},
 	Run:          runRest("/auth/ctrl/RunCommand"),
 }
+
 var ExecApiCmds = []*cli.Command{
 	RunCommandCmd,
 }

@@ -279,6 +279,9 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importOrmapi = true
 		g.importStrings = true
 		g.importCli = true
+		if strings.HasPrefix(*method.Name, "Update"+args.InName) && gensupport.HasGrpcFields(in.DescriptorProto) {
+			args.SetFields = true
+		}
 	} else if g.gencliwrapper {
 		tmpl = g.tmplMethodCliWrapper
 		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto)
@@ -326,6 +329,7 @@ type tmplArgs struct {
 	StreamOutIncremental bool
 	NoConfig             string
 	ReturnErrArg         string
+	SetFields            bool
 }
 
 var tmplApi = `
@@ -519,7 +523,11 @@ var {{.MethodName}}Cmd = &cli.Command{
 	Comments: addRegionComment({{.InName}}Comments),
 	ReqData: &ormapi.Region{{.InName}}{},
 	ReplyData: &edgeproto.{{.OutName}}{},
-	Run: runRest("/auth/ctrl/{{.MethodName}}"),
+	Run: runRest("/auth/ctrl/{{.MethodName}}",
+{{- if .SetFields}}
+		withSetFieldsFunc(set{{.MethodName}}Fields),
+{{- end}}
+	),
 {{- if .Outstream}}
 	StreamOut: true,
 {{- end}}
@@ -527,6 +535,22 @@ var {{.MethodName}}Cmd = &cli.Command{
 	StreamOutIncremental: true,
 {{- end}}
 }
+
+{{if .SetFields}}
+func set{{.MethodName}}Fields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("{{.InName}}")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.{{.InName}}{}, cli.JsonNamespace)
+}
+{{- end}}
+
 `
 
 var tmplMethodCliWrapper = `

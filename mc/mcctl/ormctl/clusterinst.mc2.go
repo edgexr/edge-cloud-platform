@@ -50,17 +50,32 @@ var DeleteClusterInstCmd = &cli.Command{
 }
 
 var UpdateClusterInstCmd = &cli.Command{
-	Use:                  "UpdateClusterInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
-	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
-	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
-	SpecialArgs:          &ClusterInstSpecialArgs,
-	Comments:             addRegionComment(ClusterInstComments),
-	ReqData:              &ormapi.RegionClusterInst{},
-	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/UpdateClusterInst"),
+	Use:          "UpdateClusterInst",
+	RequiredArgs: strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	OptionalArgs: strings.Join(ClusterInstOptionalArgs, " "),
+	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:  &ClusterInstSpecialArgs,
+	Comments:     addRegionComment(ClusterInstComments),
+	ReqData:      &ormapi.RegionClusterInst{},
+	ReplyData:    &edgeproto.Result{},
+	Run: runRest("/auth/ctrl/UpdateClusterInst",
+		withSetFieldsFunc(setUpdateClusterInstFields),
+	),
 	StreamOut:            true,
 	StreamOutIncremental: true,
+}
+
+func setUpdateClusterInstFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("ClusterInst")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.ClusterInst{}, cli.JsonNamespace)
 }
 
 var ShowClusterInstCmd = &cli.Command{
@@ -75,6 +90,7 @@ var ShowClusterInstCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowClusterInst"),
 	StreamOut:    true,
 }
+
 var ClusterInstApiCmds = []*cli.Command{
 	CreateClusterInstCmd,
 	DeleteClusterInstCmd,

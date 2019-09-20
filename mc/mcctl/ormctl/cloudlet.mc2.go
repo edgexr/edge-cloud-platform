@@ -51,17 +51,32 @@ var DeleteCloudletCmd = &cli.Command{
 }
 
 var UpdateCloudletCmd = &cli.Command{
-	Use:                  "UpdateCloudlet",
-	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
-	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
-	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
-	SpecialArgs:          &CloudletSpecialArgs,
-	Comments:             addRegionComment(CloudletComments),
-	ReqData:              &ormapi.RegionCloudlet{},
-	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/UpdateCloudlet"),
+	Use:          "UpdateCloudlet",
+	RequiredArgs: strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
+	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
+	Comments:     addRegionComment(CloudletComments),
+	ReqData:      &ormapi.RegionCloudlet{},
+	ReplyData:    &edgeproto.Result{},
+	Run: runRest("/auth/ctrl/UpdateCloudlet",
+		withSetFieldsFunc(setUpdateCloudletFields),
+	),
 	StreamOut:            true,
 	StreamOutIncremental: true,
+}
+
+func setUpdateCloudletFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("Cloudlet")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.Cloudlet{}, cli.JsonNamespace)
 }
 
 var ShowCloudletCmd = &cli.Command{
@@ -76,6 +91,7 @@ var ShowCloudletCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowCloudlet"),
 	StreamOut:    true,
 }
+
 var CloudletApiCmds = []*cli.Command{
 	CreateCloudletCmd,
 	DeleteCloudletCmd,
@@ -95,6 +111,7 @@ var ShowCloudletInfoCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowCloudletInfo"),
 	StreamOut:    true,
 }
+
 var CloudletInfoApiCmds = []*cli.Command{
 	ShowCloudletInfoCmd,
 }

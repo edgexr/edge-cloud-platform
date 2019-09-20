@@ -126,7 +126,22 @@ var UpdateAppCmd = &cli.Command{
 	Comments:     addRegionComment(AppComments),
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/UpdateApp"),
+	Run: runRest("/auth/ctrl/UpdateApp",
+		withSetFieldsFunc(setUpdateAppFields),
+	),
+}
+
+func setUpdateAppFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("App")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.App{}, cli.JsonNamespace)
 }
 
 var ShowAppCmd = &cli.Command{
@@ -141,6 +156,7 @@ var ShowAppCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowApp"),
 	StreamOut:    true,
 }
+
 var AppApiCmds = []*cli.Command{
 	CreateAppCmd,
 	DeleteAppCmd,

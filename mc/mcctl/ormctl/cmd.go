@@ -19,7 +19,9 @@ var Token string
 var SkipVerify bool
 var client ormclient.Client
 
-func runRest(path string) func(c *cli.Command, args []string) error {
+type setFieldsFunc func(in map[string]interface{})
+
+func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
@@ -28,6 +30,11 @@ func runRest(path string) func(c *cli.Command, args []string) error {
 		in, err := c.ParseInput(args)
 		if err != nil {
 			return err
+		}
+		opts := runRestOptions{}
+		opts.apply(ops)
+		if opts.setFieldsFunc != nil {
+			opts.setFieldsFunc(in)
 		}
 
 		client.Debug = cli.Debug
@@ -126,4 +133,20 @@ func getUri() string {
 func addRegionComment(comments map[string]string) map[string]string {
 	comments["region"] = "Region name"
 	return comments
+}
+
+type runRestOptions struct {
+	setFieldsFunc func(in map[string]interface{})
+}
+
+type runRestOp func(opts *runRestOptions)
+
+func withSetFieldsFunc(fn func(in map[string]interface{})) runRestOp {
+	return func(opts *runRestOptions) { opts.setFieldsFunc = fn }
+}
+
+func (o *runRestOptions) apply(opts []runRestOp) {
+	for _, opt := range opts {
+		opt(o)
+	}
 }
