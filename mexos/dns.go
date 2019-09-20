@@ -92,10 +92,11 @@ func CreateAppDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8sm
 			}
 		}
 		if action.AddDNS && useDns {
+			mappedAddr := GetMappedExternalIP(action.ExternalIP)
 			fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 
-			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, GetCloudletDNSZone(), fqdn, "A", action.ExternalIP, 1, false); err != nil {
-				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, action.ExternalIP, err)
+			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false); err != nil {
+				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
 			}
 			log.SpanLog(ctx, log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 		}
