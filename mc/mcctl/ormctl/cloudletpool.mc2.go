@@ -57,6 +57,7 @@ var ShowCloudletPoolCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowCloudletPool"),
 	StreamOut:    true,
 }
+
 var CloudletPoolApiCmds = []*cli.Command{
 	CreateCloudletPoolCmd,
 	DeleteCloudletPoolCmd,
@@ -138,6 +139,7 @@ var ShowCloudletsForPoolListCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowCloudletsForPoolList"),
 	StreamOut:    true,
 }
+
 var CloudletPoolMemberApiCmds = []*cli.Command{
 	CreateCloudletPoolMemberCmd,
 	DeleteCloudletPoolMemberCmd,

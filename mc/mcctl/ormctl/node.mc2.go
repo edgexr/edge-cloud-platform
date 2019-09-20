@@ -33,6 +33,7 @@ var ShowNodeCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowNode"),
 	StreamOut:    true,
 }
+
 var NodeApiCmds = []*cli.Command{
 	ShowNodeCmd,
 }

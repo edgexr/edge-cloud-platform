@@ -54,7 +54,22 @@ var UpdateFlavorCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/UpdateFlavor"),
+	Run: runRest("/auth/ctrl/UpdateFlavor",
+		withSetFieldsFunc(setUpdateFlavorFields),
+	),
+}
+
+func setUpdateFlavorFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("Flavor")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.Flavor{}, cli.JsonNamespace)
 }
 
 var ShowFlavorCmd = &cli.Command{
@@ -69,6 +84,7 @@ var ShowFlavorCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowFlavor"),
 	StreamOut:    true,
 }
+
 var FlavorApiCmds = []*cli.Command{
 	CreateFlavorCmd,
 	DeleteFlavorCmd,

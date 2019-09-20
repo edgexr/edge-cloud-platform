@@ -52,17 +52,32 @@ var DeleteAppInstCmd = &cli.Command{
 }
 
 var UpdateAppInstCmd = &cli.Command{
-	Use:                  "UpdateAppInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
-	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
-	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
-	SpecialArgs:          &AppInstSpecialArgs,
-	Comments:             addRegionComment(AppInstComments),
-	ReqData:              &ormapi.RegionAppInst{},
-	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/UpdateAppInst"),
+	Use:          "UpdateAppInst",
+	RequiredArgs: strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
+	OptionalArgs: strings.Join(AppInstOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:  &AppInstSpecialArgs,
+	Comments:     addRegionComment(AppInstComments),
+	ReqData:      &ormapi.RegionAppInst{},
+	ReplyData:    &edgeproto.Result{},
+	Run: runRest("/auth/ctrl/UpdateAppInst",
+		withSetFieldsFunc(setUpdateAppInstFields),
+	),
 	StreamOut:            true,
 	StreamOutIncremental: true,
+}
+
+func setUpdateAppInstFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in[strings.ToLower("AppInst")]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.AppInst{}, cli.JsonNamespace)
 }
 
 var ShowAppInstCmd = &cli.Command{
@@ -77,6 +92,7 @@ var ShowAppInstCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowAppInst"),
 	StreamOut:    true,
 }
+
 var AppInstApiCmds = []*cli.Command{
 	CreateAppInstCmd,
 	DeleteAppInstCmd,
