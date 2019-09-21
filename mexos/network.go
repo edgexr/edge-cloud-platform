@@ -95,10 +95,10 @@ func GetMexRouterIP(ctx context.Context) (string, error) {
 		fip := reg.ExternalFixedIPs[0]
 		log.SpanLog(ctx, log.DebugLevelMexos, "external fixed ips", "ips", fip)
 		return fip.IPAddress, nil
-
 	} else {
-		log.InfoLog("can't get external fixed ips list from router detail external gateway")
-		return "", fmt.Errorf("can't get external fixed ips list from router detail")
+		// some networks may not have an external fixed ip for the router.  This is not fatal
+		log.SpanLog(ctx, log.DebugLevelMexos, "can't get external fixed ips list from router detail external gateway, returning blank ip")
+		return "", nil
 	}
 }
 
