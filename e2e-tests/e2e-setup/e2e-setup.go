@@ -119,8 +119,8 @@ func setupVault(rolesfile string) bool {
 	return true
 }
 
-func StartProcesses(processName string, outputDir string) bool {
-	if !setupmex.StartProcesses(processName, outputDir) {
+func StartProcesses(processName string, args []string, outputDir string) bool {
+	if !setupmex.StartProcesses(processName, args, outputDir) {
 		return false
 	}
 
@@ -162,6 +162,7 @@ func StartProcesses(processName string, outputDir string) bool {
 }
 
 func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi.TestConfig, spec *TestSpec, specStr string, mods []string) []string {
+	var actionArgs []string
 	act, actionParam := setupmex.GetActionParam(actionSpec)
 	action, actionSubtype := setupmex.GetActionSubtype(act)
 
@@ -196,7 +197,14 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 	case "start":
 		startFailed := false
 		allprocs := GetAllProcesses()
-		if !StartProcesses(actionParam, outputDir) {
+		if actionSubtype == "argument" {
+			// extract the action param and action args
+			actionArgs = setupmex.GetActionArgs(actionParam)
+			actionParam = actionArgs[0]
+			actionArgs = actionArgs[1:]
+		}
+
+		if !StartProcesses(actionParam, actionArgs, outputDir) {
 			startFailed = true
 			errors = append(errors, "start failed")
 		} else {

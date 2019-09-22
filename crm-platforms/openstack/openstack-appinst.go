@@ -300,6 +300,17 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return err
 		}
 		return dockermgmt.UpdateAppInst(ctx, client, app, appInst)
+	case cloudcommon.AppDeploymentTypeHelm:
+		client, err := s.GetPlatformClient(ctx, clusterInst)
+		if err != nil {
+			return err
+		}
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		if err != nil {
+			return fmt.Errorf("get kube names failed: %s", err)
+		}
+		return k8smgmt.UpdateHelmAppInst(client, names, app, appInst)
+
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
 	}
