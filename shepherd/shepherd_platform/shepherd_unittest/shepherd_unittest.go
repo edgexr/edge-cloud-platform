@@ -1,7 +1,6 @@
 package shepherd_unittest
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -64,20 +63,12 @@ func (s *UTClient) Output(command string) (string, error) {
 }
 
 func (s *UTClient) getUTData(command string) (string, error) {
-	str := ""
 	// docker stats unit test
 	if strings.Contains(command, "docker stats ") {
 		// take the json with line breaks and compact it, as that's what the command expects
-		str = s.pf.DockerAppMetrics
+		return s.pf.DockerAppMetrics, nil
 	} else if strings.Contains(command, shepherd_common.ResTrackerCmd) {
-		str = s.pf.DockerClusterMetrics
-	}
-	if str != "" {
-		buf := new(bytes.Buffer)
-		if err := json.Compact(buf, []byte(str)); err != nil {
-			return "", err
-		}
-		return buf.String(), nil
+		return s.pf.DockerClusterMetrics, nil
 	}
 	return "", fmt.Errorf("No UT Data found")
 }
