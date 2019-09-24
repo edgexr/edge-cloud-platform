@@ -2,7 +2,6 @@ package mexos
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +28,9 @@ import (
 //   So if an app needs an external IP, we can't figure out if that is the case.
 //   Nor is there a way to return the IP address or DNS name. Or even know if it needs a DNS name.
 //   No ability to open ports, redirect or set up any kind of reverse proxy control.  etc.
+
+// MaxK8sNodeNameLen is the maximum length that k8s node names are truncated to
+const MaxK8sNodeNameLen = 63
 
 //ClusterFlavor contains definitions of cluster flavor
 type ClusterFlavor struct {
@@ -217,38 +219,42 @@ func IsClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, mas
 		return false, 0, fmt.Errorf("can't get ssh client for cluser ready check, %v", err)
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "checking master k8s node for available nodes", "ipaddr", masterIP)
-	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes -o json", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP)
+	cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl get nodes", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP)
 	//log.SpanLog(ctx,log.DebugLevelMexos, "running kubectl get nodes", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "error checking for kubernetes nodes", "out", out, "err", err)
 		return false, 0, nil //This is intentional
 	}
-	gitems := &genericItems{}
-	err = json.Unmarshal([]byte(out), gitems)
-	if err != nil {
-		return false, 0, fmt.Errorf("failed to json unmarshal kubectl get nodes output, %v, %v", err, out)
+	lines := strings.Split(out, "\n")
+	var readyCount uint32
+	for _, l := range lines {
+		if strings.Contains(l, " Ready") {
+			readyCount++
+		}
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "kubectl reports nodes", "numnodes", len(gitems.Items))
-	readyCount := uint32(len(gitems.Items))
-
 	if readyCount < (clusterInst.NumNodes + clusterInst.NumMasters) {
-		//log.SpanLog(ctx,log.DebugLevelMexos, "kubernetes cluster not ready", "log", out)
-		log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster not ready", "len items", len(gitems.Items))
+		log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster not ready", "readyCount", readyCount)
 		return false, 0, nil
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "cluster nodes", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters)
+	log.SpanLog(ctx, log.DebugLevelMexos, "cluster nodes ready", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
 	if err := CopyKubeConfig(ctx, client, clusterInst, rootLBName, masterIP); err != nil {
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
+		// k8s nodes are limited to MaxK8sNodeNameLen chars
+		masterString := masterName
+		if len(masterString) > MaxK8sNodeNameLen {
+			log.SpanLog(ctx, log.DebugLevelMexos, "truncating master node name", "MaxK8sNodeNameLen", MaxK8sNodeNameLen)
+			masterString = masterString[0:MaxK8sNodeNameLen]
+		}
 		//remove the taint from the master if there are no nodes. This has potential side effects if the cluster
 		// becomes very busy but is useful for testing and PoC type clusters.
 		// TODO: if the cluster is subsequently increased in size do we need to add the taint?
 		//For now leaving that alone since an increased cluster size means we needed more capacity.
-		log.SpanLog(ctx, log.DebugLevelMexos, "removing NoSchedule taint from master", "master", masterName)
-		cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP, masterName)
+		log.SpanLog(ctx, log.DebugLevelMexos, "removing NoSchedule taint from master", "master", masterString)
+		cmd := fmt.Sprintf("ssh -o %s -o %s -o %s -i id_rsa_mex %s@%s kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-", sshOpts[0], sshOpts[1], sshOpts[2], SSHUser, masterIP, masterString)
 		out, err := client.Output(cmd)
 		if err != nil {
 			if strings.Contains(out, "not found") {
