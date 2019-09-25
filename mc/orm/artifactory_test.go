@@ -378,6 +378,17 @@ func (s *ArtifactoryMock) verify(t *testing.T, v entry, objType string) {
 	}
 }
 
+func (s *ArtifactoryMock) verifyCount(t *testing.T, objType string) {
+	if objType != MCObj {
+		return
+	}
+	for _, v := range s.permStore {
+		require.Equal(t, 3, len(*v.Principals.Users), "permission target has right number of users")
+		require.Equal(t, 1, len(*v.Principals.Groups), "permission target has right number of groups")
+		require.Equal(t, 1, len(*v.Repositories), "permission target has right number of repos")
+	}
+}
+
 func (s *ArtifactoryMock) verifyEmpty(t *testing.T) {
 	require.Equal(t, 0, len(s.userStore), "deleted all artifactory users")
 	require.Equal(t, 0, len(s.groupStore), "deleted all artifactory groups")

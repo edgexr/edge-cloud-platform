@@ -182,6 +182,7 @@ func TestAppStoreApi(t *testing.T) {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
 	}
+	rtf.verifyCount(t, MCObj)
 
 	// Create users & orgs which are not present in MC
 	for _, v := range extraEntries {
