@@ -111,6 +111,26 @@ func ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 	return networks, nil
 }
 
+//ShowFlavor returns the details of a given flavor.
+// If the flavor has any properties set, these are returned as well
+func ShowFlavor(ctx context.Context, flavor string) (details string, properties string, err error) {
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "flavor", "show", flavor, "-f", "json")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "flavor show failed", "out", out)
+		fmt.Printf("Timed Op return error %d\n", err)
+		return "", "", err
+	}
+	s := strings.Index(string(out), "properties")
+	s += len("properties") + 2
+	ms := cloudcommon.QuotedStringRegex.FindAllString(string(out[s:]), -1)
+	ss := make([]string, len(ms))
+	for i, m := range ms {
+		ss[i] = m[1 : len(m)-1]
+	}
+	return string(out), ss[0], err
+}
+
 //ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
 func ListFlavors(ctx context.Context) ([]OSFlavor, error) {
 	flavorMatchPattern := GetCloudletFlavorMatchPattern()
