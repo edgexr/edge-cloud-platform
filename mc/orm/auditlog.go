@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -13,12 +12,12 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
 )
 
 var AuditId uint64
-var jwtRegex = regexp.MustCompile(`"(.*?)"`) // scrub jwt tokens from responses before logging, find all quoted strings.
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) (nexterr error) {
@@ -125,7 +124,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			// for all responses, if it has a jwt token
 			// remove it before logging
 			if strings.Contains(string(resBody), "token") {
-				ms := jwtRegex.FindAllStringSubmatch(string(resBody), -1)
+				ms := cloudcommon.QuotedStringRegex.FindAllStringSubmatch(string(resBody), -1)
 				if ms != nil {
 					ss := make([]string, len(ms))
 					for i, m := range ms {
