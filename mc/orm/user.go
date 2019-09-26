@@ -171,9 +171,7 @@ func CreateUser(c echo.Context) error {
 	}
 
 	gitlabCreateLDAPUser(ctx, &user)
-	if user.Name != Superuser {
-		artifactoryCreateUser(ctx, &user, nil, nil)
-	}
+	artifactoryCreateUser(ctx, &user, nil, nil)
 
 	if user.Locked {
 		msg := fmt.Sprintf("Locked account created for user %s, email %s", user.Name, user.Email)

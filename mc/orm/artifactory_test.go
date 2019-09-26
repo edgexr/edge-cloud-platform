@@ -347,10 +347,17 @@ func (s *ArtifactoryMock) verify(t *testing.T, v entry, objType string) {
 			require.False(t, contains(grpPerm, "d"), "Group should not have delete permission")
 			require.True(t, contains(grpPerm, "r"), "Group should have read permission")
 		}
+		// Since rtfPerms uses MC grouping info for adding users, extraObj can't have users in rtfPerms
+		if objType != ExtraObj {
+			fmt.Println(permName, s.groupStore, s.permStore)
+			require.Equal(t, len(v.Users), len(*rtfPerm.Principals.Users), "permission target has right number of users")
+		}
+		require.Equal(t, 1, len(*rtfPerm.Principals.Groups), "permission target has right number of groups")
+		require.Equal(t, 1, len(*rtfPerm.Repositories), "permission target has right number of repos")
 	}
 	// Verify user exists and uses LDAP config
 	for user, userType := range v.Users {
-		userName := strings.ToLower(user)
+		userName := getArtifactoryName(strings.ToLower(user))
 		rtfUser, ok := s.userStore[userName]
 		require.True(t, ok, "user exists")
 		require.Equal(t, *rtfUser.Name, userName, "user name matches")
@@ -378,15 +385,20 @@ func (s *ArtifactoryMock) verify(t *testing.T, v entry, objType string) {
 	}
 }
 
-func (s *ArtifactoryMock) verifyCount(t *testing.T, objType string) {
-	if objType != MCObj {
-		return
+func (s *ArtifactoryMock) verifyCount(t *testing.T, entries []entry, objType string) {
+	userCount := 0
+	groupObjCount := 0
+	for _, v := range entries {
+		userCount += len(v.Users)
+		if v.OrgType == OrgTypeDeveloper {
+			groupObjCount += 1
+		}
 	}
-	for _, v := range s.permStore {
-		require.Equal(t, 3, len(*v.Principals.Users), "permission target has right number of users")
-		require.Equal(t, 1, len(*v.Principals.Groups), "permission target has right number of groups")
-		require.Equal(t, 1, len(*v.Repositories), "permission target has right number of repos")
-	}
+	fmt.Println(s.userStore)
+	require.Equal(t, groupObjCount, len(s.groupStore), "group count is consistent")
+	require.Equal(t, groupObjCount, len(s.repoStore), "repo count is consistent")
+	require.Equal(t, groupObjCount, len(s.permStore), "repo perm count is consistent")
+	require.Equal(t, userCount, len(s.userStore), "user count is consistent")
 }
 
 func (s *ArtifactoryMock) verifyEmpty(t *testing.T) {

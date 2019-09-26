@@ -143,7 +143,8 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 			continue
 		}
 		// Store username is lowercase format as Artifactory stores it in lowercase
-		mcusersT[strings.ToLower(mcusers[ii].Name)] = &mcusers[ii]
+		userName := getArtifactoryName(strings.ToLower(mcusers[ii].Name))
+		mcusersT[userName] = &mcusers[ii]
 	}
 
 	// Get MC group members info
@@ -161,11 +162,12 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 		if org, ok := allOrgs[role.Org]; !ok || org.Type == OrgTypeOperator {
 			continue
 		}
-		username := strings.ToLower(role.Username)
-		if _, ok := groupMembers[username]; !ok {
-			groupMembers[username] = map[string]*ormapi.Role{}
+		userName := getArtifactoryName(strings.ToLower(role.Username))
+		orgName := getArtifactoryName(role.Org)
+		if _, ok := groupMembers[userName]; !ok {
+			groupMembers[userName] = map[string]*ormapi.Role{}
 		}
-		groupMembers[username][getArtifactoryName(role.Org)] = role
+		groupMembers[userName][orgName] = role
 	}
 
 	// Get Artifactory users
@@ -202,13 +204,15 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra user",
 			"name", user)
-		artifactoryDeleteUser(ctx, user)
+		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
+		artifactoryDeleteUser(ctx, userName)
 	}
 
 	// Add missing roles
 	for name, _ := range mcusersT {
 		// Get Artifactory roles
-		rtfGroups, err := artifactoryListUserGroups(ctx, name)
+		userName := strings.TrimPrefix(name, ArtifactoryPrefix)
+		rtfGroups, err := artifactoryListUserGroups(ctx, userName)
 		if err != nil {
 			s.syncErr(ctx, err)
 			return
@@ -230,7 +234,7 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 				// User is part of extra group
 				// Remove user from the group
 				role := ormapi.Role{}
-				role.Username = name
+				role.Username = strings.TrimPrefix(name, ArtifactoryPrefix)
 				role.Org = strings.TrimPrefix(rtfgroup, ArtifactoryPrefix)
 				orgType := getOrgType(role.Org, allOrgs)
 				log.SpanLog(ctx, log.DebugLevelApi,
