@@ -154,6 +154,9 @@ func (s *AppStoreSync) syncGroupMembers(ctx context.Context, allOrgs map[string]
 		if role == nil || role.Org == "" {
 			continue
 		}
+		if org, ok := allOrgs[role.Org]; !ok || org.Type == OrgTypeOperator {
+			continue
+		}
 		// get cached group
 		memberTable, found := members[role.Org]
 		if !found {

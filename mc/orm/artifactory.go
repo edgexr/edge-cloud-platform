@@ -74,12 +74,7 @@ func artifactoryListUsers(ctx context.Context) (map[string]struct{}, error) {
 	tmp := make(map[string]struct{})
 	for _, user := range *users {
 		userName := *user.Name
-		if *user.Realm == "ldap" && userName != "admin" {
-			tmp[userName] = struct{}{}
-			continue
-		}
-		userInfo, _, err := client.V1.Security.GetUser(context.Background(), userName)
-		if err == nil && *userInfo.InternalPasswordDisabled {
+		if strings.HasPrefix(userName, ArtifactoryPrefix) {
 			tmp[userName] = struct{}{}
 		}
 	}
@@ -93,7 +88,7 @@ func artifactoryListUserGroups(ctx context.Context, userName string) (map[string
 	}
 
 	tmp := make(map[string]struct{})
-	userInfo, _, err := client.V1.Security.GetUser(context.Background(), userName)
+	userInfo, _, err := client.V1.Security.GetUser(context.Background(), getArtifactoryName(userName))
 	if err == nil && userInfo.Groups != nil {
 		for _, group := range *userInfo.Groups {
 			if strings.HasPrefix(group, ArtifactoryPrefix) {
@@ -106,7 +101,10 @@ func artifactoryListUserGroups(ctx context.Context, userName string) (map[string
 
 func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]string, allOrgs map[string]*ormapi.Organization) {
 	client, err := artifactoryClient(ctx)
-	userName := user.Name
+	userName := getArtifactoryName(user.Name)
+	if user.Name == Superuser {
+		return
+	}
 	if err == nil {
 		rtfUser := v1.User{
 			Name:                     artifactory.String(userName),
@@ -117,9 +115,8 @@ func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]str
 		}
 		_, err = client.V1.Security.CreateOrReplaceUser(context.Background(), userName, &rtfUser)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory create user", "user", userName, "err", err)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory create user",
-			"user", userName, "err", err)
 		artifactorySync.NeedsSync()
 		return
 	}
@@ -134,17 +131,15 @@ func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]str
 
 func artifactoryDeleteUser(ctx context.Context, userName string) {
 	client, err := artifactoryClient(ctx)
+	rtfUserName := getArtifactoryName(userName)
 	if err == nil {
-		_, _, err = client.V1.Security.DeleteUser(context.Background(), userName)
+		_, _, err = client.V1.Security.DeleteUser(context.Background(), rtfUserName)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user", "user", rtfUserName, "err", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "Status:404") {
-			log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user",
-				"user", userName, "err", "user does not exists")
 			return
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user",
-			"user", userName, "err", err)
 		artifactorySync.NeedsSync()
 		return
 	}
@@ -154,11 +149,12 @@ func artifactoryAddUserToGroup(ctx context.Context, role *ormapi.Role, orgType s
 	if orgType == OrgTypeOperator {
 		return
 	}
+	if role.Username == Superuser {
+		return
+	}
 	client, err := artifactoryClient(ctx)
-	userName := role.Username
+	userName := getArtifactoryName(role.Username)
 	orgName := getArtifactoryName(role.Org)
-	log.SpanLog(ctx, log.DebugLevelApi, "artifactory add user to group",
-		"user", userName, "group", orgName)
 	if err == nil {
 		var userInfo *v1.User
 		userInfo, _, err = client.V1.Security.GetUser(context.Background(), userName)
@@ -175,9 +171,9 @@ func artifactoryAddUserToGroup(ctx context.Context, role *ormapi.Role, orgType s
 			_, err = client.V1.Security.UpdateUser(context.Background(), userName, &rtfUser)
 		}
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory add user to group",
+		"user", userName, "group", orgName, "err", err)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory add user to group",
-			"user", userName, "group", orgName, "err", err)
 		artifactorySync.NeedsSync()
 		return
 	}
@@ -189,10 +185,8 @@ func artifactoryRemoveUserFromGroup(ctx context.Context, role *ormapi.Role, orgT
 		return
 	}
 	client, err := artifactoryClient(ctx)
-	userName := role.Username
+	userName := getArtifactoryName(role.Username)
 	orgName := getArtifactoryName(role.Org)
-	log.SpanLog(ctx, log.DebugLevelApi, "artifactory remove user from group",
-		"user", userName)
 	if err == nil {
 		var userInfo *v1.User
 		userInfo, _, err = client.V1.Security.GetUser(context.Background(), userName)
@@ -210,9 +204,9 @@ func artifactoryRemoveUserFromGroup(ctx context.Context, role *ormapi.Role, orgT
 			_, err = client.V1.Security.UpdateUser(context.Background(), userName, &rtfUser)
 		}
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory remove user from group",
+		"user", userName, "group", orgName, "err", err)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory remove user from group",
-			"user", userName, "err", err)
 		artifactorySync.NeedsSync()
 		return
 	}
@@ -242,20 +236,16 @@ func artifactoryCreateGroup(ctx context.Context, orgName, orgType string) error 
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	client, err := artifactoryClient(ctx)
-	if err != nil {
-		return err
-	}
 	groupName := getArtifactoryName(orgName)
 	group := v1.Group{
 		Name:        artifactory.String(groupName),
 		Description: artifactory.String("Group maintained by master-controller"),
 	}
-	_, err = client.V1.Security.CreateOrReplaceGroup(context.Background(), groupName, &group)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory create group",
-			"group", groupName, "err", err)
+	client, err := artifactoryClient(ctx)
+	if err == nil {
+		_, err = client.V1.Security.CreateOrReplaceGroup(context.Background(), groupName, &group)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory create group", "group", groupName, "err", err)
 	return err
 }
 
@@ -263,21 +253,12 @@ func artifactoryDeleteGroup(ctx context.Context, orgName, orgType string) error 
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	client, err := artifactoryClient(ctx)
-	if err != nil {
-		return err
-	}
 	groupName := getArtifactoryName(orgName)
-	_, _, err = client.V1.Security.DeleteGroup(context.Background(), groupName)
-	if err != nil {
-		if strings.Contains(err.Error(), "Status:404") {
-			log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete group",
-				"group", groupName, "err", "group does not exists")
-			return nil
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete group",
-			"group", groupName, "err", err)
+	client, err := artifactoryClient(ctx)
+	if err == nil {
+		_, _, err = client.V1.Security.DeleteGroup(context.Background(), groupName)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete group", "group", groupName, "err", err)
 	return err
 }
 
@@ -304,10 +285,6 @@ func artifactoryCreateRepo(ctx context.Context, orgName, orgType string) error {
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	client, err := artifactoryClient(ctx)
-	if err != nil {
-		return err
-	}
 	repoName := getArtifactoryRepoName(orgName)
 	repo := v1.LocalRepository{
 		Key:             artifactory.String(repoName),
@@ -315,17 +292,12 @@ func artifactoryCreateRepo(ctx context.Context, orgName, orgType string) error {
 		PackageType:     artifactory.String("generic"),
 		HandleSnapshots: artifactory.Bool(false),
 	}
-
-	_, err = client.V1.Repositories.CreateLocal(context.Background(), &repo)
-	if err != nil {
-		if strings.Contains(err.Error(), "key already exists") {
-			log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repository",
-				"repository", repoName, "err", "already exists")
-			return nil
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repository",
-			"repository", repoName, "err", err)
+	client, err := artifactoryClient(ctx)
+	if err == nil {
+		_, err = client.V1.Repositories.CreateLocal(context.Background(), &repo)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repository",
+		"repository", repoName, "err", err)
 	return err
 }
 
@@ -333,21 +305,13 @@ func artifactoryDeleteRepo(ctx context.Context, orgName, orgType string) error {
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	client, err := artifactoryClient(ctx)
-	if err != nil {
-		return err
-	}
 	repoName := getArtifactoryRepoName(orgName)
-	_, err = client.V1.Repositories.DeleteLocal(context.Background(), repoName)
-	if err != nil {
-		if strings.Contains(err.Error(), "Status:404") {
-			log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repository",
-				"repository", repoName, "err", "repository does not exists")
-			return nil
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repository",
-			"repository", repoName, "err", err)
+	client, err := artifactoryClient(ctx)
+	if err == nil {
+		_, err = client.V1.Repositories.DeleteLocal(context.Background(), repoName)
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repository",
+		"repository", repoName, "err", err)
 	return err
 }
 
@@ -381,6 +345,7 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 	groupName := getArtifactoryName(orgName)
 	repoName := getArtifactoryRepoName(orgName)
 	permTargetName := getArtifactoryName(orgName)
+
 	// create permission target
 	permTargets := v1.PermissionTargets{
 		Name:         artifactory.String(permTargetName),
@@ -395,8 +360,11 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 	userPerms := map[string][]string{}
 	groupings, err := enforcer.GetGroupingPolicy()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repo perms failed",
+			"permission target", permTargetName, "repository", repoName, "group", groupName, "err", err)
 		return err
 	}
+	var permUsers []string
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil {
@@ -405,7 +373,10 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 		if role.Org != orgName {
 			continue
 		}
-		userName := strings.ToLower(role.Username)
+		if role.Username == Superuser {
+			continue
+		}
+		userName := getArtifactoryName(strings.ToLower(role.Username))
 		if role.Role == RoleDeveloperManager {
 			userPerms[userName] = []string{"w", "d", "r", "m"}
 		}
@@ -415,14 +386,15 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 		if role.Role == RoleDeveloperViewer {
 			userPerms[userName] = []string{"r"}
 		}
+		permUsers = append(permUsers, userName)
 	}
 	permTargets.Principals.Users = &userPerms
 
 	_, err = client.V1.Security.CreateOrReplacePermissionTargets(context.Background(), permTargetName, &permTargets)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repo perms",
-			"permission target", permTargetName, "repository", repoName, "group", groupName, "err", err)
-	}
+
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory create repo perms",
+		"permission target", permTargetName, "repository", repoName, "group", groupName,
+		"users", permUsers, "err", err)
 	return err
 }
 
@@ -430,21 +402,13 @@ func artifactoryDeleteRepoPerms(ctx context.Context, orgName, orgType string) er
 	if orgType == OrgTypeOperator {
 		return nil
 	}
-	client, err := artifactoryClient(ctx)
-	if err != nil {
-		return err
-	}
 	permTargetName := getArtifactoryName(orgName)
-	_, _, err = client.V1.Security.DeletePermissionTargets(context.Background(), permTargetName)
-	if err != nil {
-		if strings.Contains(err.Error(), "Status:404") {
-			log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repo perms",
-				"repo perms", permTargetName, "err", "repo perms does not exists")
-			return nil
-		}
-		log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repo perms",
-			"permission target", permTargetName, "err", err)
+	client, err := artifactoryClient(ctx)
+	if err == nil {
+		_, _, err = client.V1.Security.DeletePermissionTargets(context.Background(), permTargetName)
 	}
+
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete repo perms", "permission target", permTargetName, "err", err)
 	return err
 }
 

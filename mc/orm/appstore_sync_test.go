@@ -182,7 +182,7 @@ func TestAppStoreApi(t *testing.T) {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
 	}
-	rtf.verifyCount(t, MCObj)
+	rtf.verifyCount(t, testEntries, MCObj)
 
 	// Create users & orgs which are not present in MC
 	for _, v := range extraEntries {
@@ -205,12 +205,12 @@ func TestAppStoreApi(t *testing.T) {
 				Role:     userType,
 			}
 			gitlabAddGroupMember(ctx, &roleArg, org.Type)
-			artifactoryCreateGroupObjects(ctx, org.Name, org.Type)
 			artifactoryAddUserToGroup(ctx, &roleArg, org.Type)
 		}
 		rtf.verify(t, v, ExtraObj)
 		gm.verify(t, v, ExtraObj)
 	}
+	rtf.verifyCount(t, append(testEntries, extraEntries...), MCObj)
 
 	// Create operator entries in MC and then force populate them
 	// in artifactory/gitlab to test that sync will remove them.
@@ -240,15 +240,27 @@ func TestAppStoreApi(t *testing.T) {
 	require.Nil(t, err, "gitlab resync")
 	require.Equal(t, http.StatusOK, status, "gitlab resync status")
 
+	waitSyncCount(t, gitlabSync, 2)
+	waitSyncCount(t, artifactorySync, 2)
+
+	// Verify that only testEntries and missingEntries are present
+	for _, v := range testEntries {
+		rtf.verify(t, v, MCObj)
+		gm.verify(t, v, MCObj)
+	}
+	for _, v := range missingEntries {
+		rtf.verify(t, v, MCObj)
+		gm.verify(t, v, MCObj)
+	}
+	rtf.verifyCount(t, append(testEntries, missingEntries...), MCObj)
+
 	// Delete MC created Objects
 	for _, v := range testEntries {
 		mcClientDelete(t, v, mcClient, uri, tokenAdmin)
 	}
 
-	waitSyncCount(t, gitlabSync, 2)
-	waitSyncCount(t, artifactorySync, 2)
-
 	// verify missing entries are there
+	rtf.verifyCount(t, missingEntries, MCObj)
 	for _, v := range missingEntries {
 		rtf.verify(t, v, MCObj)
 		gm.verify(t, v, MCObj)
