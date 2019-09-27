@@ -3,6 +3,7 @@ package mexos
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,9 +29,6 @@ import (
 //   So if an app needs an external IP, we can't figure out if that is the case.
 //   Nor is there a way to return the IP address or DNS name. Or even know if it needs a DNS name.
 //   No ability to open ports, redirect or set up any kind of reverse proxy control.  etc.
-
-// MaxK8sNodeNameLen is the maximum length that k8s node names are truncated to
-const MaxK8sNodeNameLen = 63
 
 //ClusterFlavor contains definitions of cluster flavor
 type ClusterFlavor struct {
@@ -226,29 +224,46 @@ func IsClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, mas
 		log.SpanLog(ctx, log.DebugLevelMexos, "error checking for kubernetes nodes", "out", out, "err", err)
 		return false, 0, nil //This is intentional
 	}
+	//                   node       state               role     age     version
+	nodeMatchPattern := "(\\S+)\\s+(Ready|NotReady)\\s+(\\S+)\\s+\\S+\\s+\\S+"
+	reg, err := regexp.Compile(nodeMatchPattern)
+	if err != nil {
+		// this is a bug if the regex does not compile
+		log.SpanLog(ctx, log.DebugLevelInfo, "failed to compile regex", "pattern", nodeMatchPattern)
+		return false, 0, fmt.Errorf("Internal Error compiling regex for k8s node")
+	}
+	masterString := ""
 	lines := strings.Split(out, "\n")
 	var readyCount uint32
+	var notReadyCount uint32
 	for _, l := range lines {
-		if strings.Contains(l, " Ready") {
-			readyCount++
+		if reg.MatchString(l) {
+			matches := reg.FindStringSubmatch(l)
+			nodename := matches[1]
+			state := matches[2]
+			role := matches[3]
+
+			if role == "master" {
+				masterString = nodename
+			}
+			if state == "Ready" {
+				readyCount++
+			} else {
+				notReadyCount++
+			}
 		}
 	}
 	if readyCount < (clusterInst.NumNodes + clusterInst.NumMasters) {
-		log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster not ready", "readyCount", readyCount)
+		log.SpanLog(ctx, log.DebugLevelMexos, "kubernetes cluster not ready", "readyCount", readyCount, "notReadyCount", notReadyCount)
 		return false, 0, nil
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "cluster nodes ready", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount)
+	log.SpanLog(ctx, log.DebugLevelMexos, "cluster nodes ready", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount, "notReadyCount", notReadyCount)
 	//kcpath := MEXDir() + "/" + name[strings.LastIndex(name, "-")+1:] + ".kubeconfig"
 	if err := CopyKubeConfig(ctx, client, clusterInst, rootLBName, masterIP); err != nil {
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
 		// k8s nodes are limited to MaxK8sNodeNameLen chars
-		masterString := masterName
-		if len(masterString) > MaxK8sNodeNameLen {
-			log.SpanLog(ctx, log.DebugLevelMexos, "truncating master node name", "MaxK8sNodeNameLen", MaxK8sNodeNameLen)
-			masterString = masterString[0:MaxK8sNodeNameLen]
-		}
 		//remove the taint from the master if there are no nodes. This has potential side effects if the cluster
 		// becomes very busy but is useful for testing and PoC type clusters.
 		// TODO: if the cluster is subsequently increased in size do we need to add the taint?
