@@ -11,11 +11,13 @@ func GetAllDataCommand() *cobra.Command {
 		Use:          "create",
 		DataFlagOnly: true,
 		StreamOut:    true,
+		ReqData:      &ormapi.AllData{},
 		Run:          runRest("/auth/data/create"),
 	}, &cli.Command{
 		Use:          "delete",
 		DataFlagOnly: true,
 		StreamOut:    true,
+		ReqData:      &ormapi.AllData{},
 		Run:          runRest("/auth/data/delete"),
 	}, &cli.Command{
 		Use:       "show",

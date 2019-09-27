@@ -248,6 +248,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		OrgValid:             true,
 		Outstream:            gensupport.ServerStreaming(method),
 		StreamOutIncremental: gensupport.GetStreamOutIncremental(method),
+		HasMethodArgs:        gensupport.HasMethodArgs(method),
 	}
 	if apiVals[2] == "" {
 		args.Org = `""`
@@ -284,7 +285,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		}
 	} else if g.gencliwrapper {
 		tmpl = g.tmplMethodCliWrapper
-		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto)
+		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto, method)
 		g.importOrmapi = true
 		g.importStrings = true
 	} else {
@@ -330,6 +331,7 @@ type tmplArgs struct {
 	NoConfig             string
 	ReturnErrArg         string
 	SetFields            bool
+	HasMethodArgs        bool
 }
 
 var tmplApi = `
@@ -514,6 +516,9 @@ var {{.MethodName}}Cmd = &cli.Command{
 {{- if .Show}}
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append({{.InName}}RequiredArgs, {{.InName}}OptionalArgs...), " "),
+{{- else if .HasMethodArgs}}
+	RequiredArgs: strings.Join(append([]string{"region"}, {{.MethodName}}RequiredArgs...), " "),
+	OptionalArgs: strings.Join({{.MethodName}}OptionalArgs, " "),
 {{- else}}
 	RequiredArgs: strings.Join(append([]string{"region"}, {{.InName}}RequiredArgs...), " "),
 	OptionalArgs: strings.Join({{.InName}}OptionalArgs, " "),
@@ -735,6 +740,9 @@ func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
 	}
 	g.P("}")
 	g.P()
+	for ii, method := range service.Method {
+		gensupport.GenerateMethodArgs(g.Generator, &g.support, method, true, ii)
+	}
 }
 
 func hasMc2Api(service *descriptor.ServiceDescriptorProto) bool {
