@@ -25,8 +25,8 @@ var _ = math.Inf
 
 var CreateAppInstCmd = &cli.Command{
 	Use:                  "CreateAppInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
-	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
+	RequiredArgs:         strings.Join(append([]string{"region"}, CreateAppInstRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(CreateAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
 	Comments:             addRegionComment(AppInstComments),
@@ -53,8 +53,8 @@ var DeleteAppInstCmd = &cli.Command{
 
 var UpdateAppInstCmd = &cli.Command{
 	Use:          "UpdateAppInst",
-	RequiredArgs: strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
-	OptionalArgs: strings.Join(AppInstOptionalArgs, " "),
+	RequiredArgs: strings.Join(append([]string{"region"}, UpdateAppInstRequiredArgs...), " "),
+	OptionalArgs: strings.Join(UpdateAppInstOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:  &AppInstSpecialArgs,
 	Comments:     addRegionComment(AppInstComments),
@@ -100,6 +100,36 @@ var AppInstApiCmds = []*cli.Command{
 	ShowAppInstCmd,
 }
 
+var CreateAppInstRequiredArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+	"cluster",
+	"operator",
+	"cloudlet",
+}
+var CreateAppInstOptionalArgs = []string{
+	"clusterdeveloper",
+	"flavor",
+	"state",
+	"crmoverride",
+	"autoclusteripaccess",
+	"forceupdate",
+}
+var UpdateAppInstRequiredArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+}
+var UpdateAppInstOptionalArgs = []string{
+	"cluster",
+	"operator",
+	"cloudlet",
+	"clusterdeveloper",
+	"crmoverride",
+	"forceupdate",
+	"updatemultiple",
+}
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
 	"appkey.developerkey.name",
@@ -139,12 +169,9 @@ var AppInstRequiredArgs = []string{
 }
 var AppInstOptionalArgs = []string{
 	"clusterdeveloper",
-	"flavor.name",
+	"flavor",
 	"state",
-	"errors",
 	"crmoverride",
-	"runtimeinfo.containerids",
-	"runtimeinfo.consoleurl",
 	"autoclusteripaccess",
 	"forceupdate",
 	"updatemultiple",
@@ -174,7 +201,7 @@ var AppInstAliasArgs = []string{
 	"mappedports.pathprefix=appinst.mappedports.pathprefix",
 	"mappedports.fqdnprefix=appinst.mappedports.fqdnprefix",
 	"mappedports.endport=appinst.mappedports.endport",
-	"flavor.name=appinst.flavor.name",
+	"flavor=appinst.flavor.name",
 	"state=appinst.state",
 	"errors=appinst.errors",
 	"crmoverride=appinst.crmoverride",
@@ -214,7 +241,7 @@ var AppInstComments = map[string]string{
 	"mappedports.pathprefix":         "Public facing path for HTTP L7 access.",
 	"mappedports.fqdnprefix":         "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"mappedports.endport":            "A non-zero end port indicates this is a port range from internal port to end port, inclusive.",
-	"flavor.name":                    "Flavor name",
+	"flavor":                         "Flavor name",
 	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare",
 	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
