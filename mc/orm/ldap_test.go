@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"net/http"
 	"sort"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestLDAPServer(t *testing.T) {
 	mcClient := &ormclient.Client{}
 
 	// login as super user
-	_, err = mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass)
+	tokenAd, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass)
 	require.Nil(t, err, "login as superuser")
 
 	// create new users & orgs
@@ -64,6 +65,14 @@ func TestLDAPServer(t *testing.T) {
 	defer l.Close()
 
 	var sr *ldap.SearchResult
+
+	// Login fails for locked/email not verified users
+	err = l.Bind("cn=worker1,ou=users", "worker1-password")
+	require.NotNil(t, err, "login locked user")
+	unlockUser(t, mcClient, uri, tokenAd, "orgman1")
+	unlockUser(t, mcClient, uri, tokenAd, "orgman2")
+	unlockUser(t, mcClient, uri, tokenAd, "worker1")
+	unlockUser(t, mcClient, uri, tokenAd, "worker2")
 
 	// Expect Count: 7 (1 admin entry + 4 users + 2 orgs)
 	ldapSearchCheck(t, l, "cn=worker1,ou=users", "worker1-password", "", "(objectClass=*)", 7)
@@ -118,4 +127,14 @@ func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, f
 	require.Equal(t, len(sr.Entries), numEntries, "match num of entries from search result")
 
 	return sr
+}
+
+func unlockUser(t *testing.T, mcClient *ormclient.Client, uri, token, username string) {
+	req := make(map[string]interface{})
+	req["name"] = username
+	req["locked"] = false
+	req["emailverified"] = true
+	status, err := mcClient.RestrictedUserUpdate(uri, token, req)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }

@@ -51,6 +51,9 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 		}
 		// don't log "user", as it contains password hash
 		log.SpanLog(ctx, log.DebugLevelApi, "pw check", "user", lookup)
+		if !user.EmailVerified || user.Locked {
+			return ldap.LDAPResultInvalidCredentials, nil
+		}
 		matches, err := PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
 		if err != nil || !matches {
 			time.Sleep(BadAuthDelay)
