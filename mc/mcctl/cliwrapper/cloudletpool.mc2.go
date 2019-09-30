@@ -95,14 +95,3 @@ func (s *Client) ShowCloudletsForPool(uri, token string, in *ormapi.RegionCloudl
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
 }
-
-func (s *Client) ShowCloudletsForPoolList(uri, token string, in *ormapi.RegionCloudletPoolList) ([]edgeproto.Cloudlet, int, error) {
-	args := []string{"region", "ShowCloudletsForPoolList"}
-	outlist := []edgeproto.Cloudlet{}
-	noconfig := strings.Split("", ",")
-	ops := []runOp{
-		withIgnore(noconfig),
-	}
-	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
-	return outlist, st, err
-}

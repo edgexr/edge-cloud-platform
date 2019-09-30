@@ -1,0 +1,206 @@
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+  influxdb: http://127.0.0.1:8086
+  createdat: 2019-09-26T14:54:12.019247-07:00
+  updatedat: 2019-09-26T14:54:12.019247-07:00
+- region: usa
+  address: usa.mc.mobiledgex.com:55001
+  createdat: 2019-09-26T14:54:12.021051-07:00
+  updatedat: 2019-09-26T14:54:12.021051-07:00
+- region: germany
+  address: germany.mc.mobiledgex.com:55001
+  createdat: 2019-09-26T14:54:12.022424-07:00
+  updatedat: 2019-09-26T14:54:12.022424-07:00
+orgs:
+- name: enterprise
+  type: developer
+  address: enterprise headquarters
+  phone: 123-123-1234
+  adminusername: mexadmin
+  createdat: 2019-09-26T14:54:12.023243-07:00
+  updatedat: 2019-09-26T14:54:12.023243-07:00
+roles:
+- org: enterprise
+  username: mexadmin
+  role: DeveloperManager
+- org: enterprise
+  username: user3
+  role: DeveloperManager
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        operatorkey:
+          name: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      timelimits:
+        createclusterinsttimeout: 3000000000
+        updateclusterinsttimeout: 2000000000
+        deleteclusterinsttimeout: 2000000000
+        createappinsttimeout: 3000000000
+        updateappinsttimeout: 2000000000
+        deleteappinsttimeout: 2000000000
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51006
+      flavor:
+        name: x1.small
+      physicalname: enterprise-1
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: enterprise
+          name: enterprise-1
+        developer: enterprise
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      state: Ready
+      ipaccess: IpAccessDedicated
+      allocatedip: dynamic
+      nodeflavor: flavor1
+      deployment: kubernetes
+      nummasters: 1
+      numnodes: 1
+    apps:
+    - key:
+        developerkey:
+          name: enterprise
+        name: ep1
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
+      imagetype: ImageTypeDocker
+      accessports: tcp:80,http:443,udp:10002
+      defaultflavor:
+        name: x1.small
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ep1-tcp
+          labels:
+            run: ep1
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp80
+            protocol: TCP
+            port: 80
+            targetPort: 80
+          - name: http443
+            protocol: TCP
+            port: 443
+            targetPort: 443
+          selector:
+            run: ep1
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ep1-udp
+          labels:
+            run: ep1
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: udp10002
+            protocol: UDP
+            port: 10002
+            targetPort: 10002
+          selector:
+            run: ep1
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ep1-deployment
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              run: ep1
+          template:
+            metadata:
+              labels:
+                run: ep1
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: registry.mobiledgex.net
+              containers:
+              - name: ep1
+                image: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 80
+                  protocol: TCP
+                - containerPort: 443
+                  protocol: TCP
+                - containerPort: 10002
+                  protocol: UDP
+      deploymentgenerator: kubernetes-basic
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: enterprise
+          name: ep1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            operatorkey:
+              name: enterprise
+            name: enterprise-1
+          developer: enterprise
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: smallcluster.enterprise-1.enterprise.mobiledgex.net
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 80
+        publicport: 80
+        fqdnprefix: ep1-tcp.
+      - proto: LProtoHttp
+        internalport: 443
+        publicport: 443
+        pathprefix: enterprise/ep110/p443
+      - proto: LProtoUdp
+        internalport: 10002
+        publicport: 10002
+        fqdnprefix: ep1-udp.
+      flavor:
+        name: x1.small
+      state: Ready
+      createdat:
+        seconds: 1569534854
+        nanos: 528573000

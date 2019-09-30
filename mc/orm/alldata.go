@@ -11,9 +11,10 @@ import (
 )
 
 type RegionContext struct {
-	region string
-	claims *UserClaims
-	conn   *grpc.ClientConn
+	region    string
+	username  string
+	conn      *grpc.ClientConn
+	skipAuthz bool
 }
 
 func newResCb(c echo.Context, desc string) func(*edgeproto.Result) {
@@ -63,7 +64,7 @@ func CreateData(c echo.Context) error {
 		defer conn.Close()
 
 		rc := &RegionContext{}
-		rc.claims = claims
+		rc.username = claims.Username
 		rc.region = regionData.Region
 		rc.conn = conn
 
@@ -77,6 +78,16 @@ func CreateData(c echo.Context) error {
 			desc := fmt.Sprintf("Create Cloudlet %v", cloudlet.Key)
 			cb := newResCb(c, desc)
 			err = CreateCloudletStream(ctx, rc, &cloudlet, cb)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, pool := range appdata.CloudletPools {
+			desc := fmt.Sprintf("Create CloudletPool %v", pool.Key)
+			_, err := CreateCloudletPoolObj(ctx, rc, &pool)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, member := range appdata.CloudletPoolMembers {
+			desc := fmt.Sprintf("Create CloudletPoolMember %v", member)
+			_, err := CreateCloudletPoolMemberObj(ctx, rc, &member)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cinst := range appdata.ClusterInsts {
@@ -96,6 +107,11 @@ func CreateData(c echo.Context) error {
 			err = CreateAppInstStream(ctx, rc, &appinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
+	}
+	for _, oc := range data.OrgCloudletPools {
+		desc := fmt.Sprintf("Create OrgCloudletPool %v", oc)
+		err := CreateOrgCloudletPoolObj(ctx, claims, &oc)
+		streamReply(c, desc, err, &hadErr)
 	}
 	if hadErr {
 		streamErr(c, "Some error encountered")
@@ -119,6 +135,11 @@ func DeleteData(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	hadErr := false
+	for _, oc := range data.OrgCloudletPools {
+		desc := fmt.Sprintf("Delete OrgCloudletPool %v", oc)
+		err := DeleteOrgCloudletPoolObj(ctx, claims, &oc)
+		streamReply(c, desc, err, &hadErr)
+	}
 	for _, regionData := range data.RegionData {
 		conn, err := connectController(ctx, regionData.Region)
 		if err != nil {
@@ -129,7 +150,7 @@ func DeleteData(c echo.Context) error {
 		defer conn.Close()
 
 		rc := &RegionContext{}
-		rc.claims = claims
+		rc.username = claims.Username
 		rc.region = regionData.Region
 		rc.conn = conn
 
@@ -150,6 +171,16 @@ func DeleteData(c echo.Context) error {
 			desc := fmt.Sprintf("Delete ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
 			err = DeleteClusterInstStream(ctx, rc, &cinst, cb)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, member := range appdata.CloudletPoolMembers {
+			desc := fmt.Sprintf("Delete CloudletPoolMember %v", member)
+			_, err := DeleteCloudletPoolMemberObj(ctx, rc, &member)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, pool := range appdata.CloudletPools {
+			desc := fmt.Sprintf("Delete CloudletPool %v", pool.Key)
+			_, err := DeleteCloudletPoolObj(ctx, rc, &pool)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
@@ -207,6 +238,10 @@ func ShowData(c echo.Context) error {
 	if err == nil {
 		data.Roles = roles
 	}
+	ocs, err := ShowOrgCloudletPoolObj(ctx, claims.Username)
+	if err == nil {
+		data.OrgCloudletPools = ocs
+	}
 
 	// Iterate over all controllers. We need to look up
 	// controllers this time without enforcement check.
@@ -224,7 +259,7 @@ func ShowData(c echo.Context) error {
 		defer conn.Close()
 
 		rc := &RegionContext{}
-		rc.claims = claims
+		rc.username = claims.Username
 		rc.region = ctrl.Region
 		rc.conn = conn
 
@@ -235,6 +270,14 @@ func ShowData(c echo.Context) error {
 		cloudlets, err := ShowCloudletObj(ctx, rc, &edgeproto.Cloudlet{})
 		if err == nil {
 			appdata.Cloudlets = cloudlets
+		}
+		pools, err := ShowCloudletPoolObj(ctx, rc, &edgeproto.CloudletPool{})
+		if err == nil {
+			appdata.CloudletPools = pools
+		}
+		members, err := ShowCloudletPoolMemberObj(ctx, rc, &edgeproto.CloudletPoolMember{})
+		if err == nil {
+			appdata.CloudletPoolMembers = members
 		}
 		flavors, err := ShowFlavorObj(ctx, rc, &edgeproto.Flavor{})
 		if err == nil {

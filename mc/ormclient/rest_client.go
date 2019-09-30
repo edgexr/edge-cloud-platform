@@ -11,6 +11,7 @@ import (
 	"reflect"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
 type Client struct {
@@ -82,6 +83,26 @@ func (s *Client) ShowOrg(uri, token string) ([]ormapi.Organization, int, error) 
 	orgs := []ormapi.Organization{}
 	status, err := s.PostJson(uri+"/auth/org/show", token, nil, &orgs)
 	return orgs, status, err
+}
+
+func (s *Client) CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/orgcloudletpool/create", token, op, nil)
+}
+
+func (s *Client) DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/orgcloudletpool/delete", token, op, nil)
+}
+
+func (s *Client) ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error) {
+	ops := []ormapi.OrgCloudletPool{}
+	status, err := s.PostJson(uri+"/auth/orgcloudletpool/show", token, nil, &ops)
+	return ops, status, err
+}
+
+func (s *Client) ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.Cloudlet, int, error) {
+	out := []edgeproto.Cloudlet{}
+	status, err := s.PostJson(uri+"/auth/orgcloudlet/show", token, in, &out)
+	return out, status, err
 }
 
 func (s *Client) AddUserRole(uri, token string, role *ormapi.Role) (int, error) {

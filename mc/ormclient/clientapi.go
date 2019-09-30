@@ -1,6 +1,9 @@
 package ormclient
 
-import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+import (
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+)
 
 type Api interface {
 	DoLogin(uri, user, pass string) (string, error)
@@ -30,6 +33,11 @@ type Api interface {
 	UpdateConfig(uri, token string, config map[string]interface{}) (int, error)
 	ShowConfig(uri, token string) (*ormapi.Config, int, error)
 
+	CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error)
+	ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.Cloudlet, int, error)
+
 	ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 	ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 
@@ -38,4 +46,6 @@ type Api interface {
 	ClusterInstApiClient
 	AppApiClient
 	AppInstApiClient
+	CloudletPoolApiClient
+	CloudletPoolMemberApiClient
 }

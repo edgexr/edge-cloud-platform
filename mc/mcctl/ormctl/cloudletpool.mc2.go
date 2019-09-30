@@ -101,6 +101,12 @@ var ShowCloudletPoolMemberCmd = &cli.Command{
 	StreamOut:    true,
 }
 
+var CloudletPoolMemberApiCmds = []*cli.Command{
+	CreateCloudletPoolMemberCmd,
+	DeleteCloudletPoolMemberCmd,
+	ShowCloudletPoolMemberCmd,
+}
+
 var ShowPoolsForCloudletCmd = &cli.Command{
 	Use:          "ShowPoolsForCloudlet",
 	RequiredArgs: "region",
@@ -127,26 +133,9 @@ var ShowCloudletsForPoolCmd = &cli.Command{
 	StreamOut:    true,
 }
 
-var ShowCloudletsForPoolListCmd = &cli.Command{
-	Use:          "ShowCloudletsForPoolList",
-	RequiredArgs: "region",
-	OptionalArgs: strings.Join(append(CloudletPoolListRequiredArgs, CloudletPoolListOptionalArgs...), " "),
-	AliasArgs:    strings.Join(CloudletPoolListAliasArgs, " "),
-	SpecialArgs:  &CloudletPoolListSpecialArgs,
-	Comments:     addRegionComment(CloudletPoolListComments),
-	ReqData:      &ormapi.RegionCloudletPoolList{},
-	ReplyData:    &edgeproto.Cloudlet{},
-	Run:          runRest("/auth/ctrl/ShowCloudletsForPoolList"),
-	StreamOut:    true,
-}
-
-var CloudletPoolMemberApiCmds = []*cli.Command{
-	CreateCloudletPoolMemberCmd,
-	DeleteCloudletPoolMemberCmd,
-	ShowCloudletPoolMemberCmd,
+var CloudletPoolShowApiCmds = []*cli.Command{
 	ShowPoolsForCloudletCmd,
 	ShowCloudletsForPoolCmd,
-	ShowCloudletsForPoolListCmd,
 }
 
 var CloudletPoolKeyRequiredArgs = []string{}
@@ -188,16 +177,3 @@ var CloudletPoolMemberComments = map[string]string{
 	"cloudlet": "Name of the cloudlet",
 }
 var CloudletPoolMemberSpecialArgs = map[string]string{}
-var CloudletPoolListRequiredArgs = []string{}
-var CloudletPoolListOptionalArgs = []string{
-	"poolname",
-}
-var CloudletPoolListAliasArgs = []string{
-	"poolname=cloudletpoollist.poolname",
-}
-var CloudletPoolListComments = map[string]string{
-	"poolname": "Name of Cloudlet Pool (may be repeated)",
-}
-var CloudletPoolListSpecialArgs = map[string]string{
-	"poolname": "StringArray",
-}

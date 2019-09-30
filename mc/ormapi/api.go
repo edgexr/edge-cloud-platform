@@ -48,6 +48,12 @@ type Config struct {
 	NotifyEmailAddress string
 }
 
+type OrgCloudletPool struct {
+	Org          string `gorm:"type:citext REFERENCES organizations(name)"`
+	Region       string `gorm:"type:text REFERENCES controllers(region)"`
+	CloudletPool string `gorm:"not null"`
+}
+
 // Structs used for API calls
 
 type RolePerm struct {
@@ -60,6 +66,11 @@ type Role struct {
 	Org      string `form:"org" json:"org"`
 	Username string `form:"username" json:"username"`
 	Role     string `form:"role" json:"role"`
+}
+
+type OrgCloudlet struct {
+	Region string `json:"region,omitempty"`
+	Org    string `form:"org" json:"org"`
 }
 
 type UserLogin struct {
@@ -142,10 +153,11 @@ type StreamPayload struct {
 // all data is for full create/delete
 
 type AllData struct {
-	Controllers []Controller   `json:"controllers,omitempty"`
-	Orgs        []Organization `json:"orgs,omitempty"`
-	Roles       []Role         `json:"roles,omitempty"`
-	RegionData  []RegionData   `json:"regiondata,omitempty"`
+	Controllers      []Controller      `json:"controllers,omitempty"`
+	Orgs             []Organization    `json:"orgs,omitempty"`
+	Roles            []Role            `json:"roles,omitempty"`
+	OrgCloudletPools []OrgCloudletPool `json:"orgcloudletpools,omitempty"`
+	RegionData       []RegionData      `json:"regiondata,omitempty"`
 }
 
 type RegionData struct {

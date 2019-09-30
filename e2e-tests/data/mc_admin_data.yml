@@ -7,6 +7,23 @@ controllers:
 - region: germany
   address: "germany.mc.mobiledgex.com:55001"
 
+orgs:
+- name: enterprise
+  type: developer
+  address: enterprise headquarters
+  phone: 123-123-1234
+  adminusername: mexadmin
+
+roles:
+- username: user3
+  org: enterprise
+  role: DeveloperManager
+
+orgcloudletpools:
+- org: enterprise
+  region: local
+  cloudletpool: enterprise-pool
+
 regiondata:
 - region: local
   appdata:
@@ -26,4 +43,36 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
-
+    cloudlets:
+    - key:
+        operatorkey:
+          name: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51006
+      flavor:
+        name: x1.small
+      physicalname: enterprise-1
+      state: Ready
+      timelimits:
+        createclusterinsttimeout: 3000000000
+        updateclusterinsttimeout: 2000000000
+        deleteclusterinsttimeout: 2000000000
+        createappinsttimeout: 3000000000
+        updateappinsttimeout: 2000000000
+        deleteappinsttimeout: 2000000000
+    cloudletpools:
+    - key:
+        name: enterprise-pool
+    cloudletpoolmembers:
+    - poolkey:
+        name: enterprise-pool
+      cloudletkey:
+        operatorkey:
+          name: enterprise
+        name: enterprise-1

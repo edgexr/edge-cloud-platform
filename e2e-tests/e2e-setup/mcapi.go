@@ -242,11 +242,15 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 	orgs, status, err := mcClient.ShowOrg(uri, token)
 	checkMcErr("ShowOrgs", status, err, rc)
 	roles, status, err := mcClient.ShowUserRole(uri, token)
+	checkMcErr("ShowRoles", status, err, rc)
+	ocs, status, err := mcClient.ShowOrgCloudletPool(uri, token)
+	checkMcErr("ShowOrgCloudletPools", status, err, rc)
 
 	showData := &ormapi.AllData{
-		Controllers: ctrls,
-		Orgs:        orgs,
-		Roles:       roles,
+		Controllers:      ctrls,
+		Orgs:             orgs,
+		Roles:            roles,
+		OrgCloudletPools: ocs,
 	}
 	for _, ctrl := range ctrls {
 		inFlavor := &ormapi.RegionFlavor{
@@ -260,6 +264,18 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		}
 		cloudlets, status, err := mcClient.ShowCloudlet(uri, token, inCloudlet)
 		checkMcCtrlErr("ShowCloudlet", status, err, rc)
+
+		inCloudletPool := &ormapi.RegionCloudletPool{
+			Region: ctrl.Region,
+		}
+		pools, status, err := mcClient.ShowCloudletPool(uri, token, inCloudletPool)
+		checkMcCtrlErr("ShowCloudletPool", status, err, rc)
+
+		inCloudletPoolMember := &ormapi.RegionCloudletPoolMember{
+			Region: ctrl.Region,
+		}
+		members, status, err := mcClient.ShowCloudletPoolMember(uri, token, inCloudletPoolMember)
+		checkMcCtrlErr("ShowCloudletPoolMember", status, err, rc)
 
 		inClusterInst := &ormapi.RegionClusterInst{
 			Region: ctrl.Region,
@@ -289,11 +305,13 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		rd := ormapi.RegionData{
 			Region: ctrl.Region,
 			AppData: edgeproto.ApplicationData{
-				Flavors:      flavors,
-				Cloudlets:    cloudlets,
-				ClusterInsts: clusterInsts,
-				Applications: apps,
-				AppInstances: appInsts,
+				Flavors:             flavors,
+				Cloudlets:           cloudlets,
+				CloudletPools:       pools,
+				CloudletPoolMembers: members,
+				ClusterInsts:        clusterInsts,
+				Applications:        apps,
+				AppInstances:        appInsts,
 			},
 		}
 		showData.RegionData = append(showData.RegionData, rd)
@@ -331,6 +349,22 @@ func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 			_, st, err := mcClient.CreateCloudlet(uri, token, in)
 			checkMcErr("CreateCloudlet", st, err, rc)
 		}
+		for _, pool := range rd.AppData.CloudletPools {
+			in := &ormapi.RegionCloudletPool{
+				Region:       rd.Region,
+				CloudletPool: pool,
+			}
+			_, st, err := mcClient.CreateCloudletPool(uri, token, in)
+			checkMcErr("CreateCloudletPool", st, err, rc)
+		}
+		for _, member := range rd.AppData.CloudletPoolMembers {
+			in := &ormapi.RegionCloudletPoolMember{
+				Region:             rd.Region,
+				CloudletPoolMember: member,
+			}
+			_, st, err := mcClient.CreateCloudletPoolMember(uri, token, in)
+			checkMcErr("CreateCloudletPoolMember", st, err, rc)
+		}
 		for _, cinst := range rd.AppData.ClusterInsts {
 			in := &ormapi.RegionClusterInst{
 				Region:      rd.Region,
@@ -356,9 +390,17 @@ func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 			checkMcErr("CreateAppInst", st, err, rc)
 		}
 	}
+	for _, oc := range data.OrgCloudletPools {
+		st, err := mcClient.CreateOrgCloudletPool(uri, token, &oc)
+		checkMcErr("CreateOrgCloudletPool", st, err, rc)
+	}
 }
 
 func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
+	for _, oc := range data.OrgCloudletPools {
+		st, err := mcClient.DeleteOrgCloudletPool(uri, token, &oc)
+		checkMcErr("DeleteOrgCloudletPool", st, err, rc)
+	}
 	for _, rd := range data.RegionData {
 		for _, appinst := range rd.AppData.AppInstances {
 			in := &ormapi.RegionAppInst{
@@ -383,6 +425,22 @@ func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 			}
 			_, st, err := mcClient.DeleteClusterInst(uri, token, in)
 			checkMcErr("DeleteClusterInst", st, err, rc)
+		}
+		for _, member := range rd.AppData.CloudletPoolMembers {
+			in := &ormapi.RegionCloudletPoolMember{
+				Region:             rd.Region,
+				CloudletPoolMember: member,
+			}
+			_, st, err := mcClient.DeleteCloudletPoolMember(uri, token, in)
+			checkMcErr("DeleteCloudletPoolMember", st, err, rc)
+		}
+		for _, pool := range rd.AppData.CloudletPools {
+			in := &ormapi.RegionCloudletPool{
+				Region:       rd.Region,
+				CloudletPool: pool,
+			}
+			_, st, err := mcClient.DeleteCloudletPool(uri, token, in)
+			checkMcErr("DeleteCloudletPool", st, err, rc)
 		}
 		for _, cloudlet := range rd.AppData.Cloudlets {
 			in := &ormapi.RegionCloudlet{

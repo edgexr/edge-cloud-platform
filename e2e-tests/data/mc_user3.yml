@@ -1,0 +1,3 @@
+- name: user3
+  passhash: user3password
+  email: user3@enterprise.com

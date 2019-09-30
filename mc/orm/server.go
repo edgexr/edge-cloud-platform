@@ -223,6 +223,10 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
 	auth.POST("/audit/showself", ShowAuditSelf)
 	auth.POST("/audit/showorg", ShowAuditOrg)
+	auth.POST("/orgcloudletpool/create", CreateOrgCloudletPool)
+	auth.POST("/orgcloudletpool/delete", DeleteOrgCloudletPool)
+	auth.POST("/orgcloudletpool/show", ShowOrgCloudletPool)
+	auth.POST("/orgcloudlet/show", ShowOrgCloudlet)
 	addControllerApis(auth)
 	// Metrics api route use auth to serve a query to influxDB
 	auth.POST("/metrics/app", GetMetricsCommon)
