@@ -248,6 +248,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		OrgValid:             true,
 		Outstream:            gensupport.ServerStreaming(method),
 		StreamOutIncremental: gensupport.GetStreamOutIncremental(method),
+		CustomAuthz:          GetMc2CustomAuthz(method),
 		HasMethodArgs:        gensupport.HasMethodArgs(method),
 	}
 	if apiVals[2] == "" {
@@ -265,6 +266,13 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	if !args.Outstream {
 		args.ReturnErrArg = "nil, "
 	}
+	if !args.Show {
+		args.TargetCloudlet = GetMc2TargetCloudlet(in.DescriptorProto)
+		if args.TargetCloudlet != "" {
+			args.TargetCloudletParam = ", targetCloudlet *edgeproto.CloudletKey"
+			args.TargetCloudletArg = ", targetCloudlet"
+		}
+	}
 	var tmpl *template.Template
 	if g.genapi {
 		tmpl = g.tmplApi
@@ -275,6 +283,9 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		tmpl = g.tmplMethodTest
 		g.importOrmapi = true
 		g.importOrmclient = true
+		g.importTesting = true
+		g.importRequire = true
+		g.importHttp = true
 	} else if g.genctl {
 		tmpl = g.tmplMethodCtl
 		g.importOrmapi = true
@@ -331,6 +342,10 @@ type tmplArgs struct {
 	NoConfig             string
 	ReturnErrArg         string
 	SetFields            bool
+	CustomAuthz          bool
+	TargetCloudlet       string
+	TargetCloudletParam  string
+	TargetCloudletArg    string
 	HasMethodArgs        bool
 }
 
@@ -352,7 +367,7 @@ func {{.MethodName}}(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	rc.claims = claims
+	rc.username = claims.Username
 
 	in := ormapi.Region{{.InName}}{}
 	if err := c.Bind(&in); err != nil {
@@ -403,16 +418,55 @@ func {{.MethodName}}(c echo.Context) error {
 {{- end}}
 }
 
+{{- if and (not .SkipEnforce) (and .Show .CustomAuthz)}}
+type {{.MethodName}}Authz interface {
+	Ok(obj *edgeproto.{{.InName}}) bool
+}
+{{- end}}
+
 {{if .Outstream}}
 func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
 {{- else}}
 func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
-{{- if and (not .Show) (not .SkipEnforce)}}
-	if !authorized(ctx, rc.claims.Username, {{.Org}},
+{{- if (not .SkipEnforce)}}
+{{- if and .Show .CustomAuthz}}
+	var authz {{.MethodName}}Authz
+	var err error
+	if !rc.skipAuthz {
+		authz, err = new{{.MethodName}}Authz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
+		if err == echo.ErrForbidden {
+			return nil
+		}
+		if err != nil {
+			return {{.ReturnErrArg}}err
+		}
+	}
+{{- else if and .Show (not .CustomAuthz)}}
+	var authz *ShowAuthz
+	var err error
+	if !rc.skipAuthz {
+		authz, err = NewShowAuthz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
+		if err == echo.ErrForbidden {
+			return nil
+		}
+		if err != nil {
+			return {{.ReturnErrArg}}err
+		}
+	}
+{{- else if .CustomAuthz}}
+	if !rc.skipAuthz {
+		if err := authz{{.MethodName}}(ctx, rc.region, rc.username, obj,
+			{{.Resource}}, {{.Action}}); err != nil {
+			return err
+		}
+	}
+{{- else}}
+	if !rc.skipAuthz && !authorized(ctx, rc.username, {{.Org}},
 		{{.Resource}}, {{.Action}}) {
 		return {{.ReturnErrArg}}echo.ErrForbidden
 	}
+{{- end}}
 {{- end}}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -440,10 +494,17 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 		if err != nil {
 			return {{.ReturnErrArg}}err
 		}
-{{- if and (.Show) (not .SkipEnforce)}}
-		if !authorized(ctx, rc.claims.Username, {{.ShowOrg}},
-			{{.Resource}}, {{.Action}}) {
-			continue
+{{- if and .Show (not .SkipEnforce)}}
+		if !rc.skipAuthz {
+{{- if .CustomAuthz}}
+			if !authz.Ok(res) {
+				continue
+			}
+{{- else}}
+			if !authz.Ok({{.ShowOrg}}) {
+				continue
+			}
+{{- end}}
 		}
 {{- end}}
 		cb(res)
@@ -479,15 +540,32 @@ func test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, 
 }
 
 {{- if .Outstream}}
-func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.{{.OutName}}, int, error) {
+func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) ([]edgeproto.{{.OutName}}, int, error) {
 {{- else}}
-func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.{{.OutName}}, int, error) {
+func testPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) (edgeproto.{{.OutName}}, int, error) {
 {{- end}}
 	in := &edgeproto.{{.InName}}{}
+{{- if .TargetCloudlet}}
+	if targetCloudlet != nil {
+		in.{{.TargetCloudlet}} = *targetCloudlet
+	}
+{{- end}}
 {{- if and (ne .OrgField "") (not .SkipEnforce)}}
 	in.{{.OrgField}} = org
 {{- end}}
 	return test{{.MethodName}}(mcClient, uri, token, region, in)
+}
+
+func badPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
+	_, status, err := testPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}})
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
+	_, status, err := testPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}})
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }
 `
 
@@ -588,8 +666,9 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
 	message := desc.DescriptorProto
 	args := msgArgs{
-		Message:   *message.Name,
-		HasUpdate: GetGenerateCudTestUpdate(message),
+		Message:        *message.Name,
+		HasUpdate:      GetGenerateCudTestUpdate(message),
+		TargetCloudlet: GetMc2TargetCloudlet(message),
 	}
 	if GetGenerateAddrmTest(message) {
 		args.Create = "Add"
@@ -598,7 +677,10 @@ func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
 		args.Create = "Create"
 		args.Delete = "Delete"
 	}
-
+	if args.TargetCloudlet != "" {
+		args.TargetCloudletParam = ", targetCloudlet *edgeproto.CloudletKey"
+		args.TargetCloudletArg = ", targetCloudlet"
+	}
 	err := g.tmplMessageTest.Execute(g, &args)
 	if err != nil {
 		g.Fail("Failed to execute message test template: ", err.Error())
@@ -609,27 +691,24 @@ func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
 }
 
 type msgArgs struct {
-	Message   string
-	HasUpdate bool
-	Create    string
-	Delete    string
+	Message             string
+	HasUpdate           bool
+	Create              string
+	Delete              string
+	TargetCloudlet      string
+	TargetCloudletParam string
+	TargetCloudletArg   string
 }
 
 var tmplMessageTest = `
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testPerm{{.Create}}{{.Message}}(mcClient, uri, token, region, org)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusForbidden, status)
+func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
+	badPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 {{- if .HasUpdate}}
-	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusForbidden, status)
+	badPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 {{- end}}
-	_, status, err = testPerm{{.Delete}}{{.Message}}(mcClient, uri, token, region, org)
-	require.NotNil(t, err)
-	require.Equal(t, http.StatusForbidden, status)
+	badPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 }
 
 func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -642,31 +721,25 @@ func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, 
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
-	_, status, err := testPerm{{.Create}}{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
+func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, showcount int) {
+	goodPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 {{- if .HasUpdate}}
-	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
+	goodPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 {{- end}}
-	_, status, err = testPerm{{.Delete}}{{.Message}}(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
+	goodPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 
 	// make sure region check works
-	_, status, err = testPerm{{.Create}}{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err := testPerm{{.Create}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 {{- if .HasUpdate}}
-	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err = testPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 {{- end}}
-	_, status, err = testPerm{{.Delete}}{{.Message}}(mcClient, uri, token, "bad region", org)
+	_, status, err = testPerm{{.Delete}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -691,14 +764,14 @@ func goodPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri,
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int) {
-	badPermTest{{.Message}}(t, mcClient, uri, token1, region, org2)
+func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string{{.TargetCloudletParam}}, showcount int) {
+	badPermTest{{.Message}}(t, mcClient, uri, token1, region, org2{{.TargetCloudletArg}})
 	badPermTestShow{{.Message}}(t, mcClient, uri, token1, region, org2)
-	badPermTest{{.Message}}(t, mcClient, uri, token2, region, org1)
+	badPermTest{{.Message}}(t, mcClient, uri, token2, region, org1{{.TargetCloudletArg}})
 	badPermTestShow{{.Message}}(t, mcClient, uri, token2, region, org1)
 
-	goodPermTest{{.Message}}(t, mcClient, uri, token1, region, org1, showcount)
-	goodPermTest{{.Message}}(t, mcClient, uri, token2, region, org2, showcount)
+	goodPermTest{{.Message}}(t, mcClient, uri, token1, region, org1{{.TargetCloudletArg}}, showcount)
+	goodPermTest{{.Message}}(t, mcClient, uri, token2, region, org2{{.TargetCloudletArg}}, showcount)
 }
 `
 
@@ -764,6 +837,14 @@ func (g *GenMC2) hasParam(p string) bool {
 
 func GetMc2Api(method *descriptor.MethodDescriptorProto) string {
 	return gensupport.GetStringExtension(method.Options, protogen.E_Mc2Api, "")
+}
+
+func GetMc2CustomAuthz(method *descriptor.MethodDescriptorProto) bool {
+	return proto.GetBoolExtension(method.Options, protogen.E_Mc2CustomAuthz, false)
+}
+
+func GetMc2TargetCloudlet(message *descriptor.DescriptorProto) string {
+	return gensupport.GetStringExtension(message.Options, protogen.E_Mc2TargetCloudlet, "")
 }
 
 func GetGenerateCud(message *descriptor.DescriptorProto) bool {

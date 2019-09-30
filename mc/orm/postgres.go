@@ -58,7 +58,7 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 
 		// create or update tables
 		err := db.AutoMigrate(&ormapi.User{}, &ormapi.Organization{},
-			&ormapi.Controller{}, &ormapi.Config{}).Error
+			&ormapi.Controller{}, &ormapi.Config{}, &ormapi.OrgCloudletPool{}).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
 			continue
@@ -77,6 +77,11 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 		err = InitConfig(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init config", "err", err)
+			continue
+		}
+		err = InitOrgCloudletPool(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "init orgcloudletpool", "err", err)
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "init data done")

@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 )
@@ -49,4 +50,24 @@ func (e *Enforcer) Enforce(ctx context.Context, sub, org, obj, act string) (bool
 
 func (e *Enforcer) LogEnforce(on bool) {
 	e.adapter.LogAuthz(on)
+}
+
+func (e *Enforcer) GetAuthorizedOrgs(ctx context.Context, sub, obj, act string) (map[string]struct{}, error) {
+	authz, err := e.adapter.GetAuthorized(ctx, obj, act)
+	if err != nil {
+		return nil, err
+	}
+	orgs := make(map[string]struct{})
+	for k, _ := range authz {
+		// no org
+		if k == sub {
+			orgs[""] = struct{}{}
+		}
+		orguser := strings.Split(k, "::")
+		if len(orguser) == 2 && orguser[1] == sub {
+			org := orguser[0]
+			orgs[org] = struct{}{}
+		}
+	}
+	return orgs, nil
 }

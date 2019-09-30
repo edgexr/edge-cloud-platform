@@ -37,8 +37,3 @@ type RegionCloudletPoolKey struct {
 	Region          string
 	CloudletPoolKey edgeproto.CloudletPoolKey
 }
-
-type RegionCloudletPoolList struct {
-	Region           string
-	CloudletPoolList edgeproto.CloudletPoolList
-}

@@ -1,0 +1,55 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          operatorkey:
+            name: enterprise
+          name: enterprise-1
+        developer: enterprise
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      ipaccess: IpAccessDedicated
+      nodeflavor: flavor1
+      masterflavor: flavor1
+      nummasters: 1
+      numnodes: 1
+    apps:
+    - key:
+        developerkey:
+          name: enterprise
+        name: ep1
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
+      imagetype: ImageTypeDocker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: SmallCluster
+      accessports: "tcp:80,http:443,udp:10002"
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: enterprise
+          name: ep1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            operatorkey:
+              name: enterprise
+            name: enterprise-1
+          developer: enterprise
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      liveness: LivenessStatic
+      flavor:
+        name: x1.small
