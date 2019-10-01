@@ -10,6 +10,7 @@ func GetControllerCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
 		RequiredArgs: "region address",
+		OptionalArgs: "influxdb",
 		ReqData:      &ormapi.Controller{},
 		Run:          runRest("/auth/controller/create"),
 	}, &cli.Command{

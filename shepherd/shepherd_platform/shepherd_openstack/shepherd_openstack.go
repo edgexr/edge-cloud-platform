@@ -66,7 +66,7 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 	}
 
 	cloudletMetric.ComputeTS, _ = types.TimestampProto(time.Now())
-	// Openstack limits for RAM and Disk is in GBs
+	// Openstack limits for RAM in MB and Disk is in GBs
 	for _, l := range limits {
 
 		if l.Name == "maxTotalRAMSize" {

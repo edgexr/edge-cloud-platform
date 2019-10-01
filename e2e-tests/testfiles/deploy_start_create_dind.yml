@@ -8,7 +8,7 @@ tests:
 
 - name: admin create controllers, flavors
   actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_admin_data.yml'
+  apifile: '{{datadir2}}/mc_admin_data_dind.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'
 
 - name: create users
