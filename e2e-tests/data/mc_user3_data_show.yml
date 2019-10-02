@@ -190,10 +190,10 @@ regiondata:
         internalport: 80
         publicport: 80
         fqdnprefix: ep1-tcp.
-      - proto: LProtoHttp
+      - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        pathprefix: enterprise/ep110/p443
+        fqdnprefix: ep1-tcp.
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
