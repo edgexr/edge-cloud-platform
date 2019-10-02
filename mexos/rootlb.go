@@ -12,6 +12,7 @@ import (
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -64,8 +65,8 @@ var rootLBPorts = []int{
 
 //CreateRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
 //  It also sets up first basic network router and subnet, ready for running first MEX agent.
-func CreateRootLB(ctx context.Context, rootLB *MEXRootLB, platformFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name)
+func CreateRootLB(ctx context.Context, rootLB *MEXRootLB, vmspec *vmspec.VMCreationSpec, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name, "vmspec", vmspec)
 	if rootLB == nil {
 		return fmt.Errorf("cannot enable rootLB, rootLB is null")
 	}
@@ -90,7 +91,7 @@ func CreateRootLB(ctx context.Context, rootLB *MEXRootLB, platformFlavor string,
 	}
 	if found == 0 {
 		log.SpanLog(ctx, log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
-		err := HeatCreateRootLBVM(ctx, rootLB.Name, rootLB.Name, platformFlavor, updateCallback)
+		err := HeatCreateRootLBVM(ctx, rootLB.Name, rootLB.Name, vmspec, updateCallback)
 		if err != nil {
 			log.InfoLog("error while creating RootLB VM", "name", rootLB.Name, "error", err)
 			return err
@@ -106,8 +107,8 @@ func CreateRootLB(ctx context.Context, rootLB *MEXRootLB, platformFlavor string,
 
 //SetupRootLB prepares the RootLB. It will optionally create the rootlb if the createRootLBFlavor
 // is not blank and no existing server found
-func SetupRootLB(ctx context.Context, rootLBName string, createRootLBFlavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "SetupRootLB", "createRootLBFlavor", createRootLBFlavor)
+func SetupRootLB(ctx context.Context, rootLBName string, rootLBSpec *vmspec.VMCreationSpec, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "SetupRootLB", "rootLBSpec", rootLBSpec)
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(rootLBName) {
 		return fmt.Errorf("fqdn %s is not valid", rootLBName)
@@ -119,8 +120,8 @@ func SetupRootLB(ctx context.Context, rootLBName string, createRootLBFlavor stri
 	sd, err := GetServerDetails(ctx, rootLBName)
 	if err == nil && sd.Name == rootLBName {
 		log.SpanLog(ctx, log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
-	} else if createRootLBFlavor != "" {
-		err = CreateRootLB(ctx, rootLB, createRootLBFlavor, updateCallback)
+	} else if rootLBSpec != nil {
+		err = CreateRootLB(ctx, rootLB, rootLBSpec, updateCallback)
 		if err != nil {
 			log.InfoLog("can't create agent", "name", rootLB.Name, "err", err)
 			return fmt.Errorf("Failed to enable root LB %v", err)

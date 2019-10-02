@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -150,7 +151,8 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		//suitable for docker only
 		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-		err = HeatCreateRootLBVM(ctx, dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), clusterInst.NodeFlavor, updateCallback)
+		vmspec := vmspec.VMCreationSpec{FlavorName: clusterInst.NodeFlavor, ExternalVolumeSize: clusterInst.ExternalVolumeSize}
+		err = HeatCreateRootLBVM(ctx, dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, updateCallback)
 	} else {
 		err = HeatCreateClusterKubernetes(ctx, clusterInst, dedicatedRootLBName, updateCallback)
 	}
@@ -167,7 +169,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = SetupRootLB(ctx, rootLBName, "", updateCallback)
+		err = SetupRootLB(ctx, rootLBName, nil, updateCallback)
 		if err != nil {
 			return err
 		}

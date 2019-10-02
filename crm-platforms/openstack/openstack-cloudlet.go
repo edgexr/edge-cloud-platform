@@ -13,8 +13,8 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/flavor"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -136,11 +136,10 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return err
 	}
-	platform_flavor_name, err := flavor.GetClosestFlavor(finfo, *pfFlavor)
+	vmspec, err := vmspec.GetVMSpec(finfo, *pfFlavor)
 	if err != nil {
-		return fmt.Errorf("unable to find closest flavor for platform: %v", err)
+		return fmt.Errorf("unable to find matching vm spec for platform: %v", err)
 	}
-
 	// Fetch platform base image name and md5sum
 	pfImageName, err := cloudcommon.GetFileName(pfConfig.ImagePath)
 	if err != nil {
@@ -192,7 +191,8 @@ ssh_authorized_keys:
 	vmp, err := mexos.GetVMParams(ctx,
 		mexos.UserVMDeployment,
 		platform_vm_name,
-		platform_flavor_name,
+		vmspec.FlavorName,
+		vmspec.ExternalVolumeSize,
 		pfImageName,
 		"",           // AuthPublicKey
 		"tcp:22",     // AccessPorts
@@ -216,7 +216,7 @@ ssh_authorized_keys:
 
 	// Deploy Platform VM
 	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
-	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "flavor", platform_flavor_name)
+	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "vmspec", vmspec)
 	err = mexos.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, mexos.VmTemplate, updateCallback)
 	if err != nil {
 		return fmt.Errorf("CreateVMAppInst error: %v", err)

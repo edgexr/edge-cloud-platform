@@ -580,9 +580,9 @@ func SetServerProperty(ctx context.Context, name, property string) error {
 // createHeatStack creates a stack with the given template
 func createHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "create heat stack", "template", templateFile, "stackName", stackName)
-	_, err := TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--template", templateFile, stackName)
+	out, err := TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--template", templateFile, stackName)
 	if err != nil {
-		return fmt.Errorf("error creating heat stack: %s -- %v", templateFile, err)
+		return fmt.Errorf("error creating heat stack: %s, %s -- %v", templateFile, string(out), err)
 	}
 	return nil
 }

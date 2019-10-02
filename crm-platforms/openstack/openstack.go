@@ -11,8 +11,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/flavor"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 )
 
 const MINIMUM_DISK_SIZE uint64 = 20
@@ -76,14 +76,14 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if err != nil {
 		return fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
 	}
-	flavorName, err := flavor.GetClosestFlavor(s.flavorList, sharedRootLBFlavor)
+	vmspec, err := vmspec.GetVMSpec(s.flavorList, sharedRootLBFlavor)
 	if err != nil {
-		return fmt.Errorf("unable to find closest flavor for Shared RootLB: %v", err)
+		return fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
 	}
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = mexos.SetupRootLB(ctx, rootLBName, flavorName, edgeproto.DummyUpdateCallback)
+	err = mexos.SetupRootLB(ctx, rootLBName, vmspec, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}

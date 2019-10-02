@@ -14,11 +14,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 )
 
 type VMParams struct {
 	VMName              string
-	Flavor              string
+	FlavorName          string
+	ExternalVolumeSize  uint64
 	ImageName           string
 	SecurityGroup       string
 	NetworkName         string
@@ -64,18 +66,30 @@ runcmd:
 // This is the resources part of a template for a VM. It is for use within another template
 // the parameters under VMP can come from either a standalone struture (VM Create) or a cluster (for rootLB)
 var vmTemplateResources = `
+  {{if .ExternalVolumeSize}}
+   {{.VMName}}-vol:
+      type: OS::Cinder::Volume
+      properties:
+         name: {{.VMName}}-vol
+         image: {{.ImageName}}
+         size: 40
+  {{- end }}
    {{.VMName}}:
       type: OS::Nova::Server
       properties:
          name: 
             {{.VMName}}
+       {{if .ExternalVolumeSize}}
+         block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.VMName}}-vol }, delete_on_termination: "false" }]
+       {{else}}
          image: {{.ImageName}}
+       {{- end}}
         {{if not .FloatingIPAddressID}}
          security_groups:
           - {{.SecurityGroup}}
          {{if .AccessPorts}} - { get_resource: vm_security_group } {{- end}}
         {{- end}}
-         flavor: {{.Flavor}}
+         flavor: {{.FlavorName}}
         {{if .AuthPublicKey}} key_name: { get_resource: ssh_key_pair } {{- end}}
          config_drive: true       
          user_data_format: RAW
@@ -90,7 +104,7 @@ var vmTemplateResources = `
             skipk8s: yes
             role: mex-agent-node 
             edgeproxy: {{.GatewayIP}}
-            mex-flavor: {{.Flavor}}
+            mex-flavor: {{.FlavorName}}
            {{if .MEXRouterIP}}
             privaterouter: {{.MEXRouterIP}}
            {{- end}}
@@ -163,19 +177,20 @@ type ClusterNode struct {
 
 // ClusterParams has the info needed to populate the heat template
 type ClusterParams struct {
-	NodeFlavor     string
-	ImageName      string
-	SecurityGroup  string
-	MEXRouterName  string
-	MEXNetworkName string
-	VnicType       string
-	ClusterName    string
-	CIDR           string
-	GatewayIP      string
-	MasterIP       string
-	DNSServers     []string
-	Nodes          []ClusterNode
-	*VMParams      //rootlb
+	NodeFlavor         string
+	ExternalVolumeSize uint64
+	ImageName          string
+	SecurityGroup      string
+	MEXRouterName      string
+	MEXNetworkName     string
+	VnicType           string
+	ClusterName        string
+	CIDR               string
+	GatewayIP          string
+	MasterIP           string
+	DNSServers         []string
+	Nodes              []ClusterNode
+	*VMParams          //rootlb
 }
 
 var k8sClusterTemplate = `
@@ -227,13 +242,24 @@ resources:
             ip_address: {{.MasterIP}}
          security_groups:
           - {{$.SecurityGroup}}
-
+  {{if .ExternalVolumeSize}}
+   k8s_master_vol:
+      type: OS::Cinder::Volume
+      properties:
+         name: k8s-master-{{.ClusterName}}-vol
+         image: {{.ImageName}}
+         size: 40
+  {{- end}}
    k8s_master:
       type: OS::Nova::Server
       properties:
          name: 
             mex-k8s-master-{{.ClusterName}}
+        {{if .ExternalVolumeSize}}
+         block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: k8s_master_vol }, delete_on_termination: "false" }]
+        {{else}}
          image: {{.ImageName}}
+        {{- end}}
          flavor: {{.NodeFlavor}}
          config_drive: true
          user_data_format: RAW
@@ -262,13 +288,25 @@ resources:
             ip_address: {{.NodeIP}}
           security_groups:
            - {{$.SecurityGroup}}
+  {{if $.ExternalVolumeSize}}
+   {{.NodeName}}-vol:
+      type: OS::Cinder::Volume
+      properties:
+         name: {{.NodeName}}-vol
+         image: {{$.ImageName}}
+         size: {{$.ExternalVolumeSize}}
+  {{- end }}
 
    {{.NodeName}}:
       type: OS::Nova::Server
       depends_on: k8s_master
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
+        {{if  $.ExternalVolumeSize}}
+         block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.NodeName}}-vol }, delete_on_termination: "false" }]
+        {{else}}
          image: {{$.ImageName}}
+        {{- end}}
          flavor: {{$.NodeFlavor}}
          config_drive: true
          user_data_format: RAW
@@ -348,11 +386,12 @@ func waitForStack(ctx context.Context, stackname string, action string, updateCa
 	}
 }
 
-func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor, imageName, authPublicKey, accessPorts, deploymentManifest, command string, ni *NetSpecInfo) (*VMParams, error) {
+func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavorName string, externalVolumeSize uint64, imageName, authPublicKey, accessPorts, deploymentManifest, command string, ni *NetSpecInfo) (*VMParams, error) {
 	var vmp VMParams
 	var err error
 	vmp.VMName = serverName
-	vmp.Flavor = flavor
+	vmp.FlavorName = flavorName
+	vmp.ExternalVolumeSize = externalVolumeSize
 	vmp.ImageName = imageName
 	vmp.SecurityGroup = GetCloudletSecurityGroup()
 	if depType == RootLBVMDeployment {
@@ -493,6 +532,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 			RootLBVMDeployment,
 			rootLBName,
 			clusterInst.NodeFlavor,
+			clusterInst.ExternalVolumeSize,
 			GetCloudletOSImage(),
 			"", // AuthPublicKey
 			"", // AccessPorts
@@ -550,6 +590,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 		return nil, fmt.Errorf("Node Flavor is not set")
 	}
 	cp.NodeFlavor = clusterInst.NodeFlavor
+	cp.ExternalVolumeSize = clusterInst.ExternalVolumeSize
 	for i := uint32(1); i <= clusterInst.NumNodes; i++ {
 		nn := fmt.Sprintf("mex-k8s-node-%d", i)
 		nip := fmt.Sprintf("%s.%d", nodeIPPrefix, i+100)
@@ -562,8 +603,8 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 }
 
 // HeatCreateRootLBVM creates a roobLB VM
-func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateRootLBVM", "serverName", serverName, "stackName", stackName, "flavor", flavor)
+func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string, vmspec *vmspec.VMCreationSpec, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateRootLBVM", "serverName", serverName, "stackName", stackName, "vmspec", vmspec)
 	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
 	if err != nil {
 		return err
@@ -578,7 +619,8 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 	vmp, err := GetVMParams(ctx,
 		RootLBVMDeployment,
 		serverName,
-		flavor,
+		vmspec.FlavorName,
+		vmspec.ExternalVolumeSize,
 		GetCloudletOSImage(),
 		"", // AuthPublicKey
 		"", // AccessPorts
