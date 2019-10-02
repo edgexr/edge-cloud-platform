@@ -88,8 +88,9 @@ func GetMexRouterIP(ctx context.Context) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "router detail", "detail", rd)
 	reg, regerr := GetRouterDetailExternalGateway(rd)
 	if regerr != nil {
-		log.InfoLog("can't get router detail")
-		return "", fmt.Errorf("can't get router detail")
+		// some deployments will not be able to retrieve the router GW at all, allow this
+		log.SpanLog(ctx, log.DebugLevelMexos, "can't get router external GW, continuing", "error", regerr)
+		return "", nil
 	}
 	if reg != nil && len(reg.ExternalFixedIPs) > 0 {
 		fip := reg.ExternalFixedIPs[0]
