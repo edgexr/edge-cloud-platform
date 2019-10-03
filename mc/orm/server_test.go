@@ -99,6 +99,10 @@ func TestServer(t *testing.T) {
 		Address: "123 X Way",
 		Phone:   "123-123-1234",
 	}
+	orgX := org1
+	orgX.Name = user1.Name
+	_, err = mcClient.CreateOrg(uri, tokenMisterX, &orgX)
+	require.NotNil(t, err, "create org with same name as user (case-insensitive)")
 	status, err = mcClient.CreateOrg(uri, tokenMisterX, &org1)
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
@@ -264,6 +268,14 @@ func TestServer(t *testing.T) {
 	// add users to org with different roles, make sure they can see users
 	testAddUserRole(t, mcClient, uri, tokenMisterX, org1.Name, "DeveloperContributor", user3.Name, Success)
 	testAddUserRole(t, mcClient, uri, tokenMisterX, org1.Name, "DeveloperViewer", user4.Name, Success)
+	// add user with same name as org
+	roleArgX := ormapi.Role{
+		Username: org1.Name,
+		Org:      org1.Name,
+		Role:     "DeveloperViewer",
+	}
+	_, err = mcClient.AddUserRole(uri, tokenMisterX, &roleArgX)
+	require.NotNil(t, err, "user name with same name as org (case-insensitive)")
 	// check that they can see all users in org
 	users, status, err = mcClient.ShowUser(uri, token3, &org1)
 	require.Nil(t, err)

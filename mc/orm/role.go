@@ -248,6 +248,9 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	if role.Role == "" {
 		return fmt.Errorf("Role not specified")
 	}
+	if strings.ToLower(role.Username) == strings.ToLower(role.Org) {
+		return fmt.Errorf("org name cannot be same as existing user name")
+	}
 	if role.Org != "" {
 		span := log.SpanFromContext(ctx)
 		span.SetTag("org", role.Org)
