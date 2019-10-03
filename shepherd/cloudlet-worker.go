@@ -27,7 +27,7 @@ func CloudletScraper() {
 			ctx := log.ContextWithSpan(context.Background(), span)
 			cloudletStats, err := pf.GetPlatformStats(ctx)
 			if err != nil {
-				log.DebugLog(log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", pf, "error", err.Error())
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", pf, "error", err.Error())
 			} else {
 				metrics := MarshalCloudletMetrics(&cloudletStats)
 				for _, metric := range metrics {

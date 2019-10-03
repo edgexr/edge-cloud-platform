@@ -103,9 +103,9 @@ func NginxScraper() {
 				span.SetTag("cluster", v.Cluster)
 				ctx := log.ContextWithSpan(context.Background(), span)
 
-				metrics, err := QueryNginx(v)
+				metrics, err := QueryNginx(ctx, v)
 				if err != nil {
-					log.DebugLog(log.DebugLevelMetrics, "Error retrieving nginx metrics", "appinst", v.App, "error", err.Error())
+					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving nginx metrics", "appinst", v.App, "error", err.Error())
 				} else {
 					// send to crm->controller->influx
 					influxData := MarshallNginxMetric(v, metrics)
@@ -118,7 +118,7 @@ func NginxScraper() {
 
 }
 
-func QueryNginx(scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, error) {
+func QueryNginx(ctx context.Context, scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, error) {
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.NginxMetricsPort)
 	if nginxUnitTest {
@@ -127,7 +127,7 @@ func QueryNginx(scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, er
 	resp, err := scrapePoint.Client.Output(request)
 	// if this is the first time, or the container got restarted, install curl (for old deployments)
 	if strings.Contains(resp, "executable file not found") {
-		log.DebugLog(log.DebugLevelMexos, "Installing curl onto docker container ", "Container", scrapePoint.App)
+		log.SpanLog(ctx, log.DebugLevelMexos, "Installing curl onto docker container ", "Container", scrapePoint.App)
 		installer := fmt.Sprintf("docker exec %s apt-get update; docker exec %s apt-get --assume-yes install curl", scrapePoint.App, scrapePoint.App)
 		resp, err = scrapePoint.Client.Output(installer)
 		if err != nil {
@@ -137,7 +137,7 @@ func QueryNginx(scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, er
 		resp, err = scrapePoint.Client.Output(request)
 	}
 	if err != nil {
-		log.DebugLog(log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		return nil, err
 	}
 	metrics := &shepherd_common.NginxMetrics{}

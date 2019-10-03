@@ -238,6 +238,10 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--tls")
 		args = append(args, p.TLS.ServerCert)
 	}
+	if p.Span != "" {
+		args = append(args, "--span")
+		args = append(args, p.Span)
+	}
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {

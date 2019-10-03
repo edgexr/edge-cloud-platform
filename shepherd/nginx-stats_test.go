@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -8,12 +9,17 @@ import (
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
 )
 
 var testNginxData = "Active connections: 10\nserver accepts handled requests\n 101 202 303\nReading: 5 Writing: 4 Waiting: 3"
 
 func TestNginxStats(t *testing.T) {
+	log.InitTracer("")
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	testScrapePoint := NginxScrapePoint{
 		App:     "UnitTestApp",
 		Cluster: "UnitTestCluster",
@@ -27,7 +33,7 @@ func TestNginxStats(t *testing.T) {
 	nginxUnitTestPort, _ = strconv.ParseInt(strings.Split(fakeNginxTestServer.URL, ":")[2], 10, 32)
 	nginxUnitTest = true
 
-	testMetrics, err := QueryNginx(testScrapePoint)
+	testMetrics, err := QueryNginx(ctx, testScrapePoint)
 
 	assert.Nil(t, err, "Test Querying Nginx")
 	assert.Equal(t, uint64(10), testMetrics.ActiveConn)

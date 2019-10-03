@@ -18,6 +18,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -29,6 +30,7 @@ var vaultAddr = flag.String("vaultAddr", "", "Address to vault")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
+var parentSpan = flag.String("span", "", "Use parent span for logging")
 
 var defaultPrometheusPort = int32(9090)
 
@@ -143,7 +145,13 @@ func main() {
 	log.SetDebugLevelStrs(*debugLevels)
 	log.InitTracer(*tlsCertFile)
 	defer log.FinishTracer()
-	span := log.StartSpan(log.DebugLevelInfo, "main")
+
+	var span opentracing.Span
+	if *parentSpan != "" {
+		span = log.NewSpanFromString(log.DebugLevelInfo, *parentSpan, "main")
+	} else {
+		span = log.StartSpan(log.DebugLevelInfo, "main")
+	}
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)

@@ -34,4 +34,5 @@ type Shepherd struct {
 	CloudletKey    string
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
+	Span           string
 }
