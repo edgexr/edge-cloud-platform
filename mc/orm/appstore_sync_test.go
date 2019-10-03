@@ -196,7 +196,7 @@ func TestAppStoreApi(t *testing.T) {
 			userObj := ormapi.User{
 				Name: user,
 			}
-			artifactoryCreateUser(ctx, &userObj, nil, nil)
+			artifactoryCreateUser(ctx, &userObj)
 			gitlabCreateLDAPUser(ctx, &userObj)
 
 			roleArg := ormapi.Role{

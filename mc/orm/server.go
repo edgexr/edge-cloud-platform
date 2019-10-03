@@ -217,6 +217,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/data/show", ShowData)
 	auth.POST("/gitlab/resync", GitlabResync)
 	auth.POST("/artifactory/resync", ArtifactoryResync)
+	auth.POST("/artifactory/summary", ArtifactorySummary)
 	auth.POST("/config/update", UpdateConfig)
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/config/version", ShowVersion)
