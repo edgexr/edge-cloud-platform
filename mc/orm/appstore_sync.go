@@ -25,6 +25,38 @@ type AppStoreSync struct {
 	count        int64
 }
 
+type UserInfo struct {
+	AppStoreUsers int
+	MCUsers       int
+	MissingUsers  []string
+	ExtraUsers    []string
+}
+type GroupInfo struct {
+	AppStoreGroups int
+	AppStoreRepos  int
+	AppStorePerms  int
+	MCGroups       int
+	ExtraGroups    []string
+	MissingGroups  []string
+	MissingRepos   []string
+	MissingPerms   []string
+}
+type GroupMember struct {
+	Group string
+	User  string
+}
+
+type GroupMemberInfo struct {
+	MissingGroupMembers []GroupMember
+	ExtraGroupMembers   []GroupMember
+}
+
+type AppStoreSummary struct {
+	Users        UserInfo
+	Groups       GroupInfo
+	GroupMembers GroupMemberInfo
+}
+
 func AppStoreNewSync(appStoreType string) *AppStoreSync {
 	sync := AppStoreSync{}
 	sync.run = make(chan bool, 1)

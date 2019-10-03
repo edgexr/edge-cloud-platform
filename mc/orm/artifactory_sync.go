@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -19,8 +20,98 @@ func (s *AppStoreSync) syncArtifactoryObjects(ctx context.Context) {
 	// Refresh auth cache on sync
 	rtfAuth = nil
 
+	s.syncRtfUsers(ctx)
 	allOrgs := s.syncGroupObjects(ctx)
 	s.syncGroupUsers(ctx, allOrgs)
+}
+
+func getMCUsers(ctx context.Context) (map[string]*ormapi.User, error) {
+	// Get MC users
+	mcusers := []ormapi.User{}
+	db := loggedDB(ctx)
+	err := db.Find(&mcusers).Error
+	if err != nil {
+		return nil, err
+	}
+	mcusersT := make(map[string]*ormapi.User)
+	for ii, _ := range mcusers {
+		if mcusers[ii].Name == Superuser {
+			continue
+		}
+		// Store username in lowercase format as Artifactory stores it in lowercase
+		userName := strings.ToLower(mcusers[ii].Name)
+		mcusersT[userName] = &mcusers[ii]
+	}
+	return mcusersT, nil
+}
+
+func getMCGroupMembers(allOrgs map[string]*ormapi.Organization) (map[string]map[string]*ormapi.Role, error) {
+	// Get MC group members info
+	groupings, err := enforcer.GetGroupingPolicy()
+	if err != nil {
+		return nil, err
+	}
+	mcGroupMembers := make(map[string]map[string]*ormapi.Role)
+	for ii, _ := range groupings {
+		role := parseRole(groupings[ii])
+		if role == nil || role.Org == "" {
+			continue
+		}
+		if org, ok := allOrgs[role.Org]; !ok || org.Type == OrgTypeOperator {
+			continue
+		}
+		if role.Username == Superuser {
+			continue
+		}
+		orgName := role.Org
+		userName := strings.ToLower(role.Username)
+		if _, ok := mcGroupMembers[userName]; !ok {
+			mcGroupMembers[userName] = map[string]*ormapi.Role{}
+		}
+		mcGroupMembers[userName][orgName] = role
+	}
+	return mcGroupMembers, nil
+}
+
+func (s *AppStoreSync) syncRtfUsers(ctx context.Context) {
+	// Get MC users
+	mcusersT, err := getMCUsers(ctx)
+	if err != nil {
+		s.syncErr(ctx, err)
+		return
+	}
+
+	// Get Artifactory users
+	rtfUsers, err := artifactoryListUsers(ctx)
+	if err != nil {
+		s.syncErr(ctx, err)
+		return
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory sync users", "artifactory users", len(rtfUsers), "mc users", len(mcusersT))
+
+	// Create missing users
+	for name, user := range mcusersT {
+		p_userName := getArtifactoryName(name)
+		if _, found := rtfUsers[p_userName]; found {
+			// in sync
+			delete(rtfUsers, p_userName)
+		} else {
+			// missing from Artifactory, so create
+			log.SpanLog(ctx, log.DebugLevelApi,
+				"Artifactory Sync create missing LDAP user",
+				"user", name)
+			artifactoryCreateUser(ctx, user)
+		}
+	}
+
+	// Delete extra users
+	for user, _ := range rtfUsers {
+		log.SpanLog(ctx, log.DebugLevelApi,
+			"Artifactory Sync delete extra user",
+			"name", user)
+		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
+		artifactoryDeleteUser(ctx, userName)
+	}
 }
 
 func (s *AppStoreSync) syncGroupObjects(ctx context.Context) map[string]*ormapi.Organization {
@@ -48,6 +139,7 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) map[string]*ormapi.
 		s.syncErr(ctx, err)
 		return orgsT
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory sync group objs", "artifactory groups", len(groups), "mc groups", len(orgsT))
 
 	// Create missing objects
 	for orgname, org := range orgsT {
@@ -129,117 +221,46 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) map[string]*ormapi.
 }
 
 func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*ormapi.Organization) {
-	// Get MC users
-	mcusers := []ormapi.User{}
-	db := loggedDB(ctx)
-	err := db.Find(&mcusers).Error
-	if err != nil {
-		s.syncErr(ctx, err)
-		return
-	}
-	mcusersT := make(map[string]*ormapi.User)
-	for ii, _ := range mcusers {
-		if mcusers[ii].Name == Superuser {
-			continue
-		}
-		// Store username is lowercase format as Artifactory stores it in lowercase
-		userName := getArtifactoryName(strings.ToLower(mcusers[ii].Name))
-		mcusersT[userName] = &mcusers[ii]
-	}
-
 	// Get MC group members info
-	groupings, err := enforcer.GetGroupingPolicy()
-	if err != nil {
-		s.syncErr(ctx, err)
-		return
-	}
-	groupMembers := make(map[string]map[string]*ormapi.Role)
-	for ii, _ := range groupings {
-		role := parseRole(groupings[ii])
-		if role == nil || role.Org == "" {
-			continue
-		}
-		if org, ok := allOrgs[role.Org]; !ok || org.Type == OrgTypeOperator {
-			continue
-		}
-		userName := getArtifactoryName(strings.ToLower(role.Username))
-		orgName := getArtifactoryName(role.Org)
-		if _, ok := groupMembers[userName]; !ok {
-			groupMembers[userName] = map[string]*ormapi.Role{}
-		}
-		groupMembers[userName][orgName] = role
-	}
-
-	// Get Artifactory users
-	rtfUsers, err := artifactoryListUsers(ctx)
+	mcGroupMembers, err := getMCGroupMembers(allOrgs)
 	if err != nil {
 		s.syncErr(ctx, err)
 		return
 	}
 
-	// Create missing users
-	for name, user := range mcusersT {
-		if _, found := rtfUsers[name]; found {
-			// in sync
-			delete(rtfUsers, name)
-		} else {
-			// missing from Artifactory, so create
-			log.SpanLog(ctx, log.DebugLevelApi,
-				"Artifactory Sync create missing LDAP user",
-				"user", name)
-			if groups, ok := groupMembers[name]; ok {
-				rtfGroups := []string{}
-				for group, _ := range groups {
-					rtfGroups = append(rtfGroups, group)
-				}
-				artifactoryCreateUser(ctx, user, &rtfGroups, allOrgs)
-			} else {
-				artifactoryCreateUser(ctx, user, nil, allOrgs)
-			}
-		}
-	}
-
-	// Delete extra users
-	for user, _ := range rtfUsers {
-		log.SpanLog(ctx, log.DebugLevelApi,
-			"Artifactory Sync delete extra user",
-			"name", user)
-		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
-		artifactoryDeleteUser(ctx, userName)
-	}
-
-	// Add missing roles
-	for name, _ := range mcusersT {
+	for mcUserName, mcUserRoles := range mcGroupMembers {
+		rtfUserName := getArtifactoryName(mcUserName)
 		// Get Artifactory roles
-		userName := strings.TrimPrefix(name, ArtifactoryPrefix)
-		rtfGroups, err := artifactoryListUserGroups(ctx, userName)
+		rtfGroups, err := artifactoryListUserGroups(ctx, mcUserName)
 		if err != nil {
 			s.syncErr(ctx, err)
 			return
 		}
-		for mcgroup, mcrole := range groupMembers[name] {
-			if _, ok := rtfGroups[mcgroup]; !ok {
+		for mcGroup, mcRole := range mcUserRoles {
+			rtfGroup := getArtifactoryName(mcGroup)
+			if _, ok := rtfGroups[rtfGroup]; !ok {
 				// Group not part of Artifactory user
 				// Add user to the group
 				log.SpanLog(ctx, log.DebugLevelApi,
 					"Artifactory Sync add missing user to group",
-					"user", name, "group", mcgroup,
-					"role", mcrole)
-				orgType := getOrgType(mcrole.Org, allOrgs)
-				artifactoryAddUserToGroup(ctx, mcrole, orgType)
+					"user", rtfUserName, "group", rtfGroup,
+					"role", mcRole)
+				orgType := getOrgType(mcRole.Org, allOrgs)
+				artifactoryAddUserToGroup(ctx, mcRole, orgType)
 			}
 		}
-		for rtfgroup, _ := range rtfGroups {
-			if _, ok := groupMembers[name][rtfgroup]; !ok {
+		for rtfGroup, _ := range rtfGroups {
+			mcGroup := strings.TrimPrefix(rtfGroup, ArtifactoryPrefix)
+			if _, ok := mcUserRoles[mcGroup]; !ok {
 				// User is part of extra group
 				// Remove user from the group
 				role := ormapi.Role{}
-				role.Username = strings.TrimPrefix(name, ArtifactoryPrefix)
-				role.Org = strings.TrimPrefix(rtfgroup, ArtifactoryPrefix)
+				role.Username = mcUserName
+				role.Org = mcGroup
 				orgType := getOrgType(role.Org, allOrgs)
 				log.SpanLog(ctx, log.DebugLevelApi,
 					"Artifactory Sync remove extra user from group",
-					"user", name, "group", rtfgroup,
+					"user", rtfUserName, "group", rtfGroup,
 					"role", role)
 				artifactoryRemoveUserFromGroup(ctx, &role, orgType)
 			}
@@ -255,4 +276,125 @@ func ArtifactoryResync(c echo.Context) error {
 	artifactorySync.NeedsSync()
 	artifactorySync.wakeup()
 	return err
+}
+
+func ArtifactorySummary(c echo.Context) error {
+	var summary AppStoreSummary
+
+	// Get MC users
+	ctx := GetContext(c)
+	mcUsers, err := getMCUsers(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Users.MCUsers = len(mcUsers)
+
+	// Artifactory users
+	rtfUsers, err := artifactoryListUsers(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Users.AppStoreUsers = len(rtfUsers)
+
+	for name, _ := range mcUsers {
+		p_userName := getArtifactoryName(name)
+		if _, found := rtfUsers[p_userName]; !found {
+			summary.Users.MissingUsers = append(summary.Users.MissingUsers, p_userName)
+		}
+	}
+
+	for user, _ := range rtfUsers {
+		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
+		if _, found := mcUsers[userName]; !found {
+			summary.Users.ExtraUsers = append(summary.Users.ExtraUsers, user)
+		}
+	}
+
+	orgsT, err := GetAllOrgs(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Groups.MCGroups = len(orgsT)
+
+	// Artifactory Objects:
+	//     Groups, Repos, Permission Targets
+
+	groups, err := artifactoryListGroups(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Groups.AppStoreGroups = len(groups)
+
+	repos, err := artifactoryListRepos(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Groups.AppStoreRepos = len(repos)
+
+	perms, err := artifactoryListPerms(ctx)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	summary.Groups.AppStorePerms = len(perms)
+
+	for orgname, org := range orgsT {
+		if org.Type == OrgTypeOperator {
+			continue
+		}
+		groupName := getArtifactoryName(orgname)
+		if _, ok := groups[groupName]; !ok {
+			summary.Groups.MissingGroups = append(summary.Groups.MissingGroups, groupName)
+		}
+		repoName := getArtifactoryRepoName(orgname)
+		if _, ok := repos[repoName]; !ok {
+			summary.Groups.MissingRepos = append(summary.Groups.MissingRepos, repoName)
+		}
+		permName := getArtifactoryName(orgname)
+		if _, ok := perms[permName]; !ok {
+			summary.Groups.MissingPerms = append(summary.Groups.MissingPerms, permName)
+		}
+	}
+	for group, _ := range groups {
+		groupName := strings.TrimPrefix(group, ArtifactoryPrefix)
+		if _, found := orgsT[groupName]; !found {
+			summary.Groups.ExtraGroups = append(summary.Groups.ExtraGroups, groupName)
+		}
+	}
+
+	// Get MC group members info
+	mcGroupMembers, err := getMCGroupMembers(orgsT)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+
+	for mcUserName, mcUserRoles := range mcGroupMembers {
+		rtfUserName := getArtifactoryName(mcUserName)
+		// Get Artifactory roles
+		rtfGroups, err := artifactoryListUserGroups(ctx, mcUserName)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, MsgErr(err))
+		}
+		for mcGroup, _ := range mcUserRoles {
+			rtfGroup := getArtifactoryName(mcGroup)
+			if _, ok := rtfGroups[rtfGroup]; !ok {
+				// Group not part of Artifactory user
+				summary.GroupMembers.MissingGroupMembers = append(summary.GroupMembers.MissingGroupMembers, GroupMember{
+					Group: rtfGroup,
+					User:  rtfUserName,
+				})
+			}
+		}
+		for rtfGroup, _ := range rtfGroups {
+			mcGroup := strings.TrimPrefix(rtfGroup, ArtifactoryPrefix)
+			if _, ok := mcUserRoles[mcGroup]; !ok {
+				// User is part of extra group
+				summary.GroupMembers.ExtraGroupMembers = append(summary.GroupMembers.ExtraGroupMembers, GroupMember{
+					Group: rtfGroup,
+					User:  rtfUserName,
+				})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, summary)
 }

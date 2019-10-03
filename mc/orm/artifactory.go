@@ -99,7 +99,7 @@ func artifactoryListUserGroups(ctx context.Context, userName string) (map[string
 	return tmp, nil
 }
 
-func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]string, allOrgs map[string]*ormapi.Organization) {
+func artifactoryCreateUser(ctx context.Context, user *ormapi.User) {
 	client, err := artifactoryClient(ctx)
 	userName := getArtifactoryName(user.Name)
 	if user.Name == Superuser {
@@ -110,7 +110,6 @@ func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]str
 			Name:                     artifactory.String(userName),
 			Email:                    artifactory.String(user.Email),
 			ProfileUpdatable:         artifactory.Bool(false),
-			Groups:                   groups,
 			InternalPasswordDisabled: artifactory.Bool(true),
 		}
 		_, err = client.V1.Security.CreateOrReplaceUser(context.Background(), userName, &rtfUser)
@@ -119,13 +118,6 @@ func artifactoryCreateUser(ctx context.Context, user *ormapi.User, groups *[]str
 	if err != nil {
 		artifactorySync.NeedsSync()
 		return
-	}
-	if groups != nil {
-		for _, group := range *groups {
-			groupName := strings.TrimPrefix(group, ArtifactoryPrefix)
-			orgType := getOrgType(groupName, allOrgs)
-			artifactoryCreateRepoPerms(ctx, groupName, orgType)
-		}
 	}
 }
 

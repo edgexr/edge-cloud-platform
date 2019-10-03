@@ -13,6 +13,10 @@ import (
 // MC tag is used to tag groups/projects created by master controller
 var GitlabMCTag = "mastercontroller"
 var GitlabAdminID = 1
+var ListOptions = gitlab.ListOptions{
+	PerPage: 100,
+	Page:    1,
+}
 
 func GitlabNewSync() *AppStoreSync {
 	gSync := AppStoreNewSync("gitlab")
@@ -28,21 +32,29 @@ func (s *AppStoreSync) syncGitlabObjects(ctx context.Context) {
 
 func (s *AppStoreSync) syncUsers(ctx context.Context) {
 	// get Gitlab users
-	gusers, _, err := gitlabClient.Users.ListUsers(&gitlab.ListUsersOptions{})
-	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab Sync list users",
-		"users", gusers)
-	if err != nil {
-		s.syncErr(ctx, err)
-		return
+	opts := gitlab.ListUsersOptions{
+		ListOptions: ListOptions,
 	}
 	gusersT := make(map[string]*gitlab.User)
-	for ii, _ := range gusers {
-		gusersT[gusers[ii].Name] = gusers[ii]
+	for {
+		gusers, resp, err := gitlabClient.Users.ListUsers(&opts)
+		if err != nil {
+			s.syncErr(ctx, err)
+			return
+		}
+		for ii, _ := range gusers {
+			gusersT[gusers[ii].Name] = gusers[ii]
+		}
+		// Exit the loop when we've seen all pages.
+		if resp.CurrentPage >= resp.TotalPages {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 	// get MC users
 	mcusers := []ormapi.User{}
 	db := loggedDB(ctx)
-	err = db.Find(&mcusers).Error
+	err := db.Find(&mcusers).Error
 	if err != nil {
 		s.syncErr(ctx, err)
 		return
@@ -51,6 +63,7 @@ func (s *AppStoreSync) syncUsers(ctx context.Context) {
 	for ii, _ := range mcusers {
 		mcusersT[mcusers[ii].Name] = &mcusers[ii]
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab sync users", "gitlab users", len(gusersT), "mc users", len(mcusersT))
 
 	for name, user := range mcusersT {
 		if _, found := gusersT[name]; found {
@@ -82,7 +95,7 @@ func (s *AppStoreSync) syncUsers(ctx context.Context) {
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Gitlab Sync delete extra LDAP user",
 			"name", guser.Name)
-		_, err = gitlabClient.Users.DeleteUser(guser.ID)
+		_, err := gitlabClient.Users.DeleteUser(guser.ID)
 		if err != nil {
 			s.syncErr(ctx, err)
 		}
@@ -96,15 +109,26 @@ func (s *AppStoreSync) syncGroups(ctx context.Context) map[string]*ormapi.Organi
 		return nil
 	}
 	// get Gitlab groups
-	groups, _, err := gitlabClient.Groups.ListGroups(&gitlab.ListGroupsOptions{})
-	if err != nil {
-		s.syncErr(ctx, err)
-		return orgsT
-	}
 	groupsT := make(map[string]*gitlab.Group)
-	for ii, _ := range groups {
-		groupsT[groups[ii].Name] = groups[ii]
+	opts := gitlab.ListGroupsOptions{
+		ListOptions: ListOptions,
 	}
+	for {
+		groups, resp, err := gitlabClient.Groups.ListGroups(&opts)
+		if err != nil {
+			s.syncErr(ctx, err)
+			return orgsT
+		}
+		for ii, _ := range groups {
+			groupsT[groups[ii].Name] = groups[ii]
+		}
+		// Exit the loop when we've seen all pages.
+		if resp.CurrentPage >= resp.TotalPages {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab sync groups", "gitlab groups", len(groupsT), "mc groups", len(orgsT))
 	for name, org := range orgsT {
 		if org.Type == OrgTypeOperator {
 			continue
@@ -159,17 +183,32 @@ func (s *AppStoreSync) syncGroupMembers(ctx context.Context, allOrgs map[string]
 		}
 		// get cached group
 		memberTable, found := members[role.Org]
+		mopts := gitlab.ListGroupMembersOptions{
+			ListOptions: ListOptions,
+		}
 		if !found {
 			gname := util.GitlabGroupSanitize(role.Org)
-			memberlist, _, err := gitlabClient.Groups.ListGroupMembers(gname, &gitlab.ListGroupMembersOptions{})
-			if err != nil {
-				s.syncErr(ctx, err)
-				continue
-			}
 			// convert list to table for easier processing
 			memberTable = make(map[string]*gitlab.GroupMember)
-			for _, member := range memberlist {
-				memberTable[member.Username] = member
+			foundErr := false
+			for {
+				memberlist, resp, err := gitlabClient.Groups.ListGroupMembers(gname, &mopts)
+				if err != nil {
+					s.syncErr(ctx, err)
+					foundErr = true
+					break
+				}
+				for _, member := range memberlist {
+					memberTable[member.Username] = member
+				}
+				// Exit the loop when we've seen all pages.
+				if resp.CurrentPage >= resp.TotalPages {
+					break
+				}
+				mopts.Page = resp.NextPage
+			}
+			if foundErr {
+				continue
 			}
 			members[role.Org] = memberTable
 		}
