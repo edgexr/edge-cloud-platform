@@ -108,6 +108,10 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 	return s.generic.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 }
 
+func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+	return s.generic.GetConsoleUrl(ctx, app)
+}
+
 // GetDINDServiceIP depending on the type of DIND cluster will return either the interface or external address
 func (s *Platform) GetDINDServiceIP(ctx context.Context) (string, error) {
 	if s.NetworkScheme == cloudcommon.NetworkSchemePrivateIP {

@@ -23,7 +23,7 @@ var _ = math.Inf
 func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (edgeproto.ExecRequest, int, error) {
 	args := []string{"region", "RunCommand"}
 	out := edgeproto.ExecRequest{}
-	noconfig := strings.Split("Offer,Answer,Err", ",")
+	noconfig := strings.Split("Offer,Answer,Err,ConsoleUrl", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	return out, st, err
 }
