@@ -46,6 +46,7 @@ require (
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pion/webrtc/v2 v2.0.24
