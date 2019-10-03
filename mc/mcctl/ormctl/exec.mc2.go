@@ -45,10 +45,11 @@ var ExecRequestRequiredArgs = []string{
 	"operator",
 	"cloudlet",
 	"clusterdeveloper",
-	"command",
 }
 var ExecRequestOptionalArgs = []string{
+	"command",
 	"containerid",
+	"console",
 }
 var ExecRequestAliasArgs = []string{
 	"developer=execrequest.appinstkey.appkey.developerkey.name",
@@ -63,6 +64,8 @@ var ExecRequestAliasArgs = []string{
 	"offer=execrequest.offer",
 	"answer=execrequest.answer",
 	"err=execrequest.err",
+	"console=execrequest.console",
+	"consoleurl=execrequest.consoleurl",
 }
 var ExecRequestComments = map[string]string{
 	"developer":        "Organization or Company Name that a Developer is part of",
@@ -77,5 +80,7 @@ var ExecRequestComments = map[string]string{
 	"offer":            "WebRTC Offer",
 	"answer":           "WebRTC Answer",
 	"err":              "Any error message",
+	"console":          "VM Console",
+	"consoleurl":       "VM Console URL",
 }
 var ExecRequestSpecialArgs = map[string]string{}

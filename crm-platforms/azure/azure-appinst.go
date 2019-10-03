@@ -164,3 +164,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
 }
+
+func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+	return "", fmt.Errorf("Unsupported command for platform")
+}

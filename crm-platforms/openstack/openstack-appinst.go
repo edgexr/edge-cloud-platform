@@ -336,13 +336,7 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 	case cloudcommon.AppDeploymentTypeDocker:
 		return dockermgmt.GetAppInstRuntime(client, app, appInst)
 	case cloudcommon.AppDeploymentTypeVM:
-		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, app.Key.Name)
-		if err != nil {
-			return nil, err
-		}
-		rt := &edgeproto.AppInstRuntime{}
-		rt.ConsoleUrl = consoleUrl.Url
-		return rt, nil
+		fallthrough
 	default:
 		return nil, fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -358,6 +352,19 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 		return dockermgmt.GetContainerCommand(clusterInst, app, appInst, req)
 	case cloudcommon.AppDeploymentTypeVM:
 		fallthrough
+	default:
+		return "", fmt.Errorf("unsupported deployment type %s", deployment)
+	}
+}
+
+func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
+	switch deployment := app.Deployment; deployment {
+	case cloudcommon.AppDeploymentTypeVM:
+		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, app.Key.Name)
+		if err != nil {
+			return "", err
+		}
+		return consoleUrl.Url, nil
 	default:
 		return "", fmt.Errorf("unsupported deployment type %s", deployment)
 	}
