@@ -74,7 +74,8 @@ func artifactoryListUsers(ctx context.Context) (map[string]struct{}, error) {
 	tmp := make(map[string]struct{})
 	for _, user := range *users {
 		userName := *user.Name
-		if strings.HasPrefix(userName, ArtifactoryPrefix) {
+		userInfo, _, err := client.V1.Security.GetUser(context.Background(), userName)
+		if err == nil && *userInfo.InternalPasswordDisabled {
 			tmp[userName] = struct{}{}
 		}
 	}
@@ -88,7 +89,7 @@ func artifactoryListUserGroups(ctx context.Context, userName string) (map[string
 	}
 
 	tmp := make(map[string]struct{})
-	userInfo, _, err := client.V1.Security.GetUser(context.Background(), getArtifactoryName(userName))
+	userInfo, _, err := client.V1.Security.GetUser(context.Background(), userName)
 	if err == nil && userInfo.Groups != nil {
 		for _, group := range *userInfo.Groups {
 			if strings.HasPrefix(group, ArtifactoryPrefix) {
@@ -101,7 +102,7 @@ func artifactoryListUserGroups(ctx context.Context, userName string) (map[string
 
 func artifactoryCreateUser(ctx context.Context, user *ormapi.User) {
 	client, err := artifactoryClient(ctx)
-	userName := getArtifactoryName(user.Name)
+	userName := user.Name
 	if user.Name == Superuser {
 		return
 	}
@@ -123,11 +124,10 @@ func artifactoryCreateUser(ctx context.Context, user *ormapi.User) {
 
 func artifactoryDeleteUser(ctx context.Context, userName string) {
 	client, err := artifactoryClient(ctx)
-	rtfUserName := getArtifactoryName(userName)
 	if err == nil {
-		_, _, err = client.V1.Security.DeleteUser(context.Background(), rtfUserName)
+		_, _, err = client.V1.Security.DeleteUser(context.Background(), userName)
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user", "user", rtfUserName, "err", err)
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory delete user", "user", userName, "err", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "Status:404") {
 			return
@@ -145,7 +145,7 @@ func artifactoryAddUserToGroup(ctx context.Context, role *ormapi.Role, orgType s
 		return
 	}
 	client, err := artifactoryClient(ctx)
-	userName := getArtifactoryName(role.Username)
+	userName := role.Username
 	orgName := getArtifactoryName(role.Org)
 	if err == nil {
 		var userInfo *v1.User
@@ -177,7 +177,7 @@ func artifactoryRemoveUserFromGroup(ctx context.Context, role *ormapi.Role, orgT
 		return
 	}
 	client, err := artifactoryClient(ctx)
-	userName := getArtifactoryName(role.Username)
+	userName := role.Username
 	orgName := getArtifactoryName(role.Org)
 	if err == nil {
 		var userInfo *v1.User
@@ -368,7 +368,7 @@ func artifactoryCreateRepoPerms(ctx context.Context, orgName, orgType string) er
 		if role.Username == Superuser {
 			continue
 		}
-		userName := getArtifactoryName(strings.ToLower(role.Username))
+		userName := strings.ToLower(role.Username)
 		if role.Role == RoleDeveloperManager {
 			userPerms[userName] = []string{"w", "d", "r", "m"}
 		}

@@ -91,10 +91,9 @@ func (s *AppStoreSync) syncRtfUsers(ctx context.Context) {
 
 	// Create missing users
 	for name, user := range mcusersT {
-		p_userName := getArtifactoryName(name)
-		if _, found := rtfUsers[p_userName]; found {
+		if _, found := rtfUsers[name]; found {
 			// in sync
-			delete(rtfUsers, p_userName)
+			delete(rtfUsers, name)
 		} else {
 			// missing from Artifactory, so create
 			log.SpanLog(ctx, log.DebugLevelApi,
@@ -109,8 +108,7 @@ func (s *AppStoreSync) syncRtfUsers(ctx context.Context) {
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Artifactory Sync delete extra user",
 			"name", user)
-		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
-		artifactoryDeleteUser(ctx, userName)
+		artifactoryDeleteUser(ctx, user)
 	}
 }
 
@@ -228,10 +226,9 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 		return
 	}
 
-	for mcUserName, mcUserRoles := range mcGroupMembers {
-		rtfUserName := getArtifactoryName(mcUserName)
+	for userName, mcUserRoles := range mcGroupMembers {
 		// Get Artifactory roles
-		rtfGroups, err := artifactoryListUserGroups(ctx, mcUserName)
+		rtfGroups, err := artifactoryListUserGroups(ctx, userName)
 		if err != nil {
 			s.syncErr(ctx, err)
 			return
@@ -243,7 +240,7 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 				// Add user to the group
 				log.SpanLog(ctx, log.DebugLevelApi,
 					"Artifactory Sync add missing user to group",
-					"user", rtfUserName, "group", rtfGroup,
+					"user", userName, "group", rtfGroup,
 					"role", mcRole)
 				orgType := getOrgType(mcRole.Org, allOrgs)
 				artifactoryAddUserToGroup(ctx, mcRole, orgType)
@@ -255,12 +252,12 @@ func (s *AppStoreSync) syncGroupUsers(ctx context.Context, allOrgs map[string]*o
 				// User is part of extra group
 				// Remove user from the group
 				role := ormapi.Role{}
-				role.Username = mcUserName
+				role.Username = userName
 				role.Org = mcGroup
 				orgType := getOrgType(role.Org, allOrgs)
 				log.SpanLog(ctx, log.DebugLevelApi,
 					"Artifactory Sync remove extra user from group",
-					"user", rtfUserName, "group", rtfGroup,
+					"user", userName, "group", rtfGroup,
 					"role", role)
 				artifactoryRemoveUserFromGroup(ctx, &role, orgType)
 			}
@@ -297,15 +294,13 @@ func ArtifactorySummary(c echo.Context) error {
 	summary.Users.AppStoreUsers = len(rtfUsers)
 
 	for name, _ := range mcUsers {
-		p_userName := getArtifactoryName(name)
-		if _, found := rtfUsers[p_userName]; !found {
-			summary.Users.MissingUsers = append(summary.Users.MissingUsers, p_userName)
+		if _, found := rtfUsers[name]; !found {
+			summary.Users.MissingUsers = append(summary.Users.MissingUsers, name)
 		}
 	}
 
 	for user, _ := range rtfUsers {
-		userName := strings.TrimPrefix(user, ArtifactoryPrefix)
-		if _, found := mcUsers[userName]; !found {
+		if _, found := mcUsers[user]; !found {
 			summary.Users.ExtraUsers = append(summary.Users.ExtraUsers, user)
 		}
 	}
@@ -367,10 +362,9 @@ func ArtifactorySummary(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 
-	for mcUserName, mcUserRoles := range mcGroupMembers {
-		rtfUserName := getArtifactoryName(mcUserName)
+	for userName, mcUserRoles := range mcGroupMembers {
 		// Get Artifactory roles
-		rtfGroups, err := artifactoryListUserGroups(ctx, mcUserName)
+		rtfGroups, err := artifactoryListUserGroups(ctx, userName)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, MsgErr(err))
 		}
@@ -380,7 +374,7 @@ func ArtifactorySummary(c echo.Context) error {
 				// Group not part of Artifactory user
 				summary.GroupMembers.MissingGroupMembers = append(summary.GroupMembers.MissingGroupMembers, GroupMember{
 					Group: rtfGroup,
-					User:  rtfUserName,
+					User:  userName,
 				})
 			}
 		}
@@ -390,7 +384,7 @@ func ArtifactorySummary(c echo.Context) error {
 				// User is part of extra group
 				summary.GroupMembers.ExtraGroupMembers = append(summary.GroupMembers.ExtraGroupMembers, GroupMember{
 					Group: rtfGroup,
-					User:  rtfUserName,
+					User:  userName,
 				})
 			}
 		}
