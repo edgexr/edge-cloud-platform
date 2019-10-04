@@ -357,7 +357,7 @@ func (s *ArtifactoryMock) verify(t *testing.T, v entry, objType string) {
 	}
 	// Verify user exists and uses LDAP config
 	for user, userType := range v.Users {
-		userName := getArtifactoryName(strings.ToLower(user))
+		userName := strings.ToLower(user)
 		rtfUser, ok := s.userStore[userName]
 		require.True(t, ok, "user exists")
 		require.Equal(t, *rtfUser.Name, userName, "user name matches")
