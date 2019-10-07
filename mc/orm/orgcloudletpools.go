@@ -152,7 +152,15 @@ func DeleteOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		return echo.ErrForbidden
 	}
 	db := loggedDB(ctx)
-	err := db.Delete(op).Error
+	// can't use db.Delete as we're not using primary key
+	// see http://jinzhu.me/gorm/crud.html#delete
+	args := []interface{}{
+		"org = ? and region = ? and cloudlet_pool = ?",
+		op.Org,
+		op.Region,
+		op.CloudletPool,
+	}
+	err := db.Delete(op, args...).Error
 	if err != nil {
 		return dbErr(err)
 	}
