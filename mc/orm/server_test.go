@@ -107,6 +107,14 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
 
+	// try to delete admin and user1
+	status, err = mcClient.DeleteUser(uri, token, &ormapi.User{Name: DefaultSuperuser})
+	require.NotNil(t, err, "delete only AdminManager")
+	require.Equal(t, http.StatusBadRequest, status, "deleting lone manager")
+	status, err = mcClient.DeleteUser(uri, tokenMisterX, &user1)
+	require.NotNil(t, err, "delete only manager of an org")
+	require.Equal(t, http.StatusBadRequest, status, "deleting lone manager")
+
 	// create new user2
 	user2 := ormapi.User{
 		Name:     "MisterY",

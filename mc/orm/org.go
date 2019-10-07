@@ -62,7 +62,6 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if strings.ToLower(claims.Username) == strings.ToLower(org.Name) {
 		return fmt.Errorf("org name cannot be same as existing user name")
 	}
-	org.AdminUsername = claims.Username
 	db := loggedDB(ctx)
 	err = db.Create(&org).Error
 	if err != nil {
