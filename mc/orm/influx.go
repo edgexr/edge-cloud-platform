@@ -273,7 +273,7 @@ func parseCloudletSelectorString(selector string) (string, error) {
 
 // Common method to handle both app and cluster metrics
 func GetMetricsCommon(c echo.Context) error {
-	var cmd, org, selectorStr string
+	var errStr, cmd, org, selectorStr string
 
 	rc := &InfluxDBContext{}
 	claims, err := getClaims(c)
@@ -286,7 +286,8 @@ func GetMetricsCommon(c echo.Context) error {
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
 		if err := c.Bind(&in); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg("Invalid GET data"))
+			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Cluster name has to be specified
 		if in.AppInst.ClusterInstKey.ClusterKey.Name == "" {
@@ -301,7 +302,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
 		if err := c.Bind(&in); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg("Invalid GET data"))
+			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Cluster name has to be specified
 		if in.ClusterInst.ClusterKey.Name == "" {
@@ -316,7 +318,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
 		if err := c.Bind(&in); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg("Invalid GET data"))
+			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Cloudlet details are required
 		if in.Cloudlet.Name == "" || in.Cloudlet.OperatorKey.Name == "" {
