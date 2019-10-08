@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -18,6 +19,7 @@ func TestServer(t *testing.T) {
 	defer log.FinishTracer()
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
+	ctx := log.StartTestSpan(context.Background())
 
 	config := ServerConfig{
 		ServAddr:        addr,
@@ -345,6 +347,7 @@ func TestServer(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(users))
 
+	testImagePaths(t, ctx, mcClient, uri, token)
 	testLockedUsers(t, uri, mcClient)
 }
 
