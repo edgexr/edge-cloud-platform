@@ -436,7 +436,7 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 	if !rc.skipAuthz {
 		authz, err = new{{.MethodName}}Authz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
 		if err == echo.ErrForbidden {
-			return nil
+			return {{.ReturnErrArg}}nil
 		}
 		if err != nil {
 			return {{.ReturnErrArg}}err
@@ -448,7 +448,7 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 	if !rc.skipAuthz {
 		authz, err = NewShowAuthz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
 		if err == echo.ErrForbidden {
-			return nil
+			return {{.ReturnErrArg}}nil
 		}
 		if err != nil {
 			return {{.ReturnErrArg}}err
@@ -458,7 +458,7 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 	if !rc.skipAuthz {
 		if err := authz{{.MethodName}}(ctx, rc.region, rc.username, obj,
 			{{.Resource}}, {{.Action}}); err != nil {
-			return err
+			return {{.ReturnErrArg}}err
 		}
 	}
 {{- else}}
