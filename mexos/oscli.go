@@ -605,8 +605,12 @@ func deleteHeatStack(ctx context.Context, stackName string) error {
 			log.SpanLog(ctx, log.DebugLevelMexos, "stack not found")
 			return nil
 		}
-		log.InfoLog("stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
-		return fmt.Errorf("stack deletion failed: %s -- %v", stackName, err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
+		if strings.Contains(string(out), "Stack not found") {
+			log.SpanLog(ctx, log.DebugLevelMexos, "stack already deleted", "stackName", stackName)
+			return nil
+		}
+		return fmt.Errorf("stack deletion failed: %s, %s %v", stackName, out, err)
 	}
 	return nil
 }
