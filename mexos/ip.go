@@ -23,6 +23,8 @@ type NetSpecInfo struct {
 	RouterGatewayIP   string
 }
 
+const ClusterNotFoundErr string = "cluster not found"
+
 //ParseNetSpec decodes netspec string
 //TODO: IPv6
 func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
@@ -185,7 +187,7 @@ func GetMasterNameAndIP(ctx context.Context, clusterInst *edgeproto.ClusterInst)
 	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	masterName, err := FindClusterMaster(ctx, nodeNameSuffix, srvs)
 	if err != nil {
-		return "", "", fmt.Errorf("can't find cluster with key %s, %v", nodeNameSuffix, err)
+		return "", "", fmt.Errorf("%s -- %s, %v", ClusterNotFoundErr, nodeNameSuffix, err)
 	}
 	masterIP, err := FindNodeIP(masterName, srvs)
 	return masterName, masterIP, err

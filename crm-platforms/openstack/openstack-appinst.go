@@ -11,8 +11,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/vmspec"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -240,15 +240,26 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
+			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED &&
+				strings.Contains(err.Error(), "No server with a name or ID") {
+				// if this happens someone very likely deleted the dedicated cluster stack by hand.   If it happens
+				// on the shared RootLB then we have major problems
+				log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
+				return nil
+			}
 			return err
 		}
+
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-
 		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
 		if err != nil {
+			if strings.Contains(err.Error(), mexos.ClusterNotFoundErr) {
+				log.SpanLog(ctx, log.DebugLevelMexos, "cluster is gone, allow app deletion")
+				return nil
+			}
 			return err
 		} // Clean up security rules and nginx proxy if app is external
 		if !app.InternalPorts {
@@ -260,11 +271,13 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
+
 		if deployment == cloudcommon.AppDeploymentTypeKubernetes {
 			return k8smgmt.DeleteAppInst(client, names, app, appInst)
 		} else {
 			return k8smgmt.DeleteHelmAppInst(client, names, clusterInst)
 		}
+
 	case cloudcommon.AppDeploymentTypeVM:
 		log.SpanLog(ctx, log.DebugLevelMexos, "Deleting VM", "stackName", app.Key.Name)
 		err := mexos.HeatDeleteStack(ctx, app.Key.Name)
@@ -275,7 +288,13 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	case cloudcommon.AppDeploymentTypeDocker:
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
-			return err
+			if strings.Contains(err.Error(), "No server with a name or ID") {
+				// if the VM is gone then so is the app
+				log.SpanLog(ctx, log.DebugLevelMexos, "Docker VM is gone, allow app deletion")
+				return nil
+			} else {
+				return err
+			}
 		}
 		return dockermgmt.DeleteAppInst(ctx, client, app, appInst)
 	default:
