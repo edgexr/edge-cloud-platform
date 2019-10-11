@@ -417,12 +417,17 @@ func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error
 	if err != nil {
 		return nil, dbErr(err)
 	}
+	authz, err := newShowAuthz(ctx, username, ResourceUsers, ActionView)
+	if err != nil {
+		return nil, err
+	}
+
 	for ii, _ := range groupings {
 		role := parseRole(groupings[ii])
 		if role == nil {
 			continue
 		}
-		if !authorized(ctx, username, role.Org, ResourceUsers, ActionView) {
+		if !authz.Ok(ctx, role.Org) {
 			continue
 		}
 		roles = append(roles, *role)

@@ -185,9 +185,14 @@ func ShowOrgCloudletPoolObj(ctx context.Context, username string) ([]ormapi.OrgC
 	if err != nil {
 		return nil, dbErr(err)
 	}
+	authz, err := newShowAuthz(ctx, username, ResourceCloudletPools, ActionView)
+	if err != nil {
+		return nil, err
+	}
+
 	retops := []ormapi.OrgCloudletPool{}
 	for _, op := range ops {
-		if !authorized(ctx, username, op.Org, ResourceCloudletPools, ActionView) {
+		if !authz.Ok(ctx, op.Org) {
 			continue
 		}
 		retops = append(retops, op)
