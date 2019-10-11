@@ -219,7 +219,7 @@ ssh_authorized_keys:
 	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "vmspec", vmspec)
 	err = mexos.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, mexos.VmTemplate, updateCallback)
 	if err != nil {
-		return fmt.Errorf("CreateVMAppInst error: %v", err)
+		return fmt.Errorf("CreatePlatformVM error: %v", err)
 	}
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 

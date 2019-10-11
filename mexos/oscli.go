@@ -67,7 +67,13 @@ func ListImages(ctx context.Context) ([]OSImage, error) {
 
 //GetImageDetail show of a given image from Glance
 func GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
-	out, err := TimedOpenStackCommand(ctx, "openstack", "image", "show", name, "-f", "json", "-c", "id", "-c", "status", "-c", "updated_at")
+	out, err := TimedOpenStackCommand(
+		ctx, "openstack", "image", "show", name, "-f", "json",
+		"-c", "id",
+		"-c", "status",
+		"-c", "updated_at",
+		"-c", "checksum",
+	)
 	if err != nil {
 		err = fmt.Errorf("cannot get image Detail for %s, %s, %v", name, string(out), err)
 		return nil, err
@@ -80,17 +86,6 @@ func GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "show image Detail", "Detail", imageDetail)
 	return &imageDetail, nil
-}
-
-func GetImageUpdatedTime(ctx context.Context, name string) (time.Time, error) {
-	imageDetail, err := GetImageDetail(ctx, name)
-	if err == nil && imageDetail.Status != "active" {
-		err = fmt.Errorf("image %s is not active", name)
-	}
-	if err != nil {
-		return time.Time{}, err
-	}
-	return time.Parse(time.RFC3339, imageDetail.UpdatedAt)
 }
 
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
