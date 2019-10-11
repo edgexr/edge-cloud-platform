@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -39,4 +39,16 @@ func (c *K8sClusterStats) GetAppStats(ctx context.Context) map[shepherd_common.M
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect app metrics", "K8s Cluster", c)
 	}
 	return metrics
+}
+
+func (c *K8sClusterStats) GetAlerts(ctx context.Context) []edgeproto.Alert {
+	if c.promAddr == "" {
+		return nil
+	}
+	alerts, err := getPromAlerts(ctx, c.promAddr, c.client)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect alerts", "K8s Cluster", c, "err", err)
+		return nil
+	}
+	return alerts
 }

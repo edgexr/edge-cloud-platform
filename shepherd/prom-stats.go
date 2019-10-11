@@ -12,6 +12,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -41,11 +43,18 @@ type PromData struct {
 	Result  []PromMetric `json:"result,omitempty"`
 }
 type PromMetric struct {
-	Labels PromLables    `json:"metric,omitempty"`
+	Labels PromLabels    `json:"metric,omitempty"`
 	Values []interface{} `json:"value,omitempty"`
 }
-type PromLables struct {
+type PromLabels struct {
 	PodName string `json:"pod_name,omitempty"`
+}
+type PromAlert struct {
+	Labels      map[string]string
+	Annotations map[string]string
+	State       string
+	ActiveAt    *time.Time `json:"activeAt,omitempty"`
+	Value       float64
 }
 
 const platformClientHeaderSize = 3
@@ -63,8 +72,7 @@ func getPromMetrics(ctx context.Context, addr string, query string, client pc.Pl
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
 	resp, err := client.Output("curl " + reqURI)
 	if err != nil {
-		errstr := fmt.Sprintf("Failed to run <%s>", reqURI)
-		log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err)
 		return nil, err
 	}
 	trimmedResp := outputTrim(resp)
@@ -73,6 +81,40 @@ func getPromMetrics(ctx context.Context, addr string, query string, client pc.Pl
 		return nil, err
 	}
 	return promResp, nil
+}
+
+func getPromAlerts(ctx context.Context, addr string, client pc.PlatformClient) ([]edgeproto.Alert, error) {
+	reqURI := "'http://" + addr + "/api/v1/alerts'"
+	out, err := client.Output("curl " + reqURI)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to run <%s>, %v", reqURI, err)
+	}
+	trimmedResp := outputTrim(out)
+	resp := struct {
+		Status string
+		Data   struct {
+			Alerts []PromAlert
+		}
+	}{}
+	if err = json.Unmarshal([]byte(trimmedResp), &resp); err != nil {
+		return nil, err
+	}
+	if resp.Status != "success" {
+		return nil, fmt.Errorf("Resp to <%s> is %s instead of success", reqURI, resp.Status)
+	}
+	alerts := []edgeproto.Alert{}
+	for _, pa := range resp.Data.Alerts {
+		alert := edgeproto.Alert{}
+		alert.Labels = pa.Labels
+		alert.Annotations = pa.Annotations
+		alert.State = pa.State
+		alert.Value = pa.Value
+		if pa.ActiveAt != nil {
+			alert.ActiveAt = cloudcommon.TimeToTimestamp(*pa.ActiveAt)
+		}
+		alerts = append(alerts, alert)
+	}
+	return alerts, nil
 }
 
 //this takes a float64 representation of a time(in sec) given to use by prometheus
@@ -84,7 +126,7 @@ func parseTime(timeFloat float64) *types.Timestamp {
 	return ts
 }
 
-func collectAppPrometheusMetrics(ctx context.Context,p *K8sClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
+func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
 
 	appKey := shepherd_common.MetricAppInstKey{
@@ -159,7 +201,7 @@ func collectAppPrometheusMetrics(ctx context.Context,p *K8sClusterStats) map[she
 		}
 	}
 	// Get Pod NetRecv bytes rate averaged over 1m
-	resp, err = getPromMetrics(ctx,p.promAddr, promQNetSentRate, p.client)
+	resp, err = getPromMetrics(ctx, p.promAddr, promQNetSentRate, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			appKey.Pod = metric.Labels.PodName

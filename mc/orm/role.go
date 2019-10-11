@@ -31,6 +31,7 @@ const ResourceCloudletAnalytics = "cloudletanalytics"
 const ResourceClusterFlavors = "clusterflavors"
 const ResourceFlavors = "flavors"
 const ResourceConfig = "config"
+const ResourceAlert = "alert"
 
 var DeveloperResources = []string{
 	ResourceApps,
@@ -72,6 +73,8 @@ func InitRolePerms(ctx context.Context) error {
 	addPolicy(ctx, &err, RoleAdminManager, ResourceConfig, ActionView)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceCloudletPools, ActionManage)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceCloudletPools, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceAlert, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceAlert, ActionView)
 
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionManage)
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionView)

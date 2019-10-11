@@ -41,6 +41,7 @@ var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
 var AppCache edgeproto.AppCache
 var MetricSender *notify.MetricSend
+var AlertCache edgeproto.AlertCache
 
 var cloudletKey edgeproto.CloudletKey
 var pf platform.Platform
@@ -183,6 +184,8 @@ func main() {
 	//register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)
+	edgeproto.InitAlertCache(&AlertCache)
+	notifyClient.RegisterSendAlertCache(&AlertCache)
 
 	notifyClient.Start()
 	defer notifyClient.Stop()

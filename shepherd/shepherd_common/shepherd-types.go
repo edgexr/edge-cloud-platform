@@ -22,6 +22,7 @@ type ClusterStats interface {
 	// Returns current resource usage for a cluster instance
 	GetClusterStats(ctx context.Context) *ClusterMetrics
 	GetAppStats(ctx context.Context) map[MetricAppInstKey]*AppMetrics
+	GetAlerts(ctx context.Context) []edgeproto.Alert
 }
 
 type AppMetrics struct {
