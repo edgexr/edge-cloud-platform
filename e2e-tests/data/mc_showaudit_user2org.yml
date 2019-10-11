@@ -14,7 +14,7 @@
   starttime: "2019-08-10T16:13:42.173053-07:00"
   duration: 7.154ms
   request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
-    FL 32604","Phone":"123-123-1234","AdminUsername":"user2","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+    FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 3f80227e8749927a
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst

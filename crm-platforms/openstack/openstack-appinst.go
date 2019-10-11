@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
@@ -93,21 +94,21 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		appWaitErr := <-appWaitChan
 		if appWaitErr != "" {
-			return fmt.Errorf("CreateKubernetesAppInst app wait error: %v", appWaitErr)
+			return fmt.Errorf("app wait error, %v", appWaitErr)
 		}
 		if err != nil {
-			return fmt.Errorf("CreateKubernetesAppInst other error: %v", err)
+			return err
 		}
 	case cloudcommon.AppDeploymentTypeVM:
 		imageName, err := cloudcommon.GetFileName(app.ImagePath)
 		if err != nil {
-			return fmt.Errorf("CreateVMAppInst error: %v", err)
+			return err
 		}
 		sourceImageTime, md5Sum, err := mexos.GetUrlInfo(ctx, app.ImagePath)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "failed to fetch source image info, skip image validity checks")
 		}
-		glanceImageTime, err := mexos.GetImageUpdatedTime(ctx, imageName)
+		imageDetail, err := mexos.GetImageDetail(ctx, imageName)
 		createImage := false
 		if err != nil {
 			if strings.Contains(err.Error(), "Could not find resource") {
@@ -115,16 +116,26 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				log.SpanLog(ctx, log.DebugLevelMexos, "image is not present in glance, add image")
 				createImage = true
 			} else {
-				return fmt.Errorf("CreateVMAppInst error: %v", err)
+				return err
 			}
 		} else {
+			if imageDetail.Status != "active" {
+				return fmt.Errorf("image in store %s is not active", imageName)
+			}
+			if imageDetail.Checksum != md5Sum {
+				return fmt.Errorf("mismatch in md5sum")
+			}
+			glanceImageTime, err := time.Parse(time.RFC3339, imageDetail.UpdatedAt)
+			if err != nil {
+				return err
+			}
 			if !sourceImageTime.IsZero() {
 				if sourceImageTime.Sub(glanceImageTime) > 0 {
 					// Update the image in Glance
-					log.SpanLog(ctx, log.DebugLevelMexos, "image in glance is no longer valid, update image")
+					updateCallback(edgeproto.UpdateTask, "Image in store is outdated, deleting old image")
 					err = mexos.DeleteImage(ctx, imageName)
 					if err != nil {
-						return fmt.Errorf("CreateVMAppInst error: %v", err)
+						return err
 					}
 					createImage = true
 				}
@@ -134,7 +145,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			updateCallback(edgeproto.UpdateTask, "Creating VM Image from URL")
 			err = mexos.CreateImageFromUrl(ctx, imageName, app.ImagePath, md5Sum)
 			if err != nil {
-				return fmt.Errorf("CreateVMAppInst error: %v", err)
+				return err
 			}
 		}
 
@@ -165,7 +176,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", app.Key.Name, "vmspec", vmspec)
 		err = mexos.CreateHeatStackFromTemplate(ctx, vmp, app.Key.Name, mexos.VmTemplate, updateCallback)
 		if err != nil {
-			return fmt.Errorf("CreateVMAppInst error: %v", err)
+			return err
 		}
 		external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), app.Key.Name)
 		if err != nil {
@@ -208,7 +219,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 		err = dockermgmt.CreateAppInst(ctx, client, app, appInst)
 		if err != nil {
-			return fmt.Errorf("createAppInst error for docker %v", err)
+			return err
 		}
 		getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 			action := mexos.DnsSvcAction{}

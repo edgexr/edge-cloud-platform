@@ -99,6 +99,7 @@ type OSImageDetail struct {
 	Status    string `json:"status"`
 	ID        string `json:"id"`
 	UpdatedAt string `json:"updated_at"`
+	Checksum  string `json:"checksum"`
 }
 
 type OSNetwork struct {
