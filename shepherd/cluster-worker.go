@@ -98,6 +98,10 @@ func (p *ClusterWorker) RunNotify() {
 			for _, metric := range clusterMetrics {
 				p.send(ctx, metric)
 			}
+
+			clusterAlerts := p.clusterStat.GetAlerts(ctx)
+			updateAlerts(ctx, &p.clusterInstKey, clusterAlerts)
+
 			span.Finish()
 		case <-p.stop:
 			done = true
@@ -226,4 +230,38 @@ func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_com
 	stat.NetRecvTS = nil
 
 	return metrics
+}
+
+func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey, alerts []edgeproto.Alert) {
+	if alerts == nil {
+		// some error occurred, do not modify existing cache set
+		return
+	}
+
+	stale := make(map[edgeproto.AlertKey]context.Context)
+	AlertCache.GetAllKeys(ctx, stale)
+
+	for ii, _ := range alerts {
+		alert := &alerts[ii]
+		alert.Labels["dev"] = clusterInstKey.Developer
+		alert.Labels["operator"] = clusterInstKey.CloudletKey.OperatorKey.Name
+		alert.Labels["cloudlet"] = clusterInstKey.CloudletKey.Name
+		alert.Labels["cluster"] = clusterInstKey.ClusterKey.Name
+
+		AlertCache.UpdateModFunc(ctx, alert.GetKey(), 0, func(old *edgeproto.Alert) (*edgeproto.Alert, bool) {
+			if old == nil {
+				return alert, true
+			}
+			// don't update if nothing changed
+			changed := !alert.Matches(old)
+			return alert, changed
+		})
+		delete(stale, alert.GetKeyVal())
+	}
+	// delete stale entries
+	for key, _ := range stale {
+		buf := edgeproto.Alert{}
+		buf.SetKey(&key)
+		AlertCache.Delete(ctx, &buf, 0)
+	}
 }

@@ -265,3 +265,8 @@ func collectDockerClusterMetrics(ctx context.Context, p *DockerClusterStats) err
 	p.MemTS, p.DiskTS, p.NetSentTS, p.NetRecvTS, p.TcpConnsTS, p.TcpRetransTS, p.UdpSentTS, p.UdpRecvTS, p.UdpRecvErrTS = p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS, p.CpuTS
 	return nil
 }
+
+func (c *DockerClusterStats) GetAlerts(ctx context.Context) []edgeproto.Alert {
+	// no docker alerts yet
+	return nil
+}
