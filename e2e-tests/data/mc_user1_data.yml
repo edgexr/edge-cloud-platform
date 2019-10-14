@@ -15,17 +15,6 @@ orgs:
   phone: 123-123-1234
   adminusername: user1
 
-roles:
-- username: user1
-  org: dmuus
-  role: OperatorManager
-- username: user1
-  org: azure
-  role: OperatorManager
-- username: user1
-  org: gcp
-  role: OperatorManager
-
 regiondata:
 - region: local
   appdata:

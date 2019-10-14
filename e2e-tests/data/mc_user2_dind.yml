@@ -5,11 +5,6 @@ orgs:
   phone: 123-123-1234
   adminusername: user2
 
-roles:
-- username: user2
-  org: MobiledgeX
-  role: DeveloperManager
-
 regiondata:
 - region: local
   appdata:

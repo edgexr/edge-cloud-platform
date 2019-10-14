@@ -128,7 +128,14 @@ func (s *AppStoreSync) syncGroups(ctx context.Context) map[string]*ormapi.Organi
 		}
 		opts.Page = resp.NextPage
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab sync groups", "gitlab groups", len(groupsT), "mc groups", len(orgsT))
+	devOrgsCount := 0
+	for _, org := range orgsT {
+		if org.Type == OrgTypeOperator {
+			continue
+		}
+		devOrgsCount++
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "Gitlab sync groups", "gitlab groups", len(groupsT), "mc dev groups", devOrgsCount)
 	for name, org := range orgsT {
 		if org.Type == OrgTypeOperator {
 			continue

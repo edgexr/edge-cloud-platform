@@ -1,12 +1,3 @@
-- operationname: /api/v1/auth/role/removeuser
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-10T16:04:18.84145-07:00"
-  duration: 132µs
-  request: '{"org":"AcmeAppCo","username":"user2","role":"DeveloperManager"}'
-  response: '{"message":"Role removed from user"}'
-  traceid: 57d3cbb62c39ac5e
 - operationname: /api/v1/auth/org/delete
   username: user2
   clientip: 127.0.0.1
@@ -120,3 +111,17 @@
     PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
   response: '{}'
   traceid: 751109d99e1fb42a
+- operationname: /api/v1/auth/ctrl/CreateClusterInst
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-10-11T12:40:48.40604+05:30"
+  duration: 230.38ms
+  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
+  response: |
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"First Create Task"}}
+    {"data":{"message":"Second Create Task"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created successfully"}}
+  traceid: 793f7650fefeca28
