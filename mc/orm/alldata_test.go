@@ -85,6 +85,20 @@ orgs:
 
 roles:
 - org: devorg
+  username: dev2
+  role: DeveloperViewer
+`
+
+	showdev1data := `
+orgs:
+- name: devorg
+  type: developer
+  address: somewhere
+  phone: somenumber
+  adminusername: dev1
+
+roles:
+- org: devorg
   username: dev1
   role: DeveloperManager
 - org: devorg
@@ -99,11 +113,11 @@ roles:
 		require.Equal(t, http.StatusOK, status)
 	}
 
-	testData(t, mcClient, uri, &adminUser, admindata)
-	testData(t, mcClient, uri, &users[0], dev1data)
+	testData(t, mcClient, uri, &adminUser, admindata, admindata)
+	testData(t, mcClient, uri, &users[0], dev1data, showdev1data)
 }
 
-func testData(t *testing.T, mcClient *ormclient.Client, uri string, user *ormapi.User, yamldata string) {
+func testData(t *testing.T, mcClient *ormclient.Client, uri string, user *ormapi.User, yamldata string, outdata string) {
 	data := &ormapi.AllData{}
 	err := yaml.Unmarshal([]byte(yamldata), data)
 	require.Nil(t, err, "unmarshal yaml")
@@ -126,6 +140,9 @@ func testData(t *testing.T, mcClient *ormclient.Client, uri string, user *ormapi
 	}
 
 	// run show and compare
+	data = &ormapi.AllData{}
+	err = yaml.Unmarshal([]byte(outdata), data)
+	require.Nil(t, err, "unmarshal yaml")
 	showData, status, err := mcClient.ShowData(uri, token)
 
 	if !cmp.Equal(data, showData, copts...) {

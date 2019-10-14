@@ -137,7 +137,14 @@ func (s *AppStoreSync) syncGroupObjects(ctx context.Context) map[string]*ormapi.
 		s.syncErr(ctx, err)
 		return orgsT
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "artifactory sync group objs", "artifactory groups", len(groups), "mc groups", len(orgsT))
+	devOrgsCount := 0
+	for _, org := range orgsT {
+		if org.Type == OrgTypeOperator {
+			continue
+		}
+		devOrgsCount++
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "artifactory sync group objs", "artifactory groups", len(groups), "mc dev groups", devOrgsCount)
 
 	// Create missing objects
 	for orgname, org := range orgsT {

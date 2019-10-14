@@ -25,24 +25,6 @@
   request: '{"username":"user2","password":""}'
   response: '{"token":""}'
   traceid: 635be073ef98bea
-- operationname: /api/v1/auth/role/removeuser
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-11T09:36:02.92474-07:00"
-  duration: 135µs
-  request: '{"org":"platos","username":"user2","role":"DeveloperManager"}'
-  response: '{"message":"Role removed from user"}'
-  traceid: a1b22a9b86b59a
-- operationname: /api/v1/auth/role/removeuser
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-11T09:36:02.920549-07:00"
-  duration: 142µs
-  request: '{"org":"AcmeAppCo","username":"user2","role":"DeveloperManager"}'
-  response: '{"message":"Role removed from user"}'
-  traceid: 6e8232a551f56839
 - operationname: /api/v1/auth/org/delete
   username: user2
   clientip: 127.0.0.1
@@ -104,3 +86,26 @@
   request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
   response: '{}'
   traceid: 47b0b401e7c4768d
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-10-11T12:52:41.690206+05:30"
+  duration: 33.816ms
+  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
+  response: '{}'
+  traceid: 1e63f404d3eb3c06
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-10-11T12:52:41.625768+05:30"
+  duration: 58.741ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 48c09d035649b16a
