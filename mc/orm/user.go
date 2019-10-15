@@ -112,11 +112,9 @@ func CreateUser(c echo.Context) error {
 	if user.Name == "" {
 		return c.JSON(http.StatusBadRequest, Msg("Name not specified"))
 	}
-	if strings.Contains(user.Name, "::") {
-		return c.JSON(http.StatusBadRequest, Msg("Name cannot contain ::"))
-	}
-	if strings.Contains(user.Name, "&") {
-		return c.JSON(http.StatusBadRequest, Msg("Name cannot contain &"))
+	err := ValidName(user.Name)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 	}
 	if !util.ValidEmail(user.Email) {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid email address"))
@@ -124,9 +122,6 @@ func CreateUser(c echo.Context) error {
 	if err := ValidPassword(user.Passhash); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
 			err.Error()))
-	}
-	if !util.ValidLDAPName(user.Name) {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid characters in user name"))
 	}
 	if !serverConfig.SkipVerifyEmail {
 		// real email will be filled in later

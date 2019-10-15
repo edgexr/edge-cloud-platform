@@ -10,7 +10,6 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/util"
 )
 
 // Organization Type names for ORM database
@@ -39,7 +38,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if org.Name == "" {
 		return fmt.Errorf("Name not specified")
 	}
-	err := util.ValidOrgName(org.Name)
+	err := ValidName(org.Name)
 	if err != nil {
 		return err
 	}

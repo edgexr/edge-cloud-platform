@@ -94,7 +94,7 @@ func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 		// no operator orgs needed in gitlab
 		return
 	}
-	name := util.GitlabGroupSanitize(org.Name)
+	name := GitlabGroupSanitize(org.Name)
 	groupOpts := gitlab.CreateGroupOptions{
 		Name:       &name,
 		Path:       &name,
@@ -127,7 +127,7 @@ func gitlabDeleteGroup(ctx context.Context, org *ormapi.Organization) {
 		// no operator orgs needed in gitlab
 		return
 	}
-	name := util.GitlabGroupSanitize(org.Name)
+	name := GitlabGroupSanitize(org.Name)
 	_, err := gitlabClient.Groups.DeleteGroup(name)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab delete group",
@@ -160,7 +160,7 @@ func gitlabAddGroupMember(ctx context.Context, role *ormapi.Role, orgType string
 		UserID:      &user.ID,
 		AccessLevel: access,
 	}
-	orgname := util.GitlabGroupSanitize(role.Org)
+	orgname := GitlabGroupSanitize(role.Org)
 	_, _, err = gitlabClient.GroupMembers.AddGroupMember(orgname, &opts)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab add group member",
@@ -181,7 +181,7 @@ func gitlabRemoveGroupMember(ctx context.Context, role *ormapi.Role, orgType str
 		gitlabSync.NeedsSync()
 		return
 	}
-	orgname := util.GitlabGroupSanitize(role.Org)
+	orgname := GitlabGroupSanitize(role.Org)
 	_, err = gitlabClient.GroupMembers.RemoveGroupMember(orgname, user.ID)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "gitlab remove group member",
