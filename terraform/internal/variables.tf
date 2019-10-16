@@ -70,6 +70,22 @@ variable "jaeger_domain_name" {
   default     = "jaeger.mobiledgex.net"
 }
 
+variable "elasticsearch_instance_name" {
+  default     = "elasticsearch"
+}
+
+variable "elasticsearch_gcp_zone" {
+  default     = "us-central1-a"
+}
+
+variable "elasticsearch_domain_name" {
+  default     = "es01.es.mobiledgex.net"
+}
+
+variable "kibana_domain_name" {
+  default     = "kibana.es.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"

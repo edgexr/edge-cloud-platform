@@ -34,9 +34,10 @@ module "influxdb" {
   source                  = "../modules/vm_gcp"
 
   instance_name           = "${var.influxdb_instance_name}"
+  instance_size           = "custom-1-4864"
   zone                    = "${var.gcp_zone}"
   boot_disk_size          = 100
-  tags                    = [ "internal", "influxdb", "https-server" ]
+  tags                    = [ "internal", "influxdb", "http-server", "https-server" ]
   ssh_public_key_file     = "${var.ssh_public_key_file}"
 }
 
@@ -66,4 +67,26 @@ module "jaeger_dns" {
   source                        = "../modules/cloudflare_record"
   hostname                      = "${var.jaeger_domain_name}"
   ip                            = "${module.jaeger.external_ip}"
+}
+
+module "elasticsearch" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                = "${var.elasticsearch_instance_name}"
+  zone                          = "${var.elasticsearch_gcp_zone}"
+  boot_disk_size                = 200
+  tags                          = [ "mexplat-${var.environ_tag}", "elasticsearch" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "elasticsearch_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.elasticsearch_domain_name}"
+  ip                            = "${module.elasticsearch.external_ip}"
+}
+
+module "kibana_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.kibana_domain_name}"
+  ip                            = "${module.elasticsearch.external_ip}"
 }
