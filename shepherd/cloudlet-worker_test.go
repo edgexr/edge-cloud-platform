@@ -46,11 +46,11 @@ func TestCloudletStats(t *testing.T) {
 	testCloudletData.NetworkTS = testCloudletData.ComputeTS
 	buf, err := json.Marshal(testCloudletData)
 	assert.Nil(t, err, "marshal cloudlet metrics")
-	pf = &shepherd_unittest.Platform{
+	myPlatform = &shepherd_unittest.Platform{
 		CloudletMetrics: string(buf),
 	}
 
-	cloudletStats, err := pf.GetPlatformStats(ctx)
+	cloudletStats, err := myPlatform.GetPlatformStats(ctx)
 	assert.Nil(t, err, "Get cloudlet stats")
 	metrics := MarshalCloudletMetrics(&cloudletStats)
 	// Should be two measurements

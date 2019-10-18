@@ -25,9 +25,9 @@ func CloudletScraper() {
 			span.SetTag("operator", cloudletKey.OperatorKey.Name)
 			span.SetTag("cloudlet", cloudletKey.Name)
 			ctx := log.ContextWithSpan(context.Background(), span)
-			cloudletStats, err := pf.GetPlatformStats(ctx)
+			cloudletStats, err := myPlatform.GetPlatformStats(ctx)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", pf, "error", err.Error())
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", myPlatform, "error", err.Error())
 			} else {
 				metrics := MarshalCloudletMetrics(&cloudletStats)
 				for _, metric := range metrics {
