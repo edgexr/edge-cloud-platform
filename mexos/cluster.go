@@ -10,8 +10,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/vmspec"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 )
 
 //XXX ClusterInst seems to have Nodes which is a number.
@@ -110,7 +110,8 @@ func waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 func UpdateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources with Heat")
 
-	err := HeatUpdateClusterKubernetes(ctx, clusterInst, "", updateCallback)
+	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
+	err := HeatUpdateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -141,9 +142,9 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 	start := time.Now()
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating cluster instance", "clusterInst", clusterInst, "timeout", timeout)
 
-	dedicatedRootLBName := ""
+	dedicatedRootLB := false
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		dedicatedRootLBName = rootLBName
+		dedicatedRootLB = true
 	}
 
 	var err error
@@ -152,9 +153,9 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
 		vmspec := vmspec.VMCreationSpec{FlavorName: clusterInst.NodeFlavor, ExternalVolumeSize: clusterInst.ExternalVolumeSize}
-		err = HeatCreateRootLBVM(ctx, dedicatedRootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, updateCallback)
+		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, updateCallback)
 	} else {
-		err = HeatCreateClusterKubernetes(ctx, clusterInst, dedicatedRootLBName, updateCallback)
+		err = HeatCreateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)
 	}
 	if err != nil {
 		return err
@@ -199,12 +200,17 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 //DeleteCluster deletes kubernetes cluster
 func DeleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	clusterName := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	err := HeatDeleteStack(ctx, clusterName)
+
+	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
+	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
 		return err
 	}
-	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+	err = HeatDeleteCluster(ctx, client, clusterInst, rootLBName, dedicatedRootLB)
+	if err != nil {
+		return err
+	}
+	if dedicatedRootLB {
 		DeleteRootLB(rootLBName)
 	}
 	return nil

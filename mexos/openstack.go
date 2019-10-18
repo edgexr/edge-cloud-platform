@@ -91,6 +91,23 @@ type OSServerDetail struct {
 	Properties       string `json:"properties"`
 }
 
+type OSPort struct {
+	ID         string `json:"ID"`
+	Name       string `json:"Name"`
+	Status     string `json:"Status"`
+	MACAddress string `json:"MAC Address"`
+	FixedIPs   string `json:"Fixed IP Addresses"`
+}
+
+type OSPortDetail struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	DeviceID   string `json:"device_id"`
+	Status     string `json:"status"`
+	MACAddress string `json:"mac_address"`
+	FixedIPs   string `json:"fixed_ips"`
+}
+
 type OSImage struct {
 	Status, ID, Name string
 }
