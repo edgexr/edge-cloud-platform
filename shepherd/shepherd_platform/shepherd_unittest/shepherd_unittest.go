@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -17,7 +19,8 @@ type Platform struct {
 	DockerAppMetrics     string
 	DockerClusterMetrics string
 	// Cloudlet-level test data
-	CloudletMetrics string
+	CloudletMetrics  string
+	VmAppInstMetrics string
 	// TODO - add Prometheus/nginx strings here EDGECLOUD-1252
 }
 
@@ -45,6 +48,21 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 		return metrics, err
 	}
 	return metrics, nil
+}
+
+func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
+	metrics := shepherd_common.AppMetrics{}
+	if err := json.Unmarshal([]byte(s.VmAppInstMetrics), &metrics); err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to marshal unit test metrics", "stats", s.VmAppInstMetrics, "err", err.Error())
+		return metrics, err
+	}
+	ts, _ := types.TimestampProto(time.Now())
+	metrics.CpuTS, metrics.MemTS, metrics.DiskTS, metrics.NetSentTS, metrics.NetRecvTS = ts, ts, ts, ts, ts
+	return metrics, nil
+}
+
+func (s *Platform) GetMetricsCollectInterval() time.Duration {
+	return 0
 }
 
 // UTClient hijacks a set of commands and returns predetermined output

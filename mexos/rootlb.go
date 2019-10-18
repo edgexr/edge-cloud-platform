@@ -12,8 +12,8 @@ import (
 	valid "github.com/asaskevich/govalidator"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/vmspec"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -160,7 +160,6 @@ func SetupRootLB(ctx context.Context, rootLBName string, rootLBSpec *vmspec.VMCr
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "Copy resource-tracker to rootLb", "rootLb", rootLBName)
 	err = CopyResourceTracker(client)
-	// Not critical if we cannot copy over resource-tracker executable so just log it
 	if err != nil {
 		return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
 	}

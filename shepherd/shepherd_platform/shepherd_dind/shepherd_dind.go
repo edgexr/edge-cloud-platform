@@ -2,6 +2,7 @@ package shepherd_dind
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -40,6 +41,10 @@ func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto
 	return s.SharedClient, nil
 }
 
+func (s *Platform) GetMetricsCollectInterval() time.Duration {
+	return 0
+}
+
 func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	cloudletMetric := shepherd_common.CloudletMetrics{}
 	cloudletMetric.ComputeTS, _ = types.TimestampProto(time.Now())
@@ -74,4 +79,8 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 	cloudletMetric.NetRecv = n[0].BytesRecv >> 10
 	cloudletMetric.NetSent = n[0].BytesSent >> 10
 	return cloudletMetric, nil
+}
+
+func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
+	return shepherd_common.AppMetrics{}, fmt.Errorf("VM on DIND is unsupported")
 }

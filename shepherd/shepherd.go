@@ -36,6 +36,7 @@ var defaultPrometheusPort = int32(9090)
 
 //map keeping track of all the currently running prometheuses
 var workerMap map[string]*ClusterWorker
+var vmAppWorkerMap map[string]*AppInstWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
@@ -44,29 +45,50 @@ var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
 
 var cloudletKey edgeproto.CloudletKey
-var pf platform.Platform
+var myPlatform platform.Platform
 
 var sigChan chan os.Signal
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	CollectNginxStats(ctx, new)
 	var port int32
-	//check for prometheus
-	if new.Key.AppKey.Name != MEXPrometheusAppName {
+	var exists bool
+	var mapKey string
+
+	// check cluster name if this is a VM App
+	if new.Key.ClusterInstKey.ClusterKey.Name == cloudcommon.DefaultVMCluster {
+		mapKey = new.Key.GetKeyString()
+		stats, exists := vmAppWorkerMap[mapKey]
+		if new.State == edgeproto.TrackedState_READY && !exists {
+			// Add/Create
+			stats, err := NewAppInstWorker(ctx, *collectInterval, MetricSender.Update, new, myPlatform)
+			if err == nil {
+				vmAppWorkerMap[mapKey] = stats
+				stats.Start(ctx)
+			}
+		} else if new.State != edgeproto.TrackedState_READY && !exists {
+			delete(vmAppWorkerMap, mapKey)
+			stats.Stop(ctx)
+		}
+		// Done for VM Apps
+		return
+	} else if new.Key.AppKey.Name == MEXPrometheusAppName {
+		// check for prometheus
+		mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key.ClusterInstKey)
+	} else {
 		return
 	}
-	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key.ClusterInstKey)
 	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
-		//get address of prometheus.
+		// get address of prometheus.
 		clusterInst := edgeproto.ClusterInst{}
 		found := ClusterInstCache.Get(&new.Key.ClusterInstKey, &clusterInst)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return
 		}
-		clustIP, err := pf.GetClusterIP(ctx, &clusterInst)
+		clustIP, err := myPlatform.GetClusterIP(ctx, &clusterInst)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
 			return
@@ -80,7 +102,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewClusterWorker(ctx, promAddress, *collectInterval, MetricSender.Update, &clusterInst, pf)
+			stats, err = NewClusterWorker(ctx, promAddress, *collectInterval, MetricSender.Update, &clusterInst, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -108,7 +130,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
 		if !exists {
-			stats, err := NewClusterWorker(ctx, "", *collectInterval, MetricSender.Update, new, pf)
+			stats, err := NewClusterWorker(ctx, "", *collectInterval, MetricSender.Update, new, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -158,15 +180,16 @@ func main() {
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Metrics collection", "interval", collectInterval)
 	var err error
-	pf, err = getPlatform()
+	myPlatform, err = getPlatform()
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	err = pf.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
+	err = myPlatform.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	workerMap = make(map[string]*ClusterWorker)
+	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	InitNginxScraper()
 	InitPlatformMetrics()
 

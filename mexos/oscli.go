@@ -782,3 +782,59 @@ func OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, err
 	}
 	return consoleUrl, nil
 }
+
+// Finds a resource by name by instance id.
+// There are resources that are metered for instance-id, which are resources of their own
+// The examples are instance_network_interface and instance_disk
+// Openstack example call:
+//   <openstack metric resource search --type instance_network_interface instance_id=dc32daa6-0d0a-4512-a9fa-2b989e913014>
+// We only use the the first found result
+func OSFindResourceByInstId(ctx context.Context, resourceType string, instId string) (*OSMetricResource, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "find resource for instance Id", "id", instId,
+		"resource", resourceType)
+	osRes := []OSMetricResource{}
+	instArg := fmt.Sprintf("instance_id=%s", instId)
+	out, err := TimedOpenStackCommand(ctx, "openstack", "metric", "resource", "search",
+		"-f", "json", "--type", resourceType, instArg)
+	if err != nil {
+		err = fmt.Errorf("can't find resource %s, for %s, %s %v", resourceType, instId, out, err)
+		return nil, err
+	}
+	err = json.Unmarshal(out, &osRes)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal Metric Resource, %v", err)
+		return nil, err
+	}
+	if len(osRes) != 1 {
+		return nil, fmt.Errorf("Unexpected Number of Meters found")
+	}
+	return &osRes[0], nil
+}
+
+// Get openstack metrics from ceilometer tsdb
+// Example openstack call:
+//   <openstack metric measures show --resource-id a9bf10cf-a709-5a47-8b69-da920b8f65cd network.incoming.bytes>
+// This will return a range of measurements from the startTime
+func OSGetMetricsRangeForId(ctx context.Context, resId string, metric string, startTime time.Time) ([]OSMetricMeasurement, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get measure for Id", "id", resId, "metric", metric)
+	measurements := []OSMetricMeasurement{}
+
+	startStr := startTime.Format(time.RFC3339)
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "metric", "measures", "show",
+		"-f", "json", "--start", startStr, "--resource-id", resId, metric)
+	if err != nil {
+		err = fmt.Errorf("can't get measurements %s, for %s, %s %v", metric, resId, out, err)
+		return []OSMetricMeasurement{}, err
+	}
+	err = json.Unmarshal(out, &measurements)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal measurements, %v", err)
+		return []OSMetricMeasurement{}, err
+	}
+	// No value, means we don't need to write it
+	if len(measurements) == 0 {
+		return []OSMetricMeasurement{}, fmt.Errorf("No values for the metric")
+	}
+	return measurements, nil
+}
