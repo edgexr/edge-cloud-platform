@@ -48,6 +48,23 @@ func ListServers(ctx context.Context) ([]OSServer, error) {
 	return servers, nil
 }
 
+//ListServers returns list of servers, KVM instances, running on the system
+func ListPorts(ctx context.Context) ([]OSPort, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "list", "-f", "json")
+
+	if err != nil {
+		err = fmt.Errorf("cannot get port list, %v", err)
+		return nil, err
+	}
+	var ports []OSPort
+	err = json.Unmarshal(out, &ports)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	return ports, nil
+}
+
 //ListImages lists avilable images in glance
 func ListImages(ctx context.Context) ([]OSImage, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "image", "list", "-f", "json")
@@ -234,6 +251,57 @@ func GetServerDetails(ctx context.Context, name string) (*OSServerDetail, error)
 	return srvDetail, nil
 }
 
+// GetPortDetails gets details of the specified port
+func GetPortDetails(ctx context.Context, name string) (*OSPortDetail, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "get port details", "name", name)
+	portDetail := &OSPortDetail{}
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "show", name, "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("can't get port detail for port: %s, %s, %v", name, out, err)
+		return nil, err
+	}
+	err = json.Unmarshal(out, &portDetail)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "port unmarshal failed", "err", err)
+		err = fmt.Errorf("can't unmarshal port, %v", err)
+		return nil, err
+	}
+	return portDetail, nil
+}
+
+// AttachPortToServer attaches a port to a server
+func AttachPortToServer(ctx context.Context, serverName, portName string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "AttachPortToServer", "serverName", serverName, "portName", portName)
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "server", "add", "port", serverName, portName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "can't attach port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+		err = fmt.Errorf("can't attach port: %s, %s, %v", portName, out, err)
+		return err
+	}
+	return nil
+}
+
+// DetachPortFromServer removes a port from a server
+func DetachPortFromServer(ctx context.Context, serverName, portName string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "DetachPortFromServer", "serverName", serverName, "portName", portName)
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "server", "remove", "port", serverName, portName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+		if strings.Contains(string(out), "No Port found") {
+			// when ports are removed they are detached from any server they are connected to.
+			log.SpanLog(ctx, log.DebugLevelMexos, "port is gone", "portName", portName)
+			err = nil
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMexos, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+		}
+		return err
+	}
+	return nil
+}
+
 //DeleteServer destroys a KVM instance
 //  sometimes it is not possible to destroy. Like most things in Openstack, try again.
 func DeleteServer(ctx context.Context, id string) error {
@@ -247,9 +315,14 @@ func DeleteServer(ctx context.Context, id string) error {
 }
 
 // CreateNetwork creates a network with a name.
-func CreateNetwork(ctx context.Context, name string) error {
+func CreateNetwork(ctx context.Context, name string, netType string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating network", "network", name)
-	out, err := TimedOpenStackCommand(ctx, "openstack", "network", "create", name)
+	args := []string{"network", "create"}
+	if netType != "" {
+		args = append(args, []string{"--provider-network-type", netType}...)
+	}
+	args = append(args, name)
+	out, err := TimedOpenStackCommand(ctx, "openstack", args...)
 	if err != nil {
 		err = fmt.Errorf("can't create network %s, %s, %v", name, out, err)
 		return err

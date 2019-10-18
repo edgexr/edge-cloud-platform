@@ -78,7 +78,7 @@ func GetRouterDetailInterfaces(ctx context.Context, rd *OSRouterDetail) ([]OSRou
 
 func GetMexRouterIP(ctx context.Context) (string, error) {
 	rtr := GetCloudletExternalRouter()
-	if rtr == NoConfigExternalRouter {
+	if rtr == NoConfigExternalRouter || rtr == NoExternalRouter {
 		return "", nil
 	}
 	rd, rderr := GetRouterDetail(ctx, rtr)
@@ -132,7 +132,7 @@ func ValidateNetwork(ctx context.Context) error {
 	}
 
 	rtr := GetCloudletExternalRouter()
-	if rtr != NoConfigExternalRouter {
+	if rtr != NoConfigExternalRouter && rtr != NoExternalRouter {
 		routers, err := ListRouters(ctx)
 		if err != nil {
 			return err
@@ -186,15 +186,19 @@ func PrepNetwork(ctx context.Context) error {
 		}
 	}
 	if !found {
+		ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+		if err != nil {
+			return err
+		}
 		// We need at least one network for `mex` clusters
-		err = CreateNetwork(ctx, GetCloudletMexNetwork())
+		err = CreateNetwork(ctx, GetCloudletMexNetwork(), ni.NetworkType)
 		if err != nil {
 			return fmt.Errorf("cannot create mex network %s, %v", GetCloudletMexNetwork(), err)
 		}
 	}
 
 	rtr := GetCloudletExternalRouter()
-	if rtr != NoConfigExternalRouter {
+	if rtr != NoConfigExternalRouter && rtr != NoExternalRouter {
 		routers, err := ListRouters(ctx)
 		if err != nil {
 			return err

@@ -10,8 +10,12 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+// NetworkTypeVLAN is an OpenStack provider network type
+const NetworkTypeVLAN string = "vlan"
+
 type NetSpecInfo struct {
 	Name, CIDR        string
+	NetworkType       string
 	NetworkAddress    string
 	NetmaskBits       string
 	Octets            []string
@@ -55,6 +59,8 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 			ni.VnicType = v
 		case "routergateway":
 			ni.RouterGatewayIP = v
+		case "networktype":
+			ni.NetworkType = v
 		default:
 			return nil, fmt.Errorf("unknown netspec item key: %s", k)
 		}

@@ -25,8 +25,13 @@ var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 var VaultAddr string
 
 // NoConfigExternalRouter is used for the case in which we don't manage the external
-// router and don't add ports to it ourself, as happens with Contrail
+// router and don't add ports to it ourself, as happens with Contrail.  The router does exist in
+// this case and we use it to route from the LB to the pods
 var NoConfigExternalRouter = "NOCONFIG"
+
+// NoExternalRouter means there is no router at all and we connect the LB to the k8s pods on the same subnet
+// this may eventually be the default and possibly only option
+var NoExternalRouter = "NONE"
 
 // Package level test mode variable
 var testMode = false
