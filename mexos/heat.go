@@ -525,8 +525,9 @@ func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, 
 func HeatDeleteCluster(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
 	cp, err := getClusterParams(ctx, clusterInst, rootLBName, dedicatedRootLB, heatDelete)
 	if err == nil {
-		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack
-		if cp.RootLBPortName != "" && !dedicatedRootLB {
+		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack.  A nil client can be passed here in
+		// some rare cases because the server was somehow deleted
+		if cp.RootLBPortName != "" && !dedicatedRootLB && client != nil {
 			err = DetachAndDisableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "unable to detach rootLB interface, proceed with stack deletion", "err", err)

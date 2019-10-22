@@ -204,7 +204,11 @@ func DeleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "No server with a name or ID") {
+			log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow stack delete to proceed")
+		} else {
+			return err
+		}
 	}
 	err = HeatDeleteCluster(ctx, client, clusterInst, rootLBName, dedicatedRootLB)
 	if err != nil {
