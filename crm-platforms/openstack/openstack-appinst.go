@@ -248,16 +248,17 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
+			_, err := mexos.GetServerDetails(ctx, rootLBName)
+			if err != nil {
+				if strings.Contains(err.Error(), "No server with a name or ID") {
+					log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
+					return nil
+				}
+				return err
+			}
 		}
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
-			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED &&
-				strings.Contains(err.Error(), "No server with a name or ID") {
-				// if this happens someone very likely deleted the dedicated cluster stack by hand.   If it happens
-				// on the shared RootLB then we have major problems
-				log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
-				return nil
-			}
 			return err
 		}
 
@@ -297,15 +298,18 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		return nil
 	case cloudcommon.AppDeploymentTypeDocker:
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		rootLBName := cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
+		_, err := mexos.GetServerDetails(ctx, rootLBName)
 		if err != nil {
 			if strings.Contains(err.Error(), "No server with a name or ID") {
-				// if the VM is gone then so is the app
-				log.SpanLog(ctx, log.DebugLevelMexos, "Docker VM is gone, allow app deletion")
+				log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
 				return nil
-			} else {
-				return err
 			}
+			return err
+		}
+		client, err := s.GetPlatformClient(ctx, clusterInst)
+		if err != nil {
+			return err
 		}
 		return dockermgmt.DeleteAppInst(ctx, client, app, appInst)
 	default:
