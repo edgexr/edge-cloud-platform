@@ -682,7 +682,7 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 // HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
 func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst)
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
 	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
 	// So we will do this one at a time.   It will slightly slow down the creation of the second cluster, but the heat
@@ -715,19 +715,19 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	return nil
 }
 
-// HeatUpdateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
-func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, dedicatedRootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+// HeatUpdateClusterKubernetes updates a k8s cluster which may optionally include a dedicated root LB
+func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateClusterKubernetes", "clusterInst", clusterInst)
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
 
-	cp, err := getClusterParams(ctx, clusterInst, dedicatedRootLBName, dedicatedRootLB, heatUpdate)
+	cp, err := getClusterParams(ctx, clusterInst, rootLBName, dedicatedRootLB, heatUpdate)
 	if err != nil {
 		return err
 	}
 
 	templateString := k8sClusterTemplate
 	//append the VM resources for the rootLB is specified
-	if dedicatedRootLBName != "" {
+	if dedicatedRootLB{
 		templateString += vmTemplateResources
 	}
 	err = UpdateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
