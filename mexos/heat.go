@@ -35,13 +35,15 @@ type VMParams struct {
 	DeploymentManifest  template.HTML
 	Command             template.HTML
 	IsRootLB            bool
+	IsInternal          bool
 }
 
 type DeploymentType string
 
 const (
-	RootLBVMDeployment DeploymentType = "mexrootlb"
-	UserVMDeployment   DeploymentType = "mexuservm"
+	RootLBVMDeployment   DeploymentType = "mexrootlb"
+	UserVMDeployment     DeploymentType = "mexuservm"
+	PlatformVMDeployment DeploymentType = "mexplatformvm"
 )
 
 var heatStackLock sync.Mutex
@@ -109,6 +111,8 @@ var vmTemplateResources = `
            {{if .MEXRouterIP}}
             privaterouter: {{.MEXRouterIP}}
            {{- end}}
+        {{- end}}
+        {{if .IsInternal}}
          user_data: |
 ` + reindent(vmCloudConfig, 12) + `
         {{- end}}
@@ -409,6 +413,9 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 	vmp.ExternalVolumeSize = externalVolumeSize
 	vmp.ImageName = imageName
 	vmp.SecurityGroup = GetCloudletSecurityGroup()
+	if depType != UserVMDeployment {
+		vmp.IsInternal = true
+	}
 	if depType == RootLBVMDeployment {
 		vmp.GatewayIP, err = GetExternalGateway(ctx, GetCloudletExternalNetwork())
 		if err != nil {

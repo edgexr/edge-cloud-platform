@@ -70,6 +70,7 @@ var NodeOptionalArgs = []string{
 	"buildhead",
 	"buildauthor",
 	"hostname",
+	"imageversion",
 }
 var NodeAliasArgs = []string{
 	"key.name=node.key.name",
@@ -81,6 +82,7 @@ var NodeAliasArgs = []string{
 	"buildhead=node.buildhead",
 	"buildauthor=node.buildauthor",
 	"hostname=node.hostname",
+	"imageversion=node.imageversion",
 }
 var NodeComments = map[string]string{
 	"key.name":                         "Name or hostname of node",
@@ -92,5 +94,6 @@ var NodeComments = map[string]string{
 	"buildhead":                        "Build Head Version",
 	"buildauthor":                      "Build Author",
 	"hostname":                         "Hostname",
+	"imageversion":                     "Docker edge-cloud base image version",
 }
 var NodeSpecialArgs = map[string]string{}
