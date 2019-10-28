@@ -75,7 +75,7 @@ func LBAddRouteAndSecRules(ctx context.Context, client pc.PlatformClient, rootLB
 
 		// make the route persist by adding the following line if not already present via grep.
 		routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", subnetNomask, mask, gatewayIP)
-		interfacesFile := "/etc/network/interfaces.d/50-cloud-init.cfg"
+		interfacesFile := GetCloudletNetworkIfaceFile()
 		cmd = fmt.Sprintf("grep -l '%s' %s", routeAddLine, interfacesFile)
 		out, err = client.Output(cmd)
 		if err != nil {

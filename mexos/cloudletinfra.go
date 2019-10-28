@@ -228,6 +228,10 @@ func GetCloudletCRMGatewayIPAndPort() (string, int) {
 	return host, port
 }
 
+func GetCloudletNetworkIfaceFile() string {
+	return "/etc/network/interfaces.d/50-cloud-init.cfg"
+}
+
 // initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:
 // fromip1=toip1,fromip2=toip2 and populates mappedExternalIPs
 func initMappedIPs() error {
