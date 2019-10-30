@@ -117,6 +117,15 @@ func TestServer(t *testing.T) {
 	require.NotNil(t, err, "delete only manager of an org")
 	require.Equal(t, http.StatusBadRequest, status, "deleting lone manager")
 
+	// create new user with same name as org
+	userX := ormapi.User{
+		Name:     "DevX",
+		Email:    "misterX@gmail.com",
+		Passhash: "misterX-password",
+	}
+	status, err = mcClient.CreateUser(uri, &userX)
+	require.NotNil(t, err, "cannot create user with same name as org")
+
 	// create new user2
 	user2 := ormapi.User{
 		Name:     "MisterY",

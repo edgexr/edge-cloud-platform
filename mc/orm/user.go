@@ -123,6 +123,14 @@ func CreateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
 			err.Error()))
 	}
+	orgT, err := GetAllOrgs(ctx)
+	if err == nil {
+		for orgName, _ := range orgT {
+			if strings.ToLower(user.Name) == strings.ToLower(orgName) {
+				return c.JSON(http.StatusBadRequest, Msg("user name cannot be same as org name"))
+			}
+		}
+	}
 	if !serverConfig.SkipVerifyEmail {
 		// real email will be filled in later
 		createuser.Verify.Email = "dummy@dummy.com"
