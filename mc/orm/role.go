@@ -260,6 +260,19 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 		span := log.SpanFromContext(ctx)
 		span.SetTag("org", role.Org)
 	}
+	// Special case Admin roles and the empty org (which implies all orgs).
+	// AdminRoles may only be associated to the empty org, and the
+	// empty org may only be associated with Admin roles.
+	if role.Role == RoleAdminManager || role.Role == RoleAdminContributor || role.Role == RoleAdminViewer {
+		if role.Org != "" {
+			return fmt.Errorf("Admin roles cannot be associated with an org, please specify the empty org \"\"")
+		}
+	} else {
+		if role.Org == "" {
+			return fmt.Errorf("Org name must be specified for the specified role")
+		}
+	}
+
 	// check that user/org/role exists
 	targetUser := ormapi.User{}
 	db := loggedDB(ctx)

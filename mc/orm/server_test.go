@@ -321,6 +321,9 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "remove user role")
 	require.Equal(t, http.StatusOK, status)
 
+	// test role + org combinations
+	testRoleOrgCombos(t, uri, token, mcClient)
+
 	// delete orgs
 	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org1)
 	require.Nil(t, err)
@@ -504,6 +507,86 @@ func testLockedUsers(t *testing.T, uri string, mcClient *ormclient.Client) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	status, err = mcClient.DeleteUser(uri, superTok, &user2)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+func testRoleOrgCombos(t *testing.T, uri, token string, mcClient *ormclient.Client) {
+	devOrg := ormapi.Organization{
+		Name: "rcDev",
+		Type: "developer",
+	}
+	operOrg := ormapi.Organization{
+		Name: "rcOper",
+		Type: "operator",
+	}
+	user := ormapi.User{
+		Name: "rcUser",
+	}
+	testCreateOrg(t, mcClient, uri, token, devOrg.Type, devOrg.Name)
+	testCreateOrg(t, mcClient, uri, token, operOrg.Type, operOrg.Name)
+	testCreateUser(t, mcClient, uri, user.Name)
+
+	role := ormapi.Role{
+		Username: user.Name,
+	}
+	expectFail := func(orgName, roleName string) {
+		role.Org = orgName
+		role.Role = roleName
+		status, err := mcClient.AddUserRole(uri, token, &role)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	expectOk := func(orgName, roleName string) {
+		role.Org = orgName
+		role.Role = roleName
+		status, err := mcClient.AddUserRole(uri, token, &role)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		status, err = mcClient.RemoveUserRole(uri, token, &role)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	// developer roles can only be assigned to dev org
+	for _, rr := range []string{
+		RoleDeveloperManager,
+		RoleDeveloperContributor,
+		RoleDeveloperViewer,
+	} {
+		expectOk(devOrg.Name, rr)
+		expectFail("", rr)
+		expectFail(operOrg.Name, rr)
+	}
+	// operator roles can only be assigned to operator org
+	for _, rr := range []string{
+		RoleOperatorManager,
+		RoleOperatorContributor,
+		RoleOperatorViewer,
+	} {
+		expectOk(operOrg.Name, rr)
+		expectFail("", rr)
+		expectFail(devOrg.Name, rr)
+	}
+	// admin roles can only be assigned to the empty org
+	for _, rr := range []string{
+		RoleAdminManager,
+		RoleAdminContributor,
+		RoleAdminViewer,
+	} {
+		expectOk("", rr)
+		expectFail(devOrg.Name, rr)
+		expectFail(operOrg.Name, rr)
+	}
+
+	// clean up
+	status, err := mcClient.DeleteOrg(uri, token, &devOrg)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteOrg(uri, token, &operOrg)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteUser(uri, token, &user)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
