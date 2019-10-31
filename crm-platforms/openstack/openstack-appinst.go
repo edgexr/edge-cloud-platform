@@ -160,9 +160,10 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("unable to find closest flavor for app: %v", err)
 		}
+		objName := cloudcommon.GetAppFQN(&app.Key)
 		vmp, err := mexos.GetVMParams(ctx,
 			mexos.UserVMDeployment,
-			app.Key.Name,
+			objName,
 			vmspec.FlavorName,
 			vmspec.ExternalVolumeSize,
 			imageName,
@@ -176,12 +177,12 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return fmt.Errorf("unable to get vm params: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying VM")
-		log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", app.Key.Name, "vmspec", vmspec)
-		err = mexos.CreateHeatStackFromTemplate(ctx, vmp, app.Key.Name, mexos.VmTemplate, updateCallback)
+		log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "vmspec", vmspec)
+		err = mexos.CreateHeatStackFromTemplate(ctx, vmp, objName, mexos.VmTemplate, updateCallback)
 		if err != nil {
 			return err
 		}
-		external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), app.Key.Name)
+		external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), objName)
 		if err != nil {
 			return err
 		}
@@ -191,7 +192,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return err
 			}
 			log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated",
-				"name", app.Key.Name,
+				"name", objName,
 				"fqdn", fqdn,
 				"IP", external_ip)
 		}
@@ -294,8 +295,9 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 
 	case cloudcommon.AppDeploymentTypeVM:
-		log.SpanLog(ctx, log.DebugLevelMexos, "Deleting VM", "stackName", app.Key.Name)
-		err := mexos.HeatDeleteStack(ctx, app.Key.Name)
+		objName := cloudcommon.GetAppFQN(&app.Key)
+		log.SpanLog(ctx, log.DebugLevelMexos, "Deleting VM", "stackName", objName)
+		err := mexos.HeatDeleteStack(ctx, objName)
 		if err != nil {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
@@ -397,7 +399,8 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeVM:
-		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, app.Key.Name)
+		objName := cloudcommon.GetAppFQN(&app.Key)
+		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, objName)
 		if err != nil {
 			return "", err
 		}
