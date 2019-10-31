@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/mexdind"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
+	"github.com/mobiledgex/edge-cloud-infra/plugin/common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 )
 
@@ -25,6 +26,10 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}
 	return outPlatform, nil
+}
+
+func GetClusterSvc() (platform.ClusterSvc, error) {
+	return &common.ClusterSvc{}, nil
 }
 
 func main() {}

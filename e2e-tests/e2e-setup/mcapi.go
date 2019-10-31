@@ -277,6 +277,12 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		members, status, err := mcClient.ShowCloudletPoolMember(uri, token, inCloudletPoolMember)
 		checkMcCtrlErr("ShowCloudletPoolMember", status, err, rc)
 
+		inAutoScalePolicy := &ormapi.RegionAutoScalePolicy{
+			Region: ctrl.Region,
+		}
+		asPolicies, status, err := mcClient.ShowAutoScalePolicy(uri, token, inAutoScalePolicy)
+		checkMcCtrlErr("ShowAutoScalePolicy", status, err, rc)
+
 		inClusterInst := &ormapi.RegionClusterInst{
 			Region: ctrl.Region,
 		}
@@ -312,6 +318,7 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 				ClusterInsts:        clusterInsts,
 				Applications:        apps,
 				AppInstances:        appInsts,
+				AutoScalePolicies:   asPolicies,
 			},
 		}
 		showData.RegionData = append(showData.RegionData, rd)
@@ -364,6 +371,14 @@ func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 			}
 			_, st, err := mcClient.CreateCloudletPoolMember(uri, token, in)
 			checkMcErr("CreateCloudletPoolMember", st, err, rc)
+		}
+		for _, policy := range rd.AppData.AutoScalePolicies {
+			in := &ormapi.RegionAutoScalePolicy{
+				Region:          rd.Region,
+				AutoScalePolicy: policy,
+			}
+			_, st, err := mcClient.CreateAutoScalePolicy(uri, token, in)
+			checkMcErr("CreateAutoScalePolicy", st, err, rc)
 		}
 		for _, cinst := range rd.AppData.ClusterInsts {
 			in := &ormapi.RegionClusterInst{
@@ -425,6 +440,14 @@ func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 			}
 			_, st, err := mcClient.DeleteClusterInst(uri, token, in)
 			checkMcErr("DeleteClusterInst", st, err, rc)
+		}
+		for _, policy := range rd.AppData.AutoScalePolicies {
+			in := &ormapi.RegionAutoScalePolicy{
+				Region:          rd.Region,
+				AutoScalePolicy: policy,
+			}
+			_, st, err := mcClient.DeleteAutoScalePolicy(uri, token, in)
+			checkMcErr("DeleteAutoScalePolicy", st, err, rc)
 		}
 		for _, member := range rd.AppData.CloudletPoolMembers {
 			in := &ormapi.RegionCloudletPoolMember{

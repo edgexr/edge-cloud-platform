@@ -22,6 +22,7 @@ regiondata:
       liveness: LivenessStatic
       nummasters: 1
       numnodes: 3
+      autoscalepolicy: scale1
     apps:
     - key:
         developerkey:
@@ -91,3 +92,12 @@ regiondata:
             operatorkey:
               name: mexdev
             name: localtest
+    autoscalepolicies:
+    - key:
+        developer: AcmeAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 3
+      scaleupcputhresh: 85
+      scaledowncputhresh: 50
+      triggertimesec: 60

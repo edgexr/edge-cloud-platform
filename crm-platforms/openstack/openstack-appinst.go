@@ -53,6 +53,9 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 			err = k8smgmt.CreateHelmAppInst(client, names, clusterInst, app, appInst)
 		}
+		if err != nil {
+			return err
+		}
 
 		// wait for the appinst in parallel with other tasks
 		go func() {

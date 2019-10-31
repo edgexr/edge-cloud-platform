@@ -133,6 +133,7 @@ var ClusterInstOptionalArgs = []string{
 	"deployment",
 	"nummasters",
 	"numnodes",
+	"autoscalepolicy",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=clusterinst.key.clusterkey.name",
@@ -156,6 +157,7 @@ var ClusterInstAliasArgs = []string{
 	"status.taskname=clusterinst.status.taskname",
 	"status.stepname=clusterinst.status.stepname",
 	"externalvolumesize=clusterinst.externalvolumesize",
+	"autoscalepolicy=clusterinst.autoscalepolicy",
 }
 var ClusterInstComments = map[string]string{
 	"cluster":            "Cluster name",
@@ -175,6 +177,7 @@ var ClusterInstComments = map[string]string{
 	"nummasters":         "Number of k8s masters (In case of docker deployment, this field is not required)",
 	"numnodes":           "Number of k8s nodes (In case of docker deployment, this field is not required)",
 	"externalvolumesize": "Size of external volume to be attached to nodes",
+	"autoscalepolicy":    "Auto scale policy name",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors": "StringArray",

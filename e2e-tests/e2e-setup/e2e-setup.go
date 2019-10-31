@@ -67,6 +67,7 @@ type DeploymentData struct {
 	Mcs                 []*intprocess.MC       `yaml:"mcs"`
 	Sqls                []*intprocess.Sql      `yaml:"sqls"`
 	Shepherds           []*intprocess.Shepherd `yaml:"shepherds"`
+	AutoProvs           []*intprocess.AutoProv `yaml:"autoprovs"`
 	Cloudflare          CloudflareDNS          `yaml:"cloudflare"`
 }
 
@@ -82,6 +83,9 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.Shepherds {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.AutoProvs {
 		all = append(all, p)
 	}
 	return all
@@ -158,6 +162,12 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 			return false
 		}
 	}
+	for _, p := range Deployment.AutoProvs {
+		opts = append(opts, process.WithDebug("api,notify"))
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
 	return true
 }
 
@@ -226,6 +236,10 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			if !setupmex.WaitForProcesses(actionParam, allprocs) {
 				errors = append(errors, "wait for process failed")
 			}
+		}
+	case "status":
+		if !setupmex.WaitForProcesses(actionParam, GetAllProcesses()) {
+			errors = append(errors, "wait for process failed")
 		}
 	case "stop":
 		allprocs := GetAllProcesses()

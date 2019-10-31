@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -107,8 +108,44 @@ func waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 	}
 }
 
-func UpdateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources with Heat")
+
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeKubernetes {
+		// if removing nodes, need to tell kubernetes that nodes are
+		// going away forever so that tolerating pods can be migrated
+		// off immediately.
+		kconfName := k8smgmt.GetKconfName(clusterInst)
+		cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --no-headers -o custom-columns=Name:.metadata.name", kconfName)
+		out, err := client.Output(cmd)
+		if err != nil {
+			return err
+		}
+		allnodes := strings.Split(strings.TrimSpace(out), "\n")
+		toRemove := []string{}
+		for _, n := range allnodes {
+			if !strings.HasPrefix(n, cloudcommon.MexNodePrefix) {
+				// skip master
+				continue
+			}
+			ok, num := ParseHeatNodePrefix(n)
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelMexos, "unable to parse node name, ignoring", "name", n)
+				continue
+			}
+			// heat will remove the higher-numbered nodes
+			if num > clusterInst.NumNodes {
+				toRemove = append(toRemove, n)
+			}
+		}
+		if len(toRemove) > 0 {
+			log.SpanLog(ctx, log.DebugLevelMexos, "delete nodes", "toRemove", toRemove)
+			err = k8smgmt.DeleteNodes(ctx, client, kconfName, toRemove)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	err := HeatUpdateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)

@@ -90,6 +90,11 @@ func CreateData(c echo.Context) error {
 			_, err := CreateCloudletPoolMemberObj(ctx, rc, &member)
 			streamReply(c, desc, err, &hadErr)
 		}
+		for _, policy := range appdata.AutoScalePolicies {
+			desc := fmt.Sprintf("Create AutoScalePolicy %v", policy.Key)
+			_, err := CreateAutoScalePolicyObj(ctx, rc, &policy)
+			streamReply(c, desc, err, &hadErr)
+		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Create ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
@@ -171,6 +176,11 @@ func DeleteData(c echo.Context) error {
 			desc := fmt.Sprintf("Delete ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
 			err = DeleteClusterInstStream(ctx, rc, &cinst, cb)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, policy := range appdata.AutoScalePolicies {
+			desc := fmt.Sprintf("Delete AutoScalePolicy %v", policy.Key)
+			_, err := DeleteAutoScalePolicyObj(ctx, rc, &policy)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, member := range appdata.CloudletPoolMembers {
@@ -282,6 +292,10 @@ func ShowData(c echo.Context) error {
 		flavors, err := ShowFlavorObj(ctx, rc, &edgeproto.Flavor{})
 		if err == nil {
 			appdata.Flavors = flavors
+		}
+		aspolicies, err := ShowAutoScalePolicyObj(ctx, rc, &edgeproto.AutoScalePolicy{})
+		if err == nil {
+			appdata.AutoScalePolicies = aspolicies
 		}
 		cinsts, err := ShowClusterInstObj(ctx, rc, &edgeproto.ClusterInst{})
 		if err == nil {

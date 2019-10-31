@@ -8,6 +8,15 @@
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: f372c8a2f99c4b6
+- operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-10-23T17:28:29.223902-07:00"
+  duration: 18.577ms
+  request: '{"Region":"local","AutoScalePolicy":{"key":{"developer":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
+  response: '{}'
+  traceid: 1e71004f9d5966b1
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
   username: user2
   clientip: 127.0.0.1
@@ -30,7 +39,7 @@
   status: 200
   starttime: "2019-08-10T16:04:18.643366-07:00"
   duration: 82.835ms
-  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
+  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1"}}'
   response: |
     {"data":{"message":"Autodeleting appinst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -111,17 +120,3 @@
     PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
   response: '{}'
   traceid: 751109d99e1fb42a
-- operationname: /api/v1/auth/ctrl/CreateClusterInst
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-10-11T12:40:48.40604+05:30"
-  duration: 230.38ms
-  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
-  response: |
-    {"data":{"message":"Creating"}}
-    {"data":{"message":"First Create Task"}}
-    {"data":{"message":"Second Create Task"}}
-    {"data":{"message":"Ready"}}
-    {"data":{"message":"Created successfully"}}
-  traceid: 793f7650fefeca28

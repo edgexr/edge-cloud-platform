@@ -82,6 +82,7 @@ clustersvcs:
 - name: cluster-svc1
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   ctrladdrs: "127.0.0.1:55001"
+  pluginrequired: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -160,4 +161,13 @@ traefiks:
 
 jaegers:
 - name: jaeger-e2e
+  hostname: "127.0.0.1"
+
+autoprovs:
+- name: autoprov1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"

@@ -73,6 +73,7 @@ func (p *ClusterWorker) Stop(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Stopping ClusterWorker thread\n")
 	close(p.stop)
 	p.waitGrp.Wait()
+	flushAlerts(ctx, &p.clusterInstKey)
 }
 
 func (p *ClusterWorker) RunNotify() {
@@ -88,6 +89,13 @@ func (p *ClusterWorker) RunNotify() {
 			clusterStats := p.clusterStat.GetClusterStats(ctx)
 			appStatsMap := p.clusterStat.GetAppStats(ctx)
 
+			// create another span for alerts that is always logged
+			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check")
+			aspan.SetTag("operator", p.clusterInstKey.CloudletKey.OperatorKey.Name)
+			aspan.SetTag("cloudlet", p.clusterInstKey.CloudletKey.Name)
+			aspan.SetTag("cluster", p.clusterInstKey.ClusterKey.Name)
+			actx := log.ContextWithSpan(context.Background(), aspan)
+
 			for key, stat := range appStatsMap {
 				appMetrics := MarshalAppMetrics(&key, stat)
 				for _, metric := range appMetrics {
@@ -99,10 +107,11 @@ func (p *ClusterWorker) RunNotify() {
 				p.send(ctx, metric)
 			}
 
-			clusterAlerts := p.clusterStat.GetAlerts(ctx)
-			updateAlerts(ctx, &p.clusterInstKey, clusterAlerts)
+			clusterAlerts := p.clusterStat.GetAlerts(actx)
+			updateAlerts(actx, &p.clusterInstKey, clusterAlerts)
 
 			span.Finish()
+			aspan.Finish()
 		case <-p.stop:
 			done = true
 		}
@@ -241,19 +250,26 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 	stale := make(map[edgeproto.AlertKey]context.Context)
 	AlertCache.GetAllKeys(ctx, stale)
 
+	changeCount := 0
 	for ii, _ := range alerts {
 		alert := &alerts[ii]
-		alert.Labels["dev"] = clusterInstKey.Developer
-		alert.Labels["operator"] = clusterInstKey.CloudletKey.OperatorKey.Name
-		alert.Labels["cloudlet"] = clusterInstKey.CloudletKey.Name
-		alert.Labels["cluster"] = clusterInstKey.ClusterKey.Name
+		alert.Labels[cloudcommon.AlertLabelDev] = clusterInstKey.Developer
+		alert.Labels[cloudcommon.AlertLabelOperator] = clusterInstKey.CloudletKey.OperatorKey.Name
+		alert.Labels[cloudcommon.AlertLabelCloudlet] = clusterInstKey.CloudletKey.Name
+		alert.Labels[cloudcommon.AlertLabelCluster] = clusterInstKey.ClusterKey.Name
 
 		AlertCache.UpdateModFunc(ctx, alert.GetKey(), 0, func(old *edgeproto.Alert) (*edgeproto.Alert, bool) {
 			if old == nil {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Update alert", "alert", alert)
+				changeCount++
 				return alert, true
 			}
 			// don't update if nothing changed
 			changed := !alert.Matches(old)
+			if changed {
+				changeCount++
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Update alert", "alert", alert)
+			}
 			return alert, changed
 		})
 		delete(stale, alert.GetKeyVal())
@@ -263,5 +279,25 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 		buf := edgeproto.Alert{}
 		buf.SetKey(&key)
 		AlertCache.Delete(ctx, &buf, 0)
+		changeCount++
+	}
+	if changeCount == 0 {
+		// suppress span log since nothing logged
+		span := log.SpanFromContext(ctx)
+		log.NoLogSpan(span)
+	}
+}
+
+// flushAlerts removes Alerts for clusters that have been deleted
+func flushAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
+	AlertCache.Mux.Lock()
+	defer AlertCache.Mux.Unlock()
+	for k, v := range AlertCache.Objs {
+		if v.Labels[cloudcommon.AlertLabelDev] == key.Developer &&
+			v.Labels[cloudcommon.AlertLabelOperator] == key.CloudletKey.OperatorKey.Name &&
+			v.Labels[cloudcommon.AlertLabelCloudlet] == key.CloudletKey.Name &&
+			v.Labels[cloudcommon.AlertLabelCluster] == key.ClusterKey.Name {
+			delete(AlertCache.Objs, k)
+		}
 	}
 }
