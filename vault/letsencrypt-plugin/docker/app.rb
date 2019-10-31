@@ -54,14 +54,17 @@ get "/cert/:domain" do
     end
   end
 
-  domain_list = domains.join(',')
+  domain_id = domains.join(',')
 
-  certdir = File.join(LETSENCRYPT_DIR, domain_list)
+  # Replace wildcard requests starting with an '_.' with '*'
+  domain_list = domains.map{|d| d.sub(/^_\./, '*.')}
+
+  certdir = File.join(LETSENCRYPT_DIR, domain_id)
   if not Dir.exist? certdir
     certbot_run = certbot \
                     + dns_provider_args[dns_provider] \
-                    + [ "--cert-name", domain_list ] \
-                    + domains.map{|d| [ "-d", d ]}.flatten
+                    + [ "--cert-name", domain_id ] \
+                    + domain_list.map{|d| [ "-d", d ]}.flatten
     ok = system(*certbot_run)
     if not ok
       status 401
