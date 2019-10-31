@@ -54,7 +54,7 @@ type PromAlert struct {
 	Annotations map[string]string
 	State       string
 	ActiveAt    *time.Time `json:"activeAt,omitempty"`
-	Value       float64
+	Value       PromValue
 }
 
 const platformClientHeaderSize = 3
@@ -108,7 +108,7 @@ func getPromAlerts(ctx context.Context, addr string, client pc.PlatformClient) (
 		alert.Labels = pa.Labels
 		alert.Annotations = pa.Annotations
 		alert.State = pa.State
-		alert.Value = pa.Value
+		alert.Value = float64(pa.Value)
 		if pa.ActiveAt != nil {
 			alert.ActiveAt = cloudcommon.TimeToTimestamp(*pa.ActiveAt)
 		}

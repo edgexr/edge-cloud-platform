@@ -115,6 +115,8 @@ var CreateAppInstOptionalArgs = []string{
 	"crmoverride",
 	"autoclusteripaccess",
 	"forceupdate",
+	"configs.kind",
+	"configs.config",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"developer",
@@ -129,6 +131,8 @@ var UpdateAppInstOptionalArgs = []string{
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
+	"configs.kind",
+	"configs.config",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -175,6 +179,8 @@ var AppInstOptionalArgs = []string{
 	"autoclusteripaccess",
 	"forceupdate",
 	"updatemultiple",
+	"configs.kind",
+	"configs.config",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -216,6 +222,8 @@ var AppInstAliasArgs = []string{
 	"revision=appinst.revision",
 	"forceupdate=appinst.forceupdate",
 	"updatemultiple=appinst.updatemultiple",
+	"configs.kind=appinst.configs.kind",
+	"configs.config=appinst.configs.config",
 }
 var AppInstComments = map[string]string{
 	"developer":                      "Organization or Company Name that a Developer is part of",
@@ -249,6 +257,8 @@ var AppInstComments = map[string]string{
 	"revision":                       "Revision increments each time the App is updated.  Updating the App Instance will sync the revision with that of the App",
 	"forceupdate":                    "Force Appinst update when UpdateAppInst is done if revision matches",
 	"updatemultiple":                 "Allow multiple instances to be updated at once",
+	"configs.kind":                   "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
+	"configs.config":                 "config file contents or URI reference",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",

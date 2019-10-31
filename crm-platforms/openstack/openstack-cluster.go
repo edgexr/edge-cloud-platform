@@ -16,7 +16,11 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return mexos.UpdateCluster(ctx, lbName, clusterInst, updateCallback)
+	client, err := s.GetPlatformClient(ctx, clusterInst)
+	if err != nil {
+		return err
+	}
+	return mexos.UpdateCluster(ctx, client, lbName, clusterInst, updateCallback)
 }
 
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {

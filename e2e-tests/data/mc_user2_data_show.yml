@@ -132,6 +132,15 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
+    autoscalepolicies:
+    - key:
+        developer: AcmeAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 3
+      scaleupcputhresh: 85
+      scaledowncputhresh: 20
+      triggertimesec: 60
     clusterinsts:
     - key:
         clusterkey:
@@ -152,6 +161,7 @@ regiondata:
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
+      autoscalepolicy: scale1
     - key:
         clusterkey:
           name: SmallCluster

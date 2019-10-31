@@ -48,4 +48,5 @@ type Api interface {
 	AppInstApiClient
 	CloudletPoolApiClient
 	CloudletPoolMemberApiClient
+	AutoScalePolicyApiClient
 }

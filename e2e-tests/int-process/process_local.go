@@ -285,6 +285,35 @@ func (p *Shepherd) Wait() {
 	p.cmd.Wait()
 }
 
+func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{"--notifyAddrs", p.NotifyAddrs}
+	if p.CtrlAddrs != "" {
+		args = append(args, "--ctrlAddrs")
+		args = append(args, p.CtrlAddrs)
+	}
+	if p.TLS.ServerCert != "" {
+		args = append(args, "--tls")
+		args = append(args, p.TLS.ServerCert)
+	}
+	options := process.StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.Debug != "" {
+		args = append(args, "-d")
+		args = append(args, options.Debug)
+	}
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *AutoProv) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *AutoProv) GetExeName() string { return "autoprov" }
+
+func (p *AutoProv) LookupArgs() string { return "" }
+
 type VaultRoles struct {
 	MCRoleID         string `json:"mcroleid"`
 	MCSecretID       string `json:"mcsecretid"`

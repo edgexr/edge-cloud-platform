@@ -30,6 +30,7 @@ regiondata:
       masterflavor: flavor1
       nummasters: 1
       numnodes: 1
+      autoscalepolicy: scale1
     - key:
         clusterkey:
           name: SmallCluster
@@ -119,3 +120,12 @@ regiondata:
       liveness: LivenessStatic
       flavor:
         name: x1.small
+    autoscalepolicies:
+    - key:
+        developer: AcmeAppCo
+        name: scale1
+      minnodes: 1
+      maxnodes: 3
+      scaleupcputhresh: 85
+      scaledowncputhresh: 20
+      triggertimesec: 60

@@ -36,3 +36,10 @@ type Shepherd struct {
 	cmd            *exec.Cmd
 	Span           string
 }
+type AutoProv struct {
+	process.Common `yaml:",inline"`
+	NotifyAddrs    string
+	CtrlAddrs      string
+	TLS            process.TLSCerts
+	cmd            *exec.Cmd
+}

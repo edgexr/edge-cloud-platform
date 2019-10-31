@@ -45,6 +45,15 @@
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 70aa9663b5c13c3
+- operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-10-23T17:33:40.487278-07:00"
+  duration: 14.316ms
+  request: '{"Region":"local","AutoScalePolicy":{"key":{"developer":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
+  response: '{}'
+  traceid: 382475ae5bd5fddb
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
   username: user2
   clientip: 127.0.0.1
@@ -67,7 +76,7 @@
   status: 200
   starttime: "2019-08-11T09:36:02.685286-07:00"
   duration: 93.375ms
-  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{}}}'
+  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"flavor1","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1"}}'
   response: |
     {"data":{"message":"Autodeleting appinst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -97,15 +106,3 @@
     PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
   response: '{}'
   traceid: 1e63f404d3eb3c06
-- operationname: /api/v1/auth/ctrl/DeleteAppInst
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-10-11T12:52:41.625768+05:30"
-  duration: 58.741ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
-  response: |
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-  traceid: 48c09d035649b16a

@@ -76,7 +76,7 @@ func CreateClusterConfigMap(ctx context.Context, client pc.PlatformClient, clust
 	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
-			return fmt.Errorf("can't add cluster ConfigMap, %s, %v", out, err)
+			return fmt.Errorf("can't add cluster ConfigMap cmd %s, %s, %v", cmd, out, err)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelMexos, "warning, Cluster ConfigMap already exists.")
 		}
