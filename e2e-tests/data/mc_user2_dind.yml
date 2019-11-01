@@ -94,7 +94,7 @@ regiondata:
             name: localtest
     autoscalepolicies:
     - key:
-        developer: AcmeAppCo
+        developer: MobiledgeX
         name: scale1
       minnodes: 1
       maxnodes: 3
