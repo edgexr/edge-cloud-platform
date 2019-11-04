@@ -24,6 +24,13 @@ var MEXInfraVersion = "v2.0.42" //temporary until 2.0.5 available
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 var VaultAddr string
 
+// Default CloudletVM/Registry paths should only be used for local testing.
+// Ansible should always specify the correct ones to the controller.
+// These are not used if running the CRM manually, because these are only
+// used by CreateCloudlet to set up the CRM VM and container.
+var DefaultCloudletRegistryPath = "registry.mobiledgex.net:5000/mobiledgex/edge-cloud"
+var DefaultCloudletVMImagePath = "https://artifactory.mobiledgex.net/artifactory/baseimages/" + defaultOSImageName + ".qcow2"
+
 // NoConfigExternalRouter is used for the case in which we don't manage the external
 // router and don't add ports to it ourself, as happens with Contrail.  The router does exist in
 // this case and we use it to route from the LB to the pods
