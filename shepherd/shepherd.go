@@ -32,7 +32,7 @@ var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted clou
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
 
-var defaultPrometheusPort = int32(9090)
+var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 //map keeping track of all the currently running prometheuses
 var workerMap map[string]*ClusterWorker
@@ -155,7 +155,9 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_dind.Platform{}
 	case "PLATFORM_TYPE_OPENSTACK":
 		plat = &shepherd_openstack.Platform{}
-	case "PLATFORM_TYPE_FAKE":
+	case "PLATFORM_TYPE_FAKEINFRA":
+		// change the scrape interval to 1s so we dont have to wait as long for e2e tests to go
+		*collectInterval = time.Second
 		plat = &shepherd_fake.Platform{}
 	default:
 		err = fmt.Errorf("Platform %s not supported", *platformName)

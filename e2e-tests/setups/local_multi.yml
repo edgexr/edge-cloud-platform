@@ -171,3 +171,14 @@ autoprovs:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
+
+prometheus:
+- name: prom-e2e
+  hostname: "127.0.0.1"
+  port: 9090
+
+exporter:
+- name: fakePromExporter
+  datafile: "{{datadir2}}/mc_metrics.yml"
+  port: 9100
+  hostname: "127.0.0.1"

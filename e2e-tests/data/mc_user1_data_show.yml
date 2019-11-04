@@ -53,6 +53,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
+      platformtype: PlatformTypeFakeinfra
       deploymentlocal: false
       registrypath: registry.mobiledgex.net:5000/mobiledgex/edge-cloud
       imagepath: https://artifactory.mobiledgex.net/artifactory/baseimages/mobiledgex-v2.0.2.qcow2#md5:51371613a81f7218c2633ce3c1814258

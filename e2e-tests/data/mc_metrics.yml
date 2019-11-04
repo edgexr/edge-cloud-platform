@@ -1,0 +1,27 @@
+prometheus:
+  #cluster-cpu, will always be 0, since its a rate expression
+  clustCpu: 0
+  clustCpuCores: 4
+  #cluster-mem: 75%
+  clustMem: 750
+  clustMemTotal: 1000
+  #cluster-disk: 42.1%
+  clustDisk: 421
+  clustDiskTotal: 1000
+  #cluster-tcp
+  tcpConn: 100
+  tcpRetrans: 200
+  #cluster-udp
+  udpSent: 300
+  udpRecv: 400
+  udpRecvErr: 500
+  #appinst-cpu, will always be 0, since its a rate
+  appCpu: 420
+  #appinst-mem
+  appMem: 3.756834298e+09
+  #appinst-disk
+  appDisk: 73728
+  #appinst/cluster-network, no matter what value you put here it will be 0, since these are rates
+  netSend: 11
+  netRecv: 12
+  appName: someapplication1

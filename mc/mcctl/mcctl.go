@@ -27,6 +27,7 @@ func main() {
 	rootCmd.AddCommand(ormctl.GetAuditCommand())
 	rootCmd.AddCommand(ormctl.GetOrgCloudletCommand())
 	rootCmd.AddCommand(ormctl.GetOrgCloudletPoolCommand())
+	rootCmd.AddCommand(ormctl.GetMetricsCommand())
 
 	rootCmd.PersistentFlags().StringVar(&ormctl.Addr, "addr", "http://127.0.0.1:9900", "MC address")
 	rootCmd.PersistentFlags().StringVar(&ormctl.Token, "token", "", "JWT token")

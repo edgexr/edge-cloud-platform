@@ -11,6 +11,7 @@ import (
 	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
@@ -69,6 +70,45 @@ type DeploymentData struct {
 	Shepherds           []*intprocess.Shepherd `yaml:"shepherds"`
 	AutoProvs           []*intprocess.AutoProv `yaml:"autoprovs"`
 	Cloudflare          CloudflareDNS          `yaml:"cloudflare"`
+	Prometheus          []*intprocess.PromE2e  `yaml:"prometheus"`
+	Exporters           []*intprocess.Exporter `yaml:"exporter"`
+}
+
+// a comparison and yaml friendly version of AllMetrics for e2e-tests
+type MetricsCompare struct {
+	Name   string
+	Tags   map[string]string
+	Values map[string]float64
+}
+
+type MetricTargets struct {
+	AppInstKey     edgeproto.AppInstKey
+	ClusterInstKey edgeproto.ClusterInstKey
+}
+
+// metrics that e2e currently tests for
+var E2eAppSelectors = []string{
+	"cpu",
+	"mem",
+	"disk",
+	"network",
+}
+
+var E2eClusterSelectors = []string{
+	"cpu",
+	"mem",
+	"disk",
+	"network",
+	"tcp",
+	"udp",
+}
+
+var TagValues = map[string]struct{}{
+	"app":      struct{}{},
+	"cloudlet": struct{}{},
+	"cluster":  struct{}{},
+	"dev":      struct{}{},
+	"operator": struct{}{},
 }
 
 var apiAddrsUpdated = false
@@ -86,6 +126,12 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.AutoProvs {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Prometheus {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Exporters {
 		all = append(all, p)
 	}
 	return all
@@ -164,6 +210,18 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	}
 	for _, p := range Deployment.AutoProvs {
 		opts = append(opts, process.WithDebug("api,notify"))
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Prometheus {
+		opts := append(opts, process.WithCleanStartup())
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Exporters {
+		opts := append(opts, process.WithCleanStartup())
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

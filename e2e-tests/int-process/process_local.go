@@ -360,3 +360,63 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	}
 	return &roles, err
 }
+
+func (p *PromE2e) StartLocal(logfile string, opts ...process.StartOp) error {
+	// if the image doesnt exist, build it
+	if !imageFound(p.Name) {
+		directory := os.Getenv("GOPATH") + "/src/github.com/mobiledgex/edge-cloud-infra/shepherd/fakePromExporter"
+		builder := exec.Command("docker", "build", "-t", p.Name, directory)
+		err := builder.Run()
+		if err != nil {
+			return fmt.Errorf("Failed to build docker image for e2e prometheus: %v", err)
+		}
+	}
+	args := []string{
+		"run", "--rm", "-p", fmt.Sprintf("%d:%d", p.Port, p.Port), "--name", p.Name, p.Name,
+	}
+
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func imageFound(name string) bool {
+	listCmd := exec.Command("docker", "images")
+	output, err := listCmd.Output()
+	if err != nil {
+		return false
+	}
+	imageList := strings.Split(string(output), "\n")
+	for _, row := range imageList {
+		if name == strings.SplitN(row, " ", 2)[0] {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *PromE2e) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *PromE2e) GetExeName() string { return "docker" }
+
+func (p *PromE2e) LookupArgs() string { return p.Name }
+
+func (p *Exporter) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{
+		"-port", fmt.Sprintf("%d", p.Port), "-statsPath", p.DataFile,
+	}
+
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *Exporter) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *Exporter) GetExeName() string { return "fakepromexporter" }
+
+func (p *Exporter) LookupArgs() string { return "" }

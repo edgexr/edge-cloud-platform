@@ -10,6 +10,7 @@ import (
 )
 
 type Platform struct {
+	promStarted bool
 }
 
 func (s *Platform) GetType() string {

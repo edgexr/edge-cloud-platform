@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
@@ -121,6 +122,29 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if api == "showmetrics" {
+		var showMetrics *ormapi.AllMetrics
+		targets := readMCMetricTargetsFile(apiFile)
+		var parsedMetrics *[]MetricsCompare
+		// retry a couple times since prometheus takes a while on startup
+		for i := 0; i < 100; i++ {
+			if sep {
+				showMetrics = showMcMetricsSep(uri, token, targets, &rc)
+			} else {
+				showMetrics = showMcMetricsAll(uri, token, targets, &rc)
+			}
+			// convert showMetrics into something yml compatible
+			parsedMetrics = parseMetrics(showMetrics)
+			if len(*parsedMetrics) == len(E2eAppSelectors)+len(E2eClusterSelectors) {
+				break
+			} else {
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		return rc
+	}
+
 	if apiFile == "" {
 		log.Println("Error: Cannot run MC data APIs without API file")
 		return false
@@ -170,6 +194,18 @@ func readMCDataFile(file string) *ormapi.AllData {
 		}
 	}
 	return &data
+}
+
+func readMCMetricTargetsFile(file string) *MetricTargets {
+	targets := MetricTargets{}
+	err := util.ReadYamlFile(file, &targets)
+	if err != nil {
+		if !util.IsYamlOk(err, "mcdata") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
+			os.Exit(1)
+		}
+	}
+	return &targets
 }
 
 func loginCurUser(uri, curUserFile string) (string, bool) {
@@ -496,6 +532,57 @@ func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 	}
 }
 
+func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	appQuery := ormapi.RegionAppInstMetrics{
+		Region:   "local",
+		AppInst:  targets.AppInstKey,
+		Selector: "*",
+		Last:     1,
+	}
+	appMetrics, status, err := mcClient.ShowAppMetrics(uri, token, &appQuery)
+	checkMcErr("ShowAppMetrics", status, err, rc)
+	clusterQuery := ormapi.RegionClusterInstMetrics{
+		Region:      "local",
+		ClusterInst: targets.ClusterInstKey,
+		Selector:    "*",
+		Last:        1,
+	}
+	clusterMetrics, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
+	checkMcErr("ShowClusterMetrics", status, err, rc)
+	// combine them into one AllMetrics
+	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
+	return appMetrics
+}
+
+// same end result as showMcMetricsAll, but gets each metric individually instead of in a batch
+func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
+	appQuery := ormapi.RegionAppInstMetrics{
+		Region:  "local",
+		AppInst: targets.AppInstKey,
+		Last:    1,
+	}
+	for _, selector := range E2eAppSelectors {
+		appQuery.Selector = selector
+		appMetric, status, err := mcClient.ShowAppMetrics(uri, token, &appQuery)
+		checkMcErr("ShowApp"+strings.Title(selector), status, err, rc)
+		allMetrics.Data = append(allMetrics.Data, appMetric.Data...)
+	}
+
+	clusterQuery := ormapi.RegionClusterInstMetrics{
+		Region:      "local",
+		ClusterInst: targets.ClusterInstKey,
+		Last:        1,
+	}
+	for _, selector := range E2eClusterSelectors {
+		clusterQuery.Selector = selector
+		clusterMetric, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
+		checkMcErr("ShowCluster"+strings.Title(selector), status, err, rc)
+		allMetrics.Data = append(allMetrics.Data, clusterMetric.Data...)
+	}
+	return &allMetrics
+}
+
 type runCommandData struct {
 	Request        ormapi.RegionExecRequest
 	ExpectedOutput string
@@ -605,4 +692,36 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string)
 
 func getTokenFile(username, outputDir string) string {
 	return outputDir + "/" + username + ".token"
+}
+
+func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
+	result := make([]MetricsCompare, 0)
+	for _, data := range allMetrics.Data {
+		for _, series := range data.Series {
+			measurement := MetricsCompare{Name: series.Name, Tags: make(map[string]string), Values: make(map[string]float64)}
+			// e2e tests only grabs the latest measurement so there should only be one
+			if len(series.Values) != 1 {
+				return nil
+			}
+			for i, val := range series.Values[0] {
+				// ignore timestamps
+				if series.Columns[i] == "time" || series.Columns[i] == "metadata" {
+					continue
+				}
+				// put non measurement info separate
+				_, isTag := TagValues[series.Columns[i]]
+				if str, ok := val.(string); ok && isTag {
+					measurement.Tags[series.Columns[i]] = str
+				}
+				if floatVal, ok := val.(float64); ok {
+					measurement.Values[series.Columns[i]] = floatVal
+					// if its an int cast it to a float to make comparing easier
+				} else if intVal, ok := val.(int); ok {
+					measurement.Values[series.Columns[i]] = float64(intVal)
+				}
+			}
+			result = append(result, measurement)
+		}
+	}
+	return &result
 }
