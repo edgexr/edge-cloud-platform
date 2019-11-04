@@ -43,3 +43,16 @@ type AutoProv struct {
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 }
+
+type PromE2e struct {
+	process.Common `yaml:",inline"`
+	Port           int
+	cmd            *exec.Cmd
+}
+
+type Exporter struct {
+	process.Common `yaml:",inline"`
+	DataFile       string
+	Port           int
+	cmd            *exec.Cmd
+}

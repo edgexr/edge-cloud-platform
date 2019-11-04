@@ -45,6 +45,7 @@ regiondata:
         updateappinsttimeout: 2000000000
         deleteappinsttimeout: 2000000000
       state: Ready
+      platformtype: PlatformTypeFakeinfra
       deploymentlocal: false
       notifysrvaddr: 127.0.0.1:51001
       flavor:

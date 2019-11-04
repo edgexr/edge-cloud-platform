@@ -61,6 +61,15 @@ tests:
   apifile: '{{datadir2}}/mc_runcommand.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
 
+- name: check shepherd metrics in influx
+  actions: [mcapi-showmetrics]
+  apifile: '{{datadir2}}/mc_metrics_targets.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_metrics_show.yml'
+    filetype: mcmetrics
+
 # Note that once user2's org is deleted, they have no orgs so cannot see any cloudlets
 - name: user2 deletes apps; verify it is empty
   actions: [mcapi-delete, mcapi-show]

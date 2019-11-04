@@ -30,6 +30,10 @@ type Api interface {
 	DeleteData(uri, token string, data *ormapi.AllData, cb func(res *ormapi.Result)) (int, error)
 	ShowData(uri, token string) (*ormapi.AllData, int, error)
 
+	ShowAppMetrics(uri, token string, query *ormapi.RegionAppInstMetrics) (*ormapi.AllMetrics, int, error)
+	ShowClusterMetrics(uri, token string, query *ormapi.RegionClusterInstMetrics) (*ormapi.AllMetrics, int, error)
+	ShowCloudletMetrics(uri, token string, query *ormapi.RegionCloudletMetrics) (*ormapi.AllMetrics, int, error)
+
 	UpdateConfig(uri, token string, config map[string]interface{}) (int, error)
 	ShowConfig(uri, token string) (*ormapi.Config, int, error)
 

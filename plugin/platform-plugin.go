@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/azure"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/mexdind"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
@@ -22,6 +23,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &gcp.Platform{}
 	case "PLATFORM_TYPE_MEXDIND":
 		outPlatform = &mexdind.Platform{}
+	case "PLATFORM_TYPE_FAKEINFRA":
+		outPlatform = &fakeinfra.Platform{}
 	default:
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}

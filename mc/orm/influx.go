@@ -41,8 +41,34 @@ type influxQueryArgs struct {
 	Last         int
 }
 
-// select * from "crm-appinst-cpu"."crm-appinst-mem"."crm-appinst-net"...
-// EDGECLOUD-940
+var AppSelectors = []string{
+	"cpu",
+	"mem",
+	"disk",
+	"network",
+	"connections",
+}
+
+var ClusterSelectors = []string{
+	"cpu",
+	"mem",
+	"disk",
+	"network",
+	"tcp",
+	"udp",
+}
+
+var CloudletSelectors = []string{
+	"network",
+	"utilization",
+}
+
+const (
+	APPINST  = "appinst"
+	CLUSTER  = "cluster"
+	CLOUDLET = "cloudlet"
+)
+
 var influDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "cluster"='{{.ClusterName}}'` +
 	`{{if .AppInstName}} AND "app"=~/{{.AppInstName}}/{{end}}` +
@@ -92,10 +118,10 @@ func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error
 }
 
 // Query is a template with a specific set of if/else
-func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, selectorStr string) string {
+func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     selectorStr,
-		Measurement:  "appinst-" + obj.Selector,
+		Selector:     "*",
+		Measurement:  getMeasurementString(obj.Selector, APPINST),
 		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
 		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
@@ -125,10 +151,10 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, selectorStr string) s
 }
 
 // Query is a template with a specific set of if/else
-func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, selectorStr string) string {
+func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     selectorStr,
-		Measurement:  "cluster-" + obj.Selector,
+		Selector:     "*",
+		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
 		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		OperatorName: obj.ClusterInst.CloudletKey.OperatorKey.Name,
@@ -157,10 +183,10 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, selectorStr strin
 }
 
 // Query is a template with a specific set of if/else
-func CloudldetMetricsQuery(obj *ormapi.RegionCloudletMetrics, selectorStr string) string {
+func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     selectorStr,
-		Measurement:  "cloudlet-" + obj.Selector,
+		Selector:     "*",
+		Measurement:  getMeasurementString(obj.Selector, CLOUDLET),
 		CloudletName: obj.Cloudlet.Name,
 		OperatorName: obj.Cloudlet.OperatorKey.Name,
 		Last:         obj.Last,
@@ -224,56 +250,49 @@ func metricsStream(ctx context.Context, rc *InfluxDBContext, dbQuery string, cb 
 	return nil
 }
 
+func Contains(slice []string, elem string) bool {
+	for _, val := range slice {
+		if val == elem {
+			return true
+		}
+	}
+	return false
+}
+
 // Function validates the selector passed, we support several selectors: cpu, mem, disk, net
-// TODO: check for specific strings for now.
-//       Right now we don't support "*", or multiple selectors - EDGECLOUD-940
-func parseClusterSelectorString(selector string) (string, error) {
-	switch selector {
-	case "cpu":
-		fallthrough
-	case "mem":
-		fallthrough
-	case "disk":
-		fallthrough
-	case "network":
-		fallthrough
-	case "tcp":
-		fallthrough
-	case "udp":
-		return "*", nil
+func validateSelectorString(selector string, validSelectors []string) error {
+	if selector == "*" {
+		return nil
 	}
-	return "", fmt.Errorf("Invalid selector in a request")
+	selectors := strings.Split(selector, ",")
+	for _, s := range selectors {
+		if !Contains(validSelectors, s) {
+			return fmt.Errorf("Invalid cluster selector %s in a request", s)
+		}
+	}
+	return nil
 }
 
-func parseAppSelectorString(selector string) (string, error) {
-	switch selector {
-	case "cpu":
-		fallthrough
-	case "mem":
-		fallthrough
-	case "disk":
-		fallthrough
-	case "network":
-		fallthrough
-	case "connections":
-		return "*", nil
+func getMeasurementString(selector, measurementType string) string {
+	var measurements []string
+	switch measurementType {
+	case "appinst":
+		measurements = AppSelectors
+	case "cluster":
+		measurements = ClusterSelectors
+	case "cloudlet":
+		measurements = CloudletSelectors
 	}
-	return "", fmt.Errorf("Invalid selector in a request")
-}
-
-func parseCloudletSelectorString(selector string) (string, error) {
-	switch selector {
-	case "utilization":
-		fallthrough
-	case "network":
-		return "*", nil
+	if selector != "*" {
+		measurements = strings.Split(selector, ",")
 	}
-	return "", fmt.Errorf("Invalid selector in a request")
+	prefix := measurementType + "-"
+	return prefix + strings.Join(measurements, "\",\""+prefix)
 }
 
 // Common method to handle both app and cluster metrics
 func GetMetricsCommon(c echo.Context) error {
-	var errStr, cmd, org, selectorStr string
+	var errStr, cmd, org string
 
 	rc := &InfluxDBContext{}
 	claims, err := getClaims(c)
@@ -291,14 +310,14 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// Cluster name has to be specified
 		if in.AppInst.ClusterInstKey.ClusterKey.Name == "" {
-			return c.JSON(http.StatusBadRequest, Msg("Cluster details must be present"))
+			return c.JSON(http.StatusBadRequest, Msg("App details must be present"))
 		}
 		rc.region = in.Region
 		org = in.AppInst.AppKey.DeveloperKey.Name
-		if selectorStr, err = parseAppSelectorString(in.Selector); err != nil {
+		if err = validateSelectorString(in.Selector, AppSelectors); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
-		cmd = AppInstMetricsQuery(&in, selectorStr)
+		cmd = AppInstMetricsQuery(&in)
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
 		if err := c.Bind(&in); err != nil {
@@ -311,10 +330,10 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		rc.region = in.Region
 		org = in.ClusterInst.Developer
-		if selectorStr, err = parseClusterSelectorString(in.Selector); err != nil {
+		if err = validateSelectorString(in.Selector, ClusterSelectors); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
-		cmd = ClusterMetricsQuery(&in, selectorStr)
+		cmd = ClusterMetricsQuery(&in)
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
 		if err := c.Bind(&in); err != nil {
@@ -327,10 +346,10 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.OperatorKey.Name
-		if selectorStr, err = parseCloudletSelectorString(in.Selector); err != nil {
+		if err = validateSelectorString(in.Selector, CloudletSelectors); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
-		cmd = CloudldetMetricsQuery(&in, selectorStr)
+		cmd = CloudletMetricsQuery(&in)
 
 	} else {
 		return echo.ErrNotFound
