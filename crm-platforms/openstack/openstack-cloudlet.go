@@ -261,6 +261,17 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		return err
 	}
 
+	// For real setups, ansible will always specify the correct
+	// cloudlet container and vm image paths to the controller.
+	// But for local testing convenience, we default to the hard-coded
+	// ones if not specified.
+	if pfConfig.RegistryPath == "" {
+		pfConfig.RegistryPath = mexos.DefaultCloudletRegistryPath
+	}
+	if pfConfig.ImagePath == "" {
+		pfConfig.ImagePath = mexos.DefaultCloudletVMImagePath
+	}
+
 	// Get Closest Platform Flavor
 	finfo, err := mexos.GetFlavorInfo(ctx)
 	if err != nil {
