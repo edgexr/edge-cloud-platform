@@ -755,5 +755,16 @@ func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 		templateString += vmTemplateResources
 	}
 	err = UpdateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
-	return err
+	if err != nil {
+		return err
+	}
+	// It it is possible this cluster was created before the default was to use a router
+	if cp.RootLBPortName != "" {
+		client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
+		if err != nil {
+			return fmt.Errorf("unable to get rootlb SSH client: %v", err)
+		}
+		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+	}
+	return nil
 }

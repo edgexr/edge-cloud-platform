@@ -276,6 +276,11 @@ func AttachPortToServer(ctx context.Context, serverName, portName string) error 
 
 	out, err := TimedOpenStackCommand(ctx, "openstack", "server", "add", "port", serverName, portName)
 	if err != nil {
+		if strings.Contains(string(out), "still in use") {
+			// port already attached
+			log.SpanLog(ctx, log.DebugLevelMexos, "port already attached", "serverName", serverName, "portName", portName, "out", out, "err", err)
+			return nil
+		}
 		log.SpanLog(ctx, log.DebugLevelMexos, "can't attach port", "serverName", serverName, "portName", portName, "out", out, "err", err)
 		err = fmt.Errorf("can't attach port: %s, %s, %v", portName, out, err)
 		return err
