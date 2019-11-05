@@ -49,33 +49,39 @@ func (p *AppInstWorker) Stop(ctx context.Context) {
 	p.waitGrp.Wait()
 }
 
+func (p *AppInstWorker) sendMetrics() {
+	span := log.StartSpan(log.DebugLevelSampled, "send-metric")
+	span.SetTag("operator", p.appInstKey.ClusterInstKey.CloudletKey.OperatorKey.Name)
+	span.SetTag("cloudlet", p.appInstKey.ClusterInstKey.CloudletKey.Name)
+	span.SetTag("cluster", cloudcommon.DefaultVMCluster)
+	ctx := log.ContextWithSpan(context.Background(), span)
+	defer span.Finish()
+	key := shepherd_common.MetricAppInstKey{
+		ClusterInstKey: p.appInstKey.ClusterInstKey,
+		Pod:            p.appInstKey.AppKey.Name,
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Collecting metrics for app", "key", key)
+	stat, err := p.pf.GetVmStats(ctx, &p.appInstKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get metrics from VM", "app", p.appInstKey, "err", err)
+		span.Finish()
+		return
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "metrics for app", "key", key, "metrics", stat)
+	appMetrics := MarshalAppMetrics(&key, &stat)
+	for _, metric := range appMetrics {
+		p.send(ctx, metric)
+	}
+}
+
 func (p *AppInstWorker) RunNotify() {
 	done := false
+	// Run the collection as a first step to avoid an initial wait
+	p.sendMetrics()
 	for !done {
 		select {
 		case <-time.After(p.interval):
-			span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-			span.SetTag("operator", p.appInstKey.ClusterInstKey.CloudletKey.OperatorKey.Name)
-			span.SetTag("cloudlet", p.appInstKey.ClusterInstKey.CloudletKey.Name)
-			span.SetTag("cluster", cloudcommon.DefaultVMCluster)
-			ctx := log.ContextWithSpan(context.Background(), span)
-			key := shepherd_common.MetricAppInstKey{
-				ClusterInstKey: p.appInstKey.ClusterInstKey,
-				Pod:            p.appInstKey.AppKey.Name,
-			}
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Collecting metrics for app", "key", key)
-			stat, err := p.pf.GetVmStats(ctx, &p.appInstKey)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get metrics from VM", "app", p.appInstKey, "err", err)
-				span.Finish()
-				continue
-			}
-			log.SpanLog(ctx, log.DebugLevelMetrics, "metrics for app", "key", key, "metrics", stat)
-			appMetrics := MarshalAppMetrics(&key, &stat)
-			for _, metric := range appMetrics {
-				p.send(ctx, metric)
-			}
-			span.Finish()
+			p.sendMetrics()
 		case <-p.stop:
 			done = true
 		}

@@ -66,7 +66,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 				vmAppWorkerMap[mapKey] = stats
 				stats.Start(ctx)
 			}
-		} else if new.State != edgeproto.TrackedState_READY && !exists {
+		} else if new.State != edgeproto.TrackedState_READY && exists {
 			delete(vmAppWorkerMap, mapKey)
 			stats.Stop(ctx)
 		}

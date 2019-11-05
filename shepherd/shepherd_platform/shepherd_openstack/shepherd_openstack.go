@@ -107,8 +107,10 @@ func (s *Platform) goGetMetricforId(ctx context.Context, id string, measurement 
 		if err == nil && len(metrics) > 0 {
 			*osMetric = metrics[len(metrics)-1]
 			waitChan <- ""
+		} else if len(metrics) == 0 {
+			waitChan <- "no metric"
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMexos, "Error getting metric", "id", id,
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Error getting metric", "id", id,
 				"measurement", measurement, "error", err)
 			waitChan <- err.Error()
 		}
@@ -126,7 +128,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 		return appMetrics, fmt.Errorf("Nil App passed")
 	}
 
-	server, err := mexos.GetServerDetails(ctx, key.AppKey.Name)
+	server, err := mexos.GetServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
 	if err != nil {
 		return appMetrics, err
 	}
@@ -142,8 +144,10 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 		netSentChan = s.goGetMetricforId(ctx, netIf.Id, "network.outgoing.bytes.rate", &NetSent)
 		netRecvChan = s.goGetMetricforId(ctx, netIf.Id, "network.incoming.bytes.rate", &NetRecv)
 	} else {
-		netRecvChan <- "Unavailable"
-		netSentChan <- "Unavailable"
+		go func() {
+			netRecvChan <- "Unavailable"
+			netSentChan <- "Unavailable"
+		}()
 	}
 	cpuErr := <-cpuChan
 	memErr := <-memChan
