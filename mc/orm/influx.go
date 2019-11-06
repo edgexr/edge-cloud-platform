@@ -18,7 +18,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var influxDBTemplate *template.Template
+var devInfluxDBTemplate *template.Template
+var operatorInfluxDBTemplate *template.Template
 
 // 100 values at a time
 var queryChunkSize = 100
@@ -30,15 +31,16 @@ type InfluxDBContext struct {
 }
 
 type influxQueryArgs struct {
-	Selector     string
-	Measurement  string
-	AppInstName  string
-	ClusterName  string
-	CloudletName string
-	OperatorName string
-	StartTime    string
-	EndTime      string
-	Last         int
+	Selector      string
+	Measurement   string
+	AppInstName   string
+	ClusterName   string
+	DeveloperName string
+	CloudletName  string
+	OperatorName  string
+	StartTime     string
+	EndTime       string
+	Last          int
 }
 
 var AppSelectors = []string{
@@ -69,17 +71,26 @@ const (
 	CLOUDLET = "cloudlet"
 )
 
-var influDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
-	` WHERE "cluster"='{{.ClusterName}}'` +
+var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+	` WHERE "dev"='{{.DeveloperName}}'` +
 	`{{if .AppInstName}} AND "app"=~/{{.AppInstName}}/{{end}}` +
+	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
 	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
+var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+	` WHERE "operator"='{{.OperatorName}}'` +
+	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
+	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
+	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
+	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
+
 func init() {
-	influxDBTemplate = template.Must(template.New("influxquery").Parse(influDBT))
+	devInfluxDBTemplate = template.Must(template.New("influxquery").Parse(devInfluDBT))
+	operatorInfluxDBTemplate = template.Must(template.New("influxquery").Parse(operatorInfluDBT))
 }
 
 func connectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
@@ -120,13 +131,14 @@ func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error
 // Query is a template with a specific set of if/else
 func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     "*",
-		Measurement:  getMeasurementString(obj.Selector, APPINST),
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		OperatorName: obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
-		Last:         obj.Last,
+		Selector:      "*",
+		Measurement:   getMeasurementString(obj.Selector, APPINST),
+		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
+		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
+		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
+		Last:          obj.Last,
 	}
 
 	// Figure out the start/end time range for the query
@@ -144,7 +156,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
-	if err := influxDBTemplate.Execute(&buf, &arg); err != nil {
+	if err := devInfluxDBTemplate.Execute(&buf, &arg); err != nil {
 		return ""
 	}
 	return buf.String()
@@ -153,12 +165,13 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 // Query is a template with a specific set of if/else
 func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     "*",
-		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
-		CloudletName: obj.ClusterInst.CloudletKey.Name,
-		ClusterName:  obj.ClusterInst.ClusterKey.Name,
-		OperatorName: obj.ClusterInst.CloudletKey.OperatorKey.Name,
-		Last:         obj.Last,
+		Selector:      "*",
+		Measurement:   getMeasurementString(obj.Selector, CLUSTER),
+		CloudletName:  obj.ClusterInst.CloudletKey.Name,
+		ClusterName:   obj.ClusterInst.ClusterKey.Name,
+		DeveloperName: obj.ClusterInst.Developer,
+		OperatorName:  obj.ClusterInst.CloudletKey.OperatorKey.Name,
+		Last:          obj.Last,
 	}
 
 	// Figure out the start/end time range for the query
@@ -176,7 +189,7 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
-	if err := influxDBTemplate.Execute(&buf, &arg); err != nil {
+	if err := devInfluxDBTemplate.Execute(&buf, &arg); err != nil {
 		return ""
 	}
 	return buf.String()
@@ -208,7 +221,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
-	if err := influxDBTemplate.Execute(&buf, &arg); err != nil {
+	if err := operatorInfluxDBTemplate.Execute(&buf, &arg); err != nil {
 		return ""
 	}
 	return buf.String()
@@ -308,8 +321,8 @@ func GetMetricsCommon(c echo.Context) error {
 			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
-		// Cluster name has to be specified
-		if in.AppInst.ClusterInstKey.ClusterKey.Name == "" {
+		// Developer name has to be specified
+		if in.AppInst.AppKey.DeveloperKey.Name == "" {
 			return c.JSON(http.StatusBadRequest, Msg("App details must be present"))
 		}
 		rc.region = in.Region
@@ -324,8 +337,8 @@ func GetMetricsCommon(c echo.Context) error {
 			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
-		// Cluster name has to be specified
-		if in.ClusterInst.ClusterKey.Name == "" {
+		// Developer name has to be specified
+		if in.ClusterInst.Developer == "" {
 			return c.JSON(http.StatusBadRequest, Msg("Cluster details must be present"))
 		}
 		rc.region = in.Region
@@ -340,8 +353,8 @@ func GetMetricsCommon(c echo.Context) error {
 			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
-		// Cloudlet details are required
-		if in.Cloudlet.Name == "" || in.Cloudlet.OperatorKey.Name == "" {
+		// Operator name has to be specified
+		if in.Cloudlet.OperatorKey.Name == "" {
 			return c.JSON(http.StatusBadRequest, Msg("Cloudlet details must be present"))
 		}
 		rc.region = in.Region
