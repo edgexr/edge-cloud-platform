@@ -2,7 +2,9 @@ package orm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -50,7 +52,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	} else if org.Type == OrgTypeOperator {
 		role = RoleOperatorManager
 	} else {
-		return fmt.Errorf(fmt.Sprintf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator))
+		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}
 	if org.Address == "" {
 		return fmt.Errorf("Address not specified")
@@ -139,6 +141,59 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	}
 	gitlabDeleteGroup(ctx, org)
 	artifactoryDeleteGroupObjects(ctx, org.Name, "")
+	return nil
+}
+
+func UpdateOrg(c echo.Context) error {
+	ctx := GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Pull json directly so we can unmarshal twice.
+	// First time is to do lookup, second time is to apply
+	// modified fields.
+	body, err := ioutil.ReadAll(c.Request().Body)
+	in := ormapi.Organization{}
+	err = json.Unmarshal(body, &in)
+	if err != nil {
+		return bindErr(c, err)
+	}
+	if in.Name == "" {
+		return c.JSON(http.StatusBadRequest, Msg("Organization name not specified"))
+	}
+
+	lookup := ormapi.Organization{
+		Name: in.Name,
+	}
+	org := ormapi.Organization{}
+	db := loggedDB(ctx)
+	res := db.Where(&lookup).First(&org)
+	if res.RecordNotFound() {
+		return c.JSON(http.StatusBadRequest, Msg("Organization not found"))
+	}
+	if res.Error != nil {
+		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(res.Error)))
+	}
+	oldType := org.Type
+
+	if !authorized(ctx, claims.Username, in.Name, ResourceUsers, ActionManage) {
+		return echo.ErrForbidden
+	}
+
+	// apply specified fields
+	err = json.Unmarshal(body, &org)
+	if err != nil {
+		return bindErr(c, err)
+	}
+	if org.Type != oldType {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change Organization type"))
+	}
+
+	err = db.Save(&org).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(err)))
+	}
 	return nil
 }
 

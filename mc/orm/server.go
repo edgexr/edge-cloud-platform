@@ -207,6 +207,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/role/removeuser", RemoveUserRole)
 	auth.POST("/role/showuser", ShowUserRole)
 	auth.POST("/org/create", CreateOrg)
+	auth.POST("/org/update", UpdateOrg)
 	auth.POST("/org/show", ShowOrg)
 	auth.POST("/org/delete", DeleteOrg)
 	auth.POST("/controller/create", CreateController)

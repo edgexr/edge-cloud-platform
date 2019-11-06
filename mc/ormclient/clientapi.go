@@ -19,6 +19,7 @@ type Api interface {
 
 	CreateOrg(uri, token string, org *ormapi.Organization) (int, error)
 	DeleteOrg(uri, token string, org *ormapi.Organization) (int, error)
+	UpdateOrg(uri, token string, jsonData string) (int, error)
 	ShowOrg(uri, token string) ([]ormapi.Organization, int, error)
 
 	AddUserRole(uri, token string, role *ormapi.Role) (int, error)
