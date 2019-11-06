@@ -76,7 +76,7 @@ var influDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
 	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
-	`{{if ne .Last 0}} order by time desc limit {{.Last}}{{end}}`
+	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 func init() {
 	influxDBTemplate = template.Must(template.New("influxquery").Parse(influDBT))
