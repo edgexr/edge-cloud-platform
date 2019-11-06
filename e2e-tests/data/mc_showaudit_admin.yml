@@ -65,26 +65,26 @@
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:31:34.97016-07:00"
-  duration: 1.497ms
-  request: '{"Region":"germany","Address":"germany.mc.mobiledgex.com:55001","InfluxDB":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
-  response: '{"message":"Controller deregistered"}'
-  traceid: 330ebf735516f800
-- operationname: /api/v1/auth/controller/delete
-  username: mexadmin
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-09-26T15:31:34.96522-07:00"
-  duration: 1.492ms
-  request: '{"Region":"usa","Address":"usa.mc.mobiledgex.com:55001","InfluxDB":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
-  response: '{"message":"Controller deregistered"}'
-  traceid: 4b6e24c72c5334cd
-- operationname: /api/v1/auth/controller/delete
-  username: mexadmin
-  clientip: 127.0.0.1
-  status: 200
   starttime: "2019-09-26T15:31:34.960139-07:00"
   duration: 1.48ms
   request: '{"Region":"local","Address":"127.0.0.1:55001","InfluxDB":"http://127.0.0.1:8086","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Controller deregistered"}'
   traceid: 2a2c6480666aff04
+- operationname: /api/v1/auth/role/removeuser
+  username: mexadmin
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-11-05T17:06:33.239904-08:00"
+  duration: 586µs
+  request: '{"org":"enterprise","username":"user3","role":"DeveloperManager"}'
+  response: '{"message":"Role removed from user"}'
+  traceid: 1c1aff34d0d8f0a9
+- operationname: /api/v1/auth/org/delete
+  username: mexadmin
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-11-05T17:06:33.229084-08:00"
+  duration: 7.6ms
+  request: '{"Name":"enterprise","Type":"developer","Address":"enterprise headquarters","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Organization deleted"}'
+  traceid: 384d9326d52eefe9

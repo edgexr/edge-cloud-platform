@@ -32,7 +32,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			strings.Contains(req.RequestURI, "/metrics/") ||
 			strings.Contains(req.RequestURI, "/auth/audit/") {
 			// don't log (fills up Audit logs)
-			lvl = 0
+			lvl = log.SuppressLvl
 		}
 
 		// All Tags on this span will be exposed to the end-user in
@@ -44,17 +44,6 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		defer span.Finish()
 		ctx := log.ContextWithSpan(context.Background(), span)
 		ec := NewEchoContext(c, ctx)
-
-		if lvl == 0 {
-			defer func() {
-				if nexterr != nil {
-					// but, log if there was a failure
-					// note logs will not show up in stdout,
-					// but will show up in jaeger.
-					log.ForceLogSpan(span)
-				}
-			}()
-		}
 
 		reqBody := []byte{}
 		resBody := []byte{}
@@ -69,6 +58,14 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		nexterr = handler(ec)
 
 		span.SetTag("status", res.Status)
+
+		if lvl == log.SuppressLvl && (nexterr != nil || res.Status != http.StatusOK) {
+			// log if there was a failure for shows.
+			// note logs will not show up in stdout
+			// except for final "finish" log,
+			// but full logs will show up in jaeger.
+			log.Unsuppress(span)
+		}
 
 		// remove passwords from requests so they aren't logged
 		if strings.Contains(req.RequestURI, "login") {

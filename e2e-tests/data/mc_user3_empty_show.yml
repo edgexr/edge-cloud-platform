@@ -4,14 +4,6 @@ controllers:
   influxdb: http://127.0.0.1:8086
   createdat: 2019-09-26T15:12:31.962691-07:00
   updatedat: 2019-09-26T15:12:31.962691-07:00
-- region: usa
-  address: usa.mc.mobiledgex.com:55001
-  createdat: 2019-09-26T15:12:31.964426-07:00
-  updatedat: 2019-09-26T15:12:31.964426-07:00
-- region: germany
-  address: germany.mc.mobiledgex.com:55001
-  createdat: 2019-09-26T15:12:31.965676-07:00
-  updatedat: 2019-09-26T15:12:31.965676-07:00
 orgs:
 - name: enterprise
   type: developer
