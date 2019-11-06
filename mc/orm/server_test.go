@@ -215,6 +215,14 @@ func TestServer(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 2, len(orgs))
 
+	// users should be able to update their own orgs
+	testUpdateOrg(t, mcClient, uri, tokenMisterX, org1.Name)
+	testUpdateOrg(t, mcClient, uri, tokenMisterY, org2.Name)
+	testUpdateOrg(t, mcClient, uri, tokenAdmin, org1.Name)
+	// users should not be able to update other's org
+	testUpdateOrgFail(t, mcClient, uri, tokenMisterX, org2.Name)
+	testUpdateOrgFail(t, mcClient, uri, tokenMisterY, org1.Name)
+
 	// check role assignments as mister x
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenMisterX)
 	require.Nil(t, err)

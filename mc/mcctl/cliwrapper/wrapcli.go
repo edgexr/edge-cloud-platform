@@ -41,12 +41,23 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 	opts := runOptions{}
 	opts.apply(ops)
 
-	objArgs, err := cli.MarshalArgs(in, opts.ignore)
-	if err != nil {
-		return 0, err
+	if str, ok := in.(string); ok {
+		// json data
+		m := make(map[string]interface{})
+		err := json.Unmarshal([]byte(str), &m)
+		if err != nil {
+			return 0, err
+		}
+		ignore := make(map[string]struct{})
+		objArgs := cli.MapToArgs([]string{}, m, ignore)
+		args = append(args, objArgs...)
+	} else {
+		objArgs, err := cli.MarshalArgs(in, opts.ignore)
+		if err != nil {
+			return 0, err
+		}
+		args = append(args, objArgs...)
 	}
-	args = append(args, objArgs...)
-
 	byt, err := s.run(uri, token, args)
 	// note we lose the status code, since a non-StatusOK result
 	// always generates an error.
