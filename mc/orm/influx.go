@@ -273,14 +273,25 @@ func Contains(slice []string, elem string) bool {
 }
 
 // Function validates the selector passed, we support several selectors: cpu, mem, disk, net
-func validateSelectorString(selector string, validSelectors []string) error {
+func validateSelectorString(selector, metricType string) error {
+	var validSelectors []string
+	switch metricType {
+	case APPINST:
+		validSelectors = AppSelectors
+	case CLUSTER:
+		validSelectors = ClusterSelectors
+	case CLOUDLET:
+		validSelectors = CloudletSelectors
+	default:
+		return fmt.Errorf("Invalid metric type %s", metricType)
+	}
 	if selector == "*" {
 		return nil
 	}
 	selectors := strings.Split(selector, ",")
 	for _, s := range selectors {
 		if !Contains(validSelectors, s) {
-			return fmt.Errorf("Invalid cluster selector %s in a request", s)
+			return fmt.Errorf("Invalid %s selector: %s", metricType, s)
 		}
 	}
 	return nil
@@ -327,10 +338,15 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		rc.region = in.Region
 		org = in.AppInst.AppKey.DeveloperKey.Name
-		if err = validateSelectorString(in.Selector, AppSelectors); err != nil {
+		if err = validateSelectorString(in.Selector, APPINST); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
 		cmd = AppInstMetricsQuery(&in)
+
+		// Check the developer against who is logged in
+		if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
+			return echo.ErrForbidden
+		}
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
 		if err := c.Bind(&in); err != nil {
@@ -343,10 +359,15 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		rc.region = in.Region
 		org = in.ClusterInst.Developer
-		if err = validateSelectorString(in.Selector, ClusterSelectors); err != nil {
+		if err = validateSelectorString(in.Selector, CLUSTER); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
 		cmd = ClusterMetricsQuery(&in)
+
+		// Check the developer against who is logged in
+		if !authorized(ctx, rc.claims.Username, org, ResourceClusterAnalytics, ActionView) {
+			return echo.ErrForbidden
+		}
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
 		if err := c.Bind(&in); err != nil {
@@ -359,17 +380,17 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.OperatorKey.Name
-		if err = validateSelectorString(in.Selector, CloudletSelectors); err != nil {
+		if err = validateSelectorString(in.Selector, CLOUDLET); err != nil {
 			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
 		}
 		cmd = CloudletMetricsQuery(&in)
 
+		// Check the operator against who is logged in
+		if !authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView) {
+			return echo.ErrForbidden
+		}
 	} else {
 		return echo.ErrNotFound
-	}
-	// Check the developer against who is logged in
-	if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
-		return echo.ErrForbidden
 	}
 
 	wroteHeader := false

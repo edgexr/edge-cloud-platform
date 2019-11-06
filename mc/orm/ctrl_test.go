@@ -304,7 +304,7 @@ func TestController(t *testing.T) {
 	goodPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
 	goodPermTestAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, tc3, dcnt)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, tc3, dcnt)
-	goodPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	goodPermTestMetrics(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 
 	// test users with different roles
 	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, ccount)

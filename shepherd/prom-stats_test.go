@@ -294,7 +294,7 @@ func TestPromStats(t *testing.T) {
 		Deployment: cloudcommon.AppDeploymentTypeHelm,
 	}
 
-	*platformName = "PLATFORM_TYPE_FAKE"
+	*platformName = "PLATFORM_TYPE_FAKEINFRA"
 	testPlatform, _ := getPlatform()
 
 	// Skip this much of the URL

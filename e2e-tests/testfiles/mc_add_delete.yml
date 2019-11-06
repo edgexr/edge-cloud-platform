@@ -61,7 +61,8 @@ tests:
   apifile: '{{datadir2}}/mc_runcommand.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
 
-- name: check shepherd metrics in influx
+  #going to need a second one for operator, or just use mexadmin instead of user2
+- name: check developer shepherd metrics in influx
   actions: [mcapi-showmetrics]
   apifile: '{{datadir2}}/mc_metrics_targets.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
