@@ -16,8 +16,8 @@ import (
 // We don't use the auto-generated Command because the client
 // must implement the webrtc protocol.
 
-const runCommandRequiredArgs = "region command appname appvers developer cluster cloudlet operator"
-const runCommandOptionalArgs = "containerid"
+const runCommandRequiredArgs = "region appname appvers developer cluster cloudlet operator"
+const runCommandOptionalArgs = "command containerid"
 
 var runCommandAliasArgs = []string{
 	"appname=execrequest.appinstkey.appkey.name",
