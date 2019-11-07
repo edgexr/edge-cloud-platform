@@ -329,7 +329,7 @@ func GetMetricsCommon(c echo.Context) error {
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
 		if err := c.Bind(&in); err != nil {
-			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			errStr = fmt.Sprintf("Invalid POST data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Developer name has to be specified
@@ -350,7 +350,7 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
 		if err := c.Bind(&in); err != nil {
-			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			errStr = fmt.Sprintf("Invalid POST data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Developer name has to be specified
@@ -371,7 +371,7 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
 		if err := c.Bind(&in); err != nil {
-			errStr = fmt.Sprintf("Invalid GET data: %s", err.Error())
+			errStr = fmt.Sprintf("Invalid POST data: %s", err.Error())
 			return c.JSON(http.StatusBadRequest, Msg(errStr))
 		}
 		// Operator name has to be specified
