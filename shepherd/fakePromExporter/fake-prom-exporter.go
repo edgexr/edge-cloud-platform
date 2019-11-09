@@ -55,31 +55,31 @@ node_netstat_Udp_InErrors {{.UdpRecvErr}}
 node_netstat_Udp_OutDatagrams {{.UdpSent}}
 # HELP container_cpu_usage_seconds_total Cumulative cpu time consumed in seconds. For mimicking the cpu metrics
 # TYPE container_cpu_usage_seconds_total counter
-container_cpu_usage_seconds_total{id="/",image="",pod_name=""} {{.ClustCpu}} 
-container_cpu_usage_seconds_total{id="idNameThatsNotJustAForwardSlash",image="anythingButAnEmptyString",pod_name="{{.AppName}}"} {{.AppCpu}}
+container_cpu_usage_seconds_total{id="/",image="",pod=""} {{.ClustCpu}} 
+container_cpu_usage_seconds_total{id="idNameThatsNotJustAForwardSlash",image="anythingButAnEmptyString",pod="{{.AppName}}"} {{.AppCpu}}
 # HELP machine_cpu_cores Number of CPU cores on the machine. For mimicking cluster-cpu
 # TYPE machine_cpu_cores gauge
 machine_cpu_cores {{.ClustCpuCores}}
 # HELP container_memory_working_set_bytes Current working set in bytes. For mimicking the mem metrics
 # TYPE container_memory_working_set_bytes gauge
-container_memory_working_set_bytes{id="/",image="",pod_name=""} {{.ClustMem}}
-container_memory_working_set_bytes{id="idNameThatsNotJustAForwardSlash",image="anythingButAnEmptyString",pod_name="{{.AppName}}"} {{.AppMem}}
+container_memory_working_set_bytes{id="/",image="",pod=""} {{.ClustMem}}
+container_memory_working_set_bytes{id="idNameThatsNotJustAForwardSlash",image="anythingButAnEmptyString",pod="{{.AppName}}"} {{.AppMem}}
 # HELP machine_memory_bytes Amount of memory installed on the machine. For mimicking cluster-mem
 # TYPE machine_memory_bytes gauge
 machine_memory_bytes {{.ClustMemTotal}}
 # HELP container_fs_usage_bytes Number of bytes that are consumed by the container on this filesystem. For mimicking the disk metrics
 # TYPE container_fs_usage_bytes gauge
-container_fs_usage_bytes{device="/dev/sda1",id="/",image="",pod_name=""} {{.ClustDisk}}
-container_fs_usage_bytes{device="",id="notAForwardSlash",image="notTheEmptyString",pod_name="{{.AppName}}"} {{.AppDisk}}
+container_fs_usage_bytes{device="/dev/sda1",id="/",image="",pod=""} {{.ClustDisk}}
+container_fs_usage_bytes{device="",id="notAForwardSlash",image="notTheEmptyString",pod="{{.AppName}}"} {{.AppDisk}}
 # HELP container_fs_limit_bytes Number of bytes that can be consumed by the container on this filesystem. For mimicking cluster-disk
 # TYPE container_fs_limit_bytes gauge
 container_fs_limit_bytes{device="/dev/sda1",id="/"} {{.ClustDiskTotal}}
 # HELP container_network_transmit_bytes_total Cumulative count of bytes transmitted. For mimicking the network stats
 # TYPE container_network_transmit_bytes_total counter
-container_network_transmit_bytes_total{image="notTheEmptyString",pod_name="{{.AppName}}"} {{.NetSend}}
+container_network_transmit_bytes_total{image="notTheEmptyString",pod="{{.AppName}}"} {{.NetSend}}
 # HELP container_network_receive_bytes_total Cumulative count of bytes received. For mimicking the network stats
 # TYPE container_network_receive_bytes_total counter
-container_network_receive_bytes_total{image="notTheEmptyString",pod_name="{{.AppName}}"} {{.NetRecv}}
+container_network_receive_bytes_total{image="notTheEmptyString",pod="{{.AppName}}"} {{.NetRecv}}
 `
 
 var port = flag.Int("port", 9100, "Port to export metrics on")
