@@ -102,7 +102,7 @@ var testPayloadData = map[string]string{
 		  "result": [
 			{
 			  "metric": {
-				"pod_name": "testPod1"
+				"pod": "testPod1"
 			  },
 			  "value": [
 				1549491454.802,
@@ -119,7 +119,7 @@ var testPayloadData = map[string]string{
   		"result": [
 			{
 	  		"metric": {
-				"pod_name": "testPod1"
+				"pod": "testPod1"
 	  		},
 	  		"value": [
 				1549484450.932,
@@ -136,7 +136,7 @@ var testPayloadData = map[string]string{
 		  "result": [
 			{
 			  "metric": {
-				"pod_name": "testPod1"
+				"pod": "testPod1"
 			},
 			"value": [
 				1549484450.932,
@@ -153,7 +153,7 @@ var testPayloadData = map[string]string{
   		"result": [
 			{
 	  		"metric": {
-				"pod_name": "testPod1"
+				"pod": "testPod1"
 	  		},
 	  		"value": [
 				1549484450.932,
@@ -170,7 +170,7 @@ var testPayloadData = map[string]string{
   		"result": [
 			{
 	  		"metric": {
-				"pod_name": "testPod1"
+				"pod": "testPod1"
 	  		},
 	  		"value": [
 				1549484450.932,
@@ -205,7 +205,7 @@ var testAlertsData = `
           "alertname": "CPUThrottlingHigh",
           "container_name": "config-reloader",
           "namespace": "default",
-          "pod_name": "alertmanager-mexprometheusappname-prome-alertmanager-0",
+          "pod": "alertmanager-mexprometheusappname-prome-alertmanager-0",
           "severity": "warning"
         },
         "annotations": {
@@ -238,7 +238,7 @@ var expectedTestAlerts = []edgeproto.Alert{
 			"alertname":      "CPUThrottlingHigh",
 			"container_name": "config-reloader",
 			"namespace":      "default",
-			"pod_name":       "alertmanager-mexprometheusappname-prome-alertmanager-0",
+			"pod":            "alertmanager-mexprometheusappname-prome-alertmanager-0",
 			"severity":       "warning",
 		},
 		Annotations: map[string]string{
