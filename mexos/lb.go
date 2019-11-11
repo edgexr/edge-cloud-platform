@@ -308,9 +308,9 @@ func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client
 		if err != nil {
 			return fmt.Errorf("unable to write interface config file: %s -- %v", filename, err)
 		}
-		// now bring the new internal interface up
-		log.SpanLog(ctx, log.DebugLevelMexos, "bringing up interface", "internalIfname", internalIfname)
-		cmd = fmt.Sprintf("sudo ifdown %s;sudo ifup %s", internalIfname, internalIfname)
+		// now bring the new internal interface up.
+		cmd = fmt.Sprintf("sudo ifdown --force %s;sudo ifup %s", internalIfname, internalIfname)
+		log.SpanLog(ctx, log.DebugLevelMexos, "bringing up interface", "internalIfname", internalIfname, "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "unable to run ifup", "out", out, "err", err)
