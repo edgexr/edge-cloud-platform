@@ -65,6 +65,23 @@ func ListPorts(ctx context.Context) ([]OSPort, error) {
 	return ports, nil
 }
 
+//ListPortsServerNetwork returns ports for a particular server on a given network
+func ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPort, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "--network", network, "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("cannot get port list, %v", err)
+		return nil, err
+	}
+	var ports []OSPort
+	err = json.Unmarshal(out, &ports)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "list ports", "server", server, "network", network, "ports", ports)
+	return ports, nil
+}
+
 //ListImages lists avilable images in glance
 func ListImages(ctx context.Context) ([]OSImage, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "image", "list", "-f", "json")
@@ -480,6 +497,58 @@ func ListSubnets(ctx context.Context, netName string) ([]OSSubnet, error) {
 	return subnets, nil
 }
 
+//ListProjects returns a list of projects we can see
+func ListProjects(ctx context.Context) ([]OSProject, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "project", "list", "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("can't get a list of projects, %s, %v", out, err)
+		return nil, err
+	}
+	projects := []OSProject{}
+	err = json.Unmarshal(out, &projects)
+	if err != nil {
+		err = fmt.Errorf("can't unmarshal projects, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "list projects", "projects", projects)
+	return projects, nil
+}
+
+//ListSecurityGroups returns a list of security groups
+func ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "list", "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("can't get a list of security groups, %s, %v", out, err)
+		return nil, err
+	}
+	secgrps := []OSSecurityGroup{}
+	err = json.Unmarshal(out, &secgrps)
+	if err != nil {
+		err = fmt.Errorf("can't unmarshal security groups, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "list security groups", "security groups", secgrps)
+	return secgrps, nil
+}
+
+func CreateSecurityGroup(ctx context.Context, groupName string) error {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "create", groupName)
+	if err != nil {
+		err = fmt.Errorf("can't create security group, %s, %v", out, err)
+		return err
+	}
+	return nil
+}
+
+func AddSecurityGroupToPort(ctx context.Context, portID, groupName string) error {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "set", "--security-group", groupName, portID)
+	if err != nil {
+		err = fmt.Errorf("can't add security group to port, %s, %v", out, err)
+		return err
+	}
+	return nil
+}
+
 //ListRouters returns a list of routers available
 func ListRouters(ctx context.Context) ([]OSRouter, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "router", "list", "-f", "json")
@@ -771,6 +840,20 @@ func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
 		)
 	}
 	return finfo, nil
+}
+
+func GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID string) (string, error) {
+	grps, err := ListSecurityGroups(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, g := range grps {
+		if g.Name == grpname && g.Project == projectID {
+			log.SpanLog(ctx, log.DebugLevelMexos, "GetSecurityGroupIDForProject", "projectID", projectID, "group", grpname)
+			return g.ID, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find security group %s project %s", grpname, projectID)
 }
 
 func OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, error) {

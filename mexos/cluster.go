@@ -185,12 +185,12 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 	}
 
 	var err error
+	vmspec := vmspec.VMCreationSpec{FlavorName: clusterInst.NodeFlavor, ExternalVolumeSize: clusterInst.ExternalVolumeSize}
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
 		//suitable for docker only
 		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-		vmspec := vmspec.VMCreationSpec{FlavorName: clusterInst.NodeFlavor, ExternalVolumeSize: clusterInst.ExternalVolumeSize}
-		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, updateCallback)
+		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
 	} else {
 		err = HeatCreateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)
 	}
@@ -207,7 +207,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = SetupRootLB(ctx, rootLBName, nil, updateCallback)
+		err = SetupRootLB(ctx, rootLBName, &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
 		if err != nil {
 			return err
 		}

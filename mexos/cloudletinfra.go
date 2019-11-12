@@ -196,17 +196,15 @@ func GetCleanupOnFailure(ctx context.Context) bool {
 	return true
 }
 
+func GetCloudletProjectName() string {
+	return os.Getenv("OS_PROJECT_NAME")
+}
+
 // These not in the proto file yet because they may not change for a while
 func GetCloudletTenant() string {
 	return "null"
 }
-func GetCloudletSecurityGroup() string {
-	sg := os.Getenv("MEX_SECURITY_GROUP")
-	if sg == "" {
-		return "default"
-	}
-	return sg
-}
+
 func GetCloudletMexosAgentPort() string {
 	return "18889"
 }
