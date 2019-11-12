@@ -83,7 +83,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = mexos.SetupRootLB(ctx, rootLBName, vmspec, edgeproto.DummyUpdateCallback)
+	err = mexos.SetupRootLB(ctx, rootLBName, vmspec, platformConfig.CloudletKey, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}

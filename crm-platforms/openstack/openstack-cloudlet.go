@@ -307,6 +307,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 
 	// Form platform VM name based on cloudletKey
 	platform_vm_name := getPlatformVMName(cloudlet)
+	secGrp := mexos.GetSecurityGroupName(ctx, platform_vm_name)
 
 	vmp, err := mexos.GetVMParams(ctx,
 		mexos.PlatformVMDeployment,
@@ -314,11 +315,9 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		vmspec.FlavorName,
 		vmspec.ExternalVolumeSize,
 		pfImageName,
-		"",       // AuthPublicKey
-		"tcp:22", // AccessPorts
-		"",       // DeploymentManifest,
-		"",       // Command,
-		nil,      // NetSpecInfo
+		secGrp,
+		&cloudlet.Key,
+		mexos.WithAccessPorts("tcp:22"),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to get vm params: %v", err)
@@ -346,8 +345,8 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 
 	// setup SSH access to cloudlet for CRM
 	updateCallback(edgeproto.UpdateTask, "Setting up security group for SSH access")
-	groupName := mexos.GetCloudletSecurityGroup()
-	if err := mexos.AddSecurityRuleCIDR(ctx, external_ip, "tcp", groupName, "22"); err != nil {
+
+	if err := mexos.AddSecurityRuleCIDR(ctx, external_ip, "tcp", secGrp, "22"); err != nil {
 		return fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
 	}
 

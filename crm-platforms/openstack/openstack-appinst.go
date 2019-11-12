@@ -167,12 +167,14 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			vmspec.FlavorName,
 			vmspec.ExternalVolumeSize,
 			imageName,
-			app.AuthPublicKey,
-			app.AccessPorts,
-			app.DeploymentManifest,
-			app.Command,
-			nil, // NetSpecInfo
+			mexos.GetSecurityGroupName(ctx, objName),
+			&clusterInst.Key.CloudletKey,
+			mexos.WithPublicKey(app.AuthPublicKey),
+			mexos.WithAccessPorts(app.AccessPorts),
+			mexos.WithDeploymentManifest(app.DeploymentManifest),
+			mexos.WithCommand(app.Command),
 		)
+
 		if err != nil {
 			return fmt.Errorf("unable to get vm params: %v", err)
 		}
@@ -278,8 +280,9 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			}
 			return err
 		} // Clean up security rules and nginx proxy if app is external
+		secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
 		if !app.InternalPorts {
-			if err := mexos.DeleteProxySecurityRules(ctx, client, masterIP, names.AppName); err != nil {
+			if err := mexos.DeleteProxySecurityRules(ctx, client, masterIP, names.AppName, secGrp); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 			// Clean up DNS entries

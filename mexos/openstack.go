@@ -23,6 +23,17 @@ type OSFloatingIP struct {
 	FloatingIPAddress string `json:"Floating IP Address"`
 }
 
+type OSProject struct {
+	ID   string `json:"ID"`
+	Name string `json:"Name"`
+}
+
+type OSSecurityGroup struct {
+	ID      string `json:"ID"`
+	Project string `json:"Project"`
+	Name    string `json:"Name"`
+}
+
 func getNameAndIPFromNetwork(network string) (string, string, error) {
 	nets := strings.Split(network, "=")
 	if len(nets) != 2 {

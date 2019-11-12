@@ -196,7 +196,6 @@ func GetExternalPublicAddr(ctx context.Context) (string, error) {
 	if err == nil {
 		return myip, nil
 	}
-
 	// Alternatively use dns resolver to fetch external IP
 	myip, err = dnsGetMyIP()
 	if err == nil {
