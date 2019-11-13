@@ -18,7 +18,7 @@ import (
 func (s *Platform) GCPLogin(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "doing GcpLogin", "vault url", s.props.GcpAuthKeyUrl)
 	filename := "/tmp/auth_key.json"
-	err := mexos.GetVaultDataToFile(s.props.GcpAuthKeyUrl, filename)
+	err := mexos.GetVaultDataToFile(s.vaultConfig, s.props.GcpAuthKeyUrl, filename)
 	if err != nil {
 		return fmt.Errorf("unable to write auth file %s: %s", filename, err.Error())
 	}

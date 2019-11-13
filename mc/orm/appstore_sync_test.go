@@ -146,9 +146,6 @@ func TestAppStoreApi(t *testing.T) {
 	require.Nil(t, err, "run server")
 	defer server.Stop()
 
-	os.Setenv("VAULT_ROLE_ID", roleID)
-	os.Setenv("VAULT_SECRET_ID", secretID)
-
 	rtfuri, err := url.ParseRequestURI(artifactoryAddr)
 	require.Nil(t, err, "parse artifactory url")
 

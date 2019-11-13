@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 var GCPServiceAccount string //temp
@@ -20,6 +21,7 @@ var GCPServiceAccount string //temp
 type Platform struct {
 	props        edgeproto.GcpProperties // GcpProperties needs to move to edge-cloud-infra
 	config       platform.PlatformConfig
+	vaultConfig  *vault.Config
 	clusterCache *edgeproto.ClusterInstInfoCache
 }
 
@@ -44,7 +46,13 @@ func (s *Platform) GetType() string {
 }
 
 func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
+	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
+	if err != nil {
+		return err
+	}
+	s.vaultConfig = vaultConfig
+
+	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
 		return err
 	}
 	s.config = *platformConfig
@@ -61,11 +69,11 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if s.props.ServiceAccount == "" {
 		return fmt.Errorf("Env variable MEX_GCP_SERVICE_ACCOUNT not set")
 	}
-	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_URL")
+	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_PATH")
 	if s.props.GcpAuthKeyUrl == "" {
 		//default it
-		s.props.GcpAuthKeyUrl = "https://" + platformConfig.VaultAddr + "/v1/secret/data/cloudlet/gcp/auth_key.json"
-		log.SpanLog(ctx, log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_URL defaulted", "value", s.props.GcpAuthKeyUrl)
+		s.props.GcpAuthKeyUrl = "/secret/data/cloudlet/gcp/auth_key.json"
+		log.SpanLog(ctx, log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_PATH defaulted", "value", s.props.GcpAuthKeyUrl)
 	}
 	return nil
 }

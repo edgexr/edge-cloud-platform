@@ -13,11 +13,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 type Platform struct {
-	props  edgeproto.AzureProperties // AzureProperties should be moved to edge-cloud-infra
-	config platform.PlatformConfig
+	props       edgeproto.AzureProperties // AzureProperties should be moved to edge-cloud-infra
+	config      platform.PlatformConfig
+	vaultConfig *vault.Config
 }
 
 func (s *Platform) GetType() string {
@@ -25,7 +27,13 @@ func (s *Platform) GetType() string {
 }
 
 func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
+	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
+	if err != nil {
+		return err
+	}
+	s.vaultConfig = vaultConfig
+
+	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
 		return err
 	}
 	s.config = *platformConfig
@@ -72,7 +80,7 @@ type AZFlavor struct {
 
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (Azure)")
-	if err := s.AzureLogin(ctx, ); err != nil {
+	if err := s.AzureLogin(ctx); err != nil {
 		return err
 	}
 

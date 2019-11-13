@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // mexdind wraps the generic dind implementation with
@@ -21,6 +22,7 @@ import (
 type Platform struct {
 	generic       dind.Platform
 	config        platform.PlatformConfig
+	vaultConfig   *vault.Config
 	NetworkScheme string
 }
 
@@ -38,7 +40,13 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	// Set the test Mode based on what is in PlatformConfig
 	mexos.SetTestMode(platformConfig.TestMode)
 
-	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
+	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
+	if err != nil {
+		return err
+	}
+	s.vaultConfig = vaultConfig
+
+	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
 		return err
 	}
 
@@ -53,7 +61,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	mexos.CloudletInfraCommon.NetworkScheme = s.NetworkScheme
 
 	fqdn := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
-	ipaddr, err := s.GetDINDServiceIP(ctx, )
+	ipaddr, err := s.GetDINDServiceIP(ctx)
 	if err != nil {
 		return fmt.Errorf("init cannot get service ip, %s", err.Error())
 	}

@@ -29,8 +29,8 @@ var PasshashSaltBytes = 8
 
 var Jwks vault.JWKS
 
-func InitVault(addr, roleID, secretID string, updateDone chan struct{}) {
-	Jwks.Init(addr, "", "mcorm", roleID, secretID)
+func InitVault(config *vault.Config, updateDone chan struct{}) {
+	Jwks.Init(config, "", "mcorm")
 	Jwks.GoUpdate(updateDone)
 }
 

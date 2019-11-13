@@ -19,6 +19,9 @@ func TestLDAPServer(t *testing.T) {
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
 
+	vaultServer, vaultConfig := vault.DummyServer()
+	defer vaultServer.Close()
+
 	config := ServerConfig{
 		ServAddr:        addr,
 		SqlAddr:         "127.0.0.1:5445",
@@ -27,12 +30,13 @@ func TestLDAPServer(t *testing.T) {
 		IgnoreEnv:       true,
 		LDAPAddr:        "127.0.0.1:9389",
 		SkipVerifyEmail: true,
+		vaultConfig:     vaultConfig,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 	defer server.Stop()
 
-	Jwks.Init("addr", "region", "mcorm", "roleID", "secretID")
+	Jwks.Init(vaultConfig, "region", "mcorm")
 	Jwks.Meta.CurrentVersion = 1
 	Jwks.Keys[1] = &vault.JWK{
 		Secret:  "12345",
