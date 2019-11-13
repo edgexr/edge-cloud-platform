@@ -425,6 +425,9 @@ func waitForStack(ctx context.Context, stackname string, action string, updateCa
 
 func WithPublicKey(authPublicKey string) VMParamsOp {
 	return func(vmp *VMParams) error {
+		if authPublicKey == "" {
+			return nil
+		}
 		convKey, err := util.ConvertPEMtoOpenSSH(authPublicKey)
 		if err != nil {
 			return err
