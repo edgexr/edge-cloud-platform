@@ -196,7 +196,7 @@ type emailAccount struct {
 func getNoreply(ctx context.Context) (*emailAccount, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "lookup Vault email account")
 	noreply := emailAccount{}
-	err := vault.GetData(serverConfig.VaultAddr, roleID, secretID,
+	err := vault.GetData(serverConfig.vaultConfig,
 		"/secret/data/accounts/noreplyemail", 0, &noreply)
 	if err != nil {
 		return nil, err

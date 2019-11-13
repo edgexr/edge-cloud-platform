@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 func PrivateSSHKey() string {
@@ -36,10 +37,10 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string) error {
+func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret")
 
-	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultAddr)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
 	if err != nil {
 		return err
 	}

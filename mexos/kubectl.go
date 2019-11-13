@@ -13,13 +13,14 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultAddr string, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
-	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultAddr)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
 		return nil

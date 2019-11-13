@@ -40,7 +40,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
-		err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.config.VaultAddr, names)
+		err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.vaultConfig, names)
 		if err != nil {
 			return err
 		}
@@ -218,7 +218,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return fmt.Errorf("get kube names failed, %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
-		err = mexos.SeedDockerSecret(ctx, client, clusterInst, app, s.config.VaultAddr)
+		err = mexos.SeedDockerSecret(ctx, client, clusterInst, app, s.vaultConfig)
 		if err != nil {
 			return fmt.Errorf("seeding docker secret failed, %v", err)
 		}

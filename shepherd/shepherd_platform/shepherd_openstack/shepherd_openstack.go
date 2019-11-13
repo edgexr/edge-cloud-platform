@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 // Default Ceilometer granularity is 300 secs(5 mins)
@@ -23,6 +24,7 @@ type Platform struct {
 	SharedClient    pc.PlatformClient
 	pf              openstack.Platform
 	collectInterval time.Duration
+	vaultConfig     *vault.Config
 }
 
 func (s *Platform) GetType() string {
@@ -30,9 +32,14 @@ func (s *Platform) GetType() string {
 }
 
 func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
+	vaultConfig, err := vault.BestConfig(vaultAddr)
+	if err != nil {
+		return err
+	}
+	s.vaultConfig = vaultConfig
+
 	//get the platform client so we can ssh in to make curl commands to the prometheus apps
-	var err error
-	if err = mexos.InitOpenstackProps(ctx, key.OperatorKey.Name, physicalName, vaultAddr); err != nil {
+	if err = mexos.InitOpenstackProps(ctx, key.OperatorKey.Name, physicalName, vaultConfig); err != nil {
 		return err
 	}
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,

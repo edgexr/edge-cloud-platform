@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
 )
 
@@ -23,6 +24,7 @@ type Platform struct {
 	cloudletKey *edgeproto.CloudletKey
 	flavorList  []*edgeproto.FlavorInfo
 	config      platform.PlatformConfig
+	vaultConfig *vault.Config
 }
 
 func (s *Platform) GetType() string {
@@ -41,18 +43,24 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 
 	updateCallback(edgeproto.UpdateTask, "Initializing Openstack platform")
 
-	updateCallback(edgeproto.UpdateTask, "Fetching Openstack access credentials")
-	if err := mexos.InitInfraCommon(ctx, platformConfig.VaultAddr); err != nil {
+	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
+	if err != nil {
 		return err
 	}
-	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey.OperatorKey.Name, platformConfig.PhysicalName, platformConfig.VaultAddr); err != nil {
+	s.vaultConfig = vaultConfig
+	log.SpanLog(ctx, log.DebugLevelMexos, "vault auth", "type", vaultConfig.Auth.Type())
+
+	updateCallback(edgeproto.UpdateTask, "Fetching Openstack access credentials")
+	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
+		return err
+	}
+	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey.OperatorKey.Name, platformConfig.PhysicalName, vaultConfig); err != nil {
 		return err
 	}
 	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
 	if mexos.CloudletInfraCommon.NetworkScheme == "" {
 		mexos.CloudletInfraCommon.NetworkScheme = "name=mex-k8s-net-1,cidr=10.101.X.0/24"
 	}
-	var err error
 	s.flavorList, err = mexos.GetFlavorInfo(ctx)
 	if err != nil {
 		return err

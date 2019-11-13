@@ -15,6 +15,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 var CloudletInfraCommon edgeproto.CloudletInfraCommon
@@ -22,7 +23,7 @@ var OpenstackProps edgeproto.OpenStackProperties
 
 var MEXInfraVersion = "v2.0.42" //temporary until 2.0.5 available
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
-var VaultAddr string
+var VaultConfig *vault.Config
 
 // Default CloudletVM/Registry paths should only be used for local testing.
 // Ansible should always specify the correct ones to the controller.
@@ -48,25 +49,23 @@ var testMode = false
 // access the cloudlet externally but are not visible in any way to OpenStack
 var mappedExternalIPs map[string]string
 
-func getVaultCloudletPath(filePath, vaultAddr string) string {
-	return fmt.Sprintf(
-		"%s/v1/secret/data/cloudlet/openstack/%s",
-		vaultAddr, filePath,
-	)
+func getVaultCloudletPath(filePath string) string {
+	return fmt.Sprintf("/secret/data/cloudlet/openstack/%s", filePath)
 }
 
-func InitInfraCommon(ctx context.Context, vaultAddr string) error {
-	if vaultAddr == "" {
+func InitInfraCommon(ctx context.Context, vaultConfig *vault.Config) error {
+	if vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
-	VaultAddr = vaultAddr
-	mexEnvURL := getVaultCloudletPath("mexenv.json", vaultAddr)
-	err := InternVaultEnv(ctx, mexEnvURL)
+	VaultConfig = vaultConfig
+
+	mexEnvPath := getVaultCloudletPath("mexenv.json")
+	err := InternVaultEnv(ctx, vaultConfig, mexEnvPath)
 	if err != nil {
 		if testMode {
-			log.SpanLog(ctx, log.DebugLevelMexos, "failed to InternVaultEnv", "url", mexEnvURL, "err", err)
+			log.SpanLog(ctx, log.DebugLevelMexos, "failed to InternVaultEnv", "addr", vaultConfig.Addr, "path", mexEnvPath, "err", err)
 		} else {
-			return fmt.Errorf("failed to InternVaultEnv %s: %v", mexEnvURL, err)
+			return fmt.Errorf("failed to InternVaultEnv %s, %s: %v", vaultConfig.Addr, mexEnvPath, err)
 		}
 	}
 	CloudletInfraCommon.CfKey = os.Getenv("MEX_CF_KEY")
@@ -94,24 +93,25 @@ func InitInfraCommon(ctx context.Context, vaultAddr string) error {
 	return nil
 }
 
-func InitOpenstackProps(ctx context.Context, operatorName, physicalName, vaultAddr string) error {
-	openRcURL := getVaultCloudletPath(physicalName+"/openrc.json", vaultAddr)
-	err := InternVaultEnv(ctx, openRcURL)
+func InitOpenstackProps(ctx context.Context, operatorName, physicalName string, vaultConfig *vault.Config) error {
+	openRcPath := getVaultCloudletPath(physicalName + "/openrc.json")
+	err := InternVaultEnv(ctx, vaultConfig, openRcPath)
 	if err != nil {
-		return fmt.Errorf("failed to InternVaultEnv %s: %v", openRcURL, err)
+		return fmt.Errorf("failed to InternVaultEnv %s, %s: %v", vaultConfig.Addr, openRcPath, err)
 	}
-	VaultAddr = vaultAddr
+	// these (and the resulting env vars) really need to be set on an
+	// object to deal with controller calling this function in parallel
+	// for Platform Create/Delete/UpdateCloudlet.
+	VaultConfig = vaultConfig
 	authURL := os.Getenv("OS_AUTH_URL")
 	if strings.HasPrefix(authURL, "https") {
-		caCertURL := getVaultCloudletPath(physicalName+"/os_cacert", vaultAddr)
-		if caCertURL != "" {
-			certFile := fmt.Sprintf("/tmp/%s.%s.cert", operatorName, physicalName)
-			err := GetVaultDataToFile(caCertURL, certFile)
-			if err != nil {
-				return fmt.Errorf("failed to GetVaultDataToFile %s: %v", caCertURL, err)
-			}
-			os.Setenv("OS_CACERT", certFile)
+		caCertPath := getVaultCloudletPath(physicalName + "/os_cacert")
+		certFile := fmt.Sprintf("/tmp/%s.%s.cert", operatorName, physicalName)
+		err := GetVaultDataToFile(vaultConfig, caCertPath, certFile)
+		if err != nil {
+			return fmt.Errorf("failed to GetVaultDataToFile %s, %s: %v", vaultConfig.Addr, caCertPath, err)
 		}
+		os.Setenv("OS_CACERT", certFile)
 	}
 
 	OpenstackProps.OpenRcVars = make(map[string]string)

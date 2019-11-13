@@ -15,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/version"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
@@ -49,6 +50,7 @@ type ServerConfig struct {
 	PingInterval    time.Duration
 	SkipVerifyEmail bool
 	JaegerAddr      string
+	vaultConfig     *vault.Config
 }
 
 var DefaultDBUser = "mcuser"
@@ -66,8 +68,6 @@ var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
 var gitlabSync *AppStoreSync
 var artifactorySync *AppStoreSync
-var roleID string
-var secretID string
 
 func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
@@ -100,32 +100,39 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		superpass = DefaultSuperpass
 	}
 
-	// roleID and secretID could also come from RAM disk.
-	// assume env vars for now.
-	roleID = os.Getenv("VAULT_ROLE_ID")
-	secretID = os.Getenv("VAULT_SECRET_ID")
 	if config.LocalVault {
-		vault := process.Vault{
+		vaultProc := process.Vault{
 			Common: process.Common{
 				Name: "vault",
 			},
 			DmeSecret: "123456",
 		}
-		_, err := vault.StartLocalRoles()
+		_, err := vaultProc.StartLocalRoles()
 		if err != nil {
 			return nil, err
 		}
-		roles, err := intprocess.SetupVault(&vault)
+		roles, err := intprocess.SetupVault(&vaultProc)
 		if err != nil {
 			return nil, err
 		}
-		roleID = roles.MCRoleID
-		secretID = roles.MCSecretID
+		roleID := roles.MCRoleID
+		secretID := roles.MCSecretID
 		config.VaultAddr = process.VaultAddress
-		server.vault = &vault
+		server.vault = &vaultProc
+		auth := vault.NewAppRoleAuth(roleID, secretID)
+		config.vaultConfig = vault.NewConfig(process.VaultAddress, auth)
 	}
+	// vaultConfig should only be set by unit tests
+	if config.vaultConfig == nil {
+		vaultConfig, err := vault.BestConfig(config.VaultAddr)
+		if err != nil {
+			return nil, err
+		}
+		config.vaultConfig = vaultConfig
+	}
+	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", config.vaultConfig.Auth.Type())
 	server.initJWKDone = make(chan struct{}, 1)
-	InitVault(config.VaultAddr, roleID, secretID, server.initJWKDone)
+	InitVault(config.vaultConfig, server.initJWKDone)
 
 	if gitlabToken == "" {
 		log.InfoLog("Note: No gitlab_token env var found")

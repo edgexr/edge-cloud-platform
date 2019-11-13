@@ -118,7 +118,7 @@ func GetSCPFile(ctx context.Context, uri string) ([]byte, error) {
 
 func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
-	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultAddr)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig)
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("Error fetching last modified time of URL %s, %v", fileUrlPath, err)
 	}
@@ -157,7 +157,7 @@ func Md5SumFile(filePath string) (string, error) {
 func DownloadFile(ctx context.Context, fileUrlPath string, filePath string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
 
-	resp, err := cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultAddr)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultConfig)
 	if err != nil {
 		return err
 	}

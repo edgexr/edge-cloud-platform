@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
@@ -22,15 +21,6 @@ type VaultEnvData struct {
 
 type VaultData struct {
 	Data string `json:"data"`
-}
-
-func GetVaultEnv(data map[string]interface{}) (*VaultEnvData, error) {
-	envData := &VaultEnvData{}
-	err := mapstructure.WeakDecode(data["data"], envData)
-	if err != nil {
-		return nil, err
-	}
-	return envData, nil
 }
 
 var home = os.Getenv("HOME")
@@ -54,13 +44,10 @@ func internEnv(envs []EnvData) error {
 	return nil
 }
 
-func InternVaultEnv(ctx context.Context, keyURL string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "interning vault", "keyURL", keyURL)
-	dat, err := vault.GetVaultData(keyURL)
-	if err != nil {
-		return err
-	}
-	envData, err := GetVaultEnv(dat)
+func InternVaultEnv(ctx context.Context, config *vault.Config, path string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "interning vault", "addr", config.Addr, "path", path)
+	envData := &VaultEnvData{}
+	err := vault.GetData(config, path, 0, envData)
 	if err != nil {
 		return err
 	}
@@ -71,14 +58,10 @@ func InternVaultEnv(ctx context.Context, keyURL string) error {
 	return nil
 }
 
-func GetVaultDataToFile(keyURL, fileName string) error {
-	log.DebugLog(log.DebugLevelMexos, "get vault data to file", "keyURL", keyURL, "file", fileName)
-	dat, err := vault.GetVaultData(keyURL)
-	if err != nil {
-		return err
-	}
+func GetVaultDataToFile(config *vault.Config, path, fileName string) error {
+	log.DebugLog(log.DebugLevelMexos, "get vault data to file", "addr", config.Addr, "path", path, "file", fileName)
 	vaultData := &VaultData{}
-	err = mapstructure.WeakDecode(dat["data"], vaultData)
+	err := vault.GetData(config, path, 0, vaultData)
 	if err != nil {
 		return err
 	}
@@ -89,6 +72,5 @@ func GetVaultDataToFile(keyURL, fileName string) error {
 	}
 
 	log.DebugLog(log.DebugLevelMexos, "vault data imported to file successfully")
-
 	return nil
 }

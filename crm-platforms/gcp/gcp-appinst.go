@@ -27,7 +27,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	if err != nil {
 		return err
 	}
-	err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.config.VaultAddr, names)
+	err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.vaultConfig, names)
 	if err != nil {
 		return err
 	}
