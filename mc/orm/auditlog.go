@@ -114,7 +114,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			span.SetTag("error", nexterr)
 			he, ok := nexterr.(*echo.HTTPError)
 			if ok && he.Internal != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", he.Internal)
+				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.Internal)
 			}
 		}
 		if len(resBody) > 0 {
