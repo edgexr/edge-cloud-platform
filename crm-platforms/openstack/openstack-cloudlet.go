@@ -477,7 +477,12 @@ func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Clou
 		if out, err := client.Output(
 			fmt.Sprintf("sudo docker rm -f %s_old", pfService),
 		); err != nil {
-			return fmt.Errorf("cleanup failed: %v, %s\n", err, out)
+			if strings.Contains(out, "No such container") {
+				log.SpanLog(ctx, log.DebugLevelMexos, "no containers to cleanup")
+				continue
+			} else {
+				return fmt.Errorf("cleanup failed: %v, %s\n", err, out)
+			}
 		}
 	}
 
