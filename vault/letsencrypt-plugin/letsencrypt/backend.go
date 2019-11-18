@@ -15,6 +15,8 @@ type tls struct {
 	Ttl int `json:"ttl"`
 }
 
+type certlist map[string]interface{}
+
 var CertGenPort string
 
 // Factory creates a new usable instance of this secrets engine.
@@ -79,6 +81,19 @@ Return the letsencrypt cert for the given domain(s), generating it if it is not 
 				},
 				Callbacks: map[logical.Operation]framework.OperationFunc{
 					logical.ReadOperation: b.pathCert,
+				},
+			},
+
+			&framework.Path{
+				Pattern:      "list",
+				HelpSynopsis: "List all managed certs",
+				HelpDescription: `
+
+Return a list of all known certs.
+
+`,
+				Callbacks: map[logical.Operation]framework.OperationFunc{
+					logical.ReadOperation: b.pathCertList,
 				},
 			},
 		},

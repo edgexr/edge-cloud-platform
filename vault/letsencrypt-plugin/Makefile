@@ -1,4 +1,4 @@
-VERSION		= 1.1
+VERSION		= 1.2
 GITCOMMIT	= $(shell git describe --always --dirty=+)
 VERSION_FILE	= letsencrypt/version.go
 
