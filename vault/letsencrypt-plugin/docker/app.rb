@@ -1,6 +1,7 @@
 require 'bundler/setup'
 
 require 'json'
+require 'open3'
 require 'openssl'
 require 'sinatra'
 
@@ -85,4 +86,21 @@ get "/cert/:domain" do
     :ttl  => ttl,
   }
   cert.to_json
+end
+
+get "/certs" do
+  content_type :json
+  certlist = `certbot certificates`
+  re = Regexp.new('  Certificate Name: ([^\s]+)\n\s*Domains: ([^\s]+)\n\s*Expiry Date: ([^\s]+\s[^\s]+) \(([^\)]+)\)',
+                  Regexp::MULTILINE)
+  certs = {}
+  certlist.scan(re).each do |cert|
+    certs[cert[1]] = {
+      :certname => cert[0],
+      :valid_until => cert[2],
+      :state => cert[3],
+    }
+  end
+
+  certs.to_json
 end
