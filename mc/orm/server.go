@@ -260,7 +260,13 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	ldapServer.BindFunc("", handler)
 	ldapServer.SearchFunc("", handler)
 	go func() {
-		if err := ldapServer.ListenAndServe(config.LDAPAddr); err != nil {
+		var err error
+		if config.TlsCertFile != "" {
+			err = ldapServer.ListenAndServeTLS(config.LDAPAddr, config.TlsCertFile, config.TlsKeyFile)
+		} else {
+			err = ldapServer.ListenAndServe(config.LDAPAddr)
+		}
+		if err != nil {
 			server.Stop()
 			log.FatalLog("LDAP Server Failed", "err", err)
 		}
