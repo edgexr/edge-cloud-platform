@@ -46,9 +46,23 @@ func (s *Client) ShowFlavor(uri, token string, in *ormapi.RegionFlavor) ([]edgep
 	return outlist, status, err
 }
 
+func (s *Client) AddFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/AddFlavorRes", token, in, &out)
+	return out, status, err
+}
+
+func (s *Client) RemoveFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/RemoveFlavorRes", token, in, &out)
+	return out, status, err
+}
+
 type FlavorApiClient interface {
 	CreateFlavor(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error)
 	DeleteFlavor(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error)
 	UpdateFlavor(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error)
 	ShowFlavor(uri, token string, in *ormapi.RegionFlavor) ([]edgeproto.Flavor, int, error)
+	AddFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error)
+	RemoveFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error)
 }

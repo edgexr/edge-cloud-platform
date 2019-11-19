@@ -85,11 +85,37 @@ var ShowFlavorCmd = &cli.Command{
 	StreamOut:    true,
 }
 
+var AddFlavorResCmd = &cli.Command{
+	Use:          "AddFlavorRes",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
+	Comments:     addRegionComment(FlavorComments),
+	ReqData:      &ormapi.RegionFlavor{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/AddFlavorRes"),
+}
+
+var RemoveFlavorResCmd = &cli.Command{
+	Use:          "RemoveFlavorRes",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
+	Comments:     addRegionComment(FlavorComments),
+	ReqData:      &ormapi.RegionFlavor{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/RemoveFlavorRes"),
+}
+
 var FlavorApiCmds = []*cli.Command{
 	CreateFlavorCmd,
 	DeleteFlavorCmd,
 	UpdateFlavorCmd,
 	ShowFlavorCmd,
+	AddFlavorResCmd,
+	RemoveFlavorResCmd,
 }
 
 var FlavorKeyRequiredArgs = []string{}
@@ -109,17 +135,34 @@ var FlavorRequiredArgs = []string{
 	"vcpus",
 	"disk",
 }
-var FlavorOptionalArgs = []string{}
+var FlavorOptionalArgs = []string{
+	"optresmap",
+}
 var FlavorAliasArgs = []string{
 	"name=flavor.key.name",
 	"ram=flavor.ram",
 	"vcpus=flavor.vcpus",
 	"disk=flavor.disk",
+	"optresmap=flavor.optresmap",
 }
 var FlavorComments = map[string]string{
-	"name":  "Flavor name",
-	"ram":   "RAM in megabytes",
-	"vcpus": "Number of virtual CPUs",
-	"disk":  "Amount of disk space in gigabytes",
+	"name":      "Flavor name",
+	"ram":       "RAM in megabytes",
+	"vcpus":     "Number of virtual CPUs",
+	"disk":      "Amount of disk space in gigabytes",
+	"optresmap": "Optional Resources request, key = [gpu, nas, nic]",
 }
-var FlavorSpecialArgs = map[string]string{}
+var FlavorSpecialArgs = map[string]string{
+	"optresmap": "StringToString",
+}
+var OptResMapEntryRequiredArgs = []string{}
+var OptResMapEntryOptionalArgs = []string{
+	"key",
+	"value",
+}
+var OptResMapEntryAliasArgs = []string{
+	"key=optresmapentry.key",
+	"value=optresmapentry.value",
+}
+var OptResMapEntryComments = map[string]string{}
+var OptResMapEntrySpecialArgs = map[string]string{}
