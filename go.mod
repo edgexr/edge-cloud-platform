@@ -67,6 +67,7 @@ require (
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.2.2
 	gortc.io/stun v1.21.0
+	gotest.tools v2.2.0+incompatible
 	//	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
 	k8s.io/apimachinery v0.0.0-20190402064448-91ffda0f6be2

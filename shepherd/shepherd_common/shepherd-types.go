@@ -82,7 +82,12 @@ type CloudletMetrics struct {
 	// Total KBytes received
 	NetRecv uint64
 	// Total KBytes sent
-	NetSent uint64
+	NetSent   uint64
+	IpUsageTS *types.Timestamp
+	// Total available IP addresses
+	Ipv4Max uint64
+	// Currently used IP addrs
+	Ipv4Used uint64
 }
 
 type NginxMetrics struct {
