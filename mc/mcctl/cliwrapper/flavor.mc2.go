@@ -54,3 +54,19 @@ func (s *Client) ShowFlavor(uri, token string, in *ormapi.RegionFlavor) ([]edgep
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
 }
+
+func (s *Client) AddFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error) {
+	args := []string{"region", "AddFlavorRes"}
+	out := edgeproto.Result{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	return out, st, err
+}
+
+func (s *Client) RemoveFlavorRes(uri, token string, in *ormapi.RegionFlavor) (edgeproto.Result, int, error) {
+	args := []string{"region", "RemoveFlavorRes"}
+	out := edgeproto.Result{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	return out, st, err
+}
