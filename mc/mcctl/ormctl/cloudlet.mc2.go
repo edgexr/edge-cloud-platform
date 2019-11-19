@@ -331,7 +331,6 @@ var PlatformConfigOptionalArgs = []string{
 	"platformtag",
 	"testmode",
 	"span",
-	"controllermode",
 	"cleanupmode",
 }
 var PlatformConfigAliasArgs = []string{
@@ -345,7 +344,6 @@ var PlatformConfigAliasArgs = []string{
 	"platformtag=platformconfig.platformtag",
 	"testmode=platformconfig.testmode",
 	"span=platformconfig.span",
-	"controllermode=platformconfig.controllermode",
 	"cleanupmode=platformconfig.cleanupmode",
 }
 var PlatformConfigComments = map[string]string{
@@ -359,7 +357,6 @@ var PlatformConfigComments = map[string]string{
 	"platformtag":     "Tag of edge-cloud image",
 	"testmode":        "Internal Test flag",
 	"span":            "Span string",
-	"controllermode":  "Internal controller flag",
 	"cleanupmode":     "Internal cleanup flag",
 }
 var PlatformConfigSpecialArgs = map[string]string{}
@@ -433,7 +430,6 @@ var CloudletAliasArgs = []string{
 	"config.platformtag=cloudlet.config.platformtag",
 	"config.testmode=cloudlet.config.testmode",
 	"config.span=cloudlet.config.span",
-	"config.controllermode=cloudlet.config.controllermode",
 	"config.cleanupmode=cloudlet.config.cleanupmode",
 }
 var CloudletComments = map[string]string{
@@ -476,7 +472,6 @@ var CloudletComments = map[string]string{
 	"config.platformtag":                  "Tag of edge-cloud image",
 	"config.testmode":                     "Internal Test flag",
 	"config.span":                         "Span string",
-	"config.controllermode":               "Internal controller flag",
 	"config.cleanupmode":                  "Internal cleanup flag",
 }
 var CloudletSpecialArgs = map[string]string{

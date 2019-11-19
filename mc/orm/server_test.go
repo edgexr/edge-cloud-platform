@@ -8,6 +8,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/stretchr/testify/require"
@@ -195,6 +196,20 @@ func TestServer(t *testing.T) {
 	tokenAdmin, err := mcClient.DoLogin(uri, admin.Name, admin.Passhash)
 	require.Nil(t, err, "login as admin")
 
+	orgMex := ormapi.Organization{
+		Type:    "developer",
+		Name:    cloudcommon.DeveloperMobiledgeX,
+		Address: "123",
+		Phone:   "123",
+	}
+	_, err = mcClient.CreateOrg(uri, tokenMisterX, &orgMex)
+	require.NotNil(t, err, "create reserved mobiledgex org")
+	status, err = mcClient.CreateOrg(uri, tokenAdmin, &orgMex)
+	require.Nil(t, err, "create reserved mobiledgex org")
+	require.Equal(t, http.StatusOK, status)
+	_, err = mcClient.DeleteOrg(uri, tokenMisterX, &orgMex)
+	require.NotNil(t, err, "delete reserved mobiledgex org")
+
 	// check org membership as mister x
 	orgs, status, err := mcClient.ShowOrg(uri, tokenMisterX)
 	require.Nil(t, err)
@@ -213,11 +228,11 @@ func TestServer(t *testing.T) {
 	orgs, status, err = mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 2, len(orgs))
+	require.Equal(t, 3, len(orgs))
 	orgs, status, err = mcClient.ShowOrg(uri, tokenAdmin)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 2, len(orgs))
+	require.Equal(t, 3, len(orgs))
 
 	// users should be able to update their own orgs
 	testUpdateOrg(t, mcClient, uri, tokenMisterX, org1.Name)
@@ -243,11 +258,11 @@ func TestServer(t *testing.T) {
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 4, len(roleAssignments))
+	require.Equal(t, 5, len(roleAssignments))
 	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, tokenAdmin)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 4, len(roleAssignments))
+	require.Equal(t, 5, len(roleAssignments))
 
 	// show org users as mister x
 	users, status, err = mcClient.ShowUser(uri, tokenMisterX, &org1)
@@ -341,6 +356,9 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	status, err = mcClient.DeleteOrg(uri, tokenMisterY, &org2)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteOrg(uri, tokenAdmin, &orgMex)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// delete users
