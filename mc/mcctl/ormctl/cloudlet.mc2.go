@@ -24,8 +24,8 @@ var _ = math.Inf
 
 var CreateCloudletCmd = &cli.Command{
 	Use:                  "CreateCloudlet",
-	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
-	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
+	RequiredArgs:         strings.Join(append([]string{"region"}, CreateCloudletRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(CreateCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
@@ -123,6 +123,34 @@ var CloudletApiCmds = []*cli.Command{
 	ShowCloudletCmd,
 	AddCloudletResMappingCmd,
 	RemoveCloudletResMappingCmd,
+}
+
+var CreateCloudletRequiredArgs = []string{
+	"operator",
+	"name",
+	"location.latitude",
+	"location.longitude",
+	"numdynamicips",
+}
+var CreateCloudletOptionalArgs = []string{
+	"accesscredentials",
+	"location.altitude",
+	"location.timestamp.seconds",
+	"location.timestamp.nanos",
+	"ipsupport",
+	"staticips",
+	"errors",
+	"state",
+	"crmoverride",
+	"deploymentlocal",
+	"platformtype",
+	"flavor.name",
+	"physicalname",
+	"envvar",
+	"version",
+	"restagmap.key",
+	"restagmap.value.name",
+	"restagmap.value.operatorkey.name",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -419,17 +447,17 @@ var MappingEntrySpecialArgs = map[string]string{}
 var CloudletRequiredArgs = []string{
 	"operator",
 	"name",
-	"location.latitude",
-	"location.longitude",
-	"numdynamicips",
 }
 var CloudletOptionalArgs = []string{
 	"accesscredentials",
+	"location.latitude",
+	"location.longitude",
 	"location.altitude",
 	"location.timestamp.seconds",
 	"location.timestamp.nanos",
 	"ipsupport",
 	"staticips",
+	"numdynamicips",
 	"errors",
 	"state",
 	"crmoverride",
