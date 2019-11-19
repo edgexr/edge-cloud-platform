@@ -148,7 +148,7 @@ func SetupRootLB(ctx context.Context, rootLBName string, rootLBSpec *vmspec.VMCr
 		log.SpanLog(ctx, log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
-	extIP, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
+	extIP, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName, ExternalIPType)
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
 	}

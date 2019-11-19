@@ -167,7 +167,7 @@ var vmTemplateResources = `
            fixed_ips: 
             - subnet_id: {{.SubnetName}}
            security_groups:
-            - {{$.RootLBParams.ApplicationSecurityGroup}}
+            - { get_resource: vm_security_group }
    floatingip:
        type: OS::Neutron::FloatingIPAssociation
        properties:

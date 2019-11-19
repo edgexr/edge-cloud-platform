@@ -346,8 +346,7 @@ func AttachAndEnableRootLBInterface(ctx context.Context, client pc.PlatformClien
 	if err != nil {
 		return err
 	}
-
-	rootLbIp, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
+	rootLbIp, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName, InternalIPType)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "fail to get RootLB IP address", "rootLBName", rootLBName)
 

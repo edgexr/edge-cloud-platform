@@ -335,7 +335,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	}
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 
-	external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name)
+	external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name, mexos.ExternalIPType)
 	if err != nil {
 		return err
 	}

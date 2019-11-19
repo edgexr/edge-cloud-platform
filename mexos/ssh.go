@@ -17,7 +17,7 @@ var SSHUser = "ubuntu"
 func CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
 	log.SpanLog(ctx, log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	addr, err := GetServerIPAddr(ctx, networkName, serverName)
+	addr, err := GetServerIPAddr(ctx, networkName, serverName, ExternalIPType)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func GetSSHClient(ctx context.Context, serverName, networkName, userName string)
 	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
 	log.SpanLog(ctx, log.DebugLevelMexos, "GetSSHClient", "serverName", serverName)
 
-	addr, err := GetServerIPAddr(ctx, networkName, serverName)
+	addr, err := GetServerIPAddr(ctx, networkName, serverName, ExternalIPType)
 	if err != nil {
 		return nil, err
 	}

@@ -13,6 +13,9 @@ import (
 // NetworkTypeVLAN is an OpenStack provider network type
 const NetworkTypeVLAN string = "vlan"
 
+const ExternalIPType string = "external"
+const InternalIPType string = "internal"
+
 type NetSpecInfo struct {
 	Name, CIDR        string
 	NetworkType       string
@@ -122,16 +125,18 @@ func GetAllowedClientCIDR() string {
 	return "0.0.0.0/0"
 }
 
-//GetServerIPAddr gets the server IP
-//TODO: consider replacing this function with GetServerNetworkIP, however that function
-// requires some rework to use in all cases
-func GetServerIPAddr(ctx context.Context, networkName, serverName string) (string, error) {
-	// if this is a root lb, look it up and get the IP if we have it cached
-	rootLB, err := getRootLB(ctx, serverName)
-	if err == nil && rootLB != nil {
-		if rootLB.IP != "" {
-			log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
-			return rootLB.IP, nil
+//GetServerIPAddr gets the server IP.  If the IP found is a pair of internal to floating IP, then the
+// returnIPType is used to determine which to return
+func GetServerIPAddr(ctx context.Context, networkName, serverName string, returnIPType string) (string, error) {
+
+	// if this is a root lb, look it up and get the IP if we have it cached, unless we are looking for an internal IP
+	if returnIPType != InternalIPType {
+		rootLB, err := getRootLB(ctx, serverName)
+		if err == nil && rootLB != nil {
+			if rootLB.IP != "" {
+				log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
+				return rootLB.IP, nil
+			}
 		}
 	}
 	sd, err := GetServerDetails(ctx, serverName)
@@ -146,10 +151,17 @@ func GetServerIPAddr(ctx context.Context, networkName, serverName string) (strin
 		}
 		if strings.Contains(sits[0], networkName) {
 			addr := sits[1]
+			// the comma indicates a floating IP is present.   If we specified to return
+			// the external IP, return the value after the comma, which is the floating IP.
+			// If we specified to return the internal IP, return the value before the comma
 			if strings.Contains(addr, ",") {
 				addrs := strings.Split(addr, ",")
 				if len(addrs) == 2 {
-					addr = addrs[1]
+					if returnIPType == ExternalIPType {
+						addr = addrs[1]
+					} else {
+						addr = addrs[0]
+					}
 				} else {
 					return "", fmt.Errorf("GetServerIPAddr: Unable to parse '%s'", addr)
 				}
