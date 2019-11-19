@@ -63,6 +63,7 @@ var ClusterSelectors = []string{
 var CloudletSelectors = []string{
 	"network",
 	"utilization",
+	"ipusage",
 }
 
 const (

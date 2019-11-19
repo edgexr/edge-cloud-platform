@@ -3,6 +3,9 @@ package shepherd_openstack
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -73,6 +76,70 @@ func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto
 	}
 }
 
+// Given pool ranges return total number of available ip addresses
+// Example: 10.10.10.1-10.10.10.20,10.10.10.30-10.10.10.40
+//  Returns 20+11 = 31
+func getIpCountFromPools(ipPools string) (uint64, error) {
+	var total uint64
+	total = 0
+	pools := strings.Split(ipPools, ",")
+	for _, p := range pools {
+		ipRange := strings.Split(p, "-")
+		if len(ipRange) != 2 {
+			return 0, fmt.Errorf("invalid ip pool format")
+		}
+		ipStart := net.ParseIP(ipRange[0])
+		ipEnd := net.ParseIP(ipRange[1])
+		if ipStart == nil || ipEnd == nil {
+			return 0, fmt.Errorf("Could not parse ip pool limits")
+		}
+		numStart := new(big.Int)
+		numEnd := new(big.Int)
+		diff := new(big.Int)
+		numStart = numStart.SetBytes(ipStart)
+		numEnd = numEnd.SetBytes(ipEnd)
+		if numStart == nil || numEnd == nil {
+			return 0, fmt.Errorf("cannot convert bytes to bigInt")
+		}
+		diff = diff.Sub(numEnd, numStart)
+		total += diff.Uint64()
+		// add extra 1 for the start of pool
+		total += 1
+	}
+	return total, nil
+}
+
+func addIpUsageDetails(ctx context.Context, metric *shepherd_common.CloudletMetrics) error {
+	externalNet, err := mexos.GetNetworkDetail(ctx, mexos.GetCloudletExternalNetwork())
+	if err != nil {
+		return err
+	}
+	if externalNet == nil {
+		return fmt.Errorf("No external network")
+	}
+	subnets := strings.Split(externalNet.Subnets, ",")
+	if len(subnets) < 1 {
+		return nil
+	}
+	// Assume first subnet for now - see similar note in GetExternalGateway()
+	sd, err := mexos.GetSubnetDetail(ctx, subnets[0])
+	if metric.Ipv4Max, err = getIpCountFromPools(sd.AllocationPools); err != nil {
+		return err
+	}
+	// Get current usage
+	srvs, err := mexos.ListServers(ctx)
+	if err != nil {
+		return err
+	}
+	metric.Ipv4Used = 0
+	for _, s := range srvs {
+		if strings.Contains(s.Networks, mexos.GetCloudletExternalNetwork()) {
+			metric.Ipv4Used++
+		}
+	}
+	return nil
+}
+
 func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	cloudletMetric := shepherd_common.CloudletMetrics{}
 	limits, err := mexos.OSGetAllLimits(ctx)
@@ -101,6 +168,12 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 	}
 	// TODO - collect network data for all the VM instances
 
+	// Get Ip pool usage
+	if addIpUsageDetails(ctx, &cloudletMetric) != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "get ip pool information", "error", err)
+	} else {
+		cloudletMetric.IpUsageTS, _ = types.TimestampProto(time.Now())
+	}
 	return cloudletMetric, nil
 }
 

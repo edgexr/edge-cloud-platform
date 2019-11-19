@@ -512,6 +512,7 @@ http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metric
 http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metrics/app <<< '{"region":"local","appinst":{"app_key":{"developer_key":{"name":"MobiledgeX"},"name":"facedetectiondemo","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"AppCluster"},"cloudlet_key":{"operator_key":{"name":""}}}},"selector":"connections","last":5}'
 http --verify=false --auth-type=jwt --auth=$WORKER1TOKEN POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"mexdev"},"name":"localtest"},"selector":"utilization","last":2}'
 http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"mexdev"},"name":"localtest"},"selector":"network","last":2}'
+http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"GDDT"},"name":"lev-fairview"},"selector":"ipusage","last":2}'
 ```
 
 Change your password:
