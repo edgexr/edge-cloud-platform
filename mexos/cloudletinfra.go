@@ -97,7 +97,10 @@ func InitOpenstackProps(ctx context.Context, operatorName, physicalName string, 
 	openRcPath := getVaultCloudletPath(physicalName + "/openrc.json")
 	err := InternVaultEnv(ctx, vaultConfig, openRcPath)
 	if err != nil {
-		return fmt.Errorf("failed to InternVaultEnv %s, %s: %v", vaultConfig.Addr, openRcPath, err)
+		if strings.Contains(err.Error(), "no secrets") {
+			return fmt.Errorf("Failed to source platform variables as physicalname '%s' is invalid", physicalName)
+		}
+		return fmt.Errorf("Failed to source platform variables from %s, %s: %v", vaultConfig.Addr, openRcPath, err)
 	}
 	// these (and the resulting env vars) really need to be set on an
 	// object to deal with controller calling this function in parallel
