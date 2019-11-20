@@ -164,6 +164,10 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 			cloudletMetric.DiskMax = uint64(l.Value)
 		} else if l.Name == "totalGigabytesUsed" {
 			cloudletMetric.DiskUsed = uint64(l.Value)
+		} else if l.Name == "maxTotalFloatingIps" {
+			cloudletMetric.FloatingIpsMax = uint64(l.Value)
+		} else if l.Name == "totalFloatingIpsUsed" {
+			cloudletMetric.FloatingIpsUsed = uint64(l.Value)
 		}
 	}
 	// TODO - collect network data for all the VM instances
