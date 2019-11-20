@@ -17,16 +17,18 @@ import (
 
 // Example output of resource-tracker
 var testCloudletData = shepherd_common.CloudletMetrics{
-	VCpuMax:  10,
-	VCpuUsed: 5,
-	MemMax:   500000,
-	MemUsed:  1234,
-	DiskMax:  400000,
-	DiskUsed: 10000,
-	NetRecv:  123456,
-	NetSent:  654321,
-	Ipv4Max:  100,
-	Ipv4Used: 50,
+	VCpuMax:         10,
+	VCpuUsed:        5,
+	MemMax:          500000,
+	MemUsed:         1234,
+	DiskMax:         400000,
+	DiskUsed:        10000,
+	FloatingIpsMax:  20,
+	FloatingIpsUsed: 11,
+	NetRecv:         123456,
+	NetSent:         654321,
+	Ipv4Max:         100,
+	Ipv4Used:        50,
 }
 
 func TestCloudletStats(t *testing.T) {
@@ -107,6 +109,10 @@ func TestCloudletStats(t *testing.T) {
 			assert.Equal(t, testCloudletData.Ipv4Max, v.GetIval())
 		} else if v.Name == "ipv4Used" {
 			assert.Equal(t, testCloudletData.Ipv4Used, v.GetIval())
+		} else if v.Name == "floatingIpsMax" {
+			assert.Equal(t, testCloudletData.FloatingIpsMax, v.GetIval())
+		} else if v.Name == "floatingIpsUsed" {
+			assert.Equal(t, testCloudletData.FloatingIpsUsed, v.GetIval())
 		} else {
 			errstr := fmt.Sprintf("Unexpected value in a metric(%v) - %s", v, v.Name)
 			assert.FailNow(t, errstr)
