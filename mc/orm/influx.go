@@ -78,14 +78,14 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
-	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
+	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "operator"='{{.OperatorName}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .StartTime}} AND time > '{{.StartTime}}'{{end}}` +
+	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
