@@ -848,9 +848,17 @@ func GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID
 		return "", err
 	}
 	for _, g := range grps {
-		if g.Name == grpname && g.Project == projectID {
-			log.SpanLog(ctx, log.DebugLevelMexos, "GetSecurityGroupIDForProject", "projectID", projectID, "group", grpname)
-			return g.ID, nil
+		if g.Name == grpname {
+			if g.Project == projectID {
+				log.SpanLog(ctx, log.DebugLevelMexos, "GetSecurityGroupIDForProject", "projectID", projectID, "group", grpname)
+				return g.ID, nil
+			}
+			if g.Project == "" {
+				// This is an openstack bug in some environments in which it may not show the project ids when listing the group
+				// all we can do is hope for no conflicts in this case
+				log.SpanLog(ctx, log.DebugLevelMexos, "Warning: no project id returned for security group", "group", grpname)
+				return g.ID, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("unable to find security group %s project %s", grpname, projectID)
