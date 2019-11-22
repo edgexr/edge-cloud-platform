@@ -123,9 +123,12 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 		}
 		allnodes := strings.Split(strings.TrimSpace(out), "\n")
 		toRemove := []string{}
+		numMaster := uint32(0)
+		numNodes := uint32(0)
 		for _, n := range allnodes {
 			if !strings.HasPrefix(n, cloudcommon.MexNodePrefix) {
 				// skip master
+				numMaster++
 				continue
 			}
 			ok, num := ParseHeatNodePrefix(n)
@@ -133,6 +136,7 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 				log.SpanLog(ctx, log.DebugLevelMexos, "unable to parse node name, ignoring", "name", n)
 				continue
 			}
+			numNodes++
 			// heat will remove the higher-numbered nodes
 			if num > clusterInst.NumNodes {
 				toRemove = append(toRemove, n)
@@ -144,6 +148,11 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 			if err != nil {
 				return err
 			}
+		}
+		if numMaster == clusterInst.NumMasters && numNodes == clusterInst.NumNodes {
+			// nothing changing
+			log.SpanLog(ctx, log.DebugLevelMexos, "no change in nodes", "ClusterInst", clusterInst.Key, "nummaster", numMaster, "numnodes", numNodes)
+			return nil
 		}
 	}
 

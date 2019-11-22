@@ -290,14 +290,20 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 
 // flushAlerts removes Alerts for clusters that have been deleted
 func flushAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
+	toflush := []edgeproto.AlertKey{}
 	AlertCache.Mux.Lock()
-	defer AlertCache.Mux.Unlock()
 	for k, v := range AlertCache.Objs {
 		if v.Labels[cloudcommon.AlertLabelDev] == key.Developer &&
 			v.Labels[cloudcommon.AlertLabelOperator] == key.CloudletKey.OperatorKey.Name &&
 			v.Labels[cloudcommon.AlertLabelCloudlet] == key.CloudletKey.Name &&
 			v.Labels[cloudcommon.AlertLabelCluster] == key.ClusterKey.Name {
-			delete(AlertCache.Objs, k)
+			toflush = append(toflush, k)
 		}
+	}
+	AlertCache.Mux.Unlock()
+	for _, k := range toflush {
+		buf := edgeproto.Alert{}
+		buf.SetKey(&k)
+		AlertCache.Delete(ctx, &buf, 0)
 	}
 }

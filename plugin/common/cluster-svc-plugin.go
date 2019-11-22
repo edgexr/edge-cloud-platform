@@ -23,7 +23,7 @@ type ClusterSvc struct{}
 // The scale down alert files when any node is below the low cpu threshold,
 // and there are more than the min number of nodes.
 var MEXPrometheusAutoScaleT = `additionalPrometheusRules:
-- name: [[.AutoScalePolicy]]
+- name: autoscalepolicy
   groups:
   - name: autoscale.rules
     rules:
