@@ -267,12 +267,11 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
+		_, _, err = mexos.GetMasterNameAndIP(ctx, clusterInst)
 		if err != nil {
 			if strings.Contains(err.Error(), mexos.ClusterNotFoundErr) {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cluster is gone, allow app deletion")
@@ -282,8 +281,8 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		} // Clean up security rules and nginx proxy if app is external
 		secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
 		if !app.InternalPorts {
-			if err := mexos.DeleteProxySecurityRules(ctx, client, masterIP, names.AppName, secGrp); err != nil {
-				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
+			if err := mexos.DeleteProxySecurityGroupRules(ctx, client, names.AppName, secGrp, appInst.MappedPorts, rootLBName); err != nil {
+				log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 			// Clean up DNS entries
 			if err := mexos.DeleteAppDNS(ctx, client, names); err != nil {
@@ -318,6 +317,14 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
+		}
+		appName := k8smgmt.NormalizeName(app.Key.Name)
+		if !app.InternalPorts {
+			secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
+			//  the proxy does not yet exist for docker, but it eventually will.  Secgrp rules should be deleted in either case
+			if err := mexos.DeleteProxySecurityGroupRules(ctx, client, appName, secGrp, appInst.MappedPorts, rootLBName); err != nil {
+				log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete security rules", "name", appName, "rootlb", rootLBName, "error", err)
+			}
 		}
 		return dockermgmt.DeleteAppInst(ctx, client, app, appInst)
 	default:

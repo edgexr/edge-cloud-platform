@@ -531,6 +531,23 @@ func ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, error) {
 	return secgrps, nil
 }
 
+//ListSecurityGroups returns a list of security groups
+func ListSecurityGroupRules(ctx context.Context, secGrp string) ([]OSSecurityGroupRule, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "list", secGrp, "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("can't get a list of security group rules, %s, %v", out, err)
+		return nil, err
+	}
+	rules := []OSSecurityGroupRule{}
+	err = json.Unmarshal(out, &rules)
+	if err != nil {
+		err = fmt.Errorf("can't unmarshal security group rules, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "list security group rules", "security groups", rules)
+	return rules, nil
+}
+
 func CreateSecurityGroup(ctx context.Context, groupName string) error {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "security", "group", "create", groupName)
 	if err != nil {

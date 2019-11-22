@@ -34,6 +34,13 @@ type OSSecurityGroup struct {
 	Name    string `json:"Name"`
 }
 
+type OSSecurityGroupRule struct {
+	ID        string `json:"ID"`
+	IPRange   string `json:"IP Range"`
+	PortRange string `json:"Port Range"`
+	Protocol  string `json:"IP Protocol"`
+}
+
 func getNameAndIPFromNetwork(network string) (string, string, error) {
 	nets := strings.Split(network, "=")
 	if len(nets) != 2 {
