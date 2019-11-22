@@ -46,10 +46,22 @@ func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 	return outlist, st, err
 }
 
+func (s *Client) RefreshAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+	args := []string{"region", "RefreshAppInst"}
+	outlist := []edgeproto.Result{}
+	noconfig := strings.Split("CloudletLoc,Uri,MappedPorts,Liveness,Flavor,State,RuntimeInfo,AutoClusterIpAccess,Errors,CreatedAt,Status,Revision,Configs", ",")
+	ops := []runOp{
+		withIgnore(noconfig),
+		withStreamOutIncremental(),
+	}
+	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
+	return outlist, st, err
+}
+
 func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateAppInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("CloudletLoc,Uri,MappedPorts,Liveness,Flavor,State,RuntimeInfo,AutoClusterIpAccess,Errors,CreatedAt,Status,Revision", ",")
+	noconfig := strings.Split("CloudletLoc,Uri,MappedPorts,Liveness,Flavor,State,RuntimeInfo,AutoClusterIpAccess,Errors,CreatedAt,Status,Revision,UpdateMultiple", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),

@@ -39,6 +39,15 @@ func (s *Client) DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 	return outlist, status, err
 }
 
+func (s *Client) RefreshAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	outlist := []edgeproto.Result{}
+	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/RefreshAppInst", token, in, &out, func() {
+		outlist = append(outlist, out)
+	})
+	return outlist, status, err
+}
+
 func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	outlist := []edgeproto.Result{}
@@ -60,6 +69,7 @@ func (s *Client) ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edg
 type AppInstApiClient interface {
 	CreateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error)
 	DeleteAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error)
+	RefreshAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error)
 	UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error)
 	ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.AppInst, int, error)
 }

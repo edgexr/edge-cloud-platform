@@ -51,6 +51,20 @@ var DeleteAppInstCmd = &cli.Command{
 	StreamOutIncremental: true,
 }
 
+var RefreshAppInstCmd = &cli.Command{
+	Use:                  "RefreshAppInst",
+	RequiredArgs:         strings.Join(append([]string{"region"}, RefreshAppInstRequiredArgs...), " "),
+	OptionalArgs:         strings.Join(RefreshAppInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:          &AppInstSpecialArgs,
+	Comments:             addRegionComment(AppInstComments),
+	ReqData:              &ormapi.RegionAppInst{},
+	ReplyData:            &edgeproto.Result{},
+	Run:                  runRest("/auth/ctrl/RefreshAppInst"),
+	StreamOut:            true,
+	StreamOutIncremental: true,
+}
+
 var UpdateAppInstCmd = &cli.Command{
 	Use:          "UpdateAppInst",
 	RequiredArgs: strings.Join(append([]string{"region"}, UpdateAppInstRequiredArgs...), " "),
@@ -96,6 +110,7 @@ var ShowAppInstCmd = &cli.Command{
 var AppInstApiCmds = []*cli.Command{
 	CreateAppInstCmd,
 	DeleteAppInstCmd,
+	RefreshAppInstCmd,
 	UpdateAppInstCmd,
 	ShowAppInstCmd,
 }
@@ -118,12 +133,12 @@ var CreateAppInstOptionalArgs = []string{
 	"configs.kind",
 	"configs.config",
 }
-var UpdateAppInstRequiredArgs = []string{
+var RefreshAppInstRequiredArgs = []string{
 	"developer",
 	"appname",
 	"appvers",
 }
-var UpdateAppInstOptionalArgs = []string{
+var RefreshAppInstOptionalArgs = []string{
 	"cluster",
 	"operator",
 	"cloudlet",
@@ -131,6 +146,19 @@ var UpdateAppInstOptionalArgs = []string{
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
+}
+var UpdateAppInstRequiredArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+	"cluster",
+	"operator",
+	"cloudlet",
+}
+var UpdateAppInstOptionalArgs = []string{
+	"clusterdeveloper",
+	"crmoverride",
+	"forceupdate",
 	"configs.kind",
 	"configs.config",
 }
