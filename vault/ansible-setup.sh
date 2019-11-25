@@ -36,6 +36,10 @@ path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
 
+path "secret/data/ansible/internal/accounts/influxdb" {
+  capabilities = [ "read" ]
+}
+
 path "secret/data/registry/*" {
   capabilities = [ "read" ]
 }
