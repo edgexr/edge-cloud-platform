@@ -141,39 +141,36 @@ func ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 }
 
 //ShowFlavor returns the details of a given flavor.
-// If the flavor has any properties set, these are returned as well
-func ShowFlavor(ctx context.Context, flavor string) (details string, properties string, err error) {
+func ShowFlavor(ctx context.Context, flavor string) (details OSFlavorDetail, err error) {
 
+	var flav OSFlavorDetail
 	out, err := TimedOpenStackCommand(ctx, "openstack", "flavor", "show", flavor, "-f", "json")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "flavor show failed", "out", out)
-		fmt.Printf("Timed Op return error %d\n", err)
-		return "", "", err
+		return flav, err
 	}
-	s := strings.Index(string(out), "properties")
-	s += len("properties") + 2
-	ms := cloudcommon.QuotedStringRegex.FindAllString(string(out[s:]), -1)
-	ss := make([]string, len(ms))
-	for i, m := range ms {
-		ss[i] = m[1 : len(m)-1]
+
+	err = json.Unmarshal(out, &flav)
+	if err != nil {
+		return flav, err
 	}
-	return string(out), ss[0], err
+	return flav, nil
 }
 
 //ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
-func ListFlavors(ctx context.Context) ([]OSFlavor, error) {
+func ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 	flavorMatchPattern := GetCloudletFlavorMatchPattern()
 	r, err := regexp.Compile(flavorMatchPattern)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot compile flavor match pattern")
 	}
-	out, err := TimedOpenStackCommand(ctx, "openstack", "flavor", "list", "-f", "json")
+	out, err := TimedOpenStackCommand(ctx, "openstack", "flavor", "list", "--long", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get flavor list, %v", err)
 		return nil, err
 	}
-	var flavors []OSFlavor
-	var flavorsMatched []OSFlavor
+	var flavors []OSFlavorDetail
+	var flavorsMatched []OSFlavorDetail
 	err = json.Unmarshal(out, &flavors)
 
 	if err != nil {
@@ -186,6 +183,21 @@ func ListFlavors(ctx context.Context) ([]OSFlavor, error) {
 		}
 	}
 	return flavorsMatched, nil
+}
+
+func ListAZones(ctx context.Context) ([]OSAZone, error) {
+	out, err := TimedOpenStackCommand(ctx, "openstack availability zone list", "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("cannot get availability zone list, %v", err)
+		return nil, err
+	}
+	var zones []OSAZone
+	err = json.Unmarshal(out, &zones)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	return zones, nil
 }
 
 func ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) {
@@ -813,11 +825,15 @@ func OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
 		}
 	}
 
-	finfo, err := GetFlavorInfo(ctx)
+	finfo, zones, err := GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
 	info.Flavors = finfo
+	for i, _ := range zones {
+		info.AvailabilityZones[i].Name = zones[i].Name
+		info.AvailabilityZones[i].Status = zones[i].Status
+	}
 	return nil
 }
 
@@ -837,26 +853,28 @@ func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	return limits, nil
 }
 
-func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
+func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, error) {
 	osflavors, err := ListFlavors(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get flavors, %v", err.Error())
+		return nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
 	}
 	if len(osflavors) == 0 {
-		return nil, fmt.Errorf("no flavors found")
+		return nil, nil, fmt.Errorf("no flavors found")
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
 		finfo = append(
 			finfo,
 			&edgeproto.FlavorInfo{
-				Name:  f.Name,
-				Vcpus: uint64(f.VCPUs),
-				Ram:   uint64(f.RAM),
-				Disk:  uint64(f.Disk)},
+				Name:       f.Name,
+				Vcpus:      uint64(f.VCPUs),
+				Ram:        uint64(f.RAM),
+				Disk:       uint64(f.Disk),
+				Properties: f.Properties},
 		)
 	}
-	return finfo, nil
+	zones, err := ListAZones(ctx)
+	return finfo, zones, nil
 }
 
 func GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID string) (string, error) {

@@ -116,6 +116,18 @@ var RemoveCloudletResMappingCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/RemoveCloudletResMapping"),
 }
 
+var FindFlavorMatchCmd = &cli.Command{
+	Use:          "FindFlavorMatch",
+	RequiredArgs: strings.Join(append([]string{"region"}, FlavorMatchRequiredArgs...), " "),
+	OptionalArgs: strings.Join(FlavorMatchOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorMatchAliasArgs, " "),
+	SpecialArgs:  &FlavorMatchSpecialArgs,
+	Comments:     addRegionComment(FlavorMatchComments),
+	ReqData:      &ormapi.RegionFlavorMatch{},
+	ReplyData:    &edgeproto.FlavorMatch{},
+	Run:          runRest("/auth/ctrl/FindFlavorMatch"),
+}
+
 var CloudletApiCmds = []*cli.Command{
 	CreateCloudletCmd,
 	DeleteCloudletCmd,
@@ -123,6 +135,7 @@ var CloudletApiCmds = []*cli.Command{
 	ShowCloudletCmd,
 	AddCloudletResMappingCmd,
 	RemoveCloudletResMappingCmd,
+	FindFlavorMatchCmd,
 }
 
 var CreateCloudletRequiredArgs = []string{
@@ -597,6 +610,25 @@ var ResTagMapEntryComments = map[string]string{
 	"value.operatorkey.name": "Company or Organization name of the operator",
 }
 var ResTagMapEntrySpecialArgs = map[string]string{}
+var FlavorMatchRequiredArgs = []string{
+	"operator",
+	"cloudlet",
+}
+var FlavorMatchOptionalArgs = []string{
+	"flavor",
+	"availabilityzone",
+}
+var FlavorMatchAliasArgs = []string{
+	"operator=flavormatch.key.operatorkey.name",
+	"cloudlet=flavormatch.key.name",
+	"flavor=flavormatch.flavorname",
+	"availabilityzone=flavormatch.availabilityzone",
+}
+var FlavorMatchComments = map[string]string{
+	"operator": "Company or Organization name of the operator",
+	"cloudlet": "Name of the cloudlet",
+}
+var FlavorMatchSpecialArgs = map[string]string{}
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{
 	"name",
@@ -620,6 +652,17 @@ var FlavorInfoComments = map[string]string{
 	"properties": "OS Flavor Properties, if any",
 }
 var FlavorInfoSpecialArgs = map[string]string{}
+var OSAZoneRequiredArgs = []string{}
+var OSAZoneOptionalArgs = []string{
+	"name",
+	"status",
+}
+var OSAZoneAliasArgs = []string{
+	"name=osazone.name",
+	"status=osazone.status",
+}
+var OSAZoneComments = map[string]string{}
+var OSAZoneSpecialArgs = map[string]string{}
 var CloudletInfoRequiredArgs = []string{
 	"operator",
 	"name",
@@ -642,6 +685,8 @@ var CloudletInfoOptionalArgs = []string{
 	"status.taskname",
 	"status.stepname",
 	"version",
+	"availabilityzones.name",
+	"availabilityzones.status",
 }
 var CloudletInfoAliasArgs = []string{
 	"operator=cloudletinfo.key.operatorkey.name",
@@ -663,6 +708,8 @@ var CloudletInfoAliasArgs = []string{
 	"status.taskname=cloudletinfo.status.taskname",
 	"status.stepname=cloudletinfo.status.stepname",
 	"version=cloudletinfo.version",
+	"availabilityzones.name=cloudletinfo.availabilityzones.name",
+	"availabilityzones.status=cloudletinfo.availabilityzones.status",
 }
 var CloudletInfoComments = map[string]string{
 	"operator":           "Company or Organization name of the operator",

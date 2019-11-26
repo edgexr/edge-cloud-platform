@@ -29,6 +29,11 @@ type RegionCloudletResMap struct {
 	CloudletResMap edgeproto.CloudletResMap
 }
 
+type RegionFlavorMatch struct {
+	Region      string
+	FlavorMatch edgeproto.FlavorMatch
+}
+
 type RegionCloudletInfo struct {
 	Region       string
 	CloudletInfo edgeproto.CloudletInfo

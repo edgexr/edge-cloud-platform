@@ -152,7 +152,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			}
 		}
 
-		finfo, err := mexos.GetFlavorInfo(ctx)
+		finfo, _, err := mexos.GetFlavorInfo(ctx)
 		if err != nil {
 			return err
 		}

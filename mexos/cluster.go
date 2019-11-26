@@ -194,7 +194,12 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 	}
 
 	var err error
-	vmspec := vmspec.VMCreationSpec{FlavorName: clusterInst.NodeFlavor, ExternalVolumeSize: clusterInst.ExternalVolumeSize}
+	vmspec := vmspec.VMCreationSpec{
+		FlavorName:         clusterInst.NodeFlavor,
+		ExternalVolumeSize: clusterInst.ExternalVolumeSize,
+		AvailabilityZone:   clusterInst.AvailabilityZone,
+	}
+
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
 		//suitable for docker only
 		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")

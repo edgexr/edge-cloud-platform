@@ -61,7 +61,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if mexos.CloudletInfraCommon.NetworkScheme == "" {
 		mexos.CloudletInfraCommon.NetworkScheme = "name=mex-k8s-net-1,cidr=10.101.X.0/24"
 	}
-	s.flavorList, err = mexos.GetFlavorInfo(ctx)
+	s.flavorList, _, err = mexos.GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
