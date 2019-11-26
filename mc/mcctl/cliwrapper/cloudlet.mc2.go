@@ -84,6 +84,14 @@ func (s *Client) RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCl
 	return out, st, err
 }
 
+func (s *Client) FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch) (edgeproto.FlavorMatch, int, error) {
+	args := []string{"region", "FindFlavorMatch"}
+	out := edgeproto.FlavorMatch{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	return out, st, err
+}
+
 func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
 	args := []string{"region", "ShowCloudletInfo"}
 	outlist := []edgeproto.CloudletInfo{}

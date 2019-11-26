@@ -14,6 +14,24 @@ type OSServer struct {
 	Status, Name, Image, ID, Flavor, Networks string
 }
 
+type OSFlavorDetail struct {
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	RAM         int    `json:"ram"`
+	Ephemeral   int    `json:"OS-FLV-EXT-DATA:ephemeral"`
+	VCPUs       int    `json:"vcpus"`
+	Disk        int    `json:"disk"`
+	Public      bool   `json:"os-flavor-access:is_public"`
+	Properties  string `json:"properties"`
+	Swap        string `json:"swap"`
+	RXTX_Factor string `json:"RXTX_factor"`
+}
+
+type OSAZone struct {
+	Name   string `json:"zone_name"`
+	Status string `json:"zone_status"`
+}
+
 type OSFloatingIP struct {
 	ID                string `json:"ID"`
 	Project           string `json:"Project"`
