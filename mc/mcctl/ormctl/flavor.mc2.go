@@ -155,14 +155,3 @@ var FlavorComments = map[string]string{
 var FlavorSpecialArgs = map[string]string{
 	"optresmap": "StringToString",
 }
-var OptResMapEntryRequiredArgs = []string{}
-var OptResMapEntryOptionalArgs = []string{
-	"key",
-	"value",
-}
-var OptResMapEntryAliasArgs = []string{
-	"key=optresmapentry.key",
-	"value=optresmapentry.value",
-}
-var OptResMapEntryComments = map[string]string{}
-var OptResMapEntrySpecialArgs = map[string]string{}

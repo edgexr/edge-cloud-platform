@@ -26,9 +26,10 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	vaultAddr := ""
 	span := ""
 	if pfConfig != nil {
-		// Same role-id/secret-id as CRM
-		envVars["VAULT_ROLE_ID"] = pfConfig.CrmRoleId
-		envVars["VAULT_SECRET_ID"] = pfConfig.CrmSecretId
+		// Same vault role-id/secret-id as CRM
+		for k, v := range pfConfig.EnvVar {
+			envVars[k] = v
+		}
 		notifyAddr = cloudlet.NotifySrvAddr
 		tlsCertFile = pfConfig.TlsCertFile
 		vaultAddr = pfConfig.VaultAddr
