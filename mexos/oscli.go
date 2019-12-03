@@ -122,6 +122,24 @@ func GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
 	return &imageDetail, nil
 }
 
+// fetch tags + properties etc of all images for resource mapping
+func ListImagesDetail(ctx context.Context) ([]OSImageDetail, error) {
+	var img_details []OSImageDetail
+	images, err := ListImages(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, image := range images {
+		details, err := GetImageDetail(ctx, image.Name)
+		if err == nil {
+			img_details = append(img_details, *details)
+		}
+	}
+	return img_details, err
+}
+
+//
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
 func ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "network", "list", "-f", "json")
@@ -186,7 +204,7 @@ func ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 }
 
 func ListAZones(ctx context.Context) ([]OSAZone, error) {
-	out, err := TimedOpenStackCommand(ctx, "openstack availability zone list", "-f", "json")
+	out, err := TimedOpenStackCommand(ctx, "openstack", "availability", "zone", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get availability zone list, %v", err)
 		return nil, err
@@ -825,15 +843,11 @@ func OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
 		}
 	}
 
-	finfo, zones, err := GetFlavorInfo(ctx)
+	finfo, _, _, err := GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
 	info.Flavors = finfo
-	for i, _ := range zones {
-		info.AvailabilityZones[i].Name = zones[i].Name
-		info.AvailabilityZones[i].Status = zones[i].Status
-	}
 	return nil
 }
 
@@ -853,13 +867,13 @@ func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	return limits, nil
 }
 
-func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, error) {
+func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImageDetail, error) {
 	osflavors, err := ListFlavors(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
+		return nil, nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
 	}
 	if len(osflavors) == 0 {
-		return nil, nil, fmt.Errorf("no flavors found")
+		return nil, nil, nil, fmt.Errorf("no flavors found")
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
@@ -874,7 +888,11 @@ func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, err
 		)
 	}
 	zones, err := ListAZones(ctx)
-	return finfo, zones, nil
+	images, err := ListImagesDetail(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return finfo, zones, images, nil
 }
 
 func GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID string) (string, error) {

@@ -149,10 +149,14 @@ type OSImage struct {
 }
 
 type OSImageDetail struct {
-	Status    string `json:"status"`
-	ID        string `json:"id"`
-	UpdatedAt string `json:"updated_at"`
-	Checksum  string `json:"checksum"`
+	Name       string `json:"name"`
+	Status     string `json:"status"`
+	ID         string `json:"id"`
+	UpdatedAt  string `json:"updated_at"`
+	Checksum   string `json:"checksum"`
+	Tags       string `json:"tags"`
+	Properties string `json:"propereties"`
+	DiskFormat string `json:"disk_format"`
 }
 
 type OSNetwork struct {

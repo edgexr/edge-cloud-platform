@@ -198,6 +198,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		FlavorName:         clusterInst.NodeFlavor,
 		ExternalVolumeSize: clusterInst.ExternalVolumeSize,
 		AvailabilityZone:   clusterInst.AvailabilityZone,
+		ImageName:          clusterInst.ImageName,
 	}
 
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
