@@ -63,6 +63,14 @@ variable "console_instance_name" {
   default     = "console-dev"
 }
 
+variable "vault_b_instance_name" {
+  default     = "vault-dev-b"
+}
+
+variable "vault_b_gcp_zone" {
+  default     = "europe-west3-a"
+}
+
 // DNS entries
 
 variable "crm_vm_domain_name" {
@@ -97,6 +105,14 @@ variable "console_domain_name" {
 
 variable "jaeger_domain_name" {
   default     = "jaeger-dev.mobiledgex.net"
+}
+
+variable "vault_a_domain_name" {
+  default     = "vault-dev-a.mobiledgex.net"
+}
+
+variable "vault_b_domain_name" {
+  default     = "vault-dev-b.mobiledgex.net"
 }
 
 variable "ssh_public_key_file" {

@@ -3,6 +3,7 @@ resource "google_compute_instance" vm {
   machine_type  = "${var.instance_size}"
   zone          = "${var.zone}"
   tags          = "${var.tags}"
+  labels        = "${var.labels}"
 
   allow_stopping_for_update = "${var.allow_stopping_for_update}"
   deletion_protection       = "${var.deletion_protection}"

@@ -14,6 +14,12 @@ variable "tags" {
   type        = "list"
 }
 
+variable "labels" {
+  description = "Labels for VM instance"
+  type        = "map"
+  default     = {}
+}
+
 variable "zone" {
   description = "GCP zone for VM instance"
   type        = "string"

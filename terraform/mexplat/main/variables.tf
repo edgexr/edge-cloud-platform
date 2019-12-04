@@ -53,6 +53,30 @@ variable "vault_domain_name" {
   default     = "vault-main.mobiledgex.net"
 }
 
+variable "vault_a_vm_name" {
+  default     = "vault-main-a"
+}
+
+variable "vault_a_gcp_zone" {
+  default     = "us-central1-a"
+}
+
+variable "vault_a_domain_name" {
+  default     = "vault-main-a.mobiledgex.net"
+}
+
+variable "vault_b_vm_name" {
+  default     = "vault-main-b"
+}
+
+variable "vault_b_gcp_zone" {
+  default     = "europe-west3-a"
+}
+
+variable "vault_b_domain_name" {
+  default     = "vault-main-b.mobiledgex.net"
+}
+
 variable "mc_instance_name" {
   default     = "mc-main"
 }
