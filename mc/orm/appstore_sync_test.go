@@ -289,7 +289,7 @@ func mcClientCreate(t *testing.T, v entry, mcClient *ormclient.Client, uri strin
 
 func mcClientDelete(t *testing.T, v entry, mcClient *ormclient.Client, uri, tokenAdmin string) {
 	for user, userType := range v.Users {
-		if userType == RoleDeveloperManager {
+		if userType == RoleDeveloperManager || userType == RoleOperatorManager {
 			continue
 		}
 		roleArg := ormapi.Role{
