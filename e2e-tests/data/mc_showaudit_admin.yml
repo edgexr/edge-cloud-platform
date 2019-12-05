@@ -85,6 +85,6 @@
   status: 200
   starttime: "2019-11-05T17:06:33.229084-08:00"
   duration: 7.6ms
-  request: '{"Name":"enterprise","Type":"developer","Address":"enterprise headquarters","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  request: '{"Name":"MobiledgeX","Type":"developer","Address":"mobiledgex","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 384d9326d52eefe9

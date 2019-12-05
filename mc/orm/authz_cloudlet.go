@@ -2,6 +2,8 @@ package orm
 
 import (
 	"context"
+	fmt "fmt"
+	"net/http"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -16,6 +18,7 @@ type AuthzCloudlet struct {
 	noPoolOrgs       map[string]struct{}
 	cloudletPoolSide map[edgeproto.CloudletKey]int
 	allowAll         bool
+	admin            bool
 }
 
 const myPool int = 1
@@ -32,6 +35,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 	if _, found := orgs[""]; found {
 		// User is an admin. If no filter is specified,
 		// then access for all cloudlets is provided.
+		s.admin = true
 		if orgfilter == "" {
 			s.allowAll = true
 			return nil
@@ -166,6 +170,13 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	}
 	if !authzCloudlet.Ok(&cloudlet) {
 		return echo.ErrForbidden
+	}
+	// Enforce that target ClusterInst org is the same as AppInst org.
+	// This prevents Developers from using reservable ClusterInsts directly.
+	// Only auto-provisioning service (which goes direct to controller API)
+	// can instantiate AppInsts with mismatched orgs.
+	if !authzCloudlet.admin && obj.Key.ClusterInstKey.Developer != "" && obj.Key.ClusterInstKey.Developer != obj.Key.AppKey.DeveloperKey.Name {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("AppInst developer must match ClusterInst developer"))
 	}
 	return nil
 }

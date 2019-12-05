@@ -11,6 +11,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/testutil"
@@ -314,6 +315,23 @@ func TestController(t *testing.T) {
 	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, ccount)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
 	badPermTestClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org1, tc3)
+
+	{
+		// developers can't create AppInsts on other developer's ClusterInsts
+		appinst := edgeproto.AppInst{}
+		appinst.Key.AppKey.DeveloperKey.Name = org1
+		appinst.Key.ClusterInstKey.Developer = cloudcommon.DeveloperMobiledgeX
+		_, status, err := testCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "AppInst developer must match ClusterInst developer")
+		// but admin can
+		_, status, err = testCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		_, status, err = testDeleteAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
 
 	// remove users from roles, test that they can't modify anything anymore
 	testRemoveUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperContributor", dev3.Name, Success)
