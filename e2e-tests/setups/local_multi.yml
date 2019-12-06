@@ -65,6 +65,7 @@ controllers:
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   shorttimeouts: true
   hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
   testmode: true
 
 - name: ctrl2
@@ -78,6 +79,7 @@ controllers:
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   shorttimeouts: true
   hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
   testmode: true
 
 clustersvcs:

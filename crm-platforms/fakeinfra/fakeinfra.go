@@ -34,6 +34,27 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }
 
+func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	updateCallback(edgeproto.UpdateTask, "Stopping old Shepherd service")
+	err := intprocess.StopShepherdService(ctx, cloudlet)
+	if err != nil {
+		return err
+	}
+	err = s.fake.UpdateCloudlet(ctx, cloudlet, pfConfig, updateCallback)
+	if err != nil {
+		return err
+	}
+	return ShepherdStartup(ctx, cloudlet, pfConfig, updateCallback)
+}
+
+func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.fake.CleanupCloudlet(ctx, cloudlet, pfConfig, updateCallback)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func ShepherdStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	updateCallback(edgeproto.UpdateTask, "Starting Shepherd")
 	shProc, err := intprocess.StartShepherdService(ctx, cloudlet, pfConfig)

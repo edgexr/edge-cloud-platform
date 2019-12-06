@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -321,14 +322,14 @@ func TestController(t *testing.T) {
 		appinst := edgeproto.AppInst{}
 		appinst.Key.AppKey.DeveloperKey.Name = org1
 		appinst.Key.ClusterInstKey.Developer = cloudcommon.DeveloperMobiledgeX
-		_, status, err := testCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
+		_, status, err := ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
 		require.NotNil(t, err)
 		require.Contains(t, err.Error(), "AppInst developer must match ClusterInst developer")
 		// but admin can
-		_, status, err = testCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
+		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
-		_, status, err = testDeleteAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
+		_, status, err = ormtestutil.TestDeleteAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
 	}
