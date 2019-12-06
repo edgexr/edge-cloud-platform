@@ -11,6 +11,7 @@ import (
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
+	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -150,19 +151,22 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return false
 	}
 	data := readMCDataFile(apiFile)
+	regionDataMap := readMCRegionDataFileMap(apiFile)
 	switch api {
 	case "create":
 		if sep {
-			createMcDataSep(uri, token, data, &rc)
+			createMcDataSep(uri, token, data, regionDataMap, &rc)
 		} else {
 			createMcDataAll(uri, token, data, &rc)
 		}
 	case "delete":
 		if sep {
-			deleteMcDataSep(uri, token, data, &rc)
+			deleteMcDataSep(uri, token, data, regionDataMap, &rc)
 		} else {
 			deleteMcDataAll(uri, token, data, &rc)
 		}
+	case "update":
+		updateMcDataSep(uri, token, data, regionDataMap, &rc)
 	}
 	return rc
 }
@@ -194,6 +198,26 @@ func readMCDataFile(file string) *ormapi.AllData {
 		}
 	}
 	return &data
+}
+
+func readMCRegionDataFileMap(file string) *[]interface{} {
+	dataMap := make(map[string]interface{})
+	err := util.ReadYamlFile(file, &dataMap)
+	if err != nil {
+		if !util.IsYamlOk(err, "mcdata") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
+			os.Exit(1)
+		}
+	}
+	if val, ok := dataMap["regiondata"]; ok {
+		retval, ok := val.([]interface{})
+		if ok {
+			return &retval
+		}
+		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, invalid data in regiondata: %v\n", file, val)
+		os.Exit(1)
+	}
+	return nil
 }
 
 func readMCMetricTargetsFile(file string) *MetricTargets {
@@ -362,7 +386,47 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 	return showData
 }
 
-func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
+func getRegionAppDataFromMap(regionDataMap interface{}) map[string]interface{} {
+	regionData, ok := regionDataMap.(map[string]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "invalid data in regiondata: %v\n", regionDataMap)
+		os.Exit(1)
+	}
+	appData, ok := regionData["appdata"].(map[string]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "invalid data in appdata: %v\n", regionData["appdata"])
+		os.Exit(1)
+	}
+	return appData
+}
+
+func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string) {
+	appDataMap := getRegionAppDataFromMap(rdMap)
+	switch mode {
+	case "create":
+		fallthrough
+	case "update":
+		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
+		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
+		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
+		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
+		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
+		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
+		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
+		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
+	case "delete":
+		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
+		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
+		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
+		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
+		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
+		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
+		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
+		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
+	}
+}
+
+func createMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
 	for _, ctrl := range data.Controllers {
 		st, err := mcClient.CreateController(uri, token, &ctrl)
 		checkMcErr("CreateController", st, err, rc)
@@ -375,71 +439,8 @@ func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 		st, err := mcClient.AddUserRole(uri, token, &role)
 		checkMcErr("AddUserRole", st, err, rc)
 	}
-	for _, rd := range data.RegionData {
-		for _, flavor := range rd.AppData.Flavors {
-			in := &ormapi.RegionFlavor{
-				Region: rd.Region,
-				Flavor: flavor,
-			}
-			_, st, err := mcClient.CreateFlavor(uri, token, in)
-			checkMcErr("CreateFlavor", st, err, rc)
-		}
-		for _, cloudlet := range rd.AppData.Cloudlets {
-			in := &ormapi.RegionCloudlet{
-				Region:   rd.Region,
-				Cloudlet: cloudlet,
-			}
-			_, st, err := mcClient.CreateCloudlet(uri, token, in)
-			checkMcErr("CreateCloudlet", st, err, rc)
-		}
-		for _, pool := range rd.AppData.CloudletPools {
-			in := &ormapi.RegionCloudletPool{
-				Region:       rd.Region,
-				CloudletPool: pool,
-			}
-			_, st, err := mcClient.CreateCloudletPool(uri, token, in)
-			checkMcErr("CreateCloudletPool", st, err, rc)
-		}
-		for _, member := range rd.AppData.CloudletPoolMembers {
-			in := &ormapi.RegionCloudletPoolMember{
-				Region:             rd.Region,
-				CloudletPoolMember: member,
-			}
-			_, st, err := mcClient.CreateCloudletPoolMember(uri, token, in)
-			checkMcErr("CreateCloudletPoolMember", st, err, rc)
-		}
-		for _, policy := range rd.AppData.AutoScalePolicies {
-			in := &ormapi.RegionAutoScalePolicy{
-				Region:          rd.Region,
-				AutoScalePolicy: policy,
-			}
-			_, st, err := mcClient.CreateAutoScalePolicy(uri, token, in)
-			checkMcErr("CreateAutoScalePolicy", st, err, rc)
-		}
-		for _, cinst := range rd.AppData.ClusterInsts {
-			in := &ormapi.RegionClusterInst{
-				Region:      rd.Region,
-				ClusterInst: cinst,
-			}
-			_, st, err := mcClient.CreateClusterInst(uri, token, in)
-			checkMcErr("CreateClusterInst", st, err, rc)
-		}
-		for _, app := range rd.AppData.Applications {
-			in := &ormapi.RegionApp{
-				Region: rd.Region,
-				App:    app,
-			}
-			_, st, err := mcClient.CreateApp(uri, token, in)
-			checkMcErr("CreateApp", st, err, rc)
-		}
-		for _, appinst := range rd.AppData.AppInstances {
-			in := &ormapi.RegionAppInst{
-				Region:  rd.Region,
-				AppInst: appinst,
-			}
-			_, st, err := mcClient.CreateAppInst(uri, token, in)
-			checkMcErr("CreateAppInst", st, err, rc)
-		}
+	for ii, rd := range data.RegionData {
+		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "create")
 	}
 	for _, oc := range data.OrgCloudletPools {
 		st, err := mcClient.CreateOrgCloudletPool(uri, token, &oc)
@@ -447,76 +448,13 @@ func createMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 	}
 }
 
-func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
+func deleteMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
 	for _, oc := range data.OrgCloudletPools {
 		st, err := mcClient.DeleteOrgCloudletPool(uri, token, &oc)
 		checkMcErr("DeleteOrgCloudletPool", st, err, rc)
 	}
-	for _, rd := range data.RegionData {
-		for _, appinst := range rd.AppData.AppInstances {
-			in := &ormapi.RegionAppInst{
-				Region:  rd.Region,
-				AppInst: appinst,
-			}
-			_, st, err := mcClient.DeleteAppInst(uri, token, in)
-			checkMcErr("DeleteAppInst", st, err, rc)
-		}
-		for _, app := range rd.AppData.Applications {
-			in := &ormapi.RegionApp{
-				Region: rd.Region,
-				App:    app,
-			}
-			_, st, err := mcClient.DeleteApp(uri, token, in)
-			checkMcErr("DeleteApp", st, err, rc)
-		}
-		for _, cinst := range rd.AppData.ClusterInsts {
-			in := &ormapi.RegionClusterInst{
-				Region:      rd.Region,
-				ClusterInst: cinst,
-			}
-			_, st, err := mcClient.DeleteClusterInst(uri, token, in)
-			checkMcErr("DeleteClusterInst", st, err, rc)
-		}
-		for _, policy := range rd.AppData.AutoScalePolicies {
-			in := &ormapi.RegionAutoScalePolicy{
-				Region:          rd.Region,
-				AutoScalePolicy: policy,
-			}
-			_, st, err := mcClient.DeleteAutoScalePolicy(uri, token, in)
-			checkMcErr("DeleteAutoScalePolicy", st, err, rc)
-		}
-		for _, member := range rd.AppData.CloudletPoolMembers {
-			in := &ormapi.RegionCloudletPoolMember{
-				Region:             rd.Region,
-				CloudletPoolMember: member,
-			}
-			_, st, err := mcClient.DeleteCloudletPoolMember(uri, token, in)
-			checkMcErr("DeleteCloudletPoolMember", st, err, rc)
-		}
-		for _, pool := range rd.AppData.CloudletPools {
-			in := &ormapi.RegionCloudletPool{
-				Region:       rd.Region,
-				CloudletPool: pool,
-			}
-			_, st, err := mcClient.DeleteCloudletPool(uri, token, in)
-			checkMcErr("DeleteCloudletPool", st, err, rc)
-		}
-		for _, cloudlet := range rd.AppData.Cloudlets {
-			in := &ormapi.RegionCloudlet{
-				Region:   rd.Region,
-				Cloudlet: cloudlet,
-			}
-			_, st, err := mcClient.DeleteCloudlet(uri, token, in)
-			checkMcErr("DeleteCloudlet", st, err, rc)
-		}
-		for _, flavor := range rd.AppData.Flavors {
-			in := &ormapi.RegionFlavor{
-				Region: rd.Region,
-				Flavor: flavor,
-			}
-			_, st, err := mcClient.DeleteFlavor(uri, token, in)
-			checkMcErr("DeleteFlavor", st, err, rc)
-		}
+	for ii, rd := range data.RegionData {
+		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "delete")
 	}
 	for _, org := range data.Orgs {
 		st, err := mcClient.DeleteOrg(uri, token, &org)
@@ -529,6 +467,12 @@ func deleteMcDataSep(uri, token string, data *ormapi.AllData, rc *bool) {
 	for _, ctrl := range data.Controllers {
 		st, err := mcClient.DeleteController(uri, token, &ctrl)
 		checkMcErr("DeleteController", st, err, rc)
+	}
+}
+
+func updateMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
+	for ii, rd := range data.RegionData {
+		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "update")
 	}
 }
 

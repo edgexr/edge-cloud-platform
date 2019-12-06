@@ -63,6 +63,7 @@ controllers:
      servercert: "{{tlsoutdir}}/mex-server.crt"
      clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
   testmode: true
 
 - name: ctrl2
@@ -74,6 +75,7 @@ controllers:
      servercert: "{{tlsoutdir}}/mex-server.crt"
      clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
   testmode: true
 
 
