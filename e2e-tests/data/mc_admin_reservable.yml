@@ -1,0 +1,21 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: Reservable1
+        cloudletkey:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+        developer: MobiledgeX
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      ipaccess: IpAccessShared
+      nodeflavor: flavor1
+      masterflavor: flavor1
+      nummasters: 1
+      numnodes: 1
+      reservable: true
