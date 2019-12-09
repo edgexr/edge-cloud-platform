@@ -172,6 +172,9 @@ var vmTemplateResources = `
             - subnet_id: {{.SubnetName}}
            security_groups:
             - { get_resource: vm_security_group }
+           {{if .CloudletSecurityGroup}}
+            - {{ .CloudletSecurityGroup}}
+           {{- end}}
    floatingip:
        type: OS::Neutron::FloatingIPAssociation
        properties:
