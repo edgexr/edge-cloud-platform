@@ -96,6 +96,21 @@ variable "jaeger_domain_name" {
   default     = "jaeger-qa.mobiledgex.net"
 }
 
+variable "crm_vm_domain_name" {
+  description = "CRM VM domain name"
+  type        = "string"
+}
+
+variable "mc_vm_domain_name" {
+  description = "MC VM domain name"
+  type        = "string"
+}
+
+variable "postgres_domain_name" {
+  description = "Postgres domain name"
+  type        = "string"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
