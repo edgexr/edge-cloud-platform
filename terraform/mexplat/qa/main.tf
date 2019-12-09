@@ -53,6 +53,24 @@ module "docker_dns" {
   ip                            = "${module.gitlab.external_ip}"
 }
 
+module "crm_vm_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.crm_vm_domain_name}"
+  ip                            = "${module.gitlab.external_ip}"
+}
+
+module "mc_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.mc_vm_domain_name}"
+  ip                            = "${module.gitlab.external_ip}"
+}
+
+module "postgres_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.postgres_domain_name}"
+  ip                            = "${module.gitlab.external_ip}"
+}
+
 module "vault_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.vault_vm_domain_name}"
