@@ -86,6 +86,14 @@ variable "kibana_domain_name" {
   default     = "kibana.es.mobiledgex.net"
 }
 
+variable "infra_domain_name" {
+  default     = "infra.internal.mobiledgex.net"
+}
+
+variable "infra_instance_name" {
+  default     = "infra-internal"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
