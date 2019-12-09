@@ -90,3 +90,20 @@ module "kibana_dns" {
   hostname                      = "${var.kibana_domain_name}"
   ip                            = "${module.elasticsearch.external_ip}"
 }
+
+module "infra" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                 = "${var.infra_instance_name}"
+  instance_size                 = "n1-standard-1"
+  zone                          = "${var.gcp_zone}"
+  boot_disk_size                = 20
+  tags                          = [ "mexplat-${var.environ_tag}", "infra" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "infra_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.infra_domain_name}"
+  ip                            = "${module.infra.external_ip}"
+}
