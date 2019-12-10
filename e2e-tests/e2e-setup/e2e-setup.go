@@ -229,7 +229,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	return true
 }
 
-func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi.TestConfig, spec *TestSpec, specStr string, mods []string) []string {
+func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi.TestConfig, spec *TestSpec, specStr string, mods []string, vars map[string]string) []string {
 	var actionArgs []string
 	act, actionParam := setupmex.GetActionParam(actionSpec)
 	action, actionSubtype := setupmex.GetActionSubtype(act)
@@ -308,7 +308,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			errors = append(errors, "stop remote failed")
 		}
 	case "mcapi":
-		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.CurUserFile, outputDir, mods) {
+		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.CurUserFile, outputDir, mods, vars) {
 			log.Printf("Unable to run api for %s\n", action)
 			errors = append(errors, "MC api failed")
 		}
@@ -354,7 +354,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			fmt.Fprintf(os.Stderr, "ERROR: unmarshaling setupmex TestSpec: %v", err)
 			errors = append(errors, "Error in unmarshaling TestSpec")
 		} else {
-			errs := setupmex.RunAction(ctx, actionSpec, outputDir, &ecSpec, mods)
+			errs := setupmex.RunAction(ctx, actionSpec, outputDir, &ecSpec, mods, vars)
 			errors = append(errors, errs...)
 		}
 	}

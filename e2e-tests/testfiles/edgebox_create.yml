@@ -1,0 +1,11 @@
+##
+##
+
+tests:
+
+
+- name: admin creates operator/cloudlets
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_edgebox.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+

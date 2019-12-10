@@ -1,0 +1,24 @@
+regiondata:
+- region: {{region}}
+  appdata:
+    cloudlets:
+    - key:
+        operatorkey:
+          name: {{operator}}
+        name: {{cloudlet}}
+      location:
+        latitude: 1
+        longitude: 2
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeMexdind
+      flavor:
+        name: x1.medium
+      state: Ready
+      timelimits:
+        createclusterinsttimeout: 3000000000
+        updateclusterinsttimeout: 2000000000
+        deleteclusterinsttimeout: 2000000000
+        createappinsttimeout: 3000000000
+        updateappinsttimeout: 2000000000
+        deleteappinsttimeout: 2000000000

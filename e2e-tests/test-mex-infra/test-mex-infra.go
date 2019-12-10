@@ -75,7 +75,7 @@ func main() {
 	ranTest := false
 	for _, a := range spec.Actions {
 		util.PrintStepBanner("running action: " + a)
-		errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods)
+		errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars)
 		errors = append(errors, errs...)
 		ranTest = true
 	}
