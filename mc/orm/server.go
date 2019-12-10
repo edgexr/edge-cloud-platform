@@ -241,6 +241,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/metrics/app", GetMetricsCommon)
 	auth.POST("/metrics/cluster", GetMetricsCommon)
 	auth.POST("/metrics/cloudlet", GetMetricsCommon)
+	auth.POST("/metrics/client", GetMetricsCommon)
 
 	go func() {
 		var err error
