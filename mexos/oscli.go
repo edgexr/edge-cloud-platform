@@ -867,7 +867,7 @@ func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	return limits, nil
 }
 
-func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImageDetail, error) {
+func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImage, error) {
 	osflavors, err := ListFlavors(ctx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
@@ -888,7 +888,7 @@ func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []O
 		)
 	}
 	zones, err := ListAZones(ctx)
-	images, err := ListImagesDetail(ctx)
+	images, err := ListImages(ctx)
 	if err != nil {
 		return nil, nil, nil, err
 	}
