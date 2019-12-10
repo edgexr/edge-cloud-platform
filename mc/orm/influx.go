@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
@@ -38,6 +40,8 @@ type influxQueryArgs struct {
 	DeveloperName string
 	CloudletName  string
 	OperatorName  string
+	Method        string
+	CellId        string
 	StartTime     string
 	EndTime       string
 	Last          int
@@ -66,10 +70,15 @@ var CloudletSelectors = []string{
 	"ipusage",
 }
 
+var ClientSelectors = []string{
+	"api",
+}
+
 const (
 	APPINST  = "appinst"
 	CLUSTER  = "cluster"
 	CLOUDLET = "cloudlet"
+	CLIENT   = "dme"
 )
 
 var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
@@ -78,6 +87,8 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
+	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
+	`{{if .CellId}} AND "cellID"='{{.CellId}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
@@ -129,6 +140,47 @@ func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error
 	return ctrl.InfluxDB, nil
 }
 
+func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.Time, end *time.Time) string {
+	// Figure out the start/end time range for the query
+	if !start.IsZero() {
+		buf, err := start.MarshalText()
+		if err == nil {
+			q.StartTime = string(buf)
+		}
+	}
+	if !end.IsZero() {
+		buf, err := end.MarshalText()
+		if err == nil {
+			q.EndTime = string(buf)
+		}
+	}
+	// now that we know all the details of the query - build it
+	buf := bytes.Buffer{}
+	if err := tmpl.Execute(&buf, q); err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to run template", "tmpl", tmpl, "args", q, "error", err)
+		return ""
+	}
+	return buf.String()
+}
+
+func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
+	arg := influxQueryArgs{
+		Selector:      "*",
+		Measurement:   getMeasurementString(obj.Selector, CLIENT),
+		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
+		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
+		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
+		Method:        obj.Method,
+		Last:          obj.Last,
+	}
+	if obj.CellId != 0 {
+		arg.CellId = strconv.FormatUint(uint64(obj.CellId), 10)
+	}
+	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
+}
+
 // Query is a template with a specific set of if/else
 func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
@@ -141,26 +193,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
 		Last:          obj.Last,
 	}
-
-	// Figure out the start/end time range for the query
-	if !obj.StartTime.IsZero() {
-		buf, err := obj.StartTime.MarshalText()
-		if err == nil {
-			arg.StartTime = string(buf)
-		}
-	}
-	if !obj.EndTime.IsZero() {
-		buf, err := obj.EndTime.MarshalText()
-		if err == nil {
-			arg.EndTime = string(buf)
-		}
-	}
-	// now that we know all the details of the query - build it
-	buf := bytes.Buffer{}
-	if err := devInfluxDBTemplate.Execute(&buf, &arg); err != nil {
-		return ""
-	}
-	return buf.String()
+	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
 
 // Query is a template with a specific set of if/else
@@ -174,26 +207,7 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 		OperatorName:  obj.ClusterInst.CloudletKey.OperatorKey.Name,
 		Last:          obj.Last,
 	}
-
-	// Figure out the start/end time range for the query
-	if !obj.StartTime.IsZero() {
-		buf, err := obj.StartTime.MarshalText()
-		if err == nil {
-			arg.StartTime = string(buf)
-		}
-	}
-	if !obj.EndTime.IsZero() {
-		buf, err := obj.EndTime.MarshalText()
-		if err == nil {
-			arg.EndTime = string(buf)
-		}
-	}
-	// now that we know all the details of the query - build it
-	buf := bytes.Buffer{}
-	if err := devInfluxDBTemplate.Execute(&buf, &arg); err != nil {
-		return ""
-	}
-	return buf.String()
+	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
 
 // Query is a template with a specific set of if/else
@@ -205,28 +219,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 		OperatorName: obj.Cloudlet.OperatorKey.Name,
 		Last:         obj.Last,
 	}
-
-	// Figure out the start/end time range for the query
-	if !obj.StartTime.IsZero() {
-		buf, err := obj.StartTime.MarshalText()
-		if err == nil {
-			arg.StartTime = string(buf)
-		}
-	}
-	if !obj.EndTime.IsZero() {
-		buf, err := obj.EndTime.MarshalText()
-		if err == nil {
-			arg.EndTime = string(buf)
-		}
-	}
-
-	// now that we know all the details of the query - build it
-	buf := bytes.Buffer{}
-	if err := operatorInfluxDBTemplate.Execute(&buf, &arg); err != nil {
-		return ""
-	}
-	return buf.String()
-
+	return fillTimeAndGetCmd(&arg, operatorInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
 
 // TODO: This function should be a streaming fucntion, but currently client library for influxDB
@@ -283,6 +276,8 @@ func validateSelectorString(selector, metricType string) error {
 		validSelectors = ClusterSelectors
 	case CLOUDLET:
 		validSelectors = CloudletSelectors
+	case CLIENT:
+		validSelectors = ClientSelectors
 	default:
 		return fmt.Errorf("Invalid metric type %s", metricType)
 	}
@@ -307,6 +302,8 @@ func getMeasurementString(selector, measurementType string) string {
 		measurements = ClusterSelectors
 	case "cloudlet":
 		measurements = CloudletSelectors
+	case "client":
+		measurements = ClientSelectors
 	}
 	if selector != "*" {
 		measurements = strings.Split(selector, ",")
@@ -388,6 +385,27 @@ func GetMetricsCommon(c echo.Context) error {
 
 		// Check the operator against who is logged in
 		if !authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView) {
+			return echo.ErrForbidden
+		}
+	} else if strings.HasSuffix(c.Path(), "metrics/client") {
+		in := ormapi.RegionClientMetrics{}
+		if err := c.Bind(&in); err != nil {
+			errStr = checkForTimeError(fmt.Sprintf("Invalid POST data: %s", err.Error()))
+			return c.JSON(http.StatusBadRequest, Msg(errStr))
+		}
+		// Developer name has to be specified
+		if in.AppInst.AppKey.DeveloperKey.Name == "" {
+			return c.JSON(http.StatusBadRequest, Msg("App details must be present"))
+		}
+		rc.region = in.Region
+		org = in.AppInst.AppKey.DeveloperKey.Name
+		if err = validateSelectorString(in.Selector, CLIENT); err != nil {
+			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+		}
+		cmd = ClientMetricsQuery(&in)
+		// Check the developer against who is logged in
+		// Should the operators logged in be allowed to see the API usage of the apps on their cloudlets?
+		if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
 			return echo.ErrForbidden
 		}
 	} else {

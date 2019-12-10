@@ -61,6 +61,23 @@ func testPermShowCloudletMetrics(mcClient *ormclient.Client, uri, token, region,
 	return data, status, err
 }
 
+func testPermShowClientMetrics(mcClient *ormclient.Client, uri, token, region, org, selector string) ([]interface{}, int, error) {
+	var out interface{}
+	var data []interface{}
+
+	in := &edgeproto.AppInstKey{}
+	in.AppKey.DeveloperKey.Name = org
+	in.ClusterInstKey.ClusterKey.Name = "testcluster"
+	dat := &ormapi.RegionAppInstMetrics{}
+	dat.Region = region
+	dat.Selector = selector
+	dat.AppInst = *in
+	status, err := mcClient.PostJsonStreamOut(uri+"/auth/metrics/client", token, dat, &out, func() {
+		data = append(data, out)
+	})
+	return data, status, err
+}
+
 func badPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
 	// AppInst Metrics tests
 	_, status, err := testPermShowAppInstMetrics(mcClient, uri, token, region, org, "cpu")
@@ -72,6 +89,10 @@ func badPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, token, re
 	require.Equal(t, http.StatusForbidden, status)
 	// Cloudlet Metrics tests
 	_, status, err = testPermShowCloudletMetrics(mcClient, uri, token, region, org, "utilization")
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Client Metrics tests
+	_, status, err = testPermShowClientMetrics(mcClient, uri, token, region, org, "api")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
@@ -183,4 +204,16 @@ func goodPermTestMetrics(t *testing.T, mcClient *ormclient.Client, uri, devToken
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Equal(t, 0, len(list))
 
+	// Client Metrics test
+	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "api")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotEqual(t, 0, len(list))
+
+	// bad selector check
+	list, status, err = testPermShowClientMetrics(mcClient, uri, devToken, region, devOrg, "bad selector")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Invalid dme selector: bad selector")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, 0, len(list))
 }
