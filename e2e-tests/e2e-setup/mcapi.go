@@ -20,7 +20,7 @@ import (
 
 var mcClient ormclient.Api
 
-func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string) bool {
+func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
@@ -37,13 +37,13 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	}
 
 	if strings.HasSuffix(api, "users") {
-		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods)
+		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if strings.HasPrefix(api, "audit") {
-		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods)
+		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "runcommand" {
-		return runMcRunCommand(uri, apiFile, curUserFile, outputDir, mods)
+		return runMcRunCommand(uri, apiFile, curUserFile, outputDir, mods, vars)
 	}
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 }
 
 func getMC(name string) *intprocess.MC {
@@ -59,12 +59,12 @@ func getMC(name string) *intprocess.MC {
 	return nil //unreachable
 }
 
-func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	log.Printf("Applying MC users via APIs for %s\n", apiFile)
 
 	rc := true
 	if api == "showusers" {
-		token, rc := loginCurUser(uri, curUserFile)
+		token, rc := loginCurUser(uri, curUserFile, vars)
 		if !rc {
 			return false
 		}
@@ -78,7 +78,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		log.Println("Error: Cannot run MC user APIs without API file")
 		return false
 	}
-	users := readUsersFiles(apiFile)
+	users := readUsersFiles(apiFile, vars)
 
 	switch api {
 	case "createusers":
@@ -87,7 +87,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 			checkMcErr("CreateUser", status, err, &rc)
 		}
 	case "deleteusers":
-		token, ok := loginCurUser(uri, curUserFile)
+		token, ok := loginCurUser(uri, curUserFile, vars)
 		if !ok {
 			return false
 		}
@@ -99,15 +99,15 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
-	log.Printf("Applying MC data via APIs for %s %v\n", apiFile, mods)
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
 	sep := hasMod("sep", mods)
 
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
 	// We need to log in as that user.
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile)
+	token, rc := loginCurUser(uri, curUserFile, vars)
 	if !rc {
 		return false
 	}
@@ -125,7 +125,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 
 	if api == "showmetrics" {
 		var showMetrics *ormapi.AllMetrics
-		targets := readMCMetricTargetsFile(apiFile)
+		targets := readMCMetricTargetsFile(apiFile, vars)
 		var parsedMetrics *[]MetricsCompare
 		// retry a couple times since prometheus takes a while on startup
 		for i := 0; i < 100; i++ {
@@ -150,8 +150,8 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		log.Println("Error: Cannot run MC data APIs without API file")
 		return false
 	}
-	data := readMCDataFile(apiFile)
-	regionDataMap := readMCRegionDataFileMap(apiFile)
+	data := readMCDataFile(apiFile, vars)
+	regionDataMap := readMCRegionDataFileMap(apiFile, vars)
 	switch api {
 	case "create":
 		if sep {
@@ -171,12 +171,12 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	return rc
 }
 
-func readUsersFiles(file string) []ormapi.User {
+func readUsersFiles(file string, vars map[string]string) []ormapi.User {
 	users := []ormapi.User{}
 	files := strings.Split(file, ",")
 	for _, file := range files {
 		fileusers := []ormapi.User{}
-		err := util.ReadYamlFile(file, &fileusers)
+		err := util.ReadYamlFile(file, &fileusers, util.WithVars(vars), util.ValidateReplacedVars())
 		if err != nil {
 			if !util.IsYamlOk(err, "mcusers") {
 				fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
@@ -188,9 +188,9 @@ func readUsersFiles(file string) []ormapi.User {
 	return users
 }
 
-func readMCDataFile(file string) *ormapi.AllData {
+func readMCDataFile(file string, vars map[string]string) *ormapi.AllData {
 	data := ormapi.AllData{}
-	err := util.ReadYamlFile(file, &data)
+	err := util.ReadYamlFile(file, &data, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		if !util.IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
@@ -200,9 +200,9 @@ func readMCDataFile(file string) *ormapi.AllData {
 	return &data
 }
 
-func readMCRegionDataFileMap(file string) *[]interface{} {
+func readMCRegionDataFileMap(file string, vars map[string]string) *[]interface{} {
 	dataMap := make(map[string]interface{})
-	err := util.ReadYamlFile(file, &dataMap)
+	err := util.ReadYamlFile(file, &dataMap, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		if !util.IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
@@ -220,9 +220,9 @@ func readMCRegionDataFileMap(file string) *[]interface{} {
 	return nil
 }
 
-func readMCMetricTargetsFile(file string) *MetricTargets {
+func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets {
 	targets := MetricTargets{}
-	err := util.ReadYamlFile(file, &targets)
+	err := util.ReadYamlFile(file, &targets, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		if !util.IsYamlOk(err, "mcdata") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", file)
@@ -232,12 +232,12 @@ func readMCMetricTargetsFile(file string) *MetricTargets {
 	return &targets
 }
 
-func loginCurUser(uri, curUserFile string) (string, bool) {
+func loginCurUser(uri, curUserFile string, vars map[string]string) (string, bool) {
 	if curUserFile == "" {
 		log.Println("Error: Cannot run MC APIs without current user file")
 		return "", false
 	}
-	users := readUsersFiles(curUserFile)
+	users := readUsersFiles(curUserFile, vars)
 	if len(users) == 0 {
 		log.Printf("no user to run MC api\n")
 		return "", false
@@ -532,7 +532,7 @@ type runCommandData struct {
 	ExpectedOutput string
 }
 
-func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	// test only runnable for mod CLI. Also avoid for mod sep just
 	// because webrtc takes a while to setup and it slows down the tests.
 	if !hasMod("cli", mods) || hasMod("sep", mods) {
@@ -546,12 +546,12 @@ func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string)
 
 	// RunCommand is a special case only supported by mcctl CLI,
 	// because it leverages the webrtc client code in mcctl.
-	token, rc := loginCurUser(uri, curUserFile)
+	token, rc := loginCurUser(uri, curUserFile, vars)
 	if !rc {
 		return false
 	}
 	data := runCommandData{}
-	err := util.ReadYamlFile(apiFile, &data)
+	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
@@ -570,7 +570,7 @@ func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string)
 	return true
 }
 
-func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string) bool {
+func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
 
 	if apiFile == "" {
@@ -585,7 +585,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string)
 		// up affecting the audit logs that we're trying to validate.
 		// Instead, we log in during setup and record the tokens to
 		// be used later.
-		users := readUsersFiles(apiFile)
+		users := readUsersFiles(apiFile, vars)
 		for _, user := range users {
 			token, err := mcClient.DoLogin(uri, user.Name, user.Passhash)
 			checkMcErr("DoLogin", http.StatusOK, err, &rc)
@@ -600,7 +600,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string)
 		}
 		return rc
 	}
-	users := readUsersFiles(curUserFile)
+	users := readUsersFiles(curUserFile, vars)
 	if len(users) == 0 {
 		log.Printf("no user to run MC audit api\n")
 		return false
@@ -614,7 +614,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string)
 	token := string(out)
 
 	query := ormapi.AuditQuery{}
-	err = util.ReadYamlFile(apiFile, &query)
+	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		if !util.IsYamlOk(err, "mcaudit") {
 			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)

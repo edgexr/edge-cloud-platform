@@ -1,0 +1,11 @@
+##
+##
+
+tests:
+
+
+- name: admin delete operator/cloudlets
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_edgebox.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
