@@ -330,7 +330,7 @@ def main():
                 'id': channelid,
                 'name': norg,
                 'is_private': True,
-                'is_archived': Falsem
+                'is_archived': False
             }
             channels['by_id'][channelid] = channels['by_name'][norg]
         else:
