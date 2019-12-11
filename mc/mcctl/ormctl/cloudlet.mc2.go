@@ -146,7 +146,6 @@ var CreateCloudletRequiredArgs = []string{
 	"numdynamicips",
 }
 var CreateCloudletOptionalArgs = []string{
-	"accesscredentials",
 	"location.altitude",
 	"location.timestamp.seconds",
 	"location.timestamp.nanos",
@@ -164,6 +163,7 @@ var CreateCloudletOptionalArgs = []string{
 	"restagmap.key",
 	"restagmap.value.name",
 	"restagmap.value.operatorkey.name",
+	"accessvars",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -387,6 +387,7 @@ var PlatformConfigOptionalArgs = []string{
 	"testmode",
 	"span",
 	"cleanupmode",
+	"region",
 }
 var PlatformConfigAliasArgs = []string{
 	"registrypath=platformconfig.registrypath",
@@ -399,6 +400,7 @@ var PlatformConfigAliasArgs = []string{
 	"testmode=platformconfig.testmode",
 	"span=platformconfig.span",
 	"cleanupmode=platformconfig.cleanupmode",
+	"region=platformconfig.region",
 }
 var PlatformConfigComments = map[string]string{
 	"registrypath":    "Path to Docker registry holding edge-cloud image",
@@ -411,6 +413,7 @@ var PlatformConfigComments = map[string]string{
 	"testmode":        "Internal Test flag",
 	"span":            "Span string",
 	"cleanupmode":     "Internal cleanup flag",
+	"region":          "Region",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"envvar": "StringToString",
@@ -439,7 +442,6 @@ var CloudletRequiredArgs = []string{
 	"name",
 }
 var CloudletOptionalArgs = []string{
-	"accesscredentials",
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
@@ -460,11 +462,11 @@ var CloudletOptionalArgs = []string{
 	"restagmap.key",
 	"restagmap.value.name",
 	"restagmap.value.operatorkey.name",
+	"accessvars",
 }
 var CloudletAliasArgs = []string{
 	"operator=cloudlet.key.operatorkey.name",
 	"name=cloudlet.key.name",
-	"accesscredentials=cloudlet.accesscredentials",
 	"location.latitude=cloudlet.location.latitude",
 	"location.longitude=cloudlet.location.longitude",
 	"location.horizontalaccuracy=cloudlet.location.horizontalaccuracy",
@@ -507,14 +509,15 @@ var CloudletAliasArgs = []string{
 	"config.testmode=cloudlet.config.testmode",
 	"config.span=cloudlet.config.span",
 	"config.cleanupmode=cloudlet.config.cleanupmode",
+	"config.region=cloudlet.config.region",
 	"restagmap.key=cloudlet.restagmap.key",
 	"restagmap.value.name=cloudlet.restagmap.value.name",
 	"restagmap.value.operatorkey.name=cloudlet.restagmap.value.operatorkey.name",
+	"accessvars=cloudlet.accessvars",
 }
 var CloudletComments = map[string]string{
 	"operator":                            "Company or Organization name of the operator",
 	"name":                                "Name of the cloudlet",
-	"accesscredentials":                   "Placeholder for cloudlet access credentials, i.e. openstack keys, passwords, etc",
 	"location.latitude":                   "latitude in WGS 84 coordinates",
 	"location.longitude":                  "longitude in WGS 84 coordinates",
 	"location.horizontalaccuracy":         "horizontal accuracy (radius in meters)",
@@ -551,10 +554,13 @@ var CloudletComments = map[string]string{
 	"config.testmode":                     "Internal Test flag",
 	"config.span":                         "Span string",
 	"config.cleanupmode":                  "Internal cleanup flag",
+	"config.region":                       "Region",
 	"restagmap.value.name":                "Resource Table Name",
 	"restagmap.value.operatorkey.name":    "Company or Organization name of the operator",
+	"accessvars":                          "Variables required to access cloudlet",
 }
 var CloudletSpecialArgs = map[string]string{
+	"accessvars":    "StringToString",
 	"config.envvar": "StringToString",
 	"envvar":        "StringToString",
 	"errors":        "StringArray",

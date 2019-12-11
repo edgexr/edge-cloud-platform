@@ -242,6 +242,10 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--span")
 		args = append(args, p.Span)
 	}
+	if p.Region != "" {
+		args = append(args, "--region")
+		args = append(args, p.Region)
+	}
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {

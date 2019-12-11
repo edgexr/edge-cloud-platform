@@ -108,6 +108,17 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
+		} else if strings.Contains(req.RequestURI, "/auth/ctrl/CreateCloudlet") ||
+			strings.Contains(req.RequestURI, "/auth/ctrl/UpdateCloudlet") {
+			regionCloudlet := ormapi.RegionCloudlet{}
+			err := json.Unmarshal(reqBody, &regionCloudlet)
+			if err == nil {
+				regionCloudlet.Cloudlet.AccessVars = nil
+				reqBody, err = json.Marshal(regionCloudlet)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
 		}
 		span.SetTag("request", string(reqBody))
 		if nexterr != nil {

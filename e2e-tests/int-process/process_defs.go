@@ -35,6 +35,7 @@ type Shepherd struct {
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 	Span           string
+	Region         string
 }
 type AutoProv struct {
 	process.Common `yaml:",inline"`

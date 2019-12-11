@@ -40,3 +40,13 @@ func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Clou
 	err := s.generic.CleanupCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	return err
 }
+
+func (s *Platform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "Saving cloudlet access vars", "cloudletName", cloudlet.Key.Name)
+	return nil
+}
+
+func (s *Platform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "Deleting cloudlet access vars", "cloudletName", cloudlet.Key.Name)
+	return nil
+}

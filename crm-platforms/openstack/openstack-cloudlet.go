@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -260,10 +261,20 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		return err
 	}
 	// Source OpenRC file to access openstack API endpoint
-	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Sourcing platform variables for %s cloudlet", cloudlet.PhysicalName))
-	err = mexos.InitOpenstackProps(ctx, cloudlet.Key.OperatorKey.Name, cloudlet.PhysicalName, vaultConfig)
+	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
+	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
 	if err != nil {
 		return err
+	}
+	// Get Flavor Info
+	finfo, _, _, err := mexos.GetFlavorInfo(ctx)
+	if err != nil {
+		return err
+	}
+	// Get Closest Platform Flavor
+	vmspec, err := vmspec.GetVMSpec(finfo, *pfFlavor)
+	if err != nil {
+		return fmt.Errorf("unable to find matching vm spec for platform: %v", err)
 	}
 
 	// For real setups, ansible will always specify the correct
@@ -277,15 +288,6 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		pfConfig.ImagePath = mexos.DefaultCloudletVMImagePath
 	}
 
-	// Get Closest Platform Flavor
-	finfo, _, _, err := mexos.GetFlavorInfo(ctx)
-	if err != nil {
-		return err
-	}
-	vmspec, err := vmspec.GetVMSpec(finfo, *pfFlavor)
-	if err != nil {
-		return fmt.Errorf("unable to find matching vm spec for platform: %v", err)
-	}
 	// Fetch platform base image name and md5sum
 	pfImageName, err := cloudcommon.GetFileName(pfConfig.ImagePath)
 	if err != nil {
@@ -358,6 +360,92 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, client, updateCallback)
 }
 
+func (s *Platform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
+	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr, vault.WithEnvMap(pfConfig.EnvVar))
+	if err != nil {
+		return err
+	}
+	openrcData, ok := accessVarsIn["OPENRC_DATA"]
+	if !ok {
+		return fmt.Errorf("Invalid accessvars, missing OPENRC_DATA")
+	}
+	out := strings.Split(openrcData, "\n")
+	if len(out) <= 1 {
+		return fmt.Errorf("Invalid accessvars, as OPENRC_DATA is invalid: %v", out)
+	}
+	accessVars := make(map[string]string)
+	for _, v := range out {
+		out1 := strings.Split(v, "=")
+		if len(out1) != 2 {
+			return fmt.Errorf("Invalid separator for key-value pair: %v", out1)
+		}
+		key := strings.TrimSpace(out1[0])
+		value := strings.TrimSpace(out1[1])
+		if !strings.HasPrefix(key, "OS_") {
+			return fmt.Errorf("Invalid accessvars: %s, must start with 'OS_' prefix", key)
+		}
+		accessVars[key] = value
+	}
+	authURL, ok := accessVars["OS_AUTH_URL"]
+	if !ok {
+		return fmt.Errorf("Invalid accessvars, missing OS_AUTH_URL")
+	}
+	if strings.HasPrefix(authURL, "https") {
+		certData, ok := accessVarsIn["CACERT_DATA"]
+		if !ok {
+			return fmt.Errorf("Invalid accessvars, missing CACERT_DATA")
+		}
+		certFile := mexos.GetCertFilePath(&cloudlet.Key)
+		err := ioutil.WriteFile(certFile, []byte(certData), 0644)
+		if err != nil {
+			return err
+		}
+		accessVars["OS_CACERT"] = certFile
+		accessVars["OS_CACERT_DATA"] = certData
+	}
+	updateCallback(edgeproto.UpdateTask, "Saving access vars to secure secrets storage (Vault)")
+	var varList mexos.VaultEnvData
+	for key, value := range accessVars {
+		if key == "OS_CACERT" {
+			continue
+		}
+		varList.Env = append(varList.Env, mexos.EnvData{
+			Name:  key,
+			Value: value,
+		})
+	}
+	data := map[string]interface{}{
+		"data": varList,
+	}
+
+	path := mexos.GetVaultCloudletPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, mexos.OSAccessVars)
+	err = mexos.PutDataToVault(vaultConfig, path, data)
+	if err != nil {
+		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
+		log.SpanLog(ctx, log.DebugLevelMexos, err.Error(), "cloudletName", cloudlet.Key.Name)
+		return fmt.Errorf("Failed to save access vars to vault: %v", err)
+	}
+	return nil
+}
+
+func (s *Platform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "Deleting access vars from vault", "cloudletName", cloudlet.Key.Name)
+
+	updateCallback(edgeproto.UpdateTask, "Deleting access vars from secure secrets storage")
+
+	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr, vault.WithEnvMap(pfConfig.EnvVar))
+	if err != nil {
+		return err
+	}
+	path := mexos.GetVaultCloudletPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, mexos.OSAccessVars)
+	err = mexos.DeleteDataFromVault(vaultConfig, path)
+	if err != nil {
+		return fmt.Errorf("Failed to delete access vars from vault: %v", err)
+	}
+	return nil
+}
+
 func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
 
@@ -368,7 +456,7 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		return err
 	}
 	// Source OpenRC file to access openstack API endpoint
-	err = mexos.InitOpenstackProps(ctx, cloudlet.Key.OperatorKey.Name, cloudlet.PhysicalName, vaultConfig)
+	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelMexos, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
@@ -420,7 +508,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	}
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Sourcing platform variables for %s cloudlet", cloudlet.PhysicalName))
-	err = mexos.InitOpenstackProps(ctx, cloudlet.Key.OperatorKey.Name, cloudlet.PhysicalName, vaultConfig)
+	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
 	if err != nil {
 		return err
 	}

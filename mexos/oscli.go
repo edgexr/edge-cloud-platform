@@ -36,7 +36,7 @@ func ListServers(ctx context.Context) ([]OSServer, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "server", "list", "-f", "json")
 
 	if err != nil {
-		err = fmt.Errorf("cannot get server list, %v", err)
+		err = fmt.Errorf("cannot get server list, %s, %v", out, err)
 		return nil, err
 	}
 	var servers []OSServer
@@ -53,7 +53,7 @@ func ListPorts(ctx context.Context) ([]OSPort, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "list", "-f", "json")
 
 	if err != nil {
-		err = fmt.Errorf("cannot get port list, %v", err)
+		err = fmt.Errorf("cannot get port list, %s, %v", out, err)
 		return nil, err
 	}
 	var ports []OSPort
@@ -69,7 +69,7 @@ func ListPorts(ctx context.Context) ([]OSPort, error) {
 func ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPort, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "--network", network, "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get port list, %v", err)
+		err = fmt.Errorf("cannot get port list, %s, %v", out, err)
 		return nil, err
 	}
 	var ports []OSPort
@@ -86,7 +86,7 @@ func ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPo
 func ListImages(ctx context.Context) ([]OSImage, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "image", "list", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get image list, %v", err)
+		err = fmt.Errorf("cannot get image list, %s, %v", out, err)
 		return nil, err
 	}
 	var images []OSImage
@@ -145,7 +145,7 @@ func ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "network", "list", "-f", "json")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "network list failed", "out", out)
-		err = fmt.Errorf("cannot get network list, %v", err)
+		err = fmt.Errorf("cannot get network list, %s, %v", out, err)
 		return nil, err
 	}
 	var networks []OSNetwork
@@ -184,7 +184,7 @@ func ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 	}
 	out, err := TimedOpenStackCommand(ctx, "openstack", "flavor", "list", "--long", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get flavor list, %v", err)
+		err = fmt.Errorf("cannot get flavor list, %s, %v", out, err)
 		return nil, err
 	}
 	var flavors []OSFlavorDetail
@@ -206,7 +206,7 @@ func ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 func ListAZones(ctx context.Context) ([]OSAZone, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "availability", "zone", "list", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get availability zone list, %v", err)
+		err = fmt.Errorf("cannot get availability zone list, %s, %v", out, err)
 		return nil, err
 	}
 	var zones []OSAZone
@@ -221,7 +221,7 @@ func ListAZones(ctx context.Context) ([]OSAZone, error) {
 func ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) {
 	out, err := TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get floating ip list, %v", err)
+		err = fmt.Errorf("cannot get floating ip list, %s, %v", out, err)
 		return nil, err
 	}
 	var fips []OSFloatingIP
@@ -349,6 +349,7 @@ func DetachPortFromServer(ctx context.Context, serverName, portName string) erro
 		} else {
 			log.SpanLog(ctx, log.DebugLevelMexos, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
 		}
+		err = fmt.Errorf("can't detach port %s from server %s: %s, %v", portName, serverName, out, err)
 		return err
 	}
 	return nil
@@ -514,7 +515,7 @@ func ListSubnets(ctx context.Context, netName string) ([]OSSubnet, error) {
 		out, err = TimedOpenStackCommand(ctx, "openstack", "subnet", "list", "-f", "json")
 	}
 	if err != nil {
-		err = fmt.Errorf("can't get a list of subnets, %v", err)
+		err = fmt.Errorf("can't get a list of subnets, %s, %v", out, err)
 		return nil, err
 	}
 	subnets := []OSSubnet{}
@@ -778,9 +779,9 @@ func createHeatStack(ctx context.Context, templateFile string, stackName string)
 
 func updateHeatStack(ctx context.Context, templateFile string, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "update heat stack", "template", templateFile, "stackName", stackName)
-	_, err := TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--template", templateFile, stackName)
+	out, err := TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--template", templateFile, stackName)
 	if err != nil {
-		return fmt.Errorf("error udpating heat stack: %s -- %v", templateFile, err)
+		return fmt.Errorf("error udpating heat stack: %s -- %s, %v", templateFile, out, err)
 	}
 	return nil
 }
@@ -825,7 +826,7 @@ func OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	var limits []OSLimit
 	out, err := TimedOpenStackCommand(ctx, "openstack", "limits", "show", "--absolute", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get limits from openstack, %v", err)
+		err = fmt.Errorf("cannot get limits from openstack, %s, %v", out, err)
 		return err
 	}
 	err = json.Unmarshal(out, &limits)
@@ -856,7 +857,7 @@ func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	var limits []OSLimit
 	out, err := TimedOpenStackCommand(ctx, "openstack", "limits", "show", "--absolute", "-f", "json")
 	if err != nil {
-		err = fmt.Errorf("cannot get limits from openstack, %v", err)
+		err = fmt.Errorf("cannot get limits from openstack, %s, %v", out, err)
 		return nil, err
 	}
 	err = json.Unmarshal(out, &limits)

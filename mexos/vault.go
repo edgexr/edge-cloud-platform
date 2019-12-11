@@ -2,6 +2,8 @@ package mexos
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -73,4 +75,32 @@ func GetVaultDataToFile(config *vault.Config, path, fileName string) error {
 
 	log.DebugLog(log.DebugLevelMexos, "vault data imported to file successfully")
 	return nil
+}
+
+func PutDataToVault(config *vault.Config, path string, data map[string]interface{}) error {
+	client, err := config.Login()
+	if err != nil {
+		return err
+	}
+	out, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal data to json: %v", err)
+	}
+
+	var vaultData map[string]interface{}
+	err = json.Unmarshal(out, &vaultData)
+	if err != nil {
+		return fmt.Errorf("Failed to unmarshal json to vault data: %v", err)
+	}
+	return vault.PutKV(client, path, vaultData)
+}
+
+func DeleteDataFromVault(config *vault.Config, path string) error {
+	client, err := config.Login()
+	if err != nil {
+		return err
+	}
+	// Deleting metadata will delete all version of data
+	metadataPath := strings.Replace(path, "secret/data", "secret/metadata", -1)
+	return vault.DeleteKV(client, metadataPath)
 }
