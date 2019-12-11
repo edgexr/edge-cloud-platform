@@ -54,7 +54,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
 		return err
 	}
-	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey.OperatorKey.Name, platformConfig.PhysicalName, vaultConfig); err != nil {
+	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig); err != nil {
 		return err
 	}
 	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")

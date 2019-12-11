@@ -31,6 +31,7 @@ var physicalName = flag.String("physicalName", "", "Physical infrastructure clou
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
+var region = flag.String("region", "local", "Region name")
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
@@ -186,7 +187,7 @@ func main() {
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	err = myPlatform.Init(ctx, &cloudletKey, *physicalName, *vaultAddr)
+	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, *vaultAddr)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}

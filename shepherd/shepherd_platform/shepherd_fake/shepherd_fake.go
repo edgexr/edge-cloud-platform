@@ -17,7 +17,7 @@ func (s *Platform) GetType() string {
 	return "fake"
 }
 
-func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, physicalName, vaultAddr string) error {
+func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string) error {
 	return nil
 }
 
