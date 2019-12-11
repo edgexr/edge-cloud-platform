@@ -304,9 +304,10 @@ def main():
             continue
 
         for userorg in userorgs[username]:
-            if userorg not in nusers:
-                nusers[userorg] = set()
-            nusers[userorg].add(useremail)
+            orgchan = userorg.lower()
+            if orgchan not in nusers:
+                nusers[orgchan] = set()
+            nusers[orgchan].add(useremail)
 
     channels = slack_channels(slack_token)
     logging.info(json.dumps(channels, indent=4))
@@ -317,7 +318,7 @@ def main():
     users = slack_users(slack_token)
     logging.info(json.dumps(users, indent=4))
     def user_lookup(ulist):
-        return ','.join([ users['by_id'][x]['name'] for x in clist.split(',') ])
+        return ','.join([ users['by_id'][x]['name'] for x in ulist.split(',') ])
     LOOKUPS['user'] = user_lookup
 
     need_invite = {}
