@@ -381,6 +381,17 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
 	}
+
+	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key)
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
+	err = mexos.HeatDeleteStack(ctx, rootLBName)
+	if err != nil {
+		return fmt.Errorf("DeleteCloudlet error: %v", err)
+	}
+
+	// Not sure if it's safe to remove vars from Vault due to testing/virtual cloudlets,
+	// so leaving them in Vault for the time being. We can always delete them manually
+
 	return nil
 }
 
