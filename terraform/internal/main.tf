@@ -107,3 +107,19 @@ module "infra_dns" {
   hostname                      = "${var.infra_domain_name}"
   ip                            = "${module.infra.external_ip}"
 }
+
+module "apt" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                 = "${var.apt_instance_name}"
+  zone                          = "${var.gcp_zone}"
+  boot_disk_size                = 1024
+  tags                          = [ "mexplat-${var.environ_tag}", "infra", "http-server", "https-server" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "apt_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.apt_domain_name}"
+  ip                            = "${module.apt.external_ip}"
+}

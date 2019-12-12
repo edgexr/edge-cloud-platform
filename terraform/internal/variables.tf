@@ -94,6 +94,14 @@ variable "infra_instance_name" {
   default     = "infra-internal"
 }
 
+variable "apt_domain_name" {
+  default     = "apt.mobiledgex.net"
+}
+
+variable "apt_instance_name" {
+  default     = "apt"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
