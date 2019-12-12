@@ -25,6 +25,7 @@ type VMParams struct {
 	VMName                   string
 	FlavorName               string
 	ExternalVolumeSize       uint64
+	SharedVolumeSize         uint64
 	ImageName                string
 	ApplicationSecurityGroup string // access to application ports for VM or RootLB
 	CloudletSecurityGroup    string // SSH access to RootLB for OAM/CRM
@@ -64,7 +65,6 @@ bootcmd:
  - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
  - echo "Removed APT and Ubuntu extra packages" | systemd-cat
 ssh_authorized_keys:
- - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDZiZ16uwmHOuafD6a9AmZ5kYF9LqtfyrUOIVMF1eoRJCMALQrWbzNz/NOnqi5h5dwhPn+49oWMU16BKDkEgDik2jgNUOSZ69oZM4/ovPsB8yL55qdNBTx32kov5O8NkSwMEDter2mAPi9czCEv18MRC1qkiZCUxmfFs0BBgXtNfE42Utr97YcKFtvutLDGA1hoFVjon0Yk7wSMNZfwkBznVoShRISCzMvG5uVtf6miJwIIA9+SiwA/aa2OjCRQaiPCKJrPzHMcuLg4oZcs0ltd1CaIVLtMGaqpEoIvDumXEpuk0TSBJwxWUDAEgO5ILmVxi2fSLKa0yuLala6bcfwJ stack@sv1.mobiledgex.com
  - ssh-rsa dummmy-ssh-rsa-data+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd ubuntu@registry
 chpasswd: { expire: False }
 ssh_pwauth: False
@@ -72,6 +72,26 @@ timezone: UTC
 runcmd:
  - [ echo, MOBILEDGEX, doing, ifconfig ]
  - [ ifconfig, -a ]`
+
+// vmCloudConfigShareMount is appended optionally to vmCloudConfig.   It assumes
+// the end of vmCloudConfig is runcmd
+var vmCloudConfigShareMount = `
+ - chown nobody:nogroup /share
+ - chmod 777 /share 
+ - echo "/share *(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+disk_setup:
+   /dev/vdb:
+     table_type: 'gpt'
+     overwrite: true
+     layout: true
+fs_setup:
+- label: share_fs
+  filesystem: 'ext4'
+  device: /dev/vdb
+  partition: auto
+  overwrite: true
+mounts:
+- [ "/dev/vdb1", "/share" ]`
 
 // This is the resources part of a template for a VM. It is for use within another template
 // the parameters under VMP can come from either a standalone struture (VM Create) or a cluster (for rootLB)
@@ -197,7 +217,6 @@ type ClusterNode struct {
 // ClusterParams has the info needed to populate the heat template
 type ClusterParams struct {
 	NodeFlavor            string
-	ExternalVolumeSize    uint64
 	ImageName             string
 	MEXRouterName         string
 	MEXNetworkName        string
@@ -282,28 +301,49 @@ resources:
         {{- end}}
 
   {{if .ExternalVolumeSize}}
-   k8s_master_vol:
+   k8s-master-vol:
       type: OS::Cinder::Volume
       properties:
          name: k8s-master-{{.ClusterName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
   {{- end}}
-   k8s_master:
+  {{if .SharedVolumeSize}}
+   k8s-shared-vol:
+      type: OS::Cinder::Volume
+      properties:
+         name: k8s-shared-{{.ClusterName}}-vol
+         size: {{.SharedVolumeSize}}
+  {{- end}}
+   k8s-master:
       type: OS::Nova::Server
       properties:
          name: 
             mex-k8s-master-{{.ClusterName}}
+      {{if or (.ExternalVolumeSize) (.SharedVolumeSize)}}
+         block_device_mapping:
         {{if .ExternalVolumeSize}}
-         block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: k8s_master_vol }, delete_on_termination: "false" }]
-        {{else}}
-         image: {{.ImageName}}
+         - device_name: "vda" 
+           volume_id: { get_resource: k8s-master-vol }
+           delete_on_termination: "false" 
         {{- end}}
+        {{if .SharedVolumeSize}}
+         - device_name: "vdb" 
+           volume_id: { get_resource: k8s-shared-vol }
+           delete_on_termination: "false"
+        {{- end}}
+      {{- end}}
+      {{- if not .ExternalVolumeSize}}
+         image: {{.ImageName}}
+      {{- end}}
          flavor: {{.NodeFlavor}}
          config_drive: true
          user_data_format: RAW
          user_data: |
 ` + reindent(vmCloudConfig, 12) + `
+        {{if .SharedVolumeSize}}
+` + reindent(vmCloudConfigShareMount, 12) + `
+        {{- end}}
          networks:
           - port: { get_resource: k8s-master-port }
          metadata:
@@ -343,7 +383,7 @@ resources:
 
    {{.NodeName}}:
       type: OS::Nova::Server
-      depends_on: k8s_master
+      depends_on: k8s-master
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
         {{if  $.ExternalVolumeSize}}
@@ -557,16 +597,16 @@ func createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData inter
 
 	tmpl, err := template.New(stackName).Funcs(funcMap).Parse(templateString)
 	if err != nil {
-		return err
+		return fmt.Errorf("template new failed: %s", err)
 	}
 	err = tmpl.Execute(&buf, templateData)
 	if err != nil {
-		return err
+		return fmt.Errorf("Template Execute Failed: %s", err)
 	}
 	filename := stackName + "-heat.yaml"
 	err = WriteTemplateFile(filename, &buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("WriteTemplateFile failed: %s", err)
 	}
 	if action == heatCreate {
 		err = createHeatStack(ctx, filename, stackName)
@@ -712,6 +752,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 	}
 	cp.NodeFlavor = clusterInst.NodeFlavor
 	cp.ExternalVolumeSize = clusterInst.ExternalVolumeSize
+	cp.SharedVolumeSize = clusterInst.SharedVolumeSize
 	for i := uint32(1); i <= clusterInst.NumNodes; i++ {
 		nn := HeatNodePrefix(i)
 		nip := fmt.Sprintf("%s.%d", nodeIPPrefix, i+100)
