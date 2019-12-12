@@ -132,6 +132,7 @@ var CreateAppInstOptionalArgs = []string{
 	"forceupdate",
 	"configs.kind",
 	"configs.config",
+	"sharedvolumesize",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"developer",
@@ -146,6 +147,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
+	"sharedvolumesize",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"developer",
@@ -161,6 +163,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"forceupdate",
 	"configs.kind",
 	"configs.config",
+	"sharedvolumesize",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -209,6 +212,7 @@ var AppInstOptionalArgs = []string{
 	"updatemultiple",
 	"configs.kind",
 	"configs.config",
+	"sharedvolumesize",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -252,6 +256,7 @@ var AppInstAliasArgs = []string{
 	"updatemultiple=appinst.updatemultiple",
 	"configs.kind=appinst.configs.kind",
 	"configs.config=appinst.configs.config",
+	"sharedvolumesize=appinst.sharedvolumesize",
 }
 var AppInstComments = map[string]string{
 	"developer":                      "Organization or Company Name that a Developer is part of",
@@ -287,6 +292,7 @@ var AppInstComments = map[string]string{
 	"updatemultiple":                 "Allow multiple instances to be updated at once",
 	"configs.kind":                   "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
 	"configs.config":                 "config file contents or URI reference",
+	"sharedvolumesize":               "shared volume size when creating auto cluster",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
