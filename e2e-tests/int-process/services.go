@@ -25,6 +25,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	tlsCertFile := ""
 	vaultAddr := ""
 	span := ""
+	region := ""
 	if pfConfig != nil {
 		// Same vault role-id/secret-id as CRM
 		for k, v := range pfConfig.EnvVar {
@@ -34,6 +35,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		tlsCertFile = pfConfig.TlsCertFile
 		vaultAddr = pfConfig.VaultAddr
 		span = pfConfig.Span
+		region = pfConfig.Region
 	}
 
 	opts = append(opts, process.WithDebug("api,mexos,notify,metrics"))
@@ -52,6 +54,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		VaultAddr:    vaultAddr,
 		PhysicalName: cloudlet.PhysicalName,
 		Span:         span,
+		Region:       region,
 	}, opts, nil
 }
 
