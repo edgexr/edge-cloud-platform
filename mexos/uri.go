@@ -120,7 +120,7 @@ func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, err
 	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
 	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig)
 	if err != nil {
-		return time.Time{}, "", fmt.Errorf("Error fetching last modified time of URL %s, %v", fileUrlPath, err)
+		return time.Time{}, "", err
 	}
 	defer resp.Body.Close()
 	tStr := resp.Header.Get("Last-modified")
