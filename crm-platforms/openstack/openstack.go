@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -102,8 +102,8 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if err != nil {
 		return err
 	}
-	updateCallback(edgeproto.UpdateTask, "Setting up Nginx Proxy")
-	err = nginx.InitL7Proxy(client, nginx.WithDockerNetwork("host"))
+	updateCallback(edgeproto.UpdateTask, "Setting up Proxy")
+	err = proxy.InitL7Proxy(ctx, client, proxy.WithDockerNetwork("host"))
 	if err != nil {
 		return err
 	}

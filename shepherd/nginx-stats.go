@@ -12,33 +12,38 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var nginxMap map[string]NginxScrapePoint
-var nginxMutex *sync.Mutex
+var ProxyMap map[string]ProxyScrapePoint
+var ProxyMutex *sync.Mutex
 
-// variables for unit testing only
-var nginxUnitTest = false
-var nginxUnitTestPort = int64(0)
+// stat names in envoy
+var envoyClusterName = "cluster.backend"
+var envoyActive = "upstream_cx_active"
+var envoyTotal = "upstream_cx_total"
+var envoyDropped = "upstream_cx_connect_fail" // this one might not be right/enough
 
-type NginxScrapePoint struct {
+type ProxyScrapePoint struct {
 	App     string
 	Cluster string
 	Dev     string
+	Ports   []int32
 	Client  pc.PlatformClient
 }
 
-func InitNginxScraper() {
-	nginxMap = make(map[string]NginxScrapePoint)
-	nginxMutex = &sync.Mutex{}
-	go NginxScraper()
+func InitProxyScraper() {
+	ProxyMap = make(map[string]ProxyScrapePoint)
+	ProxyMutex = &sync.Mutex{}
+	go ProxyScraper()
 }
 
-func CollectNginxStats(ctx context.Context, appInst *edgeproto.AppInst) {
-	// ignore apps not exposed to the outside world as they dont have an nginx lb
+func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
+	// ignore apps not exposed to the outside world as they dont have an nginx proxy
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
 	if !found {
@@ -47,13 +52,20 @@ func CollectNginxStats(ctx context.Context, appInst *edgeproto.AppInst) {
 	} else if app.InternalPorts {
 		return
 	}
-	nginxMapKey := appInst.Key.AppKey.Name + "-" + appInst.Key.ClusterInstKey.ClusterKey.Name + "-" + appInst.Key.AppKey.DeveloperKey.Name
-	// add/remove from the list of nginx endpoints to hit
+	ProxyMapKey := appInst.Key.AppKey.Name + "-" + appInst.Key.ClusterInstKey.ClusterKey.Name + "-" + appInst.Key.AppKey.DeveloperKey.Name
+	// add/remove from the list of proxy endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
-		scrapePoint := NginxScrapePoint{
+		scrapePoint := ProxyScrapePoint{
 			App:     k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
 			Cluster: appInst.Key.ClusterInstKey.ClusterKey.Name,
 			Dev:     appInst.Key.AppKey.DeveloperKey.Name,
+			Ports:   make([]int32, 0),
+		}
+		// TODO: track udp ports as well (when we add udp to envoy)
+		for _, p := range appInst.MappedPorts {
+			if p.Proto == dme.LProto_L_PROTO_TCP {
+				scrapePoint.Ports = append(scrapePoint.Ports, p.PublicPort)
+			}
 		}
 
 		clusterInst := edgeproto.ClusterInst{}
@@ -69,28 +81,28 @@ func CollectNginxStats(ctx context.Context, appInst *edgeproto.AppInst) {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
 			return
 		}
-		nginxMutex.Lock()
-		nginxMap[nginxMapKey] = scrapePoint
-		nginxMutex.Unlock()
+		ProxyMutex.Lock()
+		ProxyMap[ProxyMapKey] = scrapePoint
+		ProxyMutex.Unlock()
 	} else {
 		// if the app is anything other than ready, stop tracking it
-		nginxMutex.Lock()
-		delete(nginxMap, nginxMapKey)
-		nginxMutex.Unlock()
+		ProxyMutex.Lock()
+		delete(ProxyMap, ProxyMapKey)
+		ProxyMutex.Unlock()
 	}
 }
 
-func copyMapValues() []NginxScrapePoint {
-	nginxMutex.Lock()
-	scrapePoints := make([]NginxScrapePoint, 0, len(nginxMap))
-	for _, value := range nginxMap {
+func copyMapValues() []ProxyScrapePoint {
+	ProxyMutex.Lock()
+	scrapePoints := make([]ProxyScrapePoint, 0, len(ProxyMap))
+	for _, value := range ProxyMap {
 		scrapePoints = append(scrapePoints, value)
 	}
-	nginxMutex.Unlock()
+	ProxyMutex.Unlock()
 	return scrapePoints
 }
 
-func NginxScraper() {
+func ProxyScraper() {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
@@ -103,27 +115,102 @@ func NginxScraper() {
 				span.SetTag("cluster", v.Cluster)
 				ctx := log.ContextWithSpan(context.Background(), span)
 
-				metrics, err := QueryNginx(ctx, v)
+				metrics, err := QueryProxy(ctx, v)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving nginx metrics", "appinst", v.App, "error", err.Error())
+					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
 				} else {
 					// send to crm->controller->influx
-					influxData := MarshallNginxMetric(v, metrics)
-					MetricSender.Update(ctx, influxData)
+					influxData := MarshallProxyMetric(v, metrics)
+					for _, datapoint := range influxData {
+						MetricSender.Update(ctx, datapoint)
+					}
 				}
 				span.Finish()
 			}
 		}
 	}
-
 }
 
-func QueryNginx(ctx context.Context, scrapePoint NginxScrapePoint) (*shepherd_common.NginxMetrics, error) {
-	// build the query
-	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.NginxMetricsPort)
-	if nginxUnitTest {
-		request = fmt.Sprintf("curl http://127.0.0.1:%d/nginx_metrics", nginxUnitTestPort)
+func QueryProxy(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+	//query envoy
+	container := proxy.GetEnvoyContainerName(scrapePoint.App)
+	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", container, cloudcommon.ProxyMetricsPort)
+	resp, err := scrapePoint.Client.Output(request)
+	if err != nil {
+		if strings.Contains(resp, "No such container") {
+			return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
+		}
 	}
+	metrics := &shepherd_common.ProxyMetrics{Nginx: false}
+	respMap := parseEnvoyResp(ctx, resp)
+	err = envoyConnections(ctx, respMap, scrapePoint.Ports, metrics)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing response: %v", err)
+	}
+	return metrics, nil
+}
+
+func envoyConnections(ctx context.Context, respMap map[string]string, ports []int32, metrics *shepherd_common.ProxyMetrics) error {
+	var err error
+	metrics.EnvoyStats = make(map[int32]shepherd_common.ConnectionsMetric)
+	for _, port := range ports {
+		new := shepherd_common.ConnectionsMetric{}
+		//active, accepts, handled conn
+		activeSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyActive
+		droppedSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyDropped
+		totalSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyTotal
+
+		new.ActiveConn, err = getUIntStat(respMap, activeSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy active connections stats: %v", err)
+		}
+		new.Accepts, err = getUIntStat(respMap, totalSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy accepts connections stats: %v", err)
+		}
+		var droppedVal uint64
+		droppedVal, err = getUIntStat(respMap, droppedSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy handled connections stats: %v", err)
+		}
+		new.HandledConn = new.Accepts - droppedVal
+		metrics.Ts, _ = types.TimestampProto(time.Now())
+		metrics.EnvoyStats[port] = new
+	}
+	return nil
+}
+
+// converts the envoy stats page into a map for easy reading
+func parseEnvoyResp(ctx context.Context, resp string) map[string]string {
+	lines := strings.Split(outputTrim(resp), "\n")
+	newMap := make(map[string]string)
+	for _, line := range lines {
+		keyValPair := strings.Split(line, ": ")
+		if len(keyValPair) == 2 {
+			newMap[keyValPair[0]] = keyValPair[1]
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not parse line", "line", line)
+		}
+	}
+	return newMap
+}
+
+// this function only retrieves stats from envoy that are expected to be int values
+func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
+	stat, exists := respMap[statName]
+	if !exists {
+		return 0, fmt.Errorf("stat not found: %s", statName)
+	}
+	val, err := strconv.ParseUint(stat, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("Error retrieving stats: %v", err)
+	}
+	return val, nil
+}
+
+func QueryNginx(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+	// build the query
+	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.Output(request)
 	// if this is the first time, or the container got restarted, install curl (for old deployments)
 	if strings.Contains(resp, "executable file not found") {
@@ -140,7 +227,7 @@ func QueryNginx(ctx context.Context, scrapePoint NginxScrapePoint) (*shepherd_co
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		return nil, err
 	}
-	metrics := &shepherd_common.NginxMetrics{}
+	metrics := &shepherd_common.ProxyMetrics{Nginx: true}
 	err = parseNginxResp(resp, metrics)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing response: %v", err)
@@ -149,7 +236,7 @@ func QueryNginx(ctx context.Context, scrapePoint NginxScrapePoint) (*shepherd_co
 }
 
 // view here: https://github.com/nginxinc/nginx-prometheus-exporter/blob/29ec94bdee98668e358efac7316bd8d12b05a130/client/nginx.go#L70
-func parseNginxResp(resp string, metrics *shepherd_common.NginxMetrics) error {
+func parseNginxResp(resp string, metrics *shepherd_common.ProxyMetrics) error {
 	// sometimes the response lines get cycled around, so break it up based on the start of the actual content
 	trimmedResp := strings.Split(resp, "Active connections:")
 	if len(trimmedResp) < 2 {
@@ -194,7 +281,31 @@ func parseNginxResp(resp string, metrics *shepherd_common.NginxMetrics) error {
 	return nil
 }
 
-func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *shepherd_common.NginxMetrics) *edgeproto.Metric {
+func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
+	if data.Nginx {
+		return []*edgeproto.Metric{MarshallNginxMetric(scrapePoint, data)}
+	}
+	metricList := make([]*edgeproto.Metric, 0)
+	for _, port := range scrapePoint.Ports {
+		metric := edgeproto.Metric{}
+		metric.Name = "appinst-connections"
+		metric.Timestamp = *data.Ts
+		metric.AddTag("operator", cloudletKey.OperatorKey.Name)
+		metric.AddTag("cloudlet", cloudletKey.Name)
+		metric.AddTag("cluster", scrapePoint.Cluster)
+		metric.AddTag("dev", scrapePoint.Dev)
+		metric.AddTag("app", scrapePoint.App)
+		metric.AddTag("port", strconv.Itoa(int(port)))
+
+		metric.AddIntVal("active", data.EnvoyStats[port].ActiveConn)
+		metric.AddIntVal("accepts", data.EnvoyStats[port].Accepts)
+		metric.AddIntVal("handled", data.EnvoyStats[port].HandledConn)
+		metricList = append(metricList, &metric)
+	}
+	return metricList
+}
+
+func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) *edgeproto.Metric {
 	RemoveShepherdMetrics(data)
 	metric := edgeproto.Metric{}
 	metric.Name = "appinst-connections"
@@ -204,6 +315,7 @@ func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *shepherd_common.Ngi
 	metric.AddTag("cluster", scrapePoint.Cluster)
 	metric.AddTag("dev", scrapePoint.Dev)
 	metric.AddTag("app", scrapePoint.App)
+	metric.AddTag("port", "") //nginx doesnt support stats per port
 
 	metric.AddIntVal("active", data.ActiveConn)
 	metric.AddIntVal("accepts", data.Accepts)
@@ -211,7 +323,7 @@ func MarshallNginxMetric(scrapePoint NginxScrapePoint, data *shepherd_common.Ngi
 	return &metric
 }
 
-func RemoveShepherdMetrics(data *shepherd_common.NginxMetrics) {
+func RemoveShepherdMetrics(data *shepherd_common.ProxyMetrics) {
 	data.ActiveConn = data.ActiveConn - 1
 	data.Accepts = data.Accepts - data.Requests
 	data.HandledConn = data.HandledConn - data.Requests
