@@ -75,7 +75,7 @@ type UTClient struct {
 func (s *UTClient) Output(command string) (string, error) {
 	out, err := s.getUTData(command)
 	if err != nil {
-		return s.Output(command)
+		return s.LocalClient.Output(command)
 	}
 	return out, nil
 }
@@ -87,6 +87,15 @@ func (s *UTClient) getUTData(command string) (string, error) {
 		return s.pf.DockerAppMetrics, nil
 	} else if strings.Contains(command, shepherd_common.ResTrackerCmd) {
 		return s.pf.DockerClusterMetrics, nil
+	}
+	// nginx-stats and envoy-stats unit test
+	// "docker exec containername curl http://url"
+	if strings.Contains(command, "docker exec") && strings.Contains(command, "curl") {
+		split := strings.SplitN(command, " ", 4)
+		if len(split) == 4 {
+			fmt.Printf("curl command: %s\n", split[3])
+			return s.LocalClient.Output(split[3])
+		}
 	}
 	return "", fmt.Errorf("No UT Data found")
 }

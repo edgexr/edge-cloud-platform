@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -155,9 +155,9 @@ func AddSecurityRuleCIDRWithRetry(ctx context.Context, cidr string, proto string
 
 func DeleteProxySecurityGroupRules(ctx context.Context, client pc.PlatformClient, appName string, groupName string, ports []dme.AppPort, serverName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "DeleteProxtySecurityGroupRules", "appName", appName, "ports", ports)
-	err := nginx.DeleteNginxProxy(client, appName)
+	err := proxy.DeleteNginxProxy(ctx, client, appName)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete nginx proxy", "name", appName, "error", err)
+		log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete proxy", "name", appName, "error", err)
 	}
 	allowedClientCIDR := GetAllowedClientCIDR()
 	rules, err := ListSecurityGroupRules(ctx, groupName)

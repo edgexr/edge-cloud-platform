@@ -9,7 +9,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/nginx"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -91,7 +91,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 					err = mexos.CreateAppDNS(ctx, client, names, getDnsAction)
 				} else {
 					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, nginx.WithDockerPublishPorts(), nginx.WithDockerNetwork(""))
+					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
 				}
 			}
 		}
@@ -278,7 +278,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return nil
 			}
 			return err
-		} // Clean up security rules and nginx proxy if app is external
+		} // Clean up security rules and proxy if app is external
 		secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
 		if !app.InternalPorts {
 			if err := mexos.DeleteProxySecurityGroupRules(ctx, client, names.AppName, secGrp, appInst.MappedPorts, rootLBName); err != nil {

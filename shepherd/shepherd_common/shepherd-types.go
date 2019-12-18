@@ -94,7 +94,7 @@ type CloudletMetrics struct {
 	Ipv4Used uint64
 }
 
-type NginxMetrics struct {
+type ProxyMetrics struct {
 	ActiveConn  uint64
 	Accepts     uint64
 	HandledConn uint64
@@ -102,7 +102,18 @@ type NginxMetrics struct {
 	Reading     uint64
 	Writing     uint64
 	Waiting     uint64
+	Nginx       bool
+	EnvoyStats  map[int32]ConnectionsMetric
 	Ts          *types.Timestamp
+}
+
+type ConnectionsMetric struct {
+	ActiveConn     uint64
+	Accepts        uint64
+	HandledConn    uint64
+	AvgSessionTime uint64
+	AvgBytesSent   uint64
+	AvgBytesRecvd  uint64
 }
 
 // We keep the name of the pod+ClusterInstKey rather than AppInstKey
