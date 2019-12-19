@@ -24,7 +24,6 @@ import (
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 var tlsCertFile = flag.String("tls", "", "server tls cert file.  Keyfile and CA file mex-ca.crt must be in same directory")
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:51001", "CRM notify listener addresses")
-var collectInterval = flag.Duration("interval", time.Second*5, "Metrics collection interval")
 var platformName = flag.String("platform", "", "Platform type of Cloudlet")
 var vaultAddr = flag.String("vaultAddr", "", "Address to vault")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
@@ -32,7 +31,6 @@ var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted clou
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
-
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 //map keeping track of all the currently running prometheuses
@@ -49,9 +47,13 @@ var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
 
 var sigChan chan os.Signal
+var collectInterval time.Duration
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
-	CollectProxyStats(ctx, new)
+	// LB metrics are not supported in fake mode
+	if myPlatform.GetType() != "fake" {
+		CollectProxyStats(ctx, new)
+	}
 	var port int32
 	var exists bool
 	var mapKey string
@@ -62,7 +64,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		stats, exists := vmAppWorkerMap[mapKey]
 		if new.State == edgeproto.TrackedState_READY && !exists {
 			// Add/Create
-			stats, err := NewAppInstWorker(ctx, *collectInterval, MetricSender.Update, new, myPlatform)
+			stats, err := NewAppInstWorker(ctx, collectInterval, MetricSender.Update, new, myPlatform)
 			if err == nil {
 				vmAppWorkerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -103,7 +105,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewClusterWorker(ctx, promAddress, *collectInterval, MetricSender.Update, &clusterInst, myPlatform)
+			stats, err = NewClusterWorker(ctx, promAddress, collectInterval, MetricSender.Update, &clusterInst, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -131,7 +133,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
 		if !exists {
-			stats, err := NewClusterWorker(ctx, "", *collectInterval, MetricSender.Update, new, myPlatform)
+			stats, err := NewClusterWorker(ctx, "", collectInterval, MetricSender.Update, new, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -158,7 +160,7 @@ func getPlatform() (platform.Platform, error) {
 		plat = &shepherd_openstack.Platform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		// change the scrape interval to 1s so we dont have to wait as long for e2e tests to go
-		*collectInterval = time.Second
+		collectInterval = time.Second
 		plat = &shepherd_fake.Platform{}
 	default:
 		err = fmt.Errorf("Platform %s not supported", *platformName)
@@ -171,7 +173,7 @@ func main() {
 	log.SetDebugLevelStrs(*debugLevels)
 	log.InitTracer(*tlsCertFile)
 	defer log.FinishTracer()
-
+	collectInterval = cloudcommon.ShepherdMetricsCollectionInterval
 	var span opentracing.Span
 	if *parentSpan != "" {
 		span = log.NewSpanFromString(log.DebugLevelInfo, *parentSpan, "main")
@@ -193,10 +195,13 @@ func main() {
 	}
 	workerMap = make(map[string]*ClusterWorker)
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
-	InitProxyScraper()
+	// LB metrics are not supported in fake mode
+	if myPlatform.GetType() != "fake" {
+		InitProxyScraper()
+	}
 	InitPlatformMetrics()
 
-	//register shepherd to receive appinst and clusterinst notifications from crm
+	// register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.SetUpdatedCb(appInstCb)
 	ClusterInstCache.SetUpdatedCb(clusterInstCb)
@@ -207,7 +212,7 @@ func main() {
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
-	//register to send metrics
+	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)
 	edgeproto.InitAlertCache(&AlertCache)
