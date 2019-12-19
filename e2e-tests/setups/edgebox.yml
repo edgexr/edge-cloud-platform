@@ -1,6 +1,6 @@
 mcs:
 - name: mc1
-  addr: {{mc}}
+  addr: {{mc}}:9900
   hostname: {{mc}}
 
 crms:
@@ -12,7 +12,7 @@ crms:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
-  vaultaddr: "https://vault.mobiledgex.net"
+  vaultaddr: "{{vault}}"
   envvars:
-    PLATFORM: PLATFORM_TYPE_MEXDIND
+    PLATFORM: PLATFORM_TYPE_EDGEBOX
 

@@ -1,4 +1,4 @@
-package mexdind
+package edgebox
 
 import (
 	"context"
@@ -24,9 +24,11 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	if err != nil {
 		return err
 	}
-	err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.vaultConfig, names)
-	if err != nil {
-		return err
+	if app.Deployment != cloudcommon.AppDeploymentTypeDocker {
+		err = mexos.CreateDockerRegistrySecret(ctx, client, clusterInst, app, s.vaultConfig, names)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Use generic DIND to create the AppInst

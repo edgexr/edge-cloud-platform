@@ -74,7 +74,7 @@ vault read auth/approle/role/rotator/role-id
 vault write -f auth/approle/role/rotator/secret-id
 
 # mexenv approle
-# This is used by mexdind to access registry secrets only.
+# This is used by edgebox to access registry secrets only.
 # It does not have full access of crm role, so we can put it in
 # the local_dind.yml setup file. Once we make our demo
 # apps public, we can remove this app role.

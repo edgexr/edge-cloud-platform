@@ -7,11 +7,12 @@ regiondata:
           name: {{operator}}
         name: {{cloudlet}}
       location:
-        latitude: 1
-        longitude: 2
+        latitude: {{latitude}}
+        longitude: {{longitude}}
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      platformtype: PlatformTypeMexdind
+      crmoverride: IgnoreCrmAndTransientState
+      platformtype: PlatformTypeEdgebox
       flavor:
         name: x1.medium
       state: Ready

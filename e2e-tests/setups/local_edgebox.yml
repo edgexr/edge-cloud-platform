@@ -1,0 +1,135 @@
+vars:
+  - locverurl: "http://127.0.0.1:8888/verifyLocation" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL%3Dhttps://dme.mobiledgex.net/verifyLoc" 
+
+locsims:
+- name: locsim1
+  port: 8888
+  locfile: "{{datadir}}/locsim.yml"
+  geofile: "{{datadir}}/geocode.dat"
+  country: US
+  hostname: "127.0.0.1"
+
+toksims:
+- name: toksim1
+  port: 9999
+  hostname: "127.0.0.1"
+
+vaults:
+- name: vault
+  hostname: "127.0.0.1"
+
+influxs:
+- name: influx1
+  datadir: /var/tmp/edge-cloud-local-influx/influx1
+  httpaddr: "127.0.0.1:8086"
+  hostname: "127.0.0.1"
+  auth:
+    user: "root"
+    pass: "root"
+
+etcds:
+- name: etcd1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd1
+  peeraddrs: "http://127.0.0.1:30011"
+  clientaddrs: "http://127.0.0.1:30001"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd2
+  peeraddrs: "http://127.0.0.1:30012"
+  clientaddrs: "http://127.0.0.1:30002"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcd3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd3
+  peeraddrs: "http://127.0.0.1:30013"
+  clientaddrs: "http://127.0.0.1:30003"
+  initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+controllers:
+- name: ctrl1
+  etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
+  apiaddr: "0.0.0.0:55001"
+  httpaddr: "0.0.0.0:36001"
+  notifyaddr: "127.0.0.1:37001"
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  testmode: true
+
+dmes:
+- name: dme1
+  apiaddr: "0.0.0.0:50051"
+  httpaddr: "0.0.0.0:38001"
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"operator_key":{"name":"mexdev"},"name":"mexdev-cloud-1"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  cookieexpr: "24h"
+  hostname: "127.0.0.1"
+
+clustersvcs:
+- name: cluster-svc1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  pluginrequired: true
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  promports: "tcp:9090"
+  interval: "5s"
+  hostname: "127.0.0.1"
+
+mcs:
+- name: mc1
+  addr: "127.0.0.1:9900"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+sqls:
+- name: sql1
+  datadir: /var/tmp/edge-cloud-local-sql/sql1
+  httpaddr: "127.0.0.1:5432"
+  username: mcuser
+  dbname: mcdb
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+  hostname: "127.0.0.1"
+
+traefiks:
+- name: traefik-e2e
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    cacert: "{{tlsoutdir}}/mex-ca.crt"
+  hostname: "127.0.0.1"
+
+jaegers:
+- name: jaeger-e2e
+  hostname: "127.0.0.1"
+
+autoprovs:
+- name: autoprov1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"

@@ -8,7 +8,7 @@ tests:
 
 - name: admin create controllers, flavors
   actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_admin_data_dind.yml'
+  apifile: '{{datadir2}}/mc_admin_data_edgebox.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'
 
 - name: create users
@@ -17,10 +17,10 @@ tests:
 
 - name: user1 creates operator/cloudlets
   actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_user1_dind.yml'
+  apifile: '{{datadir2}}/mc_user1_edgebox.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
 
 - name: user2 creates apps
   actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_user2_dind.yml'
+  apifile: '{{datadir2}}/mc_user2_edgebox.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'

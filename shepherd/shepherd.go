@@ -10,7 +10,7 @@ import (
 	"time"
 
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_dind"
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_openstack"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -154,8 +154,8 @@ func getPlatform() (platform.Platform, error) {
 	var plat platform.Platform
 	var err error
 	switch *platformName {
-	case "PLATFORM_TYPE_MEXDIND":
-		plat = &shepherd_dind.Platform{}
+	case "PLATFORM_TYPE_EDGEBOX":
+		plat = &shepherd_edgebox.Platform{}
 	case "PLATFORM_TYPE_OPENSTACK":
 		plat = &shepherd_openstack.Platform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
