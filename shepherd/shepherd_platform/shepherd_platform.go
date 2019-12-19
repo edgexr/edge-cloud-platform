@@ -17,7 +17,7 @@ type Platform interface {
 	Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string) error
 	// Gets the IP for a cluster
 	GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error)
-	// Gets a platform client to be able to runn commands against (mainly for curling the prometheuses)
+	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)
 	GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error)
 	// Gets cloudlet-level metrics. This is platform-dependent, hence the common interfcae
 	GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error)

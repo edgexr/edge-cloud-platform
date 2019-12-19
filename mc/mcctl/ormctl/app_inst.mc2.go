@@ -133,6 +133,7 @@ var CreateAppInstOptionalArgs = []string{
 	"configs.kind",
 	"configs.config",
 	"sharedvolumesize",
+	"healthcheck",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"developer",
@@ -148,6 +149,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"forceupdate",
 	"updatemultiple",
 	"sharedvolumesize",
+	"healthcheck",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"developer",
@@ -164,6 +166,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"configs.kind",
 	"configs.config",
 	"sharedvolumesize",
+	"healthcheck",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -213,6 +216,7 @@ var AppInstOptionalArgs = []string{
 	"configs.kind",
 	"configs.config",
 	"sharedvolumesize",
+	"healthcheck",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -257,6 +261,7 @@ var AppInstAliasArgs = []string{
 	"configs.kind=appinst.configs.kind",
 	"configs.config=appinst.configs.config",
 	"sharedvolumesize=appinst.sharedvolumesize",
+	"healthcheck=appinst.healthcheck",
 }
 var AppInstComments = map[string]string{
 	"developer":                      "Organization or Company Name that a Developer is part of",
@@ -293,6 +298,7 @@ var AppInstComments = map[string]string{
 	"configs.kind":                   "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
 	"configs.config":                 "config file contents or URI reference",
 	"sharedvolumesize":               "shared volume size when creating auto cluster",
+	"healthcheck":                    "Health Check status, one of HealthCheckOk, HealthCheckFailRootlbOffline, HealthCheckFailServerFail",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",

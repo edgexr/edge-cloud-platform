@@ -93,7 +93,6 @@ func (s *UTClient) getUTData(command string) (string, error) {
 	if strings.Contains(command, "docker exec") && strings.Contains(command, "curl") {
 		split := strings.SplitN(command, " ", 4)
 		if len(split) == 4 {
-			fmt.Printf("curl command: %s\n", split[3])
 			return s.LocalClient.Output(split[3])
 		}
 	}

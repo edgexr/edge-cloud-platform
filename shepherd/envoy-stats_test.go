@@ -40,7 +40,7 @@ func TestEnvoyStats(t *testing.T) {
 	envoyUnitTestPort, _ := strconv.ParseInt(strings.Split(fakeEnvoyTestServer.URL, ":")[2], 10, 32)
 	cloudcommon.ProxyMetricsPort = int32(envoyUnitTestPort)
 
-	testMetrics, err := QueryProxy(ctx, testScrapePoint)
+	testMetrics, err := QueryProxy(ctx, &testScrapePoint)
 
 	assert.Nil(t, err, "Test Querying Envoy")
 	assert.Equal(t, uint64(10), testMetrics.EnvoyStats[1234].ActiveConn)

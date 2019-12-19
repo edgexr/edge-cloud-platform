@@ -29,17 +29,23 @@ var envoyTotal = "upstream_cx_total"
 var envoyDropped = "upstream_cx_connect_fail" // this one might not be right/enough
 
 type ProxyScrapePoint struct {
-	App     string
-	Cluster string
-	Dev     string
-	Ports   []int32
-	Client  pc.PlatformClient
+	Key               edgeproto.AppInstKey
+	FailedChecksCount int
+	App               string
+	Cluster           string
+	Dev               string
+	Ports             []int32
+	Client            pc.PlatformClient
 }
 
 func InitProxyScraper() {
 	ProxyMap = make(map[string]ProxyScrapePoint)
 	ProxyMutex = &sync.Mutex{}
 	go ProxyScraper()
+}
+
+func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
+	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" + appInstKey.AppKey.DeveloperKey.Name
 }
 
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
@@ -52,10 +58,11 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 	} else if app.InternalPorts {
 		return
 	}
-	ProxyMapKey := appInst.Key.AppKey.Name + "-" + appInst.Key.ClusterInstKey.ClusterKey.Name + "-" + appInst.Key.AppKey.DeveloperKey.Name
+	ProxyMapKey := getProxyKey(appInst.GetKey())
 	// add/remove from the list of proxy endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
 		scrapePoint := ProxyScrapePoint{
+			Key:     appInst.Key,
 			App:     k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
 			Cluster: appInst.Key.ClusterInstKey.ClusterKey.Name,
 			Dev:     appInst.Key.AppKey.DeveloperKey.Name,
@@ -106,7 +113,7 @@ func ProxyScraper() {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
-		case <-time.After(*collectInterval):
+		case <-time.After(collectInterval):
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
 				span := log.StartSpan(log.DebugLevelSampled, "send-metric")
@@ -115,7 +122,7 @@ func ProxyScraper() {
 				span.SetTag("cluster", v.Cluster)
 				ctx := log.ContextWithSpan(context.Background(), span)
 
-				metrics, err := QueryProxy(ctx, v)
+				metrics, err := QueryProxy(ctx, &v)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
 				} else {
@@ -131,7 +138,7 @@ func ProxyScraper() {
 	}
 }
 
-func QueryProxy(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
 	//query envoy
 	container := proxy.GetEnvoyContainerName(scrapePoint.App)
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", container, cloudcommon.ProxyMetricsPort)
@@ -140,7 +147,12 @@ func QueryProxy(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_co
 		if strings.Contains(resp, "No such container") {
 			return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
 		}
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
+		// Also this means that we need to notify the controller that this AppInst is no longer recheable
+		HealthCheckDown(ctx, &scrapePoint.Key)
+		return nil, err
 	}
+	HealthCheckUp(ctx, &scrapePoint.Key)
 	metrics := &shepherd_common.ProxyMetrics{Nginx: false}
 	respMap := parseEnvoyResp(ctx, resp)
 	err = envoyConnections(ctx, respMap, scrapePoint.Ports, metrics)
@@ -208,7 +220,7 @@ func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
 	return val, nil
 }
 
-func QueryNginx(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.Output(request)
@@ -225,8 +237,11 @@ func QueryNginx(ctx context.Context, scrapePoint ProxyScrapePoint) (*shepherd_co
 	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
+		// Also this means that we need to notify the controller that this AppInst is no longer recheable
+		HealthCheckDown(ctx, &scrapePoint.Key)
 		return nil, err
 	}
+	HealthCheckUp(ctx, &scrapePoint.Key)
 	metrics := &shepherd_common.ProxyMetrics{Nginx: true}
 	err = parseNginxResp(resp, metrics)
 	if err != nil {

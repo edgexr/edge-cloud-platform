@@ -241,6 +241,21 @@ func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_com
 	return metrics
 }
 
+// Don't consider alerts, which are not destined for this cluster Instance and not clusterInst alerts
+func pruneForeignAlerts(clusterInstKey *edgeproto.ClusterInstKey, keys *map[edgeproto.AlertKey]context.Context) {
+	alertFromKey := edgeproto.Alert{}
+	for key, _ := range *keys {
+		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
+		if _, found := alertFromKey.Labels[cloudcommon.AlertLabelApp]; found ||
+			alertFromKey.Labels[cloudcommon.AlertLabelDev] != clusterInstKey.Developer ||
+			alertFromKey.Labels[cloudcommon.AlertLabelOperator] != clusterInstKey.CloudletKey.OperatorKey.Name ||
+			alertFromKey.Labels[cloudcommon.AlertLabelCloudlet] != clusterInstKey.CloudletKey.Name ||
+			alertFromKey.Labels[cloudcommon.AlertLabelCluster] != clusterInstKey.ClusterKey.Name {
+			delete(*keys, key)
+		}
+	}
+}
+
 func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey, alerts []edgeproto.Alert) {
 	if alerts == nil {
 		// some error occurred, do not modify existing cache set
@@ -274,7 +289,8 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 		})
 		delete(stale, alert.GetKeyVal())
 	}
-	// delete stale entries
+	// delete our stale entries
+	pruneForeignAlerts(clusterInstKey, &stale)
 	for key, _ := range stale {
 		buf := edgeproto.Alert{}
 		buf.SetKey(&key)
