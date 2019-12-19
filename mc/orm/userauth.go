@@ -147,6 +147,14 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 			c.Set("user", token)
 			return next(c)
 		}
+		// display error regarding token valid time/expired
+		if err != nil && strings.Contains(err.Error(), "expired") {
+			return &echo.HTTPError{
+				Code:     http.StatusBadRequest,
+				Message:  err.Error(),
+				Internal: err,
+			}
+		}
 		return &echo.HTTPError{
 			Code:     http.StatusUnauthorized,
 			Message:  "invalid or expired jwt",
