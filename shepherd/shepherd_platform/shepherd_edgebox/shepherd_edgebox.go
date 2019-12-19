@@ -1,4 +1,4 @@
-package shepherd_dind
+package shepherd_edgebox
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type Platform struct {
 }
 
 func (s *Platform) GetType() string {
-	return "dind"
+	return "edgebox"
 }
 
 func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string) error {

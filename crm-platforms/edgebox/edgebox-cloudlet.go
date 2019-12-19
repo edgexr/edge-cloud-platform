@@ -1,4 +1,4 @@
-package mexdind
+package edgebox
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "create cloudlet for mexdind")
+	log.SpanLog(ctx, log.DebugLevelMexos, "create cloudlet for edgebox")
 	err := s.generic.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, updateCallback)
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 }
 
 func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "delete cloudlet for mexdind")
+	log.SpanLog(ctx, log.DebugLevelMexos, "delete cloudlet for edgebox")
 	err := s.generic.DeleteCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	if err != nil {
 		return err

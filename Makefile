@@ -110,9 +110,9 @@ test-robot-start:
 test-robot-stop:
 	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
 
-## note: DIND requires make install-dind from edge-cloud to be run once
-test-dind-start:
-	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_dind.yml -setupfile ./e2e-tests/setups/local_dind.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
+## note: edgebox requires make install-dind from edge-cloud to be run once
+edgebox-start:
+	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_edgebox.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
 
-test-dind-stop:
-	e2e-tests -testfile ./e2e-tests/testfiles/delete_dind_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_dind.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+edgebox-stop:
+	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp

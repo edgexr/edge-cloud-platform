@@ -1,4 +1,4 @@
-package mexdind
+package edgebox
 
 import (
 	"context"
