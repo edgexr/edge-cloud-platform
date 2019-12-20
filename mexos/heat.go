@@ -79,6 +79,9 @@ var vmCloudConfigShareMount = `
  - chown nobody:nogroup /share
  - chmod 777 /share 
  - echo "/share *(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+ - exportfs -a
+ - echo "showing exported filesystems"
+ - exportfs
 disk_setup:
    /dev/vdb:
      table_type: 'gpt'
