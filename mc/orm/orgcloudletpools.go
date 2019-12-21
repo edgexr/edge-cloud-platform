@@ -65,20 +65,20 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		return err
 	}
 	if !found {
-		return fmt.Errorf("Specified CloudletPool for region not found")
+		return fmt.Errorf("Specified CloudletPool %s for region %s not found", op.CloudletPool, op.Region)
 	}
 	// create org cloudletpool
 	db := loggedDB(ctx)
 	err = db.Create(&op).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_org_fkey\"") {
-			return fmt.Errorf("Specified Organization does not exist")
+			return fmt.Errorf("Specified Organization %s does not exist", op.Org)
 		}
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_region_fkey\"") {
-			return fmt.Errorf("Specified Region does not exist")
+			return fmt.Errorf("Specified Region %s does not exist", op.Region)
 		}
 		if strings.Contains(err.Error(), "duplicate key value violates unique") {
-			return fmt.Errorf("Already exists")
+			return fmt.Errorf("OrgCloudletPool org %s, region %s, pool %s already exists", op.Org, op.Region, op.CloudletPool)
 		}
 		return dbErr(err)
 	}
