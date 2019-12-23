@@ -38,11 +38,11 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, client, names, app, appInst)
 		if err == nil {
 			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 
-			err = k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
+			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 		}
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
@@ -90,7 +90,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
-		err = k8smgmt.DeleteAppInst(client, names, app, appInst)
+		err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -139,7 +139,7 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 	if err != nil {
 		return nil, err
 	}
-	return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
+	return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 }
 
 func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -153,16 +153,16 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		return err
 	}
 
-	err = k8smgmt.UpdateAppInst(client, names, app, appInst)
+	err = k8smgmt.UpdateAppInst(ctx, client, names, app, appInst)
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
-		err = k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
+		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 	}
 	return err
 }
 
 func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
-	return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
+	return k8smgmt.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 }
 
 func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
