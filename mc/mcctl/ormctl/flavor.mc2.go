@@ -23,8 +23,8 @@ var _ = math.Inf
 
 var CreateFlavorCmd = &cli.Command{
 	Use:          "CreateFlavor",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
-	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	RequiredArgs: strings.Join(append([]string{"region"}, CreateFlavorRequiredArgs...), " "),
+	OptionalArgs: strings.Join(CreateFlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
 	Comments:     addRegionComment(FlavorComments),
@@ -118,6 +118,15 @@ var FlavorApiCmds = []*cli.Command{
 	RemoveFlavorResCmd,
 }
 
+var CreateFlavorRequiredArgs = []string{
+	"name",
+	"ram",
+	"vcpus",
+	"disk",
+}
+var CreateFlavorOptionalArgs = []string{
+	"optresmap",
+}
 var FlavorKeyRequiredArgs = []string{}
 var FlavorKeyOptionalArgs = []string{
 	"name",
@@ -131,11 +140,11 @@ var FlavorKeyComments = map[string]string{
 var FlavorKeySpecialArgs = map[string]string{}
 var FlavorRequiredArgs = []string{
 	"name",
+}
+var FlavorOptionalArgs = []string{
 	"ram",
 	"vcpus",
 	"disk",
-}
-var FlavorOptionalArgs = []string{
 	"optresmap",
 }
 var FlavorAliasArgs = []string{
