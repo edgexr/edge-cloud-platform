@@ -67,6 +67,18 @@ regiondata:
       authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
     - key:
         developerkey:
+          name: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+      imagetype: ImageTypeDocker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:81"
+      autoprovpolicy: autoprov1
+    - key:
+        developerkey:
           name: platos
         name: platosEnablingLayer
         version: "1.0"
@@ -120,6 +132,7 @@ regiondata:
       liveness: LivenessStatic
       flavor:
         name: x1.small
+
     autoscalepolicies:
     - key:
         developer: AcmeAppCo
@@ -129,3 +142,19 @@ regiondata:
       scaleupcputhresh: 85
       scaledowncputhresh: 20
       triggertimesec: 60
+
+    autoprovpolicies:
+    - key:
+        name: autoprov1
+        developer: AcmeAppCo
+      deployclientcount: 3
+      deployintervalcount: 3
+      cloudlets:
+      - key:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+      - key:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-2

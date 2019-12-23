@@ -209,7 +209,8 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.AutoProvs {
-		opts = append(opts, process.WithDebug("api,notify"))
+		opts = append(opts, process.WithRolesFile(rolesfile))
+		opts = append(opts, process.WithDebug("api,notify,metrics"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

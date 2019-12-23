@@ -130,6 +130,12 @@ func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data
 			in.ResTagTable.Fields = cli.GetSpecifiedFields(dataMap, &in.ResTagTable, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateResTagTable(uri, token, in)
 			checkMcErr("UpdateResTagTable", st, err, rc)
+		case "add":
+			_, st, err := mcClient.AddResTag(uri, token, in)
+			checkMcErr("AddResTag", st, err, rc)
+		case "remove":
+			_, st, err := mcClient.RemoveResTag(uri, token, in)
+			checkMcErr("RemoveResTag", st, err, rc)
 		default:
 			return
 		}

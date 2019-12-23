@@ -45,6 +45,15 @@
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 70aa9663b5c13c3
+- operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-12-18T13:42:42.48365-08:00"
+  duration: 18.759ms
+  request: '{"Region":"local","AutoProvPolicy":{"key":{"developer":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"loc":{}},{"key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"loc":{}}]}}'
+  response: '{}'
+  traceid: 7af113ec2d0b698c
 - operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
   username: user2
   clientip: 127.0.0.1
@@ -95,14 +104,3 @@
   request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
   response: '{}'
   traceid: 47b0b401e7c4768d
-- operationname: /api/v1/auth/ctrl/DeleteApp
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-10-11T12:52:41.690206+05:30"
-  duration: 33.816ms
-  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
-    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
-  response: '{}'
-  traceid: 1e63f404d3eb3c06

@@ -143,6 +143,25 @@ func RunMcCloudletApi(mcClient ormclient.Api, uri, token, region string, data *[
 	}
 }
 
+func RunMcCloudletApi_CloudletResMap(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletResMap, dataIn interface{}, rc *bool, mode string) {
+	for _, cloudletResMap := range *data {
+		in := &ormapi.RegionCloudletResMap{
+			Region:         region,
+			CloudletResMap: cloudletResMap,
+		}
+		switch mode {
+		case "add":
+			_, st, err := mcClient.AddCloudletResMapping(uri, token, in)
+			checkMcErr("AddCloudletResMapping", st, err, rc)
+		case "remove":
+			_, st, err := mcClient.RemoveCloudletResMapping(uri, token, in)
+			checkMcErr("RemoveCloudletResMapping", st, err, rc)
+		default:
+			return
+		}
+	}
+}
+
 func TestShowCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
 	dat := &ormapi.RegionCloudletInfo{}
 	dat.Region = region

@@ -55,4 +55,5 @@ type Api interface {
 	CloudletPoolMemberApiClient
 	AutoScalePolicyApiClient
 	ResTagTableApiClient
+	AutoProvPolicyApiClient
 }

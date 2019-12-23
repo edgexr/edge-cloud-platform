@@ -1,0 +1,34 @@
+regiondata:
+- region: local
+  appdata:
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: AcmeAppCo
+          name: autoprovapp
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: Reservable1
+          cloudletkey:
+            operatorkey:
+              name: dmuus
+            name: dmuus-cloud-1
+          developer: MobiledgeX
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: dmuus-cloud-1.dmuus.mobiledgex.net
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 81
+        publicport: 81
+        fqdnprefix: autoprovapp-tcp.
+      flavor:
+        name: x1.small
+      state: Ready
+      createdat:
+        seconds: 1576628584
+        nanos: 73154000
