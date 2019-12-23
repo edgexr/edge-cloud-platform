@@ -70,6 +70,14 @@ variable "console_instance_name" {
   default     = "console-qa"
 }
 
+variable "vault_b_instance_name" {
+  default     = "vault-qa-b"
+}
+
+variable "vault_b_gcp_zone" {
+  default     = "europe-west3-a"
+}
+
 // DNS entries
 
 variable "vault_vm_domain_name" {
@@ -109,6 +117,14 @@ variable "mc_vm_domain_name" {
 variable "postgres_domain_name" {
   description = "Postgres domain name"
   type        = "string"
+}
+
+variable "vault_a_domain_name" {
+  default     = "vault-qa-a.mobiledgex.net"
+}
+
+variable "vault_b_domain_name" {
+  default     = "vault-qa-b.mobiledgex.net"
 }
 
 variable "ssh_public_key_file" {

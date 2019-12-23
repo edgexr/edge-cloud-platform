@@ -48,23 +48,6 @@ module "docker_replica_west_eu_dns" {
   ip                            = "${module.docker_replica_west_eu.external_ip}"
 }
 
-# Vault VM
-module "vault" {
-  source              = "../../modules/vm_gcp"
-
-  instance_name       = "${var.vault_vm_name}"
-  zone                = "${var.gcp_zone}"
-  boot_disk_size      = 20
-  tags                = [ "mexplat-${var.environ_tag}", "https-server" ]
-  ssh_public_key_file = "${var.ssh_public_key_file}"
-}
-
-module "vault_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.vault_domain_name}"
-  ip                            = "${module.vault.external_ip}"
-}
-
 # Vault VMs
 module "vault_a" {
   source              = "../../modules/vm_gcp"
@@ -72,7 +55,15 @@ module "vault_a" {
   instance_name       = "${var.vault_a_vm_name}"
   zone                = "${var.vault_a_gcp_zone}"
   boot_disk_size      = 20
-  tags                = [ "mexplat-${var.environ_tag}", "vault-ac" ]
+  tags                = [
+    "mexplat-${var.environ_tag}",
+    "vault-ac",
+    "${module.fw_vault_gcp.target_tag}"
+  ]
+  labels              = {
+    "environ"         = "${var.environ_tag}",
+    "vault"           = "true",
+  }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
@@ -88,7 +79,15 @@ module "vault_b" {
   instance_name       = "${var.vault_b_vm_name}"
   zone                = "${var.vault_b_gcp_zone}"
   boot_disk_size      = 20
-  tags                = [ "mexplat-${var.environ_tag}", "vault-ac" ]
+  tags                = [
+    "mexplat-${var.environ_tag}",
+    "vault-ac",
+    "${module.fw_vault_gcp.target_tag}"
+  ]
+  labels              = {
+    "environ"         = "${var.environ_tag}",
+    "vault"           = "true",
+  }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
@@ -111,4 +110,10 @@ module "mc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.mc_vm_domain_name}"
   ip                            = "${module.mc.external_ip}"
+}
+
+module "fw_vault_gcp" {
+  source                        = "../../modules/fw_vault_gcp"
+  firewall_name                 = "${var.environ_tag}-vault-fw-hc-and-proxy"
+  target_tag                    = "${var.environ_tag}-vault-hc-and-proxy"
 }
