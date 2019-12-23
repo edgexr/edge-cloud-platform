@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
@@ -45,13 +46,22 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return err
 		}
 
+		_, masterIP, masterIpErr := mexos.GetMasterNameAndIP(ctx, clusterInst)
+		// Add crm local replace variables
+		deploymentVars := crmutil.DeploymentReplaceVars{
+			Deployment: crmutil.CrmReplaceVars{
+				ClusterIp: masterIP,
+			},
+		}
+		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+
 		if deployment == cloudcommon.AppDeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(client, names, app, appInst)
+			err = k8smgmt.CreateAppInst(ctx, client, names, app, appInst)
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 
-			err = k8smgmt.CreateHelmAppInst(client, names, clusterInst, app, appInst)
+			err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 		}
 		if err != nil {
 			return err
@@ -60,7 +70,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		// wait for the appinst in parallel with other tasks
 		go func() {
 			if deployment == cloudcommon.AppDeploymentTypeKubernetes {
-				waitErr := k8smgmt.WaitForAppInst(client, names, app, k8smgmt.WaitRunning)
+				waitErr := k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 				if waitErr == nil {
 					appWaitChan <- ""
 				} else {
@@ -73,8 +83,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 		// set up DNS
 		var rootLBIPaddr string
-		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
-		if err == nil {
+		if masterIpErr == nil {
 			rootLBIPaddr, err = mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), rootLBName, mexos.ExternalIPType)
 			if err == nil {
 				getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
@@ -291,9 +300,9 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 
 		if deployment == cloudcommon.AppDeploymentTypeKubernetes {
-			return k8smgmt.DeleteAppInst(client, names, app, appInst)
+			return k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
 		} else {
-			return k8smgmt.DeleteHelmAppInst(client, names, clusterInst)
+			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 		}
 
 	case cloudcommon.AppDeploymentTypeVM:
@@ -333,6 +342,15 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	_, masterIP, _ := mexos.GetMasterNameAndIP(ctx, clusterInst)
+	// Add crm local replace variables
+	deploymentVars := crmutil.DeploymentReplaceVars{
+		Deployment: crmutil.CrmReplaceVars{
+			ClusterIp: masterIP,
+		},
+	}
+	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
 		client, err := s.GetPlatformClient(ctx, clusterInst)
@@ -343,7 +361,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		return k8smgmt.UpdateAppInst(client, names, app, appInst)
+		return k8smgmt.UpdateAppInst(ctx, client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
@@ -359,7 +377,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		return k8smgmt.UpdateHelmAppInst(client, names, app, appInst)
+		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
 
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
@@ -381,7 +399,7 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 		if err != nil {
 			return nil, err
 		}
-		return k8smgmt.GetAppInstRuntime(client, names, app, appInst)
+		return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
 		return dockermgmt.GetAppInstRuntime(client, app, appInst)
 	case cloudcommon.AppDeploymentTypeVM:
@@ -396,7 +414,7 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 	case cloudcommon.AppDeploymentTypeKubernetes:
 		fallthrough
 	case cloudcommon.AppDeploymentTypeHelm:
-		return k8smgmt.GetContainerCommand(clusterInst, app, appInst, req)
+		return k8smgmt.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 	case cloudcommon.AppDeploymentTypeDocker:
 		return dockermgmt.GetContainerCommand(clusterInst, app, appInst, req)
 	case cloudcommon.AppDeploymentTypeVM:
