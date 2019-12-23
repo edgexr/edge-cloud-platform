@@ -96,25 +96,6 @@ func TestPermRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token
 	return TestRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 
-func RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicyCloudlet, dataIn interface{}, rc *bool, mode string) {
-	for _, autoProvPolicyCloudlet := range *data {
-		in := &ormapi.RegionAutoProvPolicyCloudlet{
-			Region:                 region,
-			AutoProvPolicyCloudlet: autoProvPolicyCloudlet,
-		}
-		switch mode {
-		case "add":
-			_, st, err := mcClient.AddAutoProvPolicyCloudlet(uri, token, in)
-			checkMcErr("AddAutoProvPolicyCloudlet", st, err, rc)
-		case "remove":
-			_, st, err := mcClient.RemoveAutoProvPolicyCloudlet(uri, token, in)
-			checkMcErr("RemoveAutoProvPolicyCloudlet", st, err, rc)
-		default:
-			return
-		}
-	}
-}
-
 func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicy, dataIn interface{}, rc *bool, mode string) {
 	var dataInList []interface{}
 	var ok bool
@@ -146,6 +127,25 @@ func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, d
 			in.AutoProvPolicy.Fields = cli.GetSpecifiedFields(dataMap, &in.AutoProvPolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAutoProvPolicy(uri, token, in)
 			checkMcErr("UpdateAutoProvPolicy", st, err, rc)
+		default:
+			return
+		}
+	}
+}
+
+func RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicyCloudlet, dataIn interface{}, rc *bool, mode string) {
+	for _, autoProvPolicyCloudlet := range *data {
+		in := &ormapi.RegionAutoProvPolicyCloudlet{
+			Region:                 region,
+			AutoProvPolicyCloudlet: autoProvPolicyCloudlet,
+		}
+		switch mode {
+		case "add":
+			_, st, err := mcClient.AddAutoProvPolicyCloudlet(uri, token, in)
+			checkMcErr("AddAutoProvPolicyCloudlet", st, err, rc)
+		case "remove":
+			_, st, err := mcClient.RemoveAutoProvPolicyCloudlet(uri, token, in)
+			checkMcErr("RemoveAutoProvPolicyCloudlet", st, err, rc)
 		default:
 			return
 		}
