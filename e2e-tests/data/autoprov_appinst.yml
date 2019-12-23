@@ -1,0 +1,18 @@
+regiondata:
+- region: local
+  appdata:
+    appinstances:
+    - key:
+        appkey:
+          developerkey:
+            name: AcmeAppCo
+          name: autoprovapp
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: Reservable1
+          cloudletkey:
+            operatorkey:
+              name: dmuus
+            name: dmuus-cloud-1
+          developer: MobiledgeX

@@ -95,6 +95,11 @@ func CreateData(c echo.Context) error {
 			_, err := CreateAutoScalePolicyObj(ctx, rc, &policy)
 			streamReply(c, desc, err, &hadErr)
 		}
+		for _, policy := range appdata.AutoProvPolicies {
+			desc := fmt.Sprintf("Create AutoProvPolicy %v", policy.Key)
+			_, err := CreateAutoProvPolicyObj(ctx, rc, &policy)
+			streamReply(c, desc, err, &hadErr)
+		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Create ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
@@ -176,6 +181,11 @@ func DeleteData(c echo.Context) error {
 			desc := fmt.Sprintf("Delete ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
 			err = DeleteClusterInstStream(ctx, rc, &cinst, cb)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, policy := range appdata.AutoProvPolicies {
+			desc := fmt.Sprintf("Delete AutoProvPolicy %v", policy.Key)
+			_, err := DeleteAutoProvPolicyObj(ctx, rc, &policy)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, policy := range appdata.AutoScalePolicies {
@@ -297,6 +307,10 @@ func ShowData(c echo.Context) error {
 		if err == nil {
 			appdata.AutoScalePolicies = aspolicies
 		}
+		appolicies, err := ShowAutoProvPolicyObj(ctx, rc, &edgeproto.AutoProvPolicy{})
+		if err == nil {
+			appdata.AutoProvPolicies = appolicies
+		}
 		cinsts, err := ShowClusterInstObj(ctx, rc, &edgeproto.ClusterInst{})
 		if err == nil {
 			appdata.ClusterInsts = cinsts
@@ -312,7 +326,8 @@ func ShowData(c echo.Context) error {
 
 		if len(flavors) > 0 ||
 			len(cloudlets) > 0 || len(cinsts) > 0 ||
-			len(apps) > 0 || len(appinsts) > 0 {
+			len(apps) > 0 || len(appinsts) > 0 ||
+			len(aspolicies) > 0 || len(appolicies) > 0 {
 			data.RegionData = append(data.RegionData, *regionData)
 		}
 	}

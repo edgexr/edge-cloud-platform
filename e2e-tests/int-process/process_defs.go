@@ -40,7 +40,10 @@ type AutoProv struct {
 	process.Common `yaml:",inline"`
 	NotifyAddrs    string
 	CtrlAddrs      string
+	VaultAddr      string
+	InfluxAddr     string
 	TLS            process.TLSCerts
+	ShortTimeouts  bool
 	cmd            *exec.Cmd
 }
 

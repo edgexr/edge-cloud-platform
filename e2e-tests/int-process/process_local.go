@@ -291,9 +291,20 @@ func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--ctrlAddrs")
 		args = append(args, p.CtrlAddrs)
 	}
+	if p.VaultAddr != "" {
+		args = append(args, "--vaultAddr")
+		args = append(args, p.VaultAddr)
+	}
+	if p.InfluxAddr != "" {
+		args = append(args, "--influxAddr")
+		args = append(args, p.InfluxAddr)
+	}
 	if p.TLS.ServerCert != "" {
 		args = append(args, "--tls")
 		args = append(args, p.TLS.ServerCert)
+	}
+	if p.ShortTimeouts {
+		args = append(args, "--shortTimeouts")
 	}
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
@@ -301,8 +312,27 @@ func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "-d")
 		args = append(args, options.Debug)
 	}
+
+	var envs []string
+	if options.RolesFile != "" {
+		dat, err := ioutil.ReadFile(options.RolesFile)
+		if err != nil {
+			return err
+		}
+		roles := VaultRoles{}
+		err = yaml.Unmarshal(dat, &roles)
+		if err != nil {
+			return err
+		}
+		envs = []string{
+			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.AutoProvRoleID),
+			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.AutoProvSecretID),
+		}
+		log.Printf("MC envs: %v\n", envs)
+	}
+
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
 	return err
 }
 
@@ -319,6 +349,8 @@ type VaultRoles struct {
 	MCSecretID       string `json:"mcsecretid"`
 	ShepherdRoleID   string `json:"shepherdroleid"`
 	ShepherdSecretID string `json:"shepherdsecretid"`
+	AutoProvRoleID   string `json:"autoprovroleid"`
+	AutoProvSecretID string `json:"autoprovsecretid"`
 	RotatorRoleID    string `json:"rotatorroleid"`
 	RotatorSecretID  string `json:"rotatorsecretid"`
 }
@@ -340,6 +372,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	// get roleIDs and secretIDs
 	roles := VaultRoles{}
 	p.GetAppRole("", "mcorm", &roles.MCRoleID, &roles.MCSecretID, &err)
+	p.GetAppRole("", "autoprov", &roles.AutoProvRoleID, &roles.AutoProvSecretID, &err)
 	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)

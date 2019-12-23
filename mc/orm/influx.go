@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/influxsup"
 	"github.com/mobiledgex/edge-cloud/log"
 	"google.golang.org/grpc/status"
 )
@@ -118,11 +119,7 @@ func connectInfluxDB(ctx context.Context, region string) (influxdb.Client, error
 		// defeault to empty auth
 		creds = &cloudcommon.InfluxCreds{}
 	}
-	client, err := influxdb.NewHTTPClient(influxdb.HTTPConfig{
-		Addr:     addr,
-		Username: creds.User,
-		Password: creds.Pass,
-	})
+	client, err := influxsup.GetClient(addr, creds.User, creds.Pass)
 	log.SpanLog(ctx, log.DebugLevelMetrics, "connecting to influxdb",
 		"addr", addr, "err", err)
 	if err != nil {

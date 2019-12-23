@@ -8,6 +8,15 @@
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 3f80227e8749927a
+- operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2019-12-18T13:44:44.543446-08:00"
+  duration: 16.81ms
+  request: '{"Region":"local","AutoProvPolicy":{"key":{"developer":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"loc":{}},{"key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"loc":{}}]}}'
+  response: '{}'
+  traceid: 1b1f287407047931
 - operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
   username: user2
   clientip: 127.0.0.1
@@ -53,6 +62,15 @@
   username: user2
   clientip: 127.0.0.1
   status: 200
+  starttime: "2019-12-18T13:44:44.285586-08:00"
+  duration: 17.826ms
+  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"AcmeAppCo"},"name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policy":"autoprov1"}}'
+  response: '{}'
+  traceid: 38d6124bc329b12
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
   starttime: "2019-08-10T16:13:41.93511-07:00"
   duration: 19.104ms
   request: '{"Region":"local","App":{"key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
@@ -84,40 +102,15 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 4242788f1d2a702f
-- operationname: /api/v1/auth/ctrl/CreateAppInst
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
   username: user2
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:41.545148-07:00"
-  duration: 54.601ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"},"developer":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2019-12-18T13:44:43.822848-08:00"
+  duration: 66.315ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"autoprovapp","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"Reservable1"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{},"runtime_info":{},"created_at":{},"status":{}}}'
   response: |
-    {"data":{"message":"Creating"}}
-    {"data":{"message":"Creating App Inst"}}
-    {"data":{"message":"Ready"}}
-    {"data":{"message":"Created AppInst successfully"}}
-  traceid: 22ec73ce836fc6ac
-- operationname: /api/v1/auth/ctrl/CreateAppInst
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-10T16:13:41.478764-07:00"
-  duration: 62.288ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"},"developer":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
-  response: |
-    {"data":{"message":"Creating"}}
-    {"data":{"message":"Creating App Inst"}}
-    {"data":{"message":"Ready"}}
-    {"data":{"message":"Created AppInst successfully"}}
-  traceid: 29ed711ad7770abf
-- operationname: /api/v1/auth/ctrl/CreateApp
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-10T16:13:41.267953-07:00"
-  duration: 184.627ms
-  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
-    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
-  response: '{}'
-  traceid: 5ad9ea5f2e64f9f2
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 67db76c01ae25287

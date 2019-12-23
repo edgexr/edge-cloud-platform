@@ -275,6 +275,60 @@ regiondata:
       permitsplatformapps: true
     - key:
         developerkey:
+          name: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+      imagetype: ImageTypeDocker
+      accessports: tcp:81
+      defaultflavor:
+        name: x1.small
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: autoprovapp-tcp
+          labels:
+            run: autoprovapp
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp81
+            protocol: TCP
+            port: 81
+            targetPort: 81
+          selector:
+            run: autoprovapp
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: autoprovapp-deployment
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              run: autoprovapp
+          template:
+            metadata:
+              labels:
+                run: autoprovapp
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: registry.mobiledgex.net
+              containers:
+              - name: autoprovapp
+                image: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 81
+                  protocol: TCP
+      deploymentgenerator: kubernetes-basic
+      autoprovpolicy: autoprov1
+    - key:
+        developerkey:
           name: platos
         name: platosEnablingLayer
         version: "1.0"
@@ -399,3 +453,25 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+
+    autoprovpolicies:
+    - key:
+        name: autoprov1
+        developer: AcmeAppCo
+      deployclientcount: 3
+      deployintervalcount: 3
+      cloudlets:
+      - key:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-1
+        loc:
+          latitude: 31
+          longitude: -91
+      - key:
+          operatorkey:
+            name: dmuus
+          name: dmuus-cloud-2
+        loc:
+          latitude: 35
+          longitude: -95

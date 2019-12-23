@@ -167,7 +167,11 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		}
 	case "update":
 		updateMcDataSep(uri, token, data, regionDataMap, &rc)
+	case "showfiltered":
+		dataOut := showMcDataFiltered(uri, token, data, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
 	}
+
 	return rc
 }
 
@@ -343,6 +347,12 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		asPolicies, status, err := mcClient.ShowAutoScalePolicy(uri, token, inAutoScalePolicy)
 		checkMcCtrlErr("ShowAutoScalePolicy", status, err, rc)
 
+		inAutoProvPolicy := &ormapi.RegionAutoProvPolicy{
+			Region: ctrl.Region,
+		}
+		apPolicies, status, err := mcClient.ShowAutoProvPolicy(uri, token, inAutoProvPolicy)
+		checkMcCtrlErr("ShowAutoProvPolicy", status, err, rc)
+
 		inClusterInst := &ormapi.RegionClusterInst{
 			Region: ctrl.Region,
 		}
@@ -379,11 +389,112 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 				Applications:        apps,
 				AppInstances:        appInsts,
 				AutoScalePolicies:   asPolicies,
+				AutoProvPolicies:    apPolicies,
 			},
 		}
 		showData.RegionData = append(showData.RegionData, rd)
 	}
 	return showData
+}
+
+func showMcDataFiltered(uri, token string, data *ormapi.AllData, rc *bool) *ormapi.AllData {
+	dataOut := &ormapi.AllData{}
+
+	// currently only controller APIs support filtering
+	for ii, _ := range data.RegionData {
+		region := data.RegionData[ii].Region
+		appdata := &data.RegionData[ii].AppData
+
+		rd := ormapi.RegionData{}
+		rd.Region = region
+		ad := &rd.AppData
+
+		for jj, _ := range appdata.Flavors {
+			filter := &ormapi.RegionFlavor{
+				Region: region,
+				Flavor: appdata.Flavors[jj],
+			}
+			out, status, err := mcClient.ShowFlavor(uri, token, filter)
+			checkMcCtrlErr("ShowFlavor", status, err, rc)
+			ad.Flavors = append(ad.Flavors, out...)
+		}
+		for jj, _ := range appdata.Cloudlets {
+			filter := &ormapi.RegionCloudlet{
+				Region:   region,
+				Cloudlet: appdata.Cloudlets[jj],
+			}
+			out, status, err := mcClient.ShowCloudlet(uri, token, filter)
+			checkMcCtrlErr("ShowCloudlet", status, err, rc)
+			ad.Cloudlets = append(ad.Cloudlets, out...)
+		}
+		for jj, _ := range appdata.CloudletPools {
+			filter := &ormapi.RegionCloudletPool{
+				Region:       region,
+				CloudletPool: appdata.CloudletPools[jj],
+			}
+			out, status, err := mcClient.ShowCloudletPool(uri, token, filter)
+			checkMcCtrlErr("ShowCloudletPool", status, err, rc)
+			ad.CloudletPools = append(ad.CloudletPools, out...)
+		}
+		for jj, _ := range appdata.CloudletPoolMembers {
+			filter := &ormapi.RegionCloudletPoolMember{
+				Region:             region,
+				CloudletPoolMember: appdata.CloudletPoolMembers[jj],
+			}
+			out, status, err := mcClient.ShowCloudletPoolMember(uri, token, filter)
+			checkMcCtrlErr("ShowCloudletPoolMember", status, err, rc)
+			ad.CloudletPoolMembers = append(ad.CloudletPoolMembers, out...)
+		}
+		for jj, _ := range appdata.AutoScalePolicies {
+			filter := &ormapi.RegionAutoScalePolicy{
+				Region:          region,
+				AutoScalePolicy: appdata.AutoScalePolicies[jj],
+			}
+			out, status, err := mcClient.ShowAutoScalePolicy(uri, token, filter)
+			checkMcCtrlErr("ShowAutoScalePolicy", status, err, rc)
+			ad.AutoScalePolicies = append(ad.AutoScalePolicies, out...)
+		}
+		for jj, _ := range appdata.AutoProvPolicies {
+			filter := &ormapi.RegionAutoProvPolicy{
+				Region:         region,
+				AutoProvPolicy: appdata.AutoProvPolicies[jj],
+			}
+			out, status, err := mcClient.ShowAutoProvPolicy(uri, token, filter)
+			checkMcCtrlErr("ShowAutoProvPolicy", status, err, rc)
+			ad.AutoProvPolicies = append(ad.AutoProvPolicies, out...)
+		}
+		for jj, _ := range appdata.ClusterInsts {
+			filter := &ormapi.RegionClusterInst{
+				Region:      region,
+				ClusterInst: appdata.ClusterInsts[jj],
+			}
+			out, status, err := mcClient.ShowClusterInst(uri, token, filter)
+			checkMcCtrlErr("ShowClusterInst", status, err, rc)
+			ad.ClusterInsts = append(ad.ClusterInsts, out...)
+		}
+		for jj, _ := range appdata.Applications {
+			filter := &ormapi.RegionApp{
+				Region: region,
+				App:    appdata.Applications[jj],
+			}
+			out, status, err := mcClient.ShowApp(uri, token, filter)
+			checkMcCtrlErr("ShowApp", status, err, rc)
+			ad.Applications = append(ad.Applications, out...)
+		}
+		for jj, _ := range appdata.AppInstances {
+			filter := &ormapi.RegionAppInst{
+				Region:  region,
+				AppInst: appdata.AppInstances[jj],
+			}
+			log.Printf("Show AppInstances filter %v\n", filter)
+			out, status, err := mcClient.ShowAppInst(uri, token, filter)
+			checkMcCtrlErr("ShowAppInst", status, err, rc)
+			log.Printf("Show AppInstances got %v\n", out)
+			ad.AppInstances = append(ad.AppInstances, out...)
+		}
+		dataOut.RegionData = append(dataOut.RegionData, rd)
+	}
+	return dataOut
 }
 
 func getRegionAppDataFromMap(regionDataMap interface{}) map[string]interface{} {
@@ -411,6 +522,28 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
 		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
 		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
+		if _, ok := mcClient.(*cliwrapper.Client); ok {
+			// cli can't handle list of Cloudlets in
+			// AutoProvPolicy, so add them separately.
+			policies := rd.AppData.AutoProvPolicies
+			add := make([]edgeproto.AutoProvPolicyCloudlet, 0)
+			for ii, _ := range policies {
+				if policies[ii].Cloudlets == nil || len(policies[ii].Cloudlets) == 0 {
+					continue
+				}
+				for jj, _ := range policies[ii].Cloudlets {
+					a := edgeproto.AutoProvPolicyCloudlet{}
+					a.Key = policies[ii].Key
+					a.CloudletKey = policies[ii].Cloudlets[jj].Key
+					add = append(add, a)
+				}
+				policies[ii].Cloudlets = nil
+			}
+			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &policies, appDataMap["autoprovpolicies"], rc, mode)
+			testutil.RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient, uri, token, rd.Region, &add, nil, rc, "add")
+		} else {
+			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoProvPolicies, appDataMap["autoprovpolicies"], rc, mode)
+		}
 		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
 		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
 		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
@@ -419,6 +552,17 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
 		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
 		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
+		if _, ok := mcClient.(*cliwrapper.Client); ok {
+			// cli can't handle list of Cloudlets,
+			// but no need to specify them for delete
+			policies := rd.AppData.AutoProvPolicies
+			for ii, _ := range policies {
+				policies[ii].Cloudlets = nil
+			}
+			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &policies, appDataMap["autoprovpolicies"], rc, mode)
+		} else {
+			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoProvPolicies, appDataMap["autoprovpolicies"], rc, mode)
+		}
 		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
 		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
 		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)

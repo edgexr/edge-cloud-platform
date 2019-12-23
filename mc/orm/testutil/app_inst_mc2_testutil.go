@@ -123,6 +123,9 @@ func RunMcAppInstApi(mcClient ormclient.Api, uri, token, region string, data *[]
 		case "delete":
 			_, st, err := mcClient.DeleteAppInst(uri, token, in)
 			checkMcErr("DeleteAppInst", st, err, rc)
+		case "refresh":
+			_, st, err := mcClient.RefreshAppInst(uri, token, in)
+			checkMcErr("RefreshAppInst", st, err, rc)
 		case "update":
 			in.AppInst.Fields = cli.GetSpecifiedFields(dataMap, &in.AppInst, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAppInst(uri, token, in)

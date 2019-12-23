@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sort"
 	"strings"
 	"text/template"
 
@@ -721,91 +720,99 @@ func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
 }
 
 func (g *GenMC2) generateRunApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
-	allowedActions := []string{
-		"Create",
-		"Update",
-		"Delete",
+	// group methods by input type
+	groups := gensupport.GetMethodGroups(g.Generator, service, nil)
+	for inType, group := range groups {
+		g.generateRunGroupApi(file, service, inType, group)
 	}
-	out := make(map[string]map[string]string)
-	for _, method := range service.Method {
-		found := false
-		action := ""
-		for _, act := range allowedActions {
-			if strings.HasPrefix(*method.Name, act) {
-				found = true
-				action = act
-				break
+}
+
+func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, inType string, group *gensupport.MethodGroup) {
+	if !group.HasMc2Api {
+		return
+	}
+	apiName := *service.Name + group.Suffix
+
+	/*
+		allowedActions := []string{
+			"Create",
+			"Update",
+			"Delete",
+		}
+		out := make(map[string]map[string]string)
+		for _, method := range service.Method {
+			found := false
+			action := ""
+			for _, act := range allowedActions {
+				if strings.HasPrefix(*method.Name, act) {
+					found = true
+					action = act
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+			cmd := strings.TrimPrefix(*method.Name, action)
+			if _, ok := out[cmd]; ok {
+				out[cmd][action] = *method.Name
+			} else {
+				out[cmd] = map[string]string{
+					action: *method.Name,
+				}
 			}
 		}
-		if !found {
+	*/
+	readMap := group.HasUpdate
+
+	objStr := strings.ToLower(string(inType[0])) + string(inType[1:len(inType)])
+	g.P()
+	g.P("func RunMc", apiName, "(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.", inType, ", dataIn interface{}, rc *bool, mode string) {")
+	if readMap {
+		g.importOS = true
+		g.P("var dataInList []interface{}")
+		g.P("var ok bool")
+		g.P("if dataIn != nil {")
+		g.P("dataInList, ok = dataIn.([]interface{})")
+		g.P("if !ok {")
+		g.P("fmt.Fprintf(os.Stderr, \"invalid data in ", objStr, ": %v\\n\", dataIn)")
+		g.P("os.Exit(1)")
+		g.P("}")
+		g.P("}")
+	}
+	if readMap {
+		g.P("for ii, ", objStr, " := range *data {")
+		g.P("dataMap, ok := dataInList[ii].(map[string]interface{})")
+		g.P("if !ok {")
+		g.P("fmt.Fprintf(os.Stderr, \"invalid data in ", objStr, ": %v\\n\", dataInList[ii])")
+		g.P("os.Exit(1)")
+		g.P("}")
+	} else {
+		g.P("for _, ", objStr, " := range *data {")
+	}
+	g.P("in := &ormapi.Region", inType, "{")
+	g.P("Region: region,")
+	g.P(inType, ": ", objStr, ",")
+	g.P("}")
+
+	g.P("switch mode {")
+	for _, info := range group.MethodInfos {
+		if !info.Mc2Api {
 			continue
 		}
-		cmd := strings.TrimPrefix(*method.Name, action)
-		if _, ok := out[cmd]; ok {
-			out[cmd][action] = *method.Name
-		} else {
-			out[cmd] = map[string]string{
-				action: *method.Name,
-			}
+		g.P("case \"", info.Action, "\":")
+		if info.Action == "update" {
+			g.importCli = true
+			g.P("in.", inType, ".Fields = cli.GetSpecifiedFields(dataMap, &in.", inType, ", cli.YamlNamespace)")
 		}
+		g.P("_, st, err := mcClient.", info.Name, "(uri, token, in)")
+		g.P("checkMcErr(\"", info.Name, "\", st, err, rc)")
 	}
-	for k, v := range out {
-		readMap := false
-		if _, ok := v["Update"]; ok {
-			readMap = true
-		}
-		objStr := strings.ToLower(string(k[0])) + string(k[1:len(k)])
-		g.P()
-		g.P("func RunMc", k, "Api(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.", k, ", dataIn interface{}, rc *bool, mode string) {")
-		if readMap {
-			g.importOS = true
-			g.P("var dataInList []interface{}")
-			g.P("var ok bool")
-			g.P("if dataIn != nil {")
-			g.P("dataInList, ok = dataIn.([]interface{})")
-			g.P("if !ok {")
-			g.P("fmt.Fprintf(os.Stderr, \"invalid data in ", objStr, ": %v\\n\", dataIn)")
-			g.P("os.Exit(1)")
-			g.P("}")
-			g.P("}")
-		}
-		if readMap {
-			g.P("for ii, ", objStr, " := range *data {")
-			g.P("dataMap, ok := dataInList[ii].(map[string]interface{})")
-			g.P("if !ok {")
-			g.P("fmt.Fprintf(os.Stderr, \"invalid data in ", objStr, ": %v\\n\", dataInList[ii])")
-			g.P("os.Exit(1)")
-			g.P("}")
-		} else {
-			g.P("for _, ", objStr, " := range *data {")
-		}
-		g.P("in := &ormapi.Region", k, "{")
-		g.P("Region: region,")
-		g.P(k, ": ", objStr, ",")
-		g.P("}")
-
-		mapKeys := []string{}
-		for mapKey, _ := range v {
-			mapKeys = append(mapKeys, mapKey)
-		}
-		sort.Strings(mapKeys)
-		g.P("switch mode {")
-		for _, action := range mapKeys {
-			fName := v[action]
-			g.P("case \"", strings.ToLower(action), "\":")
-			if action == "Update" {
-				g.importCli = true
-				g.P("in.", k, ".Fields = cli.GetSpecifiedFields(dataMap, &in.", k, ", cli.YamlNamespace)")
-			}
-			g.P("_, st, err := mcClient.", fName, "(uri, token, in)")
-			g.P("checkMcErr(\"", fName, "\", st, err, rc)")
-		}
-		g.P("default:")
-		g.P("return")
-		g.P("}")
-		g.P("}")
-		g.P("}")
-	}
+	g.P("default:")
+	g.P("return")
+	g.P("}")
+	g.P("}")
+	g.P("}")
 }
 
 type msgArgs struct {

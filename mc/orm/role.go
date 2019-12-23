@@ -32,7 +32,7 @@ const ResourceClusterFlavors = "clusterflavors"
 const ResourceFlavors = "flavors"
 const ResourceConfig = "config"
 const ResourceAlert = "alert"
-const ResourceAutoScalePolicy = "autoscalepolicy"
+const ResourceDeveloperPolicy = "developerpolicy"
 const ResourceResTagTable = "restagtbl"
 
 var DeveloperResources = []string{
@@ -42,7 +42,7 @@ var DeveloperResources = []string{
 	ResourceClusterInsts,
 	ResourceAppAnalytics,
 	ResourceClusterAnalytics,
-	ResourceAutoScalePolicy,
+	ResourceDeveloperPolicy,
 }
 var OperatorResources = []string{
 	ResourceCloudlets,
