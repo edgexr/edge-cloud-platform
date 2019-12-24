@@ -208,21 +208,23 @@ func ShowOrgCloudlet(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 	oc := ormapi.OrgCloudlet{}
-	if err := c.Bind(&oc); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	success, err := ReadConn(c, &oc)
+	if !success {
+		return err
 	}
+
 	if oc.Org == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Organization must be specified"))
+		return setReply(c, fmt.Errorf("Organization must be specified"), nil)
 	}
 	if oc.Region == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Region must be specified"))
+		return setReply(c, fmt.Errorf("Region must be specified"), nil)
 	}
 
 	db := loggedDB(ctx)
 	org := ormapi.Organization{}
 	res := db.Where(&ormapi.Organization{Name: oc.Org}).First(&org)
 	if res.RecordNotFound() {
-		return c.JSON(http.StatusBadRequest, Msg("Specified Organization not found"))
+		return setReply(c, fmt.Errorf("Specified Organization not found"), nil)
 	}
 	if res.Error != nil {
 		return dbErr(res.Error)

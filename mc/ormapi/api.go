@@ -150,6 +150,11 @@ type StreamPayload struct {
 	Result *Result     `json:"result,omitempty"`
 }
 
+type WSStreamPayload struct {
+	Code int         `json:"code"`
+	Data interface{} `json:"data"`
+}
+
 // all data is for full create/delete
 
 type AllData struct {
@@ -179,39 +184,39 @@ type MetricData struct {
 }
 
 type RegionAppInstMetrics struct {
-	Region    string
-	AppInst   edgeproto.AppInstKey
-	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	Region    string               `json:"region"`
+	AppInst   edgeproto.AppInstKey `json:"appinst"`
+	Selector  string               `json:"selector"`
+	StartTime time.Time            `json:",omitempty"`
+	EndTime   time.Time            `json:",omitempty"`
+	Last      int                  `json:",omitempty"`
 }
 
 type RegionClusterInstMetrics struct {
-	Region      string
-	ClusterInst edgeproto.ClusterInstKey
-	Selector    string
-	StartTime   time.Time `json:",omitempty"`
-	EndTime     time.Time `json:",omitempty"`
-	Last        int       `json:",omitempty"`
+	Region      string                   `json:"region"`
+	ClusterInst edgeproto.ClusterInstKey `json:"clusterinst"`
+	Selector    string                   `json:"selector"`
+	StartTime   time.Time                `json:",omitempty"`
+	EndTime     time.Time                `json:",omitempty"`
+	Last        int                      `json:",omitempty"`
 }
 
 type RegionCloudletMetrics struct {
-	Region    string
-	Cloudlet  edgeproto.CloudletKey
-	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	Region    string                `json:"region"`
+	Cloudlet  edgeproto.CloudletKey `json:"cloudlet"`
+	Selector  string                `json:"selector"`
+	StartTime time.Time             `json:",omitempty"`
+	EndTime   time.Time             `json:",omitempty"`
+	Last      int                   `json:",omitempty"`
 }
 
 type RegionClientMetrics struct {
-	Region    string
-	AppInst   edgeproto.AppInstKey
-	Method    string `json:",omitempty"`
-	CellId    int    `json:",omitempty"`
-	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	Region    string               `json:"region"`
+	AppInst   edgeproto.AppInstKey `json:"appinst"`
+	Method    string               `json:",omitempty"`
+	CellId    int                  `json:",omitempty"`
+	Selector  string               `json:"selector"`
+	StartTime time.Time            `json:",omitempty"`
+	EndTime   time.Time            `json:",omitempty"`
+	Last      int                  `json:",omitempty"`
 }

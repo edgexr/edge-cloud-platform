@@ -205,7 +205,7 @@ func genFile(file *generator.FileDescriptor) bool {
 }
 
 func (g *GenMC2) generatePosts() {
-	g.P("func addControllerApis(group *echo.Group) {")
+	g.P("func addControllerApis(method string, group *echo.Group) {")
 
 	for _, file := range g.Generator.Request.ProtoFile {
 		if !g.support.GenFile(*file.Name) {
@@ -222,7 +222,7 @@ func (g *GenMC2) generatePosts() {
 				if GetMc2Api(method) == "" {
 					continue
 				}
-				g.P("group.POST(\"/ctrl/", method.Name,
+				g.P("group.Match([]string{method}, \"/ctrl/", method.Name,
 					"\", ", method.Name, ")")
 			}
 		}
@@ -258,6 +258,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		Service:              service,
 		MethodName:           *method.Name,
 		InName:               inname,
+		InNameJson:           strings.ToLower(inname),
 		OutName:              *out.DescriptorProto.Name,
 		GenStruct:            !found,
 		Resource:             apiVals[0],
@@ -326,16 +327,16 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	} else {
 		tmpl = g.tmpl
 		g.importEcho = true
-		g.importHttp = true
 		g.importContext = true
 		g.importOrmapi = true
-		g.importGrpcStatus = true
 		if args.OrgValid {
 			g.importLog = true
 		}
 		if args.Outstream {
 			g.importIO = true
-			g.importJson = true
+		} else {
+			g.importHttp = true
+			g.importGrpcStatus = true
 		}
 	}
 	err := tmpl.Execute(g, &args)
@@ -351,6 +352,7 @@ type tmplArgs struct {
 	Service              string
 	MethodName           string
 	InName               string
+	InNameJson           string
 	OutName              string
 	GenStruct            bool
 	Resource             string
@@ -376,8 +378,8 @@ type tmplArgs struct {
 var tmplApi = `
 {{- if .GenStruct}}
 type Region{{.InName}} struct {
-	Region string
-	{{.InName}} edgeproto.{{.InName}}
+	Region string ` + "`json:\"region\"`" + `
+	{{.InName}} edgeproto.{{.InName}} ` + "`json:\"{{.InNameJson}}\"`" + `
 }
 
 {{- end}}
@@ -394,41 +396,30 @@ func {{.MethodName}}(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.Region{{.InName}}{}
+{{- if .Outstream}}
+	success, err := ReadConn(c, &in)
+	if !success {
+		return err
+	}
+{{- else}}
 	if err := c.Bind(&in); err != nil {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
+{{- end}}
 	rc.region = in.Region
 {{- if .OrgValid}}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
 {{- end}}
 {{- if .Outstream}}
-	// stream func may return "forbidden", so don't write
-	// header until we know it's ok
-	wroteHeader := false
+
 	err = {{.MethodName}}Stream(ctx, rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
-		if !wroteHeader {
-			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			c.Response().WriteHeader(http.StatusOK)
-			wroteHeader = true
-		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		json.NewEncoder(c.Response()).Encode(payload)
-		c.Response().Flush()
+		WriteStream(c, &payload)
 	})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			err = fmt.Errorf("%s", st.Message())
-		}
-		if !wroteHeader {
-			return setReply(c, err, nil)
-		}
-		res := ormapi.Result{}
-		res.Message = err.Error()
-		res.Code = http.StatusBadRequest
-		payload := ormapi.StreamPayload{Result: &res}
-		json.NewEncoder(c.Response()).Encode(payload)
+		WriteError(c, err)
 	}
 	return nil
 {{- else}}

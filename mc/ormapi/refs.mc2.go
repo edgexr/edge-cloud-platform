@@ -19,11 +19,11 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionCloudletRefs struct {
-	Region       string
-	CloudletRefs edgeproto.CloudletRefs
+	Region       string                 `json:"region"`
+	CloudletRefs edgeproto.CloudletRefs `json:"cloudletrefs"`
 }
 
 type RegionClusterRefs struct {
-	Region      string
-	ClusterRefs edgeproto.ClusterRefs
+	Region      string                `json:"region"`
+	ClusterRefs edgeproto.ClusterRefs `json:"clusterrefs"`
 }

@@ -9,7 +9,9 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 
+	"github.com/gorilla/websocket"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -276,6 +278,14 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 }
 
 func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
+	if strings.Contains(uri, "ws/api/v1") {
+		return s.handleWebsocketStreamOut(uri, token, reqData, replyData, replyReady)
+	} else {
+		return s.handleHttpStreamOut(uri, token, reqData, replyData, replyReady)
+	}
+}
+
+func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
 	resp, err := s.PostJsonSend(uri, token, reqData)
 	if err != nil {
 		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
@@ -320,6 +330,86 @@ func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interfa
 		}
 	}
 	return resp.StatusCode, nil
+}
+
+func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websocket.Conn, error) {
+	var body []byte
+	if reqData != nil {
+		str, ok := reqData.(string)
+		if ok {
+			// assume string is json data
+			body = []byte(str)
+		} else {
+			out, err := json.Marshal(reqData)
+			if err != nil {
+				return nil, fmt.Errorf("post %s marshal req failed, %s", uri, err.Error())
+			}
+			if s.Debug {
+				fmt.Printf("posting %s\n", string(out))
+			}
+			body = out
+		}
+	} else {
+		body = nil
+	}
+
+	ws, _, err := websocket.DefaultDialer.Dial(uri, nil)
+	if err != nil {
+		return nil, fmt.Errorf("websocket connect to %s failed, %s", uri, err.Error())
+	}
+
+	// Authorize JWT with server
+	authData := fmt.Sprintf(`{"token": "%s"}`, token)
+	if err := ws.WriteMessage(websocket.TextMessage, []byte(authData)); err != nil {
+		return nil, fmt.Errorf("websocket auth to %s failed with data %v, %s", uri, authData, err.Error())
+	}
+
+	// Send request data
+	if err := ws.WriteMessage(websocket.TextMessage, []byte(body)); err != nil {
+		return nil, fmt.Errorf("websocket send to %s failed, %s", uri, err.Error())
+	}
+	return ws, nil
+}
+
+func (s *Client) handleWebsocketStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
+	ws, err := s.WebsocketConn(uri, token, reqData)
+	if err != nil {
+		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
+	}
+	payload := ormapi.WSStreamPayload{}
+	if replyData != nil {
+		payload.Data = replyData
+	}
+	for {
+		if replyData != nil {
+			// clear passed in buffer for next iteration.
+			// replyData must be pointer to object.
+			p := reflect.ValueOf(replyData).Elem()
+			p.Set(reflect.Zero(p.Type()))
+		}
+
+		err := ws.ReadJSON(&payload)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				break
+			}
+			return http.StatusBadRequest, fmt.Errorf("post %s decode resp failed, %s", uri, err.Error())
+		}
+		if payload.Code != http.StatusOK {
+			if payload.Data == nil {
+				return payload.Code, nil
+			}
+			wsRes, ok := payload.Data.(*edgeproto.Result)
+			if ok {
+				return payload.Code, errors.New(wsRes.Message)
+			}
+			return payload.Code, nil
+		}
+		if replyReady != nil {
+			replyReady()
+		}
+	}
+	return http.StatusOK, nil
 }
 
 func (s *Client) ArtifactoryResync(uri, token string) (int, error) {

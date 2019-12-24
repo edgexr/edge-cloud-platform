@@ -19,6 +19,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionExecRequest struct {
-	Region      string
-	ExecRequest edgeproto.ExecRequest
+	Region      string                `json:"region"`
+	ExecRequest edgeproto.ExecRequest `json:"execrequest"`
 }

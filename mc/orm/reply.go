@@ -33,14 +33,33 @@ func bindErr(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, Msg(msg))
 }
 
-func setReply(c echo.Context, err error, successReply interface{}) error {
-	if err == echo.ErrForbidden {
-		return err
+func setReply(c echo.Context, err error, data interface{}) error {
+	code := http.StatusOK
+	if err != nil {
+		switch err {
+		case echo.ErrForbidden:
+			code = http.StatusForbidden
+		case echo.ErrNotFound:
+			code = http.StatusNotFound
+		default:
+			code = http.StatusBadRequest
+		}
+	}
+	if ws := GetWs(c); ws != nil {
+		wsPayload := ormapi.WSStreamPayload{
+			Code: code,
+		}
+		if err != nil {
+			wsPayload.Data = MsgErr(err)
+		} else if data != nil {
+			wsPayload.Data = data
+		}
+		return ws.WriteJSON(wsPayload)
 	}
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return c.JSON(code, MsgErr(err))
 	}
-	return c.JSON(http.StatusOK, successReply)
+	return c.JSON(code, data)
 }
 
 // streamReply funcs used by alldata always send back just a status

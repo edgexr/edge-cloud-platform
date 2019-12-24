@@ -52,8 +52,6 @@ mc/mc
 mc/mcctl/mcctl
 mc/orm/dump.sql
 *rbac.conf
-mc/orm/*.mc2.go
-mc/orm/*_mc2_test.go
 mc/rbac.conf
 *.postgres
 ansible.auto.tfvars

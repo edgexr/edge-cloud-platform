@@ -506,6 +506,33 @@ func TestController(t *testing.T) {
 	require.Contains(t, err.Error(), "timedout")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, count)
+
+	count = 0
+	// check that we get intermediate results.
+	// the callback func is only called when data is read back.
+	// Test Websocket connection
+	uri = "ws://" + addr + "/ws/api/v1"
+	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+		token, &dat, &out, func() {
+			// got a result, trigger next result
+			count++
+			require.Equal(t, count, int(out.Code))
+			sds.next <- 1
+		})
+	require.Nil(t, err, "stream test create cluster inst")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 3, count)
+	// check that we hit timeout if we don't trigger the next one.
+	count = 0
+	sds.next = make(chan int, 1)
+	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+		token, &dat, &out, func() {
+			count++
+		})
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "timedout")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, 1, count)
 }
 
 func testCreateUser(t *testing.T, mcClient *ormclient.Client, uri, name string) (*ormapi.User, string) {

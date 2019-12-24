@@ -19,6 +19,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionAutoScalePolicy struct {
-	Region          string
-	AutoScalePolicy edgeproto.AutoScalePolicy
+	Region          string                    `json:"region"`
+	AutoScalePolicy edgeproto.AutoScalePolicy `json:"autoscalepolicy"`
 }
