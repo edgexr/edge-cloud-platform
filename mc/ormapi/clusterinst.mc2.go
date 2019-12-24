@@ -19,6 +19,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionClusterInst struct {
-	Region      string
-	ClusterInst edgeproto.ClusterInst
+	Region      string                `json:"region"`
+	ClusterInst edgeproto.ClusterInst `json:"clusterinst"`
 }

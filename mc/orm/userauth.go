@@ -6,12 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -28,6 +30,10 @@ var PasshashKeyBytes = 32
 var PasshashSaltBytes = 8
 
 var Jwks vault.JWKS
+
+type TokenAuth struct {
+	Token string `json:"token"`
+}
 
 func InitVault(config *vault.Config, updateDone chan struct{}) {
 	Jwks.Init(config, "", "mcorm")
@@ -161,6 +167,26 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 			Internal: err,
 		}
 	}
+}
+
+func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
+	tokAuth := TokenAuth{}
+	err := ws.ReadJSON(&tokAuth)
+	if err != nil {
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return false, setReply(c, fmt.Errorf("no bearer token found"), nil)
+		}
+		return false, setReply(c, err, nil)
+	}
+
+	claims := UserClaims{}
+	cookie := tokAuth.Token
+	token, err := Jwks.VerifyCookie(cookie, &claims)
+	if err == nil && token.Valid {
+		c.Set("user", token)
+		return true, nil
+	}
+	return false, setReply(c, fmt.Errorf("invalid or expired jwt"), nil)
 }
 
 func authorized(ctx context.Context, sub, org, obj, act string) bool {

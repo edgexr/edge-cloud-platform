@@ -2,13 +2,12 @@
 // source: alert.proto
 
 /*
-Package ormapi is a generated protocol buffer package.
+Package orm is a generated protocol buffer package.
 
 It is generated from these files:
 	alert.proto
 	app.proto
 	app_inst.proto
-	autoprovpolicy.proto
 	autoscalepolicy.proto
 	cloudlet.proto
 	cloudletpool.proto
@@ -38,11 +37,6 @@ It has these top-level messages:
 	AppInstRuntime
 	AppInstInfo
 	AppInstMetrics
-	AutoProvPolicy
-	AutoProvCloudlet
-	AutoProvCount
-	AutoProvCounts
-	AutoProvPolicyCloudlet
 	PolicyKey
 	AutoScalePolicy
 	CloudletKey
@@ -90,9 +84,14 @@ It has these top-level messages:
 	ResTagTable
 	Result
 */
-package ormapi
+package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "net/http"
+import "testing"
+import "github.com/stretchr/testify/require"
+import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+import "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -108,7 +107,16 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-type RegionAlert struct {
-	Region string          `json:"region"`
-	Alert  edgeproto.Alert `json:"alert"`
+var _ = edgeproto.GetFields
+
+func badPermShowAlert(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermShowAlert(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 }

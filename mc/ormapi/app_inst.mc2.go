@@ -21,6 +21,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionAppInst struct {
-	Region  string
-	AppInst edgeproto.AppInst
+	Region  string            `json:"region"`
+	AppInst edgeproto.AppInst `json:"appinst"`
 }

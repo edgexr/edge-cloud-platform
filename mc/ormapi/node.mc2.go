@@ -19,6 +19,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionNode struct {
-	Region string
-	Node   edgeproto.Node
+	Region string         `json:"region"`
+	Node   edgeproto.Node `json:"node"`
 }

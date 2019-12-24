@@ -3,9 +3,7 @@ package orm
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"text/template"
@@ -18,7 +16,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/influxsup"
 	"github.com/mobiledgex/edge-cloud/log"
-	"google.golang.org/grpc/status"
 )
 
 var devInfluxDBTemplate *template.Template
@@ -311,7 +308,7 @@ func getMeasurementString(selector, measurementType string) string {
 
 // Common method to handle both app and cluster metrics
 func GetMetricsCommon(c echo.Context) error {
-	var errStr, cmd, org string
+	var cmd, org string
 
 	rc := &InfluxDBContext{}
 	claims, err := getClaims(c)
@@ -323,39 +320,39 @@ func GetMetricsCommon(c echo.Context) error {
 
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
-		if err := c.Bind(&in); err != nil {
-			errStr = checkForTimeError(fmt.Sprintf("Invalid POST data: %s", err.Error()))
-			return c.JSON(http.StatusBadRequest, Msg(errStr))
+		success, err := ReadConn(c, &in)
+		if !success {
+			return err
 		}
 		// Developer name has to be specified
 		if in.AppInst.AppKey.DeveloperKey.Name == "" {
-			return c.JSON(http.StatusBadRequest, Msg("App details must be present"))
+			return setReply(c, fmt.Errorf("App details must be present"), nil)
 		}
 		rc.region = in.Region
 		org = in.AppInst.AppKey.DeveloperKey.Name
 		if err = validateSelectorString(in.Selector, APPINST); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+			return setReply(c, err, nil)
 		}
 		cmd = AppInstMetricsQuery(&in)
 
 		// Check the developer against who is logged in
 		if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
-			return echo.ErrForbidden
+			return setReply(c, echo.ErrForbidden, nil)
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
-		if err := c.Bind(&in); err != nil {
-			errStr = checkForTimeError(fmt.Sprintf("Invalid POST data: %s", err.Error()))
-			return c.JSON(http.StatusBadRequest, Msg(errStr))
+		success, err := ReadConn(c, &in)
+		if !success {
+			return err
 		}
 		// Developer name has to be specified
 		if in.ClusterInst.Developer == "" {
-			return c.JSON(http.StatusBadRequest, Msg("Cluster details must be present"))
+			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
 		}
 		rc.region = in.Region
 		org = in.ClusterInst.Developer
 		if err = validateSelectorString(in.Selector, CLUSTER); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+			return setReply(c, err, nil)
 		}
 		cmd = ClusterMetricsQuery(&in)
 
@@ -365,74 +362,57 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
-		if err := c.Bind(&in); err != nil {
-			errStr = checkForTimeError(fmt.Sprintf("Invalid POST data: %s", err.Error()))
-			return c.JSON(http.StatusBadRequest, Msg(errStr))
+		success, err := ReadConn(c, &in)
+		if !success {
+			return err
 		}
 		// Operator name has to be specified
 		if in.Cloudlet.OperatorKey.Name == "" {
-			return c.JSON(http.StatusBadRequest, Msg("Cloudlet details must be present"))
+			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.OperatorKey.Name
 		if err = validateSelectorString(in.Selector, CLOUDLET); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+			return setReply(c, err, nil)
 		}
 		cmd = CloudletMetricsQuery(&in)
 
 		// Check the operator against who is logged in
 		if !authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView) {
-			return echo.ErrForbidden
+			return setReply(c, echo.ErrForbidden, nil)
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/client") {
 		in := ormapi.RegionClientMetrics{}
-		if err := c.Bind(&in); err != nil {
-			errStr = checkForTimeError(fmt.Sprintf("Invalid POST data: %s", err.Error()))
-			return c.JSON(http.StatusBadRequest, Msg(errStr))
+		success, err := ReadConn(c, &in)
+		if !success {
+			return err
 		}
 		// Developer name has to be specified
 		if in.AppInst.AppKey.DeveloperKey.Name == "" {
-			return c.JSON(http.StatusBadRequest, Msg("App details must be present"))
+			return setReply(c, fmt.Errorf("App details must be present"), nil)
 		}
 		rc.region = in.Region
 		org = in.AppInst.AppKey.DeveloperKey.Name
 		if err = validateSelectorString(in.Selector, CLIENT); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+			return setReply(c, err, nil)
 		}
 		cmd = ClientMetricsQuery(&in)
 		// Check the developer against who is logged in
 		// Should the operators logged in be allowed to see the API usage of the apps on their cloudlets?
 		if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
-			return echo.ErrForbidden
+			return setReply(c, echo.ErrForbidden, nil)
 		}
 	} else {
-		return echo.ErrNotFound
+		return setReply(c, echo.ErrNotFound, nil)
 	}
 
-	wroteHeader := false
 	err = metricsStream(ctx, rc, cmd, func(res interface{}) {
-		if !wroteHeader {
-			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			c.Response().WriteHeader(http.StatusOK)
-			wroteHeader = true
-		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		json.NewEncoder(c.Response()).Encode(payload)
-		c.Response().Flush()
+		WriteStream(c, &payload)
 	})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			err = fmt.Errorf("%s", st.Message())
-		}
-		if !wroteHeader {
-			return setReply(c, err, nil)
-		}
-		res := ormapi.Result{}
-		res.Message = err.Error()
-		res.Code = http.StatusBadRequest
-		payload := ormapi.StreamPayload{Result: &res}
-		json.NewEncoder(c.Response()).Encode(payload)
+		return WriteError(c, err)
 	}
 	return nil
 }
