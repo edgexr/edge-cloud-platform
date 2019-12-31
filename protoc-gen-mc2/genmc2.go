@@ -258,7 +258,6 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		Service:              service,
 		MethodName:           *method.Name,
 		InName:               inname,
-		InNameJson:           strings.ToLower(inname),
 		OutName:              *out.DescriptorProto.Name,
 		GenStruct:            !found,
 		Resource:             apiVals[0],
@@ -352,7 +351,6 @@ type tmplArgs struct {
 	Service              string
 	MethodName           string
 	InName               string
-	InNameJson           string
 	OutName              string
 	GenStruct            bool
 	Resource             string
@@ -378,8 +376,8 @@ type tmplArgs struct {
 var tmplApi = `
 {{- if .GenStruct}}
 type Region{{.InName}} struct {
-	Region string ` + "`json:\"region\"`" + `
-	{{.InName}} edgeproto.{{.InName}} ` + "`json:\"{{.InNameJson}}\"`" + `
+	Region string
+	{{.InName}} edgeproto.{{.InName}}
 }
 
 {{- end}}

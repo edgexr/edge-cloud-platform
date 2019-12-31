@@ -19,21 +19,21 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionCloudletPool struct {
-	Region       string                 `json:"region"`
-	CloudletPool edgeproto.CloudletPool `json:"cloudletpool"`
+	Region       string
+	CloudletPool edgeproto.CloudletPool
 }
 
 type RegionCloudletPoolMember struct {
-	Region             string                       `json:"region"`
-	CloudletPoolMember edgeproto.CloudletPoolMember `json:"cloudletpoolmember"`
+	Region             string
+	CloudletPoolMember edgeproto.CloudletPoolMember
 }
 
 type RegionCloudletKey struct {
-	Region      string                `json:"region"`
-	CloudletKey edgeproto.CloudletKey `json:"cloudletkey"`
+	Region      string
+	CloudletKey edgeproto.CloudletKey
 }
 
 type RegionCloudletPoolKey struct {
-	Region          string                    `json:"region"`
-	CloudletPoolKey edgeproto.CloudletPoolKey `json:"cloudletpoolkey"`
+	Region          string
+	CloudletPoolKey edgeproto.CloudletPoolKey
 }

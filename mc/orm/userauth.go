@@ -32,7 +32,7 @@ var PasshashSaltBytes = 8
 var Jwks vault.JWKS
 
 type TokenAuth struct {
-	Token string `json:"token"`
+	Token string
 }
 
 func InitVault(config *vault.Config, updateDone chan struct{}) {

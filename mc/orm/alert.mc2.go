@@ -8,6 +8,7 @@ It is generated from these files:
 	alert.proto
 	app.proto
 	app_inst.proto
+	autoprovpolicy.proto
 	autoscalepolicy.proto
 	cloudlet.proto
 	cloudletpool.proto
@@ -37,6 +38,11 @@ It has these top-level messages:
 	AppInstRuntime
 	AppInstInfo
 	AppInstMetrics
+	AutoProvPolicy
+	AutoProvCloudlet
+	AutoProvCount
+	AutoProvCounts
+	AutoProvPolicyCloudlet
 	PolicyKey
 	AutoScalePolicy
 	CloudletKey
@@ -232,6 +238,12 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteAutoScalePolicy", DeleteAutoScalePolicy)
 	group.Match([]string{method}, "/ctrl/UpdateAutoScalePolicy", UpdateAutoScalePolicy)
 	group.Match([]string{method}, "/ctrl/ShowAutoScalePolicy", ShowAutoScalePolicy)
+	group.Match([]string{method}, "/ctrl/CreateAutoProvPolicy", CreateAutoProvPolicy)
+	group.Match([]string{method}, "/ctrl/DeleteAutoProvPolicy", DeleteAutoProvPolicy)
+	group.Match([]string{method}, "/ctrl/UpdateAutoProvPolicy", UpdateAutoProvPolicy)
+	group.Match([]string{method}, "/ctrl/ShowAutoProvPolicy", ShowAutoProvPolicy)
+	group.Match([]string{method}, "/ctrl/AddAutoProvPolicyCloudlet", AddAutoProvPolicyCloudlet)
+	group.Match([]string{method}, "/ctrl/RemoveAutoProvPolicyCloudlet", RemoveAutoProvPolicyCloudlet)
 	group.Match([]string{method}, "/ctrl/CreateCloudletPool", CreateCloudletPool)
 	group.Match([]string{method}, "/ctrl/DeleteCloudletPool", DeleteCloudletPool)
 	group.Match([]string{method}, "/ctrl/ShowCloudletPool", ShowCloudletPool)

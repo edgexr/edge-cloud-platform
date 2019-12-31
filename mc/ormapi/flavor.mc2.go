@@ -19,6 +19,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionFlavor struct {
-	Region string           `json:"region"`
-	Flavor edgeproto.Flavor `json:"flavor"`
+	Region string
+	Flavor edgeproto.Flavor
 }

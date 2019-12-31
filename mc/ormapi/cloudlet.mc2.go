@@ -20,21 +20,21 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionCloudlet struct {
-	Region   string             `json:"region"`
-	Cloudlet edgeproto.Cloudlet `json:"cloudlet"`
+	Region   string
+	Cloudlet edgeproto.Cloudlet
 }
 
 type RegionCloudletResMap struct {
-	Region         string                   `json:"region"`
-	CloudletResMap edgeproto.CloudletResMap `json:"cloudletresmap"`
+	Region         string
+	CloudletResMap edgeproto.CloudletResMap
 }
 
 type RegionFlavorMatch struct {
-	Region      string                `json:"region"`
-	FlavorMatch edgeproto.FlavorMatch `json:"flavormatch"`
+	Region      string
+	FlavorMatch edgeproto.FlavorMatch
 }
 
 type RegionCloudletInfo struct {
-	Region       string                 `json:"region"`
-	CloudletInfo edgeproto.CloudletInfo `json:"cloudletinfo"`
+	Region       string
+	CloudletInfo edgeproto.CloudletInfo
 }

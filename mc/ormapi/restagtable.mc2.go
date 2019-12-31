@@ -19,11 +19,11 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionResTagTable struct {
-	Region      string                `json:"region"`
-	ResTagTable edgeproto.ResTagTable `json:"restagtable"`
+	Region      string
+	ResTagTable edgeproto.ResTagTable
 }
 
 type RegionResTagTableKey struct {
-	Region         string                   `json:"region"`
-	ResTagTableKey edgeproto.ResTagTableKey `json:"restagtablekey"`
+	Region         string
+	ResTagTableKey edgeproto.ResTagTableKey
 }
