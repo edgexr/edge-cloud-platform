@@ -109,6 +109,6 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 type RegionAlert struct {
-	Region string          `json:"region"`
-	Alert  edgeproto.Alert `json:"alert"`
+	Region string
+	Alert  edgeproto.Alert
 }
