@@ -194,6 +194,11 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 	}
 
 	var err error
+	if clusterInst.AvailabilityZone == "" {
+		//use the cloudlet default AZ if it exists
+		clusterInst.AvailabilityZone = GetCloudletAvailabilityZone()
+	}
+
 	vmspec := vmspec.VMCreationSpec{
 		FlavorName:         clusterInst.NodeFlavor,
 		ExternalVolumeSize: clusterInst.ExternalVolumeSize,
