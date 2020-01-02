@@ -106,6 +106,9 @@ var vmTemplateResources = `
          name: {{.VMName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
+        {{if .AvailabilityZone}}
+         availability_zone: {{.AvailabilityZone}}
+        {{- end}}
   {{- end }}
 
    vm_security_group:
@@ -124,8 +127,10 @@ var vmTemplateResources = `
    {{.VMName}}:
       type: OS::Nova::Server
       properties:
-         name: 
-            {{.VMName}}
+         name: {{.VMName}}
+       {{if .AvailabilityZone}}
+         availability_zone: {{.AvailabilityZone}}
+       {{- end}}
        {{if .ExternalVolumeSize}}
          block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.VMName}}-vol }, delete_on_termination: "false" }]
        {{else}}
@@ -139,9 +144,7 @@ var vmTemplateResources = `
           {{- end}}
         {{- end}}
          flavor: {{.FlavorName}}
-         {{if .AvailabilityZone}}
-           availabilityzone:{{.AvailabilityZone}}
-         {{- end}}
+
         {{if .AuthPublicKey}} key_name: { get_resource: ssh_key_pair } {{- end}}
          config_drive: true       
          user_data_format: RAW
@@ -310,6 +313,9 @@ resources:
          name: k8s-master-{{.ClusterName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
+        {{if .AvailabilityZone}}
+         availability_zone: {{.AvailabilityZone}}
+        {{- end}}
   {{- end}}
   {{if .SharedVolumeSize}}
    k8s-shared-vol:
@@ -317,12 +323,17 @@ resources:
       properties:
          name: k8s-shared-{{.ClusterName}}-vol
          size: {{.SharedVolumeSize}}
+        {{if .AvailabilityZone}}
+         availability_zone: {{.AvailabilityZone}}
+        {{- end}}
   {{- end}}
    k8s-master:
       type: OS::Nova::Server
       properties:
-         name: 
-            mex-k8s-master-{{.ClusterName}}
+         name: mex-k8s-master-{{.ClusterName}}
+        {{if .AvailabilityZone}}
+         availability_zone: {{.AvailabilityZone}}
+        {{- end}}
       {{if or (.ExternalVolumeSize) (.SharedVolumeSize)}}
          block_device_mapping:
         {{if .ExternalVolumeSize}}
@@ -382,6 +393,9 @@ resources:
          name: {{.NodeName}}-vol
          image: {{$.ImageName}}
          size: {{$.ExternalVolumeSize}}
+        {{if $.AvailabilityZone}}
+         availability_zone: {{$.AvailabilityZone}}
+       {{- end}}
   {{- end }}
 
    {{.NodeName}}:
@@ -389,6 +403,9 @@ resources:
       depends_on: k8s-master
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
+        {{if $.AvailabilityZone}}
+         availability_zone: {{$.AvailabilityZone}}
+        {{- end}}
         {{if  $.ExternalVolumeSize}}
          block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.NodeName}}-vol }, delete_on_termination: "false" }]
         {{else}}
@@ -505,6 +522,13 @@ func WithDeploymentManifest(deploymentManifest string) VMParamsOp {
 func WithCommand(command string) VMParamsOp {
 	return func(vmp *VMParams) error {
 		vmp.Command = command
+		return nil
+	}
+}
+
+func WithAvailabilityZone(az string) VMParamsOp {
+	return func(vmp *VMParams) error {
+		vmp.AvailabilityZone = az
 		return nil
 	}
 }
@@ -686,6 +710,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 			GetCloudletOSImage(),
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
+			WithAvailabilityZone(clusterInst.AvailabilityZone),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to get rootlb params: %v", err)
@@ -803,6 +828,7 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 		GetCloudletOSImage(),
 		GetSecurityGroupName(ctx, serverName),
 		cloudletKey,
+		WithAvailabilityZone(vmspec.AvailabilityZone),
 	)
 	if err != nil {
 		return fmt.Errorf("Unable to get VM params: %v", err)
@@ -826,6 +852,7 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	if err != nil {
 		return err
 	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "Updated ClusterParams", "clusterParams", cp)
 
 	templateString := k8sClusterTemplate
 	//append the VM resources for the rootLB is dedicated
