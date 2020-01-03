@@ -37,6 +37,7 @@ func ShowCloudletRefs(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.CloudletRefs.Key.OperatorKey.Name)
@@ -121,6 +122,7 @@ func ShowClusterRefs(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowClusterRefsStream(ctx, rc, &in.ClusterRefs, func(res *edgeproto.ClusterRefs) {

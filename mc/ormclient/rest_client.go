@@ -390,7 +390,7 @@ func (s *Client) handleWebsocketStreamOut(uri, token string, reqData, replyData 
 
 		err := ws.ReadJSON(&payload)
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				break
 			}
 			return http.StatusBadRequest, fmt.Errorf("post %s decode resp failed, %s", uri, err.Error())

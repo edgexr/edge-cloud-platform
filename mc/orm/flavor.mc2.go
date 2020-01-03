@@ -167,6 +167,7 @@ func ShowFlavor(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowFlavorStream(ctx, rc, &in.Flavor, func(res *edgeproto.Flavor) {

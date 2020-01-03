@@ -126,6 +126,7 @@ func ShowCloudletPool(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowCloudletPoolStream(ctx, rc, &in.CloudletPool, func(res *edgeproto.CloudletPool) {
@@ -294,6 +295,7 @@ func ShowCloudletPoolMember(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowCloudletPoolMemberStream(ctx, rc, &in.CloudletPoolMember, func(res *edgeproto.CloudletPoolMember) {
@@ -376,6 +378,7 @@ func ShowPoolsForCloudlet(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowPoolsForCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.CloudletPool) {
@@ -458,6 +461,7 @@ func ShowCloudletsForPool(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowCloudletsForPoolStream(ctx, rc, &in.CloudletPoolKey, func(res *edgeproto.Cloudlet) {
