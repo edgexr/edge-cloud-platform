@@ -55,6 +55,7 @@ type ServerConfig struct {
 	SkipVerifyEmail bool
 	JaegerAddr      string
 	vaultConfig     *vault.Config
+	SkipOriginCheck bool
 }
 
 var DefaultDBUser = "mcuser"
@@ -252,7 +253,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	// Use GET method for websockets as thats the method used
 	// in setting up TCP connection by most of the clients
 	// Also, authorization is handled as part of websocketUpgrade
-	ws := e.Group("ws/"+root+"/auth", websocketUpgrade)
+	ws := e.Group("ws/"+root+"/auth", server.websocketUpgrade)
 	addControllerApis("GET", ws)
 	// Metrics api route use ws to serve a query to influxDB
 	ws.GET("/metrics/app", GetMetricsCommon)
@@ -351,17 +352,20 @@ func ShowVersion(c echo.Context) error {
 	return c.JSON(http.StatusOK, ver)
 }
 
-func websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		upgrader := websocket.Upgrader{}
+		if s.config.SkipOriginCheck {
+			// Skip origin check restriction.
+			// This is to be used for testing purpose only, as it is
+			// not safe to allow all origins
+			upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+		}
 		ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 		if err != nil {
 			return nil
 		}
 		defer ws.Close()
-
-		// Set Read timeout
-		ws.SetReadDeadline(time.Now().Add(10 * time.Second))
 
 		// Verify Auth
 		// ===========
@@ -420,6 +424,40 @@ func ReadConn(c echo.Context, in interface{}) (bool, error) {
 	return true, nil
 }
 
+func CloseConn(c echo.Context) {
+	if ws := GetWs(c); ws != nil {
+		ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+		ws.Close()
+	}
+}
+
+func WaitForConnClose(c echo.Context, serverClosed chan bool) {
+	if ws := GetWs(c); ws != nil {
+		clientClosed := make(chan error)
+		go func() {
+			// Handling close events from client is different here
+			// A close message is sent from client, hence just wait
+			// on getting a close message
+			_, _, err := ws.ReadMessage()
+			clientClosed <- err
+		}()
+		select {
+		case <-serverClosed:
+			return
+		case err := <-clientClosed:
+			if _, ok := err.(*websocket.CloseError); !ok {
+				ws.WriteMessage(websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseAbnormalClosure, ""))
+				ws.Close()
+			}
+		}
+	} else {
+		if <-serverClosed {
+			return
+		}
+	}
+}
+
 func WriteStream(c echo.Context, payload *ormapi.StreamPayload) error {
 	if ws := GetWs(c); ws != nil {
 		wsPayload := ormapi.WSStreamPayload{
@@ -468,7 +506,7 @@ func WriteError(c echo.Context, err error) error {
 			Code: http.StatusBadRequest,
 			Data: MsgErr(err),
 		}
-		ws.WriteJSON(wsPayload)
+		return ws.WriteJSON(wsPayload)
 	} else {
 		res := ormapi.Result{}
 		res.Message = err.Error()

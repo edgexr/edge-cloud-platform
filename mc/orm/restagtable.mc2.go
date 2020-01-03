@@ -167,6 +167,7 @@ func ShowResTagTable(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowResTagTableStream(ctx, rc, &in.ResTagTable, func(res *edgeproto.ResTagTable) {

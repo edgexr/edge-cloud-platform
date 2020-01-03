@@ -176,6 +176,7 @@ func ShowAutoProvPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AutoProvPolicy.Key.Developer)

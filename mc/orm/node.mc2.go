@@ -36,6 +36,7 @@ func ShowNode(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowNodeStream(ctx, rc, &in.Node, func(res *edgeproto.Node) {

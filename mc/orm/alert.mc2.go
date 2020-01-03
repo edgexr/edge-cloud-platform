@@ -126,6 +126,7 @@ func ShowAlert(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 
 	err = ShowAlertStream(ctx, rc, &in.Alert, func(res *edgeproto.Alert) {
@@ -218,6 +219,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/RemoveResTag", RemoveResTag)
 	group.Match([]string{method}, "/ctrl/GetResTagTable", GetResTagTable)
 	group.Match([]string{method}, "/ctrl/CreateCloudlet", CreateCloudlet)
+	group.Match([]string{method}, "/ctrl/StreamCloudlet", StreamCloudlet)
 	group.Match([]string{method}, "/ctrl/DeleteCloudlet", DeleteCloudlet)
 	group.Match([]string{method}, "/ctrl/UpdateCloudlet", UpdateCloudlet)
 	group.Match([]string{method}, "/ctrl/ShowCloudlet", ShowCloudlet)
@@ -226,10 +228,12 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/FindFlavorMatch", FindFlavorMatch)
 	group.Match([]string{method}, "/ctrl/ShowCloudletInfo", ShowCloudletInfo)
 	group.Match([]string{method}, "/ctrl/CreateClusterInst", CreateClusterInst)
+	group.Match([]string{method}, "/ctrl/StreamClusterInst", StreamClusterInst)
 	group.Match([]string{method}, "/ctrl/DeleteClusterInst", DeleteClusterInst)
 	group.Match([]string{method}, "/ctrl/UpdateClusterInst", UpdateClusterInst)
 	group.Match([]string{method}, "/ctrl/ShowClusterInst", ShowClusterInst)
 	group.Match([]string{method}, "/ctrl/CreateAppInst", CreateAppInst)
+	group.Match([]string{method}, "/ctrl/StreamAppInst", StreamAppInst)
 	group.Match([]string{method}, "/ctrl/DeleteAppInst", DeleteAppInst)
 	group.Match([]string{method}, "/ctrl/RefreshAppInst", RefreshAppInst)
 	group.Match([]string{method}, "/ctrl/UpdateAppInst", UpdateAppInst)

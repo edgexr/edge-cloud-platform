@@ -27,6 +27,7 @@ var artifactoryAddr = flag.String("artifactoryAddr", "http://127.0.0.1:80", "Art
 var jaegerAddr = flag.String("jaegerAddr", "127.0.0.1:16686", "Jaeger server address - do not include scheme")
 var pingInterval = flag.Duration("pingInterval", 20*time.Second, "SQL database ping keep-alive interval")
 var skipVerifyEmail = flag.Bool("skipVerifyEmail", false, "skip email verification, for testing only")
+var skipOriginCheck = flag.Bool("skipOriginCheck", false, "skip origin check constraint, for testing only")
 
 var sigChan chan os.Signal
 
@@ -54,6 +55,7 @@ func main() {
 		PingInterval:    *pingInterval,
 		SkipVerifyEmail: *skipVerifyEmail,
 		JaegerAddr:      *jaegerAddr,
+		SkipOriginCheck: *skipOriginCheck,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

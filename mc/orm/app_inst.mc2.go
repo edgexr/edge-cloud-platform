@@ -25,7 +25,9 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func CreateAppInst(c echo.Context) error {
+var streamAppInst = &StreamObj{}
+
+func StreamAppInst(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
@@ -43,13 +45,77 @@ func CreateAppInst(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
 
+	streamer := streamAppInst.Get(in.AppInst.Key)
+	if streamer != nil {
+		payload := ormapi.StreamPayload{}
+		streamCh := streamer.Subscribe()
+		serverClosed := make(chan bool)
+		go func() {
+			for streamMsg := range streamCh {
+				switch out := streamMsg.(type) {
+				case string:
+					payload.Data = &edgeproto.Result{Message: out}
+					WriteStream(c, &payload)
+				case error:
+					WriteError(c, out)
+				default:
+					WriteError(c, fmt.Errorf("Unsupported message type received: %v", streamMsg))
+				}
+			}
+			CloseConn(c)
+			serverClosed <- true
+		}()
+		// Wait for client/server to close
+		// * Server closure is set via above serverClosed flag
+		// * Client closure is sent from client via a message
+		WaitForConnClose(c, serverClosed)
+		streamer.Unsubscribe(streamCh)
+	} else {
+		WriteError(c, fmt.Errorf("Key doesn't exist"))
+		CloseConn(c)
+	}
+	return nil
+}
+
+func CreateAppInst(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionAppInst{}
+	success, err := ReadConn(c, &in)
+	if !success {
+		return err
+	}
+	defer CloseConn(c)
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+
+	streamer := NewStreamer()
+	defer streamer.Stop()
+	streamAdded := false
+
 	err = CreateAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.Result) {
+		if !streamAdded {
+			streamAppInst.Add(in.AppInst.Key, streamer)
+			streamAdded = true
+		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
+		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
+		streamer.Publish(err)
 		WriteError(c, err)
+	}
+	if streamAdded {
+		streamAppInst.Remove(in.AppInst.Key, streamer)
 	}
 	return nil
 }
@@ -113,17 +179,31 @@ func DeleteAppInst(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
 
+	streamer := NewStreamer()
+	defer streamer.Stop()
+	streamAdded := false
+
 	err = DeleteAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.Result) {
+		if !streamAdded {
+			streamAppInst.Add(in.AppInst.Key, streamer)
+			streamAdded = true
+		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
+		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
+		streamer.Publish(err)
 		WriteError(c, err)
+	}
+	if streamAdded {
+		streamAppInst.Remove(in.AppInst.Key, streamer)
 	}
 	return nil
 }
@@ -185,17 +265,31 @@ func RefreshAppInst(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
 
+	streamer := NewStreamer()
+	defer streamer.Stop()
+	streamAdded := false
+
 	err = RefreshAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.Result) {
+		if !streamAdded {
+			streamAppInst.Add(in.AppInst.Key, streamer)
+			streamAdded = true
+		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
+		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
+		streamer.Publish(err)
 		WriteError(c, err)
+	}
+	if streamAdded {
+		streamAppInst.Remove(in.AppInst.Key, streamer)
 	}
 	return nil
 }
@@ -257,17 +351,31 @@ func UpdateAppInst(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
 
+	streamer := NewStreamer()
+	defer streamer.Stop()
+	streamAdded := false
+
 	err = UpdateAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.Result) {
+		if !streamAdded {
+			streamAppInst.Add(in.AppInst.Key, streamer)
+			streamAdded = true
+		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
+		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
+		streamer.Publish(err)
 		WriteError(c, err)
+	}
+	if streamAdded {
+		streamAppInst.Remove(in.AppInst.Key, streamer)
 	}
 	return nil
 }
@@ -329,6 +437,7 @@ func ShowAppInst(c echo.Context) error {
 	if !success {
 		return err
 	}
+	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
