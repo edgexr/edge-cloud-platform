@@ -54,7 +54,7 @@ regiondata:
           name: AcmeAppCo
         name: someapplication1
         version: "1.0"
-      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
       imagetype: ImageTypeDocker
       deployment: "kubernetes"
       defaultflavor:
@@ -70,7 +70,7 @@ regiondata:
           name: AcmeAppCo
         name: autoprovapp
         version: "1.0"
-      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
       imagetype: ImageTypeDocker
       deployment: "kubernetes"
       defaultflavor:
@@ -82,7 +82,7 @@ regiondata:
           name: platos
         name: platosEnablingLayer
         version: "1.0"
-      imagepath: registry.mobiledgex.net/dummyvalue
+      imagepath: registry.mobiledgex.net/platos/dummyvalue
       imagetype: ImageTypeDocker
       deployment: "kubernetes"
       defaultflavor:

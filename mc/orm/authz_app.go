@@ -42,6 +42,17 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse ImagePath, %v", err)
 	}
+	if u.Scheme == "" {
+		// No scheme specified, causes host to be parsed as path.
+		// Typical for docker URIs that leave out the http scheme.
+		u, err = url.Parse("http://" + obj.ImagePath)
+		if err != nil {
+			return fmt.Errorf("Failed to parse http:// scheme prepended ImagePath, %v", err)
+		}
+	}
+	if u.Host == "" {
+		return fmt.Errorf("Unable to determine host from ImagePath %s", obj.ImagePath)
+	}
 	dns := ".mobiledgex.net"
 	if !strings.HasSuffix(u.Host, ".mobiledgex.net") {
 		return nil
