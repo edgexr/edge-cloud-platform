@@ -37,6 +37,8 @@ func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Clien
 	// non-mobiledgex paths always succeed
 	testImagePath(t, ctx, "org1", "http://foobar.com/blah/blah", true)
 	testImagePath(t, ctx, "org1", "http://foobar.com/artifactory/repo-blah/blah", true)
+	// non-mobiledgex docker path at implied docker.io
+	testImagePath(t, ctx, "org1", "library/mongo", true)
 	// mobiledgex paths that should succeed - gitlab
 	testImagePath(t, ctx, "org1", "http://foobar.mobiledgex.net/org1/app", true)
 	testImagePath(t, ctx, "org1", "http://foobar.mobiledgex.net/org1/app:1.0", true)
@@ -60,6 +62,8 @@ func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Clien
 	// missing orgs should fail
 	testImagePath(t, ctx, "org1", "http://foobar.mobiledgex.net/org4/someapp", false)
 	testImagePath(t, ctx, "org1", "http://foobar.mobiledgex.net/artifactory/repo-org4/someapp", false)
+	// docker path which doesn't include http scheme
+	testImagePath(t, ctx, "org1", "foobar.mobiledgex.net/andyorg/images/server:1.0", false)
 
 	status, err = mcClient.DeleteOrg(uri, tokenAd, &org1)
 	require.Nil(t, err)

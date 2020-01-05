@@ -86,7 +86,7 @@ regiondata:
           name: enterprise
         name: ep1
         version: "1.0"
-      imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
+      imagepath: registry.mobiledgex.net/enterprise/ep1:1.0
       imagetype: ImageTypeDocker
       accessports: tcp:80,http:443,udp:10002
       defaultflavor:

@@ -101,6 +101,6 @@
   status: 200
   starttime: "2019-08-11T09:36:02.661684-07:00"
   duration: 19.931ms
-  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
+  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
   response: '{}'
   traceid: 47b0b401e7c4768d
