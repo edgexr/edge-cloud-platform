@@ -121,7 +121,7 @@ var vmTemplateResources = `
            - remote_ip_prefix: 0.0.0.0/0
              protocol: {{.Proto}}
              port_range_min: {{.Port}}
-             port_range_max: {{.Port}}
+             port_range_max: {{.EndPort}}
           {{end}}
 
    {{.VMName}}:
@@ -506,9 +506,21 @@ func WithPublicKey(authPublicKey string) VMParamsOp {
 
 func WithAccessPorts(accessPorts string) VMParamsOp {
 	return func(vmp *VMParams) error {
-		var err error
-		vmp.AccessPorts, err = util.ParsePorts(accessPorts)
-		return err
+		parsedAccessPorts, err := util.ParsePorts(accessPorts)
+		if err != nil {
+			return err
+		}
+		for _, port := range parsedAccessPorts {
+			endPort, err := strconv.ParseInt(port.EndPort, 10, 32)
+			if err != nil {
+				return err
+			}
+			if endPort == 0 {
+				port.EndPort = port.Port
+			}
+			vmp.AccessPorts = append(vmp.AccessPorts, port)
+		}
+		return nil
 	}
 }
 
