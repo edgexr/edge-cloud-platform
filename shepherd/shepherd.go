@@ -198,6 +198,7 @@ func main() {
 	// LB metrics are not supported in fake mode
 	if myPlatform.GetType() != "fake" {
 		InitProxyScraper()
+		StartProxyScraper()
 	}
 	InitPlatformMetrics()
 

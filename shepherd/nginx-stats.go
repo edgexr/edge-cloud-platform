@@ -41,6 +41,12 @@ type ProxyScrapePoint struct {
 func InitProxyScraper() {
 	ProxyMap = make(map[string]ProxyScrapePoint)
 	ProxyMutex = &sync.Mutex{}
+}
+
+func StartProxyScraper() {
+	if ProxyMap == nil {
+		return
+	}
 	go ProxyScraper()
 }
 
@@ -139,7 +145,10 @@ func ProxyScraper() {
 }
 
 func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
-	//query envoy
+	// set up health check context
+	span, hcCtx := SetupHealthCheckSpan(&scrapePoint.Key)
+	defer span.Finish()
+	// query envoy
 	container := proxy.GetEnvoyContainerName(scrapePoint.App)
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", container, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.Output(request)
@@ -149,10 +158,11 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 		}
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		// Also this means that we need to notify the controller that this AppInst is no longer recheable
-		HealthCheckDown(ctx, &scrapePoint.Key)
+		HealthCheckRootLbDown(hcCtx, &scrapePoint.Key)
 		return nil, err
 	}
-	HealthCheckUp(ctx, &scrapePoint.Key)
+	HealthCheckRootLbUp(hcCtx, &scrapePoint.Key)
+	CheckEnvoyClusterHealth(hcCtx, scrapePoint)
 	metrics := &shepherd_common.ProxyMetrics{Nginx: false}
 	respMap := parseEnvoyResp(ctx, resp)
 	err = envoyConnections(ctx, respMap, scrapePoint.Ports, metrics)
@@ -207,6 +217,24 @@ func parseEnvoyResp(ctx context.Context, resp string) map[string]string {
 	return newMap
 }
 
+// converts envoy cluster ouptut into a map
+// Example of cluster output string: backend8008::10.192.1.2:8008::health_flags::healthy
+func parseEnvoyClusterResp(ctx context.Context, resp string) map[string]string {
+	lines := strings.Split(outputTrim(resp), "\n")
+	newMap := make(map[string]string)
+	for _, line := range lines {
+		items := strings.Split(line, "::")
+		cnt := len(items)
+		// at least 3
+		if cnt < 3 {
+			continue
+		}
+		// First is unique with respect to port, next to last is the keyname and last is value
+		newMap[items[0]+"::"+items[cnt-2]] = items[cnt-1]
+	}
+	return newMap
+}
+
 // this function only retrieves stats from envoy that are expected to be int values
 func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
 	stat, exists := respMap[statName]
@@ -221,6 +249,9 @@ func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
 }
 
 func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+	// set up health check context
+	span, hcCtx := SetupHealthCheckSpan(&scrapePoint.Key)
+	defer span.Finish()
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.Output(request)
@@ -238,10 +269,10 @@ func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		// Also this means that we need to notify the controller that this AppInst is no longer recheable
-		HealthCheckDown(ctx, &scrapePoint.Key)
+		HealthCheckRootLbDown(hcCtx, &scrapePoint.Key)
 		return nil, err
 	}
-	HealthCheckUp(ctx, &scrapePoint.Key)
+	HealthCheckRootLbUp(hcCtx, &scrapePoint.Key)
 	metrics := &shepherd_common.ProxyMetrics{Nginx: true}
 	err = parseNginxResp(resp, metrics)
 	if err != nil {
