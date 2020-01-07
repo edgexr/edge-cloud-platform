@@ -1,10 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+
 import re
 import sys
 import os
 import shutil
 import subprocess
 import getpass
+import string
 
 from yaml import load, dump
 try:
@@ -30,6 +33,21 @@ DeployTestfile = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud-inf
 
 
 EdgevarData = None
+
+def checkPrereqs():
+    gitid = os.getenv("GITHUB_ID", "")
+    vaultRole = os.getenv("VAULT_ROLE_ID", "")
+    vaultSecret = os.getenv("VAULT_SECRET_ID", "")
+    if gitid == "":
+       print("GITHUB_ID env var not set")
+       if vaultRole != "" and vaultSecret != "":
+           print("Using VAULT_ROLE_ID and VAULT_SECRET env vars")
+       else:
+           print("No appropriate Vault auth found, please set GITHUB_ID or VAULT_ROLE_ID and VAULT_SECRET_ID")
+           return False
+    return True 
+
+
 
 def readConfig():
     global Mc
@@ -124,6 +142,7 @@ def getConfig():
      Mcuser = prompt("Enter MC userid for console/mc login", Mcuser)
      Mcpass = getpass.getpass(prompt="Enter MC password for console/mc login: ", stream=None)
      Region = prompt("Enter region, e.g. US, EU, JP", Region)
+     Region = string.upper(Region)
      Controller = prompt("Enter controller", Controller)
      Cloudlet = prompt("Enter cloudlet", Cloudlet)
      Latitude = prompt("Enter latitude from -90 to 90", Latitude)
@@ -155,7 +174,10 @@ def startCloudlet():
    print("Done create cloudlet: %s" % out)
    if err != "":
       print("Error: %s" % err)
-
+      return
+   if "Failed Tests" in out:
+      print ("Failed to create provisioning")
+      return
 
    print("*** Running create deploy local CRM via e2e tests")
    p = subprocess.Popen("e2e-tests -testfile "+DeployTestfile+" -setupfile "+Setupfile+" -varsfile "+Varsfile+" -notimestamp", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -163,9 +185,15 @@ def startCloudlet():
    print("Done deploy cloudlet: %s" % out)
    if err != "":
       print("Error: %s" % err)
+   if "Failed Tests" in out:
+      print ("Failed to deploy CRM")
+
 
 
 if __name__ == "__main__":
+   if not checkPrereqs():
+      print("Quitting due to prereqs")
+      os._exit(1)
    readConfig()
    getConfig()
    saveConfig() 
