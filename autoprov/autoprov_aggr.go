@@ -131,6 +131,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	// Get any data that has changed in the last time interval.
 	cmd := fmt.Sprintf(`SELECT * FROM "%s" WHERE time > now() - %ds ORDER by time desc LIMIT 1`, cloudcommon.AutoProvMeasurement, int(s.intervalSec))
