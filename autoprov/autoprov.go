@@ -30,7 +30,7 @@ var shortTimeouts = flag.Bool("shortTimeouts", false, "set timeouts short for si
 var sigChan chan os.Signal
 var alertCache edgeproto.AlertCache
 var appHandler AppHandler
-var autoProvPolicyCache edgeproto.AutoProvPolicyCache
+var autoProvPolicyHandler AutoProvPolicyHandler
 var frClusterInsts edgeproto.FreeReservableClusterInstCache
 var dialOpts grpc.DialOption
 var notifyClient *notify.Client
@@ -75,11 +75,11 @@ func start() error {
 	}
 
 	edgeproto.InitAlertCache(&alertCache)
-	edgeproto.InitAutoProvPolicyCache(&autoProvPolicyCache)
 	appHandler.Init()
+	autoProvPolicyHandler.Init()
 	frClusterInsts.Init()
 
-	autoProvAggr = NewAutoProvAggr(cloudcommon.AutoDeployIntervalSec, cloudcommon.AutoDeployOffsetSec, &appHandler.cache, &autoProvPolicyCache, &frClusterInsts)
+	autoProvAggr = NewAutoProvAggr(cloudcommon.AutoDeployIntervalSec, cloudcommon.AutoDeployOffsetSec, &appHandler.cache, &autoProvPolicyHandler.cache, &frClusterInsts)
 	if *shortTimeouts {
 		autoProvAggr.UpdateSettings(1, 0.3)
 	}
@@ -88,7 +88,7 @@ func start() error {
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(addrs, *tlsCertFile)
 	notifyClient.RegisterRecvAlertCache(&alertCache)
-	notifyClient.RegisterRecvAutoProvPolicyCache(&autoProvPolicyCache)
+	notifyClient.RegisterRecv(notify.NewAutoProvPolicyRecv(&autoProvPolicyHandler))
 	notifyClient.RegisterRecv(notify.NewAppRecv(&appHandler))
 	frRecv := notify.NewClusterInstRecv(&frClusterInsts)
 	notifyClient.RegisterRecv(frRecv)

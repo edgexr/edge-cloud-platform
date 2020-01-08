@@ -182,26 +182,8 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	for appKey, cloudlets := range stats {
 		appStats, found := s.allStats[appKey]
 		if !found {
-			// lookup policy
-			// TODO: update cached policy params if policy changes
-			app := edgeproto.App{}
-			if !s.appCache.Get(&appKey, &app) {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find app", "app", appKey)
-				continue
-			}
-			policy := edgeproto.AutoProvPolicy{}
-			policyKey := edgeproto.PolicyKey{}
-			policyKey.Name = app.AutoProvPolicy
-			policyKey.Developer = appKey.DeveloperKey.Name
-			if !s.policyCache.Get(&policyKey, &policy) {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", appKey, "policy", app.AutoProvPolicy)
-				continue
-			}
-			appStats = &apAppStats{}
-			appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
-			appStats.deployClientCount = policy.DeployClientCount
-			appStats.deployIntervalCount = policy.DeployIntervalCount
-			s.allStats[appKey] = appStats
+			// may have been deleted
+			continue
 		}
 		for ckey, count := range cloudlets {
 			cstats, found := appStats.cloudlets[ckey]
@@ -219,15 +201,17 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			}
 			// We are looking for consecutive intervals that
 			// match the deployment/undeployment criteria.
-			if (s.intervalNum-1) == cstats.intervalNum &&
-				(count-cstats.count) >= uint64(appStats.deployClientCount) {
-				cstats.deployIntervalsMet++
-			} else {
+			if (s.intervalNum - 1) != cstats.intervalNum {
+				// missed interval means no change, so reset
+				// consecutive counter
 				cstats.deployIntervalsMet = 0
+			}
+			if (count - cstats.count) >= uint64(appStats.deployClientCount) {
+				cstats.deployIntervalsMet++
 			}
 			cstats.count = count
 			cstats.intervalNum = s.intervalNum
-			log.DebugLog(log.DebugLevelMetrics, "intervalsMet", "app", appKey, "cloudlet", ckey, "deploysMet", cstats.deployIntervalsMet)
+			log.DebugLog(log.DebugLevelMetrics, "intervalsMet", "app", appKey, "cloudlet", ckey, "deploysMet", cstats.deployIntervalsMet, "count", count)
 
 			if cstats.deployIntervalsMet >= appStats.deployIntervalCount {
 				go func() {
@@ -293,14 +277,10 @@ func (s *AutoProvAggr) deploy(ctx context.Context, appKey *edgeproto.AppKey, clo
 	return err
 }
 
-func (s *AutoProvAggr) Clear(appKey *edgeproto.AppKey) {
+func (s *AutoProvAggr) DeleteApp(ctx context.Context, appKey *edgeproto.AppKey) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	for akey, _ := range s.allStats {
-		if akey.Matches(appKey) {
-			delete(s.allStats, akey)
-		}
-	}
+	delete(s.allStats, *appKey)
 }
 
 func (s *AutoProvAggr) Prune(apps map[edgeproto.AppKey]struct{}) {
@@ -310,5 +290,52 @@ func (s *AutoProvAggr) Prune(apps map[edgeproto.AppKey]struct{}) {
 		if _, found := apps[akey]; !found {
 			delete(s.allStats, akey)
 		}
+	}
+}
+
+func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	app := edgeproto.App{}
+	if !s.appCache.Get(appKey, &app) {
+		// must have been deleted
+		delete(s.allStats, *appKey)
+		return
+	}
+	if app.AutoProvPolicy == "" {
+		delete(s.allStats, app.Key)
+		return
+	}
+	appStats, found := s.allStats[app.Key]
+	if !found {
+		appStats = &apAppStats{}
+		appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
+		s.allStats[app.Key] = appStats
+	}
+	policy := edgeproto.AutoProvPolicy{}
+	policyKey := edgeproto.PolicyKey{}
+	policyKey.Name = app.AutoProvPolicy
+	policyKey.Developer = appKey.DeveloperKey.Name
+	if !s.policyCache.Get(&policyKey, &policy) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", app.Key, "policy", app.AutoProvPolicy)
+		return
+	}
+	appStats.deployClientCount = policy.DeployClientCount
+	appStats.deployIntervalCount = policy.DeployIntervalCount
+}
+
+func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, policy *edgeproto.AutoProvPolicy) {
+	appKeys := make([]edgeproto.AppKey, 0)
+	s.appCache.Mux.Lock()
+	for key, app := range s.appCache.Objs {
+		if app.AutoProvPolicy == policy.Key.Name && key.DeveloperKey.Name == policy.Key.Developer {
+			appKeys = append(appKeys, key)
+		}
+	}
+	s.appCache.Mux.Unlock()
+
+	for _, key := range appKeys {
+		s.UpdateApp(ctx, &key)
 	}
 }

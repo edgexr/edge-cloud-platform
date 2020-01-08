@@ -16,12 +16,15 @@ func (s *AppHandler) Init() {
 
 func (s *AppHandler) Update(ctx context.Context, in *edgeproto.App, rev int64) {
 	s.cache.Update(ctx, in, rev)
+	if autoProvAggr != nil {
+		autoProvAggr.UpdateApp(ctx, &in.Key)
+	}
 }
 
 func (s *AppHandler) Delete(ctx context.Context, in *edgeproto.App, rev int64) {
 	s.cache.Delete(ctx, in, rev)
 	if autoProvAggr != nil {
-		autoProvAggr.Clear(&in.Key)
+		autoProvAggr.DeleteApp(ctx, &in.Key)
 	}
 }
 
