@@ -818,47 +818,17 @@ func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
 func (g *GenMC2) generateRunApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
 	// group methods by input type
 	groups := gensupport.GetMethodGroups(g.Generator, service, nil)
-	for inType, group := range groups {
-		g.generateRunGroupApi(file, service, inType, group)
+	for _, group := range groups {
+		g.generateRunGroupApi(file, service, group)
 	}
 }
 
-func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, inType string, group *gensupport.MethodGroup) {
+func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, group *gensupport.MethodGroup) {
 	if !group.HasMc2Api {
 		return
 	}
 	apiName := *service.Name + group.Suffix
-
-	/*
-		allowedActions := []string{
-			"Create",
-			"Update",
-			"Delete",
-		}
-		out := make(map[string]map[string]string)
-		for _, method := range service.Method {
-			found := false
-			action := ""
-			for _, act := range allowedActions {
-				if strings.HasPrefix(*method.Name, act) {
-					found = true
-					action = act
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-			cmd := strings.TrimPrefix(*method.Name, action)
-			if _, ok := out[cmd]; ok {
-				out[cmd][action] = *method.Name
-			} else {
-				out[cmd] = map[string]string{
-					action: *method.Name,
-				}
-			}
-		}
-	*/
+	inType := group.InType
 	readMap := group.HasUpdate
 
 	objStr := strings.ToLower(string(inType[0])) + string(inType[1:len(inType)])
