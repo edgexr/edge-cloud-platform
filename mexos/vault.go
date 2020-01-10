@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
@@ -103,4 +104,39 @@ func DeleteDataFromVault(config *vault.Config, path string) error {
 	// Deleting metadata will delete all version of data
 	metadataPath := strings.Replace(path, "secret/data", "secret/metadata", -1)
 	return vault.DeleteKV(client, metadataPath)
+}
+
+// GetCertFromVault fills in the cert fields by calling the vault  plugin.  The vault plugin will 
+// return a new cert if one is not already available, or a cached copy of an existing cert.
+func GetCertFromVault(ctx context.Context, config *vault.Config, commonName string, tlsCert *access.TLSCert) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetCertFromVault", "commonName", commonName)
+	client, err := config.Login()
+	if err != nil {
+		return err
+	}
+	// vault API uses "_" to denote wildcard
+	path := "/certs/cert/" + strings.Replace(commonName, "*", "_", 1)
+	result, err := vault.GetKV(client, path, 0)
+	if err != nil {
+		return err
+	}
+	var ok bool
+	tlsCert.CertString, ok = result["cert"].(string)
+	if !ok {
+		return fmt.Errorf("No cert found in cert from vault")
+	}
+	tlsCert.KeyString, ok = result["key"].(string)
+	if !ok {
+		return fmt.Errorf("No key found in cert from vault")
+	}
+	ttlval, ok := result["ttl"].(json.Number)
+	if !ok {
+		return fmt.Errorf("ttl key found in cert from vault")
+	}
+	tlsCert.TTL, err = ttlval.Int64()
+	if err != nil {
+		return fmt.Errorf("Error in decoding TTL from vault: %v", err)
+	}
+	tlsCert.CommonName = commonName
+	return nil
 }

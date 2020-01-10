@@ -66,7 +66,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
-	if err = mexos.CreateAppDNS(ctx, client, names, getDnsAction); err != nil {
+	if err = mexos.CreateAppDNS(ctx, client, names, mexos.NoDnsOverride, getDnsAction); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 		return err
 	}
@@ -87,7 +87,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	// remove DNS entries if it was added
 	if !app.InternalPorts {
-		if err = mexos.DeleteAppDNS(ctx, client, names); err != nil {
+		if err = mexos.DeleteAppDNS(ctx, client, names, mexos.NoDnsOverride); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "warning, cannot delete DNS record", "error", err)
 		}
 	}
