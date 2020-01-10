@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -50,7 +51,11 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		// Add crm local replace variables
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
-				ClusterIp: masterIP,
+				ClusterIp:     masterIP,
+				CloudletName:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
+				ClusterName:   k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
+				DeveloperName: k8smgmt.NormalizeName(app.Key.DeveloperKey.Name),
+				DnsZone:       mexos.GetCloudletDNSZone(),
 			},
 		}
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
@@ -97,10 +102,10 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				}
 				// If this is an internal ports, all we need is patch of kube service
 				if app.InternalPorts {
-					err = mexos.CreateAppDNS(ctx, client, names, getDnsAction)
+					err = mexos.CreateAppDNS(ctx, client, names, mexos.NoDnsOverride, getDnsAction)
 				} else {
 					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, masterIP, true, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
+					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, masterIP, true, s.vaultConfig, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
 				}
 			}
 		}
@@ -243,7 +248,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return &action, nil
 		}
 		updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules and DNS")
-		err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, appInst, getDnsAction, rootLBName, rootLBIPaddr, false)
+		err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, rootLBIPaddr, false, s.vaultConfig)
 		if err != nil {
 			return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 		}
@@ -280,21 +285,39 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		_, _, err = mexos.GetMasterNameAndIP(ctx, clusterInst)
+		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
 		if err != nil {
 			if strings.Contains(err.Error(), mexos.ClusterNotFoundErr) {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cluster is gone, allow app deletion")
 				return nil
 			}
 			return err
-		} // Clean up security rules and proxy if app is external
+		}
+		// Add crm local replace variables
+		deploymentVars := crmutil.DeploymentReplaceVars{
+			Deployment: crmutil.CrmReplaceVars{
+				ClusterIp:     masterIP,
+				CloudletName:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
+				ClusterName:   k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
+				DeveloperName: k8smgmt.NormalizeName(app.Key.DeveloperKey.Name),
+				DnsZone:       mexos.GetCloudletDNSZone(),
+			},
+		}
+		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+
+		// Clean up security rules and proxy if app is external
 		secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
 		if !app.InternalPorts {
 			if err := mexos.DeleteProxySecurityGroupRules(ctx, client, names.AppName, secGrp, appInst.MappedPorts, rootLBName); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 			// Clean up DNS entries
-			if err := mexos.DeleteAppDNS(ctx, client, names); err != nil {
+			configs := append(app.Configs, appInst.Configs...)
+			aac, err := access.GetAppAccessConfig(ctx, configs)
+			if err != nil {
+				return err
+			}
+			if err := mexos.DeleteAppDNS(ctx, client, names, aac.DnsOverride); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
@@ -346,7 +369,10 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	// Add crm local replace variables
 	deploymentVars := crmutil.DeploymentReplaceVars{
 		Deployment: crmutil.CrmReplaceVars{
-			ClusterIp: masterIP,
+			ClusterIp:     masterIP,
+			ClusterName:   k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
+			DeveloperName: k8smgmt.NormalizeName(app.Key.DeveloperKey.Name),
+			DnsZone:       mexos.GetCloudletDNSZone(),
 		},
 	}
 	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
