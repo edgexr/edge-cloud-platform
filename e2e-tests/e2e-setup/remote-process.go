@@ -170,6 +170,8 @@ func createAnsibleInventoryFile(procNameFilter string) (string, bool) {
 	//use the mobiledgex ssh key
 	fmt.Fprintln(invfile, "[all:vars]")
 	fmt.Fprintln(invfile, "ansible_ssh_private_key_file=~/.mobiledgex/id_rsa_mex")
+	fmt.Fprintln(invfile, "jaeger_hostname=jaeger.mobiledgex.net")
+	fmt.Fprintln(invfile, "jaeger_port=14268")
 	allservers := make(map[string]map[string]string)
 
 	allprocs := GetAllProcesses()

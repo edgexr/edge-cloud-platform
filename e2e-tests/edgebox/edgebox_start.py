@@ -24,6 +24,7 @@ Mc = None
 Controller = None
 Latitude = None
 Longitude = None
+OutputDir = "/tmp/edgebox_out"
 
 Edgectl = None
 Varsfile = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/edgebox/edgebox_vars.yml"
@@ -61,6 +62,7 @@ def readConfig():
     global Latitude
     global Longitude
     global EdgevarData
+    global OutputDir
 
     with open(Varsfile, 'r') as stream:
        EdgevarData = load(stream, Loader=Loader)
@@ -71,7 +73,8 @@ def readConfig():
        Region = EdgevarData['region']
        Latitude = EdgevarData['latitude']
        Longitude = EdgevarData['longitude']
-    
+       OutputDir = EdgevarData['outputdir']
+
 def yesOrNo(question):
     reply = str(raw_input(question+' (y/n): ')).lower().strip()
     if len(reply) < 1:
@@ -105,6 +108,7 @@ def saveConfig():
     global Latitude
     global Longitude
     global EdgevarData
+    global OutputDir
 
     os.environ["MC_USER"] = Mcuser
     os.environ["MC_PASSWORD"] = Mcpass
@@ -115,6 +119,7 @@ def saveConfig():
     EdgevarData['region'] = Region
     EdgevarData['latitude'] = float(Latitude)
     EdgevarData['longitude'] = float(Longitude)
+    EdgevarData['outputdir'] = OutputDir
  
     bakfile = Varsfile+".bak"
     print("Backing up to %s" % bakfile) 
@@ -122,6 +127,7 @@ def saveConfig():
     print("Saving to %s" % Varsfile)  
     with open(Varsfile, 'w') as varsfile:
         dump(EdgevarData, varsfile)
+    varsfile.close()
 
 def getConfig():
    global Mc
@@ -135,6 +141,7 @@ def getConfig():
    global Latitude
    global Longitude
    global EdgevarData
+   global OutputDir
 
    done = False
    while not done:
@@ -147,6 +154,7 @@ def getConfig():
      Cloudlet = prompt("Enter cloudlet", Cloudlet)
      Latitude = prompt("Enter latitude from -90 to 90", Latitude)
      Longitude = prompt("Enter longitude from -180 to 180", Longitude)
+     OutputDir = prompt("Enter output dir", OutputDir)
 
      print("\nYou entered:")
      print("   MC addr: %s" % Mc)
@@ -158,6 +166,7 @@ def getConfig():
      print("   Cloudlet: %s" % Cloudlet)
      print("   Latitude: %s" % Latitude)
      print("   Longitude: %s" % Longitude)
+     print("   OutputDir: %s" % OutputDir)
      done = yesOrNo("Is this correct?")
    
 def startCloudlet():
@@ -169,7 +178,7 @@ def startCloudlet():
    if not yesOrNo("Ready to deploy?"):
       return
    print("*** Running creating provisioning for cloudlet via e2e tests")
-   p = subprocess.Popen("e2e-tests -testfile "+CreateTestfile+" -setupfile "+Setupfile+" -varsfile "+Varsfile+" -notimestamp", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+   p = subprocess.Popen("e2e-tests -testfile "+CreateTestfile+" -setupfile "+Setupfile+" -varsfile "+Varsfile+" -notimestamp"+" -outputdir "+OutputDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
    out,err = p.communicate()
    print("Done create cloudlet: %s" % out)
    if err != "":
@@ -180,7 +189,7 @@ def startCloudlet():
       return
 
    print("*** Running create deploy local CRM via e2e tests")
-   p = subprocess.Popen("e2e-tests -testfile "+DeployTestfile+" -setupfile "+Setupfile+" -varsfile "+Varsfile+" -notimestamp", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+   p = subprocess.Popen("e2e-tests -testfile "+DeployTestfile+" -setupfile "+Setupfile+" -varsfile "+Varsfile+" -notimestamp"+" -outputdir "+OutputDir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
    out,err = p.communicate()
    print("Done deploy cloudlet: %s" % out)
    if err != "":
