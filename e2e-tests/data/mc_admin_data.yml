@@ -44,6 +44,9 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
+    operatorcodes:
+    - code: 31026
+      operatorname: dmuus
     cloudlets:
     - key:
         operatorkey:

@@ -155,11 +155,14 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 		if g.genctl {
 			g.generateCtlGroup(service)
 		}
+		if len(service.Method) == 0 {
+			continue
+		}
 		if g.gentestutil {
-			if len(service.Method) == 0 {
-				continue
-			}
 			g.generateRunApi(file.FileDescriptorProto, service)
+		}
+		if g.gentest {
+			g.generateTestApi(service)
 		}
 	}
 	if g.genctl {
@@ -177,14 +180,6 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 			g.generatePosts()
 		}
 		g.firstFile = false
-	}
-	if g.gentest {
-		for _, msg := range file.Messages() {
-			if GetGenerateCud(msg.DescriptorProto) &&
-				!GetGenerateShowTest(msg.DescriptorProto) {
-				g.generateMessageTest(msg)
-			}
-		}
 	}
 }
 
@@ -788,10 +783,26 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 
 `
 
-func (g *GenMC2) generateMessageTest(desc *generator.Descriptor) {
-	message := desc.DescriptorProto
+func (g *GenMC2) generateTestApi(service *descriptor.ServiceDescriptorProto) {
+	// group methods by input type
+	groups := gensupport.GetMethodGroups(g.Generator, service, nil)
+	for _, group := range groups {
+		g.generateTestGroupApi(service, group)
+	}
+}
+
+func (g *GenMC2) generateTestGroupApi(service *descriptor.ServiceDescriptorProto, group *gensupport.MethodGroup) {
+	if !group.HasMc2Api {
+		return
+	}
+	message := group.In.DescriptorProto
+	if !GetGenerateCud(message) || GetGenerateShowTest(message) {
+		return
+	}
+
 	args := msgArgs{
-		Message:        *message.Name,
+		Message: group.InType,
+		//Message:        *message.Name,
 		HasUpdate:      GetGenerateCudTestUpdate(message),
 		TargetCloudlet: GetMc2TargetCloudlet(message),
 	}

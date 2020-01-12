@@ -29,6 +29,7 @@ func GetControllerCommand() *cobra.Command {
 func GetRegionCommand() *cobra.Command {
 	cmds := []*cli.Command{}
 	cmds = append(cmds, FlavorApiCmds...)
+	cmds = append(cmds, OperatorCodeApiCmds...)
 	cmds = append(cmds, CloudletApiCmds...)
 	cmds = append(cmds, CloudletPoolApiCmds...)
 	cmds = append(cmds, CloudletInfoApiCmds...)

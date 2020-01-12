@@ -84,6 +84,7 @@ It has these top-level messages:
 	Notice
 	OperatorKey
 	Operator
+	OperatorCode
 	CloudletRefs
 	ClusterRefs
 	ResTagTableKey
@@ -211,6 +212,9 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteApp", DeleteApp)
 	group.Match([]string{method}, "/ctrl/UpdateApp", UpdateApp)
 	group.Match([]string{method}, "/ctrl/ShowApp", ShowApp)
+	group.Match([]string{method}, "/ctrl/CreateOperatorCode", CreateOperatorCode)
+	group.Match([]string{method}, "/ctrl/DeleteOperatorCode", DeleteOperatorCode)
+	group.Match([]string{method}, "/ctrl/ShowOperatorCode", ShowOperatorCode)
 	group.Match([]string{method}, "/ctrl/CreateResTagTable", CreateResTagTable)
 	group.Match([]string{method}, "/ctrl/DeleteResTagTable", DeleteResTagTable)
 	group.Match([]string{method}, "/ctrl/UpdateResTagTable", UpdateResTagTable)
