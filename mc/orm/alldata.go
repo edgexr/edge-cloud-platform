@@ -69,6 +69,11 @@ func CreateData(c echo.Context) error {
 		rc.conn = conn
 
 		appdata := &regionData.AppData
+		for _, oc := range appdata.OperatorCodes {
+			desc := fmt.Sprintf("Create OperatorCode %s-%s", oc.Code, oc.OperatorName)
+			_, err = CreateOperatorCodeObj(ctx, rc, &oc)
+			streamReply(c, desc, err, &hadErr)
+		}
 		for _, flavor := range appdata.Flavors {
 			desc := fmt.Sprintf("Create Flavor %s", flavor.Key.Name)
 			_, err = CreateFlavorObj(ctx, rc, &flavor)
@@ -214,6 +219,11 @@ func DeleteData(c echo.Context) error {
 			_, err = DeleteFlavorObj(ctx, rc, &flavor)
 			streamReply(c, desc, err, &hadErr)
 		}
+		for _, oc := range appdata.OperatorCodes {
+			desc := fmt.Sprintf("Delete OperatorCode %s-%s", oc.Code, oc.OperatorName)
+			_, err = DeleteOperatorCodeObj(ctx, rc, &oc)
+			streamReply(c, desc, err, &hadErr)
+		}
 	}
 	// roles must be deleted after orgs, otherwise we may delete the
 	// role that's needed to be able to delete the org.
@@ -323,11 +333,16 @@ func ShowData(c echo.Context) error {
 		if err == nil {
 			appdata.AppInstances = appinsts
 		}
+		codes, err := ShowOperatorCodeObj(ctx, rc, &edgeproto.OperatorCode{})
+		if err == nil {
+			appdata.OperatorCodes = codes
+		}
 
 		if len(flavors) > 0 ||
 			len(cloudlets) > 0 || len(cinsts) > 0 ||
 			len(apps) > 0 || len(appinsts) > 0 ||
-			len(aspolicies) > 0 || len(appolicies) > 0 {
+			len(aspolicies) > 0 || len(appolicies) > 0 ||
+			len(codes) > 0 {
 			data.RegionData = append(data.RegionData, *regionData)
 		}
 	}

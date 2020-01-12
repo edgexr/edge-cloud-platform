@@ -56,4 +56,5 @@ type Api interface {
 	AutoScalePolicyApiClient
 	ResTagTableApiClient
 	AutoProvPolicyApiClient
+	OperatorCodeApiClient
 }
