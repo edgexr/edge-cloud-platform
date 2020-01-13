@@ -108,12 +108,13 @@ type ProxyMetrics struct {
 }
 
 type ConnectionsMetric struct {
-	ActiveConn     uint64
-	Accepts        uint64
-	HandledConn    uint64
-	AvgSessionTime uint64
-	AvgBytesSent   uint64
-	AvgBytesRecvd  uint64
+	ActiveConn  uint64
+	Accepts     uint64
+	HandledConn uint64
+	// histogram of sessions times (in ms)
+	SessionTime map[string]float64
+	BytesSent   uint64
+	BytesRecvd  uint64
 }
 
 // We keep the name of the pod+ClusterInstKey rather than AppInstKey
