@@ -166,5 +166,5 @@ var ResTagTableComments = map[string]string{
 	"azone":    "availability zone(s) of resource if required",
 }
 var ResTagTableSpecialArgs = map[string]string{
-	"tags": "StringArray",
+	"tags": "StringToString",
 }
