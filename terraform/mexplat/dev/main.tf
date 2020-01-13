@@ -100,6 +100,7 @@ module "console" {
     "http-server",
     "https-server",
     "console-debug",
+    "mc",
     "jaeger",
     "alt-https",
     "vault-ac",
