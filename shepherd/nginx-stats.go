@@ -27,6 +27,12 @@ var envoyClusterName = "cluster.backend"
 var envoyActive = "upstream_cx_active"
 var envoyTotal = "upstream_cx_total"
 var envoyDropped = "upstream_cx_connect_fail" // this one might not be right/enough
+var envoyBytesSent = "upstream_cx_tx_bytes_total"
+var envoyBytesRecvd = "upstream_cx_rx_bytes_total"
+var envoySessionTime = "upstream_cx_length_ms"
+
+var envoyUnseen = "No recorded values"
+var envoyHistogramBuckets = []string{"P0", "P25", "P50", "P75", "P90", "P95", "P99", "P99.5", "P99.9", "P100"}
 
 type ProxyScrapePoint struct {
 	Key               edgeproto.AppInstKey
@@ -55,7 +61,7 @@ func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
 }
 
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
-	// ignore apps not exposed to the outside world as they dont have an nginx proxy
+	// ignore apps not exposed to the outside world as they dont have a envoy/nginx proxy
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
 	if !found {
@@ -174,14 +180,18 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 
 func envoyConnections(ctx context.Context, respMap map[string]string, ports []int32, metrics *shepherd_common.ProxyMetrics) error {
 	var err error
+	var droppedVal uint64
 	metrics.EnvoyStats = make(map[int32]shepherd_common.ConnectionsMetric)
 	for _, port := range ports {
 		new := shepherd_common.ConnectionsMetric{}
-		//active, accepts, handled conn
-		activeSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyActive
-		droppedSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyDropped
-		totalSearch := envoyClusterName + strconv.Itoa(int(port)) + "." + envoyTotal
-
+		//active, accepts, handled conn, bytes sent/recvd
+		envoyCluster := envoyClusterName + strconv.Itoa(int(port)) + "."
+		activeSearch := envoyCluster + envoyActive
+		droppedSearch := envoyCluster + envoyDropped
+		totalSearch := envoyCluster + envoyTotal
+		bytesSentSearch := envoyCluster + envoyBytesSent
+		bytesRecvdSearch := envoyCluster + envoyBytesRecvd
+		sessionTimeSearch := envoyCluster + envoySessionTime
 		new.ActiveConn, err = getUIntStat(respMap, activeSearch)
 		if err != nil {
 			return fmt.Errorf("Error retrieving envoy active connections stats: %v", err)
@@ -190,12 +200,27 @@ func envoyConnections(ctx context.Context, respMap map[string]string, ports []in
 		if err != nil {
 			return fmt.Errorf("Error retrieving envoy accepts connections stats: %v", err)
 		}
-		var droppedVal uint64
 		droppedVal, err = getUIntStat(respMap, droppedSearch)
 		if err != nil {
 			return fmt.Errorf("Error retrieving envoy handled connections stats: %v", err)
 		}
 		new.HandledConn = new.Accepts - droppedVal
+		new.BytesSent, err = getUIntStat(respMap, bytesSentSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy bytes_sent connections stats: %v", err)
+		}
+		new.BytesRecvd, err = getUIntStat(respMap, bytesRecvdSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy bytes_recvd connections stats: %v", err)
+		}
+
+		// session time histogram
+		var sessionTimeHistogram map[string]float64
+		sessionTimeHistogram, err = getHistogramIntStats(respMap, sessionTimeSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy session time connections stats: %v", err)
+		}
+		new.SessionTime = sessionTimeHistogram
 		metrics.Ts, _ = types.TimestampProto(time.Now())
 		metrics.EnvoyStats[port] = new
 	}
@@ -246,6 +271,46 @@ func getUIntStat(respMap map[string]string, statName string) (uint64, error) {
 		return 0, fmt.Errorf("Error retrieving stats: %v", err)
 	}
 	return val, nil
+}
+
+// parses envoy histograms into a map form. Envoy histograms look like this:
+// cluster.backend4321.upstream_cx_length_ms: P0(nan,2) P25(nan,5.1) P50(nan,11) P75(nan,105) P90(nan,182) P95(nan,186) P99(nan,189.2) P99.5(nan,189.6) P99.9(nan,189.92) P100(nan,190)
+func getHistogramIntStats(respMap map[string]string, statName string) (map[string]float64, error) {
+	histogramStr, exists := respMap[statName]
+	if !exists {
+		return nil, fmt.Errorf("stat not found: %s", statName)
+	}
+	histogram := make(map[string]float64)
+	for _, v := range envoyHistogramBuckets {
+		histogram[v] = 0
+	}
+	// if theres no connections yet to measure default everything to zeros
+	if histogramStr == envoyUnseen {
+		return histogram, nil
+	}
+	buckets := strings.Split(histogramStr, " ")
+	if len(buckets) != len(envoyHistogramBuckets) {
+		return nil, fmt.Errorf("Error parsing histogram")
+	}
+	for i, bucket := range buckets {
+		// P0(nan,3300)
+		// check if the percentile matches
+		if !strings.HasPrefix(bucket, envoyHistogramBuckets[i]) {
+			return nil, fmt.Errorf("Error parsing histogram")
+		}
+		start := strings.Index(bucket, ",")
+		end := strings.Index(bucket, ")")
+		if start == -1 || end == -1 {
+			return nil, fmt.Errorf("Error parsing histogram")
+		}
+		start = start + 1
+		val, err := strconv.ParseFloat(bucket[start:end], 64)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing histogram: %v", err)
+		}
+		histogram[envoyHistogramBuckets[i]] = val
+	}
+	return histogram, nil
 }
 
 func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
@@ -346,6 +411,13 @@ func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 		metric.AddIntVal("active", data.EnvoyStats[port].ActiveConn)
 		metric.AddIntVal("accepts", data.EnvoyStats[port].Accepts)
 		metric.AddIntVal("handled", data.EnvoyStats[port].HandledConn)
+		metric.AddIntVal("bytesSent", data.EnvoyStats[port].BytesSent)
+		metric.AddIntVal("bytesRecvd", data.EnvoyStats[port].BytesRecvd)
+
+		//session time historgram
+		for k, v := range data.EnvoyStats[port].SessionTime {
+			metric.AddDoubleVal(k, v)
+		}
 		metricList = append(metricList, &metric)
 	}
 	return metricList
