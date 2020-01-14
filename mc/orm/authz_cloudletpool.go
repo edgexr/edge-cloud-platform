@@ -27,5 +27,5 @@ func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *
 	if res.RecordNotFound() || len(pools) == 0 {
 		return nil
 	}
-	return fmt.Errorf("Cannot delete CloudletPool region %s name %s because it in use by OrgCloudletPool org %s", region, obj.Key.Name, pools[0].Org)
+	return fmt.Errorf("Cannot delete CloudletPool region %s name %s because it is in use by OrgCloudletPool org %s", region, obj.Key.Name, pools[0].Org)
 }
