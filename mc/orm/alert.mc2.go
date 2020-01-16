@@ -23,6 +23,7 @@ It is generated from these files:
 	node.proto
 	notice.proto
 	operator.proto
+	privacypolicy.proto
 	refs.proto
 	restagtable.proto
 	result.proto
@@ -85,6 +86,8 @@ It has these top-level messages:
 	OperatorKey
 	Operator
 	OperatorCode
+	OutboundSecurityRule
+	PrivacyPolicy
 	CloudletRefs
 	ClusterRefs
 	ResTagTableKey
@@ -262,6 +265,10 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
 	group.Match([]string{method}, "/ctrl/RunCommand", RunCommand)
 	group.Match([]string{method}, "/ctrl/ShowNode", ShowNode)
+	group.Match([]string{method}, "/ctrl/CreatePrivacyPolicy", CreatePrivacyPolicy)
+	group.Match([]string{method}, "/ctrl/DeletePrivacyPolicy", DeletePrivacyPolicy)
+	group.Match([]string{method}, "/ctrl/UpdatePrivacyPolicy", UpdatePrivacyPolicy)
+	group.Match([]string{method}, "/ctrl/ShowPrivacyPolicy", ShowPrivacyPolicy)
 	group.Match([]string{method}, "/ctrl/ShowCloudletRefs", ShowCloudletRefs)
 	group.Match([]string{method}, "/ctrl/ShowClusterRefs", ShowClusterRefs)
 }

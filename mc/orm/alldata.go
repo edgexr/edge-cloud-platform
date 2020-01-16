@@ -105,6 +105,11 @@ func CreateData(c echo.Context) error {
 			_, err := CreateAutoProvPolicyObj(ctx, rc, &policy)
 			streamReply(c, desc, err, &hadErr)
 		}
+		for _, ppolicy := range appdata.PrivacyPolicies {
+			desc := fmt.Sprintf("Create PrivacyPolicy %v", ppolicy.Key)
+			_, err := CreatePrivacyPolicyObj(ctx, rc, &ppolicy)
+			streamReply(c, desc, err, &hadErr)
+		}
 		for _, cinst := range appdata.ClusterInsts {
 			desc := fmt.Sprintf("Create ClusterInst %v", cinst.Key)
 			cb := newResCb(c, desc)
@@ -196,6 +201,11 @@ func DeleteData(c echo.Context) error {
 		for _, policy := range appdata.AutoScalePolicies {
 			desc := fmt.Sprintf("Delete AutoScalePolicy %v", policy.Key)
 			_, err := DeleteAutoScalePolicyObj(ctx, rc, &policy)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, ppolicy := range appdata.PrivacyPolicies {
+			desc := fmt.Sprintf("Delete PrivacyPolicy %v", ppolicy.Key)
+			_, err := DeletePrivacyPolicyObj(ctx, rc, &ppolicy)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, member := range appdata.CloudletPoolMembers {
