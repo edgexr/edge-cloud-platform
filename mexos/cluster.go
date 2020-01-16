@@ -108,7 +108,7 @@ func waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 	}
 }
 
-func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources with Heat")
 
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeKubernetes {
@@ -157,7 +157,7 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 	}
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
-	err := HeatUpdateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)
+	err := HeatUpdateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 	return waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, time.Minute*15)
 }
 
-func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
+func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
 	// clean-up func
 	defer func() {
 		if reterr == nil {
@@ -204,6 +204,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		ExternalVolumeSize: clusterInst.ExternalVolumeSize,
 		AvailabilityZone:   clusterInst.AvailabilityZone,
 		ImageName:          clusterInst.ImageName,
+		PrivacyPolicy:      privacyPolicy,
 	}
 
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
@@ -212,7 +213,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
 		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
 	} else {
-		err = HeatCreateClusterKubernetes(ctx, clusterInst, rootLBName, dedicatedRootLB, updateCallback)
+		err = HeatCreateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, updateCallback)
 	}
 	if err != nil {
 		return err

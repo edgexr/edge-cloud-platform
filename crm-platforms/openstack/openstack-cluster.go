@@ -11,7 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
@@ -20,10 +20,10 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if err != nil {
 		return err
 	}
-	return mexos.UpdateCluster(ctx, client, lbName, clusterInst, updateCallback)
+	return mexos.UpdateCluster(ctx, client, lbName, clusterInst, privacyPolicy, updateCallback)
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	lbName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
@@ -42,7 +42,7 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	//adjust the timeout just a bit to give some buffer for the API exchange and also sleep loops
 	timeout -= time.Minute
 
-	return mexos.CreateCluster(ctx, lbName, clusterInst, updateCallback, timeout)
+	return mexos.CreateCluster(ctx, lbName, clusterInst, privacyPolicy, updateCallback, timeout)
 }
 
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {

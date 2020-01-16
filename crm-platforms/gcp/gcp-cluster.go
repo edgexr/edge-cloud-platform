@@ -32,7 +32,7 @@ func (s *Platform) GCPLogin(ctx context.Context) error {
 	return nil
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	var err error
 	project := s.props.Project
 	zone := s.props.Zone
@@ -71,6 +71,6 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 	return DeleteGKECluster(clusterInst.Key.ClusterKey.Name)
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("update cluster inst not implemented for GCP")
 }

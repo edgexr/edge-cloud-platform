@@ -138,6 +138,7 @@ var ClusterInstOptionalArgs = []string{
 	"imagename",
 	"reservable",
 	"sharedvolumesize",
+	"privacypolicy",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=clusterinst.key.clusterkey.name",
@@ -167,6 +168,7 @@ var ClusterInstAliasArgs = []string{
 	"reservable=clusterinst.reservable",
 	"reservedby=clusterinst.reservedby",
 	"sharedvolumesize=clusterinst.sharedvolumesize",
+	"privacypolicy=clusterinst.privacypolicy",
 }
 var ClusterInstComments = map[string]string{
 	"cluster":            "Cluster name",
@@ -192,6 +194,7 @@ var ClusterInstComments = map[string]string{
 	"reservable":         "If ClusterInst is reservable",
 	"reservedby":         "For reservable MobiledgeX ClusterInsts, the current developer tenant",
 	"sharedvolumesize":   "Size of an optional shared volume to be mounted on the master",
+	"privacypolicy":      "Optional privacy policy name",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors": "StringArray",

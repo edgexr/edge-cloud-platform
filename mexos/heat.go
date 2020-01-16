@@ -42,6 +42,7 @@ type VMParams struct {
 	IsRootLB                 bool
 	IsInternal               bool
 	AvailabilityZone         string
+	PrivacyPolicy            *edgeproto.PrivacyPolicy
 }
 
 type VMParamsOp func(vmp *VMParams) error
@@ -52,6 +53,7 @@ const (
 	RootLBVMDeployment   DeploymentType = "mexrootlb"
 	UserVMDeployment     DeploymentType = "mexuservm"
 	PlatformVMDeployment DeploymentType = "mexplatformvm"
+	SharedCluster        DeploymentType = "sharedcluster"
 )
 
 var heatStackLock sync.Mutex
@@ -116,13 +118,27 @@ var vmTemplateResources = `
        properties:
           name: {{.ApplicationSecurityGroup}}
           rules:
-           - direction: egress
-          {{range .AccessPorts}}
-           - remote_ip_prefix: 0.0.0.0/0
-             protocol: {{.Proto}}
-             port_range_min: {{.Port}}
-             port_range_max: {{.EndPort}}
-          {{end}}
+        {{if .PrivacyPolicy.Key.Name}}
+         {{range .PrivacyPolicy.OutboundSecurityRules}}
+          - direction: egress
+            protocol: {{.Protocol}}
+           {{if .RemoteCidr}}
+            remote_ip_prefix: {{.RemoteCidr}}
+           {{end}}
+           {{if .PortRangeMin}}
+            port_range_min: {{.PortRangeMin}}
+            port_range_max: {{.PortRangeMax}}
+           {{end}}
+         {{end}}
+        {{else}}
+          - direction: egress
+        {{end}}
+        {{range .AccessPorts}}
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: {{.Proto}}
+            port_range_min: {{.Port}}
+            port_range_max: {{.EndPort}}
+        {{end}}
 
    {{.VMName}}:
       type: OS::Nova::Server
@@ -223,7 +239,6 @@ type ClusterNode struct {
 // ClusterParams has the info needed to populate the heat template
 type ClusterParams struct {
 	NodeFlavor            string
-	ImageName             string
 	MEXRouterName         string
 	MEXNetworkName        string
 	VnicType              string
@@ -545,6 +560,13 @@ func WithAvailabilityZone(az string) VMParamsOp {
 	}
 }
 
+func WithPrivacyPolicy(pp *edgeproto.PrivacyPolicy) VMParamsOp {
+	return func(vmp *VMParams) error {
+		vmp.PrivacyPolicy = pp
+		return nil
+	}
+}
+
 func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavorName string, externalVolumeSize uint64, imageName, secGrp string, cloudletKey *edgeproto.CloudletKey, opts ...VMParamsOp) (*VMParams, error) {
 	var vmp VMParams
 	var err error
@@ -557,6 +579,9 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 		if err := op(&vmp); err != nil {
 			return nil, err
 		}
+	}
+	if vmp.PrivacyPolicy == nil {
+		vmp.PrivacyPolicy = &edgeproto.PrivacyPolicy{}
 	}
 	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
 	if err != nil {
@@ -671,7 +696,7 @@ func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, 
 
 // HeatDeleteCluster deletes the stack and also cleans up rootLB port if needed
 func HeatDeleteCluster(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
-	cp, err := getClusterParams(ctx, clusterInst, rootLBName, dedicatedRootLB, heatDelete)
+	cp, err := getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, dedicatedRootLB, heatDelete)
 	if err == nil {
 		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack.  A nil client can be passed here in
 		// some rare cases because the server was somehow deleted
@@ -700,7 +725,7 @@ func HeatDeleteStack(ctx context.Context, stackName string) error {
 }
 
 //GetClusterParams fills template parameters for the cluster.  A non blank rootLBName will add a rootlb VM
-func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
+func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "getClusterParams", "cluster", clusterInst, "action", action)
 
 	var cp ClusterParams
@@ -723,18 +748,33 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
 			WithAvailabilityZone(clusterInst.AvailabilityZone),
+			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to get rootlb params: %v", err)
 		}
 	} else {
 		// we still use the security group from the VM params even for shared
-		cp.VMParams = &VMParams{}
+		cp.VMParams, err = GetVMParams(ctx,
+			SharedCluster,
+			"", // no server name since no rootlb
+			clusterInst.NodeFlavor,
+			clusterInst.ExternalVolumeSize,
+			GetCloudletOSImage(),
+			GetSecurityGroupName(ctx, rootLBName),
+			&clusterInst.Key.CloudletKey,
+			WithAvailabilityZone(clusterInst.AvailabilityZone),
+			WithPrivacyPolicy(privacyPolicy),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to get shared VM params: %v", err)
+		}
 	}
 	cloudletGrp, err := GetCloudletSecurityGroupID(ctx, &clusterInst.Key.CloudletKey)
 	if err != nil {
 		return nil, err
 	}
+	cp.PrivacyPolicy = privacyPolicy
 	cp.CloudletSecurityGroup = cloudletGrp
 	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	rtr := GetCloudletExternalRouter()
@@ -751,7 +791,6 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 		cp.RouterSecurityGroup = cloudletGrp
 	}
 	cp.MEXNetworkName = GetCloudletMexNetwork()
-	cp.ImageName = GetCloudletOSImage()
 	cp.ApplicationSecurityGroup = GetSecurityGroupName(ctx, rootLBName)
 	usedCidrs := make(map[string]string)
 
@@ -841,6 +880,7 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 		GetSecurityGroupName(ctx, serverName),
 		cloudletKey,
 		WithAvailabilityZone(vmspec.AvailabilityZone),
+		WithPrivacyPolicy(vmspec.PrivacyPolicy),
 	)
 	if err != nil {
 		return fmt.Errorf("Unable to get VM params: %v", err)
@@ -849,7 +889,7 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 }
 
 // HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
-func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
@@ -860,7 +900,7 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	heatStackLock.Lock()
 	defer heatStackLock.Unlock()
 
-	cp, err := getClusterParams(ctx, clusterInst, rootLBName, dedicatedRootLB, heatCreate)
+	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, heatCreate)
 	if err != nil {
 		return err
 	}
@@ -886,11 +926,11 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 // HeatUpdateClusterKubernetes updates a k8s cluster which may optionally include a dedicated root LB
-func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
 
-	cp, err := getClusterParams(ctx, clusterInst, rootLBName, dedicatedRootLB, heatUpdate)
+	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, heatUpdate)
 	if err != nil {
 		return err
 	}
