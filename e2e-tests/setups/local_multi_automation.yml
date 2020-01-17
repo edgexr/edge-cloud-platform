@@ -266,3 +266,37 @@ clustersvcs:
      clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
 
+traefiks:
+- name: traefik-e2e
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    cacert: "{{tlsoutdir}}/mex-ca.crt"
+  hostname: "127.0.0.1"
+
+jaegers:
+- name: jaeger-e2e
+  hostname: "127.0.0.1"
+
+autoprovs:
+- name: autoprov1
+  notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
+  ctrladdrs: "127.0.0.1:55001"
+  vaultaddr: "http://127.0.0.1:8200"
+  influxaddr: "http://127.0.0.1:8086"
+  shorttimeouts: true
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+prometheus:
+- name: prom-e2e
+  hostname: "127.0.0.1"
+  port: 9090
+
+exporter:
+- name: fakePromExporter
+  datafile: "{{datadir2}}/mc_metrics.yml"
+  port: 9100
+  hostname: "127.0.0.1"

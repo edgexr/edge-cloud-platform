@@ -149,21 +149,16 @@ appinstances:
         name: automation_api
       name: automation_api_app
       version: "1.0"
-    cloudletkey:
-      operatorkey:
-        name: dmuus
-      name: tmocloud-1
-    id: 123
+    clusterinstkey:
+      clusterkey:
+        name: autocluster1
+      cloudletkey:
+        operatorkey:
+          name: dmuus
+        name: tmocloud-1
   cloudletloc:
     latitude: 31
     longitude: -91
-  clusterinstkey:
-    clusterkey:
-      name: autocluster
-    cloudletkey:
-      operatorkey:
-        name: dmuus
-      name: tmocloud-1
   liveness: LivenessStatic
   flavor:
     name: automation_api_flavor
