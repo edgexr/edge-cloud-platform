@@ -4,6 +4,8 @@ description: Deploys and starts a system, adds provisioning. Does not stop or cl
 
 tests:
 
+- includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
+
 - name: deploy and start services 
   actions: [deploy,start,sleep=3]
 
