@@ -1,6 +1,6 @@
 mcs:
 - name: mc1
-  addr: {{mc}}:9900
+  addr: {{mc}}:443
   hostname: {{mc}}
 
 crms:

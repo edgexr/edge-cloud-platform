@@ -12,3 +12,4 @@ mc_user: ENV=MC_USER
 operator: mex
 region: EU
 vault: https://vault-main.mobiledgex.net
+outputdir: /tmp/edgebox
