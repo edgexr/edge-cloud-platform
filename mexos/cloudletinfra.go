@@ -22,7 +22,7 @@ import (
 var CloudletInfraCommon edgeproto.CloudletInfraCommon
 var OpenstackProps edgeproto.OpenStackProperties
 
-var MEXInfraVersion = "v3.0.1"
+var MEXInfraVersion = "v3.0.3"
 var defaultOSImageName = "mobiledgex-" + MEXInfraVersion
 var VaultConfig *vault.Config
 
