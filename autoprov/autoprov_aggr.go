@@ -76,7 +76,10 @@ func (s *AutoProvAggr) Stop() {
 	s.mux.Unlock()
 }
 
-func (s *AutoProvAggr) UpdateSettings(intervalSec, offsetSec float64) {
+func (s *AutoProvAggr) UpdateSettings(ctx context.Context, intervalSec, offsetSec float64) {
+	if s.intervalSec == intervalSec && s.offsetSec == offsetSec {
+		return
+	}
 	restart := false
 	if s.allStats != nil {
 		s.Stop()
@@ -87,6 +90,7 @@ func (s *AutoProvAggr) UpdateSettings(intervalSec, offsetSec float64) {
 	s.offsetSec = offsetSec
 	s.mux.Unlock()
 	if restart {
+		log.SpanLog(ctx, log.DebugLevelApi, "restarting autoProvAggr thread")
 		s.Start()
 	}
 }

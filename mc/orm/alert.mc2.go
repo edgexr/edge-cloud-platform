@@ -27,6 +27,7 @@ It is generated from these files:
 	refs.proto
 	restagtable.proto
 	result.proto
+	settings.proto
 	version.proto
 
 It has these top-level messages:
@@ -93,6 +94,7 @@ It has these top-level messages:
 	ResTagTableKey
 	ResTagTable
 	Result
+	Settings
 */
 package orm
 
@@ -271,4 +273,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/ShowPrivacyPolicy", ShowPrivacyPolicy)
 	group.Match([]string{method}, "/ctrl/ShowCloudletRefs", ShowCloudletRefs)
 	group.Match([]string{method}, "/ctrl/ShowClusterRefs", ShowClusterRefs)
+	group.Match([]string{method}, "/ctrl/UpdateSettings", UpdateSettings)
+	group.Match([]string{method}, "/ctrl/ResetSettings", ResetSettings)
+	group.Match([]string{method}, "/ctrl/ShowSettings", ShowSettings)
 }

@@ -24,37 +24,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (edgeproto.Result, int, error) {
+func TestCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoProvPolicy{}
 	dat.Region = region
 	dat.AutoProvPolicy = *in
 	return mcClient.CreateAutoProvPolicy(uri, token, dat)
 }
-func TestPermCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
 	in.Key.Developer = org
 	return TestCreateAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
-func TestDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (edgeproto.Result, int, error) {
+func TestDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoProvPolicy{}
 	dat.Region = region
 	dat.AutoProvPolicy = *in
 	return mcClient.DeleteAutoProvPolicy(uri, token, dat)
 }
-func TestPermDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
 	in.Key.Developer = org
 	return TestDeleteAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
-func TestUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (edgeproto.Result, int, error) {
+func TestUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoProvPolicy{}
 	dat.Region = region
 	dat.AutoProvPolicy = *in
 	return mcClient.UpdateAutoProvPolicy(uri, token, dat)
 }
-func TestPermUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
 	in.Key.Developer = org
 	return TestUpdateAutoProvPolicy(mcClient, uri, token, region, in)
@@ -72,46 +72,32 @@ func TestPermShowAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, 
 	return TestShowAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
-func TestAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicyCloudlet) (edgeproto.Result, int, error) {
+func TestAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoProvPolicyCloudlet{}
 	dat.Region = region
 	dat.AutoProvPolicyCloudlet = *in
 	return mcClient.AddAutoProvPolicyCloudlet(uri, token, dat)
 }
-func TestPermAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicyCloudlet{}
 	in.Key.Developer = org
 	return TestAddAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 
-func TestRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicyCloudlet) (edgeproto.Result, int, error) {
+func TestRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoProvPolicyCloudlet{}
 	dat.Region = region
 	dat.AutoProvPolicyCloudlet = *in
 	return mcClient.RemoveAutoProvPolicyCloudlet(uri, token, dat)
 }
-func TestPermRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicyCloudlet{}
 	in.Key.Developer = org
 	return TestRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 
-func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicy, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in autoProvPolicy: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicy, dataMap interface{}, rc *bool, mode string) {
 	for ii, autoProvPolicy := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in autoProvPolicy: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionAutoProvPolicy{
 			Region:         region,
 			AutoProvPolicy: autoProvPolicy,
@@ -124,7 +110,12 @@ func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, d
 			_, st, err := mcClient.DeleteAutoProvPolicy(uri, token, in)
 			checkMcErr("DeleteAutoProvPolicy", st, err, rc)
 		case "update":
-			in.AutoProvPolicy.Fields = cli.GetSpecifiedFields(dataMap, &in.AutoProvPolicy, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for AutoProvPolicy: %v", err)
+				os.Exit(1)
+			}
+			in.AutoProvPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoProvPolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAutoProvPolicy(uri, token, in)
 			checkMcErr("UpdateAutoProvPolicy", st, err, rc)
 		default:
@@ -133,7 +124,7 @@ func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, d
 	}
 }
 
-func RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicyCloudlet, dataIn interface{}, rc *bool, mode string) {
+func RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicyCloudlet, dataMap interface{}, rc *bool, mode string) {
 	for _, autoProvPolicyCloudlet := range *data {
 		in := &ormapi.RegionAutoProvPolicyCloudlet{
 			Region:                 region,

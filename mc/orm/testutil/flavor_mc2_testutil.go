@@ -22,35 +22,35 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (edgeproto.Result, int, error) {
+func TestCreateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
 	return mcClient.CreateFlavor(uri, token, dat)
 }
-func TestPermCreateFlavor(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateFlavor(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestCreateFlavor(mcClient, uri, token, region, in)
 }
 
-func TestDeleteFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (edgeproto.Result, int, error) {
+func TestDeleteFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
 	return mcClient.DeleteFlavor(uri, token, dat)
 }
-func TestPermDeleteFlavor(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteFlavor(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestDeleteFlavor(mcClient, uri, token, region, in)
 }
 
-func TestUpdateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (edgeproto.Result, int, error) {
+func TestUpdateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
 	return mcClient.UpdateFlavor(uri, token, dat)
 }
-func TestPermUpdateFlavor(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermUpdateFlavor(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestUpdateFlavor(mcClient, uri, token, region, in)
 }
@@ -66,44 +66,30 @@ func TestPermShowFlavor(mcClient *ormclient.Client, uri, token, region, org stri
 	return TestShowFlavor(mcClient, uri, token, region, in)
 }
 
-func TestAddFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (edgeproto.Result, int, error) {
+func TestAddFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
 	return mcClient.AddFlavorRes(uri, token, dat)
 }
-func TestPermAddFlavorRes(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermAddFlavorRes(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestAddFlavorRes(mcClient, uri, token, region, in)
 }
 
-func TestRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (edgeproto.Result, int, error) {
+func TestRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
 	return mcClient.RemoveFlavorRes(uri, token, dat)
 }
-func TestPermRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestRemoveFlavorRes(mcClient, uri, token, region, in)
 }
 
-func RunMcFlavorApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Flavor, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in flavor: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcFlavorApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Flavor, dataMap interface{}, rc *bool, mode string) {
 	for ii, flavor := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in flavor: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionFlavor{
 			Region: region,
 			Flavor: flavor,
@@ -116,7 +102,12 @@ func RunMcFlavorApi(mcClient ormclient.Api, uri, token, region string, data *[]e
 			_, st, err := mcClient.DeleteFlavor(uri, token, in)
 			checkMcErr("DeleteFlavor", st, err, rc)
 		case "update":
-			in.Flavor.Fields = cli.GetSpecifiedFields(dataMap, &in.Flavor, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for Flavor: %v", err)
+				os.Exit(1)
+			}
+			in.Flavor.Fields = cli.GetSpecifiedFields(objMap, &in.Flavor, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateFlavor(uri, token, in)
 			checkMcErr("UpdateFlavor", st, err, rc)
 		case "add":

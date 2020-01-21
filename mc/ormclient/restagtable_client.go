@@ -19,22 +19,31 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateResTagTable", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteResTagTable", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/UpdateResTagTable", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowResTagTable(uri, token string, in *ormapi.RegionResTagTable) ([]edgeproto.ResTagTable, int, error) {
@@ -46,30 +55,39 @@ func (s *Client) ShowResTagTable(uri, token string, in *ormapi.RegionResTagTable
 	return outlist, status, err
 }
 
-func (s *Client) AddResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) AddResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/AddResTag", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/RemoveResTag", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (edgeproto.ResTagTable, int, error) {
+func (s *Client) GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (*edgeproto.ResTagTable, int, error) {
 	out := edgeproto.ResTagTable{}
 	status, err := s.PostJson(uri+"/auth/ctrl/GetResTagTable", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 type ResTagTableApiClient interface {
-	CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error)
-	DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error)
-	UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error)
+	CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error)
+	DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error)
+	UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error)
 	ShowResTagTable(uri, token string, in *ormapi.RegionResTagTable) ([]edgeproto.ResTagTable, int, error)
-	AddResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error)
-	RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error)
-	GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (edgeproto.ResTagTable, int, error)
+	AddResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error)
+	RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error)
+	GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (*edgeproto.ResTagTable, int, error)
 }

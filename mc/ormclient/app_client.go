@@ -19,22 +19,31 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
+func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateApp", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
+func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteApp", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error) {
+func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/UpdateApp", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error) {
@@ -47,8 +56,8 @@ func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.A
 }
 
 type AppApiClient interface {
-	CreateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
-	DeleteApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
-	UpdateApp(uri, token string, in *ormapi.RegionApp) (edgeproto.Result, int, error)
+	CreateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
+	DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
+	UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
 	ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error)
 }

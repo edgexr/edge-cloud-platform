@@ -72,6 +72,19 @@ orgcloudletpools:
 regiondata:
 - region: local
   appdata:
+    settings:
+      shepherdmetricscollectioninterval: 1s
+      shepherdhealthcheckretries: 3
+      shepherdhealthcheckinterval: 5s
+      autodeployintervalsec: 1
+      autodeployoffsetsec: 0.3
+      autodeploymaxintervals: 10
+      createappinsttimeout: 3s
+      updateappinsttimeout: 2s
+      deleteappinsttimeout: 2s
+      createclusterinsttimeout: 3s
+      updateclusterinsttimeout: 2s
+      deleteclusterinsttimeout: 2s
     cloudlets:
     - key:
         operatorkey:
@@ -82,13 +95,6 @@ regiondata:
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      timelimits:
-        createclusterinsttimeout: 3000000000
-        updateclusterinsttimeout: 2000000000
-        deleteclusterinsttimeout: 2000000000
-        createappinsttimeout: 3000000000
-        updateappinsttimeout: 2000000000
-        deleteappinsttimeout: 2000000000
       state: Ready
       platformtype: PlatformTypeFakeinfra
       notifysrvaddr: 127.0.0.1:51001
@@ -104,13 +110,6 @@ regiondata:
         longitude: -95
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      timelimits:
-        createclusterinsttimeout: 3000000000
-        updateclusterinsttimeout: 2000000000
-        deleteclusterinsttimeout: 2000000000
-        createappinsttimeout: 3000000000
-        updateappinsttimeout: 2000000000
-        deleteappinsttimeout: 2000000000
       state: Ready
       notifysrvaddr: 127.0.0.1:51002
       flavor:
@@ -125,13 +124,6 @@ regiondata:
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      timelimits:
-        createclusterinsttimeout: 3000000000
-        updateclusterinsttimeout: 2000000000
-        deleteclusterinsttimeout: 2000000000
-        createappinsttimeout: 3000000000
-        updateappinsttimeout: 2000000000
-        deleteappinsttimeout: 2000000000
       state: Ready
       notifysrvaddr: 127.0.0.1:51004
       flavor:
@@ -146,13 +138,6 @@ regiondata:
         longitude: -95
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      timelimits:
-        createclusterinsttimeout: 3000000000
-        updateclusterinsttimeout: 2000000000
-        deleteclusterinsttimeout: 2000000000
-        createappinsttimeout: 3000000000
-        updateappinsttimeout: 2000000000
-        deleteappinsttimeout: 2000000000
       state: Ready
       notifysrvaddr: 127.0.0.1:51005
       flavor:
@@ -167,13 +152,6 @@ regiondata:
         longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      timelimits:
-        createclusterinsttimeout: 3000000000
-        updateclusterinsttimeout: 2000000000
-        deleteclusterinsttimeout: 2000000000
-        createappinsttimeout: 3000000000
-        updateappinsttimeout: 2000000000
-        deleteappinsttimeout: 2000000000
       state: Ready
       notifysrvaddr: 127.0.0.1:51006
       flavor:

@@ -19,12 +19,15 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (edgeproto.ExecRequest, int, error) {
+func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	out := edgeproto.ExecRequest{}
 	status, err := s.PostJson(uri+"/auth/ctrl/RunCommand", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 type ExecApiClient interface {
-	RunCommand(uri, token string, in *ormapi.RegionExecRequest) (edgeproto.ExecRequest, int, error)
+	RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
 }

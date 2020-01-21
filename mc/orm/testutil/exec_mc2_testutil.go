@@ -20,13 +20,13 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestRunCommand(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ExecRequest) (edgeproto.ExecRequest, int, error) {
+func TestRunCommand(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, int, error) {
 	dat := &ormapi.RegionExecRequest{}
 	dat.Region = region
 	dat.ExecRequest = *in
 	return mcClient.RunCommand(uri, token, dat)
 }
-func TestPermRunCommand(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.ExecRequest, int, error) {
+func TestPermRunCommand(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
 	in := &edgeproto.ExecRequest{}
 	in.AppInstKey.AppKey.DeveloperKey.Name = org
 	return TestRunCommand(mcClient, uri, token, region, in)

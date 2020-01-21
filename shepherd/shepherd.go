@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"time"
 
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
@@ -42,12 +41,12 @@ var ClusterInstCache edgeproto.ClusterInstCache
 var AppCache edgeproto.AppCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
+var settings edgeproto.Settings
 
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
 
 var sigChan chan os.Signal
-var collectInterval time.Duration
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	// LB metrics are not supported in fake mode
@@ -58,6 +57,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	var exists bool
 	var mapKey string
 
+	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	// check cluster name if this is a VM App
 	if new.Key.ClusterInstKey.ClusterKey.Name == cloudcommon.DefaultVMCluster {
 		mapKey = new.Key.GetKeyString()
@@ -128,6 +128,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New cluster instace", "clusterInst", new)
 		return
 	}
+	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
 	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
@@ -159,8 +160,6 @@ func getPlatform() (platform.Platform, error) {
 	case "PLATFORM_TYPE_OPENSTACK":
 		plat = &shepherd_openstack.Platform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
-		// change the scrape interval to 1s so we dont have to wait as long for e2e tests to go
-		collectInterval = time.Second
 		plat = &shepherd_fake.Platform{}
 	default:
 		err = fmt.Errorf("Platform %s not supported", *platformName)
@@ -173,7 +172,6 @@ func main() {
 	log.SetDebugLevelStrs(*debugLevels)
 	log.InitTracer(*tlsCertFile)
 	defer log.FinishTracer()
-	collectInterval = cloudcommon.ShepherdMetricsCollectionInterval
 	var span opentracing.Span
 	if *parentSpan != "" {
 		span = log.NewSpanFromString(log.DebugLevelInfo, *parentSpan, "main")
@@ -181,9 +179,9 @@ func main() {
 		span = log.StartSpan(log.DebugLevelInfo, "main")
 	}
 	ctx := log.ContextWithSpan(context.Background(), span)
+	settings = *edgeproto.GetDefaultSettings()
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
-	log.SpanLog(ctx, log.DebugLevelMetrics, "Metrics collection", "interval", collectInterval)
 	var err error
 	myPlatform, err = getPlatform()
 	if err != nil {

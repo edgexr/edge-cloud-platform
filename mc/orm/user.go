@@ -517,6 +517,9 @@ func RestrictedUserUpdate(c echo.Context) error {
 	// First time is to do lookup, second time is to apply
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return bindErr(c, err)
+	}
 	in := ormapi.User{}
 	err = json.Unmarshal(body, &in)
 	if err != nil {

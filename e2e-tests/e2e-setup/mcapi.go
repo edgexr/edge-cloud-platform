@@ -317,6 +317,18 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		OrgCloudletPools: ocs,
 	}
 	for _, ctrl := range ctrls {
+		inSettings := &ormapi.RegionSettings{
+			Region: ctrl.Region,
+		}
+		settings, status, err := mcClient.ShowSettings(uri, token, inSettings)
+		if status == http.StatusForbidden {
+			// avoid test failure when user doesn't have perms
+			settings = nil
+			status = http.StatusOK
+			err = nil
+		}
+		checkMcCtrlErr("ShowSettings", status, err, rc)
+
 		inFlavor := &ormapi.RegionFlavor{
 			Region: ctrl.Region,
 		}
@@ -398,6 +410,7 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 				AutoScalePolicies:   asPolicies,
 				AutoProvPolicies:    apPolicies,
 				OperatorCodes:       codes,
+				Settings:            settings,
 			},
 		}
 		showData.RegionData = append(showData.RegionData, rd)
@@ -534,6 +547,7 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 	case "create":
 		fallthrough
 	case "update":
+		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "update")
 		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
 		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
 		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
@@ -586,6 +600,7 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
 		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
 		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
+		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "reset")
 	}
 }
 

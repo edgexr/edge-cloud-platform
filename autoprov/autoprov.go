@@ -9,7 +9,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -25,7 +24,6 @@ var ctrlAddr = flag.String("ctrlAddrs", "127.0.0.1:55001", "controller api addre
 var influxAddr = flag.String("influxAddr", "http://127.0.0.1:8086", "InfluxDB listener address")
 var vaultAddr = flag.String("vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 var region = flag.String("region", "local", "region name")
-var shortTimeouts = flag.Bool("shortTimeouts", false, "set timeouts short for simulated cloudlet testing")
 
 var sigChan chan os.Signal
 var alertCache edgeproto.AlertCache
@@ -36,6 +34,7 @@ var dialOpts grpc.DialOption
 var notifyClient *notify.Client
 var vaultConfig *vault.Config
 var autoProvAggr *AutoProvAggr
+var settings edgeproto.Settings
 
 func main() {
 	flag.Parse()
@@ -57,6 +56,7 @@ func main() {
 func start() error {
 	log.SetDebugLevelStrs(*debugLevels)
 	log.InitTracer(*tlsCertFile)
+	settings = *edgeproto.GetDefaultSettings()
 
 	span := log.StartSpan(log.DebugLevelInfo, "main")
 	defer span.Finish()
@@ -79,14 +79,12 @@ func start() error {
 	autoProvPolicyHandler.Init()
 	frClusterInsts.Init()
 
-	autoProvAggr = NewAutoProvAggr(cloudcommon.AutoDeployIntervalSec, cloudcommon.AutoDeployOffsetSec, &appHandler.cache, &autoProvPolicyHandler.cache, &frClusterInsts)
-	if *shortTimeouts {
-		autoProvAggr.UpdateSettings(1, 0.3)
-	}
+	autoProvAggr = NewAutoProvAggr(settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec, &appHandler.cache, &autoProvPolicyHandler.cache, &frClusterInsts)
 	autoProvAggr.Start()
 
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(addrs, *tlsCertFile)
+	notifyClient.RegisterRecv(notify.GlobalSettingsRecv(&settings, settingsUpdated))
 	notifyClient.RegisterRecvAlertCache(&alertCache)
 	notifyClient.RegisterRecv(notify.NewAutoProvPolicyRecv(&autoProvPolicyHandler))
 	notifyClient.RegisterRecv(notify.NewAppRecv(&appHandler))
@@ -107,4 +105,8 @@ func stop() {
 		notifyClient.Stop()
 	}
 	log.FinishTracer()
+}
+
+func settingsUpdated(ctx context.Context, old *edgeproto.Settings, new *edgeproto.Settings) {
+	autoProvAggr.UpdateSettings(ctx, settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec)
 }

@@ -19,16 +19,22 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (edgeproto.Result, int, error) {
+func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateCloudletPool", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (edgeproto.Result, int, error) {
+func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteCloudletPool", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) ([]edgeproto.CloudletPool, int, error) {
@@ -41,21 +47,27 @@ func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPo
 }
 
 type CloudletPoolApiClient interface {
-	CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (edgeproto.Result, int, error)
-	DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (edgeproto.Result, int, error)
+	CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error)
+	DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error)
 	ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) ([]edgeproto.CloudletPool, int, error)
 }
 
-func (s *Client) CreateCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (edgeproto.Result, int, error) {
+func (s *Client) CreateCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateCloudletPoolMember", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (edgeproto.Result, int, error) {
+func (s *Client) DeleteCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteCloudletPoolMember", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) ([]edgeproto.CloudletPoolMember, int, error) {
@@ -68,8 +80,8 @@ func (s *Client) ShowCloudletPoolMember(uri, token string, in *ormapi.RegionClou
 }
 
 type CloudletPoolMemberApiClient interface {
-	CreateCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (edgeproto.Result, int, error)
-	DeleteCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (edgeproto.Result, int, error)
+	CreateCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error)
+	DeleteCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error)
 	ShowCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) ([]edgeproto.CloudletPoolMember, int, error)
 }
 

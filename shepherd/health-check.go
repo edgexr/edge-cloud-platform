@@ -60,7 +60,7 @@ func shouldSendAlertForHealthCheckCount(ctx context.Context, appInstKey *edgepro
 	}
 
 	// don't send alert first several failures(starting from 0, so maxRetries-1 )
-	if scrapePoint.FailedChecksCount < cloudcommon.ShepherdHealthCheckRetries-1 {
+	if scrapePoint.FailedChecksCount < int(settings.ShepherdHealthCheckRetries)-1 {
 		scrapePoint.FailedChecksCount++
 		ProxyMap[getProxyKey(appInstKey)] = scrapePoint
 		return false

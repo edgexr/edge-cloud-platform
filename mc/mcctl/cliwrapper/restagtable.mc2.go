@@ -20,28 +20,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) CreateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateResTagTable"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) DeleteResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteResTagTable"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) UpdateResTagTable(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateResTagTable"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
 func (s *Client) ShowResTagTable(uri, token string, in *ormapi.RegionResTagTable) ([]edgeproto.ResTagTable, int, error) {
@@ -55,26 +64,35 @@ func (s *Client) ShowResTagTable(uri, token string, in *ormapi.RegionResTagTable
 	return outlist, st, err
 }
 
-func (s *Client) AddResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) AddResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	args := []string{"region", "AddResTag"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (edgeproto.Result, int, error) {
+func (s *Client) RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (*edgeproto.Result, int, error) {
 	args := []string{"region", "RemoveResTag"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (edgeproto.ResTagTable, int, error) {
+func (s *Client) GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (*edgeproto.ResTagTable, int, error) {
 	args := []string{"region", "GetResTagTable"}
 	out := edgeproto.ResTagTable{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }

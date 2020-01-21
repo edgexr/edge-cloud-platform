@@ -43,7 +43,6 @@ type AutoProv struct {
 	VaultAddr      string
 	InfluxAddr     string
 	TLS            process.TLSCerts
-	ShortTimeouts  bool
 	cmd            *exec.Cmd
 }
 

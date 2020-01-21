@@ -19,16 +19,22 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error) {
+func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateOperatorCode", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error) {
+func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteOperatorCode", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) ([]edgeproto.OperatorCode, int, error) {
@@ -41,7 +47,7 @@ func (s *Client) ShowOperatorCode(uri, token string, in *ormapi.RegionOperatorCo
 }
 
 type OperatorCodeApiClient interface {
-	CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error)
-	DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error)
+	CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error)
+	DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error)
 	ShowOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) ([]edgeproto.OperatorCode, int, error)
 }
