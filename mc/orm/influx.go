@@ -72,6 +72,118 @@ var ClientSelectors = []string{
 	"api",
 }
 
+var AppFields = []string{
+	"\"app\"",
+	"\"cluster\"",
+	"\"dev\"",
+	"\"cloudlet\"",
+	"\"operator\"",
+}
+
+var ClusterFields = []string{
+	"\"cluster\"",
+	"\"dev\"",
+	"\"cloudlet\"",
+	"\"operator\"",
+}
+
+var CloudletFields = []string{
+	"\"cloudlet\"",
+	"\"operator\"",
+}
+
+var ClientFields = []string{
+	"\"dev\"",
+	"\"app\"",
+	"\"ver\"",
+	"\"oper\"",
+	"\"cloudlet\"",
+}
+
+var ApiFields = []string{
+	"\"id\"",
+	"\"cellID\"",
+	"\"method\"",
+	"\"foundCloudlet\"",
+	"\"foundOperator\"",
+	"\"reqs\"",
+	"\"errs\"",
+	"\"5ms\"",
+	"\"10ms\"",
+	"\"25ms\"",
+	"\"50ms\"",
+	"\"100ms\"",
+	"\"inf\"",
+}
+
+var CpuFields = []string{
+	"\"cpu\"",
+}
+
+var MemFields = []string{
+	"\"mem\"",
+}
+
+var DiskFields = []string{
+	"\"disk\"",
+}
+
+var NetworkFields = []string{
+	"\"sendBytes\"",
+	"\"recvBytes\"",
+}
+
+var TcpFields = []string{
+	"\"tcpConns\"",
+	"\"tcpRetrans\"",
+}
+
+var UdpFields = []string{
+	"\"udpSent\"",
+	"\"udpRecv\"",
+	"\"udpRecvErr\"",
+}
+
+var ConnectionsFields = []string{
+	"\"port\"",
+	"\"active\"",
+	"\"handled\"",
+	"\"accepts\"",
+	"\"bytesSent\"",
+	"\"bytesRecvd\"",
+	"\"P0\"",
+	"\"P25\"",
+	"\"P50\"",
+	"\"P75\"",
+	"\"P90\"",
+	"\"P95\"",
+	"\"P99\"",
+	"\"P99.5\"",
+	"\"P99.9\"",
+	"\"P100\"",
+}
+
+var UtilizationFields = []string{
+	"\"vCpuUsed\"",
+	"\"vCpuMax\"",
+	"\"memUsed\"",
+	"\"memMax\"",
+	"\"diskUsed\"",
+	"\"disuMax\"",
+}
+
+var CloudletNetworkFields = []string{
+	"\"netSend\"",
+	"\"netRecv\"",
+}
+
+var IpUsageFields = []string{
+	"\"floatingIpsUsed\"",
+	"\"floatingIpsMax\"",
+	"\"ipv4Used\"",
+	"\"ipv4Max\"",
+}
+
 const (
 	APPINST  = "appinst"
 	CLUSTER  = "cluster"
@@ -159,7 +271,7 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 
 func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      "*",
+		Selector:      getFields(obj.Selector, CLIENT),
 		Measurement:   getMeasurementString(obj.Selector, CLIENT),
 		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
 		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
@@ -178,7 +290,7 @@ func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 // Query is a template with a specific set of if/else
 func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      "*",
+		Selector:      getFields(obj.Selector, APPINST),
 		Measurement:   getMeasurementString(obj.Selector, APPINST),
 		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
 		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
@@ -193,7 +305,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 // Query is a template with a specific set of if/else
 func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      "*",
+		Selector:      getFields(obj.Selector, CLUSTER),
 		Measurement:   getMeasurementString(obj.Selector, CLUSTER),
 		CloudletName:  obj.ClusterInst.CloudletKey.Name,
 		ClusterName:   obj.ClusterInst.ClusterKey.Name,
@@ -207,7 +319,7 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 // Query is a template with a specific set of if/else
 func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 	arg := influxQueryArgs{
-		Selector:     "*",
+		Selector:     getFields(obj.Selector, CLOUDLET),
 		Measurement:  getMeasurementString(obj.Selector, CLOUDLET),
 		CloudletName: obj.Cloudlet.Name,
 		OperatorName: obj.Cloudlet.OperatorKey.Name,
@@ -304,6 +416,58 @@ func getMeasurementString(selector, measurementType string) string {
 	}
 	prefix := measurementType + "-"
 	return prefix + strings.Join(measurements, "\",\""+prefix)
+}
+
+func getFields(selector, measurementType string) string {
+	var fields, selectors []string
+	switch measurementType {
+	case "appinst":
+		fields = AppFields
+		selectors = AppSelectors
+	case "cluster":
+		fields = ClusterFields
+		selectors = ClusterSelectors
+	case "cloudlet":
+		fields = CloudletFields
+		selectors = CloudletSelectors
+	case "client":
+		fields = ClientFields
+		selectors = ClientSelectors
+	default:
+		return "*"
+	}
+	if selector != "*" {
+		selectors = strings.Split(selector, ",")
+	}
+	for _, v := range selectors {
+		switch v {
+		case "cpu":
+			fields = append(fields, CpuFields...)
+		case "mem":
+			fields = append(fields, MemFields...)
+		case "disk":
+			fields = append(fields, DiskFields...)
+		case "network":
+			if measurementType == "cloudlet" {
+				fields = append(fields, CloudletNetworkFields...)
+			} else {
+				fields = append(fields, NetworkFields...)
+			}
+		case "connections":
+			fields = append(fields, ConnectionsFields...)
+		case "tcp":
+			fields = append(fields, TcpFields...)
+		case "udp":
+			fields = append(fields, UdpFields...)
+		case "utilization":
+			fields = append(fields, UtilizationFields...)
+		case "ipusage":
+			fields = append(fields, IpUsageFields...)
+		case "api":
+			fields = append(fields, ApiFields...)
+		}
+	}
+	return strings.Join(fields, ",")
 }
 
 // Common method to handle both app and cluster metrics
