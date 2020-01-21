@@ -432,6 +432,11 @@ func TestController(t *testing.T) {
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", count)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", count)
+	// bug1741 - empty args to Delete CloudletPool when pools are present
+	// Should allow delete to continue to controller which always returns success
+	_, status, err = ormtestutil.TestDeleteCloudletPool(mcClient, uri, tokenAd, ctrl.Region, &edgeproto.CloudletPool{})
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 
 	// delete org cloudlet pools
 	status, err = mcClient.DeleteOrgCloudletPool(uri, token, &op1)

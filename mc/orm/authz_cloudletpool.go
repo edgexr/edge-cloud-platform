@@ -15,12 +15,10 @@ func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *
 	}
 
 	// check if cloudletpool is in use by orgcloudletpool
-	lookup := ormapi.OrgCloudletPool{}
 	pools := make([]ormapi.OrgCloudletPool, 0)
-	lookup.Region = region
-	lookup.CloudletPool = obj.Key.Name
 	db := loggedDB(ctx)
-	res := db.Where(&lookup).Find(&pools)
+	// explicitly list fields to avoid being ignored if 0 or emtpy string
+	res := db.Where(map[string]interface{}{"region": region, "cloudlet_pool": obj.Key.Name}).Find(&pools)
 	if res.Error != nil {
 		return res.Error
 	}
