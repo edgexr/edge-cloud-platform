@@ -96,22 +96,8 @@ func TestPermShowAppInst(mcClient *ormclient.Client, uri, token, region, org str
 	return TestShowAppInst(mcClient, uri, token, region, in)
 }
 
-func RunMcAppInstApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AppInst, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in appInst: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcAppInstApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AppInst, dataMap interface{}, rc *bool, mode string) {
 	for ii, appInst := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in appInst: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionAppInst{
 			Region:  region,
 			AppInst: appInst,
@@ -127,7 +113,12 @@ func RunMcAppInstApi(mcClient ormclient.Api, uri, token, region string, data *[]
 			_, st, err := mcClient.RefreshAppInst(uri, token, in)
 			checkMcErr("RefreshAppInst", st, err, rc)
 		case "update":
-			in.AppInst.Fields = cli.GetSpecifiedFields(dataMap, &in.AppInst, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for AppInst: %v", err)
+				os.Exit(1)
+			}
+			in.AppInst.Fields = cli.GetSpecifiedFields(objMap, &in.AppInst, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAppInst(uri, token, in)
 			checkMcErr("UpdateAppInst", st, err, rc)
 		default:

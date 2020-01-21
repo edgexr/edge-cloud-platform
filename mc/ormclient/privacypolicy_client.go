@@ -19,22 +19,31 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error) {
+func (s *Client) CreatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreatePrivacyPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeletePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error) {
+func (s *Client) DeletePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeletePrivacyPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) UpdatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error) {
+func (s *Client) UpdatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/UpdatePrivacyPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowPrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) ([]edgeproto.PrivacyPolicy, int, error) {
@@ -47,8 +56,8 @@ func (s *Client) ShowPrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPo
 }
 
 type PrivacyPolicyApiClient interface {
-	CreatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error)
-	DeletePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error)
-	UpdatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (edgeproto.Result, int, error)
+	CreatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error)
+	DeletePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error)
+	UpdatePrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) (*edgeproto.Result, int, error)
 	ShowPrivacyPolicy(uri, token string, in *ormapi.RegionPrivacyPolicy) ([]edgeproto.PrivacyPolicy, int, error)
 }

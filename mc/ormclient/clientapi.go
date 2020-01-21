@@ -58,4 +58,5 @@ type Api interface {
 	AutoProvPolicyApiClient
 	PrivacyPolicyApiClient
 	OperatorCodeApiClient
+	SettingsApiClient
 }

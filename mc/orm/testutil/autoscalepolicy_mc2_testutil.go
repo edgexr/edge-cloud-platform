@@ -22,37 +22,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (edgeproto.Result, int, error) {
+func TestCreateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoScalePolicy{}
 	dat.Region = region
 	dat.AutoScalePolicy = *in
 	return mcClient.CreateAutoScalePolicy(uri, token, dat)
 }
-func TestPermCreateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoScalePolicy{}
 	in.Key.Developer = org
 	return TestCreateAutoScalePolicy(mcClient, uri, token, region, in)
 }
 
-func TestDeleteAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (edgeproto.Result, int, error) {
+func TestDeleteAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoScalePolicy{}
 	dat.Region = region
 	dat.AutoScalePolicy = *in
 	return mcClient.DeleteAutoScalePolicy(uri, token, dat)
 }
-func TestPermDeleteAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoScalePolicy{}
 	in.Key.Developer = org
 	return TestDeleteAutoScalePolicy(mcClient, uri, token, region, in)
 }
 
-func TestUpdateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (edgeproto.Result, int, error) {
+func TestUpdateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAutoScalePolicy{}
 	dat.Region = region
 	dat.AutoScalePolicy = *in
 	return mcClient.UpdateAutoScalePolicy(uri, token, dat)
 }
-func TestPermUpdateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermUpdateAutoScalePolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoScalePolicy{}
 	in.Key.Developer = org
 	return TestUpdateAutoScalePolicy(mcClient, uri, token, region, in)
@@ -70,22 +70,8 @@ func TestPermShowAutoScalePolicy(mcClient *ormclient.Client, uri, token, region,
 	return TestShowAutoScalePolicy(mcClient, uri, token, region, in)
 }
 
-func RunMcAutoScalePolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoScalePolicy, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in autoScalePolicy: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcAutoScalePolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoScalePolicy, dataMap interface{}, rc *bool, mode string) {
 	for ii, autoScalePolicy := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in autoScalePolicy: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionAutoScalePolicy{
 			Region:          region,
 			AutoScalePolicy: autoScalePolicy,
@@ -98,7 +84,12 @@ func RunMcAutoScalePolicyApi(mcClient ormclient.Api, uri, token, region string, 
 			_, st, err := mcClient.DeleteAutoScalePolicy(uri, token, in)
 			checkMcErr("DeleteAutoScalePolicy", st, err, rc)
 		case "update":
-			in.AutoScalePolicy.Fields = cli.GetSpecifiedFields(dataMap, &in.AutoScalePolicy, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for AutoScalePolicy: %v", err)
+				os.Exit(1)
+			}
+			in.AutoScalePolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoScalePolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAutoScalePolicy(uri, token, in)
 			checkMcErr("UpdateAutoScalePolicy", st, err, rc)
 		default:

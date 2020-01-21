@@ -20,24 +20,24 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (edgeproto.Result, int, error) {
+func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
 	dat.Region = region
 	dat.OperatorCode = *in
 	return mcClient.CreateOperatorCode(uri, token, dat)
 }
-func TestPermCreateOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
 	return TestCreateOperatorCode(mcClient, uri, token, region, in)
 }
 
-func TestDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (edgeproto.Result, int, error) {
+func TestDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
 	dat.Region = region
 	dat.OperatorCode = *in
 	return mcClient.DeleteOperatorCode(uri, token, dat)
 }
-func TestPermDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
 	return TestDeleteOperatorCode(mcClient, uri, token, region, in)
 }
@@ -53,7 +53,7 @@ func TestPermShowOperatorCode(mcClient *ormclient.Client, uri, token, region, or
 	return TestShowOperatorCode(mcClient, uri, token, region, in)
 }
 
-func RunMcOperatorCodeApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.OperatorCode, dataIn interface{}, rc *bool, mode string) {
+func RunMcOperatorCodeApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.OperatorCode, dataMap interface{}, rc *bool, mode string) {
 	for _, operatorCode := range *data {
 		in := &ormapi.RegionOperatorCode{
 			Region:       region,

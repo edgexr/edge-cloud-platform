@@ -131,7 +131,7 @@ func requireClusterInstNumNodes(t *testing.T, cache *edgeproto.ClusterInstCache,
 func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, dn *notify.DummyHandler, influxServer *httptest.Server) {
 	require.NotNil(t, autoProvAggr)
 	// we will run iterations manually so set interval to large number
-	autoProvAggr.UpdateSettings(300, 0)
+	autoProvAggr.UpdateSettings(ctx, 300, 0)
 
 	// add reservable ClusterInst
 	rcinst := testutil.ClusterInstData[7]

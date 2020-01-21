@@ -16,6 +16,15 @@
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
   response: '{"message":"user created"}'
   traceid: 24625321e53de041
+- operationname: /api/v1/auth/ctrl/ShowSettings
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
+  starttime: "2020-01-16T16:24:05.019808-08:00"
+  duration: 578µs
+  request: '{"Region":"local","Settings":{}}'
+  response: '{"message":"code=403, message=Forbidden"}'
+  traceid: 6d8e25359c7c2d2d
 - operationname: /api/v1/login
   username: user2
   clientip: 127.0.0.1
@@ -95,12 +104,3 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 79331c0ec70fb2d6
-- operationname: /api/v1/auth/ctrl/DeleteApp
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-11T09:36:02.661684-07:00"
-  duration: 19.931ms
-  request: '{"Region":"local","App":{"key":{"developer_key":{"name":"platos"},"name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
-  response: '{}'
-  traceid: 47b0b401e7c4768d

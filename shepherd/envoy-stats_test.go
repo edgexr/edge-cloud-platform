@@ -201,6 +201,7 @@ func TestHealthChecks(t *testing.T) {
 	AppInstCache.Update(ctx, &testAppInst, 0)
 	edgeproto.InitAlertCache(&AlertCache)
 	myPlatform = &shepherd_unittest.Platform{}
+	settings = *edgeproto.GetDefaultSettings()
 
 	InitProxyScraper()
 	// Add appInst to proxyMap
@@ -213,7 +214,7 @@ func TestHealthChecks(t *testing.T) {
 
 	// RootLB health check failure
 	fakeEnvoyTestServer.Close()
-	testHealthCheckFail(t, ctx, edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE, cloudcommon.ShepherdHealthCheckRetries)
+	testHealthCheckFail(t, ctx, edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE, int(settings.ShepherdHealthCheckRetries))
 	// Emulate controller setting appInst health check state
 	testAppInst.HealthCheck = edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE
 	AppInstCache.Update(ctx, &testAppInst, 0)

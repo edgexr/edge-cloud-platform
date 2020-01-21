@@ -20,28 +20,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateAutoScalePolicy"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteAutoScalePolicy"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateAutoScalePolicy"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
 func (s *Client) ShowAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) ([]edgeproto.AutoScalePolicy, int, error) {

@@ -20,7 +20,7 @@ func CloudletScraper() {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
-		case <-time.After(collectInterval):
+		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			span := log.StartSpan(log.DebugLevelSampled, "send-cloudlet-metric")
 			span.SetTag("operator", cloudletKey.OperatorKey.Name)
 			span.SetTag("cloudlet", cloudletKey.Name)

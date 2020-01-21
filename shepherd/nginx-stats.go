@@ -125,7 +125,7 @@ func ProxyScraper() {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
-		case <-time.After(collectInterval):
+		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
 				span := log.StartSpan(log.DebugLevelSampled, "send-metric")

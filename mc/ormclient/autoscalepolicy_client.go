@@ -19,22 +19,31 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateAutoScalePolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteAutoScalePolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error) {
+func (s *Client) UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/UpdateAutoScalePolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) ([]edgeproto.AutoScalePolicy, int, error) {
@@ -47,8 +56,8 @@ func (s *Client) ShowAutoScalePolicy(uri, token string, in *ormapi.RegionAutoSca
 }
 
 type AutoScalePolicyApiClient interface {
-	CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error)
-	DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error)
-	UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (edgeproto.Result, int, error)
+	CreateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error)
+	DeleteAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error)
+	UpdateAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) (*edgeproto.Result, int, error)
 	ShowAutoScalePolicy(uri, token string, in *ormapi.RegionAutoScalePolicy) ([]edgeproto.AutoScalePolicy, int, error)
 }

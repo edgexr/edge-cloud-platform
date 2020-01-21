@@ -62,7 +62,16 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 	// note we lose the status code, since a non-StatusOK result
 	// always generates an error.
 	if err != nil {
-		return 0, fmt.Errorf("%s, %v", string(byt), err)
+		status := 0
+		out := string(byt)
+		if out != "" {
+			// special case for Forbidden for e2e tests
+			lines := strings.Split(out, "\n")
+			if strings.Contains(lines[0], "code=403, message=Forbidden") {
+				status = http.StatusForbidden
+			}
+		}
+		return status, fmt.Errorf("%s, %v", string(byt), err)
 	}
 	str := strings.TrimSpace(string(byt))
 	if out != nil && len(str) > 0 {

@@ -20,24 +20,24 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateCloudletPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPool) (edgeproto.Result, int, error) {
+func TestCreateCloudletPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPool) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletPool{}
 	dat.Region = region
 	dat.CloudletPool = *in
 	return mcClient.CreateCloudletPool(uri, token, dat)
 }
-func TestPermCreateCloudletPool(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateCloudletPool(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletPool{}
 	return TestCreateCloudletPool(mcClient, uri, token, region, in)
 }
 
-func TestDeleteCloudletPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPool) (edgeproto.Result, int, error) {
+func TestDeleteCloudletPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPool) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletPool{}
 	dat.Region = region
 	dat.CloudletPool = *in
 	return mcClient.DeleteCloudletPool(uri, token, dat)
 }
-func TestPermDeleteCloudletPool(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteCloudletPool(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletPool{}
 	return TestDeleteCloudletPool(mcClient, uri, token, region, in)
 }
@@ -53,7 +53,7 @@ func TestPermShowCloudletPool(mcClient *ormclient.Client, uri, token, region, or
 	return TestShowCloudletPool(mcClient, uri, token, region, in)
 }
 
-func RunMcCloudletPoolApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletPool, dataIn interface{}, rc *bool, mode string) {
+func RunMcCloudletPoolApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletPool, dataMap interface{}, rc *bool, mode string) {
 	for _, cloudletPool := range *data {
 		in := &ormapi.RegionCloudletPool{
 			Region:       region,
@@ -72,24 +72,24 @@ func RunMcCloudletPoolApi(mcClient ormclient.Api, uri, token, region string, dat
 	}
 }
 
-func TestCreateCloudletPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPoolMember) (edgeproto.Result, int, error) {
+func TestCreateCloudletPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletPoolMember{}
 	dat.Region = region
 	dat.CloudletPoolMember = *in
 	return mcClient.CreateCloudletPoolMember(uri, token, dat)
 }
-func TestPermCreateCloudletPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateCloudletPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletPoolMember{}
 	return TestCreateCloudletPoolMember(mcClient, uri, token, region, in)
 }
 
-func TestDeleteCloudletPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPoolMember) (edgeproto.Result, int, error) {
+func TestDeleteCloudletPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletPoolMember{}
 	dat.Region = region
 	dat.CloudletPoolMember = *in
 	return mcClient.DeleteCloudletPoolMember(uri, token, dat)
 }
-func TestPermDeleteCloudletPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteCloudletPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletPoolMember{}
 	return TestDeleteCloudletPoolMember(mcClient, uri, token, region, in)
 }
@@ -105,7 +105,7 @@ func TestPermShowCloudletPoolMember(mcClient *ormclient.Client, uri, token, regi
 	return TestShowCloudletPoolMember(mcClient, uri, token, region, in)
 }
 
-func RunMcCloudletPoolMemberApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletPoolMember, dataIn interface{}, rc *bool, mode string) {
+func RunMcCloudletPoolMemberApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletPoolMember, dataMap interface{}, rc *bool, mode string) {
 	for _, cloudletPoolMember := range *data {
 		in := &ormapi.RegionCloudletPoolMember{
 			Region:             region,

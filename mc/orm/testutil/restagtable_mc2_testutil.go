@@ -22,35 +22,35 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (edgeproto.Result, int, error) {
+func TestCreateResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionResTagTable{}
 	dat.Region = region
 	dat.ResTagTable = *in
 	return mcClient.CreateResTagTable(uri, token, dat)
 }
-func TestPermCreateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	return TestCreateResTagTable(mcClient, uri, token, region, in)
 }
 
-func TestDeleteResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (edgeproto.Result, int, error) {
+func TestDeleteResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionResTagTable{}
 	dat.Region = region
 	dat.ResTagTable = *in
 	return mcClient.DeleteResTagTable(uri, token, dat)
 }
-func TestPermDeleteResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeleteResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	return TestDeleteResTagTable(mcClient, uri, token, region, in)
 }
 
-func TestUpdateResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (edgeproto.Result, int, error) {
+func TestUpdateResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionResTagTable{}
 	dat.Region = region
 	dat.ResTagTable = *in
 	return mcClient.UpdateResTagTable(uri, token, dat)
 }
-func TestPermUpdateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermUpdateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	return TestUpdateResTagTable(mcClient, uri, token, region, in)
 }
@@ -66,55 +66,41 @@ func TestPermShowResTagTable(mcClient *ormclient.Client, uri, token, region, org
 	return TestShowResTagTable(mcClient, uri, token, region, in)
 }
 
-func TestAddResTag(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (edgeproto.Result, int, error) {
+func TestAddResTag(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionResTagTable{}
 	dat.Region = region
 	dat.ResTagTable = *in
 	return mcClient.AddResTag(uri, token, dat)
 }
-func TestPermAddResTag(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermAddResTag(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	return TestAddResTag(mcClient, uri, token, region, in)
 }
 
-func TestRemoveResTag(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (edgeproto.Result, int, error) {
+func TestRemoveResTag(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTable) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionResTagTable{}
 	dat.Region = region
 	dat.ResTagTable = *in
 	return mcClient.RemoveResTag(uri, token, dat)
 }
-func TestPermRemoveResTag(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermRemoveResTag(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	return TestRemoveResTag(mcClient, uri, token, region, in)
 }
 
-func TestGetResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTableKey) (edgeproto.ResTagTable, int, error) {
+func TestGetResTagTable(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, int, error) {
 	dat := &ormapi.RegionResTagTableKey{}
 	dat.Region = region
 	dat.ResTagTableKey = *in
 	return mcClient.GetResTagTable(uri, token, dat)
 }
-func TestPermGetResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.ResTagTable, int, error) {
+func TestPermGetResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ResTagTable, int, error) {
 	in := &edgeproto.ResTagTableKey{}
 	return TestGetResTagTable(mcClient, uri, token, region, in)
 }
 
-func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ResTagTable, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in resTagTable: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ResTagTable, dataMap interface{}, rc *bool, mode string) {
 	for ii, resTagTable := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in resTagTable: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionResTagTable{
 			Region:      region,
 			ResTagTable: resTagTable,
@@ -127,7 +113,12 @@ func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data
 			_, st, err := mcClient.DeleteResTagTable(uri, token, in)
 			checkMcErr("DeleteResTagTable", st, err, rc)
 		case "update":
-			in.ResTagTable.Fields = cli.GetSpecifiedFields(dataMap, &in.ResTagTable, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for ResTagTable: %v", err)
+				os.Exit(1)
+			}
+			in.ResTagTable.Fields = cli.GetSpecifiedFields(objMap, &in.ResTagTable, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateResTagTable(uri, token, in)
 			checkMcErr("UpdateResTagTable", st, err, rc)
 		case "add":

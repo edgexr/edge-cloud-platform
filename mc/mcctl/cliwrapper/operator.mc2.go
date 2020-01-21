@@ -20,20 +20,26 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error) {
+func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateOperatorCode"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
-func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (edgeproto.Result, int, error) {
+func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteOperatorCode"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
-	return out, st, err
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
 func (s *Client) ShowOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) ([]edgeproto.OperatorCode, int, error) {

@@ -303,9 +303,6 @@ func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--tls")
 		args = append(args, p.TLS.ServerCert)
 	}
-	if p.ShortTimeouts {
-		args = append(args, "--shortTimeouts")
-	}
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {

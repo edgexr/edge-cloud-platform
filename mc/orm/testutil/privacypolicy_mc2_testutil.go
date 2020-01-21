@@ -22,37 +22,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (edgeproto.Result, int, error) {
+func TestCreatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionPrivacyPolicy{}
 	dat.Region = region
 	dat.PrivacyPolicy = *in
 	return mcClient.CreatePrivacyPolicy(uri, token, dat)
 }
-func TestPermCreatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermCreatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.PrivacyPolicy{}
 	in.Key.Developer = org
 	return TestCreatePrivacyPolicy(mcClient, uri, token, region, in)
 }
 
-func TestDeletePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (edgeproto.Result, int, error) {
+func TestDeletePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionPrivacyPolicy{}
 	dat.Region = region
 	dat.PrivacyPolicy = *in
 	return mcClient.DeletePrivacyPolicy(uri, token, dat)
 }
-func TestPermDeletePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermDeletePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.PrivacyPolicy{}
 	in.Key.Developer = org
 	return TestDeletePrivacyPolicy(mcClient, uri, token, region, in)
 }
 
-func TestUpdatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (edgeproto.Result, int, error) {
+func TestUpdatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionPrivacyPolicy{}
 	dat.Region = region
 	dat.PrivacyPolicy = *in
 	return mcClient.UpdatePrivacyPolicy(uri, token, dat)
 }
-func TestPermUpdatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (edgeproto.Result, int, error) {
+func TestPermUpdatePrivacyPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.PrivacyPolicy{}
 	in.Key.Developer = org
 	return TestUpdatePrivacyPolicy(mcClient, uri, token, region, in)
@@ -70,22 +70,8 @@ func TestPermShowPrivacyPolicy(mcClient *ormclient.Client, uri, token, region, o
 	return TestShowPrivacyPolicy(mcClient, uri, token, region, in)
 }
 
-func RunMcPrivacyPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.PrivacyPolicy, dataIn interface{}, rc *bool, mode string) {
-	var dataInList []interface{}
-	var ok bool
-	if dataIn != nil {
-		dataInList, ok = dataIn.([]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in privacyPolicy: %v\n", dataIn)
-			os.Exit(1)
-		}
-	}
+func RunMcPrivacyPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.PrivacyPolicy, dataMap interface{}, rc *bool, mode string) {
 	for ii, privacyPolicy := range *data {
-		dataMap, ok := dataInList[ii].(map[string]interface{})
-		if !ok {
-			fmt.Fprintf(os.Stderr, "invalid data in privacyPolicy: %v\n", dataInList[ii])
-			os.Exit(1)
-		}
 		in := &ormapi.RegionPrivacyPolicy{
 			Region:        region,
 			PrivacyPolicy: privacyPolicy,
@@ -98,7 +84,12 @@ func RunMcPrivacyPolicyApi(mcClient ormclient.Api, uri, token, region string, da
 			_, st, err := mcClient.DeletePrivacyPolicy(uri, token, in)
 			checkMcErr("DeletePrivacyPolicy", st, err, rc)
 		case "update":
-			in.PrivacyPolicy.Fields = cli.GetSpecifiedFields(dataMap, &in.PrivacyPolicy, cli.YamlNamespace)
+			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bad dataMap for PrivacyPolicy: %v", err)
+				os.Exit(1)
+			}
+			in.PrivacyPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.PrivacyPolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdatePrivacyPolicy(uri, token, in)
 			checkMcErr("UpdatePrivacyPolicy", st, err, rc)
 		default:

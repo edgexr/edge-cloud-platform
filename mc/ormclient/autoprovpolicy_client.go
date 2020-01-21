@@ -21,22 +21,31 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error) {
+func (s *Client) CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/CreateAutoProvPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error) {
+func (s *Client) DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/DeleteAutoProvPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error) {
+func (s *Client) UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/UpdateAutoProvPolicy", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 func (s *Client) ShowAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) ([]edgeproto.AutoProvPolicy, int, error) {
@@ -48,23 +57,29 @@ func (s *Client) ShowAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProv
 	return outlist, status, err
 }
 
-func (s *Client) AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (edgeproto.Result, int, error) {
+func (s *Client) AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/AddAutoProvPolicyCloudlet", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
-func (s *Client) RemoveAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (edgeproto.Result, int, error) {
+func (s *Client) RemoveAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/RemoveAutoProvPolicyCloudlet", token, in, &out)
-	return out, status, err
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
 }
 
 type AutoProvPolicyApiClient interface {
-	CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error)
-	DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error)
-	UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (edgeproto.Result, int, error)
+	CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error)
+	DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error)
+	UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error)
 	ShowAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) ([]edgeproto.AutoProvPolicy, int, error)
-	AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (edgeproto.Result, int, error)
-	RemoveAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (edgeproto.Result, int, error)
+	AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error)
+	RemoveAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error)
 }
