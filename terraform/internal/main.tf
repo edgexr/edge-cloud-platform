@@ -123,3 +123,19 @@ module "apt_dns" {
   hostname                      = "${var.apt_domain_name}"
   ip                            = "${module.apt.external_ip}"
 }
+
+module "backups" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                 = "${var.backups_instance_name}"
+  zone                          = "${var.gcp_zone}"
+  boot_disk_size                = 1024
+  tags                          = [ "mexplat-${var.environ_tag}", "infra", "docker-registry" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "backups_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.backups_domain_name}"
+  ip                            = "${module.backups.external_ip}"
+}

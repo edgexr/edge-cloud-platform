@@ -102,6 +102,14 @@ variable "apt_instance_name" {
   default     = "apt"
 }
 
+variable "backups_domain_name" {
+  default     = "backups.mobiledgex.net"
+}
+
+variable "backups_instance_name" {
+  default     = "backups"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
