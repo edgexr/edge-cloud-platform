@@ -169,7 +169,7 @@ var UtilizationFields = []string{
 	"\"memUsed\"",
 	"\"memMax\"",
 	"\"diskUsed\"",
-	"\"disuMax\"",
+	"\"diskMax\"",
 }
 
 var CloudletNetworkFields = []string{
