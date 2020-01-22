@@ -190,7 +190,7 @@ func ShowAuditOrg(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 
-	if !authorized(ctx, claims.Username, query.Org, ResourceUsers, ActionView) {
+	if !authorized(ctx, claims.Username, query.Org, ResourceUsers, ActionView, withShowAudit()) {
 		if query.Org == "" {
 			return fmt.Errorf("Organization not specified or no permissions")
 		}

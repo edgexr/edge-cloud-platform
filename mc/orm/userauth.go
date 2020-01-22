@@ -189,11 +189,38 @@ func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
 	return false, setReply(c, fmt.Errorf("invalid or expired jwt"), nil)
 }
 
-func authorized(ctx context.Context, sub, org, obj, act string) bool {
-	allow, err := enforcer.Enforce(ctx, sub, org, obj, act)
+func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) bool {
+	opts := authOptions{}
+	for _, op := range ops {
+		op(&opts)
+	}
+
+	allow, admin, err := enforcer.Enforce(ctx, sub, org, obj, act)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "enforcer failed", "err", err)
 		return false
 	}
+	if admin && org != "" && !opts.showAudit {
+		// make sure org actually exists
+		found, err := orgExists(ctx, org)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, org exists check failed", "err", err)
+			return false
+		}
+		if !found {
+			log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, but org not found", "org", org)
+			return false
+		}
+	}
 	return allow
+}
+
+type authOptions struct {
+	showAudit bool
+}
+
+type authOp func(opts *authOptions)
+
+func withShowAudit() authOp {
+	return func(opts *authOptions) { opts.showAudit = true }
 }

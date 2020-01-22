@@ -300,3 +300,18 @@ func getOrgType(orgName string, allOrgs map[string]*ormapi.Organization) string 
 	}
 	return ""
 }
+
+func orgExists(ctx context.Context, orgName string) (bool, error) {
+	lookup := ormapi.Organization{
+		Name: orgName,
+	}
+	db := loggedDB(ctx)
+	res := db.Where(&lookup).First(&ormapi.Organization{})
+	if res.RecordNotFound() {
+		return false, nil
+	}
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}

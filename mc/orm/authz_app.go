@@ -73,11 +73,17 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 		return fmt.Errorf("Empty URL path in ImagePath")
 	}
 	targetOrg := pathNames[0]
+	if targetOrg == "" {
+		return fmt.Errorf("Empty organization name in ImagePath")
+	}
 
 	lookup := ormapi.Organization{}
 	lookup.Name = targetOrg
 	db := loggedDB(ctx)
-	err = db.Where(&lookup).First(&lookup).Error
+	res := db.Where(&lookup).First(&lookup)
+	if res.RecordNotFound() {
+		return fmt.Errorf("Organization %s from ImagePath not found", targetOrg)
+	}
 	if err != nil {
 		return err
 	}
