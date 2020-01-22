@@ -64,6 +64,8 @@ func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Clien
 	testImagePath(t, ctx, "org1", "http://foobar.mobiledgex.net/artifactory/repo-org4/someapp", false)
 	// docker path which doesn't include http scheme
 	testImagePath(t, ctx, "org1", "foobar.mobiledgex.net/andyorg/images/server:1.0", false)
+	// test empty org name in both org and path
+	testImagePath(t, ctx, "", "docker-qa.mobiledgex.net/", false)
 
 	status, err = mcClient.DeleteOrg(uri, tokenAd, &org1)
 	require.Nil(t, err)
