@@ -189,8 +189,8 @@ func ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 	}
 	var flavors []OSFlavorDetail
 	var flavorsMatched []OSFlavorDetail
-	err = json.Unmarshal(out, &flavors)
 
+	err = json.Unmarshal(out, &flavors)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
@@ -869,6 +869,9 @@ func OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 }
 
 func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImage, error) {
+
+	var props map[string]string
+
 	osflavors, err := ListFlavors(ctx)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
@@ -878,19 +881,10 @@ func GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []O
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
-		var props map[string]string
 		if f.Properties != "" {
-			ms := strings.Split(f.Properties, ",")
-			if ms != nil {
-				props = make(map[string]string)
-				for _, m := range ms {
-					value := strings.Split(m, ":")
-					if len(value) > 1 {
-						props[value[0]] = value[1]
-					}
-				}
-			}
+			props = ParseFlavorProperties(f)
 		}
+
 		finfo = append(
 			finfo,
 			&edgeproto.FlavorInfo{

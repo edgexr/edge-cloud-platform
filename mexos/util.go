@@ -3,6 +3,8 @@ package mexos
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -75,4 +77,32 @@ func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client pc.PlatformCli
 		return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error -- proxyerr: %v secerr: %v dnserr: %v", proxyerr, secerr, dnserr)
 	}
 	return nil
+}
+
+// TODO collapse common keys into a single entry with multi-part values ex: "hw"
+// (We don't use this property values today, but perhaps in the future)
+func ParseFlavorProperties(f OSFlavorDetail) map[string]string {
+
+	var props map[string]string
+
+	ms := strings.Split(f.Properties, ",")
+	props = make(map[string]string)
+	for _, m := range ms {
+		// ex: pci_passthrough:alias='t4gpu:1’
+		val := strings.Split(m, ":")
+		if len(val) > 1 {
+			val[0] = strings.TrimSpace(val[0])
+			var s []string
+			for i := 1; i < len(val); i++ {
+				val[i] = strings.Replace(val[i], "'", "", -1)
+				if _, err := strconv.Atoi(val[i]); err == nil {
+					s = append(s, ":")
+				}
+				s = append(s, val[i])
+			}
+			props[val[0]] = strings.Join(s, "")
+		}
+
+	}
+	return props
 }
