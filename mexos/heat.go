@@ -710,7 +710,7 @@ func HeatDeleteCluster(ctx context.Context, client pc.PlatformClient, clusterIns
 		// probably already gone
 		log.SpanLog(ctx, log.DebugLevelMexos, "unable to get cluster params, proceed with stack deletion", "err", err)
 	}
-	clusterName := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
+	clusterName := util.HeatSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
 	return HeatDeleteStack(ctx, clusterName)
 }
 
@@ -776,7 +776,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	}
 	cp.PrivacyPolicy = privacyPolicy
 	cp.CloudletSecurityGroup = cloudletGrp
-	cp.ClusterName = k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
+	cp.ClusterName = util.HeatSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
 	rtr := GetCloudletExternalRouter()
 	if rtr == NoConfigExternalRouter {
 		log.SpanLog(ctx, log.DebugLevelMexos, "NoConfigExternalRouter in use for cluster, cluster stack with no router interfaces")
