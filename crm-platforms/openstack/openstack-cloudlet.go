@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -35,7 +36,7 @@ var PlatformServices = []string{
 
 func getPlatformVMName(cloudlet *edgeproto.Cloudlet) string {
 	// Form platform VM name based on cloudletKey
-	return cloudlet.Key.Name + "." + cloudlet.Key.OperatorKey.Name + ".pf"
+	return util.HeatSanitize(cloudlet.Key.Name + "." + cloudlet.Key.OperatorKey.Name + ".pf")
 }
 
 func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, client ssh.Client, serviceType string, updateCallback edgeproto.CacheUpdateCallback, cDone chan error) {
@@ -470,7 +471,7 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
 	}
 
-	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key)
+	rootLBName := getRootLBName(&cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
 	err = mexos.HeatDeleteStack(ctx, rootLBName)
 	if err != nil {

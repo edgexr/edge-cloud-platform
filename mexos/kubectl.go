@@ -67,9 +67,9 @@ func CreateClusterConfigMap(ctx context.Context, client pc.PlatformClient, clust
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
 
 	cmd := fmt.Sprintf("kubectl create configmap mexcluster-info "+
-		"--from-literal=ClusterName=%s "+
-		"--from-literal=CloudletName=%s "+
-		"--from-literal=OperatorName=%s --kubeconfig=%s",
+		"--from-literal=ClusterName='%s' "+
+		"--from-literal=CloudletName='%s' "+
+		"--from-literal=OperatorName='%s' --kubeconfig=%s",
 		clusterInst.Key.ClusterKey.Name, clusterInst.Key.CloudletKey.Name,
 		clusterInst.Key.CloudletKey.OperatorKey.Name,
 		k8smgmt.GetKconfName(clusterInst))

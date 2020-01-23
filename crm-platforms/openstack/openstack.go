@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
 )
@@ -32,7 +33,7 @@ func (s *Platform) GetType() string {
 }
 
 func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	rootLBName := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
+	rootLBName := getRootLBName(platformConfig.CloudletKey)
 	s.cloudletKey = platformConfig.CloudletKey
 	s.config = *platformConfig
 	log.SpanLog(ctx,
@@ -135,4 +136,9 @@ func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
 	return s.GetPlatformClientRootLB(ctx, rootLBName)
+}
+
+func getRootLBName(key *edgeproto.CloudletKey) string {
+	name := cloudcommon.GetRootLBFQDN(key)
+	return util.HeatSanitize(name)
 }
