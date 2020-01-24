@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // AuthzCloudlet provides an efficient way to check if the user
@@ -40,6 +41,15 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 			s.allowAll = true
 			return nil
 		} else {
+			// make sure org actually exists
+			found, err := orgExists(ctx, orgfilter)
+			if err != nil {
+				return err
+			}
+			if !found {
+				log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, but org does not exist", "org", orgfilter)
+				return nil
+			}
 			// ensure access (admin may not have explicit perms
 			// for specified org).
 			orgs[orgfilter] = struct{}{}
