@@ -60,6 +60,26 @@ regiondata:
     operatorcodes:
     - code: 31026
       operatorname: dmuus
+    cloudletinfos:
+    - key:
+        operatorkey:
+          name: enterprise
+        name: enterprise-1
+      state: CloudletStateReady
+      notifyid: 0
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: flavor1
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      version: "2019-10-24"
     cloudlets:
     - key:
         operatorkey:

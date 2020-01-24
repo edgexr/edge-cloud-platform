@@ -350,6 +350,10 @@ func ShowData(c echo.Context) error {
 		if err == nil {
 			appdata.Cloudlets = cloudlets
 		}
+		cloudletinfos, err := ShowCloudletInfoObj(ctx, rc, &edgeproto.CloudletInfo{})
+		if err == nil {
+			appdata.CloudletInfos = cloudletinfos
+		}
 		pools, err := ShowCloudletPoolObj(ctx, rc, &edgeproto.CloudletPool{})
 		if err == nil {
 			appdata.CloudletPools = pools
