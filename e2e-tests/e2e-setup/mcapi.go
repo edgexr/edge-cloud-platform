@@ -347,6 +347,12 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		cloudlets, status, err := mcClient.ShowCloudlet(uri, token, inCloudlet)
 		checkMcCtrlErr("ShowCloudlet", status, err, rc)
 
+		inCloudletInfo := &ormapi.RegionCloudletInfo{
+			Region: ctrl.Region,
+		}
+		cloudletInfos, status, err := mcClient.ShowCloudletInfo(uri, token, inCloudletInfo)
+		checkMcCtrlErr("ShowCloudletInfo", status, err, rc)
+
 		inCloudletPool := &ormapi.RegionCloudletPool{
 			Region: ctrl.Region,
 		}
@@ -402,6 +408,7 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 			AppData: edgeproto.ApplicationData{
 				Flavors:             flavors,
 				Cloudlets:           cloudlets,
+				CloudletInfos:       cloudletInfos,
 				CloudletPools:       pools,
 				CloudletPoolMembers: members,
 				ClusterInsts:        clusterInsts,

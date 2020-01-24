@@ -101,3 +101,80 @@ regiondata:
       ram: 1024
       vcpus: 1
       disk: 1
+    cloudletinfos:
+    - key:
+        operatorkey:
+          name: dmuus
+        name: dmuus-cloud-1
+      state: CloudletStateReady
+      notifyid: 1
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: flavor1
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      version: "2019-10-24"
+    - key:
+        operatorkey:
+          name: dmuus
+        name: dmuus-cloud-2
+      state: CloudletStateReady
+      notifyid: 2
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: flavor1
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      version: "2019-10-24"
+    - key:
+        operatorkey:
+          name: azure
+        name: azure-cloud-4
+      state: CloudletStateReady
+      notifyid: 3
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: flavor1
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      version: "2019-10-24"
+    - key:
+        operatorkey:
+          name: gcp
+        name: gcp-cloud-5
+      state: CloudletStateReady
+      notifyid: 4
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: flavor1
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      version: "2019-10-24"
