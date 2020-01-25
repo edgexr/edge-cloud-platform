@@ -67,6 +67,19 @@ func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Clien
 	// test empty org name in both org and path
 	testImagePath(t, ctx, "", "docker-qa.mobiledgex.net/", false)
 
+	mobiledgexOrg := ormapi.Organization{
+		Type:         "developer",
+		Name:         "mobiledgex",
+		Address:      "mobiledgeX st",
+		Phone:        "123-123-1234",
+		PublicImages: true,
+	}
+	status, err = mcClient.CreateOrg(uri, tokenAd, &mobiledgexOrg)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// test publicimages enabled org
+	testImagePath(t, ctx, "DevOrg", "docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo", true)
+
 	status, err = mcClient.DeleteOrg(uri, tokenAd, &org1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
