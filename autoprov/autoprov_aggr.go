@@ -257,7 +257,7 @@ func (s *AutoProvAggr) deploy(ctx context.Context, appKey *edgeproto.AppKey, clo
 	inst.Key.ClusterInstKey = *cinstKey
 
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy AppInst", "AppInst", inst)
-	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(), grpc.WithWaitForHandshake())
+	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(), grpc.WithWaitForHandshake(), grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc), grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
 	if err != nil {
 		return fmt.Errorf("failed to connect to controller, %v", err)
 	}
