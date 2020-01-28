@@ -41,6 +41,7 @@ func GetRegionCommand() *cobra.Command {
 	cmds = append(cmds, AlertApiCmds...)
 	cmds = append(cmds, AutoScalePolicyApiCmds...)
 	cmds = append(cmds, AutoProvPolicyApiCmds...)
+	cmds = append(cmds, PrivacyPolicyApiCmds...)
 	cmds = append(cmds, SettingsApiCmds...)
 	cmds = append(cmds, ResTagTableApiCmds...)
 	return cli.GenGroup("region", "manage region data", cmds)
