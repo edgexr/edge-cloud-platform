@@ -197,10 +197,31 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	// login route
 	root := "api/v1"
-	e.POST(root+"/login", Login)
 	// accessible routes
+
+	// swagger:route POST /login Security Login
+	// Login.
+	// Login to MC
+	// responses:
+	//   200: authToken
+	//   400: loginBadRequest
+	e.POST(root+"/login", Login)
+	// swagger:route POST /usercreate User CreateUser
+	// Create User.
+	// Create a new user who can access/manage resources
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	e.POST(root+"/usercreate", CreateUser)
 	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
+	// swagger:route POST /passwordreset Security PasswdReset
+	// Reset login password.
+	// If login password is lost or to be changed, this API will reset the login password
+	// responses:
+	//   200: success
+	//   400: badRequest
 	e.POST(root+"/passwordreset", PasswordReset)
 	e.POST(root+"/verifyemail", VerifyEmail)
 	e.POST(root+"/resendverify", ResendVerify)
@@ -208,8 +229,29 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth := e.Group(root + "/auth")
 	auth.Use(AuthCookie)
 	// authenticated routes - gorm router
+
+	// swagger:route POST /auth/user/show User ShowUser
+	// Show Users.
+	// Show existing users which user is authorized to access
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listUsers
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/user/show", ShowUser)
 	auth.POST("/user/current", CurrentUser)
+	// swagger:route POST /auth/user/delete User DeleteUser
+	// Delete User.
+	// Delete existing user
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/user/delete", DeleteUser)
 	auth.POST("/user/newpass", NewPassword)
 	auth.POST("/role/assignment/show", ShowRoleAssignment)
@@ -218,9 +260,49 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/role/adduser", AddUserRole)
 	auth.POST("/role/removeuser", RemoveUserRole)
 	auth.POST("/role/showuser", ShowUserRole)
+	// swagger:route POST /auth/org/create Organization CreateOrg
+	// Create Organization.
+	// Create Organization to access operator/cloudlet APIs
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/org/create", CreateOrg)
+	// swagger:route POST /auth/org/update Organization UpdateOrg
+	// Update Organization.
+	// API to update an existing Organization
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/org/update", UpdateOrg)
+	// swagger:route POST /auth/org/show Organization ShowOrg
+	// Show Organizations.
+	// Show existing Organizations which user is authorized to access
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listOrgs
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/org/show", ShowOrg)
+	// swagger:route POST /auth/org/delete Organization DeleteOrg
+	// Delete Organization.
+	// Delete existing Organization
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/org/delete", DeleteOrg)
 	auth.POST("/controller/create", CreateController)
 	auth.POST("/controller/delete", DeleteController)

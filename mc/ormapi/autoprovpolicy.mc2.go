@@ -20,12 +20,58 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateAutoProvPolicy
+// swagger:parameters CreateAutoProvPolicy
+type swaggerCreateAutoProvPolicy struct {
+	// in: body
+	Body RegionAutoProvPolicy
+}
+
 type RegionAutoProvPolicy struct {
+	// required: true
+	// Region name
 	Region         string
 	AutoProvPolicy edgeproto.AutoProvPolicy
 }
 
+// Request summary for DeleteAutoProvPolicy
+// swagger:parameters DeleteAutoProvPolicy
+type swaggerDeleteAutoProvPolicy struct {
+	// in: body
+	Body RegionAutoProvPolicy
+}
+
+// Request summary for UpdateAutoProvPolicy
+// swagger:parameters UpdateAutoProvPolicy
+type swaggerUpdateAutoProvPolicy struct {
+	// in: body
+	Body RegionAutoProvPolicy
+}
+
+// Request summary for ShowAutoProvPolicy
+// swagger:parameters ShowAutoProvPolicy
+type swaggerShowAutoProvPolicy struct {
+	// in: body
+	Body RegionAutoProvPolicy
+}
+
+// Request summary for AddAutoProvPolicyCloudlet
+// swagger:parameters AddAutoProvPolicyCloudlet
+type swaggerAddAutoProvPolicyCloudlet struct {
+	// in: body
+	Body RegionAutoProvPolicyCloudlet
+}
+
 type RegionAutoProvPolicyCloudlet struct {
+	// required: true
+	// Region name
 	Region                 string
 	AutoProvPolicyCloudlet edgeproto.AutoProvPolicyCloudlet
+}
+
+// Request summary for RemoveAutoProvPolicyCloudlet
+// swagger:parameters RemoveAutoProvPolicyCloudlet
+type swaggerRemoveAutoProvPolicyCloudlet struct {
+	// in: body
+	Body RegionAutoProvPolicyCloudlet
 }

@@ -18,7 +18,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateAutoScalePolicy
+// swagger:parameters CreateAutoScalePolicy
+type swaggerCreateAutoScalePolicy struct {
+	// in: body
+	Body RegionAutoScalePolicy
+}
+
 type RegionAutoScalePolicy struct {
+	// required: true
+	// Region name
 	Region          string
 	AutoScalePolicy edgeproto.AutoScalePolicy
+}
+
+// Request summary for DeleteAutoScalePolicy
+// swagger:parameters DeleteAutoScalePolicy
+type swaggerDeleteAutoScalePolicy struct {
+	// in: body
+	Body RegionAutoScalePolicy
+}
+
+// Request summary for UpdateAutoScalePolicy
+// swagger:parameters UpdateAutoScalePolicy
+type swaggerUpdateAutoScalePolicy struct {
+	// in: body
+	Body RegionAutoScalePolicy
+}
+
+// Request summary for ShowAutoScalePolicy
+// swagger:parameters ShowAutoScalePolicy
+type swaggerShowAutoScalePolicy struct {
+	// in: body
+	Body RegionAutoScalePolicy
 }

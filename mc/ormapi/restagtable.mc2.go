@@ -18,12 +18,65 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateResTagTable
+// swagger:parameters CreateResTagTable
+type swaggerCreateResTagTable struct {
+	// in: body
+	Body RegionResTagTable
+}
+
 type RegionResTagTable struct {
+	// required: true
+	// Region name
 	Region      string
 	ResTagTable edgeproto.ResTagTable
 }
 
+// Request summary for DeleteResTagTable
+// swagger:parameters DeleteResTagTable
+type swaggerDeleteResTagTable struct {
+	// in: body
+	Body RegionResTagTable
+}
+
+// Request summary for UpdateResTagTable
+// swagger:parameters UpdateResTagTable
+type swaggerUpdateResTagTable struct {
+	// in: body
+	Body RegionResTagTable
+}
+
+// Request summary for ShowResTagTable
+// swagger:parameters ShowResTagTable
+type swaggerShowResTagTable struct {
+	// in: body
+	Body RegionResTagTable
+}
+
+// Request summary for AddResTag
+// swagger:parameters AddResTag
+type swaggerAddResTag struct {
+	// in: body
+	Body RegionResTagTable
+}
+
+// Request summary for RemoveResTag
+// swagger:parameters RemoveResTag
+type swaggerRemoveResTag struct {
+	// in: body
+	Body RegionResTagTable
+}
+
+// Request summary for GetResTagTable
+// swagger:parameters GetResTagTable
+type swaggerGetResTagTable struct {
+	// in: body
+	Body RegionResTagTableKey
+}
+
 type RegionResTagTableKey struct {
+	// required: true
+	// Region name
 	Region         string
 	ResTagTableKey edgeproto.ResTagTableKey
 }

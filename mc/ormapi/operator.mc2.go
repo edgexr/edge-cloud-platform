@@ -18,7 +18,30 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateOperatorCode
+// swagger:parameters CreateOperatorCode
+type swaggerCreateOperatorCode struct {
+	// in: body
+	Body RegionOperatorCode
+}
+
 type RegionOperatorCode struct {
+	// required: true
+	// Region name
 	Region       string
 	OperatorCode edgeproto.OperatorCode
+}
+
+// Request summary for DeleteOperatorCode
+// swagger:parameters DeleteOperatorCode
+type swaggerDeleteOperatorCode struct {
+	// in: body
+	Body RegionOperatorCode
+}
+
+// Request summary for ShowOperatorCode
+// swagger:parameters ShowOperatorCode
+type swaggerShowOperatorCode struct {
+	// in: body
+	Body RegionOperatorCode
 }

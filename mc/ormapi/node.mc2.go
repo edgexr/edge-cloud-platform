@@ -18,7 +18,16 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for ShowNode
+// swagger:parameters ShowNode
+type swaggerShowNode struct {
+	// in: body
+	Body RegionNode
+}
+
 type RegionNode struct {
+	// required: true
+	// Region name
 	Region string
 	Node   edgeproto.Node
 }

@@ -18,7 +18,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreatePrivacyPolicy
+// swagger:parameters CreatePrivacyPolicy
+type swaggerCreatePrivacyPolicy struct {
+	// in: body
+	Body RegionPrivacyPolicy
+}
+
 type RegionPrivacyPolicy struct {
+	// required: true
+	// Region name
 	Region        string
 	PrivacyPolicy edgeproto.PrivacyPolicy
+}
+
+// Request summary for DeletePrivacyPolicy
+// swagger:parameters DeletePrivacyPolicy
+type swaggerDeletePrivacyPolicy struct {
+	// in: body
+	Body RegionPrivacyPolicy
+}
+
+// Request summary for UpdatePrivacyPolicy
+// swagger:parameters UpdatePrivacyPolicy
+type swaggerUpdatePrivacyPolicy struct {
+	// in: body
+	Body RegionPrivacyPolicy
+}
+
+// Request summary for ShowPrivacyPolicy
+// swagger:parameters ShowPrivacyPolicy
+type swaggerShowPrivacyPolicy struct {
+	// in: body
+	Body RegionPrivacyPolicy
 }

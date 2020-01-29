@@ -18,7 +18,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateApp
+// swagger:parameters CreateApp
+type swaggerCreateApp struct {
+	// in: body
+	Body RegionApp
+}
+
 type RegionApp struct {
+	// required: true
+	// Region name
 	Region string
 	App    edgeproto.App
+}
+
+// Request summary for DeleteApp
+// swagger:parameters DeleteApp
+type swaggerDeleteApp struct {
+	// in: body
+	Body RegionApp
+}
+
+// Request summary for UpdateApp
+// swagger:parameters UpdateApp
+type swaggerUpdateApp struct {
+	// in: body
+	Body RegionApp
+}
+
+// Request summary for ShowApp
+// swagger:parameters ShowApp
+type swaggerShowApp struct {
+	// in: body
+	Body RegionApp
 }

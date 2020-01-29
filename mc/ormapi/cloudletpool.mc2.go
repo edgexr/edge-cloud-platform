@@ -18,22 +18,86 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateCloudletPool
+// swagger:parameters CreateCloudletPool
+type swaggerCreateCloudletPool struct {
+	// in: body
+	Body RegionCloudletPool
+}
+
 type RegionCloudletPool struct {
+	// required: true
+	// Region name
 	Region       string
 	CloudletPool edgeproto.CloudletPool
 }
 
+// Request summary for DeleteCloudletPool
+// swagger:parameters DeleteCloudletPool
+type swaggerDeleteCloudletPool struct {
+	// in: body
+	Body RegionCloudletPool
+}
+
+// Request summary for ShowCloudletPool
+// swagger:parameters ShowCloudletPool
+type swaggerShowCloudletPool struct {
+	// in: body
+	Body RegionCloudletPool
+}
+
+// Request summary for CreateCloudletPoolMember
+// swagger:parameters CreateCloudletPoolMember
+type swaggerCreateCloudletPoolMember struct {
+	// in: body
+	Body RegionCloudletPoolMember
+}
+
 type RegionCloudletPoolMember struct {
+	// required: true
+	// Region name
 	Region             string
 	CloudletPoolMember edgeproto.CloudletPoolMember
 }
 
+// Request summary for DeleteCloudletPoolMember
+// swagger:parameters DeleteCloudletPoolMember
+type swaggerDeleteCloudletPoolMember struct {
+	// in: body
+	Body RegionCloudletPoolMember
+}
+
+// Request summary for ShowCloudletPoolMember
+// swagger:parameters ShowCloudletPoolMember
+type swaggerShowCloudletPoolMember struct {
+	// in: body
+	Body RegionCloudletPoolMember
+}
+
+// Request summary for ShowPoolsForCloudlet
+// swagger:parameters ShowPoolsForCloudlet
+type swaggerShowPoolsForCloudlet struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
 type RegionCloudletKey struct {
+	// required: true
+	// Region name
 	Region      string
 	CloudletKey edgeproto.CloudletKey
 }
 
+// Request summary for ShowCloudletsForPool
+// swagger:parameters ShowCloudletsForPool
+type swaggerShowCloudletsForPool struct {
+	// in: body
+	Body RegionCloudletPoolKey
+}
+
 type RegionCloudletPoolKey struct {
+	// required: true
+	// Region name
 	Region          string
 	CloudletPoolKey edgeproto.CloudletPoolKey
 }

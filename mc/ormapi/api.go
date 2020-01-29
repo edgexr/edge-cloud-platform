@@ -9,29 +9,51 @@ import (
 // Data saved to persistent sql db, also used for API calls
 
 type User struct {
-	Name          string `gorm:"primary_key;type:citext"`
-	Email         string `gorm:"unique;not null"`
+	// User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen
+	// required: true
+	Name string `gorm:"primary_key;type:citext"`
+	// User email
+	Email string `gorm:"unique;not null"`
+	// read only: true
 	EmailVerified bool
-	Passhash      string `gorm:"not null"`
-	Salt          string `gorm:"not null"`
-	Iter          int    `gorm:"not null"`
-	FamilyName    string
-	GivenName     string
-	Picture       string
-	Nickname      string
-	CreatedAt     time.Time `json:",omitempty"`
-	UpdatedAt     time.Time `json:",omitempty"`
-	Locked        bool
+	// read only: true
+	Passhash string `gorm:"not null"`
+	// read only: true
+	Salt string `gorm:"not null"`
+	// read only: true
+	Iter int `gorm:"not null"`
+	// Family Name
+	FamilyName string
+	// Given Name
+	GivenName string
+	// read only: true
+	Picture string
+	// Nick Name
+	Nickname string
+	// read only: true
+	CreatedAt time.Time `json:",omitempty"`
+	// read only: true
+	UpdatedAt time.Time `json:",omitempty"`
+	// read only: true
+	Locked bool
 }
 
 type Organization struct {
-	Name         string `gorm:"primary_key;type:citext"`
-	Type         string `gorm:"not null"`
-	Address      string
-	Phone        string
-	CreatedAt    time.Time `json:",omitempty"`
-	UpdatedAt    time.Time `json:",omitempty"`
-	PublicImages bool      `json:",omitempty"`
+	// Organization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen
+	// required: true
+	Name string `gorm:"primary_key;type:citext"`
+	// Organization type: "developer" or "operator"
+	Type string `gorm:"not null"`
+	// Organization address
+	Address string
+	// Organization phone number
+	Phone string
+	// read only: true
+	CreatedAt time.Time `json:",omitempty"`
+	// read only: true
+	UpdatedAt time.Time `json:",omitempty"`
+	// read only: true
+	PublicImages bool `json:",omitempty"`
 }
 
 type Controller struct {
@@ -74,7 +96,11 @@ type OrgCloudlet struct {
 }
 
 type UserLogin struct {
+	// User's name or email address
+	// required: true
 	Username string `form:"username" json:"username"`
+	// User's password
+	// required: true
 	Password string `form:"password" json:"password"`
 }
 
@@ -110,19 +136,29 @@ type AuditResponse struct {
 // verification email. It contains the information need to send
 // some kind of email to the user.
 type EmailRequest struct {
-	Email           string `form:"email" json:"email"`
+	// read only: true
+	Email string `form:"email" json:"email"`
+	// read only: true
 	OperatingSystem string `form:"operatingsystem" json:"operatingsystem"`
-	Browser         string `form:"browser" json:"browser"`
-	CallbackURL     string `form:"callbackurl" json:"callbackurl"`
-	ClientIP        string `form:"clientip" json:"clientip"`
+	// read only: true
+	Browser string `form:"browser" json:"browser"`
+	// Callback URL to verify user email
+	CallbackURL string `form:"callbackurl" json:"callbackurl"`
+	// read only: true
+	ClientIP string `form:"clientip" json:"clientip"`
 }
 
 type PasswordReset struct {
-	Token    string `form:"token" json:"token"`
+	// Authentication token
+	// required: true
+	Token string `form:"token" json:"token"`
+	// User's new password
+	// required: true
 	Password string `form:"password" json:"password"`
 }
 
 type Token struct {
+	// Authentication token
 	Token string `form:"token" json:"token"`
 }
 

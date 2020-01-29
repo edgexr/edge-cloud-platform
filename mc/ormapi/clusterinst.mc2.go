@@ -18,7 +18,37 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateClusterInst
+// swagger:parameters CreateClusterInst
+type swaggerCreateClusterInst struct {
+	// in: body
+	Body RegionClusterInst
+}
+
 type RegionClusterInst struct {
+	// required: true
+	// Region name
 	Region      string
 	ClusterInst edgeproto.ClusterInst
+}
+
+// Request summary for DeleteClusterInst
+// swagger:parameters DeleteClusterInst
+type swaggerDeleteClusterInst struct {
+	// in: body
+	Body RegionClusterInst
+}
+
+// Request summary for UpdateClusterInst
+// swagger:parameters UpdateClusterInst
+type swaggerUpdateClusterInst struct {
+	// in: body
+	Body RegionClusterInst
+}
+
+// Request summary for ShowClusterInst
+// swagger:parameters ShowClusterInst
+type swaggerShowClusterInst struct {
+	// in: body
+	Body RegionClusterInst
 }
