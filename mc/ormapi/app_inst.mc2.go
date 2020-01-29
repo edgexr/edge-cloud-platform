@@ -20,7 +20,44 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateAppInst
+// swagger:parameters CreateAppInst
+type swaggerCreateAppInst struct {
+	// in: body
+	Body RegionAppInst
+}
+
 type RegionAppInst struct {
+	// required: true
+	// Region name
 	Region  string
 	AppInst edgeproto.AppInst
+}
+
+// Request summary for DeleteAppInst
+// swagger:parameters DeleteAppInst
+type swaggerDeleteAppInst struct {
+	// in: body
+	Body RegionAppInst
+}
+
+// Request summary for RefreshAppInst
+// swagger:parameters RefreshAppInst
+type swaggerRefreshAppInst struct {
+	// in: body
+	Body RegionAppInst
+}
+
+// Request summary for UpdateAppInst
+// swagger:parameters UpdateAppInst
+type swaggerUpdateAppInst struct {
+	// in: body
+	Body RegionAppInst
+}
+
+// Request summary for ShowAppInst
+// swagger:parameters ShowAppInst
+type swaggerShowAppInst struct {
+	// in: body
+	Body RegionAppInst
 }

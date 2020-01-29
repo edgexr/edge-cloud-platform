@@ -18,7 +18,30 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for UpdateSettings
+// swagger:parameters UpdateSettings
+type swaggerUpdateSettings struct {
+	// in: body
+	Body RegionSettings
+}
+
 type RegionSettings struct {
+	// required: true
+	// Region name
 	Region   string
 	Settings edgeproto.Settings
+}
+
+// Request summary for ResetSettings
+// swagger:parameters ResetSettings
+type swaggerResetSettings struct {
+	// in: body
+	Body RegionSettings
+}
+
+// Request summary for ShowSettings
+// swagger:parameters ShowSettings
+type swaggerShowSettings struct {
+	// in: body
+	Body RegionSettings
 }

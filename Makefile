@@ -51,6 +51,13 @@ install-edge-cloud:
 install-internal:
 	go install ./...
 
+doc:
+	go install ./protoc-gen-mc2
+	make -f proto.make
+	swagger generate spec -i ./doc/init.json -o ./doc/apidocs.swagger.json --scan-models
+
+.PHONY: doc
+
 #
 # Linux Target OS
 #

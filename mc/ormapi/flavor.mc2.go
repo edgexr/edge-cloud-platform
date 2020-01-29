@@ -18,7 +18,51 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateFlavor
+// swagger:parameters CreateFlavor
+type swaggerCreateFlavor struct {
+	// in: body
+	Body RegionFlavor
+}
+
 type RegionFlavor struct {
+	// required: true
+	// Region name
 	Region string
 	Flavor edgeproto.Flavor
+}
+
+// Request summary for DeleteFlavor
+// swagger:parameters DeleteFlavor
+type swaggerDeleteFlavor struct {
+	// in: body
+	Body RegionFlavor
+}
+
+// Request summary for UpdateFlavor
+// swagger:parameters UpdateFlavor
+type swaggerUpdateFlavor struct {
+	// in: body
+	Body RegionFlavor
+}
+
+// Request summary for ShowFlavor
+// swagger:parameters ShowFlavor
+type swaggerShowFlavor struct {
+	// in: body
+	Body RegionFlavor
+}
+
+// Request summary for AddFlavorRes
+// swagger:parameters AddFlavorRes
+type swaggerAddFlavorRes struct {
+	// in: body
+	Body RegionFlavor
+}
+
+// Request summary for RemoveFlavorRes
+// swagger:parameters RemoveFlavorRes
+type swaggerRemoveFlavorRes struct {
+	// in: body
+	Body RegionFlavor
 }

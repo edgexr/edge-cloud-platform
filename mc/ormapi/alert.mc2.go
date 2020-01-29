@@ -114,7 +114,16 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for ShowAlert
+// swagger:parameters ShowAlert
+type swaggerShowAlert struct {
+	// in: body
+	Body RegionAlert
+}
+
 type RegionAlert struct {
+	// required: true
+	// Region name
 	Region string
 	Alert  edgeproto.Alert
 }

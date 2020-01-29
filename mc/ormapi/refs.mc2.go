@@ -18,12 +18,30 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for ShowCloudletRefs
+// swagger:parameters ShowCloudletRefs
+type swaggerShowCloudletRefs struct {
+	// in: body
+	Body RegionCloudletRefs
+}
+
 type RegionCloudletRefs struct {
+	// required: true
+	// Region name
 	Region       string
 	CloudletRefs edgeproto.CloudletRefs
 }
 
+// Request summary for ShowClusterRefs
+// swagger:parameters ShowClusterRefs
+type swaggerShowClusterRefs struct {
+	// in: body
+	Body RegionClusterRefs
+}
+
 type RegionClusterRefs struct {
+	// required: true
+	// Region name
 	Region      string
 	ClusterRefs edgeproto.ClusterRefs
 }

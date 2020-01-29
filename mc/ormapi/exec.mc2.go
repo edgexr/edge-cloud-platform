@@ -18,7 +18,16 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for RunCommand
+// swagger:parameters RunCommand
+type swaggerRunCommand struct {
+	// in: body
+	Body RegionExecRequest
+}
+
 type RegionExecRequest struct {
+	// required: true
+	// Region name
 	Region      string
 	ExecRequest edgeproto.ExecRequest
 }
