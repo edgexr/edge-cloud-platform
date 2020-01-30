@@ -22,10 +22,11 @@ SPECIAL_MC_ORGS = {
 }
 SPECIAL_ORG_USERS = set()
 START_FROM = os.environ.get('START_FROM', '2019-12-03')
-
+LOG_LEVEL = logging.DEBUG if os.environ.get('LOG_LEVEL', None) == 'debug' else logging.WARNING
 LOOKUPS = {}
+SKIP_CHANNELS = set()
 
-logging.basicConfig(level=logging.WARNING,
+logging.basicConfig(level=LOG_LEVEL,
                     format='%(asctime)s [%(levelname)s] {%(pathname)s:%(lineno)d} %(message)s')
 
 def slack_log(message):
@@ -227,7 +228,14 @@ def slack_channel_create(token, name, args):
 
     r = slack_api_post('groups.create', token, data={'name': name})
     logging.debug(r.text)
-    return r.json()['group']['id']
+    data = r.json()
+    try:
+        return data['group']['id']
+    except KeyError as e:
+        error = data.get("error", e)
+        logging.exception(f"channel create: {name}: {error}")
+        slack_log(f"Unable to create channel: {name}: {error}")
+        return (None, error)
 
 def slack_channel_invite_member(token, channel, userid, args):
     channame = LOOKUPS['channel'](channel)
@@ -274,10 +282,18 @@ def main():
                         help='Skip inviting new members')
     parser.add_argument('--debug', '-d', action='store_true',
                         help='Print debug messages')
+    parser.add_argument('--skip-channels', '-C',
+                        help='File listing the set of channels to skip processing')
     args = parser.parse_args()
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    if args.skip_channels:
+        with open(args.skip_channels) as f:
+            for line in f.readlines():
+                SKIP_CHANNELS.add(line.strip())
+        logging.debug("Skipped channels: {SKIP_CHANNELS}")
 
     mc_user = os.environ['MC_USER']
     mc_pass = os.environ['MC_PASS']
@@ -323,9 +339,20 @@ def main():
 
     need_invite = {}
     for norg in nusers:
+        if norg in SKIP_CHANNELS:
+            logging.debug(f"Skipping org: {norg}")
+            continue
         channelid = None
         if norg not in channels['by_name']:
             channelid = slack_channel_create(slack_token, norg, args)
+            if isinstance(channelid, tuple):
+                # Could not create private channel for org
+                if channelid[1] == 'name_taken':
+                    logging.warning(f"Channel exists: {norg}")
+                    SKIP_CHANNELS.add(norg)
+                else:
+                    logging.warning(f"Unknown error creating channel: {norg}: {channelid}")
+                continue
             channels['by_name'][norg] = {
                 'id': channelid,
                 'name': norg,
@@ -362,6 +389,11 @@ def main():
     for nuser in need_invite:
         nuserchannels = ','.join(need_invite[nuser])
         slack_channel_invite_new_user(slack_legacy_token, nuserchannels, nuser, args)
+
+    # Persist skipped channel list
+    if args.skip_channels:
+        with open(args.skip_channels, "w") as f:
+            f.write("\n".join(sorted(SKIP_CHANNELS)) + "\n")
 
 if __name__ == "__main__":
     try:
