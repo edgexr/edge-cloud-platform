@@ -256,3 +256,27 @@ type RegionClientMetrics struct {
 	EndTime   time.Time `json:",omitempty"`
 	Last      int       `json:",omitempty"`
 }
+
+type RegionAppInstEvents struct {
+	Region    string
+	AppInst   edgeproto.AppInstKey
+	StartTime time.Time `json:",omitempty"`
+	EndTime   time.Time `json:",omitempty"`
+	Last      int       `json:",omitempty"`
+}
+
+type RegionClusterInstEvents struct {
+	Region      string
+	ClusterInst edgeproto.ClusterInstKey
+	StartTime   time.Time `json:",omitempty"`
+	EndTime     time.Time `json:",omitempty"`
+	Last        int       `json:",omitempty"`
+}
+
+type RegionCloudletEvents struct {
+	Region    string
+	Cloudlet  edgeproto.CloudletKey
+	StartTime time.Time `json:",omitempty"`
+	EndTime   time.Time `json:",omitempty"`
+	Last      int       `json:",omitempty"`
+}
