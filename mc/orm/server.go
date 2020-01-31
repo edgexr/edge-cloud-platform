@@ -331,6 +331,9 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/metrics/cluster", GetMetricsCommon)
 	auth.POST("/metrics/cloudlet", GetMetricsCommon)
 	auth.POST("/metrics/client", GetMetricsCommon)
+	auth.POST("/events/app", GetEventsCommon)
+	auth.POST("/events/cluster", GetEventsCommon)
+	auth.POST("/events/cloudlet", GetEventsCommon)
 
 	// Use GET method for websockets as thats the method used
 	// in setting up TCP connection by most of the clients

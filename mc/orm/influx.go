@@ -330,7 +330,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 
 // TODO: This function should be a streaming fucntion, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
-func metricsStream(ctx context.Context, rc *InfluxDBContext, dbQuery string, cb func(Data interface{})) error {
+func influxStream(ctx context.Context, rc *InfluxDBContext, database, dbQuery string, cb func(Data interface{})) error {
 	if rc.conn == nil {
 		conn, err := connectInfluxDB(ctx, rc.region)
 		if err != nil {
@@ -345,7 +345,7 @@ func metricsStream(ctx context.Context, rc *InfluxDBContext, dbQuery string, cb 
 
 	query := influxdb.Query{
 		Command:   dbQuery,
-		Database:  cloudcommon.DeveloperMetricsDbName,
+		Database:  database,
 		Chunked:   false, // TODO - add chunking. Client lib doesn't support chunk response processing yet
 		ChunkSize: queryChunkSize,
 	}
@@ -570,7 +570,7 @@ func GetMetricsCommon(c echo.Context) error {
 		return setReply(c, echo.ErrNotFound, nil)
 	}
 
-	err = metricsStream(ctx, rc, cmd, func(res interface{}) {
+	err = influxStream(ctx, rc, cloudcommon.DeveloperMetricsDbName, cmd, func(res interface{}) {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		WriteStream(c, &payload)
