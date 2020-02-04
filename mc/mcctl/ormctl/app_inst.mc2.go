@@ -133,6 +133,7 @@ var CreateAppInstOptionalArgs = []string{
 	"configs.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"developer",
@@ -149,6 +150,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"updatemultiple",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"developer",
@@ -165,6 +167,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"configs.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -215,6 +218,7 @@ var AppInstOptionalArgs = []string{
 	"configs.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -260,6 +264,7 @@ var AppInstAliasArgs = []string{
 	"configs.config=appinst.configs.config",
 	"sharedvolumesize=appinst.sharedvolumesize",
 	"healthcheck=appinst.healthcheck",
+	"privacypolicy=appinst.privacypolicy",
 }
 var AppInstComments = map[string]string{
 	"developer":                      "Organization or Company Name that a Developer is part of",
@@ -297,6 +302,7 @@ var AppInstComments = map[string]string{
 	"configs.config":                 "config file contents or URI reference",
 	"sharedvolumesize":               "shared volume size when creating auto cluster",
 	"healthcheck":                    "Health Check status, one of HealthCheckOk, HealthCheckFailRootlbOffline, HealthCheckFailServerFail",
+	"privacypolicy":                  "Optional privacy policy name",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",

@@ -150,6 +150,7 @@ var AppOptionalArgs = []string{
 	"defaultsharedvolumesize",
 	"autoprovpolicy",
 	"accesstype",
+	"defaultprivacypolicy",
 }
 var AppAliasArgs = []string{
 	"developer=app.key.developerkey.name",
@@ -177,6 +178,7 @@ var AppAliasArgs = []string{
 	"defaultsharedvolumesize=app.defaultsharedvolumesize",
 	"autoprovpolicy=app.autoprovpolicy",
 	"accesstype=app.accesstype",
+	"defaultprivacypolicy=app.defaultprivacypolicy",
 }
 var AppComments = map[string]string{
 	"developer":               "Organization or Company Name that a Developer is part of",
@@ -204,5 +206,6 @@ var AppComments = map[string]string{
 	"defaultsharedvolumesize": "shared volume size when creating auto cluster",
 	"autoprovpolicy":          "Auto provisioning policy name",
 	"accesstype":              "Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
+	"defaultprivacypolicy":    "Privacy policy when creating auto cluster",
 }
 var AppSpecialArgs = map[string]string{}

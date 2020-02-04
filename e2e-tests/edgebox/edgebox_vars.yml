@@ -6,10 +6,10 @@ default-program: test-mex-infra
 edge-cloud-testfiles: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/testfiles
 latitude: 33.01
 longitude: -96.61
-mc: mc-stage.mobiledgex.net
+mc: console-stage.mobiledgex.net
 mc_pass: ENV=MC_PASSWORD
 mc_user: ENV=MC_USER
 operator: mex
+outputdir: /tmp/edgebox
 region: EU
 vault: https://vault-main.mobiledgex.net
-outputdir: /tmp/edgebox
