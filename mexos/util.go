@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
@@ -44,7 +44,7 @@ func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client pc.PlatformCli
 				}
 				ops = append(ops, proxy.WithTLSCert(&tlsCert))
 			}
-			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(app), listenIP, backendIP, appInst.MappedPorts, ops...)
+			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, ops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {
