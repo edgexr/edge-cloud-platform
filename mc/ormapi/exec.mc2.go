@@ -31,3 +31,17 @@ type RegionExecRequest struct {
 	Region      string
 	ExecRequest edgeproto.ExecRequest
 }
+
+// Request summary for RunConsole
+// swagger:parameters RunConsole
+type swaggerRunConsole struct {
+	// in: body
+	Body RegionExecRequest
+}
+
+// Request summary for ShowLogs
+// swagger:parameters ShowLogs
+type swaggerShowLogs struct {
+	// in: body
+	Body RegionExecRequest
+}

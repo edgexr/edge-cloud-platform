@@ -41,7 +41,9 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	} else if strings.HasPrefix(api, "audit") {
 		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "runcommand" {
-		return runMcRunCommand(uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+	} else if api == "showlogs" {
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	}
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 }
@@ -717,7 +719,7 @@ type runCommandData struct {
 	ExpectedOutput string
 }
 
-func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	// test only runnable for mod CLI. Also avoid for mod sep just
 	// because webrtc takes a while to setup and it slows down the tests.
 	if !hasMod("cli", mods) || hasMod("sep", mods) {
@@ -741,12 +743,17 @@ func runMcRunCommand(uri, apiFile, curUserFile, outputDir string, mods []string,
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
 	}
-	out, err := client.RunCommandOut(uri, token, &data.Request)
+	var out string
+	if api == "runcommand" {
+		out, err = client.RunCommandOut(uri, token, &data.Request)
+	} else {
+		out, err = client.ShowLogsOut(uri, token, &data.Request)
+	}
 	if err != nil {
-		log.Printf("Error running RunCommand API %v\n", err)
+		log.Printf("Error running %s API %v\n", api, err)
 		return false
 	}
-	log.Printf("RunCommand output: %s\n", out)
+	log.Printf("Exec %s output: %s\n", api, out)
 	actual := strings.TrimSpace(out)
 	if actual != data.ExpectedOutput {
 		log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)

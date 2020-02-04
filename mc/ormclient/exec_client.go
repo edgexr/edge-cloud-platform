@@ -28,6 +28,26 @@ func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*e
 	return &out, status, err
 }
 
+func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+	out := edgeproto.ExecRequest{}
+	status, err := s.PostJson(uri+"/auth/ctrl/RunConsole", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
+func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+	out := edgeproto.ExecRequest{}
+	status, err := s.PostJson(uri+"/auth/ctrl/ShowLogs", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 type ExecApiClient interface {
 	RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
+	RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
+	ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
 }
