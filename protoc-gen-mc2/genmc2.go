@@ -237,7 +237,7 @@ func (g *GenMC2) generatePosts() {
 					if len(apiVals) != 3 {
 						g.Fail("invalid mc2_api string, expected ResourceType,Action,OrgNameField")
 					}
-					if apiVals[1] == "ActionView" && strings.HasPrefix(*method.Name, "Show") {
+					if apiVals[1] == "ActionView" && gensupport.IsShow(method) {
 						continue
 					}
 					streamRouteAdded = true
@@ -322,7 +322,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		args.SkipEnforce = true
 		args.OrgValid = false
 	}
-	if args.Action == "ActionView" && strings.HasPrefix(args.MethodName, "Show") {
+	if args.Action == "ActionView" && gensupport.IsShow(method) {
 		args.Show = true
 	}
 	if !args.Outstream {

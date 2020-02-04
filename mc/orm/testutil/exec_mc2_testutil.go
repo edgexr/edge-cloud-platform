@@ -31,3 +31,27 @@ func TestPermRunCommand(mcClient *ormclient.Client, uri, token, region, org stri
 	in.AppInstKey.AppKey.DeveloperKey.Name = org
 	return TestRunCommand(mcClient, uri, token, region, in)
 }
+
+func TestRunConsole(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, int, error) {
+	dat := &ormapi.RegionExecRequest{}
+	dat.Region = region
+	dat.ExecRequest = *in
+	return mcClient.RunConsole(uri, token, dat)
+}
+func TestPermRunConsole(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
+	in := &edgeproto.ExecRequest{}
+	in.AppInstKey.AppKey.DeveloperKey.Name = org
+	return TestRunConsole(mcClient, uri, token, region, in)
+}
+
+func TestShowLogs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, int, error) {
+	dat := &ormapi.RegionExecRequest{}
+	dat.Region = region
+	dat.ExecRequest = *in
+	return mcClient.ShowLogs(uri, token, dat)
+}
+func TestPermShowLogs(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
+	in := &edgeproto.ExecRequest{}
+	in.AppInstKey.AppKey.DeveloperKey.Name = org
+	return TestShowLogs(mcClient, uri, token, region, in)
+}
