@@ -52,6 +52,7 @@ backend4321::10.192.1.2:4321::health_flags::/failed_active_hc`
 	testApp = edgeproto.App{
 		Key:         testAppKey,
 		AccessPorts: "tcp:1234",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 	}
 	testAppInstKey = edgeproto.AppInstKey{
 		AppKey:         testAppKey,

@@ -70,6 +70,8 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 		return
 	} else if app.InternalPorts {
 		return
+	} else if app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+		return
 	}
 	ProxyMapKey := getProxyKey(appInst.GetKey())
 	// add/remove from the list of proxy endpoints to hit
