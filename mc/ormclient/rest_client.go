@@ -249,7 +249,12 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	if s.SkipVerify {
 		tlsConfig.InsecureSkipVerify = true
 	}
-	tr := &http.Transport{TLSClientConfig: tlsConfig}
+
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+		Proxy:           http.ProxyFromEnvironment,
+	}
+
 	client := &http.Client{Transport: tr}
 	return client.Do(req)
 }
