@@ -88,6 +88,12 @@ func CreateData(c echo.Context) error {
 		appdata := &regionData.AppData
 		appdataMap := getAppMap(ctx, dataMap, ii)
 
+		for _, flavor := range appdata.Flavors {
+			desc := fmt.Sprintf("Create Flavor %s", flavor.Key.Name)
+			_, err = CreateFlavorObj(ctx, rc, &flavor)
+			streamReply(c, desc, err, &hadErr)
+		}
+
 		if appdata.Settings != nil && appdataMap != nil {
 			desc := fmt.Sprintf("Update Settings")
 			objMap, err := cli.GetGenericObj(appdataMap["Settings"])
@@ -102,11 +108,6 @@ func CreateData(c echo.Context) error {
 		for _, oc := range appdata.OperatorCodes {
 			desc := fmt.Sprintf("Create OperatorCode %s-%s", oc.Code, oc.OperatorName)
 			_, err = CreateOperatorCodeObj(ctx, rc, &oc)
-			streamReply(c, desc, err, &hadErr)
-		}
-		for _, flavor := range appdata.Flavors {
-			desc := fmt.Sprintf("Create Flavor %s", flavor.Key.Name)
-			_, err = CreateFlavorObj(ctx, rc, &flavor)
 			streamReply(c, desc, err, &hadErr)
 		}
 		for _, cloudlet := range appdata.Cloudlets {
@@ -254,11 +255,6 @@ func DeleteData(c echo.Context) error {
 			err = DeleteCloudletStream(ctx, rc, &cloudlet, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
-		for _, flavor := range appdata.Flavors {
-			desc := fmt.Sprintf("Delete Flavor %s", flavor.Key.Name)
-			_, err = DeleteFlavorObj(ctx, rc, &flavor)
-			streamReply(c, desc, err, &hadErr)
-		}
 		for _, oc := range appdata.OperatorCodes {
 			desc := fmt.Sprintf("Delete OperatorCode %s-%s", oc.Code, oc.OperatorName)
 			_, err = DeleteOperatorCodeObj(ctx, rc, &oc)
@@ -267,6 +263,11 @@ func DeleteData(c echo.Context) error {
 		if appdata.Settings != nil {
 			desc := fmt.Sprintf("Reset Settings")
 			_, err = ResetSettingsObj(ctx, rc, appdata.Settings)
+			streamReply(c, desc, err, &hadErr)
+		}
+		for _, flavor := range appdata.Flavors {
+			desc := fmt.Sprintf("Delete Flavor %s", flavor.Key.Name)
+			_, err = DeleteFlavorObj(ctx, rc, &flavor)
 			streamReply(c, desc, err, &hadErr)
 		}
 	}

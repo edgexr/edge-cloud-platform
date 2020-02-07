@@ -139,6 +139,7 @@ var ClusterInstOptionalArgs = []string{
 	"reservable",
 	"sharedvolumesize",
 	"privacypolicy",
+	"masternodeflavor",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=clusterinst.key.clusterkey.name",
@@ -169,6 +170,7 @@ var ClusterInstAliasArgs = []string{
 	"reservedby=clusterinst.reservedby",
 	"sharedvolumesize=clusterinst.sharedvolumesize",
 	"privacypolicy=clusterinst.privacypolicy",
+	"masternodeflavor=clusterinst.masternodeflavor",
 }
 var ClusterInstComments = map[string]string{
 	"cluster":            "Cluster name",
@@ -195,6 +197,7 @@ var ClusterInstComments = map[string]string{
 	"reservedby":         "For reservable MobiledgeX ClusterInsts, the current developer tenant",
 	"sharedvolumesize":   "Size of an optional shared volume to be mounted on the master",
 	"privacypolicy":      "Optional privacy policy name",
+	"masternodeflavor":   "Generic flavor for k8s master VM when worker nodes > 0",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors": "StringArray",

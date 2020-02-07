@@ -556,8 +556,8 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 	case "create":
 		fallthrough
 	case "update":
-		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "update")
 		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
+		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "update")
 		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
 		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
 		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
@@ -608,8 +608,8 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
 		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
 		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
-		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
 		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "reset")
+		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
 	}
 }
 
