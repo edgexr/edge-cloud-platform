@@ -10,7 +10,7 @@ import sys
 import traceback
 
 LOG_WEBHOOK = os.environ.get('LOG_WEBHOOK', None)
-MC = os.environ.get('MC', 'https://mc.mobiledgex.net:9900')
+MC = os.environ.get('MC', 'https://console.mobiledgex.net')
 SLACK = 'https://slack.com/api/'
 
 TEST_MODE_FORMAT = "slacktest2+{}@venky.duh-uh.com".format

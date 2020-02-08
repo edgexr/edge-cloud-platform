@@ -86,6 +86,15 @@ variable "mc_vm_domain_name" {
   default     = "mc.mobiledgex.net"
 }
 
+variable "console_instance_name" {
+  default     = "console-main"
+}
+
+variable "console_domain_name" {
+  description = "Console domain name"
+  type        = "string"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
