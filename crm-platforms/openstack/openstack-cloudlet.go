@@ -34,9 +34,9 @@ var PlatformServices = []string{
 	ServiceTypeShepherd,
 }
 
-func getPlatformVMName(cloudlet *edgeproto.Cloudlet) string {
+func getPlatformVMName(key *edgeproto.CloudletKey) string {
 	// Form platform VM name based on cloudletKey
-	return util.HeatSanitize(cloudlet.Key.Name + "." + cloudlet.Key.OperatorKey.Name + ".pf")
+	return util.HeatSanitize(key.Name + "." + key.OperatorKey.Name + ".pf")
 }
 
 func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, client ssh.Client, serviceType string, updateCallback edgeproto.CacheUpdateCallback, cDone chan error) {
@@ -82,7 +82,7 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 		"--restart=unless-stopped",
 		"--name", container_name,
 		strings.Join(envVarsAr, " "),
-		pfConfig.RegistryPath + ":" + pfConfig.PlatformTag,
+		pfConfig.ContainerRegistryPath + ":" + pfConfig.PlatformTag,
 		service_cmd,
 	}
 	if out, err := client.Output(strings.Join(cmd, " ")); err != nil {
@@ -131,7 +131,7 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
 	// Gather registry credentails from Vault
 	updateCallback(edgeproto.UpdateTask, "Fetching registry auth credentials")
-	regAuth, err := cloudcommon.GetRegistryAuth(ctx, pfConfig.RegistryPath, vaultConfig)
+	regAuth, err := cloudcommon.GetRegistryAuth(ctx, pfConfig.ContainerRegistryPath, vaultConfig)
 	if err != nil {
 		return fmt.Errorf("unable to fetch registry auth credentials")
 	}
@@ -224,7 +224,7 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 			`echo "%s" | sudo docker login -u %s --password-stdin %s`,
 			regAuth.Password,
 			regAuth.Username,
-			pfConfig.RegistryPath,
+			pfConfig.ContainerRegistryPath,
 		),
 	); err != nil {
 		return fmt.Errorf("unable to login to docker registry: %v, %s\n", err, out)
@@ -252,6 +252,76 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 
 }
 
+// setupPlatformVM:
+//   * Downloads Cloudlet VM base image (if not-present)
+//   * Brings up Platform VM (using HEAT stack)
+//   * Sets up Security Group for access to Cloudlet
+// Returns ssh client
+func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) (ssh.Client, error) {
+	// Get Flavor Info
+	finfo, _, _, err := mexos.GetFlavorInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Get Closest Platform Flavor
+	vmspec, err := vmspec.GetVMSpec(finfo, *pfFlavor)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find matching vm spec for platform: %v", err)
+	}
+
+	pfImageName, err := mexos.AddImageIfNotPresent(ctx, pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, updateCallback)
+	if err != nil {
+		return nil, err
+	}
+
+	// Form platform VM name based on cloudletKey
+	platform_vm_name := getPlatformVMName(&cloudlet.Key)
+	secGrp := mexos.GetSecurityGroupName(ctx, platform_vm_name)
+
+	vmp, err := mexos.GetVMParams(ctx,
+		mexos.PlatformVMDeployment,
+		platform_vm_name,
+		vmspec.FlavorName,
+		vmspec.ExternalVolumeSize,
+		pfImageName,
+		secGrp,
+		&cloudlet.Key,
+		mexos.WithAccessPorts("tcp:22"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get vm params: %v", err)
+	}
+
+	// Deploy Platform VM
+	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
+	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "vmspec", vmspec)
+	err = mexos.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, mexos.VmTemplate, updateCallback)
+	if err != nil {
+		return nil, fmt.Errorf("CreatePlatformVM error: %v", err)
+	}
+	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
+
+	external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name, mexos.ExternalIPType)
+	if err != nil {
+		return nil, err
+	}
+	updateCallback(edgeproto.UpdateTask, "Platform VM external IP: "+external_ip)
+
+	client, err := mexos.GetSSHClient(ctx, platform_vm_name, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	if err != nil {
+		return nil, err
+	}
+
+	// setup SSH access to cloudlet for CRM
+	updateCallback(edgeproto.UpdateTask, "Setting up security group for SSH access")
+
+	if err := mexos.AddSecurityRuleCIDR(ctx, external_ip, "tcp", secGrp, "22"); err != nil {
+		return nil, fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
+	}
+
+	return client, nil
+}
+
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 
@@ -267,95 +337,18 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return err
 	}
-	// Get Flavor Info
-	finfo, _, _, err := mexos.GetFlavorInfo(ctx)
-	if err != nil {
-		return err
-	}
-	// Get Closest Platform Flavor
-	vmspec, err := vmspec.GetVMSpec(finfo, *pfFlavor)
-	if err != nil {
-		return fmt.Errorf("unable to find matching vm spec for platform: %v", err)
-	}
 
 	// For real setups, ansible will always specify the correct
 	// cloudlet container and vm image paths to the controller.
 	// But for local testing convenience, we default to the hard-coded
 	// ones if not specified.
-	if pfConfig.RegistryPath == "" {
-		pfConfig.RegistryPath = mexos.DefaultCloudletRegistryPath
-	}
-	if pfConfig.ImagePath == "" {
-		pfConfig.ImagePath = mexos.DefaultCloudletVMImagePath
+	if pfConfig.ContainerRegistryPath == "" {
+		pfConfig.ContainerRegistryPath = mexos.DefaultContainerRegistryPath
 	}
 
-	// Fetch platform base image name and md5sum
-	pfImageName, err := cloudcommon.GetFileName(pfConfig.ImagePath)
+	client, err := setupPlatformVM(ctx, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
 		return err
-	}
-	_, md5Sum, err := mexos.GetUrlInfo(ctx, pfConfig.ImagePath)
-	if err != nil {
-		return err
-	}
-
-	// Use PlatformBaseImage, if not present then fetch it from MobiledgeX VM registry
-	imageDetail, err := mexos.GetImageDetail(ctx, pfImageName)
-	if err == nil && imageDetail.Status != "active" {
-		return fmt.Errorf("image %s is not active", pfImageName)
-	}
-	if err != nil {
-		// Download platform base image and Add to Openstack Glance
-		updateCallback(edgeproto.UpdateTask, "Downloading platform base image: "+pfImageName)
-		err = mexos.CreateImageFromUrl(ctx, pfImageName, pfConfig.ImagePath, md5Sum)
-		if err != nil {
-			return fmt.Errorf("Error downloading platform base image: %v", err)
-		}
-	}
-
-	// Form platform VM name based on cloudletKey
-	platform_vm_name := getPlatformVMName(cloudlet)
-	secGrp := mexos.GetSecurityGroupName(ctx, platform_vm_name)
-
-	vmp, err := mexos.GetVMParams(ctx,
-		mexos.PlatformVMDeployment,
-		platform_vm_name,
-		vmspec.FlavorName,
-		vmspec.ExternalVolumeSize,
-		pfImageName,
-		secGrp,
-		&cloudlet.Key,
-		mexos.WithAccessPorts("tcp:22"),
-	)
-	if err != nil {
-		return fmt.Errorf("unable to get vm params: %v", err)
-	}
-
-	// Deploy Platform VM
-	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
-	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "vmspec", vmspec)
-	err = mexos.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, mexos.VmTemplate, updateCallback)
-	if err != nil {
-		return fmt.Errorf("CreatePlatformVM error: %v", err)
-	}
-	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
-
-	external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name, mexos.ExternalIPType)
-	if err != nil {
-		return err
-	}
-	updateCallback(edgeproto.UpdateTask, "Platform VM external IP: "+external_ip)
-
-	client, err := mexos.GetSSHClient(ctx, platform_vm_name, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
-	if err != nil {
-		return err
-	}
-
-	// setup SSH access to cloudlet for CRM
-	updateCallback(edgeproto.UpdateTask, "Setting up security group for SSH access")
-
-	if err := mexos.AddSecurityRuleCIDR(ctx, external_ip, "tcp", secGrp, "22"); err != nil {
-		return fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
 	}
 
 	return setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, client, updateCallback)
@@ -464,8 +457,8 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		return nil
 	}
 
-	platform_vm_name := getPlatformVMName(cloudlet)
-	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting HEAT Stack %s", platform_vm_name))
+	platform_vm_name := getPlatformVMName(&cloudlet.Key)
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", platform_vm_name))
 	err = mexos.HeatDeleteStack(ctx, platform_vm_name)
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
@@ -500,23 +493,106 @@ func handleUpgradeError(ctx context.Context, client ssh.Client) error {
 	return nil
 }
 
-func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func getCRMContainerVersion(ctx context.Context, client ssh.Client) (string, error) {
+	var err error
+	var out string
+
+	log.SpanLog(ctx, log.DebugLevelMexos, "fetch crmserver container version")
+	if out, err = client.Output(
+		fmt.Sprintf("sudo docker ps --filter name=%s --format '{{.Image}}'", ServiceTypeCRM),
+	); err != nil {
+		return "", fmt.Errorf("unable to fetch crm version for %s, %v, %v",
+			ServiceTypeCRM, err, out)
+	}
+	if out == "" {
+		return "", fmt.Errorf("no container with name %s exists", ServiceTypeCRM)
+	}
+	imgParts := strings.Split(out, ":")
+	return imgParts[len(imgParts)-1], nil
+}
+
+func getCRMPkgVersion(ctx context.Context, client ssh.Client) (string, error) {
+	var err error
+	var out string
+
+	log.SpanLog(ctx, log.DebugLevelMexos, "fetch Cloudlet base image package version")
+	if out, err = client.Output("sudo dpkg-query --showformat='${Version}' --show mobiledgex"); err != nil {
+		return "", fmt.Errorf("failed to get mobiledgex debian package version, %v, %v", out, err)
+	}
+	return out, nil
+}
+
+func upgradeCloudletPkgs(ctx context.Context, vmType mexos.DeploymentType, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "Updating apt package lists", "cloudletName", cloudlet.Key.Name, "vmType", vmType)
+	if out, err := client.Output("sudo apt-get update"); err != nil {
+		return fmt.Errorf("Failed to update apt package lists, %v, %v", out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "Upgrading mobiledgex base image package", "cloudletName", cloudlet.Key.Name, "vmType", vmType, "packageVersion", cloudlet.PackageVersion)
+	if out, err := client.Output(
+		fmt.Sprintf("MEXVM_TYPE=%s sudo apt-get install -y mobiledgex=%s", vmType, cloudlet.PackageVersion),
+	); err != nil {
+		return fmt.Errorf("Failed to upgrade mobiledgex pkg, %v, %v", out, err)
+	}
+	return nil
+}
+
+func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (edgeproto.CloudletAction, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Updating cloudlet", "cloudletName", cloudlet.Key.Name)
+
+	defCloudletAction := edgeproto.CloudletAction_ACTION_NONE
 
 	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr, vault.WithEnvMap(pfConfig.EnvVar))
 	if err != nil {
-		return err
+		return defCloudletAction, err
 	}
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Sourcing platform variables for %s cloudlet", cloudlet.PhysicalName))
 	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
 	if err != nil {
-		return err
+		return defCloudletAction, err
 	}
 
-	client, err := mexos.GetSSHClient(ctx, getPlatformVMName(cloudlet), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	pfClient, err := mexos.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
-		return err
+		return defCloudletAction, err
+	}
+
+	containerVersion, err := getCRMContainerVersion(ctx, pfClient)
+	if err != nil {
+		return defCloudletAction, err
+	}
+
+	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key)
+	rlbClient, err := mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	if err != nil {
+		return defCloudletAction, err
+	}
+	upgradeMap := map[mexos.DeploymentType]ssh.Client{
+		mexos.PlatformVMDeployment: pfClient,
+		mexos.RootLBVMDeployment:   rlbClient,
+	}
+	for vmType, client := range upgradeMap {
+		pkgVersion, err := getCRMPkgVersion(ctx, client)
+		if err != nil {
+			return defCloudletAction, err
+		}
+		if cloudlet.PackageVersion == pkgVersion {
+			continue
+		}
+
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Upgrading mobiledgex base image package for %s to version %s", vmType, cloudlet.PackageVersion))
+		err = upgradeCloudletPkgs(ctx, vmType, cloudlet, pfConfig, vaultConfig, client, updateCallback)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "Failed to upgrade cloudlet packages", "VM type", vmType, "Version", cloudlet.PackageVersion, "err", err)
+			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Failed to upgrade cloudlet packages of vm type %s to version %s, please upgrade them manually!", vmType, cloudlet.PackageVersion))
+			return defCloudletAction, err
+		}
+
+	}
+
+	if containerVersion == cloudlet.ContainerVersion {
+		// No service upgrade required
+		return edgeproto.CloudletAction_ACTION_DONE, nil
 	}
 
 	// Rename existing containers
@@ -524,33 +600,33 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		from := pfService
 		to := pfService + "_old"
 		log.SpanLog(ctx, log.DebugLevelMexos, "renaming existing services to bringup new ones", "from", from, "to", to)
-		if out, err := client.Output(
+		if out, err := pfClient.Output(
 			fmt.Sprintf("sudo docker rename %s %s", from, to),
 		); err != nil {
 			errStr := fmt.Sprintf("unable to rename %s to %s: %v, %s\n",
 				from, to, err, out)
-			err = handleUpgradeError(ctx, client)
+			err = handleUpgradeError(ctx, pfClient)
 			if err == nil {
-				return errors.New(errStr)
+				return defCloudletAction, errors.New(errStr)
 			} else {
-				return fmt.Errorf("%s. Cleanup failed as well: %v\n", errStr, err)
+				return defCloudletAction, fmt.Errorf("%s. Cleanup failed as well: %v\n", errStr, err)
 			}
 		}
 	}
 
-	err = setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, client, updateCallback)
+	err = setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, pfClient, updateCallback)
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "failed to setup platform services", "err", err)
 		// Cleanup failed containers
 		updateCallback(edgeproto.UpdateTask, "Upgrade failed, cleaning up")
-		if out, err1 := client.Output(
+		if out, err1 := pfClient.Output(
 			fmt.Sprintf("sudo docker rm -f %s", strings.Join(PlatformServices, " ")),
 		); err1 != nil {
 			if strings.Contains(out, "No such container") {
 				log.SpanLog(ctx, log.DebugLevelMexos, "no containers to cleanup")
 			} else {
-				return fmt.Errorf("upgrade failed: %v and cleanup failed: %v, %s\n", err, err1, out)
+				return defCloudletAction, fmt.Errorf("upgrade failed: %v and cleanup failed: %v, %s\n", err, err1, out)
 			}
 		}
 		// Cleanup container names
@@ -558,23 +634,21 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 			from := pfService + "_old"
 			to := pfService
 			log.SpanLog(ctx, log.DebugLevelMexos, "restoring old container name", "from", from, "to", to)
-			if out, err1 := client.Output(
+			if out, err1 := pfClient.Output(
 				fmt.Sprintf("sudo docker rename %s %s", from, to),
 			); err1 != nil {
-				return fmt.Errorf("upgrade failed: %v and unable to rename old-container: %v, %s\n", err, err1, out)
+				return defCloudletAction, fmt.Errorf("upgrade failed: %v and unable to rename old-container: %v, %s\n", err, err1, out)
 			}
 		}
+		return defCloudletAction, err
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return edgeproto.CloudletAction_ACTION_IN_PROGRESS, nil
 }
 
 func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Cleaning up cloudlet", "cloudletName", cloudlet.Key.Name)
 
-	client, err := mexos.GetSSHClient(ctx, getPlatformVMName(cloudlet), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	client, err := mexos.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return err
 	}

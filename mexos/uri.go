@@ -136,6 +136,9 @@ func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, err
 			md5Sum = cSum[1]
 		}
 	}
+	if md5Sum == "" {
+		md5Sum = resp.Header.Get("X-Checksum-Md5")
+	}
 	return lastMod, md5Sum, err
 }
 

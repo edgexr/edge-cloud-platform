@@ -165,11 +165,13 @@ var CreateCloudletOptionalArgs = []string{
 	"flavor.name",
 	"physicalname",
 	"envvar",
-	"version",
+	"containerversion",
 	"restagmap.key",
 	"restagmap.value.name",
 	"restagmap.value.operatorkey.name",
 	"accessvars",
+	"vmimageversion",
+	"packageversion",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -383,8 +385,8 @@ var CloudletInfraPropertiesSpecialArgs = map[string]string{
 }
 var PlatformConfigRequiredArgs = []string{}
 var PlatformConfigOptionalArgs = []string{
-	"registrypath",
-	"imagepath",
+	"containerregistrypath",
+	"cloudletvmimagepath",
 	"notifyctrladdrs",
 	"vaultaddr",
 	"tlscertfile",
@@ -396,8 +398,8 @@ var PlatformConfigOptionalArgs = []string{
 	"region",
 }
 var PlatformConfigAliasArgs = []string{
-	"registrypath=platformconfig.registrypath",
-	"imagepath=platformconfig.imagepath",
+	"containerregistrypath=platformconfig.containerregistrypath",
+	"cloudletvmimagepath=platformconfig.cloudletvmimagepath",
 	"notifyctrladdrs=platformconfig.notifyctrladdrs",
 	"vaultaddr=platformconfig.vaultaddr",
 	"tlscertfile=platformconfig.tlscertfile",
@@ -409,17 +411,17 @@ var PlatformConfigAliasArgs = []string{
 	"region=platformconfig.region",
 }
 var PlatformConfigComments = map[string]string{
-	"registrypath":    "Path to Docker registry holding edge-cloud image",
-	"imagepath":       "Path to platform base image",
-	"notifyctrladdrs": "Address of controller notify port (can be multiple of these)",
-	"vaultaddr":       "Vault address",
-	"tlscertfile":     "TLS cert file",
-	"envvar":          "Environment variables",
-	"platformtag":     "Tag of edge-cloud image",
-	"testmode":        "Internal Test flag",
-	"span":            "Span string",
-	"cleanupmode":     "Internal cleanup flag",
-	"region":          "Region",
+	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
+	"cloudletvmimagepath":   "Path to platform base image",
+	"notifyctrladdrs":       "Address of controller notify port (can be multiple of these)",
+	"vaultaddr":             "Vault address",
+	"tlscertfile":           "TLS cert file",
+	"envvar":                "Environment variables",
+	"platformtag":           "Tag of edge-cloud image",
+	"testmode":              "Internal Test flag",
+	"span":                  "Span string",
+	"cleanupmode":           "Internal cleanup flag",
+	"region":                "Region",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"envvar": "StringToString",
@@ -470,11 +472,13 @@ var CloudletOptionalArgs = []string{
 	"flavor.name",
 	"physicalname",
 	"envvar",
-	"version",
+	"containerversion",
 	"restagmap.key",
 	"restagmap.value.name",
 	"restagmap.value.operatorkey.name",
 	"accessvars",
+	"vmimageversion",
+	"packageversion",
 }
 var CloudletAliasArgs = []string{
 	"operator=cloudlet.key.operatorkey.name",
@@ -510,9 +514,9 @@ var CloudletAliasArgs = []string{
 	"flavor.name=cloudlet.flavor.name",
 	"physicalname=cloudlet.physicalname",
 	"envvar=cloudlet.envvar",
-	"version=cloudlet.version",
-	"config.registrypath=cloudlet.config.registrypath",
-	"config.imagepath=cloudlet.config.imagepath",
+	"containerversion=cloudlet.containerversion",
+	"config.containerregistrypath=cloudlet.config.containerregistrypath",
+	"config.cloudletvmimagepath=cloudlet.config.cloudletvmimagepath",
 	"config.notifyctrladdrs=cloudlet.config.notifyctrladdrs",
 	"config.vaultaddr=cloudlet.config.vaultaddr",
 	"config.tlscertfile=cloudlet.config.tlscertfile",
@@ -526,6 +530,8 @@ var CloudletAliasArgs = []string{
 	"restagmap.value.name=cloudlet.restagmap.value.name",
 	"restagmap.value.operatorkey.name=cloudlet.restagmap.value.operatorkey.name",
 	"accessvars=cloudlet.accessvars",
+	"vmimageversion=cloudlet.vmimageversion",
+	"packageversion=cloudlet.packageversion",
 }
 var CloudletComments = map[string]string{
 	"operator":                            "Company or Organization name of the operator",
@@ -555,9 +561,9 @@ var CloudletComments = map[string]string{
 	"flavor.name":                         "Flavor name",
 	"physicalname":                        "Physical infrastructure cloudlet name",
 	"envvar":                              "Single Key-Value pair of env var to be passed to CRM",
-	"version":                             "Cloudlet version",
-	"config.registrypath":                 "Path to Docker registry holding edge-cloud image",
-	"config.imagepath":                    "Path to platform base image",
+	"containerversion":                    "Cloudlet container version",
+	"config.containerregistrypath":        "Path to Docker registry holding edge-cloud image",
+	"config.cloudletvmimagepath":          "Path to platform base image",
 	"config.notifyctrladdrs":              "Address of controller notify port (can be multiple of these)",
 	"config.vaultaddr":                    "Vault address",
 	"config.tlscertfile":                  "TLS cert file",
@@ -570,6 +576,8 @@ var CloudletComments = map[string]string{
 	"restagmap.value.name":                "Resource Table Name",
 	"restagmap.value.operatorkey.name":    "Company or Organization name of the operator",
 	"accessvars":                          "Variables required to access cloudlet",
+	"vmimageversion":                      "MobiledgeX baseimage version where CRM services reside",
+	"packageversion":                      "MobiledgeX OS package version on baseimage where CRM services reside",
 }
 var CloudletSpecialArgs = map[string]string{
 	"accessvars":    "StringToString",
@@ -673,7 +681,7 @@ var CloudletInfoOptionalArgs = []string{
 	"status.maxtasks",
 	"status.taskname",
 	"status.stepname",
-	"version",
+	"containerversion",
 	"availabilityzones.name",
 	"availabilityzones.status",
 	"osimages.name",
@@ -700,7 +708,7 @@ var CloudletInfoAliasArgs = []string{
 	"status.maxtasks=cloudletinfo.status.maxtasks",
 	"status.taskname=cloudletinfo.status.taskname",
 	"status.stepname=cloudletinfo.status.stepname",
-	"version=cloudletinfo.version",
+	"containerversion=cloudletinfo.containerversion",
 	"availabilityzones.name=cloudletinfo.availabilityzones.name",
 	"availabilityzones.status=cloudletinfo.availabilityzones.status",
 	"osimages.name=cloudletinfo.osimages.name",
@@ -723,7 +731,7 @@ var CloudletInfoComments = map[string]string{
 	"flavors.ram":         "Ram in MB on the Cloudlet",
 	"flavors.disk":        "Amount of disk in GB on the Cloudlet",
 	"flavors.propmap":     "OS Flavor Properties, if any",
-	"version":             "Cloudlet version",
+	"containerversion":    "Cloudlet container version",
 	"osimages.name":       "image name",
 	"osimages.tags":       "optional tags present on image",
 	"osimages.properties": "image properties/metadata",
