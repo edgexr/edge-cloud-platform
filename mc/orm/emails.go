@@ -189,6 +189,7 @@ func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequ
 
 type emailAccount struct {
 	Email string `json:"email"`
+	User  string `json:"user"`
 	Pass  string `json:"pass"`
 	Smtp  string `json:"smtp"`
 }
@@ -206,7 +207,7 @@ func getNoreply(ctx context.Context) (*emailAccount, error) {
 
 // sendEmail is only tested with gmail's smtp server.
 func sendEmail(from *emailAccount, to string, contents *bytes.Buffer) error {
-	auth := smtp.PlainAuth("", from.Email, from.Pass, from.Smtp)
+	auth := smtp.PlainAuth("", from.User, from.Pass, from.Smtp)
 
 	client, err := smtp.Dial(from.Smtp + ":587")
 	if err != nil {
