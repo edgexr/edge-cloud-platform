@@ -995,3 +995,32 @@ func OSGetMetricsRangeForId(ctx context.Context, resId string, metric string, st
 	}
 	return measurements, nil
 }
+
+func AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
+	imgPath := GetCloudletVMImagePath(imgPathPrefix, imgVersion)
+
+	// Fetch platform base image name
+	pfImageName, err := cloudcommon.GetFileName(imgPath)
+	if err != nil {
+		return "", err
+	}
+	// Use PlatformBaseImage, if not present then fetch it from MobiledgeX VM registry
+	imageDetail, err := GetImageDetail(ctx, pfImageName)
+	if err == nil && imageDetail.Status != "active" {
+		return "", fmt.Errorf("image %s is not active", pfImageName)
+	}
+	if err != nil {
+		// Validate if pfImageName is same as we expected
+		_, md5Sum, err := GetUrlInfo(ctx, imgPath)
+		if err != nil {
+			return "", err
+		}
+		// Download platform base image and Add to Openstack Glance
+		updateCallback(edgeproto.UpdateTask, "Downloading platform base image: "+pfImageName)
+		err = CreateImageFromUrl(ctx, pfImageName, imgPath, md5Sum)
+		if err != nil {
+			return "", fmt.Errorf("Error downloading platform base image %s: %v", pfImageName, err)
+		}
+	}
+	return pfImageName, nil
+}

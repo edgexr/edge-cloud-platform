@@ -700,7 +700,7 @@ func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, 
 
 // HeatDeleteCluster deletes the stack and also cleans up rootLB port if needed
 func HeatDeleteCluster(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
-	cp, err := getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, dedicatedRootLB, heatDelete)
+	cp, err := getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, "", dedicatedRootLB, heatDelete)
 	if err == nil {
 		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack.  A nil client can be passed here in
 		// some rare cases because the server was somehow deleted
@@ -729,7 +729,7 @@ func HeatDeleteStack(ctx context.Context, stackName string) error {
 }
 
 //GetClusterParams fills template parameters for the cluster.  A non blank rootLBName will add a rootlb VM
-func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
+func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "getClusterParams", "cluster", clusterInst, "action", action)
 
 	var cp ClusterParams
@@ -741,6 +741,11 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	cp.NetworkType = ni.NetworkType
 
 	cp.VnicType = ni.VnicType
+
+	if imgName == "" {
+		imgName = GetCloudletOSImage()
+	}
+
 	// dedicated rootLB requires a rootLB VM to be created in the stack
 	if dedicatedRootLB {
 		cp.VMParams, err = GetVMParams(ctx,
@@ -748,7 +753,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			rootLBName,
 			clusterInst.NodeFlavor,
 			clusterInst.ExternalVolumeSize,
-			GetCloudletOSImage(),
+			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
 			WithAvailabilityZone(clusterInst.AvailabilityZone),
@@ -764,7 +769,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			"", // no server name since no rootlb
 			clusterInst.NodeFlavor,
 			clusterInst.ExternalVolumeSize,
-			GetCloudletOSImage(),
+			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
 			WithAvailabilityZone(clusterInst.AvailabilityZone),
@@ -868,7 +873,7 @@ func ParseHeatNodePrefix(name string) (bool, uint32) {
 }
 
 // HeatCreateRootLBVM creates a roobLB VM
-func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string, vmspec *vmspec.VMCreationSpec, cloudletKey *edgeproto.CloudletKey, updateCallback edgeproto.CacheUpdateCallback) error {
+func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName string, vmspec *vmspec.VMCreationSpec, cloudletKey *edgeproto.CloudletKey, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateRootLBVM", "serverName", serverName, "stackName", stackName, "vmspec", vmspec)
 	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
 	if err != nil {
@@ -881,12 +886,15 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 		heatStackLock.Lock()
 		defer heatStackLock.Unlock()
 	}
+	if imgName == "" {
+		imgName = GetCloudletOSImage()
+	}
 	vmp, err := GetVMParams(ctx,
 		RootLBVMDeployment,
 		serverName,
 		vmspec.FlavorName,
 		vmspec.ExternalVolumeSize,
-		GetCloudletOSImage(),
+		imgName,
 		GetSecurityGroupName(ctx, serverName),
 		cloudletKey,
 		WithAvailabilityZone(vmspec.AvailabilityZone),
@@ -899,7 +907,7 @@ func HeatCreateRootLBVM(ctx context.Context, serverName string, stackName string
 }
 
 // HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
-func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
@@ -910,7 +918,7 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	heatStackLock.Lock()
 	defer heatStackLock.Unlock()
 
-	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, heatCreate)
+	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatCreate)
 	if err != nil {
 		return err
 	}
@@ -936,11 +944,11 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 // HeatUpdateClusterKubernetes updates a k8s cluster which may optionally include a dedicated root LB
-func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
 
-	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, heatUpdate)
+	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatUpdate)
 	if err != nil {
 		return err
 	}

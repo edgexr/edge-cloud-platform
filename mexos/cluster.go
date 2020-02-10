@@ -108,7 +108,7 @@ func waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, r
 	}
 }
 
-func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources with Heat")
 
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeKubernetes {
@@ -157,7 +157,7 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 	}
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
-	err := HeatUpdateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, updateCallback)
+	err := HeatUpdateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func UpdateCluster(ctx context.Context, client pc.PlatformClient, rootLBName str
 	return waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, time.Minute*15)
 }
 
-func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
+func CreateCluster(ctx context.Context, rootLBName, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (reterr error) {
 	// clean-up func
 	defer func() {
 		if reterr == nil {
@@ -211,9 +211,9 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 		//suitable for docker only
 		log.SpanLog(ctx, log.DebugLevelMexos, "creating single VM cluster with just rootLB and no k8s")
 		updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
+		err = HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), imgName, &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
 	} else {
-		err = HeatCreateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, dedicatedRootLB, updateCallback)
+		err = HeatCreateClusterKubernetes(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
 	}
 	if err != nil {
 		return err
@@ -228,7 +228,7 @@ func CreateCluster(ctx context.Context, rootLBName string, clusterInst *edgeprot
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = SetupRootLB(ctx, rootLBName, &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
+		err = SetupRootLB(ctx, rootLBName, &vmspec, &clusterInst.Key.CloudletKey, "", "", updateCallback)
 		if err != nil {
 			return err
 		}

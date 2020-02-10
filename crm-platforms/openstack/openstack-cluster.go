@@ -20,7 +20,15 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if err != nil {
 		return err
 	}
-	return mexos.UpdateCluster(ctx, client, lbName, clusterInst, privacyPolicy, updateCallback)
+
+	log.SpanLog(ctx, log.DebugLevelMexos, "verify if cloudlet base image exists")
+	imgName, err := mexos.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
+	if err != nil {
+		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
+		return err
+	}
+
+	return mexos.UpdateCluster(ctx, client, lbName, imgName, clusterInst, privacyPolicy, updateCallback)
 }
 
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
@@ -42,7 +50,14 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	//adjust the timeout just a bit to give some buffer for the API exchange and also sleep loops
 	timeout -= time.Minute
 
-	return mexos.CreateCluster(ctx, lbName, clusterInst, privacyPolicy, updateCallback, timeout)
+	log.SpanLog(ctx, log.DebugLevelMexos, "verify if cloudlet base image exists")
+	imgName, err := mexos.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
+	if err != nil {
+		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
+		return err
+	}
+
+	return mexos.CreateCluster(ctx, lbName, imgName, clusterInst, privacyPolicy, updateCallback, timeout)
 }
 
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
