@@ -37,7 +37,7 @@ regiondata:
       flavor:
         name: x1.small
       physicalname: enterprise-1
-      version: 2019-10-24
+      containerversion: 2019-10-24
     flavors:
     - key:
         name: x1.tiny

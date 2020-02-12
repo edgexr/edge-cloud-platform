@@ -81,7 +81,7 @@ regiondata:
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
-      version: "2019-10-24"
+      containerversion: "2019-10-24"
     cloudlets:
     - key:
         operatorkey:
@@ -97,7 +97,7 @@ regiondata:
       flavor:
         name: x1.small
       physicalname: enterprise-1
-      version: 2019-10-24
+      containerversion: 2019-10-24
       state: Ready
     cloudletpools:
     - key:
