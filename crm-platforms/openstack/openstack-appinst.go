@@ -438,7 +438,7 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 		}
 		return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
-		return dockermgmt.GetAppInstRuntime(client, app, appInst)
+		return dockermgmt.GetAppInstRuntime(ctx, client, app, appInst)
 	case cloudcommon.AppDeploymentTypeVM:
 		fallthrough
 	default:
