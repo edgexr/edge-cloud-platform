@@ -14,11 +14,10 @@ import (
 
 type Platform struct {
 	fake.Platform
-	fake fake.Platform
 }
 
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.fake.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, updateCallback)
+	err := s.Platform.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -26,7 +25,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 }
 
 func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.fake.DeleteCloudlet(ctx, cloudlet, pfConfig, updateCallback)
+	err := s.Platform.DeleteCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -40,7 +39,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return edgeproto.CloudletAction_ACTION_NONE, err
 	}
-	cloudletAction, err := s.fake.UpdateCloudlet(ctx, cloudlet, pfConfig, updateCallback)
+	cloudletAction, err := s.Platform.UpdateCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	if err != nil {
 		return edgeproto.CloudletAction_ACTION_NONE, err
 	}
@@ -49,7 +48,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 }
 
 func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.fake.CleanupCloudlet(ctx, cloudlet, pfConfig, updateCallback)
+	err := s.Platform.CleanupCloudlet(ctx, cloudlet, pfConfig, updateCallback)
 	if err != nil {
 		return err
 	}
