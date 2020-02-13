@@ -189,6 +189,11 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			// may have been deleted
 			continue
 		}
+		app := edgeproto.App{}
+		if !s.appCache.Get(&appKey, &app) {
+			// deleted
+			continue
+		}
 		for ckey, count := range cloudlets {
 			cstats, found := appStats.cloudlets[ckey]
 			if !found {
@@ -224,7 +229,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 					dspan.SetTag("cloudlet", ckey)
 					defer dspan.Finish()
 					dctx := log.ContextWithSpan(context.Background(), dspan)
-					err := s.deploy(dctx, &appKey, &ckey)
+					err := s.deploy(dctx, &app, &ckey)
 					log.SpanLog(dctx, log.DebugLevelApi, "auto-prov result", "err", err)
 				}()
 				numDeploy++
@@ -246,14 +251,14 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	return nil
 }
 
-func (s *AutoProvAggr) deploy(ctx context.Context, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) error {
+func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletKey *edgeproto.CloudletKey) error {
 	// find free reservable ClusterInst
-	cinstKey := s.freeClusters.GetForCloudlet(cloudletKey)
+	cinstKey := s.freeClusters.GetForCloudlet(cloudletKey, app.Deployment)
 	if cinstKey == nil {
 		return fmt.Errorf("no free ClusterInst found")
 	}
 	inst := edgeproto.AppInst{}
-	inst.Key.AppKey = *appKey
+	inst.Key.AppKey = app.Key
 	inst.Key.ClusterInstKey = *cinstKey
 
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy AppInst", "AppInst", inst)
