@@ -281,7 +281,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/RemoveFlavorRes", RemoveFlavorRes)
 	// swagger:route POST /auth/ctrl/CreateApp App CreateApp
 	// Create Application.
-	//  Create definition for an application instance which will be deployed on a Cloudlet
+	//  Creates a definition for an application instance for Cloudlet deployment.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -292,7 +292,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/CreateApp", CreateApp)
 	// swagger:route POST /auth/ctrl/DeleteApp App DeleteApp
 	// Delete Application.
-	//  Delete definition of an application instance. This requires that no application instance with this definition exists. If it exists, then user must delete those first
+	//  Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -303,7 +303,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteApp", DeleteApp)
 	// swagger:route POST /auth/ctrl/UpdateApp App UpdateApp
 	// Update Application.
-	//  Update definition of an application instance
+	//  Updates the definition of an Application instance.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -314,7 +314,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateApp", UpdateApp)
 	// swagger:route POST /auth/ctrl/ShowApp App ShowApp
 	// Show Applications.
-	//  Lists all application definitions managed from edge controller. Any fields specified will be used to filter results
+	//  Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -427,7 +427,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/GetResTagTable", GetResTagTable)
 	// swagger:route POST /auth/ctrl/CreateCloudlet Cloudlet CreateCloudlet
 	// Create Cloudlet.
-	//  Sets up cloudlet services on Operators compute resources and makes it part of MobiledgeX edge resource portfolio. These resources will now be managed from edge controller
+	//  Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -439,7 +439,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/StreamCloudlet", StreamCloudlet)
 	// swagger:route POST /auth/ctrl/DeleteCloudlet Cloudlet DeleteCloudlet
 	// Delete Cloudlet.
-	//  Removes cloudlet services and will no longer be managed from edge controller
+	//  Removes the Cloudlet services where they are no longer managed from the Edge Controller.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -450,7 +450,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteCloudlet", DeleteCloudlet)
 	// swagger:route POST /auth/ctrl/UpdateCloudlet Cloudlet UpdateCloudlet
 	// Update Cloudlet.
-	//  Updates cloudlet config and also manages upgrade of cloudlet services
+	//  Updates the Cloudlet configuration and manages the upgrade of Cloudlet services.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -461,7 +461,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateCloudlet", UpdateCloudlet)
 	// swagger:route POST /auth/ctrl/ShowCloudlet Cloudlet ShowCloudlet
 	// Show Cloudlets.
-	//  Lists all the cloudlets managed from edge controller
+	//  Lists all the cloudlets managed from Edge Controller.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -512,7 +512,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/ShowCloudletInfo", ShowCloudletInfo)
 	// swagger:route POST /auth/ctrl/CreateClusterInst ClusterInst CreateClusterInst
 	// Create Cluster Instance.
-	//  Creates an instance of a Cluster on a Cloudlet, defined by a Cluster Key and a Cloudlet Key.
+	//  Creates an instance of a Cluster on a Cloudlet, defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of compute resources on a Cloudlet on which AppInsts are deployed.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -524,7 +524,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/StreamClusterInst", StreamClusterInst)
 	// swagger:route POST /auth/ctrl/DeleteClusterInst ClusterInst DeleteClusterInst
 	// Delete Cluster Instance.
-	//  Deletes an instance of Cluster deployed on a Cloudlet
+	//  Deletes an instance of a Cluster deployed on a Cloudlet.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -535,7 +535,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteClusterInst", DeleteClusterInst)
 	// swagger:route POST /auth/ctrl/UpdateClusterInst ClusterInst UpdateClusterInst
 	// Update Cluster Instance.
-	//  Updates an instance of Cluster deployed on a Cloudlet
+	//  Updates an instance of a Cluster deployed on a Cloudlet.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -546,7 +546,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateClusterInst", UpdateClusterInst)
 	// swagger:route POST /auth/ctrl/ShowClusterInst ClusterInst ShowClusterInst
 	// Show Cluster Instances.
-	//  Lists all the cluster instances managed by edge controller
+	//  Lists all the cluster instances managed by Edge Controller.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -557,7 +557,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/ShowClusterInst", ShowClusterInst)
 	// swagger:route POST /auth/ctrl/CreateAppInst AppInst CreateAppInst
 	// Create Application Instance.
-	//  Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition
+	//  Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -569,7 +569,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/StreamAppInst", StreamAppInst)
 	// swagger:route POST /auth/ctrl/DeleteAppInst AppInst DeleteAppInst
 	// Delete Application Instance.
-	//  Deletes an instance of the App from the Cloudlet
+	//  Deletes an instance of the App from the Cloudlet.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -580,7 +580,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/DeleteAppInst", DeleteAppInst)
 	// swagger:route POST /auth/ctrl/RefreshAppInst AppInst RefreshAppInst
 	// Refresh Application Instance.
-	//  Refresh restarts an application instance with new App settings or image
+	//  Restarts an App instance with new App settings or image.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -591,7 +591,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/RefreshAppInst", RefreshAppInst)
 	// swagger:route POST /auth/ctrl/UpdateAppInst AppInst UpdateAppInst
 	// Update Application Instance.
-	//  Updates an application instance and then refreshes it
+	//  Updates an Application instance and then refreshes it.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -602,7 +602,7 @@ func addControllerApis(method string, group *echo.Group) {
 	group.Match([]string{method}, "/ctrl/UpdateAppInst", UpdateAppInst)
 	// swagger:route POST /auth/ctrl/ShowAppInst AppInst ShowAppInst
 	// Show Application Instances.
-	//  Lists all the application instances managed by edge controller. Any fields specified will be used to filter results
+	//  Lists all the Application instances managed by the Edge Controller. Any fields specified will be used to filter results.
 	// Security:
 	//   Bearer:
 	// responses:

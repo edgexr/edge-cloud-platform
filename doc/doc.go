@@ -1,7 +1,9 @@
 // Master Controller (MC) API Documentation
 //
 // # Introduction
-// This documentation describes all the available MC APIs, which end-users can use for edge orchestration
+// The Master Controller (MC) serves as the central gateway for orchestrating edge applications and provides several services to both application developers and operators. For application developers, these APIs allow the management and monitoring of deployments for edge applications. For infrastructure operators, these APIs provide ways to manage and monitor the usage of cloudlet infrastructures. Both developers and operators can take advantage of these APIS to manage users within the Organization.
+//
+// You can leverage these functionalities and services on our easy-to-use MobiledgeX Console. If you prefer to manage these services programmatically, the available APIs and their resources are accessible from the left navigational menu.
 //
 //     Schemes: https
 //     BasePath: /api/v1

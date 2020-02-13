@@ -201,14 +201,14 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	// swagger:route POST /login Security Login
 	// Login.
-	// Login to MC
+	// Login to MC.
 	// responses:
 	//   200: authToken
 	//   400: loginBadRequest
 	e.POST(root+"/login", Login)
 	// swagger:route POST /usercreate User CreateUser
 	// Create User.
-	// Create a new user who can access/manage resources
+	// Creates a new user and allows them to access and manage resources.
 	// responses:
 	//   200: success
 	//   400: badRequest
@@ -217,8 +217,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	e.POST(root+"/usercreate", CreateUser)
 	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
 	// swagger:route POST /passwordreset Security PasswdReset
-	// Reset login password.
-	// If login password is lost or to be changed, this API will reset the login password
+	// Reset Login Password.
+	// This resets your login password.
 	// responses:
 	//   200: success
 	//   400: badRequest
@@ -232,7 +232,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	// swagger:route POST /auth/user/show User ShowUser
 	// Show Users.
-	// Show existing users which user is authorized to access
+	// Displays existing users to which you are authorized to access.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -244,7 +244,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/user/current", CurrentUser)
 	// swagger:route POST /auth/user/delete User DeleteUser
 	// Delete User.
-	// Delete existing user
+	// Deletes existing user.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -262,7 +262,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/role/showuser", ShowUserRole)
 	// swagger:route POST /auth/org/create Organization CreateOrg
 	// Create Organization.
-	// Create Organization to access operator/cloudlet APIs
+	// Create an Organization to access operator/cloudlet APIs.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -273,7 +273,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/org/create", CreateOrg)
 	// swagger:route POST /auth/org/update Organization UpdateOrg
 	// Update Organization.
-	// API to update an existing Organization
+	// API to update an existing Organization.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -284,7 +284,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/org/update", UpdateOrg)
 	// swagger:route POST /auth/org/show Organization ShowOrg
 	// Show Organizations.
-	// Show existing Organizations which user is authorized to access
+	// Displays existing Organizations in which you are authorized to access.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -295,7 +295,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/org/show", ShowOrg)
 	// swagger:route POST /auth/org/delete Organization DeleteOrg
 	// Delete Organization.
-	// Delete existing Organization
+	// Deletes an existing Organization.
 	// Security:
 	//   Bearer:
 	// responses:
