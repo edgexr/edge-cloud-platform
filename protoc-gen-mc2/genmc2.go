@@ -228,18 +228,7 @@ func (g *GenMC2) generatePosts() {
 
 				g.P("group.Match([]string{method}, \"/ctrl/", method.Name,
 					"\", ", method.Name, ")")
-				if gensupport.ServerStreaming(method) && !streamRouteAdded {
-					api := GetMc2Api(method)
-					if api == "" {
-						return
-					}
-					apiVals := strings.Split(api, ",")
-					if len(apiVals) != 3 {
-						g.Fail("invalid mc2_api string, expected ResourceType,Action,OrgNameField")
-					}
-					if apiVals[1] == "ActionView" && gensupport.IsShow(method) {
-						continue
-					}
+				if GetMc2StreamerCache(method) && !streamRouteAdded {
 					streamRouteAdded = true
 					in := gensupport.GetDesc(g.Generator, method.GetInputType())
 					streamName := "Stream" + *in.DescriptorProto.Name
@@ -312,6 +301,8 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		StreamOutIncremental: gensupport.GetStreamOutIncremental(method),
 		CustomAuthz:          GetMc2CustomAuthz(method),
 		HasMethodArgs:        gensupport.HasMethodArgs(method),
+		GenStream:            GetMc2StreamerCache(method) && !found,
+		StreamerCache:        GetMc2StreamerCache(method),
 	}
 	if apiVals[2] == "" {
 		args.Org = `""`
@@ -328,9 +319,6 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	if !args.Outstream {
 		args.ReturnErrArg = "nil, "
 		args.Show = false
-	}
-	if args.Outstream && !args.Show && !found {
-		args.GenStream = true
 	}
 	if !args.Show {
 		args.TargetCloudlet = GetMc2TargetCloudlet(in.DescriptorProto)
@@ -418,6 +406,7 @@ type tmplArgs struct {
 	TargetCloudletParam  string
 	TargetCloudletArg    string
 	HasMethodArgs        bool
+	StreamerCache        bool
 }
 
 var tmplApi = `
@@ -524,7 +513,7 @@ func {{.MethodName}}(c echo.Context) error {
 	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
 {{- end}}
 {{- if .Outstream}}
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -535,7 +524,7 @@ func {{.MethodName}}(c echo.Context) error {
 {{- end}}
 
 	err = {{.MethodName}}Stream(ctx, rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 		if !streamAdded{
 			stream{{.InName}}.Add(in.{{.InName}}.Key, streamer)
 			streamAdded = true
@@ -543,18 +532,18 @@ func {{.MethodName}}(c echo.Context) error {
 {{- end}}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 		streamer.Publish(res.Message)
 {{- end}}
 		WriteStream(c, &payload)
 	})
 	if err != nil {
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 		streamer.Publish(err)
 {{- end}}
 		WriteError(c, err)
 	}
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 	if streamAdded {
 		stream{{.InName}}.Remove(in.{{.InName}}.Key, streamer)
 	}
@@ -1095,6 +1084,10 @@ func GetMc2Api(method *descriptor.MethodDescriptorProto) string {
 
 func GetMc2CustomAuthz(method *descriptor.MethodDescriptorProto) bool {
 	return proto.GetBoolExtension(method.Options, protogen.E_Mc2CustomAuthz, false)
+}
+
+func GetMc2StreamerCache(method *descriptor.MethodDescriptorProto) bool {
+	return proto.GetBoolExtension(method.Options, protogen.E_Mc2StreamerCache, false)
 }
 
 func GetMc2TargetCloudlet(message *descriptor.DescriptorProto) string {
