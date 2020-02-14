@@ -7,7 +7,8 @@ Package orm is a generated protocol buffer package.
 It is generated from these files:
 	alert.proto
 	app.proto
-	app_inst.proto
+	appinst.proto
+	appinstclient.proto
 	autoprovpolicy.proto
 	autoscalepolicy.proto
 	cloudlet.proto
@@ -40,6 +41,8 @@ It has these top-level messages:
 	AppInstRuntime
 	AppInstInfo
 	AppInstMetrics
+	AppInstClientKey
+	AppInstClient
 	AutoProvPolicy
 	AutoProvCloudlet
 	AutoProvCount
@@ -611,6 +614,17 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowAppInst", ShowAppInst)
+	// swagger:route POST /auth/ctrl/ShowAppInstClient AppInstClientKey ShowAppInstClient
+	// Show application instance clients.
+	//
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowAppInstClient", ShowAppInstClient)
 	// swagger:route POST /auth/ctrl/CreateAutoScalePolicy AutoScalePolicy CreateAutoScalePolicy
 	// Create an Auto Scale Policy.
 	// Security:

@@ -60,4 +60,5 @@ type Api interface {
 	PrivacyPolicyApiClient
 	OperatorCodeApiClient
 	SettingsApiClient
+	AppInstClientApiClient
 }

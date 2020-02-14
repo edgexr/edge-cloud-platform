@@ -86,6 +86,7 @@ regiondata:
       updateclusterinsttimeout: 2s
       deleteclusterinsttimeout: 2s
       loadbalancermaxportrange: 100
+      maxtrackeddmeclients: 100
     cloudlets:
     - key:
         operatorkey:

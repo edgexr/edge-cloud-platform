@@ -434,7 +434,9 @@ var tmpl = `
 var stream{{.InName}} = &StreamObj{}
 
 func Stream{{.InName}}(c echo.Context) error {
+{{- if .OrgValid}}
 	ctx := GetContext(c)
+{{- end}}
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -519,7 +521,7 @@ func {{.MethodName}}(c echo.Context) error {
 	defer streamer.Stop()
 {{- end}}
 
-{{- if and (not .Show) .Outstream}}
+{{- if .StreamerCache}}
 	streamAdded := false
 {{- end}}
 
