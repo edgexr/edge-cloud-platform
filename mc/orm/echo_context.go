@@ -9,8 +9,10 @@ import (
 
 type EchoContext struct {
 	echo.Context
-	ctx context.Context
-	ws  *websocket.Conn
+	ctx        context.Context
+	ws         *websocket.Conn
+	wsRequest  []byte
+	wsResponse []string
 }
 
 func NewEchoContext(c echo.Context, ctx context.Context) *EchoContext {
@@ -43,4 +45,28 @@ func GetWs(c echo.Context) *websocket.Conn {
 		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
 	}
 	return ec.ws
+}
+
+func LogWsRequest(c echo.Context, data []byte) {
+	ec, ok := c.(*EchoContext)
+	if !ok {
+		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
+	}
+	ec.wsRequest = data
+}
+
+func LogWsResponse(c echo.Context, data string) {
+	ec, ok := c.(*EchoContext)
+	if !ok {
+		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
+	}
+	ec.wsResponse = append(ec.wsResponse, data)
+}
+
+func GetWsLogData(c echo.Context) ([]byte, []string) {
+	ec, ok := c.(*EchoContext)
+	if !ok {
+		panic("auditlog.go logger func should have wrapped echo.Context with EchoContext")
+	}
+	return ec.wsRequest, ec.wsResponse
 }

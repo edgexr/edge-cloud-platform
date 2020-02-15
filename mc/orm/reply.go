@@ -54,6 +54,10 @@ func setReply(c echo.Context, err error, data interface{}) error {
 		} else if data != nil {
 			wsPayload.Data = data
 		}
+		out, err := json.Marshal(wsPayload)
+		if err == nil {
+			LogWsResponse(c, string(out))
+		}
 		return ws.WriteJSON(wsPayload)
 	}
 	if err != nil {
