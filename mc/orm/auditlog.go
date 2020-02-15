@@ -68,6 +68,16 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			log.Unsuppress(span)
 		}
 
+		if ws := GetWs(ec); ws != nil {
+			wsRequest, wsResponse := GetWsLogData(ec)
+			if len(wsRequest) > 0 {
+				reqBody = wsRequest
+			}
+			if len(wsResponse) > 0 {
+				span.SetTag("response", strings.Join(wsResponse, "\n"))
+			}
+		}
+
 		// remove passwords from requests so they aren't logged
 		if strings.Contains(req.RequestURI, "login") {
 			login := ormapi.UserLogin{}
