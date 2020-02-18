@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vmspec"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 type VMParams struct {
@@ -60,6 +60,11 @@ var heatStackLock sync.Mutex
 var heatCreate string = "CREATE"
 var heatUpdate string = "UPDATE"
 var heatDelete string = "DELETE"
+var clusterTypeKubernetes = "k8s"
+var clusterTypeDocker = "docker"
+var ClusterTypeKubernetesMasterLabel = "mex-k8s-master"
+var ClusterTypeDockerVMLabel = "mex-docker-vm"
+
 var vmCloudConfig = `#cloud-config
 bootcmd:
  - echo MOBILEDGEX CLOUD CONFIG START
@@ -238,6 +243,8 @@ type ClusterNode struct {
 
 // ClusterParams has the info needed to populate the heat template
 type ClusterParams struct {
+	ClusterType           string
+	ClusterFirstVMLabel   string
 	NodeFlavor            string
 	MEXRouterName         string
 	MEXNetworkName        string
@@ -256,7 +263,7 @@ type ClusterParams struct {
 	*VMParams             //rootlb
 }
 
-var k8sClusterTemplate = `
+var clusterTemplate = `
 heat_template_version: 2016-10-14
 description: Create a cluster
 
@@ -304,10 +311,10 @@ resources:
          port: { get_resource: router-port }
 
   {{- end}}
-   k8s-master-port:
+   {{.ClusterFirstVMLabel}}-port:
       type: OS::Neutron::Port
       properties:
-         name: k8s-master-port
+         name: {{.ClusterFirstVMLabel}}-port
         {{if .VnicType}}
          binding:vnic_type: {{.VnicType}}
         {{- end}}
@@ -323,10 +330,10 @@ resources:
         {{- end}}
 
   {{if .ExternalVolumeSize}}
-   k8s-master-vol:
+   {{.ClusterFirstVMLabel}}-vol:
       type: OS::Cinder::Volume
       properties:
-         name: k8s-master-{{.ClusterName}}-vol
+         name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
         {{if .AvailabilityZone}}
@@ -334,19 +341,19 @@ resources:
         {{- end}}
   {{- end}}
   {{if .SharedVolumeSize}}
-   k8s-shared-vol:
+   {{.ClusterType}}-shared-vol:
       type: OS::Cinder::Volume
       properties:
-         name: k8s-shared-{{.ClusterName}}-vol
+         name: {{.ClusterType}}-shared-{{.ClusterName}}-vol
          size: {{.SharedVolumeSize}}
         {{if .AvailabilityZone}}
          availability_zone: {{.AvailabilityZone}}
         {{- end}}
   {{- end}}
-   k8s-master:
+   {{.ClusterFirstVMLabel}}:
       type: OS::Nova::Server
       properties:
-         name: mex-k8s-master-{{.ClusterName}}
+         name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}
         {{if .AvailabilityZone}}
          availability_zone: {{.AvailabilityZone}}
         {{- end}}
@@ -354,12 +361,12 @@ resources:
          block_device_mapping:
         {{if .ExternalVolumeSize}}
          - device_name: "vda" 
-           volume_id: { get_resource: k8s-master-vol }
+           volume_id: { get_resource: {{.ClusterFirstVMLabel}}-vol }
            delete_on_termination: "false" 
         {{- end}}
         {{if .SharedVolumeSize}}
          - device_name: "vdb" 
-           volume_id: { get_resource: k8s-shared-vol }
+           volume_id: { get_resource: {{.ClusterType}}-shared-vol }
            delete_on_termination: "false"
         {{- end}}
       {{- end}}
@@ -375,19 +382,25 @@ resources:
 ` + reindent(vmCloudConfigShareMount, 12) + `
         {{- end}}
          networks:
-          - port: { get_resource: k8s-master-port }
+          - port: { get_resource: {{.ClusterFirstVMLabel}}-port }
          metadata:
-            skipk8s: no
-            role: k8s-master 
-            edgeproxy: {{.GatewayIP}}
-            mex-flavor: {{.NodeFlavor}}
-            k8smaster: {{.MasterIP}}
-
+         {{if eq "k8s" .ClusterType }}
+           skipk8s: no
+           role: k8s-master 
+           edgeproxy: {{.GatewayIP}}
+           mex-flavor: {{.NodeFlavor}}
+           k8smaster: {{.MasterIP}}
+         {{else}}
+           skipk8s: yes
+           role: mex-agent-node 
+           edgeproxy: {{.GatewayIP}}
+           mex-flavor: {{.NodeFlavor}}
+         {{- end}}
   {{range .Nodes}}
    {{.NodeName}}-port:
       type: OS::Neutron::Port
       properties:
-          name: mex-k8s-{{.NodeName}}-port-{{$.ClusterName}}
+          name: mex-{{$.ClusterType}}-{{.NodeName}}-port-{{$.ClusterName}}
          {{if $.VnicType}}
           binding:vnic_type: {{$.VnicType}}
          {{- end}}
@@ -416,7 +429,7 @@ resources:
 
    {{.NodeName}}:
       type: OS::Nova::Server
-      depends_on: k8s-master
+      depends_on: {{$.ClusterFirstVMLabel}}
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
         {{if $.AvailabilityZone}}
@@ -699,7 +712,7 @@ func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, 
 }
 
 // HeatDeleteCluster deletes the stack and also cleans up rootLB port if needed
-func HeatDeleteCluster(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
+func HeatDeleteCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
 	cp, err := getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, "", dedicatedRootLB, heatDelete)
 	if err == nil {
 		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack.  A nil client can be passed here in
@@ -737,6 +750,13 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
 	if err != nil {
 		return nil, err
+	}
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+		cp.ClusterType = clusterTypeDocker
+		cp.ClusterFirstVMLabel = ClusterTypeDockerVMLabel
+	} else {
+		cp.ClusterType = clusterTypeKubernetes
+		cp.ClusterFirstVMLabel = ClusterTypeKubernetesMasterLabel
 	}
 	cp.NetworkType = ni.NetworkType
 
@@ -906,10 +926,9 @@ func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName stri
 	return CreateHeatStackFromTemplate(ctx, vmp, stackName, VmTemplate, updateCallback)
 }
 
-// HeatCreateClusterKubernetes creates a k8s cluster which may optionally include a dedicated root LB
-func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
-
-	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName)
+// HeatCreateCluster creates a docker or k8s cluster which may optionally include a dedicated root LB
+func HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateCluster", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
 	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
 	// So we will do this one at a time.   It will slightly slow down the creation of the second cluster, but the heat
@@ -924,7 +943,7 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "Updated ClusterParams", "clusterParams", cp)
 
-	templateString := k8sClusterTemplate
+	templateString := clusterTemplate
 	//append the VM resources for the rootLB is dedicated
 	if dedicatedRootLB {
 		templateString += vmTemplateResources
@@ -943,17 +962,16 @@ func HeatCreateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.Clu
 	return nil
 }
 
-// HeatUpdateClusterKubernetes updates a k8s cluster which may optionally include a dedicated root LB
-func HeatUpdateClusterKubernetes(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
-
-	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateClusterKubernetes", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
+// HeatUpdateCluster updates a cluster which may optionally include a dedicated root LB
+func HeatUpdateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateCluster", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
 
 	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatUpdate)
 	if err != nil {
 		return err
 	}
 
-	templateString := k8sClusterTemplate
+	templateString := clusterTemplate
 	//append the VM resources for the rootLB is specified
 	if dedicatedRootLB {
 		templateString += vmTemplateResources

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -202,11 +203,29 @@ func GetMasterNameAndIP(ctx context.Context, clusterInst *edgeproto.ClusterInst)
 		return "", "", fmt.Errorf("error getting server list: %v", err)
 
 	}
+	namePrefix := ClusterTypeKubernetesMasterLabel
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+		namePrefix = ClusterTypeDockerVMLabel
+	}
 	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	masterName, err := FindClusterMaster(ctx, nodeNameSuffix, srvs)
+	masterName, err := FindClusterMaster(ctx, namePrefix, nodeNameSuffix, srvs)
 	if err != nil {
 		return "", "", fmt.Errorf("%s -- %s, %v", ClusterNotFoundErr, nodeNameSuffix, err)
 	}
 	masterIP, err := FindNodeIP(masterName, srvs)
 	return masterName, masterIP, err
+}
+
+//FindClusterMaster finds cluster given a key string
+func FindClusterMaster(ctx context.Context, namePrefix, nameSuffix string, srvs []OSServer) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "FindClusterMaster", "namePrefix", namePrefix, "nameSuffix", nameSuffix)
+	if namePrefix == "" || nameSuffix == "" {
+		return "", fmt.Errorf("empty name component")
+	}
+	for _, s := range srvs {
+		if s.Status == "ACTIVE" && strings.HasSuffix(s.Name, nameSuffix) && strings.HasPrefix(s.Name, namePrefix) {
+			return s.Name, nil
+		}
+	}
+	return "", fmt.Errorf("VM %s not found", nameSuffix)
 }

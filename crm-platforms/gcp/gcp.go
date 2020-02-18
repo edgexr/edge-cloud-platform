@@ -14,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var GCPServiceAccount string //temp
@@ -149,6 +150,6 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return nil
 }
 
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }

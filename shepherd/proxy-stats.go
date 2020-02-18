@@ -12,12 +12,12 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var ProxyMap map[string]ProxyScrapePoint
@@ -42,7 +42,7 @@ type ProxyScrapePoint struct {
 	Cluster           string
 	Dev               string
 	Ports             []int32
-	Client            pc.PlatformClient
+	Client            ssh.Client
 }
 
 func InitProxyScraper() {

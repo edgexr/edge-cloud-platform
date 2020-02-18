@@ -7,7 +7,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -15,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 const MINIMUM_DISK_SIZE uint64 = 20
@@ -118,7 +118,7 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return mexos.OSGetLimits(ctx, info)
 }
 
-func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName string) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName string) (ssh.Client, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "GetPlatformClientRootLB", "rootLBName", rootLBName)
 
 	if rootLBName == "" {
@@ -130,7 +130,7 @@ func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName strin
 	return mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 }
 
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)

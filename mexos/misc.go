@@ -6,11 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 func PrivateSSHKey() string {
@@ -37,7 +38,7 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
+func SeedDockerSecret(ctx context.Context, plat platform.Platform, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret")
 
 	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
@@ -47,7 +48,6 @@ func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgep
 	if auth.AuthType != cloudcommon.BasicAuth {
 		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
 	}
-
 	// XXX: not sure writing password to file buys us anything if the
 	// echo command is recorded in some history.
 	cmd := fmt.Sprintf("echo %s > .docker-pass", auth.Password)
@@ -58,7 +58,7 @@ func SeedDockerSecret(ctx context.Context, client pc.PlatformClient, inst *edgep
 	log.SpanLog(ctx, log.DebugLevelMexos, "stored docker password")
 	defer func() {
 		cmd := fmt.Sprintf("rm .docker-pass")
-		client.Output(cmd)
+		out, err = client.Output(cmd)
 	}()
 
 	cmd = fmt.Sprintf("cat .docker-pass | docker login -u %s --password-stdin %s ", auth.Username, auth.Hostname)

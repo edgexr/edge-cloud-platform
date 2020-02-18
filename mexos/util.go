@@ -11,19 +11,20 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // AddProxySecurityRulesAndPatchDNS Adds security rules and dns records in parallel
-func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, listenIP, backendIP string, addProxy bool, vaultConfig *vault.Config, ops ...proxy.Op) error {
+func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, listenIP, backendIP string, addProxy bool, vaultConfig *vault.Config, ops ...proxy.Op) error {
 	secchan := make(chan string)
 	dnschan := make(chan string)
 	proxychan := make(chan string)
 
+	log.SpanLog(ctx, log.DebugLevelMexos, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "rootLBName", rootLBName, "listenIP", listenIP, "backendIP", backendIP)
 	if len(appInst.MappedPorts) == 0 {
 		log.SpanLog(ctx, log.DebugLevelMexos, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
 		return nil

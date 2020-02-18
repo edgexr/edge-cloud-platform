@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // K8s Cluster
 type K8sClusterStats struct {
 	key      edgeproto.ClusterInstKey
 	promAddr string
-	client   pc.PlatformClient
+	client   ssh.Client
 	shepherd_common.ClusterMetrics
 }
 

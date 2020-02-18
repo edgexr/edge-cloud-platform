@@ -12,11 +12,11 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // Default Ceilometer granularity is 300 secs(5 mins)
@@ -24,7 +24,7 @@ var VmScrapeInterval = time.Minute * 5
 
 type Platform struct {
 	rootLbName      string
-	SharedClient    pc.PlatformClient
+	SharedClient    ssh.Client
 	pf              openstack.Platform
 	collectInterval time.Duration
 	vaultConfig     *vault.Config
@@ -66,7 +66,7 @@ func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.Clus
 	return ip, err
 }
 
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	if clusterInst != nil && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLb := cloudcommon.GetDedicatedLBFQDN(&clusterInst.Key.CloudletKey, &clusterInst.Key.ClusterKey)
 		pc, err := s.pf.GetPlatformClientRootLB(ctx, rootLb)

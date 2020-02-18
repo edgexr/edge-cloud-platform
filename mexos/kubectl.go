@@ -9,15 +9,15 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating docker registry secret in kubernetes cluster")
 	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
@@ -61,7 +61,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client pc.PlatformClient, c
 }
 
 // ConfigMap of cluster instance details such as cluster name, cloudlet name, and operator name
-func CreateClusterConfigMap(ctx context.Context, client pc.PlatformClient, clusterInst *edgeproto.ClusterInst) error {
+func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) error {
 	var out string
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "creating cluster config map in kubernetes cluster")
@@ -86,7 +86,7 @@ func CreateClusterConfigMap(ctx context.Context, client pc.PlatformClient, clust
 	return nil
 }
 
-func GetSvcExternalIP(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
+func GetSvcExternalIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "get service external IP", "name", name)
 	externalIP := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
@@ -124,7 +124,7 @@ func GetSvcExternalIP(ctx context.Context, client pc.PlatformClient, kubeNames *
 	return externalIP, nil
 }
 
-func GetServices(ctx context.Context, client pc.PlatformClient, names *k8smgmt.KubeNames) ([]v1.Service, error) {
+func GetServices(ctx context.Context, client ssh.Client, names *k8smgmt.KubeNames) ([]v1.Service, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "get services", "kconf", names.KconfName)
 	svcs := svcItems{}
 	if names.DeploymentType == cloudcommon.AppDeploymentTypeDocker {
@@ -136,11 +136,10 @@ func GetServices(ctx context.Context, client pc.PlatformClient, names *k8smgmt.K
 		}
 		return svcs.Items, nil
 	}
-
 	cmd := fmt.Sprintf("%s kubectl get svc -o json", names.KconfEnv)
 	out, err := client.Output(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("can not get list of services, %s, %v", out, err)
+		return nil, fmt.Errorf("can not get list of services: %s, %s, %v", cmd, out, err)
 	}
 	err = json.Unmarshal([]byte(out), &svcs)
 	if err != nil {
@@ -150,7 +149,7 @@ func GetServices(ctx context.Context, client pc.PlatformClient, names *k8smgmt.K
 	return svcs.Items, nil
 }
 
-func BackupKubeconfig(ctx context.Context, client pc.PlatformClient) {
+func BackupKubeconfig(ctx context.Context, client ssh.Client) {
 	kc := DefaultKubeconfig()
 	cmd := fmt.Sprintf("mv %s %s.save", kc, kc)
 	out, err := client.Output(cmd)
