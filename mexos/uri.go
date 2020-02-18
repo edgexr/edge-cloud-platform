@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -118,7 +119,7 @@ func GetSCPFile(ctx context.Context, uri string) ([]byte, error) {
 
 func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
-	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig, nil)
 	if err != nil {
 		return time.Time{}, "", err
 	}
@@ -158,9 +159,31 @@ func Md5SumFile(filePath string) (string, error) {
 }
 
 func DownloadFile(ctx context.Context, fileUrlPath string, filePath string) error {
+	var reqConfig *cloudcommon.RequestConfig
+
 	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
 
-	resp, err := cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultConfig)
+	// Adjust request timeout based on File Size
+	//  - Timeout is increased by 10min for every 5GB
+	//  - If less than 5GB, then use default timeout
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	contentLength := resp.Header.Get("Content-Length")
+	cLen, err := strconv.Atoi(contentLength)
+	if err == nil && cLen > 0 {
+		timeout := GetTimeout(cLen)
+		if timeout > 0 {
+			reqConfig = &cloudcommon.RequestConfig{
+				Timeout: timeout,
+			}
+			log.SpanLog(ctx, log.DebugLevelMexos, "increased request timeout", "file-url", fileUrlPath, "timeout", timeout.String())
+		}
+	}
+
+	resp, err = cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultConfig, reqConfig)
 	if err != nil {
 		return err
 	}
