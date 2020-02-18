@@ -3,8 +3,10 @@ package mexos
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
@@ -106,4 +108,14 @@ func ParseFlavorProperties(f OSFlavorDetail) map[string]string {
 
 	}
 	return props
+}
+
+// 5GB = 10minutes
+func GetTimeout(cLen int) time.Duration {
+	fileSizeInGB := float64(cLen) / (1024.0 * 1024.0 * 1024.0)
+	timeoutUnit := int(math.Ceil(fileSizeInGB / 5.0))
+	if fileSizeInGB > 5 {
+		return time.Duration(timeoutUnit) * 10 * time.Minute
+	}
+	return 10 * time.Minute
 }
