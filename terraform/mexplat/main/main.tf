@@ -114,21 +114,6 @@ module "console_dns" {
   ip                            = "${module.console.external_ip}"
 }
 
-module "mc" {
-  source              = "../../modules/vm_gcp"
-
-  instance_name       = "${var.mc_instance_name}"
-  zone                = "${var.gcp_zone}"
-  tags                = [ "mexplat-${var.environ_tag}", "http-server", "https-server", "mc" ]
-  ssh_public_key_file = "${var.ssh_public_key_file}"
-}
-
-module "mc_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.mc_vm_domain_name}"
-  ip                            = "${module.mc.external_ip}"
-}
-
 module "fw_vault_gcp" {
   source                        = "../../modules/fw_vault_gcp"
   firewall_name                 = "${var.environ_tag}-vault-fw-hc-and-proxy"

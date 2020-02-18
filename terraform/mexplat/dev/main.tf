@@ -76,12 +76,6 @@ module "crm_vm_dns" {
   ip                            = "${module.gitlab.external_ip}"
 }
 
-module "mc_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.mc_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
 module "postgres_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.postgres_domain_name}"

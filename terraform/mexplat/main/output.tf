@@ -7,7 +7,3 @@ output "registry_replicas" {
     }
   ]
 }
-
-output "mc_external_ip" {
-  value = "${module.mc.external_ip}"
-}
