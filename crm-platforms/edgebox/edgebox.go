@@ -8,11 +8,11 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/dind"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // edgebox wraps the generic dind implementation with
@@ -77,6 +77,6 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return s.generic.GatherCloudletInfo(ctx, info)
 }
 
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error) {
+func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	return s.generic.GetPlatformClient(ctx, clusterInst)
 }

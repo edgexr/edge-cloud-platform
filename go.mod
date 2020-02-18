@@ -31,7 +31,6 @@ require (
 	github.com/influxdata/influxdb v1.6.2
 	github.com/jaegertracing/jaeger v1.13.1
 	github.com/jarcoal/httpmock v1.0.4
-	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
@@ -42,7 +41,7 @@ require (
 	github.com/miekg/dns v1.1.15
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mobiledgex/edge-cloud v1.0.1
-	github.com/mobiledgex/golang-ssh v0.0.4
+	github.com/mobiledgex/golang-ssh v0.0.5
 	github.com/mobiledgex/yaml/v2 v2.2.4
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
@@ -337,3 +336,13 @@ replace gopkg.in/check.v1 => gopkg.in/check.v1 v1.0.0-20180628173108-788fd784012
 replace github.com/xtaci/smux => github.com/xtaci/smux v1.3.6
 
 replace github.com/segmentio/ksuid => github.com/segmentio/ksuid v1.0.2
+
+replace github.com/docker/docker => github.com/docker/docker v1.13.1
+
+replace github.com/golang/glog => github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+
+replace github.com/jcelliott/lumber => github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25
+
+replace github.com/mobiledgex/golang-ssh => github.com/mobiledgex/golang-ssh v0.0.5
+
+replace github.com/rogpeppe/fastuuid => github.com/rogpeppe/fastuuid v1.2.0

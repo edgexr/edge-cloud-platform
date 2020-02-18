@@ -11,10 +11,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var promQCpuClust = "sum(rate(container_cpu_usage_seconds_total%7Bid%3D%22%2F%22%7D%5B1m%5D))%2Fsum(machine_cpu_cores)*100"
@@ -59,7 +59,7 @@ type PromAlert struct {
 
 const platformClientHeaderSize = 3
 
-//trims the output from the pc.PlatformClient.Output request so that to get rid of the header stuff tacked on by it
+//trims the output from the Client.PlatformClient.Output request so that to get rid of the header stuff tacked on by it
 func outputTrim(output string) string {
 	lines := strings.SplitN(output, "\n", platformClientHeaderSize+1)
 	if len(lines) == 0 {
@@ -68,7 +68,7 @@ func outputTrim(output string) string {
 	return lines[len(lines)-1]
 }
 
-func getPromMetrics(ctx context.Context, addr string, query string, client pc.PlatformClient) (*PromResp, error) {
+func getPromMetrics(ctx context.Context, addr string, query string, client ssh.Client) (*PromResp, error) {
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
 	resp, err := client.Output("curl " + reqURI)
 	if err != nil {
@@ -83,7 +83,7 @@ func getPromMetrics(ctx context.Context, addr string, query string, client pc.Pl
 	return promResp, nil
 }
 
-func getPromAlerts(ctx context.Context, addr string, client pc.PlatformClient) ([]edgeproto.Alert, error) {
+func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgeproto.Alert, error) {
 	reqURI := "'http://" + addr + "/api/v1/alerts'"
 	out, err := client.Output("curl " + reqURI)
 	if err != nil {

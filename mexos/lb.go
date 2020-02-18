@@ -8,6 +8,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var udevRulesFile = "/etc/udev/rules.d/70-persistent-net.rules"
@@ -16,7 +17,7 @@ var actionAdd string = "ADD"
 var actionDelete string = "DELETE"
 
 // LBAddRouteAndSecRules adds an external route and sec rules
-func LBAddRouteAndSecRules(ctx context.Context, client pc.PlatformClient, rootLBName string) error {
+func LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Adding route to reach internal networks", "rootLBName", rootLBName)
 
 	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
@@ -105,7 +106,7 @@ func LBAddRouteAndSecRules(ctx context.Context, client pc.PlatformClient, rootLB
 }
 
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
-func persistInterfaceName(ctx context.Context, client pc.PlatformClient, ifName, mac, action string) error {
+func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac, action string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "persistInterfaceName", "ifName", ifName, "mac", mac)
 	cmd := fmt.Sprintf("sudo cat %s", udevRulesFile)
 	newFileContents := ""
@@ -132,7 +133,7 @@ func persistInterfaceName(ctx context.Context, client pc.PlatformClient, ifName,
 }
 
 // run an iptables add or delete conditionally based on whether the entry already exists or not
-func doIptablesCommand(ctx context.Context, client pc.PlatformClient, rule string, ruleExists bool, action string) error {
+func doIptablesCommand(ctx context.Context, client ssh.Client, rule string, ruleExists bool, action string) error {
 	runCommand := false
 	if ruleExists {
 		if action == actionDelete {
@@ -162,7 +163,7 @@ func doIptablesCommand(ctx context.Context, client pc.PlatformClient, rule strin
 
 // setupForwardingIptables creates iptables rules to allow the cluster nodes to use the LB as a
 // router for internet access
-func setupForwardingIptables(ctx context.Context, client pc.PlatformClient, externalIfname, internalIfname, action string) error {
+func setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfname, internalIfname, action string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "setupForwardingIptables", "externalIfname", externalIfname, "internalIfname", internalIfname)
 	// get current iptables
 	cmd := fmt.Sprintf("sudo iptables-save|grep -e POSTROUTING -e FORWARD")
@@ -226,7 +227,7 @@ func setupForwardingIptables(ctx context.Context, client pc.PlatformClient, exte
 
 // configureInternalInterfaceAndExternalForwarding sets up the new internal interface and then creates iptables rules to forward
 // traffic out the external interface
-func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client pc.PlatformClient, externalIPAddr, internalPortName, internalIPAddr string, action string) error {
+func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, externalIPAddr, internalPortName, internalIPAddr string, action string) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "configureInternalInterfaceAndExternalForwarding", "externalIPAddr", externalIPAddr, "internalPortName", internalPortName, "internalIPAddr", internalIPAddr)
 
@@ -339,7 +340,7 @@ func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client
 }
 
 // AttachAndEnableRootLBInterface attaches the interface and enables it in the OS
-func AttachAndEnableRootLBInterface(ctx context.Context, client pc.PlatformClient, rootLBName string, internalPortName, internalIPAddr string) error {
+func AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "internalPortName", internalPortName)
 
 	err := AttachPortToServer(ctx, rootLBName, internalPortName)
@@ -369,7 +370,7 @@ func AttachAndEnableRootLBInterface(ctx context.Context, client pc.PlatformClien
 }
 
 // DetachAndDisableRootLBInterface performs some cleanup when deleting the rootLB port.
-func DetachAndDisableRootLBInterface(ctx context.Context, client pc.PlatformClient, rootLBName string, internalPortName, internalIPAddr string) error {
+func DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "DetachAndDisableRootLBInterface", "rootLBName", rootLBName, "internalPortName", internalPortName)
 	rootLB, err := getRootLB(ctx, rootLBName)
 	if err != nil {

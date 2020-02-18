@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // Platform abstracts the underlying cloudlet platform.
@@ -18,7 +18,7 @@ type Platform interface {
 	// Gets the IP for a cluster
 	GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error)
 	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)
-	GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (pc.PlatformClient, error)
+	GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error)
 	// Gets cloudlet-level metrics. This is platform-dependent, hence the common interfcae
 	GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error)
 	// Get VM metrics - this is really a set of AppMetrics

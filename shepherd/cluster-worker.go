@@ -9,10 +9,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // For each cluster the notify worker is created
@@ -25,7 +25,7 @@ type ClusterWorker struct {
 	send           func(ctx context.Context, metric *edgeproto.Metric) bool
 	waitGrp        sync.WaitGroup
 	stop           chan struct{}
-	client         pc.PlatformClient
+	client         ssh.Client
 }
 
 func NewClusterWorker(ctx context.Context, promAddr string, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*ClusterWorker, error) {

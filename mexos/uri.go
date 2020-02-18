@@ -34,42 +34,6 @@ func validateDomain(uri string) error {
 	return fmt.Errorf("URI %s is not a valid domain name", uri)
 }
 
-func GetURIFile(ctx context.Context, uri string) ([]byte, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get uri file", "uri", uri)
-	// if _, err := url.ParseRequestURI(uri); err != nil {
-	// 	return nil, err
-	// }
-	if strings.HasPrefix(uri, "http://") || strings.HasPrefix(uri, "https://") {
-		res, err := GetHTTPFile(ctx, uri)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "error getting http uri file", "uri", uri, "error", err)
-			return nil, err
-		}
-		return res, nil
-	}
-	if strings.HasPrefix(uri, "scp://") {
-		res, err := GetSCPFile(ctx, uri)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "error getting scp uri file", "uri", uri, "error", err)
-			return nil, err
-		}
-		return res, nil
-	}
-	if strings.HasPrefix(uri, "file:///") {
-		uri = strings.Replace(uri, "file:///", "", -1)
-	}
-	// if err := validateDomain(uri); err != nil {
-	// 	return ioutil.ReadFile(uri)
-	// }
-	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to read uri as normal file", "uri", uri)
-	res, err := ioutil.ReadFile(uri)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "error getting file uri file", "uri", uri, "error", err)
-		return nil, err
-	}
-	return res, nil
-}
-
 func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get http uri file", "uri", uri)
 	resp, err := http.Get(uri)
@@ -86,36 +50,6 @@ func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
 	}
 	return nil, fmt.Errorf("http status not OK, %v", resp.StatusCode)
 }
-
-func GetSCPFile(ctx context.Context, uri string) ([]byte, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get scp uri file", "uri", uri)
-	part1 := strings.Replace(uri, "scp://", "mobiledgex@", -1)
-	slashindex := strings.Index(part1, "/")
-	if slashindex < 0 {
-		return nil, fmt.Errorf("malformed uri, missing /")
-	}
-	addr := part1[:slashindex]
-	if len(part1) < (slashindex + 1) {
-		return nil, fmt.Errorf("malformed uri, too short")
-	}
-	fn := part1[slashindex+1:]
-	if len(fn) < 1 {
-		return nil, fmt.Errorf("malformed uri, fn too short")
-	}
-	return sh.Command("ssh", "-o", sshOpts[0], "-o", sshOpts[1], "-i", PrivateSSHKey(), addr, "cat", fn).Output()
-}
-
-// func CopyURIFile(uri string, fn string) error {
-// 	res, err := GetURIFile(mf, uri)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	err = ioutil.WriteFile(fn, res, 0644)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 func GetUrlInfo(ctx context.Context, fileUrlPath string) (time.Time, string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)

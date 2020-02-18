@@ -8,9 +8,9 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -38,7 +38,7 @@ var NoDnsOverride = ""
 // The passed in GetDnsSvcActionFunc function should provide this function
 // with the actions to perform for each service, since different platforms
 // will use different IPs and patching.
-func CreateAppDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
+func CreateAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "createAppDNS")
 	useDns := true
@@ -108,7 +108,7 @@ func CreateAppDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8sm
 	return nil
 }
 
-func DeleteAppDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
+func DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
 
 	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
@@ -155,7 +155,7 @@ func DeleteAppDNS(ctx context.Context, client pc.PlatformClient, kubeNames *k8sm
 
 // KubePatchServiceIP updates the service to have the given external ip.  This is done locally and not thru
 // an ssh client
-func KubePatchServiceIP(ctx context.Context, client pc.PlatformClient, kubeNames *k8smgmt.KubeNames, servicename string, ipaddr string) error {
+func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, servicename string, ipaddr string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "patch service IP", "servicename", servicename, "ipaddr", ipaddr)
 
 	cmd := fmt.Sprintf(`%s kubectl patch svc %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfEnv, servicename, ipaddr)

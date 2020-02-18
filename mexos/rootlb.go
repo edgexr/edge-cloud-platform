@@ -24,6 +24,7 @@ type MEXRootLB struct {
 }
 
 var rootLBLock sync.Mutex
+var MaxRootLBWait = 5 * time.Minute
 
 var MEXRootLBMap = make(map[string]*MEXRootLB)
 
@@ -210,22 +211,27 @@ func WaitForRootLB(ctx context.Context, rootLB *MEXRootLB) error {
 	if err != nil {
 		return err
 	}
+	start := time.Now()
 	running := false
-	for i := 0; i < 10; i++ {
-		log.SpanLog(ctx, log.DebugLevelMexos, "waiting for rootlb...")
+	for {
+		log.SpanLog(ctx, log.DebugLevelMexos, "waiting for rootlb...", "rootLB", rootLB)
 		_, err := client.Output("sudo grep -i 'Finished mobiledgex init' /var/log/mobiledgex.log")
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "rootlb is running", "name", rootLB.Name)
 			running = true
-			//if err := CopySSHCredential(mf, rootLB.Name, GetCloudletExternalNetwork(), "root"); err != nil {
-			//	return fmt.Errorf("can't copy ssh credential to RootLB, %v", err)
-			//}
+			break
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMexos, "error checking if rootLB is running", "err", err)
+		}
+		elapsed := time.Since(start)
+		if elapsed >= (MaxRootLBWait) {
 			break
 		}
-		time.Sleep(30 * time.Second)
+		log.SpanLog(ctx, log.DebugLevelMexos, "sleeping 10 seconds before retry", "elapsed", elapsed)
+		time.Sleep(10 * time.Second)
 	}
 	if !running {
-		return fmt.Errorf("while creating cluster, timeout waiting for RootLB")
+		return fmt.Errorf("timeout waiting for RootLB")
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "done waiting for rootlb", "name", rootLB.Name)
 
