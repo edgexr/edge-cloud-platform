@@ -10,7 +10,7 @@ $(ANSIBLE_TFVARS): FORCE
 	cd $(ANSIBLE_ROOT); \
 	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES \
 		ansible-playbook -i $(ANSIBLE_INVENTORY) \
-			 -e @ansible-mex-vault.yml \
+			 -e @ansible-mex-vault-$(ANSIBLE_INVENTORY).yml \
 			 -e "output_file=$(CURDIR)/ansible.auto.tfvars" \
 			 mexplat-terraform-vars.yml
 

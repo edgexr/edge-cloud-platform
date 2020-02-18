@@ -77,15 +77,6 @@ variable "vault_b_domain_name" {
   default     = "vault-main-b.mobiledgex.net"
 }
 
-variable "mc_instance_name" {
-  default     = "mc-main"
-}
-
-variable "mc_vm_domain_name" {
-  type        = "string"
-  default     = "mc.mobiledgex.net"
-}
-
 variable "console_instance_name" {
   default     = "console-main"
 }

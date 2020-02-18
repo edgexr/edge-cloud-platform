@@ -30,7 +30,7 @@ terraform {
   }
 }
 
-# Common VM for gitlab, crm, mc, vault, postgres
+# Common VM for gitlab, crm, vault, postgres
 module "gitlab" {
   source              = "../../modules/vm_gcp"
 
@@ -44,7 +44,6 @@ module "gitlab" {
     "https-server",
     "pg-5432",
     "crm",
-    "mc",
     "stun-turn",
     "vault-ac",
     "${module.fw_vault_gcp.target_tag}"
@@ -90,12 +89,6 @@ module "docker_dns" {
 module "crm_vm_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.crm_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
-module "mc_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.mc_vm_domain_name}"
   ip                            = "${module.gitlab.external_ip}"
 }
 

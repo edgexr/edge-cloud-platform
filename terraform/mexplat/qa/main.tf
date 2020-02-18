@@ -36,7 +36,7 @@ module "gitlab" {
   instance_name       = "${var.gitlab_instance_name}"
   instance_size       = "custom-1-7680-ext"
   zone                = "${var.gcp_zone}"
-  boot_disk_size      = 20
+  boot_disk_size      = 100
   tags                = [
     "mexplat-${var.environ_tag}",
     "gitlab-registry",
@@ -44,7 +44,6 @@ module "gitlab" {
     "https-server",
     "pg-5432",
     "crm",
-    "mc",
     "stun-turn",
     "vault-ac",
     "${module.fw_vault_gcp.target_tag}"
@@ -93,21 +92,9 @@ module "crm_vm_dns" {
   ip                            = "${module.gitlab.external_ip}"
 }
 
-module "mc_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.mc_vm_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
 module "postgres_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.postgres_domain_name}"
-  ip                            = "${module.gitlab.external_ip}"
-}
-
-module "vault_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "${var.vault_vm_domain_name}"
   ip                            = "${module.gitlab.external_ip}"
 }
 
@@ -116,6 +103,7 @@ module "console" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.console_instance_name}"
+  instance_size       = "custom-2-9216"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
   tags                = [ "http-server", "https-server", "console-debug", "mc", "jaeger", "alt-https" ]
