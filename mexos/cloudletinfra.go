@@ -277,9 +277,14 @@ func GetCloudletNetworkIfaceFile() string {
 	return "/etc/network/interfaces.d/50-cloud-init.cfg"
 }
 
-// optional default AZ for the cloudlet. Can be overridden on cluster create
-func GetCloudletAvailabilityZone() string {
-	return os.Getenv("MEX_AVAILABILITY_ZONE")
+// optional default AZ for the cloudlet for compute resources (VMs).
+func GetCloudletComputeAvailabilityZone() string {
+	return os.Getenv("MEX_COMPUTE_AVAILABILITY_ZONE")
+}
+
+// optional default AZ for the cloudlet for Volumes.
+func GetCloudletVolumeAvailabilityZone() string {
+	return os.Getenv("MEX_VOLUME_AVAILABILITY_ZONE")
 }
 
 // initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:

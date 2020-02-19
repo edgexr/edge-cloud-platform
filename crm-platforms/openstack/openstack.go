@@ -90,7 +90,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 		return fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
 	}
 	if vmspec.AvailabilityZone == "" {
-		vmspec.AvailabilityZone = mexos.GetCloudletAvailabilityZone()
+		vmspec.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
 	}
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")

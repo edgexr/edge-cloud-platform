@@ -197,7 +197,7 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 	var err error
 	if clusterInst.AvailabilityZone == "" {
 		//use the cloudlet default AZ if it exists
-		clusterInst.AvailabilityZone = mexos.GetCloudletAvailabilityZone()
+		clusterInst.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
 	}
 
 	vmspec := vmspec.VMCreationSpec{
