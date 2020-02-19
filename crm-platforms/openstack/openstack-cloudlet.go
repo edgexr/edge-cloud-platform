@@ -24,9 +24,10 @@ import (
 
 const (
 	// Platform services
-	ServiceTypeCRM      = "crmserver"
-	ServiceTypeShepherd = "shepherd"
-	PlatformMaxWait     = 10 * time.Second
+	ServiceTypeCRM             = "crmserver"
+	ServiceTypeShepherd        = "shepherd"
+	PlatformMaxWait            = 10 * time.Second
+	PlatformVMReachableMaxWait = 2 * time.Minute
 )
 
 var PlatformServices = []string{
@@ -145,12 +146,25 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	if len(addrPort) != 2 {
 		return fmt.Errorf("notifyctrladdrs format is incorrect")
 	}
-	if out, err := client.Output(
-		fmt.Sprintf(
-			"nc %s %s -w 5", addrPort[0], addrPort[1],
-		),
-	); err != nil {
-		return fmt.Errorf("controller's notify port is unreachable: %v, %s\n", err, out)
+
+	start := time.Now()
+	for {
+		out, err := client.Output(fmt.Sprintf("nc %s %s -w 5", addrPort[0], addrPort[1]))
+		if err == nil {
+			break
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMexos, "error trying to connect to controller port via ssh", "out", out, "error", err)
+			if strings.Contains(err.Error(), "ssh client timeout") || strings.Contains(err.Error(), "ssh dial fail") {
+				elapsed := time.Since(start)
+				if elapsed > PlatformVMReachableMaxWait {
+					return fmt.Errorf("timed out connecting to platform VM to test controller notification channel")
+				}
+				log.SpanLog(ctx, log.DebugLevelMexos, "sleeping 10 seconds before retry", "elapsed", elapsed)
+				time.Sleep(10 * time.Second)
+			} else {
+				return fmt.Errorf("controller's notify port is unreachable: %v, %s\n", err, out)
+			}
+		}
 	}
 
 	// Verify if Openstack API Endpoint is reachable
