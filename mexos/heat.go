@@ -41,7 +41,8 @@ type VMParams struct {
 	Command                  string
 	IsRootLB                 bool
 	IsInternal               bool
-	AvailabilityZone         string
+	ComputeAvailabilityZone  string
+	VolumeAvailabilityZone   string
 	PrivacyPolicy            *edgeproto.PrivacyPolicy
 }
 
@@ -113,8 +114,8 @@ var vmTemplateResources = `
          name: {{.VMName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
-        {{if .AvailabilityZone}}
-         availability_zone: {{.AvailabilityZone}}
+        {{if .VolumeAvailabilityZone}}
+         availability_zone: {{.VolumeAvailabilityZone}}
         {{- end}}
   {{- end }}
 
@@ -149,8 +150,8 @@ var vmTemplateResources = `
       type: OS::Nova::Server
       properties:
          name: {{.VMName}}
-       {{if .AvailabilityZone}}
-         availability_zone: {{.AvailabilityZone}}
+       {{if .ComputeAvailabilityZone}}
+         availability_zone: {{.ComputeAvailabilityZone}}
        {{- end}}
        {{if .ExternalVolumeSize}}
          block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.VMName}}-vol }, delete_on_termination: "false" }]
@@ -336,8 +337,8 @@ resources:
          name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
-        {{if .AvailabilityZone}}
-         availability_zone: {{.AvailabilityZone}}
+        {{if .VolumeAvailabilityZone}}
+         availability_zone: {{.VolumeAvailabilityZone}}
         {{- end}}
   {{- end}}
   {{if .SharedVolumeSize}}
@@ -346,16 +347,16 @@ resources:
       properties:
          name: {{.ClusterType}}-shared-{{.ClusterName}}-vol
          size: {{.SharedVolumeSize}}
-        {{if .AvailabilityZone}}
-         availability_zone: {{.AvailabilityZone}}
+        {{if .VolumeAvailabilityZone}}
+         availability_zone: {{.VolumeAvailabilityZone}}
         {{- end}}
   {{- end}}
    {{.ClusterFirstVMLabel}}:
       type: OS::Nova::Server
       properties:
          name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}
-        {{if .AvailabilityZone}}
-         availability_zone: {{.AvailabilityZone}}
+        {{if .ComputeAvailabilityZone}}
+         availability_zone: {{.ComputeAvailabilityZone}}
         {{- end}}
       {{if or (.ExternalVolumeSize) (.SharedVolumeSize)}}
          block_device_mapping:
@@ -422,8 +423,8 @@ resources:
          name: {{.NodeName}}-vol
          image: {{$.ImageName}}
          size: {{$.ExternalVolumeSize}}
-        {{if $.AvailabilityZone}}
-         availability_zone: {{$.AvailabilityZone}}
+        {{if $.VolumeAvailabilityZone}}
+         availability_zone: {{$.VolumeAvailabilityZone}}
        {{- end}}
   {{- end }}
 
@@ -432,8 +433,8 @@ resources:
       depends_on: {{$.ClusterFirstVMLabel}}
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
-        {{if $.AvailabilityZone}}
-         availability_zone: {{$.AvailabilityZone}}
+        {{if $.ComputeAvailabilityZone}}
+         availability_zone: {{$.ComputeAvailabilityZone}}
         {{- end}}
         {{if  $.ExternalVolumeSize}}
          block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.NodeName}}-vol }, delete_on_termination: "false" }]
@@ -570,9 +571,16 @@ func WithCommand(command string) VMParamsOp {
 	}
 }
 
-func WithAvailabilityZone(az string) VMParamsOp {
+func WithComputeAvailabilityZone(az string) VMParamsOp {
 	return func(vmp *VMParams) error {
-		vmp.AvailabilityZone = az
+		vmp.ComputeAvailabilityZone = az
+		return nil
+	}
+}
+
+func WithVolumeAvailabilityZone(az string) VMParamsOp {
+	return func(vmp *VMParams) error {
+		vmp.VolumeAvailabilityZone = az
 		return nil
 	}
 }
@@ -776,7 +784,8 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
-			WithAvailabilityZone(clusterInst.AvailabilityZone),
+			WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
+			WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
 			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
@@ -792,7 +801,8 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
-			WithAvailabilityZone(clusterInst.AvailabilityZone),
+			WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
+			WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
 			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
@@ -917,7 +927,8 @@ func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName stri
 		imgName,
 		GetSecurityGroupName(ctx, serverName),
 		cloudletKey,
-		WithAvailabilityZone(vmspec.AvailabilityZone),
+		WithComputeAvailabilityZone(vmspec.AvailabilityZone),
+		WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
 		WithPrivacyPolicy(vmspec.PrivacyPolicy),
 	)
 	if err != nil {
