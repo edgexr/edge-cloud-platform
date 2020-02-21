@@ -62,9 +62,15 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 		//default
 		s.props.Project = "still-entity-201400"
 	}
+	if err = SetProject(s.props.Project); err != nil {
+		return err
+	}
 	s.props.Zone = os.Getenv("MEX_GCP_ZONE")
 	if s.props.Zone == "" {
 		return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
+	}
+	if err = SetZone(s.props.Zone); err != nil {
+		return err
 	}
 	s.props.ServiceAccount = os.Getenv("MEX_GCP_SERVICE_ACCOUNT")
 	if s.props.ServiceAccount == "" {

@@ -9,13 +9,15 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
+
 	v1 "k8s.io/api/core/v1"
 )
 
 func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	// regenerate kconf if missing because CRM in container was restarted
-	if err = SetupKconf(clusterInst); err != nil {
+	if err = SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
 	client, err := s.GetPlatformClient(ctx, clusterInst)
@@ -65,9 +67,8 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
-	var err error
 	// regenerate kconf if missing because CRM in container was restarted
-	if err = SetupKconf(clusterInst); err != nil {
+	if err := SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
 	client, err := s.GetPlatformClient(ctx, clusterInst)
@@ -96,8 +97,10 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	return mexos.DeleteAppDNS(ctx, client, names, mexos.NoDnsOverride)
 }
 
-func SetupKconf(clusterInst *edgeproto.ClusterInst) error {
-	targetFile := mexos.GetLocalKconfName(clusterInst)
+func SetupKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
+	targetFile := k8smgmt.GetKconfName(clusterInst)
+	log.SpanLog(ctx, log.DebugLevelMexos, "SetupKconf", "targetFile", targetFile)
+
 	if _, err := os.Stat(targetFile); err == nil {
 		// already exists
 		return nil
@@ -134,7 +137,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	// regenerate kconf if missing because CRM in container was restarted
-	if err := SetupKconf(clusterInst); err != nil {
+	if err := SetupKconf(ctx, clusterInst); err != nil {
 		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
 	client, err := s.GetPlatformClient(ctx, clusterInst)

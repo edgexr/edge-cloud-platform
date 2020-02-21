@@ -33,18 +33,8 @@ func (s *Platform) GCPLogin(ctx context.Context) error {
 }
 
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
-	var err error
-	project := s.props.Project
-	zone := s.props.Zone
 	clusterName := clusterInst.Key.ClusterKey.Name
-
-	if err = SetProject(project); err != nil {
-		return err
-	}
-	if err = SetZone(zone); err != nil {
-		return err
-	}
-	if err = CreateGKECluster(clusterName); err != nil {
+	if err := CreateGKECluster(clusterName); err != nil {
 		return err
 	}
 	//race condition exists where the config file is not ready until just after the cluster create is done

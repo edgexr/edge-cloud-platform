@@ -6,7 +6,7 @@ mcs:
 crms:
 - name: crm1
   apiaddr: "0.0.0.0:55091"
-  notifyaddrs: "mexplat-stage-eu.ctrl.mobiledgex.net:37001"
+  notifyaddrs: "{{controller}}:37001"
   cloudletkey: '{"operator_key":{"name":"{{operator}}"},"name":"{{cloudlet}}"}'
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
