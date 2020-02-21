@@ -90,7 +90,7 @@ def prompt(text, defval):
    prompttxt = text
    if defval != "":
       prompttxt += " ("+str(defval)+")"
-   reply = str(raw_input(prompttxt+": ")).lower().strip()
+   reply = str(raw_input(prompttxt+": ")).strip()
 
    if reply == "":
       if defval == "":
@@ -150,6 +150,7 @@ def getConfig():
      Mcpass = getpass.getpass(prompt="Enter MC password for console/mc login: ", stream=None)
      Region = prompt("Enter region, e.g. US, EU, JP", Region)
      Region = string.upper(Region)
+     Operator = prompt("Enter operator", Operator)
      Controller = prompt("Enter controller", Controller)
      Cloudlet = prompt("Enter cloudlet", Cloudlet)
      Latitude = prompt("Enter latitude from -90 to 90", Latitude)
