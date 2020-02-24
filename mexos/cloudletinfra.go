@@ -26,6 +26,7 @@ var MEXInfraVersion = "3.0.3"
 var ImageNamePrefix = "mobiledgex-v"
 var defaultOSImageName = ImageNamePrefix + MEXInfraVersion
 var VaultConfig *vault.Config
+var ImageFormatQcow2 = "qcow2"
 
 // Default CloudletVM/Registry paths should only be used for local testing.
 // Ansible should always specify the correct ones to the controller.
@@ -285,6 +286,14 @@ func GetCloudletComputeAvailabilityZone() string {
 // optional default AZ for the cloudlet for Volumes.
 func GetCloudletVolumeAvailabilityZone() string {
 	return os.Getenv("MEX_VOLUME_AVAILABILITY_ZONE")
+}
+
+func GetCloudletImageDiskFormat() string {
+	format := os.Getenv("MEX_IMAGE_DISK_FORMAT")
+	if format == "" {
+		return ImageFormatQcow2
+	}
+	return format
 }
 
 // initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:

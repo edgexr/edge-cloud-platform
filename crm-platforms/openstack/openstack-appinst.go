@@ -140,7 +140,11 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return fmt.Errorf("image in store %s is not active", imageName)
 			}
 			if imageDetail.Checksum != md5Sum {
-				return fmt.Errorf("mismatch in md5sum")
+				if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW && imageDetail.DiskFormat == "vmdk" {
+					log.SpanLog(ctx, log.DebugLevelMexos, "image was imported as vmdk, checksum match not possible")
+				} else {
+					return fmt.Errorf("mismatch in md5sum for image in glance: %s", imageName)
+				}
 			}
 			glanceImageTime, err := time.Parse(time.RFC3339, imageDetail.UpdatedAt)
 			if err != nil {
