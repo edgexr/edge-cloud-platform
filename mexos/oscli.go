@@ -107,6 +107,7 @@ func GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
 		"-c", "status",
 		"-c", "updated_at",
 		"-c", "checksum",
+		"-c", "disk_format",
 	)
 	if err != nil {
 		err = fmt.Errorf("cannot get image Detail for %s, %s, %v", name, string(out), err)
@@ -643,15 +644,15 @@ func CreateServerImage(ctx context.Context, serverName, imageName string) error 
 }
 
 //CreateImage puts images into glance
-func CreateImage(ctx context.Context, imageName, qcowFile string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating image in glance", "image", imageName, "qcow", qcowFile)
+func CreateImage(ctx context.Context, imageName, fileName string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "creating image in glance", "image", imageName, "fileName", fileName)
 	out, err := TimedOpenStackCommand(ctx, "openstack", "image", "create",
 		imageName,
-		"--disk-format", "qcow2",
+		"--disk-format", GetCloudletImageDiskFormat(),
 		"--container-format", "bare",
-		"--file", qcowFile)
+		"--file", fileName)
 	if err != nil {
-		err = fmt.Errorf("can't create image in glance, %s, %s, %s, %v", imageName, qcowFile, out, err)
+		err = fmt.Errorf("can't create image in glance, %s, %s, %s, %v", imageName, fileName, out, err)
 		return err
 	}
 	return nil
@@ -676,7 +677,7 @@ func CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string)
 		}
 		log.SpanLog(ctx, log.DebugLevelMexos, "verify md5sum", "downloaded-md5sum", fileMd5Sum, "actual-md5sum", md5Sum)
 		if fileMd5Sum != md5Sum {
-			return fmt.Errorf("mismatch in md5sum")
+			return fmt.Errorf("mismatch in md5sum for downloaded image: %s", imageName)
 		}
 	}
 
