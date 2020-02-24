@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -39,8 +40,16 @@ func CopyFile(src string, dst string) error {
 }
 
 func SeedDockerSecret(ctx context.Context, plat platform.Platform, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret")
+	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret", "imagepath", app.ImagePath)
 
+	urlObj, err := util.ImagePathParse(app.ImagePath)
+	if err != nil {
+		return fmt.Errorf("Cannot parse image path: %s - %v", app.ImagePath, err)
+	}
+	if urlObj.Host == cloudcommon.DockerHub {
+		log.SpanLog(ctx, log.DebugLevelMexos, "no secret needed for public image")
+		return nil
+	}
 	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
 	if err != nil {
 		return err
