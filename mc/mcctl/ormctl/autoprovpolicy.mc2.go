@@ -25,7 +25,7 @@ var _ = math.Inf
 
 var CreateAutoProvPolicyCmd = &cli.Command{
 	Use:          "CreateAutoProvPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, CreateAutoProvPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CreateAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateAutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
@@ -37,7 +37,7 @@ var CreateAutoProvPolicyCmd = &cli.Command{
 
 var DeleteAutoProvPolicyCmd = &cli.Command{
 	Use:          "DeleteAutoProvPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoProvPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
@@ -49,7 +49,7 @@ var DeleteAutoProvPolicyCmd = &cli.Command{
 
 var UpdateAutoProvPolicyCmd = &cli.Command{
 	Use:          "UpdateAutoProvPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoProvPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
@@ -89,7 +89,7 @@ var ShowAutoProvPolicyCmd = &cli.Command{
 
 var AddAutoProvPolicyCloudletCmd = &cli.Command{
 	Use:          "AddAutoProvPolicyCloudlet",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoProvPolicyCloudletRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyCloudletAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicyCloudletSpecialArgs,
@@ -101,7 +101,7 @@ var AddAutoProvPolicyCloudletCmd = &cli.Command{
 
 var RemoveAutoProvPolicyCloudletCmd = &cli.Command{
 	Use:          "RemoveAutoProvPolicyCloudlet",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoProvPolicyCloudletRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyCloudletAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicyCloudletSpecialArgs,

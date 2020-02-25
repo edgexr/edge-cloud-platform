@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreatePrivacyPolicyCmd = &cli.Command{
 	Use:          "CreatePrivacyPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, PrivacyPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(PrivacyPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(PrivacyPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(PrivacyPolicyAliasArgs, " "),
 	SpecialArgs:  &PrivacyPolicySpecialArgs,
@@ -35,7 +35,7 @@ var CreatePrivacyPolicyCmd = &cli.Command{
 
 var DeletePrivacyPolicyCmd = &cli.Command{
 	Use:          "DeletePrivacyPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, PrivacyPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(PrivacyPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(PrivacyPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(PrivacyPolicyAliasArgs, " "),
 	SpecialArgs:  &PrivacyPolicySpecialArgs,
@@ -47,7 +47,7 @@ var DeletePrivacyPolicyCmd = &cli.Command{
 
 var UpdatePrivacyPolicyCmd = &cli.Command{
 	Use:          "UpdatePrivacyPolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, PrivacyPolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(PrivacyPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(PrivacyPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(PrivacyPolicyAliasArgs, " "),
 	SpecialArgs:  &PrivacyPolicySpecialArgs,

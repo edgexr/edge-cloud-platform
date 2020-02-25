@@ -24,7 +24,7 @@ var _ = math.Inf
 
 var ShowAppInstClientCmd = &cli.Command{
 	Use:                  "ShowAppInstClient",
-	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstClientKeyRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(AppInstClientKeyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(AppInstClientKeyOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstClientKeyAliasArgs, " "),
 	SpecialArgs:          &AppInstClientKeySpecialArgs,

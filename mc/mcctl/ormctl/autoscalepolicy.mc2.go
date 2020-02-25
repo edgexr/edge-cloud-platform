@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateAutoScalePolicyCmd = &cli.Command{
 	Use:          "CreateAutoScalePolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, CreateAutoScalePolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CreateAutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateAutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
@@ -35,7 +35,7 @@ var CreateAutoScalePolicyCmd = &cli.Command{
 
 var DeleteAutoScalePolicyCmd = &cli.Command{
 	Use:          "DeleteAutoScalePolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoScalePolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,
@@ -47,7 +47,7 @@ var DeleteAutoScalePolicyCmd = &cli.Command{
 
 var UpdateAutoScalePolicyCmd = &cli.Command{
 	Use:          "UpdateAutoScalePolicy",
-	RequiredArgs: strings.Join(append([]string{"region"}, AutoScalePolicyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
 	SpecialArgs:  &AutoScalePolicySpecialArgs,

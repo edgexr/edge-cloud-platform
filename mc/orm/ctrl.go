@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -17,10 +18,18 @@ func connectController(ctx context.Context, region string) (*grpc.ClientConn, er
 	if err != nil {
 		return nil, err
 	}
-	return connectControllerAddr(addr)
+	return connectGrpcAddr(addr)
 }
 
-func connectControllerAddr(addr string) (*grpc.ClientConn, error) {
+func connectNotifyRoot(ctx context.Context) (*grpc.ClientConn, error) {
+	if serverConfig.NotifyAddrs == "" {
+		return nil, fmt.Errorf("No parent notify address specified, cannot connect to notify root")
+	}
+	addrs := strings.Split(serverConfig.NotifyAddrs, ",")
+	return connectGrpcAddr(addrs[0])
+}
+
+func connectGrpcAddr(addr string) (*grpc.ClientConn, error) {
 	dialOption, err := tls.GetTLSClientDialOption(addr, serverConfig.ClientCert, false)
 	if err != nil {
 		return nil, err

@@ -64,4 +64,5 @@ type Api interface {
 	OperatorCodeApiClient
 	SettingsApiClient
 	AppInstClientApiClient
+	NodeApiClient
 }

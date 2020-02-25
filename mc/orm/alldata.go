@@ -328,7 +328,7 @@ func ShowData(c echo.Context) error {
 		return c.JSON(http.StatusOK, data)
 	}
 	for _, ctrl := range ctrls {
-		conn, err := connectControllerAddr(ctrl.Address)
+		conn, err := connectGrpcAddr(ctrl.Address)
 		if err != nil {
 			continue
 		}

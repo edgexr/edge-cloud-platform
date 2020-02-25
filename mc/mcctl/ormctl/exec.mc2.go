@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var RunCommandCmd = &cli.Command{
 	Use:          "RunCommand",
-	RequiredArgs: strings.Join(append([]string{"region"}, RunCommandRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(RunCommandRequiredArgs, " "),
 	OptionalArgs: strings.Join(RunCommandOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
@@ -35,7 +35,7 @@ var RunCommandCmd = &cli.Command{
 
 var RunConsoleCmd = &cli.Command{
 	Use:          "RunConsole",
-	RequiredArgs: strings.Join(append([]string{"region"}, RunConsoleRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(RunConsoleRequiredArgs, " "),
 	OptionalArgs: strings.Join(RunConsoleOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
@@ -47,7 +47,7 @@ var RunConsoleCmd = &cli.Command{
 
 var ShowLogsCmd = &cli.Command{
 	Use:          "ShowLogs",
-	RequiredArgs: strings.Join(append([]string{"region"}, ShowLogsRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ShowLogsRequiredArgs, " "),
 	OptionalArgs: strings.Join(ShowLogsOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,

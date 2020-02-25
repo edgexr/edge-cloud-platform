@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateCloudletPoolCmd = &cli.Command{
 	Use:          "CreateCloudletPool",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
@@ -35,7 +35,7 @@ var CreateCloudletPoolCmd = &cli.Command{
 
 var DeleteCloudletPoolCmd = &cli.Command{
 	Use:          "DeleteCloudletPool",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
@@ -66,7 +66,7 @@ var CloudletPoolApiCmds = []*cli.Command{
 
 var CreateCloudletPoolMemberCmd = &cli.Command{
 	Use:          "CreateCloudletPoolMember",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolMemberRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,
@@ -78,7 +78,7 @@ var CreateCloudletPoolMemberCmd = &cli.Command{
 
 var DeleteCloudletPoolMemberCmd = &cli.Command{
 	Use:          "DeleteCloudletPoolMember",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolMemberRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,

@@ -20,9 +20,11 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgecli "github.com/mobiledgex/edge-cloud/edgectl/cli"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/version"
 	"github.com/nmcclain/ldap"
@@ -40,6 +42,8 @@ type Server struct {
 	stopInitData bool
 	initDataDone chan struct{}
 	initJWKDone  chan struct{}
+	notifyServer *notify.ServerMgr
+	notifyClient *notify.Client
 }
 
 type ServerConfig struct {
@@ -62,6 +66,9 @@ type ServerConfig struct {
 	JaegerAddr       string
 	vaultConfig      *vault.Config
 	SkipOriginCheck  bool
+	Hostname         string
+	NotifyAddrs      string
+	NotifySrvAddr    string
 }
 
 var DefaultDBUser = "mcuser"
@@ -79,6 +86,7 @@ var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
 var gitlabSync *AppStoreSync
 var artifactorySync *AppStoreSync
+var nodeMgr *node.NodeMgr
 
 func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
@@ -110,6 +118,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	if superpass == "" || config.IgnoreEnv {
 		superpass = DefaultSuperpass
 	}
+
+	nodeMgr = node.Init(ctx, "mc", node.WithName(config.Hostname))
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
@@ -358,6 +368,20 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	ws.GET("/ctrl/ShowLogs", RunWebrtcStream)
 	ws.GET("/ctrl/RunConsole", RunWebrtcStream)
 
+	if config.NotifySrvAddr != "" {
+		server.notifyServer = &notify.ServerMgr{}
+		nodeMgr.RegisterServer(server.notifyServer)
+
+		server.notifyServer.Start(config.NotifySrvAddr, config.TlsCertFile)
+	}
+	if config.NotifyAddrs != "" {
+		addrs := strings.Split(config.NotifyAddrs, ",")
+		server.notifyClient = notify.NewClient(addrs, config.TlsCertFile)
+		nodeMgr.RegisterClient(server.notifyClient)
+
+		server.notifyClient.Start()
+	}
+
 	go func() {
 		var err error
 		if config.TlsCertFile != "" {
@@ -427,6 +451,12 @@ func (s *Server) Stop() {
 	}
 	if s.vault != nil {
 		s.vault.StopLocal()
+	}
+	if s.notifyServer != nil {
+		s.notifyServer.Stop()
+	}
+	if s.notifyClient != nil {
+		s.notifyClient.Stop()
 	}
 }
 

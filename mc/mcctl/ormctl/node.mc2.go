@@ -23,7 +23,6 @@ var _ = math.Inf
 
 var ShowNodeCmd = &cli.Command{
 	Use:          "ShowNode",
-	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
 	AliasArgs:    strings.Join(NodeAliasArgs, " "),
 	SpecialArgs:  &NodeSpecialArgs,
@@ -41,26 +40,26 @@ var NodeApiCmds = []*cli.Command{
 var NodeKeyRequiredArgs = []string{}
 var NodeKeyOptionalArgs = []string{
 	"name",
-	"nodetype",
+	"type",
 	"cloudletkey.operatorkey.name",
 	"cloudletkey.name",
 }
 var NodeKeyAliasArgs = []string{
 	"name=nodekey.name",
-	"nodetype=nodekey.nodetype",
+	"type=nodekey.type",
 	"cloudletkey.operatorkey.name=nodekey.cloudletkey.operatorkey.name",
 	"cloudletkey.name=nodekey.cloudletkey.name",
 }
 var NodeKeyComments = map[string]string{
 	"name":                         "Name or hostname of node",
-	"nodetype":                     "Node type, one of NodeUnknown, NodeDme, NodeCrm, NodeController",
+	"type":                         "Node type",
 	"cloudletkey.operatorkey.name": "Company or Organization name of the operator",
 	"cloudletkey.name":             "Name of the cloudlet",
 }
 var NodeKeySpecialArgs = map[string]string{}
 var NodeRequiredArgs = []string{
 	"key.name",
-	"key.nodetype",
+	"key.type",
 	"key.cloudletkey.operatorkey.name",
 	"key.cloudletkey.name",
 }
@@ -74,7 +73,7 @@ var NodeOptionalArgs = []string{
 }
 var NodeAliasArgs = []string{
 	"key.name=node.key.name",
-	"key.nodetype=node.key.nodetype",
+	"key.type=node.key.type",
 	"key.cloudletkey.operatorkey.name=node.key.cloudletkey.operatorkey.name",
 	"key.cloudletkey.name=node.key.cloudletkey.name",
 	"notifyid=node.notifyid",
@@ -86,7 +85,7 @@ var NodeAliasArgs = []string{
 }
 var NodeComments = map[string]string{
 	"key.name":                         "Name or hostname of node",
-	"key.nodetype":                     "Node type, one of NodeUnknown, NodeDme, NodeCrm, NodeController",
+	"key.type":                         "Node type",
 	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
 	"key.cloudletkey.name":             "Name of the cloudlet",
 	"notifyid":                         "Id of client assigned by server (internal use only)",

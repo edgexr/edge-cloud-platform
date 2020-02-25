@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateAppCmd = &cli.Command{
 	Use:          "CreateApp",
-	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
@@ -35,7 +35,7 @@ var CreateAppCmd = &cli.Command{
 
 var DeleteAppCmd = &cli.Command{
 	Use:          "DeleteApp",
-	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
@@ -47,7 +47,7 @@ var DeleteAppCmd = &cli.Command{
 
 var UpdateAppCmd = &cli.Command{
 	Use:          "UpdateApp",
-	RequiredArgs: strings.Join(append([]string{"region"}, AppRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,

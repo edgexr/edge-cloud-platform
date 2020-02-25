@@ -1,0 +1,79 @@
+nodes:
+- key:
+    type: notifyroot
+
+- key:
+    type: mc
+- key:
+    type: mc
+
+- key:
+    type: controller
+  containerversion: "2019-10-24"
+- key:
+    type: controller
+  containerversion: "2019-10-24"
+
+- key:
+    type: dme
+    cloudletkey:
+      operatorkey:
+        name: dmuus
+      name: dmuus-cloud-1
+- key:
+    type: dme
+    cloudletkey:
+      operatorkey:
+        name: dmuus
+      name: dmuus-cloud-2
+
+- key:
+    type: crm
+    cloudletkey:
+      operatorkey:
+        name: enterprise
+      name: enterprise-1
+  containerversion: "2019-10-24"
+- key:
+    type: crm
+    cloudletkey:
+      operatorkey:
+        name: dmuus
+      name: dmuus-cloud-1
+  containerversion: "2020-10-10"
+- key:
+    type: crm
+    cloudletkey:
+      operatorkey:
+        name: dmuus
+      name: dmuus-cloud-2
+  containerversion: "2020-10-10"
+- key:
+    type: crm
+    cloudletkey:
+      operatorkey:
+        name: azure
+      name: azure-cloud-4
+  containerversion: "2019-10-24"
+- key:
+    type: crm
+    cloudletkey:
+      operatorkey:
+        name: gcp
+      name: gcp-cloud-5
+  containerversion: "2019-10-24"
+
+- key:
+    type: shepherd
+    cloudletkey:
+      operatorkey:
+        name: dmuus
+      name: dmuus-cloud-1
+  
+- key:
+    type: cluster-svc
+- key:
+    type: cluster-svc
+
+- key:
+    type: autoprov

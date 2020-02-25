@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateClusterInstCmd = &cli.Command{
 	Use:                  "CreateClusterInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
@@ -37,7 +37,7 @@ var CreateClusterInstCmd = &cli.Command{
 
 var DeleteClusterInstCmd = &cli.Command{
 	Use:                  "DeleteClusterInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
@@ -51,7 +51,7 @@ var DeleteClusterInstCmd = &cli.Command{
 
 var UpdateClusterInstCmd = &cli.Command{
 	Use:          "UpdateClusterInst",
-	RequiredArgs: strings.Join(append([]string{"region"}, ClusterInstRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ClusterInstRequiredArgs, " "),
 	OptionalArgs: strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:  &ClusterInstSpecialArgs,

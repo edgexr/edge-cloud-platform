@@ -44,6 +44,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "showlogs" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+	} else if api == "nodeshow" {
+		return runMcShowNode(uri, curUserFile, outputDir, vars)
 	}
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 }
@@ -903,4 +905,20 @@ func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
 		}
 	}
 	return &result
+}
+
+func runMcShowNode(uri, curUserFile, outputDir string, vars map[string]string) bool {
+	rc := true
+	token, rc := loginCurUser(uri, curUserFile, vars)
+	if !rc {
+		return false
+	}
+
+	nodes, status, err := mcClient.ShowNode(uri, token, &ormapi.RegionNode{})
+	checkMcErr("ShowNode", status, err, &rc)
+
+	appdata := edgeproto.ApplicationData{}
+	appdata.Nodes = nodes
+	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
+	return rc
 }

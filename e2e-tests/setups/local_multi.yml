@@ -66,6 +66,7 @@ controllers:
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
+  notifyparentaddrs: "127.0.0.1:52001"
 
 - name: ctrl2
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
@@ -79,6 +80,7 @@ controllers:
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
+  notifyparentaddrs: "127.0.0.1:52002"
 
 clustersvcs:
 - name: cluster-svc1
@@ -145,6 +147,22 @@ mcs:
     serverkey: "{{tlsoutdir}}/mex-server.key"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9389"
+  notifysrvaddr: "127.0.0.1:52001"
+  consoleproxyaddr: "127.0.0.1:6080"
+
+- name: mc2
+  addr: "127.0.0.1:9901"
+  sqladdr: "127.0.0.1:5432"
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9390"
+  notifysrvaddr: "127.0.0.1:52002"
+  consoleproxyaddr: "127.0.0.1:6081"
 
 sqls:
 - name: sql1
@@ -190,3 +208,9 @@ exporter:
   datafile: "{{datadir2}}/mc_metrics.yml"
   port: 9100
   hostname: "127.0.0.1"
+
+notifyroots:
+- name: notifyroot
+  hostname: "127.0.0.1"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
