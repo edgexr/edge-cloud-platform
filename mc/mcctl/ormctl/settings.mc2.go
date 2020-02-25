@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var UpdateSettingsCmd = &cli.Command{
 	Use:          "UpdateSettings",
-	RequiredArgs: strings.Join(append([]string{"region"}, SettingsRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
 	SpecialArgs:  &SettingsSpecialArgs,
@@ -50,7 +50,7 @@ func setUpdateSettingsFields(in map[string]interface{}) {
 
 var ResetSettingsCmd = &cli.Command{
 	Use:          "ResetSettings",
-	RequiredArgs: strings.Join(append([]string{"region"}, SettingsRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
 	SpecialArgs:  &SettingsSpecialArgs,
@@ -62,7 +62,7 @@ var ResetSettingsCmd = &cli.Command{
 
 var ShowSettingsCmd = &cli.Command{
 	Use:          "ShowSettings",
-	RequiredArgs: strings.Join(append([]string{"region"}, SettingsRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
 	SpecialArgs:  &SettingsSpecialArgs,

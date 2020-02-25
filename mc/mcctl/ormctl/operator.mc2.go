@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateOperatorCodeCmd = &cli.Command{
 	Use:          "CreateOperatorCode",
-	RequiredArgs: strings.Join(append([]string{"region"}, OperatorCodeRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
 	OptionalArgs: strings.Join(OperatorCodeOptionalArgs, " "),
 	AliasArgs:    strings.Join(OperatorCodeAliasArgs, " "),
 	SpecialArgs:  &OperatorCodeSpecialArgs,
@@ -35,7 +35,7 @@ var CreateOperatorCodeCmd = &cli.Command{
 
 var DeleteOperatorCodeCmd = &cli.Command{
 	Use:          "DeleteOperatorCode",
-	RequiredArgs: strings.Join(append([]string{"region"}, OperatorCodeRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
 	OptionalArgs: strings.Join(OperatorCodeOptionalArgs, " "),
 	AliasArgs:    strings.Join(OperatorCodeAliasArgs, " "),
 	SpecialArgs:  &OperatorCodeSpecialArgs,

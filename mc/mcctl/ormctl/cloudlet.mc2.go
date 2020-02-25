@@ -24,7 +24,7 @@ var _ = math.Inf
 
 var CreateCloudletCmd = &cli.Command{
 	Use:                  "CreateCloudlet",
-	RequiredArgs:         strings.Join(append([]string{"region"}, CreateCloudletRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(CreateCloudletRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CreateCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
@@ -38,7 +38,7 @@ var CreateCloudletCmd = &cli.Command{
 
 var DeleteCloudletCmd = &cli.Command{
 	Use:                  "DeleteCloudlet",
-	RequiredArgs:         strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(CloudletRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
@@ -52,7 +52,7 @@ var DeleteCloudletCmd = &cli.Command{
 
 var UpdateCloudletCmd = &cli.Command{
 	Use:          "UpdateCloudlet",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
@@ -94,7 +94,7 @@ var ShowCloudletCmd = &cli.Command{
 
 var AddCloudletResMappingCmd = &cli.Command{
 	Use:          "AddCloudletResMapping",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletResMapRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletResMapOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResMapAliasArgs, " "),
 	SpecialArgs:  &CloudletResMapSpecialArgs,
@@ -106,7 +106,7 @@ var AddCloudletResMappingCmd = &cli.Command{
 
 var RemoveCloudletResMappingCmd = &cli.Command{
 	Use:          "RemoveCloudletResMapping",
-	RequiredArgs: strings.Join(append([]string{"region"}, CloudletResMapRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletResMapOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResMapAliasArgs, " "),
 	SpecialArgs:  &CloudletResMapSpecialArgs,
@@ -118,7 +118,7 @@ var RemoveCloudletResMappingCmd = &cli.Command{
 
 var FindFlavorMatchCmd = &cli.Command{
 	Use:          "FindFlavorMatch",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorMatchRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(FlavorMatchRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorMatchOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorMatchAliasArgs, " "),
 	SpecialArgs:  &FlavorMatchSpecialArgs,

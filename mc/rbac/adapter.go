@@ -70,8 +70,21 @@ func (a *Adapter) createTable(ctx context.Context) error {
 			fields = append(fields, scope.Quote(field.DBName))
 		}
 	}
-	cmd := fmt.Sprintf("CREATE TABLE %v (%v, UNIQUE (%v))", scope.QuotedTableName(), strings.Join(tags, ","), strings.Join(fields, ","))
-	return db.Exec(cmd).Error
+	// Note race condition between multiple MCs starting at the same time,
+	// must allow for table already existing because table may have been
+	// created after earlier check passed.
+	cmd := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %v (%v, UNIQUE (%v))", scope.QuotedTableName(), strings.Join(tags, ","), strings.Join(fields, ","))
+	err := db.Exec(cmd).Error
+	if err != nil {
+		// For some reason, we still get a race condition even with
+		// IF NOT EXISTS. Perhaps the above command is not atomic.
+		// Detect the conflict and ignore.
+		if strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "pg_type_typname_nsp_index"`) {
+			err = nil
+		}
+		log.SpanLog(ctx, log.DebugLevelInfo, "init adapter failed", "err", err)
+	}
+	return err
 }
 
 func (a *Adapter) GetAuthorized(ctx context.Context, obj, act string) (map[string]string, error) {

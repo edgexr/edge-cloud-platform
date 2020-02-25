@@ -14,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_openstack"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -45,6 +46,7 @@ var settings edgeproto.Settings
 
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
+var nodeMgr *node.NodeMgr
 
 var sigChan chan os.Signal
 
@@ -191,6 +193,7 @@ func main() {
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
+	nodeMgr = node.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey))
 	workerMap = make(map[string]*ClusterWorker)
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	// LB metrics are not supported in fake mode
@@ -211,6 +214,7 @@ func main() {
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
+	nodeMgr.RegisterClient(notifyClient)
 	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)

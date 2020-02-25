@@ -63,7 +63,7 @@ func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node,
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connectNotifyRoot(ctx)
 		if err != nil {
 			return err
 		}

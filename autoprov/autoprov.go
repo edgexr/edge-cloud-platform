@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -24,6 +25,7 @@ var ctrlAddr = flag.String("ctrlAddrs", "127.0.0.1:55001", "controller api addre
 var influxAddr = flag.String("influxAddr", "http://127.0.0.1:8086", "InfluxDB listener address")
 var vaultAddr = flag.String("vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 var region = flag.String("region", "local", "region name")
+var hostname = flag.String("hostname", "", "Unique hostname")
 
 var sigChan chan os.Signal
 var alertCache edgeproto.AlertCache
@@ -35,6 +37,7 @@ var notifyClient *notify.Client
 var vaultConfig *vault.Config
 var autoProvAggr *AutoProvAggr
 var settings edgeproto.Settings
+var nodeMgr *node.NodeMgr
 
 func main() {
 	flag.Parse()
@@ -74,6 +77,7 @@ func start() error {
 		return fmt.Errorf("Failed to get TLS creds, %v", err)
 	}
 
+	nodeMgr = node.Init(ctx, "autoprov", node.WithName(*hostname))
 	edgeproto.InitAlertCache(&alertCache)
 	appHandler.Init()
 	autoProvPolicyHandler.Init()
@@ -90,6 +94,7 @@ func start() error {
 	notifyClient.RegisterRecv(notify.NewAppRecv(&appHandler))
 	frRecv := notify.NewClusterInstRecv(&frClusterInsts)
 	notifyClient.RegisterRecv(frRecv)
+	nodeMgr.RegisterClient(notifyClient)
 
 	alertCache.SetUpdatedCb(alertChanged)
 

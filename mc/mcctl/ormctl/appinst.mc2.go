@@ -25,7 +25,7 @@ var _ = math.Inf
 
 var CreateAppInstCmd = &cli.Command{
 	Use:                  "CreateAppInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, CreateAppInstRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(CreateAppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CreateAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
@@ -39,7 +39,7 @@ var CreateAppInstCmd = &cli.Command{
 
 var DeleteAppInstCmd = &cli.Command{
 	Use:                  "DeleteAppInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, AppInstRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(AppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
@@ -53,7 +53,7 @@ var DeleteAppInstCmd = &cli.Command{
 
 var RefreshAppInstCmd = &cli.Command{
 	Use:                  "RefreshAppInst",
-	RequiredArgs:         strings.Join(append([]string{"region"}, RefreshAppInstRequiredArgs...), " "),
+	RequiredArgs:         "region " + strings.Join(RefreshAppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(RefreshAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
@@ -67,7 +67,7 @@ var RefreshAppInstCmd = &cli.Command{
 
 var UpdateAppInstCmd = &cli.Command{
 	Use:          "UpdateAppInst",
-	RequiredArgs: strings.Join(append([]string{"region"}, UpdateAppInstRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(UpdateAppInstRequiredArgs, " "),
 	OptionalArgs: strings.Join(UpdateAppInstOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:  &AppInstSpecialArgs,
@@ -301,7 +301,7 @@ var AppInstComments = map[string]string{
 	"configs.kind":                   "kind (type) of config, i.e. k8s-manifest, helm-values, deploygen-config",
 	"configs.config":                 "config file contents or URI reference",
 	"sharedvolumesize":               "shared volume size when creating auto cluster",
-	"healthcheck":                    "Health Check status, one of HealthCheckOk, HealthCheckFailRootlbOffline, HealthCheckFailServerFail",
+	"healthcheck":                    "Health Check status, one of HealthCheckUnknown, HealthCheckFailRootlbOffline, HealthCheckFailServerFail, HealthCheckOk",
 	"privacypolicy":                  "Optional privacy policy name",
 }
 var AppInstSpecialArgs = map[string]string{

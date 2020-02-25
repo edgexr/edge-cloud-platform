@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateResTagTableCmd = &cli.Command{
 	Use:          "CreateResTagTable",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
 	SpecialArgs:  &ResTagTableSpecialArgs,
@@ -35,7 +35,7 @@ var CreateResTagTableCmd = &cli.Command{
 
 var DeleteResTagTableCmd = &cli.Command{
 	Use:          "DeleteResTagTable",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
 	SpecialArgs:  &ResTagTableSpecialArgs,
@@ -47,7 +47,7 @@ var DeleteResTagTableCmd = &cli.Command{
 
 var UpdateResTagTableCmd = &cli.Command{
 	Use:          "UpdateResTagTable",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
 	SpecialArgs:  &ResTagTableSpecialArgs,
@@ -87,7 +87,7 @@ var ShowResTagTableCmd = &cli.Command{
 
 var AddResTagCmd = &cli.Command{
 	Use:          "AddResTag",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
 	SpecialArgs:  &ResTagTableSpecialArgs,
@@ -99,7 +99,7 @@ var AddResTagCmd = &cli.Command{
 
 var RemoveResTagCmd = &cli.Command{
 	Use:          "RemoveResTag",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
 	SpecialArgs:  &ResTagTableSpecialArgs,
@@ -111,7 +111,7 @@ var RemoveResTagCmd = &cli.Command{
 
 var GetResTagTableCmd = &cli.Command{
 	Use:          "GetResTagTable",
-	RequiredArgs: strings.Join(append([]string{"region"}, ResTagTableKeyRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(ResTagTableKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableKeyOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableKeyAliasArgs, " "),
 	SpecialArgs:  &ResTagTableKeySpecialArgs,

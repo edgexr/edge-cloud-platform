@@ -23,7 +23,7 @@ var _ = math.Inf
 
 var CreateFlavorCmd = &cli.Command{
 	Use:          "CreateFlavor",
-	RequiredArgs: strings.Join(append([]string{"region"}, CreateFlavorRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(CreateFlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateFlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
@@ -35,7 +35,7 @@ var CreateFlavorCmd = &cli.Command{
 
 var DeleteFlavorCmd = &cli.Command{
 	Use:          "DeleteFlavor",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
@@ -47,7 +47,7 @@ var DeleteFlavorCmd = &cli.Command{
 
 var UpdateFlavorCmd = &cli.Command{
 	Use:          "UpdateFlavor",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
@@ -87,7 +87,7 @@ var ShowFlavorCmd = &cli.Command{
 
 var AddFlavorResCmd = &cli.Command{
 	Use:          "AddFlavorRes",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
@@ -99,7 +99,7 @@ var AddFlavorResCmd = &cli.Command{
 
 var RemoveFlavorResCmd = &cli.Command{
 	Use:          "RemoveFlavorRes",
-	RequiredArgs: strings.Join(append([]string{"region"}, FlavorRequiredArgs...), " "),
+	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
 	SpecialArgs:  &FlavorSpecialArgs,
