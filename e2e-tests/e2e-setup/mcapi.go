@@ -720,44 +720,87 @@ type runCommandData struct {
 }
 
 func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
-	// test only runnable for mod CLI. Also avoid for mod sep just
-	// because webrtc takes a while to setup and it slows down the tests.
-	if !hasMod("cli", mods) || hasMod("sep", mods) {
+	// Avoid for mod sep because webrtc takes a while to setup
+	// and it slows down the tests.
+	if hasMod("sep", mods) {
 		return true
 	}
-	client, ok := mcClient.(*cliwrapper.Client)
-	if !ok {
-		// should never happen because of check for "cli" mod above.
-		panic("not cliwrapper client")
-	}
 
-	// RunCommand is a special case only supported by mcctl CLI,
-	// because it leverages the webrtc client code in mcctl.
 	token, rc := loginCurUser(uri, curUserFile, vars)
 	if !rc {
 		return false
 	}
+
 	data := runCommandData{}
 	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		return false
 	}
-	var out string
-	if api == "runcommand" {
-		out, err = client.RunCommandOut(uri, token, &data.Request)
+
+	if hasMod("cli", mods) {
+		log.Printf("Using MC URI %s", uri)
+		client := &cliwrapper.Client{
+			DebugLog:   true,
+			SkipVerify: true,
+		}
+
+		// RunCommand is a special case only supported by mcctl CLI,
+		// because it leverages the webrtc client code in mcctl.
+		var out string
+		if api == "runcommand" {
+			out, err = client.RunCommandOut(uri, token, &data.Request)
+		} else {
+			out, err = client.ShowLogsOut(uri, token, &data.Request)
+		}
+		if err != nil {
+			log.Printf("Error running %s API %v\n", api, err)
+			return false
+		}
+		log.Printf("Exec %s output: %s\n", api, out)
+		actual := strings.TrimSpace(out)
+		if actual != data.ExpectedOutput {
+			log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
+			return false
+		}
 	} else {
-		out, err = client.ShowLogsOut(uri, token, &data.Request)
-	}
-	if err != nil {
-		log.Printf("Error running %s API %v\n", api, err)
-		return false
-	}
-	log.Printf("Exec %s output: %s\n", api, out)
-	actual := strings.TrimSpace(out)
-	if actual != data.ExpectedOutput {
-		log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
-		return false
+		wsUri := strings.Replace(uri, "http", "ws", -1)
+		wsUri = strings.Replace(wsUri, "api/v1", "ws/api/v1", -1)
+		log.Printf("Using MC URI %s", wsUri)
+
+		client := &ormclient.Client{
+			SkipVerify: true,
+		}
+
+		var streamOut []ormapi.WSStreamPayload
+		var status int
+		var err error
+		if api == "runcommand" {
+			streamOut, status, err = client.RunCommandStream(wsUri, token, &data.Request)
+		} else {
+			streamOut, status, err = client.ShowLogsStream(wsUri, token, &data.Request)
+		}
+		checkMcErr(api, status, err, &rc)
+		log.Printf("Exec %s output: %v\n", api, streamOut)
+		if len(streamOut) != 1 {
+			log.Printf("Invalid output, expected 1 data, but recieved: %d\n", len(streamOut))
+			return false
+		}
+		code := streamOut[0].Code
+		if code != http.StatusOK {
+			log.Printf("Did not get 200 status, got %d\n", code)
+			return false
+		}
+		actual, ok := streamOut[0].Data.(string)
+		if !ok {
+			log.Printf("Did not get payload of type string\n")
+			return false
+		}
+		actual = strings.TrimSpace(actual)
+		if actual != data.ExpectedOutput {
+			log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
+			return false
+		}
 	}
 	return true
 }

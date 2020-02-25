@@ -1,8 +1,10 @@
 package ormctl
 
 import (
+	"bufio"
 	"encoding/json"
 	fmt "fmt"
+	"os"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -43,6 +45,16 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 			return err
 		}
 
+		if client.McProxy {
+			out := ormapi.WSStreamPayload{}
+			reader := bufio.NewReader(os.Stdin)
+			// print streamed data as it comes
+			st, err := client.HandleWebsocketStreamOut(getWSUri()+path, Token, reader, &req, &out, func() {
+				check(c, 0, nil, &out)
+			})
+			return check(c, st, err, nil)
+		}
+
 		exchangeFunc := func(offer webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
 			offerBytes, err := json.Marshal(&offer)
 			if err != nil {
@@ -72,6 +84,6 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 			}
 			return &reply, &answer, nil
 		}
-		return edgecli.RunWebrtc(&req.ExecRequest, exchangeFunc)
+		return edgecli.RunWebrtc(&req.ExecRequest, exchangeFunc, nil, edgecli.SetupLocalConsoleTunnel)
 	}
 }

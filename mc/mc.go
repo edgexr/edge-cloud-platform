@@ -14,6 +14,7 @@ import (
 var addr = flag.String("addr", "127.0.0.1:9900", "REST listener address")
 var sqlAddr = flag.String("sqlAddr", "127.0.0.1:5432", "Postgresql address")
 var localSql = flag.Bool("localSql", false, "Run local postgres db")
+var consoleProxyAddr = flag.String("consoleproxyaddr", "127.0.0.1:6080", "Console proxy address")
 var initSql = flag.Bool("initSql", false, "Init db when using localSql")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 var tlsCertFile = flag.String("tls", "", "server tls cert file")
@@ -40,22 +41,23 @@ func main() {
 	sigChan = make(chan os.Signal, 1)
 
 	config := orm.ServerConfig{
-		ServAddr:        *addr,
-		SqlAddr:         *sqlAddr,
-		VaultAddr:       *vaultAddr,
-		RunLocal:        *localSql,
-		InitLocal:       *initSql,
-		LocalVault:      *localVault,
-		TlsCertFile:     *tlsCertFile,
-		TlsKeyFile:      *tlsKeyFile,
-		LDAPAddr:        *ldapAddr,
-		GitlabAddr:      *gitlabAddr,
-		ArtifactoryAddr: *artifactoryAddr,
-		ClientCert:      *clientCert,
-		PingInterval:    *pingInterval,
-		SkipVerifyEmail: *skipVerifyEmail,
-		JaegerAddr:      *jaegerAddr,
-		SkipOriginCheck: *skipOriginCheck,
+		ServAddr:         *addr,
+		SqlAddr:          *sqlAddr,
+		VaultAddr:        *vaultAddr,
+		ConsoleProxyAddr: *consoleProxyAddr,
+		RunLocal:         *localSql,
+		InitLocal:        *initSql,
+		LocalVault:       *localVault,
+		TlsCertFile:      *tlsCertFile,
+		TlsKeyFile:       *tlsKeyFile,
+		LDAPAddr:         *ldapAddr,
+		GitlabAddr:       *gitlabAddr,
+		ArtifactoryAddr:  *artifactoryAddr,
+		ClientCert:       *clientCert,
+		PingInterval:     *pingInterval,
+		SkipVerifyEmail:  *skipVerifyEmail,
+		JaegerAddr:       *jaegerAddr,
+		SkipOriginCheck:  *skipOriginCheck,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

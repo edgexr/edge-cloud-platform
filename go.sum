@@ -85,6 +85,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumC
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/docker/docker v0.7.3-0.20190212235812-0111ee70874a h1:r64ncoybKAgtiM9jIPurN/P+9qc1hIF78FYWe6KD7Aw=
 github.com/docker/docker v0.7.3-0.20190212235812-0111ee70874a/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
+github.com/docker/docker v1.13.1 h1:IkZjBSIc8hBjLpqeAbeE5mca5mNgeatLHBy3GO78BWo=
+github.com/docker/docker v1.13.1/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-units v0.3.3 h1:Xk8S3Xj5sLGlG5g67hJmYMmUgXv5N4PhkjJHHqrwnTk=
@@ -316,6 +318,8 @@ github.com/mitchellh/reflectwalk v1.0.0 h1:9D+8oIskB4VJBN5SFlmc27fSlIBZaov1Wpk/I
 github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mobiledgex/golang-ssh v0.0.4 h1:eFsRp+vMWuYXiz8M3uzcToNgsuxG4qwffOVmiXDzQYI=
 github.com/mobiledgex/golang-ssh v0.0.4/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
+github.com/mobiledgex/golang-ssh v0.0.5 h1:9uLkcRpJHS30gRUmUq2/w2TWrJPXMb0w2S+SyYuK0H8=
+github.com/mobiledgex/golang-ssh v0.0.5/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/yaml/v2 v2.2.4 h1:9biPviMHWPA+THM6GVuR8Rp10JmP7rFfizgDFpSXNpA=
 github.com/mobiledgex/yaml/v2 v2.2.4/go.mod h1:9xwjeLnIOTcA1fPBSAYKGRjeRy/bP/LnodFNfuZ9kqE=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
@@ -411,6 +415,7 @@ github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1 h1:/K3IL0Z1quvmJ
 github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rogpeppe/fastuuid v1.1.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
+github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-charset v0.0.0-20180617210344-2471d30d28b4/go.mod h1:qgYeAmZ5ZIpBWTGllZSQnw97Dj+woV0toclVaRGI8pc=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/ryanuber/go-glob v0.0.0-20160226084822-572520ed46db h1:ge9atzKq16843f793fDVxKUhmTb4H5muzjJQ6PgsnHg=
