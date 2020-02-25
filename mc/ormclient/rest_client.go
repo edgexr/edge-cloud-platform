@@ -1,6 +1,7 @@
 package ormclient
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -19,6 +21,7 @@ import (
 type Client struct {
 	SkipVerify bool
 	Debug      bool
+	McProxy    bool
 }
 
 func (s *Client) DoLogin(uri, user, pass string) (string, error) {
@@ -284,7 +287,7 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 
 func (s *Client) PostJsonStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
 	if strings.Contains(uri, "ws/api/v1") {
-		return s.handleWebsocketStreamOut(uri, token, reqData, replyData, replyReady)
+		return s.HandleWebsocketStreamOut(uri, token, nil, reqData, replyData, replyReady)
 	} else {
 		return s.handleHttpStreamOut(uri, token, reqData, replyData, replyReady)
 	}
@@ -358,7 +361,14 @@ func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websock
 		body = nil
 	}
 
-	ws, _, err := websocket.DefaultDialer.Dial(uri, nil)
+	var ws *websocket.Conn
+	var err error
+	if strings.HasPrefix(uri, "wss") {
+		d := websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		ws, _, err = d.Dial(uri, nil)
+	} else {
+		ws, _, err = websocket.DefaultDialer.Dial(uri, nil)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("websocket connect to %s failed, %s", uri, err.Error())
 	}
@@ -376,20 +386,34 @@ func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websock
 	return ws, nil
 }
 
-func (s *Client) handleWebsocketStreamOut(uri, token string, reqData, replyData interface{}, replyReady func()) (int, error) {
+func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reader, reqData, replyData interface{}, replyReady func()) (int, error) {
+	wsPayload, ok := replyData.(*ormapi.WSStreamPayload)
+	if !ok {
+		return 0, fmt.Errorf("response can only be of type WSStreamPayload")
+	}
 	ws, err := s.WebsocketConn(uri, token, reqData)
 	if err != nil {
 		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
 	}
-	payload := ormapi.WSStreamPayload{}
-	if replyData != nil {
-		payload.Data = replyData
+	if reader != nil {
+		go func() {
+			for {
+				text, err := reader.ReadString('\n')
+				if err == io.EOF {
+					break
+				}
+				if err := ws.WriteMessage(websocket.TextMessage, []byte(text)); err != nil {
+					break
+				}
+			}
+		}()
 	}
+	payload := wsPayload
 	for {
-		if replyData != nil {
+		if payload != nil {
 			// clear passed in buffer for next iteration.
-			// replyData must be pointer to object.
-			p := reflect.ValueOf(replyData).Elem()
+			// payload must be pointer to object.
+			p := reflect.ValueOf(payload).Elem()
 			p.Set(reflect.Zero(p.Type()))
 		}
 
@@ -404,9 +428,10 @@ func (s *Client) handleWebsocketStreamOut(uri, token string, reqData, replyData 
 			if payload.Data == nil {
 				return payload.Code, nil
 			}
-			wsRes, ok := payload.Data.(*edgeproto.Result)
-			if ok {
-				return payload.Code, errors.New(wsRes.Message)
+			errRes := edgeproto.Result{}
+			err = mapstructure.Decode(payload.Data, &errRes)
+			if err == nil {
+				return payload.Code, errors.New(errRes.Message)
 			}
 			return payload.Code, nil
 		}

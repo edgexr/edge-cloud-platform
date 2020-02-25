@@ -1198,6 +1198,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DeleteClusterInstTimeout: 13
 	// MasterNodeFlavor: 14
 	// LoadBalancerMaxPortRange: 15
+	// MaxTrackedDmeClients: 16
 	// ```
 	// Security:
 	//   Bearer:

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
@@ -535,15 +536,20 @@ func TestController(t *testing.T) {
 	require.Equal(t, 1, count)
 
 	count = 0
+	wsOut := ormapi.WSStreamPayload{}
 	// check that we get intermediate results.
 	// the callback func is only called when data is read back.
 	// Test Websocket connection
 	uri = "ws://" + addr + "/ws/api/v1"
 	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &out, func() {
+		token, &dat, &wsOut, func() {
 			// got a result, trigger next result
 			count++
-			require.Equal(t, count, int(out.Code))
+			require.Equal(t, 200, int(wsOut.Code))
+			result := edgeproto.Result{}
+			err = mapstructure.Decode(wsOut.Data, &result)
+			require.Nil(t, err, "Received data of type Result")
+			require.Equal(t, count, int(result.Code))
 			sds.next <- 1
 		})
 	require.Nil(t, err, "stream test create cluster inst")
@@ -553,7 +559,7 @@ func TestController(t *testing.T) {
 	count = 0
 	sds.next = make(chan int, 1)
 	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &out, func() {
+		token, &dat, &wsOut, func() {
 			count++
 		})
 	require.NotNil(t, err)

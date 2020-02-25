@@ -18,6 +18,7 @@ var Addr string
 var Token string
 var SkipVerify bool
 var client ormclient.Client
+var McProxy bool
 
 type setFieldsFunc func(in map[string]interface{})
 
@@ -86,6 +87,16 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 		}
 		return nil
 	}
+	if res, ok := reply.(*ormapi.WSStreamPayload); ok && !cli.Parsable {
+		if res.Data == nil {
+			return nil
+		}
+		if out, ok := res.Data.(string); ok {
+			fmt.Print(out)
+			return nil
+		}
+		reply = res.Data
+	}
 	// formatted output
 	if reply != nil {
 		// don't write output for empty slices
@@ -115,6 +126,9 @@ func PreRunE(cmd *cobra.Command, args []string) error {
 	if SkipVerify {
 		client.SkipVerify = true
 	}
+	if McProxy {
+		client.McProxy = true
+	}
 	return nil
 }
 
@@ -128,6 +142,15 @@ func getUri() string {
 		Addr = "http://" + Addr
 	}
 	return Addr + "/api/v1"
+}
+
+func getWSUri() string {
+	newAddr := Addr
+	if !strings.HasPrefix(Addr, "http") {
+		newAddr = "http://" + Addr
+	}
+	newAddr = strings.Replace(Addr, "http", "ws", -1)
+	return newAddr + "/ws/api/v1"
 }
 
 func addRegionComment(comments map[string]string) map[string]string {

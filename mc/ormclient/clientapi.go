@@ -46,6 +46,9 @@ type Api interface {
 	ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 	ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 
+	RunCommandStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
+	ShowLogsStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
+
 	FlavorApiClient
 	CloudletApiClient
 	CloudletInfoApiClient
