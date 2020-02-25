@@ -200,14 +200,14 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
 	`{{if .CellId}} AND "cellID"='{{.CellId}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
+	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "operator"='{{.OperatorName}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time < '{{.EndTime}}'{{end}}` +
+	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 func init() {
