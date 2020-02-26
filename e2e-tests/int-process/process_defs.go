@@ -61,9 +61,3 @@ type Exporter struct {
 	Port           int
 	cmd            *exec.Cmd
 }
-
-type NotifyRoot struct {
-	process.Common `yaml:",inline"`
-	TLS            process.TLSCerts
-	cmd            *exec.Cmd
-}

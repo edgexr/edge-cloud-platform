@@ -79,7 +79,7 @@ func (a *Adapter) createTable(ctx context.Context) error {
 		// For some reason, we still get a race condition even with
 		// IF NOT EXISTS. Perhaps the above command is not atomic.
 		// Detect the conflict and ignore.
-		if strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "pg_type_typname_nsp_index"`) {
+		if strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "pg_type_typname_nsp_index"`) || strings.Contains(err.Error(), `pq: relation "casbin_rule" already exists`) {
 			err = nil
 		}
 		log.SpanLog(ctx, log.DebugLevelInfo, "init adapter failed", "err", err)
