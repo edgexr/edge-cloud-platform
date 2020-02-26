@@ -71,7 +71,9 @@ func (s *AutoProvAggr) Start() {
 func (s *AutoProvAggr) Stop() {
 	s.mux.Lock()
 	close(s.stop)
+	s.mux.Unlock()
 	s.waitGroup.Wait()
+	s.mux.Lock()
 	s.allStats = nil
 	s.mux.Unlock()
 }

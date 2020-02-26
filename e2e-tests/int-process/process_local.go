@@ -463,28 +463,3 @@ func (p *Exporter) StopLocal() {
 func (p *Exporter) GetExeName() string { return "fakepromexporter" }
 
 func (p *Exporter) LookupArgs() string { return "" }
-
-func (p *NotifyRoot) StartLocal(logfile string, opts ...process.StartOp) error {
-	args := []string{}
-	if p.TLS.ServerCert != "" {
-		args = append(args, "--tls")
-		args = append(args, p.TLS.ServerCert)
-	}
-	options := process.StartOptions{}
-	options.ApplyStartOptions(opts...)
-	if options.Debug != "" {
-		args = append(args, "-d")
-		args = append(args, options.Debug)
-	}
-	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
-	return err
-}
-
-func (p *NotifyRoot) StopLocal() {
-	process.StopLocal(p.cmd)
-}
-
-func (p *NotifyRoot) GetExeName() string { return "notifyroot" }
-
-func (p *NotifyRoot) LookupArgs() string { return "" }
