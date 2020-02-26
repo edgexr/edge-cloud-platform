@@ -61,7 +61,13 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	// check cluster name if this is a VM App
-	if new.Key.ClusterInstKey.ClusterKey.Name == cloudcommon.DefaultVMCluster {
+	app := edgeproto.App{}
+	found := AppCache.Get(&new.Key.AppKey, &app)
+	if !found {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", new.Key.AppKey.Name)
+		return
+	}
+	if app.Deployment == cloudcommon.AppDeploymentTypeVM {
 		mapKey = new.Key.GetKeyString()
 		stats, exists := vmAppWorkerMap[mapKey]
 		if new.State == edgeproto.TrackedState_READY && !exists {
