@@ -115,6 +115,12 @@ module "console_dns" {
   ip                            = "${module.console.external_ip}"
 }
 
+module "console_vnc_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
 module "vault_a_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.vault_a_domain_name}"

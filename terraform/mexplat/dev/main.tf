@@ -132,6 +132,12 @@ module "console_dns" {
   ip                            = "${module.console.external_ip}"
 }
 
+module "console_vnc_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
 module "jaeger_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.jaeger_domain_name}"
