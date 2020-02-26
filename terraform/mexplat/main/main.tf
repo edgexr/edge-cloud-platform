@@ -114,6 +114,12 @@ module "console_dns" {
   ip                            = "${module.console.external_ip}"
 }
 
+module "console_vnc_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
 module "fw_vault_gcp" {
   source                        = "../../modules/fw_vault_gcp"
   firewall_name                 = "${var.environ_tag}-vault-fw-hc-and-proxy"

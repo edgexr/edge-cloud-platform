@@ -86,6 +86,11 @@ variable "console_domain_name" {
   type        = "string"
 }
 
+variable "console_vnc_domain_name" {
+  description = "Console VNC domain name"
+  type        = "string"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
