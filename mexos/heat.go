@@ -779,7 +779,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 		cp.VMParams, err = GetVMParams(ctx,
 			RootLBVMDeployment,
 			rootLBName,
-			clusterInst.NodeFlavor,
+			clusterInst.MasterNodeFlavor,
 			clusterInst.ExternalVolumeSize,
 			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
