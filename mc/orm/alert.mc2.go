@@ -820,6 +820,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// SharedVolumeSize: 28
 	// HealthCheck: 29
 	// PrivacyPolicy: 30
+	// PowerState: 31
 	// ```
 	// Security:
 	//   Bearer:

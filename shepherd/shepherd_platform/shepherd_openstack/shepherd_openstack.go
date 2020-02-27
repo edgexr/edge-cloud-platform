@@ -212,7 +212,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 		return appMetrics, fmt.Errorf("Nil App passed")
 	}
 
-	server, err := mexos.GetServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
+	server, err := mexos.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
 	if err != nil {
 		return appMetrics, err
 	}

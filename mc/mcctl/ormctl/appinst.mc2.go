@@ -39,8 +39,8 @@ var CreateAppInstCmd = &cli.Command{
 
 var DeleteAppInstCmd = &cli.Command{
 	Use:                  "DeleteAppInst",
-	RequiredArgs:         "region " + strings.Join(AppInstRequiredArgs, " "),
-	OptionalArgs:         strings.Join(AppInstOptionalArgs, " "),
+	RequiredArgs:         "region " + strings.Join(DeleteAppInstRequiredArgs, " "),
+	OptionalArgs:         strings.Join(DeleteAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
 	Comments:             addRegionComment(AppInstComments),
@@ -135,6 +135,54 @@ var CreateAppInstOptionalArgs = []string{
 	"healthcheck",
 	"privacypolicy",
 }
+var DeleteAppInstRequiredArgs = []string{
+	"developer",
+	"appname",
+	"appvers",
+	"cluster",
+	"operator",
+	"cloudlet",
+}
+var DeleteAppInstOptionalArgs = []string{
+	"clusterdeveloper",
+	"cloudletloc.latitude",
+	"cloudletloc.longitude",
+	"cloudletloc.horizontalaccuracy",
+	"cloudletloc.verticalaccuracy",
+	"cloudletloc.altitude",
+	"cloudletloc.course",
+	"cloudletloc.speed",
+	"cloudletloc.timestamp.seconds",
+	"cloudletloc.timestamp.nanos",
+	"uri",
+	"liveness",
+	"mappedports.proto",
+	"mappedports.internalport",
+	"mappedports.publicport",
+	"mappedports.pathprefix",
+	"mappedports.fqdnprefix",
+	"mappedports.endport",
+	"flavor",
+	"state",
+	"errors",
+	"crmoverride",
+	"runtimeinfo.containerids",
+	"createdat.seconds",
+	"createdat.nanos",
+	"autoclusteripaccess",
+	"status.tasknumber",
+	"status.maxtasks",
+	"status.taskname",
+	"status.stepname",
+	"revision",
+	"forceupdate",
+	"updatemultiple",
+	"configs.kind",
+	"configs.config",
+	"sharedvolumesize",
+	"healthcheck",
+	"privacypolicy",
+}
 var RefreshAppInstRequiredArgs = []string{
 	"developer",
 	"appname",
@@ -168,6 +216,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"healthcheck",
 	"privacypolicy",
+	"powerstate",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -219,6 +268,7 @@ var AppInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"healthcheck",
 	"privacypolicy",
+	"powerstate",
 }
 var AppInstAliasArgs = []string{
 	"developer=appinst.key.appkey.developerkey.name",
@@ -265,6 +315,7 @@ var AppInstAliasArgs = []string{
 	"sharedvolumesize=appinst.sharedvolumesize",
 	"healthcheck=appinst.healthcheck",
 	"privacypolicy=appinst.privacypolicy",
+	"powerstate=appinst.powerstate",
 }
 var AppInstComments = map[string]string{
 	"developer":                      "Organization or Company Name that a Developer is part of",
@@ -303,6 +354,7 @@ var AppInstComments = map[string]string{
 	"sharedvolumesize":               "shared volume size when creating auto cluster",
 	"healthcheck":                    "Health Check status, one of HealthCheckUnknown, HealthCheckFailRootlbOffline, HealthCheckFailServerFail, HealthCheckOk",
 	"privacypolicy":                  "Optional privacy policy name",
+	"powerstate":                     "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -339,6 +391,7 @@ var AppInstInfoOptionalArgs = []string{
 	"status.maxtasks",
 	"status.taskname",
 	"status.stepname",
+	"powerstate",
 }
 var AppInstInfoAliasArgs = []string{
 	"key.appkey.developerkey.name=appinstinfo.key.appkey.developerkey.name",
@@ -356,6 +409,7 @@ var AppInstInfoAliasArgs = []string{
 	"status.maxtasks=appinstinfo.status.maxtasks",
 	"status.taskname=appinstinfo.status.taskname",
 	"status.stepname=appinstinfo.status.stepname",
+	"powerstate=appinstinfo.powerstate",
 }
 var AppInstInfoComments = map[string]string{
 	"key.appkey.developerkey.name":                    "Organization or Company Name that a Developer is part of",
@@ -369,6 +423,7 @@ var AppInstInfoComments = map[string]string{
 	"state":                                           "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
 	"errors":                                          "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"runtimeinfo.containerids":                        "List of container names",
+	"powerstate":                                      "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"errors":                   "StringArray",

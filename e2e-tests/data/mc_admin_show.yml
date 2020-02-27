@@ -538,6 +538,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292120
         nanos: 292580000
@@ -567,6 +568,7 @@ regiondata:
       flavor:
         name: x1.medium
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292118
         nanos: 996693000
@@ -636,6 +638,7 @@ regiondata:
       flavor:
         name: x1.medium
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292119
         nanos: 70069000
@@ -674,6 +677,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292119
         nanos: 672179000
@@ -712,6 +716,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292119
         nanos: 745622000
@@ -741,6 +746,7 @@ regiondata:
       flavor:
         name: x1.medium
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1574292120
         nanos: 12800000
