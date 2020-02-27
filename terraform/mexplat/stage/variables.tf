@@ -113,6 +113,10 @@ variable "console_vnc_domain_name" {
   type        = "string"
 }
 
+variable "jaeger_domain_name" {
+  default     = "jaeger-stage.mobiledgex.net"
+}
+
 variable "vault_a_domain_name" {
   default     = "vault-stage-a.mobiledgex.net"
 }
