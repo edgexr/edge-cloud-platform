@@ -105,7 +105,7 @@ module "console" {
   instance_name       = "${var.console_instance_name}"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
-  tags                = [ "http-server", "https-server", "console-debug", "mc" ]
+  tags                = [ "http-server", "https-server", "console-debug", "mc", "jaeger", "alt-https" ]
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
@@ -118,6 +118,12 @@ module "console_dns" {
 module "console_vnc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "jaeger_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.jaeger_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 
