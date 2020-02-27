@@ -29,6 +29,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
       createdat:
         seconds: 1576628584
         nanos: 73154000

@@ -269,8 +269,8 @@ func CreateServer(ctx context.Context, opts *OSServerOpt) error {
 	return nil
 }
 
-// GetServerDetails returns details of the KVM instance
-func GetServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
+// GetActiveServerDetails returns details of the KVM instance waiting for it to be ACTIVE
+func GetActiveServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
 	active := false
 	srvDetail := &OSServerDetail{}
 	for i := 0; i < 10; i++ {
@@ -296,6 +296,23 @@ func GetServerDetails(ctx context.Context, name string) (*OSServerDetail, error)
 		return nil, fmt.Errorf("while getting server detail, waited but server %s is too slow getting to active state", name)
 	}
 	//log.SpanLog(ctx,log.DebugLevelMexos, "server detail", "server detail", srvDetail)
+	return srvDetail, nil
+}
+
+// GetServerDetails returns details of the KVM instance
+func GetServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
+	srvDetail := &OSServerDetail{}
+	out, err := TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
+	if err != nil {
+		err = fmt.Errorf("can't show server %s, %s, %v", name, out, err)
+		return nil, err
+	}
+	//fmt.Printf("%s\n", out)
+	err = json.Unmarshal(out, srvDetail)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal while getting server detail, %v", err)
+		return nil, err
+	}
 	return srvDetail, nil
 }
 
@@ -1024,4 +1041,16 @@ func AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string,
 		}
 	}
 	return pfImageName, nil
+}
+
+func OSSetPowerState(ctx context.Context, serverName, serverAction string) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "setting server state", "serverName", serverName, "serverAction", serverAction)
+
+	out, err := TimedOpenStackCommand(ctx, "openstack", "server", serverAction, serverName)
+	if err != nil {
+		err = fmt.Errorf("unable to %s server %s, %s, %v", serverAction, serverName, out, err)
+		return err
+	}
+
+	return nil
 }

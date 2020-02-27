@@ -126,29 +126,12 @@ func GetAllowedClientCIDR() string {
 	return "0.0.0.0/0"
 }
 
-//GetServerIPAddr gets the server IP.  If the IP found is a pair of internal to floating IP, then the
-// returnIPType is used to determine which to return
-func GetServerIPAddr(ctx context.Context, networkName, serverName string, returnIPType string) (string, error) {
-
-	// if this is a root lb, look it up and get the IP if we have it cached, unless we are looking for an internal IP
-	if returnIPType != InternalIPType {
-		rootLB, err := getRootLB(ctx, serverName)
-		if err == nil && rootLB != nil {
-			if rootLB.IP != "" {
-				log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
-				return rootLB.IP, nil
-			}
-		}
-	}
-	sd, err := GetServerDetails(ctx, serverName)
-	if err != nil {
-		return "", err
-	}
-	its := strings.Split(sd.Addresses, ";")
+func GetServerExternalIPFromAddr(ctx context.Context, networkName, addresses, serverName, returnIPType string) (string, error) {
+	its := strings.Split(addresses, ";")
 	for _, it := range its {
 		sits := strings.Split(it, "=")
 		if len(sits) != 2 {
-			return "", fmt.Errorf("GetServerIPAddr: Unable to parse '%s'", it)
+			return "", fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", it)
 		}
 		if strings.Contains(sits[0], networkName) {
 			addr := sits[1]
@@ -164,7 +147,7 @@ func GetServerIPAddr(ctx context.Context, networkName, serverName string, return
 						addr = addrs[0]
 					}
 				} else {
-					return "", fmt.Errorf("GetServerIPAddr: Unable to parse '%s'", addr)
+					return "", fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
 				}
 			}
 			addr = strings.TrimSpace(addr)
@@ -172,7 +155,28 @@ func GetServerIPAddr(ctx context.Context, networkName, serverName string, return
 			return addr, nil
 		}
 	}
-	return "", fmt.Errorf("GetServerIPAddr: Unable to find network %s for server %s", networkName, serverName)
+	return "", fmt.Errorf("Unable to find network %s for server %s", networkName, serverName)
+}
+
+//GetServerIPAddr gets the server IP.  If the IP found is a pair of internal to floating IP, then the
+// returnIPType is used to determine which to return
+func GetServerIPAddr(ctx context.Context, networkName, serverName string, returnIPType string) (string, error) {
+
+	// if this is a root lb, look it up and get the IP if we have it cached, unless we are looking for an internal IP
+	if returnIPType != InternalIPType {
+		rootLB, err := getRootLB(ctx, serverName)
+		if err == nil && rootLB != nil {
+			if rootLB.IP != "" {
+				log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
+				return rootLB.IP, nil
+			}
+		}
+	}
+	sd, err := GetActiveServerDetails(ctx, serverName)
+	if err != nil {
+		return "", err
+	}
+	return GetServerExternalIPFromAddr(ctx, networkName, sd.Addresses, serverName, returnIPType)
 }
 
 //FindNodeIP finds IP for the given node

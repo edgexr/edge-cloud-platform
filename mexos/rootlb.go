@@ -136,7 +136,7 @@ func SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("cannot find rootlb in map %s", rootLBName)
 	}
-	sd, err := GetServerDetails(ctx, rootLBName)
+	sd, err := GetActiveServerDetails(ctx, rootLBName)
 	if err == nil && sd.Name == rootLBName {
 		log.SpanLog(ctx, log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
 	} else if rootLBSpec != nil {

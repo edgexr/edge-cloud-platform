@@ -159,3 +159,7 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
 	return "", fmt.Errorf("Unsupported command for platform")
 }
+
+func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Unsupported command for platform")
+}

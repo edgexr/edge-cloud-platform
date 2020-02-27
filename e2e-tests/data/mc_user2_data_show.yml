@@ -393,6 +393,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
     - key:
         appkey:
           developerkey:
@@ -428,6 +429,7 @@ regiondata:
       flavor:
         name: x1.small
       state: Ready
+      powerstate: PowerOn
 
     autoprovpolicies:
     - key:

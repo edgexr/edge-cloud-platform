@@ -114,6 +114,10 @@ func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (strin
 	return s.generic.GetConsoleUrl(ctx, app)
 }
 
+func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.generic.SetPowerState(ctx, app, appInst, updateCallback)
+}
+
 // GetDINDServiceIP depending on the type of DIND cluster will return either the interface or external address
 func (s *Platform) GetDINDServiceIP(ctx context.Context) (string, error) {
 	if s.NetworkScheme == cloudcommon.NetworkSchemePrivateIP {
