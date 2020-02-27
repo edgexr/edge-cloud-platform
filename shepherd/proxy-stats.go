@@ -43,6 +43,7 @@ type ProxyScrapePoint struct {
 	Dev               string
 	Ports             []int32
 	Client            ssh.Client
+	ProxyContainer    string
 }
 
 func InitProxyScraper() {
@@ -59,6 +60,30 @@ func StartProxyScraper() {
 
 func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
 	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" + appInstKey.AppKey.DeveloperKey.Name
+}
+
+// Figure out envoy proxy container name
+func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (string, error) {
+	container := proxy.GetEnvoyContainerName(scrapePoint.App)
+	request := fmt.Sprintf("docker exec %s echo hello", container)
+	resp, err := scrapePoint.Client.Output(request)
+	if err != nil && strings.Contains(resp, "No such container") {
+		// try the docker name if it fails
+		container = proxy.GetEnvoyContainerName(dockermgmt.GetContainerName(&scrapePoint.Key.AppKey))
+		request = fmt.Sprintf("docker exec %s echo hello", container)
+		resp, err = scrapePoint.Client.Output(request)
+		// Perhaps this is nginx
+		if err != nil && strings.Contains(resp, "No such container") {
+			container = "nginx"
+			request := fmt.Sprintf("docker exec %s echo hello", scrapePoint.App)
+			resp, err = scrapePoint.Client.Output(request)
+		}
+	}
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
+		return "", err
+	}
+	return container, nil
 }
 
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
@@ -101,6 +126,12 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 		if err != nil {
 			// If we cannot get a platform client no point in trying to get metrics
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
+			return
+		}
+		// Now that we have a client - figure out what container name we should ping
+		scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, scrapePoint)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
 			return
 		}
 		ProxyMutex.Lock()
@@ -158,19 +189,12 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	span, hcCtx := SetupHealthCheckSpan(&scrapePoint.Key)
 	defer span.Finish()
 	// query envoy
-	container := proxy.GetEnvoyContainerName(scrapePoint.App)
-	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", container, cloudcommon.ProxyMetricsPort)
-	resp, err := scrapePoint.Client.Output(request)
-	if err != nil && strings.Contains(resp, "No such container") {
-		// try the docker name if it fails
-		container = proxy.GetEnvoyContainerName(dockermgmt.GetContainerName(&scrapePoint.Key.AppKey))
-		request = fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", container, cloudcommon.ProxyMetricsPort)
-		resp, err = scrapePoint.Client.Output(request)
+	if scrapePoint.ProxyContainer == "nginx" {
+		return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
 	}
+	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
+	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
 	if err != nil {
-		if strings.Contains(resp, "No such container") {
-			return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
-		}
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		// Also this means that we need to notify the controller that this AppInst is no longer recheable
 		HealthCheckRootLbDown(hcCtx, &scrapePoint.Key)
@@ -328,7 +352,7 @@ func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	defer span.Finish()
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
-	resp, err := scrapePoint.Client.Output(request)
+	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
 	// if this is the first time, or the container got restarted, install curl (for old deployments)
 	if strings.Contains(resp, "executable file not found") {
 		log.SpanLog(ctx, log.DebugLevelMexos, "Installing curl onto docker container ", "Container", scrapePoint.App)
@@ -338,7 +362,7 @@ func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 			return nil, fmt.Errorf("can't install curl on nginx container %s, %s, %v", *name, resp, err)
 		}
 		// now retry curling
-		resp, err = scrapePoint.Client.Output(request)
+		resp, err = scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
 	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())

@@ -119,7 +119,7 @@ func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
 	if !ok {
 		return fmt.Errorf("unable to cast client to native client")
 	}
-	session, sessionInfo, err := client.Session()
+	session, sessionInfo, err := client.Session(client.DefaultClientConfig.Timeout)
 	if err != nil {
 		return err
 	}
