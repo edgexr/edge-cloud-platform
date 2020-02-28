@@ -187,6 +187,7 @@ def slack_users(token):
         if not email:
             logging.warning(f"Skipping user with no email: {user['name']}")
             continue
+        email = email.lower()
         userid = user['id']
         username = user['name']
         users['by_email'][email] = {
@@ -216,7 +217,7 @@ def slack_channel_members(token, channel, usermap={}):
     for member in r:
         member = mapped_user(member)
         if member:
-            members.append(member)
+            members.append(member.lower())
 
     return members
 
@@ -311,7 +312,7 @@ def main():
     # Get a list of MC orgs and the users in each
     for user in users:
         username = user['Name']
-        useremail = user['Email']
+        useremail = user['Email'].lower()
         if username not in userorgs:
             if username in SPECIAL_ORG_USERS:
                 logging.info(f"user in special orgs: {username}")
