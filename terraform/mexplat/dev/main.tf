@@ -98,6 +98,7 @@ module "console" {
     "jaeger",
     "alt-https",
     "vault-ac",
+    "notifyroot",
     "${module.fw_vault_gcp.target_tag}"
   ]
   labels              = {
@@ -135,6 +136,12 @@ module "console_dns" {
 module "console_vnc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "notifyroot_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.notifyroot_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 

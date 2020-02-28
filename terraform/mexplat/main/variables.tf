@@ -91,6 +91,11 @@ variable "console_vnc_domain_name" {
   type        = "string"
 }
 
+variable "notifyroot_domain_name" {
+  description = "Notifyroot service domain name"
+  type        = "string"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
