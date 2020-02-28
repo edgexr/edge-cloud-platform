@@ -28,7 +28,9 @@ func main() {
 	logsCmd := ormctl.GetShowLogsCmd()
 	logsCmd.PersistentFlags().BoolVar(&ormctl.McProxy, "mcproxy", false, "use MC as proxy for WebRTC connection")
 	regionCmds.AddCommand(logsCmd)
-	regionCmds.AddCommand(ormctl.GetRunConsoleCmd())
+	consoleCmd := ormctl.GetRunConsoleCmd()
+	consoleCmd.PersistentFlags().BoolVar(&ormctl.McProxy, "mcproxy", false, "use MC as proxy for WebRTC connection")
+	regionCmds.AddCommand(consoleCmd)
 
 	rootCmd.AddCommand(regionCmds)
 	rootCmd.AddCommand(ormctl.GetConfigCommand())
