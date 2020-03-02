@@ -17,6 +17,7 @@ It is generated from these files:
 	clusterinst.proto
 	common.proto
 	controller.proto
+	debug.proto
 	developer.proto
 	exec.proto
 	flavor.proto
@@ -76,6 +77,8 @@ It has these top-level messages:
 	StatusInfo
 	ControllerKey
 	Controller
+	DebugRequest
+	DebugReply
 	DeveloperKey
 	Developer
 	RunCmd
@@ -1069,6 +1072,56 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
+	// swagger:route POST /auth/ctrl/ShowNode Node ShowNode
+	// Show all Nodes connected to all Controllers.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowNode", ShowNode)
+	// swagger:route POST /auth/ctrl/EnableDebugLevels DebugRequest EnableDebugLevels
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/EnableDebugLevels", EnableDebugLevels)
+	// swagger:route POST /auth/ctrl/DisableDebugLevels DebugRequest DisableDebugLevels
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DisableDebugLevels", DisableDebugLevels)
+	// swagger:route POST /auth/ctrl/ShowDebugLevels DebugRequest ShowDebugLevels
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowDebugLevels", ShowDebugLevels)
+	// swagger:route POST /auth/ctrl/RunDebug DebugRequest RunDebug
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RunDebug", RunDebug)
 	// swagger:route POST /auth/ctrl/RunCommand ExecRequest RunCommand
 	// Run a Command or Shell on a container.
 	// Security:
@@ -1099,16 +1152,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowLogs", ShowLogs)
-	// swagger:route POST /auth/ctrl/ShowNode Node ShowNode
-	// Show all Nodes connected to all Controllers.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowNode", ShowNode)
 	// swagger:route POST /auth/ctrl/CreatePrivacyPolicy PrivacyPolicy CreatePrivacyPolicy
 	// Create a Privacy Policy.
 	// Security:

@@ -46,6 +46,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "nodeshow" {
 		return runMcShowNode(uri, curUserFile, outputDir, vars)
+	} else if strings.HasPrefix(api, "debug") {
+		return runMcDebug(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	}
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 }
@@ -920,5 +922,55 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars map[string]string) b
 	appdata := edgeproto.ApplicationData{}
 	appdata.Nodes = nodes
 	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
+	return rc
+}
+
+func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+	log.Printf("Running %s MC debug APIs for %s %v\n", api, apiFile, mods)
+
+	if apiFile == "" {
+		log.Println("Error: Cannot run MC audit APIs without API file")
+		return false
+	}
+
+	rc := true
+	token, rc := loginCurUser(uri, curUserFile, vars)
+	if !rc {
+		return false
+	}
+	data := util.DebugData{}
+	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
+		os.Exit(1)
+	}
+
+	output := util.DebugOutput{}
+	for _, r := range data.Requests {
+		var replies []edgeproto.DebugReply
+		var status int
+		var err error
+		req := ormapi.RegionDebugRequest{
+			DebugRequest: r,
+		}
+		switch api {
+		case "debugenable":
+			replies, status, err = mcClient.EnableDebugLevels(uri, token, &req)
+			checkMcErr("EnableDebugLevels", status, err, &rc)
+		case "debugdisable":
+			replies, status, err = mcClient.DisableDebugLevels(uri, token, &req)
+			checkMcErr("DisableDebugLevels", status, err, &rc)
+		case "debugshow":
+			replies, status, err = mcClient.ShowDebugLevels(uri, token, &req)
+			checkMcErr("ShowDebugLevels", status, err, &rc)
+		case "debugrun":
+			replies, status, err = mcClient.RunDebug(uri, token, &req)
+			checkMcErr("RunDebug", status, err, &rc)
+		}
+		if err == nil && len(replies) > 0 {
+			output.Replies = append(output.Replies, replies)
+		}
+	}
+	util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 	return rc
 }

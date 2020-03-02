@@ -65,4 +65,5 @@ type Api interface {
 	SettingsApiClient
 	AppInstClientApiClient
 	NodeApiClient
+	DebugApiClient
 }

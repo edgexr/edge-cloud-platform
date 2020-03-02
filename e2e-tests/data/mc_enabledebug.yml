@@ -1,0 +1,22 @@
+requests:
+- node:
+    type: controller
+  levels: upgrade
+- node:
+    type: dme
+  levels: etcd,sampled
+- node:
+    type: crm
+  levels: metrics,sampled,upgrade
+- node:
+    type: cluster-svc
+  levels: metrics,etcd
+- node:
+    type: autoprov
+  levels: sampled
+- node:
+    type: shepherd
+  levels: sampled,info
+- node:
+    type: mc
+  levels: notify,info

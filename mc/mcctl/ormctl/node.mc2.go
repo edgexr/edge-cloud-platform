@@ -43,25 +43,29 @@ var NodeKeyOptionalArgs = []string{
 	"type",
 	"cloudletkey.operatorkey.name",
 	"cloudletkey.name",
+	"region",
 }
 var NodeKeyAliasArgs = []string{
 	"name=nodekey.name",
 	"type=nodekey.type",
 	"cloudletkey.operatorkey.name=nodekey.cloudletkey.operatorkey.name",
 	"cloudletkey.name=nodekey.cloudletkey.name",
+	"region=nodekey.region",
 }
 var NodeKeyComments = map[string]string{
 	"name":                         "Name or hostname of node",
 	"type":                         "Node type",
 	"cloudletkey.operatorkey.name": "Company or Organization name of the operator",
 	"cloudletkey.name":             "Name of the cloudlet",
+	"region":                       "Region the node is in",
 }
 var NodeKeySpecialArgs = map[string]string{}
 var NodeRequiredArgs = []string{
-	"key.name",
-	"key.type",
-	"key.cloudletkey.operatorkey.name",
-	"key.cloudletkey.name",
+	"name",
+	"type",
+	"operator",
+	"cloudlet",
+	"region",
 }
 var NodeOptionalArgs = []string{
 	"notifyid",
@@ -72,10 +76,11 @@ var NodeOptionalArgs = []string{
 	"containerversion",
 }
 var NodeAliasArgs = []string{
-	"key.name=node.key.name",
-	"key.type=node.key.type",
-	"key.cloudletkey.operatorkey.name=node.key.cloudletkey.operatorkey.name",
-	"key.cloudletkey.name=node.key.cloudletkey.name",
+	"name=node.key.name",
+	"type=node.key.type",
+	"operator=node.key.cloudletkey.operatorkey.name",
+	"cloudlet=node.key.cloudletkey.name",
+	"region=node.key.region",
 	"notifyid=node.notifyid",
 	"buildmaster=node.buildmaster",
 	"buildhead=node.buildhead",
@@ -84,15 +89,16 @@ var NodeAliasArgs = []string{
 	"containerversion=node.containerversion",
 }
 var NodeComments = map[string]string{
-	"key.name":                         "Name or hostname of node",
-	"key.type":                         "Node type",
-	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
-	"key.cloudletkey.name":             "Name of the cloudlet",
-	"notifyid":                         "Id of client assigned by server (internal use only)",
-	"buildmaster":                      "Build Master Version",
-	"buildhead":                        "Build Head Version",
-	"buildauthor":                      "Build Author",
-	"hostname":                         "Hostname",
-	"containerversion":                 "Docker edge-cloud container version which node instance use",
+	"name":             "Name or hostname of node",
+	"type":             "Node type",
+	"operator":         "Company or Organization name of the operator",
+	"cloudlet":         "Name of the cloudlet",
+	"region":           "Region the node is in",
+	"notifyid":         "Id of client assigned by server (internal use only)",
+	"buildmaster":      "Build Master Version",
+	"buildhead":        "Build Head Version",
+	"buildauthor":      "Build Author",
+	"hostname":         "Hostname",
+	"containerversion": "Docker edge-cloud container version which node instance use",
 }
 var NodeSpecialArgs = map[string]string{}
