@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
@@ -364,7 +365,11 @@ func (s *Client) WebsocketConn(uri, token string, reqData interface{}) (*websock
 	var ws *websocket.Conn
 	var err error
 	if strings.HasPrefix(uri, "wss") {
-		d := websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		d := websocket.Dialer{
+			Proxy:            http.ProxyFromEnvironment,
+			HandshakeTimeout: 45 * time.Second,
+			TLSClientConfig:  &tls.Config{InsecureSkipVerify: true},
+		}
 		ws, _, err = d.Dial(uri, nil)
 	} else {
 		ws, _, err = websocket.DefaultDialer.Dial(uri, nil)

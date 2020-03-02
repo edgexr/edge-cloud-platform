@@ -695,6 +695,8 @@ func (s *Server) setupConsoleProxy(ctx context.Context) {
 			if len(addrObj) == 2 {
 				req.URL.Host = strings.Replace(req.URL.Host, addrObj[1], port, -1)
 			}
+		} else {
+			req.Close = true
 		}
 		if _, ok := req.Header["User-Agent"]; !ok {
 			// explicitly disable User-Agent so it's not set to default value
@@ -720,10 +722,9 @@ func (s *Server) setupConsoleProxy(ctx context.Context) {
 			token := tokenVals[0]
 			expire := time.Now().Add(10 * time.Minute)
 			cookie := http.Cookie{
-				Name:     "mextoken",
-				Value:    tokenVals[0],
-				Expires:  expire,
-				SameSite: http.SameSiteStrictMode,
+				Name:    "mextoken",
+				Value:   tokenVals[0],
+				Expires: expire,
 			}
 			http.SetCookie(w, &cookie)
 			log.SpanLog(ctx, log.DebugLevelInfo, "setup console proxy cookies", "url", r.URL, "token", token)
