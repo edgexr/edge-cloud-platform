@@ -1,0 +1,38 @@
+tests:
+
+- name: show debug levels
+  apifile: "{{datadir}}/showdebug.yml"
+  actions: [mcapi-debugshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: "{{outputdir}}/api-output.yml"
+    yaml2: "{{datadir2}}/mc_showdebug_output.yml"
+    filetype: debugoutput
+
+- name: enable debug levels
+  apifile: "{{datadir2}}/mc_enabledebug.yml"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  actions: [mcapi-debugenable]
+
+- name: show debug levels (enabled)
+  apifile: "{{datadir}}/showdebug.yml"
+  actions: [mcapi-debugshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: "{{outputdir}}/api-output.yml"
+    yaml2: "{{datadir2}}/mc_enabledebug_output.yml"
+    filetype: debugoutput
+
+- name: disable debug levels
+  apifile: "{{datadir2}}/mc_enabledebug.yml"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  actions: [mcapi-debugdisable]
+
+- name: show debug levels (restored)
+  apifile: "{{datadir}}/showdebug.yml"
+  actions: [mcapi-debugshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: "{{outputdir}}/api-output.yml"
+    yaml2: "{{datadir2}}/mc_showdebug_output.yml"
+    filetype: debugoutput
