@@ -9,6 +9,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -133,6 +134,7 @@ func (s *Platform) deleteCluster(ctx context.Context, rootLBName string, cluster
 		return err
 	}
 	if dedicatedRootLB {
+		proxy.RemoveDedicatedCluster(ctx, clusterInst.Key.ClusterKey.Name)
 		mexos.DeleteRootLB(rootLBName)
 	}
 	return nil
@@ -255,6 +257,9 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 		if err := mexos.CreateClusterConfigMap(ctx, client, clusterInst); err != nil {
 			return err
 		}
+	}
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		proxy.NewDedicatedCluster(ctx, clusterInst.Key.ClusterKey.Name, client)
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "created kubernetes cluster")
 	return nil
