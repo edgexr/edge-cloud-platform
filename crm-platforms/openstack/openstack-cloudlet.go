@@ -315,11 +315,11 @@ func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	}
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 
-	external_ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name, mexos.ExternalIPType)
+	ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name)
 	if err != nil {
 		return nil, err
 	}
-	updateCallback(edgeproto.UpdateTask, "Platform VM external IP: "+external_ip)
+	updateCallback(edgeproto.UpdateTask, "Platform VM external IP: "+ip.ExternalAddr)
 
 	client, err := mexos.GetSSHClient(ctx, platform_vm_name, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
@@ -329,7 +329,7 @@ func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	// setup SSH access to cloudlet for CRM
 	updateCallback(edgeproto.UpdateTask, "Setting up security group for SSH access")
 
-	if err := mexos.AddSecurityRuleCIDR(ctx, external_ip, "tcp", secGrp, "22"); err != nil {
+	if err := mexos.AddSecurityRuleCIDR(ctx, ip.ExternalAddr, "tcp", secGrp, "22"); err != nil {
 		return nil, fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
 	}
 

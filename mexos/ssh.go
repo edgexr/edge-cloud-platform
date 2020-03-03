@@ -40,14 +40,14 @@ func (o *SSHOptions) Apply(ops []SSHClientOp) {
 func CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
 	log.SpanLog(ctx, log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	addr, err := GetServerIPAddr(ctx, networkName, serverName, ExternalIPType)
+	ip, err := GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return err
 	}
 	kf := PrivateSSHKey()
-	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, kf, userName+"@"+addr+":").Output()
+	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, kf, userName+"@"+ip.ExternalAddr+":").Output()
 	if err != nil {
-		return fmt.Errorf("can't copy %s to %s, %s, %v", kf, addr, out, err)
+		return fmt.Errorf("can't copy %s to %s, %s, %v", kf, ip.ExternalAddr, out, err)
 	}
 	return nil
 }
@@ -58,7 +58,7 @@ func GetSSHClient(ctx context.Context, serverName, networkName, userName string,
 	opts := SSHOptions{Timeout: DefaultConnectTimeout}
 	opts.Apply(ops)
 
-	addr, err := GetServerIPAddr(ctx, networkName, serverName, ExternalIPType)
+	addr, err := GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func GetSSHClient(ctx context.Context, serverName, networkName, userName string,
 		if err != nil {
 			return nil, err
 		}
-		client, err = client.AddHop(addr, 22)
+		client, err = client.AddHop(addr.ExternalAddr, 22)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		client, err = ssh.NewNativeClient(userName, ClientVersion, addr, 22, &auth, opts.Timeout, nil)
+		client, err = ssh.NewNativeClient(userName, ClientVersion, addr.ExternalAddr, 22, &auth, opts.Timeout, nil)
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "Created SSH Client", "addr", addr, "gwhost", gwhost, "timeout", opts.Timeout)
 	if err != nil {
