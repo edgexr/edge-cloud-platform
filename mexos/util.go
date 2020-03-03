@@ -36,17 +36,6 @@ func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, ku
 	}
 	go func() {
 		if addProxy {
-			if aac.LbTlsCertCommonName != "" {
-				var tlsCert access.TLSCert
-				proxyerr := GetCertFromVault(ctx, vaultConfig, aac.LbTlsCertCommonName, &tlsCert)
-				log.SpanLog(ctx, log.DebugLevelMexos, "got cert from vault", "tlsCert", tlsCert, "err", err)
-				if proxyerr != nil {
-					log.SpanLog(ctx, log.DebugLevelMexos, "Error getting cert from vault", "err", err)
-					proxychan <- proxyerr.Error()
-					return
-				}
-				ops = append(ops, proxy.WithTLSCert(&tlsCert))
-			}
 			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, ops...)
 			if proxyerr == nil {
 				proxychan <- ""
