@@ -24,6 +24,26 @@ path "auth/approle/login" {
   capabilities = [ "create", "read" ]
 }
 
+path "auth/approle/role/+/role-id" {
+  capabilities = [ "read" ]
+}
+
+path "auth/approle/role/+/secret-id" {
+  capabilities = [ "create", "update" ]
+}
+
+path "auth/approle/role/+/secret-id-accessor/destroy" {
+  capabilities = [ "create", "update" ]
+}
+
+path "secret/data/approle/accessors/*" {
+  capabilities = [ "create", "update", "read" ]
+}
+
+path "secret/metadata/approle/accessors/*" {
+  capabilities = [ "list" ]
+}
+
 path "secret/data/ansible/${ENVIRON}/*" {
   capabilities = [ "read" ]
 }
