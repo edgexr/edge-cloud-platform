@@ -14,8 +14,13 @@ import (
 // NetworkTypeVLAN is an OpenStack provider network type
 const NetworkTypeVLAN string = "vlan"
 
-const ExternalIPType string = "external"
-const InternalIPType string = "internal"
+// ServerIP is an IP address for a given network on a port.  In the case of floating IPs, there are both
+// internal and external addresses which are associated via NAT.   In the non floating case, the external and internal are the same
+type ServerIP struct {
+	InternalAddr           string // this is the address used inside the server
+	ExternalAddr           string // this is external with respect to the server, not necessarily internet reachable.  Can be a floating IP
+	ExternalAddrIsFloating bool
+}
 
 type NetSpecInfo struct {
 	Name, CIDR        string
@@ -126,57 +131,55 @@ func GetAllowedClientCIDR() string {
 	return "0.0.0.0/0"
 }
 
-func GetServerExternalIPFromAddr(ctx context.Context, networkName, addresses, serverName, returnIPType string) (string, error) {
+// GetServerIPFromAddrs gets the ServerIP forthe given network from the addresses provided
+func GetServerIPFromAddrs(ctx context.Context, networkName, addresses, serverName string) (*ServerIP, error) {
+	var serverIP ServerIP
 	its := strings.Split(addresses, ";")
 	for _, it := range its {
 		sits := strings.Split(it, "=")
 		if len(sits) != 2 {
-			return "", fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", it)
+			return &serverIP, fmt.Errorf("GetServerIPFromAddrs: Unable to parse '%s'", it)
 		}
 		if strings.Contains(sits[0], networkName) {
 			addr := sits[1]
-			// the comma indicates a floating IP is present.   If we specified to return
-			// the external IP, return the value after the comma, which is the floating IP.
-			// If we specified to return the internal IP, return the value before the comma
+			// the comma indicates a floating IP is present.
 			if strings.Contains(addr, ",") {
 				addrs := strings.Split(addr, ",")
 				if len(addrs) == 2 {
-					if returnIPType == ExternalIPType {
-						addr = addrs[1]
-					} else {
-						addr = addrs[0]
-					}
+					serverIP.InternalAddr = strings.TrimSpace(addrs[0])
+					serverIP.ExternalAddr = strings.TrimSpace(addrs[1])
+					serverIP.ExternalAddrIsFloating = true
 				} else {
-					return "", fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
+					return &serverIP, fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
 				}
+			} else {
+				// no floating IP, internal and external are the same
+				addr = strings.TrimSpace(addr)
+				serverIP.InternalAddr = addr
+				serverIP.ExternalAddr = addr
 			}
-			addr = strings.TrimSpace(addr)
 			log.SpanLog(ctx, log.DebugLevelMexos, "retrieved server ipaddr", "ipaddr", addr, "netname", networkName, "servername", serverName)
-			return addr, nil
+			return &serverIP, nil
 		}
 	}
-	return "", fmt.Errorf("Unable to find network %s for server %s", networkName, serverName)
+	return &serverIP, fmt.Errorf("Unable to find network %s for server %s", networkName, serverName)
 }
 
-//GetServerIPAddr gets the server IP.  If the IP found is a pair of internal to floating IP, then the
-// returnIPType is used to determine which to return
-func GetServerIPAddr(ctx context.Context, networkName, serverName string, returnIPType string) (string, error) {
-
-	// if this is a root lb, look it up and get the IP if we have it cached, unless we are looking for an internal IP
-	if returnIPType != InternalIPType {
-		rootLB, err := getRootLB(ctx, serverName)
-		if err == nil && rootLB != nil {
-			if rootLB.IP != "" {
-				log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "addr", rootLB.IP)
-				return rootLB.IP, nil
-			}
+//GetServerIPAddr gets the server IP(s) for the given network
+func GetServerIPAddr(ctx context.Context, networkName, serverName string) (*ServerIP, error) {
+	// if this is a root lb, look it up and get the IP if we have it cached
+	rootLB, err := getRootLB(ctx, serverName)
+	if err == nil && rootLB != nil {
+		if rootLB.IP != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "IP", rootLB.IP)
+			return rootLB.IP, nil
 		}
 	}
 	sd, err := GetActiveServerDetails(ctx, serverName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return GetServerExternalIPFromAddr(ctx, networkName, sd.Addresses, serverName, returnIPType)
+	return GetServerIPFromAddrs(ctx, networkName, sd.Addresses, serverName)
 }
 
 //FindNodeIP finds IP for the given node

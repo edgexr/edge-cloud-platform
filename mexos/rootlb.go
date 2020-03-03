@@ -20,7 +20,7 @@ import (
 //MEXRootLB has rootLB data
 type MEXRootLB struct {
 	Name string
-	IP   string
+	IP   *ServerIP
 }
 
 var rootLBLock sync.Mutex
@@ -167,12 +167,12 @@ func SetupRootLB(
 		log.SpanLog(ctx, log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
-	extIP, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName, ExternalIPType)
+	ip, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "set rootLB IP to", "ip", extIP)
-	rootLB.IP = extIP
+	log.SpanLog(ctx, log.DebugLevelMexos, "set rootLB IP to", "ip", ip)
+	rootLB.IP = ip
 
 	client, err := SetupSSHUser(ctx, rootLB, SSHUser)
 	if err != nil {
@@ -188,7 +188,7 @@ func SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
 	}
-	if err = ActivateFQDNA(ctx, rootLBName, extIP); err != nil {
+	if err = ActivateFQDNA(ctx, rootLBName, ip.ExternalAddr); err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated", "name", rootLB.Name)

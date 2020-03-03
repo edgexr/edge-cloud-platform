@@ -347,7 +347,7 @@ func AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, root
 	if err != nil {
 		return err
 	}
-	rootLbIp, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName, InternalIPType)
+	rootLbIp, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "fail to get RootLB IP address", "rootLBName", rootLBName)
 
@@ -358,7 +358,7 @@ func AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, root
 		return err
 	}
 
-	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLbIp, internalPortName, internalIPAddr, actionAdd)
+	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLbIp.InternalAddr, internalPortName, internalIPAddr, actionAdd)
 	if err != nil {
 		deterr := DetachPortFromServer(ctx, rootLBName, internalPortName)
 		if deterr != nil {
@@ -377,7 +377,10 @@ func DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, roo
 		// this is unexpected
 		return fmt.Errorf("Cannot find rootLB %s", rootLBName)
 	}
-	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLB.IP, internalPortName, internalIPAddr, actionDelete)
+	if rootLB.IP == nil {
+		return fmt.Errorf("rootLB has no IP %s", rootLBName)
+	}
+	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLB.IP.ExternalAddr, internalPortName, internalIPAddr, actionDelete)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "error in configureInternalInterfaceAndExternalForwarding", "err", err)
 	}
