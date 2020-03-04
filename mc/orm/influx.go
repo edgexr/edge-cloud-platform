@@ -24,6 +24,8 @@ var operatorInfluxDBTemplate *template.Template
 // 100 values at a time
 var queryChunkSize = 100
 
+var MaxEntriesFromInfluxDb = 2000
+
 type InfluxDBContext struct {
 	region string
 	claims *UserClaims
@@ -259,6 +261,10 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 		if err == nil {
 			q.EndTime = string(buf)
 		}
+	}
+	// We set max number of responses we will get from InfluxDB
+	if q.Last == 0 {
+		q.Last = MaxEntriesFromInfluxDb
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
