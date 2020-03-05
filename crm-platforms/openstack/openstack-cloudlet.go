@@ -586,6 +586,10 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		mexos.RootLBVMDeployment:   rlbClient,
 	}
 	for vmType, client := range upgradeMap {
+		if cloudlet.PackageVersion == "" {
+			// No package upgrade required
+			break
+		}
 		pkgVersion, err := getCRMPkgVersion(ctx, client)
 		if err != nil {
 			return defCloudletAction, err
@@ -601,7 +605,6 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Failed to upgrade cloudlet packages of vm type %s to version %s, please upgrade them manually!", vmType, cloudlet.PackageVersion))
 			return defCloudletAction, err
 		}
-
 	}
 
 	if containerVersion == cloudlet.ContainerVersion {

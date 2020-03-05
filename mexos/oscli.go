@@ -682,6 +682,12 @@ func CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string)
 		return err
 	}
 	filePath := "/tmp/" + fileExt
+	defer func() {
+		// Stale file might be present if download fails/succeeds, deleting it
+		if delerr := DeleteFile(filePath); delerr != nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "delete file failed", "filePath", filePath)
+		}
+	}()
 	err = DownloadFile(ctx, imageUrl, filePath)
 	if err != nil {
 		return fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
@@ -699,9 +705,6 @@ func CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string)
 	}
 
 	err = CreateImage(ctx, imageName, filePath)
-	if delerr := DeleteFile(filePath); delerr != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "delete file failed", "filePath", filePath)
-	}
 	if err != nil {
 		return fmt.Errorf("error creating image %v", err)
 	}
