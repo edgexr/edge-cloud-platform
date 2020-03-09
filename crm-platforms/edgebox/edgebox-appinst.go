@@ -66,7 +66,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
-	if err = mexos.CreateAppDNS(ctx, client, names, mexos.NoDnsOverride, getDnsAction); err != nil {
+	if err = mexos.CreateAppDNSAndPatchKubeSvc(ctx, client, names, mexos.NoDnsOverride, getDnsAction); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "cannot add DNS entries", "error", err)
 		return err
 	}

@@ -38,7 +38,7 @@ var NoDnsOverride = ""
 // The passed in GetDnsSvcActionFunc function should provide this function
 // with the actions to perform for each service, since different platforms
 // will use different IPs and patching.
-func CreateAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
+func CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "createAppDNS")
 	useDns := true
@@ -137,17 +137,28 @@ func DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.Kub
 		if overrideDns != "" {
 			fqdn = overrideDns
 		}
-		recs, derr := cloudflare.GetDNSRecords(ctx, GetCloudletDNSZone(), fqdn)
-		if derr != nil {
-			return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
+		err := DeleteDNSRecords(ctx, fqdn)
+		if err != nil {
+			return err
 		}
-		for _, rec := range recs {
-			if rec.Type == "A" && rec.Name == fqdn {
-				if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
-					return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
-				}
-				log.SpanLog(ctx, log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
+	}
+	return nil
+}
+
+func DeleteDNSRecords(ctx context.Context, fqdn string) error {
+	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+		return fmt.Errorf("cannot init cloudflare api, %v", err)
+	}
+	recs, derr := cloudflare.GetDNSRecords(ctx, GetCloudletDNSZone(), fqdn)
+	if derr != nil {
+		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
+	}
+	for _, rec := range recs {
+		if rec.Type == "A" && rec.Name == fqdn {
+			if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
+				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
 			}
+			log.SpanLog(ctx, log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
 		}
 	}
 	return nil

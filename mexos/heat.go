@@ -63,6 +63,7 @@ var heatUpdate string = "UPDATE"
 var heatDelete string = "DELETE"
 var clusterTypeKubernetes = "k8s"
 var clusterTypeDocker = "docker"
+var clusterTypeVMApp = "vmapp"
 var ClusterTypeKubernetesMasterLabel = "mex-k8s-master"
 var ClusterTypeDockerVMLabel = "mex-docker-vm"
 
@@ -245,7 +246,7 @@ type ClusterNode struct {
 // ClusterParams has the info needed to populate the heat template
 type ClusterParams struct {
 	ClusterType           string
-	ClusterFirstVMLabel   string
+	ClusterFirstVMName    string
 	NodeFlavor            string
 	MEXRouterName         string
 	MEXNetworkName        string
@@ -262,6 +263,7 @@ type ClusterParams struct {
 	Nodes                 []ClusterNode
 	MasterNodeFlavor      string
 	*VMParams             //rootlb
+	VMAppParams           *VMParams
 }
 
 var clusterTemplate = `
@@ -312,10 +314,10 @@ resources:
          port: { get_resource: router-port }
 
   {{- end}}
-   {{.ClusterFirstVMLabel}}-port:
+   {{.ClusterFirstVMName}}-port:
       type: OS::Neutron::Port
       properties:
-         name: {{.ClusterFirstVMLabel}}-port
+         name: {{.ClusterFirstVMName}}-port
         {{if .VnicType}}
          binding:vnic_type: {{.VnicType}}
         {{- end}}
@@ -331,10 +333,10 @@ resources:
         {{- end}}
 
   {{if .ExternalVolumeSize}}
-   {{.ClusterFirstVMLabel}}-vol:
+   {{.ClusterFirstVMName}}-vol:
       type: OS::Cinder::Volume
       properties:
-         name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}-vol
+         name: {{.ClusterFirstVMName}}-vol
          image: {{.ImageName}}
          size: {{.ExternalVolumeSize}}
         {{if .VolumeAvailabilityZone}}
@@ -351,10 +353,10 @@ resources:
          availability_zone: {{.VolumeAvailabilityZone}}
         {{- end}}
   {{- end}}
-   {{.ClusterFirstVMLabel}}:
+   {{.ClusterFirstVMName}}:
       type: OS::Nova::Server
       properties:
-         name: {{.ClusterFirstVMLabel}}-{{.ClusterName}}
+         name: {{.ClusterFirstVMName}}
         {{if .ComputeAvailabilityZone}}
          availability_zone: {{.ComputeAvailabilityZone}}
         {{- end}}
@@ -362,7 +364,7 @@ resources:
          block_device_mapping:
         {{if .ExternalVolumeSize}}
          - device_name: "vda" 
-           volume_id: { get_resource: {{.ClusterFirstVMLabel}}-vol }
+           volume_id: { get_resource: {{.ClusterFirstVMName}}-vol }
            delete_on_termination: "false" 
         {{- end}}
         {{if .SharedVolumeSize}}
@@ -383,7 +385,7 @@ resources:
 ` + reindent(vmCloudConfigShareMount, 12) + `
         {{- end}}
          networks:
-          - port: { get_resource: {{.ClusterFirstVMLabel}}-port }
+          - port: { get_resource: {{.ClusterFirstVMName}}-port }
          metadata:
          {{if eq "k8s" .ClusterType }}
            skipk8s: no
@@ -391,7 +393,8 @@ resources:
            edgeproxy: {{.GatewayIP}}
            mex-flavor: {{.NodeFlavor}}
            k8smaster: {{.MasterIP}}
-         {{else}}
+         {{- end}}
+         {{if eq "docker" .ClusterType }}
            skipk8s: yes
            role: mex-agent-node 
            edgeproxy: {{.GatewayIP}}
@@ -430,7 +433,7 @@ resources:
 
    {{.NodeName}}:
       type: OS::Nova::Server
-      depends_on: {{$.ClusterFirstVMLabel}}
+      depends_on: {{$.ClusterFirstVMName}}
       properties:
          name: {{.NodeName}}-{{$.ClusterName}}
         {{if $.ComputeAvailabilityZone}}
@@ -439,7 +442,11 @@ resources:
         {{if  $.ExternalVolumeSize}}
          block_device_mapping: [{ device_name: "vda", volume_id: { get_resource: {{.NodeName}}-vol }, delete_on_termination: "false" }]
         {{else}}
+         {{if $.VMAppParams}}
+         image: {{$.VMAppParams.ImageName}}
+         {{else}}
          image: {{$.ImageName}}
+         {{- end}}
         {{- end}}
          flavor: {{$.NodeFlavor}}
          config_drive: true
@@ -686,6 +693,8 @@ func createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData inter
 
 	tmpl, err := template.New(stackName).Funcs(funcMap).Parse(templateString)
 	if err != nil {
+		// this is a bug
+		log.WarnLog("template new failed", "templateString", templateString, "err", err)
 		return fmt.Errorf("template new failed: %s", err)
 	}
 	err = tmpl.Execute(&buf, templateData)
@@ -749,6 +758,64 @@ func HeatDeleteStack(ctx context.Context, stackName string) error {
 	return waitForStack(ctx, stackName, heatDelete, edgeproto.DummyUpdateCallback)
 }
 
+func populateCommonClusterParamFields(ctx context.Context, cp *ClusterParams, rootLBName, cloudletSecGrp, action string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "populateCommonClusterParamFields", "clusterParams", cp, "rootLBName", rootLBName, "cloudletSecGrp", cloudletSecGrp, "action", action)
+
+	usedCidrs := make(map[string]string)
+	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	if err != nil {
+		return "", err
+	}
+	currentSubnetName := ""
+	nodeIPPrefix := ""
+	found := false
+	cp.MEXNetworkName = GetCloudletMexNetwork()
+	cp.ApplicationSecurityGroup = GetSecurityGroupName(ctx, rootLBName)
+
+	rtr := GetCloudletExternalRouter()
+	if rtr == NoConfigExternalRouter {
+		log.SpanLog(ctx, log.DebugLevelMexos, "NoConfigExternalRouter in use for cluster, cluster stack with no router interfaces")
+	} else if rtr == NoExternalRouter {
+		log.SpanLog(ctx, log.DebugLevelMexos, "NoExternalRouter in use for cluster, cluster stack with rootlb connected to subnet")
+		cp.RootLBConnectToSubnet = rootLBName
+		cp.RootLBPortName = fmt.Sprintf("%s-%s-port", rootLBName, cp.ClusterName)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelMexos, "External router in use for cluster, cluster stack with router interfaces")
+		cp.MEXRouterName = rtr
+		// The cluster needs to be connected to the cloudlet level security group to have router access
+		cp.RouterSecurityGroup = cloudletSecGrp
+	}
+
+	if action != heatCreate {
+		currentSubnetName = "mex-k8s-subnet-" + cp.ClusterName
+	}
+	sns, snserr := ListSubnets(ctx, ni.Name)
+	if snserr != nil {
+		return nodeIPPrefix, fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, snserr)
+	}
+	for _, s := range sns {
+		usedCidrs[s.Subnet] = s.Name
+	}
+
+	//find an available subnet or the current subnet for update and delete
+	for i := 0; i <= 255; i++ {
+		subnet := fmt.Sprintf("%s.%s.%d.%d/%s", ni.Octets[0], ni.Octets[1], i, 0, ni.NetmaskBits)
+		// either look for an unused one (create) or the current one (update)
+		if (action == heatCreate && usedCidrs[subnet] == "") || (action != heatCreate && usedCidrs[subnet] == currentSubnetName) {
+			found = true
+			cp.CIDR = subnet
+			cp.GatewayIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 1)
+			cp.MasterIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 10)
+			nodeIPPrefix = fmt.Sprintf("%s.%s.%d", ni.Octets[0], ni.Octets[1], i)
+			break
+		}
+	}
+	if !found {
+		return nodeIPPrefix, fmt.Errorf("cannot find subnet cidr")
+	}
+	return nodeIPPrefix, nil
+}
+
 //GetClusterParams fills template parameters for the cluster.  A non blank rootLBName will add a rootlb VM
 func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "getClusterParams", "cluster", clusterInst, "action", action)
@@ -759,15 +826,20 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	if err != nil {
 		return nil, err
 	}
-	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
-		cp.ClusterType = clusterTypeDocker
-		cp.ClusterFirstVMLabel = ClusterTypeDockerVMLabel
-	} else {
+	cp.ClusterName = util.HeatSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
+
+	switch clusterInst.Deployment {
+	case cloudcommon.AppDeploymentTypeDocker:
+		if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+			cp.ClusterType = clusterTypeDocker
+			cp.ClusterFirstVMName = ClusterTypeDockerVMLabel + "-" + cp.ClusterName
+
+		}
+	default:
 		cp.ClusterType = clusterTypeKubernetes
-		cp.ClusterFirstVMLabel = ClusterTypeKubernetesMasterLabel
+		cp.ClusterFirstVMName = ClusterTypeKubernetesMasterLabel + "-" + cp.ClusterName
 	}
 	cp.NetworkType = ni.NetworkType
-
 	cp.VnicType = ni.VnicType
 
 	if imgName == "" {
@@ -815,54 +887,10 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	}
 	cp.PrivacyPolicy = privacyPolicy
 	cp.CloudletSecurityGroup = cloudletGrp
-	cp.ClusterName = util.HeatSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
-	rtr := GetCloudletExternalRouter()
-	if rtr == NoConfigExternalRouter {
-		log.SpanLog(ctx, log.DebugLevelMexos, "NoConfigExternalRouter in use for cluster, cluster stack with no router interfaces")
-	} else if rtr == NoExternalRouter {
-		log.SpanLog(ctx, log.DebugLevelMexos, "NoExternalRouter in use for cluster, cluster stack with rootlb connected to subnet")
-		cp.RootLBConnectToSubnet = rootLBName
-		cp.RootLBPortName = fmt.Sprintf("%s-%s-port", rootLBName, cp.ClusterName)
-	} else {
-		log.SpanLog(ctx, log.DebugLevelMexos, "External router in use for cluster, cluster stack with router interfaces")
-		cp.MEXRouterName = rtr
-		// The cluster needs to be connected to the cloudlet level security group to have router access
-		cp.RouterSecurityGroup = cloudletGrp
-	}
-	cp.MEXNetworkName = GetCloudletMexNetwork()
-	cp.ApplicationSecurityGroup = GetSecurityGroupName(ctx, rootLBName)
-	usedCidrs := make(map[string]string)
 
-	currentSubnetName := ""
-	found := false
-	if action != heatCreate {
-		currentSubnetName = "mex-k8s-subnet-" + cp.ClusterName
-	}
-	sns, snserr := ListSubnets(ctx, ni.Name)
-	if snserr != nil {
-		return nil, fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, snserr)
-	}
-	for _, s := range sns {
-		usedCidrs[s.Subnet] = s.Name
-	}
-
-	nodeIPPrefix := ""
-
-	//find an available subnet or the current subnet for update and delete
-	for i := 0; i <= 255; i++ {
-		subnet := fmt.Sprintf("%s.%s.%d.%d/%s", ni.Octets[0], ni.Octets[1], i, 0, ni.NetmaskBits)
-		// either look for an unused one (create) or the current one (update)
-		if (action == heatCreate && usedCidrs[subnet] == "") || (action != heatCreate && usedCidrs[subnet] == currentSubnetName) {
-			found = true
-			cp.CIDR = subnet
-			cp.GatewayIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 1)
-			cp.MasterIP = fmt.Sprintf("%s.%s.%d.%d", ni.Octets[0], ni.Octets[1], i, 10)
-			nodeIPPrefix = fmt.Sprintf("%s.%s.%d", ni.Octets[0], ni.Octets[1], i)
-			break
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("cannot find subnet cidr")
+	nodeIPPrefix, err := populateCommonClusterParamFields(ctx, &cp, rootLBName, cloudletGrp, action)
+	if err != nil {
+		return nil, err
 	}
 
 	if clusterInst.NodeFlavor == "" {
@@ -968,6 +996,43 @@ func HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, 
 		if err != nil {
 			return fmt.Errorf("unable to get rootlb SSH client: %v", err)
 		}
+		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+	}
+	return nil
+}
+
+// HeatCreateAppVMWithRootLB creates a VM accessed via a new rootLB
+func HeatCreateAppVMWithRootLB(ctx context.Context, rootLBName string, rootLBImage string, appVMName string, vmAppParams *VMParams, rootLBParams *VMParams, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateAppVMWithRootLB", "rootLBName", rootLBName, "appVMName", appVMName, "vmAppParams", vmAppParams, "rootLBParams", rootLBParams)
+
+	// Floating IPs can also be allocated within the stack and need to be locked as well.
+	heatStackLock.Lock()
+	defer heatStackLock.Unlock()
+
+	var cp ClusterParams
+	cp.ClusterType = clusterTypeVMApp
+	cp.ClusterFirstVMName = appVMName
+	cp.MasterNodeFlavor = vmAppParams.FlavorName
+	cp.ClusterName = appVMName
+	cp.VMParams = rootLBParams
+	cp.VMAppParams = vmAppParams
+
+	_, err := populateCommonClusterParamFields(ctx, &cp, rootLBName, vmAppParams.CloudletSecurityGroup, heatCreate)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "Created ClusterParams", "clusterParams", cp)
+
+	templateString := clusterTemplate + vmTemplateResources
+	err = CreateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
+	if err != nil {
+		return err
+	}
+	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	if err != nil {
+		return fmt.Errorf("unable to get rootlb SSH client: %v", err)
+	}
+	if cp.RootLBPortName != "" {
 		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 	}
 	return nil
