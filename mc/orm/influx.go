@@ -279,7 +279,7 @@ func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 	arg := influxQueryArgs{
 		Selector:      getFields(obj.Selector, CLIENT),
 		Measurement:   getMeasurementString(obj.Selector, CLIENT),
-		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		AppInstName:   obj.AppInst.AppKey.Name,
 		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
 		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
