@@ -190,7 +190,7 @@ regiondata:
       state: Ready
       ipaccess: IpAccessDedicated
       allocatedip: dynamic
-      nodeflavor: flavor1
+      nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
@@ -208,7 +208,7 @@ regiondata:
       liveness: LivenessStatic
       state: Ready
       ipaccess: IpAccessShared
-      nodeflavor: flavor1
+      nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1
@@ -226,7 +226,7 @@ regiondata:
       state: Ready
       ipaccess: IpAccessDedicated
       allocatedip: dynamic
-      nodeflavor: flavor1
+      nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1

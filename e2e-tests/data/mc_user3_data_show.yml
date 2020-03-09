@@ -69,7 +69,7 @@ regiondata:
       state: Ready
       ipaccess: IpAccessDedicated
       allocatedip: dynamic
-      nodeflavor: flavor1
+      nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
       numnodes: 1

@@ -15,7 +15,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vmspec"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -171,20 +170,12 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			}
 		}
 
-		finfo, _, _, err := mexos.GetFlavorInfo(ctx)
-		if err != nil {
-			return err
-		}
-		vmspec, err := vmspec.GetVMSpec(finfo, *appFlavor)
-		if err != nil {
-			return fmt.Errorf("unable to find closest flavor for app: %v", err)
-		}
 		objName := cloudcommon.GetAppFQN(&app.Key)
 		vmAppParams, err := mexos.GetVMParams(ctx,
 			mexos.UserVMDeployment,
 			objName,
-			vmspec.FlavorName,
-			vmspec.ExternalVolumeSize,
+			appInst.VmFlavor,
+			appInst.ExternalVolumeSize,
 			imageName,
 			mexos.GetSecurityGroupName(ctx, objName),
 			&clusterInst.Key.CloudletKey,
@@ -192,14 +183,14 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			mexos.WithAccessPorts(app.AccessPorts),
 			mexos.WithDeploymentManifest(app.DeploymentManifest),
 			mexos.WithCommand(app.Command),
-			mexos.WithComputeAvailabilityZone(vmspec.AvailabilityZone),
+			mexos.WithComputeAvailabilityZone(appInst.AvailabilityZone),
 			mexos.WithVolumeAvailabilityZone(mexos.GetCloudletVolumeAvailabilityZone()),
 			mexos.WithPrivacyPolicy(privacyPolicy),
 		)
-
 		if err != nil {
 			return fmt.Errorf("unable to get vm params: %v", err)
 		}
+		
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
 				CloudletName:  k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Name),
@@ -241,9 +232,9 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if err != nil {
 				return err
 			}
-		} else {
+		 else {
 			updateCallback(edgeproto.UpdateTask, "Deploying VM standalone")
-			log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "vmspec", vmspec)
+			log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "flavor", appInst.vmFlavor, "ExternalVolumeSize", appInst.ExternalVolumeSize)
 			err = mexos.CreateHeatStackFromTemplate(ctx, vmAppParams, objName, mexos.VmTemplate, updateCallback)
 			if err != nil {
 				return err
