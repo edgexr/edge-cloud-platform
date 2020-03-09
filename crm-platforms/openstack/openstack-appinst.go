@@ -190,7 +190,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("unable to get vm params: %v", err)
 		}
-		
+
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
 				CloudletName:  k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Name),
@@ -232,9 +232,9 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if err != nil {
 				return err
 			}
-		 else {
+		} else {
 			updateCallback(edgeproto.UpdateTask, "Deploying VM standalone")
-			log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "flavor", appInst.vmFlavor, "ExternalVolumeSize", appInst.ExternalVolumeSize)
+			log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "flavor", appInst.VmFlavor, "ExternalVolumeSize", appInst.ExternalVolumeSize)
 			err = mexos.CreateHeatStackFromTemplate(ctx, vmAppParams, objName, mexos.VmTemplate, updateCallback)
 			if err != nil {
 				return err
@@ -293,8 +293,8 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				"fqdn", fqdn,
 				"IP", ip.ExternalAddr)
 		}
-
 		return nil
+
 	case cloudcommon.AppDeploymentTypeDocker:
 		rootLBName := s.rootLBName
 		backendIP := cloudcommon.RemoteServerNone
