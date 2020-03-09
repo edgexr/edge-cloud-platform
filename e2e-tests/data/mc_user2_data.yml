@@ -26,8 +26,8 @@ regiondata:
         name: x1.small
       liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: flavor1
-      masterflavor: flavor1
+      nodeflavor: x1.small
+      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       autoscalepolicy: scale1
@@ -43,8 +43,8 @@ regiondata:
         name: x1.small
       liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: flavor1
-      masterflavor: flavor1
+      nodeflavor: x1.small
+      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
 
