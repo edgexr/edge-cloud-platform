@@ -67,6 +67,7 @@ controllers:
   versiontag: "2019-10-24"
   testmode: true
   notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
 
 - name: ctrl2
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
@@ -81,6 +82,7 @@ controllers:
   versiontag: "2019-10-24"
   testmode: true
   notifyparentaddrs: "127.0.0.1:52002"
+  notifyrootaddrs: "127.0.0.1:53001"
 
 clustersvcs:
 - name: cluster-svc1
