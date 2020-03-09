@@ -18,13 +18,19 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
+type ProxyDnsSecOpts struct {
+	AddProxy              bool
+	AddDnsAndPatchKubeSvc bool
+	AddSecurityRules      bool
+}
+
 // AddProxySecurityRulesAndPatchDNS Adds security rules and dns records in parallel
-func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, listenIP, backendIP string, addProxy bool, vaultConfig *vault.Config, ops ...proxy.Op) error {
+func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, rootLBName, listenIP, backendIP string, ops ProxyDnsSecOpts, vaultConfig *vault.Config, proxyops ...proxy.Op) error {
 	secchan := make(chan string)
 	dnschan := make(chan string)
 	proxychan := make(chan string)
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "rootLBName", rootLBName, "listenIP", listenIP, "backendIP", backendIP)
+	log.SpanLog(ctx, log.DebugLevelMexos, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "rootLBName", rootLBName, "listenIP", listenIP, "backendIP", backendIP, "ops", ops)
 	if len(appInst.MappedPorts) == 0 {
 		log.SpanLog(ctx, log.DebugLevelMexos, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
 		return nil
@@ -35,8 +41,12 @@ func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, ku
 		return err
 	}
 	go func() {
-		if addProxy {
-			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, ops...)
+		if ops.AddProxy {
+			// TODO update certs once AppAccessConfig functionality is added back
+			/*if aac.LbTlsCertCommonName != "" {
+				... get cert here
+			}*/
+			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {
@@ -47,19 +57,27 @@ func AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, ku
 		}
 	}()
 	go func() {
-		err := AddSecurityRules(ctx, GetSecurityGroupName(ctx, rootLBName), appInst.MappedPorts, rootLBName)
-		if err == nil {
-			secchan <- ""
+		if ops.AddSecurityRules {
+			err := AddSecurityRules(ctx, GetSecurityGroupName(ctx, rootLBName), appInst.MappedPorts, rootLBName)
+			if err == nil {
+				secchan <- ""
+			} else {
+				secchan <- err.Error()
+			}
 		} else {
-			secchan <- err.Error()
+			secchan <- ""
 		}
 	}()
 	go func() {
-		err := CreateAppDNS(ctx, client, kubeNames, aac.DnsOverride, getDnsSvcAction)
-		if err == nil {
-			dnschan <- ""
+		if ops.AddDnsAndPatchKubeSvc {
+			err := CreateAppDNSAndPatchKubeSvc(ctx, client, kubeNames, aac.DnsOverride, getDnsSvcAction)
+			if err == nil {
+				dnschan <- ""
+			} else {
+				dnschan <- err.Error()
+			}
 		} else {
-			dnschan <- err.Error()
+			dnschan <- ""
 		}
 	}()
 	proxyerr := <-proxychan

@@ -162,6 +162,8 @@ func GetServerIPFromAddrs(ctx context.Context, networkName, addresses, serverNam
 			return &serverIP, nil
 		}
 	}
+	// this is a bug
+	log.WarnLog("Unable to find network for server", "networkName", networkName, "serverName", serverName)
 	return &serverIP, fmt.Errorf("Unable to find network %s for server %s", networkName, serverName)
 }
 
@@ -214,6 +216,7 @@ func GetMasterNameAndIP(ctx context.Context, clusterInst *edgeproto.ClusterInst)
 	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
 		namePrefix = ClusterTypeDockerVMLabel
 	}
+
 	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 	masterName, err := FindClusterMaster(ctx, namePrefix, nodeNameSuffix, srvs)
 	if err != nil {

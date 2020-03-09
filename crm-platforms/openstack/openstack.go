@@ -32,6 +32,25 @@ func (s *Platform) GetType() string {
 	return "openstack"
 }
 
+// GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
+// used for Shared RootLb and for VM app based RootLb
+func (s *Platform) GetVMSpecForRootLB() (*vmspec.VMCreationSpec, error) {
+
+	var rootlbFlavor edgeproto.Flavor
+	err := mexos.GetCloudletSharedRootLBFlavor(&rootlbFlavor)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
+	}
+	vmspec, err := vmspec.GetVMSpec(s.flavorList, rootlbFlavor)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
+	}
+	if vmspec.AvailabilityZone == "" {
+		vmspec.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
+	}
+	return vmspec, nil
+}
+
 func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	rootLBName := getRootLBName(platformConfig.CloudletKey)
 	s.cloudletKey = platformConfig.CloudletKey
@@ -80,17 +99,9 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	s.rootLB = crmRootLB
 	s.rootLBName = rootLBName
 
-	var sharedRootLBFlavor edgeproto.Flavor
-	err = mexos.GetCloudletSharedRootLBFlavor(&sharedRootLBFlavor)
+	vmspec, err := s.GetVMSpecForRootLB()
 	if err != nil {
-		return fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
-	}
-	vmspec, err := vmspec.GetVMSpec(s.flavorList, sharedRootLBFlavor)
-	if err != nil {
-		return fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
-	}
-	if vmspec.AvailabilityZone == "" {
-		vmspec.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
+		return err
 	}
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")
