@@ -92,6 +92,9 @@ func RunMcAutoScalePolicyApi(mcClient ormclient.Api, uri, token, region string, 
 			in.AutoScalePolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoScalePolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAutoScalePolicy(uri, token, in)
 			checkMcErr("UpdateAutoScalePolicy", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowAutoScalePolicy(uri, token, in)
+			checkMcErr("ShowAutoScalePolicy", st, err, rc)
 		default:
 			return
 		}

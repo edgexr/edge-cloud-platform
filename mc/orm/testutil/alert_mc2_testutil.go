@@ -6,6 +6,7 @@ Package testutil is a generated protocol buffer package.
 
 It is generated from these files:
 	alert.proto
+	alldata.proto
 	app.proto
 	appinst.proto
 	appinstclient.proto
@@ -34,6 +35,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	Alert
+	AllData
 	AppKey
 	ConfigFile
 	App
@@ -79,6 +81,7 @@ It has these top-level messages:
 	Controller
 	DebugRequest
 	DebugReply
+	DebugData
 	DeveloperKey
 	Developer
 	RunCmd
@@ -92,6 +95,7 @@ It has these top-level messages:
 	Metric
 	NodeKey
 	Node
+	NodeData
 	Notice
 	OperatorKey
 	Operator
@@ -134,4 +138,20 @@ func TestShowAlert(mcClient *ormclient.Client, uri, token, region string, in *ed
 func TestPermShowAlert(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Alert, int, error) {
 	in := &edgeproto.Alert{}
 	return TestShowAlert(mcClient, uri, token, region, in)
+}
+
+func RunMcAlertApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Alert, dataMap interface{}, rc *bool, mode string) {
+	for _, alert := range *data {
+		in := &ormapi.RegionAlert{
+			Region: region,
+			Alert:  alert,
+		}
+		switch mode {
+		case "show":
+			_, st, err := mcClient.ShowAlert(uri, token, in)
+			checkMcErr("ShowAlert", st, err, rc)
+		default:
+			return
+		}
+	}
 }

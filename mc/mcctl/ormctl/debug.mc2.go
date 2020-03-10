@@ -49,7 +49,8 @@ var DisableDebugLevelsCmd = &cli.Command{
 
 var ShowDebugLevelsCmd = &cli.Command{
 	Use:          "ShowDebugLevels",
-	OptionalArgs: strings.Join(append(DebugRequestRequiredArgs, DebugRequestOptionalArgs...), " "),
+	RequiredArgs: strings.Join(ShowDebugLevelsRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowDebugLevelsOptionalArgs, " "),
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
 	SpecialArgs:  &DebugRequestSpecialArgs,
 	Comments:     addRegionComment(DebugRequestComments),
@@ -188,3 +189,38 @@ var DebugReplyComments = map[string]string{
 	"id":                                "Id used internally",
 }
 var DebugReplySpecialArgs = map[string]string{}
+var DebugDataRequiredArgs = []string{}
+var DebugDataOptionalArgs = []string{
+	"requests.node.name",
+	"requests.node.type",
+	"requests.node.cloudletkey.operatorkey.name",
+	"requests.node.cloudletkey.name",
+	"requests.node.region",
+	"requests.levels",
+	"requests.cmd",
+	"requests.pretty",
+	"requests.id",
+}
+var DebugDataAliasArgs = []string{
+	"requests.node.name=debugdata.requests.node.name",
+	"requests.node.type=debugdata.requests.node.type",
+	"requests.node.cloudletkey.operatorkey.name=debugdata.requests.node.cloudletkey.operatorkey.name",
+	"requests.node.cloudletkey.name=debugdata.requests.node.cloudletkey.name",
+	"requests.node.region=debugdata.requests.node.region",
+	"requests.levels=debugdata.requests.levels",
+	"requests.cmd=debugdata.requests.cmd",
+	"requests.pretty=debugdata.requests.pretty",
+	"requests.id=debugdata.requests.id",
+}
+var DebugDataComments = map[string]string{
+	"requests.node.name":                         "Name or hostname of node",
+	"requests.node.type":                         "Node type",
+	"requests.node.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"requests.node.cloudletkey.name":             "Name of the cloudlet",
+	"requests.node.region":                       "Region the node is in",
+	"requests.levels":                            "Comma separated list of debug level names: etcd,api,notify,dmereq,locapi,mexos,metrics,upgrade,info,sampled",
+	"requests.cmd":                               "Debug command",
+	"requests.pretty":                            "if possible, make output pretty",
+	"requests.id":                                "Id used internally",
+}
+var DebugDataSpecialArgs = map[string]string{}

@@ -121,6 +121,9 @@ func RunMcAppInstApi(mcClient ormclient.Api, uri, token, region string, data *[]
 			in.AppInst.Fields = cli.GetSpecifiedFields(objMap, &in.AppInst, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAppInst(uri, token, in)
 			checkMcErr("UpdateAppInst", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowAppInst(uri, token, in)
+			checkMcErr("ShowAppInst", st, err, rc)
 		default:
 			return
 		}

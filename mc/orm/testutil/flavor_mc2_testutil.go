@@ -110,10 +110,13 @@ func RunMcFlavorApi(mcClient ormclient.Api, uri, token, region string, data *[]e
 			in.Flavor.Fields = cli.GetSpecifiedFields(objMap, &in.Flavor, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateFlavor(uri, token, in)
 			checkMcErr("UpdateFlavor", st, err, rc)
-		case "add":
+		case "show":
+			_, st, err := mcClient.ShowFlavor(uri, token, in)
+			checkMcErr("ShowFlavor", st, err, rc)
+		case "addflavorres":
 			_, st, err := mcClient.AddFlavorRes(uri, token, in)
 			checkMcErr("AddFlavorRes", st, err, rc)
-		case "remove":
+		case "removeflavorres":
 			_, st, err := mcClient.RemoveFlavorRes(uri, token, in)
 			checkMcErr("RemoveFlavorRes", st, err, rc)
 		default:

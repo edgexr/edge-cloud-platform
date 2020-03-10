@@ -202,8 +202,8 @@ type AllData struct {
 }
 
 type RegionData struct {
-	Region  string                    `json:"region,omitempty"`
-	AppData edgeproto.ApplicationData `json:"appdata,omitempty"`
+	Region  string            `json:"region,omitempty"`
+	AppData edgeproto.AllData `json:"appdata,omitempty"`
 }
 
 // Metrics data

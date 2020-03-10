@@ -154,12 +154,16 @@ var CloudletPoolRequiredArgs = []string{
 }
 var CloudletPoolOptionalArgs = []string{}
 var CloudletPoolAliasArgs = []string{
+	"fields=cloudletpool.fields",
 	"name=cloudletpool.key.name",
 }
 var CloudletPoolComments = map[string]string{
-	"name": "CloudletPool Name",
+	"fields": "Fields are used for the Update API to specify which fields to apply",
+	"name":   "CloudletPool Name",
 }
-var CloudletPoolSpecialArgs = map[string]string{}
+var CloudletPoolSpecialArgs = map[string]string{
+	"cloudletpool.fields": "StringArray",
+}
 var CloudletPoolMemberRequiredArgs = []string{
 	"pool",
 	"operator",

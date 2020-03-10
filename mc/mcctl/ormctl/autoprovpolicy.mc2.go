@@ -137,6 +137,7 @@ var AutoProvPolicyOptionalArgs = []string{
 	"deployintervalcount",
 }
 var AutoProvPolicyAliasArgs = []string{
+	"fields=autoprovpolicy.fields",
 	"developer=autoprovpolicy.key.developer",
 	"name=autoprovpolicy.key.name",
 	"deployclientcount=autoprovpolicy.deployclientcount",
@@ -154,6 +155,7 @@ var AutoProvPolicyAliasArgs = []string{
 	"cloudlets.loc.timestamp.nanos=autoprovpolicy.cloudlets.loc.timestamp.nanos",
 }
 var AutoProvPolicyComments = map[string]string{
+	"fields":                           "Fields are used for the Update API to specify which fields to apply",
 	"developer":                        "Name of the Developer that this policy belongs to",
 	"name":                             "Policy name",
 	"deployclientcount":                "Minimum number of clients within the auto deploy interval to trigger deployment",
@@ -168,7 +170,9 @@ var AutoProvPolicyComments = map[string]string{
 	"cloudlets.loc.course":             "course (IOS) / bearing (Android) (degrees east relative to true north)",
 	"cloudlets.loc.speed":              "speed (IOS) / velocity (Android) (meters/sec)",
 }
-var AutoProvPolicySpecialArgs = map[string]string{}
+var AutoProvPolicySpecialArgs = map[string]string{
+	"autoprovpolicy.fields": "StringArray",
+}
 var AutoProvCloudletRequiredArgs = []string{
 	"key.operatorkey.name",
 	"key.name",

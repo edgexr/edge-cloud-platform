@@ -123,6 +123,7 @@ var PrivacyPolicyOptionalArgs = []string{
 	"outboundsecurityrules.remotecidr",
 }
 var PrivacyPolicyAliasArgs = []string{
+	"fields=privacypolicy.fields",
 	"developer=privacypolicy.key.developer",
 	"name=privacypolicy.key.name",
 	"outboundsecurityrules.protocol=privacypolicy.outboundsecurityrules.protocol",
@@ -131,6 +132,7 @@ var PrivacyPolicyAliasArgs = []string{
 	"outboundsecurityrules.remotecidr=privacypolicy.outboundsecurityrules.remotecidr",
 }
 var PrivacyPolicyComments = map[string]string{
+	"fields":                             "Fields are used for the Update API to specify which fields to apply",
 	"developer":                          "Name of the Developer that this policy belongs to",
 	"name":                               "Policy name",
 	"outboundsecurityrules.protocol":     "tcp, udp, icmp",
@@ -138,4 +140,6 @@ var PrivacyPolicyComments = map[string]string{
 	"outboundsecurityrules.portrangemax": "TCP or UDP port range end",
 	"outboundsecurityrules.remotecidr":   "remote CIDR X.X.X.X/X",
 }
-var PrivacyPolicySpecialArgs = map[string]string{}
+var PrivacyPolicySpecialArgs = map[string]string{
+	"privacypolicy.fields": "StringArray",
+}

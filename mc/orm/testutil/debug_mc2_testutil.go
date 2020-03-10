@@ -63,3 +63,28 @@ func TestPermRunDebug(mcClient *ormclient.Client, uri, token, region, org string
 	in := &edgeproto.DebugRequest{}
 	return TestRunDebug(mcClient, uri, token, region, in)
 }
+
+func RunMcDebugApi_DebugRequest(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.DebugRequest, dataMap interface{}, rc *bool, mode string) {
+	for _, debugRequest := range *data {
+		in := &ormapi.RegionDebugRequest{
+			Region:       region,
+			DebugRequest: debugRequest,
+		}
+		switch mode {
+		case "enabledebuglevels":
+			_, st, err := mcClient.EnableDebugLevels(uri, token, in)
+			checkMcErr("EnableDebugLevels", st, err, rc)
+		case "disabledebuglevels":
+			_, st, err := mcClient.DisableDebugLevels(uri, token, in)
+			checkMcErr("DisableDebugLevels", st, err, rc)
+		case "showdebuglevels":
+			_, st, err := mcClient.ShowDebugLevels(uri, token, in)
+			checkMcErr("ShowDebugLevels", st, err, rc)
+		case "rundebug":
+			_, st, err := mcClient.RunDebug(uri, token, in)
+			checkMcErr("RunDebug", st, err, rc)
+		default:
+			return
+		}
+	}
+}

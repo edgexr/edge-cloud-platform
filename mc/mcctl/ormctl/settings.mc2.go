@@ -97,6 +97,7 @@ var SettingsOptionalArgs = []string{
 	"maxtrackeddmeclients",
 }
 var SettingsAliasArgs = []string{
+	"fields=settings.fields",
 	"shepherdmetricscollectioninterval=settings.shepherdmetricscollectioninterval",
 	"shepherdhealthcheckretries=settings.shepherdhealthcheckretries",
 	"shepherdhealthcheckinterval=settings.shepherdhealthcheckinterval",
@@ -114,6 +115,7 @@ var SettingsAliasArgs = []string{
 	"maxtrackeddmeclients=settings.maxtrackeddmeclients",
 }
 var SettingsComments = map[string]string{
+	"fields":                            "Fields are used for the Update API to specify which fields to apply",
 	"shepherdmetricscollectioninterval": "Shepherd metrics collection interval for k8s and docker appInstances (duration)",
 	"shepherdhealthcheckretries":        "Number of times Shepherd Health Check fails before we mark appInst down",
 	"shepherdhealthcheckinterval":       "Health Checking probing frequency (duration)",
@@ -130,4 +132,6 @@ var SettingsComments = map[string]string{
 	"loadbalancermaxportrange":          "Max IP Port range when using a load balancer",
 	"maxtrackeddmeclients":              "Max DME clients to be tracked at the same time.",
 }
-var SettingsSpecialArgs = map[string]string{}
+var SettingsSpecialArgs = map[string]string{
+	"settings.fields": "StringArray",
+}

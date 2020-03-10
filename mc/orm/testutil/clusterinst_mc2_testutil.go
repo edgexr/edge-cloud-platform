@@ -101,6 +101,9 @@ func RunMcClusterInstApi(mcClient ormclient.Api, uri, token, region string, data
 			in.ClusterInst.Fields = cli.GetSpecifiedFields(objMap, &in.ClusterInst, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateClusterInst(uri, token, in)
 			checkMcErr("UpdateClusterInst", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowClusterInst(uri, token, in)
+			checkMcErr("ShowClusterInst", st, err, rc)
 		default:
 			return
 		}

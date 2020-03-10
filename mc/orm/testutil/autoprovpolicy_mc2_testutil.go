@@ -118,6 +118,9 @@ func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, d
 			in.AutoProvPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoProvPolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateAutoProvPolicy(uri, token, in)
 			checkMcErr("UpdateAutoProvPolicy", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowAutoProvPolicy(uri, token, in)
+			checkMcErr("ShowAutoProvPolicy", st, err, rc)
 		default:
 			return
 		}

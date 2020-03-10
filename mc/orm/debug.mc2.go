@@ -193,16 +193,9 @@ func ShowDebugLevels(c echo.Context) error {
 }
 
 func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
-	var authz *ShowAuthz
-	var err error
-	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceConfig, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
+	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
+		ResourceConfig, ActionView) {
+		return echo.ErrForbidden
 	}
 	if rc.conn == nil {
 		conn, err := connectNotifyRoot(ctx)
@@ -228,11 +221,6 @@ func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 		if err != nil {
 			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok("") {
-				continue
-			}
 		}
 		cb(res)
 	}

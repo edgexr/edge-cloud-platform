@@ -76,6 +76,9 @@ func RunMcSettingsApi(mcClient ormclient.Api, uri, token, region string, obj *ed
 	case "reset":
 		_, st, err := mcClient.ResetSettings(uri, token, in)
 		checkMcErr("ResetSettings", st, err, rc)
+	case "show":
+		_, st, err := mcClient.ShowSettings(uri, token, in)
+		checkMcErr("ShowSettings", st, err, rc)
 	default:
 		return
 	}

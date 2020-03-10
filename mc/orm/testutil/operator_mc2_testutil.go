@@ -66,6 +66,9 @@ func RunMcOperatorCodeApi(mcClient ormclient.Api, uri, token, region string, dat
 		case "delete":
 			_, st, err := mcClient.DeleteOperatorCode(uri, token, in)
 			checkMcErr("DeleteOperatorCode", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowOperatorCode(uri, token, in)
+			checkMcErr("ShowOperatorCode", st, err, rc)
 		default:
 			return
 		}

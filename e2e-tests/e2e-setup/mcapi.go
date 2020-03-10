@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
 )
 
 var mcClient ormclient.Api
@@ -411,14 +412,14 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 
 		rd := ormapi.RegionData{
 			Region: ctrl.Region,
-			AppData: edgeproto.ApplicationData{
+			AppData: edgeproto.AllData{
 				Flavors:             flavors,
 				Cloudlets:           cloudlets,
 				CloudletInfos:       cloudletInfos,
 				CloudletPools:       pools,
 				CloudletPoolMembers: members,
 				ClusterInsts:        clusterInsts,
-				Applications:        apps,
+				Apps:                apps,
 				AppInstances:        appInsts,
 				AutoScalePolicies:   asPolicies,
 				AutoProvPolicies:    apPolicies,
@@ -515,14 +516,14 @@ func showMcDataFiltered(uri, token string, data *ormapi.AllData, rc *bool) *orma
 			checkMcCtrlErr("ShowClusterInst", status, err, rc)
 			ad.ClusterInsts = append(ad.ClusterInsts, out...)
 		}
-		for jj, _ := range appdata.Applications {
+		for jj, _ := range appdata.Apps {
 			filter := &ormapi.RegionApp{
 				Region: region,
-				App:    appdata.Applications[jj],
+				App:    appdata.Apps[jj],
 			}
 			out, status, err := mcClient.ShowApp(uri, token, filter)
 			checkMcCtrlErr("ShowApp", status, err, rc)
-			ad.Applications = append(ad.Applications, out...)
+			ad.Apps = append(ad.Apps, out...)
 		}
 		for jj, _ := range appdata.AppInstances {
 			filter := &ormapi.RegionAppInst{
@@ -590,11 +591,11 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.Regi
 			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoProvPolicies, appDataMap["autoprovpolicies"], rc, mode)
 		}
 		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
-		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
+		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Apps, appDataMap["apps"], rc, mode)
 		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
 	case "delete":
 		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
-		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Applications, appDataMap["apps"], rc, mode)
+		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Apps, appDataMap["apps"], rc, mode)
 		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
 		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
 		if _, ok := mcClient.(*cliwrapper.Client); ok {
@@ -919,7 +920,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars map[string]string) b
 	nodes, status, err := mcClient.ShowNode(uri, token, &ormapi.RegionNode{})
 	checkMcErr("ShowNode", status, err, &rc)
 
-	appdata := edgeproto.ApplicationData{}
+	appdata := edgeproto.NodeData{}
 	appdata.Nodes = nodes
 	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
 	return rc
@@ -938,14 +939,14 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	if !rc {
 		return false
 	}
-	data := util.DebugData{}
+	data := edgeproto.DebugData{}
 	err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
 		os.Exit(1)
 	}
 
-	output := util.DebugOutput{}
+	output := edgetestutil.DebugDataOut{}
 	for _, r := range data.Requests {
 		var replies []edgeproto.DebugReply
 		var status int
@@ -968,7 +969,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			checkMcErr("RunDebug", status, err, &rc)
 		}
 		if err == nil && len(replies) > 0 {
-			output.Replies = append(output.Replies, replies)
+			output.Requests = append(output.Requests, replies)
 		}
 	}
 	util.PrintToYamlFile("api-output.yml", outputDir, output, true)

@@ -73,7 +73,7 @@ func (s *Client) UpdateAppInst(uri, token string, in *ormapi.RegionAppInst) ([]e
 func (s *Client) ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edgeproto.AppInst, int, error) {
 	args := []string{"region", "ShowAppInst"}
 	outlist := []edgeproto.AppInst{}
-	noconfig := strings.Split("CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,NodeFlavor", ",")
+	noconfig := strings.Split("CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,NodeFlavor,ExternalVolumeSize,AvailabilityZone", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
