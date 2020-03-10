@@ -92,6 +92,9 @@ func RunMcAppApi(mcClient ormclient.Api, uri, token, region string, data *[]edge
 			in.App.Fields = cli.GetSpecifiedFields(objMap, &in.App, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateApp(uri, token, in)
 			checkMcErr("UpdateApp", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowApp(uri, token, in)
+			checkMcErr("ShowApp", st, err, rc)
 		default:
 			return
 		}

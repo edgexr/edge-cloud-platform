@@ -32,3 +32,19 @@ func TestPermShowAppInstClient(mcClient *ormclient.Client, uri, token, region, o
 	in.Key.AppKey.DeveloperKey.Name = org
 	return TestShowAppInstClient(mcClient, uri, token, region, in)
 }
+
+func RunMcAppInstClientApi_AppInstClientKey(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AppInstClientKey, dataMap interface{}, rc *bool, mode string) {
+	for _, appInstClientKey := range *data {
+		in := &ormapi.RegionAppInstClientKey{
+			Region:           region,
+			AppInstClientKey: appInstClientKey,
+		}
+		switch mode {
+		case "showappinstclient":
+			_, st, err := mcClient.ShowAppInstClient(uri, token, in)
+			checkMcErr("ShowAppInstClient", st, err, rc)
+		default:
+			return
+		}
+	}
+}

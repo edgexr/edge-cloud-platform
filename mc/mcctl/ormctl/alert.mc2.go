@@ -6,6 +6,7 @@ Package ormctl is a generated protocol buffer package.
 
 It is generated from these files:
 	alert.proto
+	alldata.proto
 	app.proto
 	appinst.proto
 	appinstclient.proto
@@ -34,6 +35,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	Alert
+	AllData
 	AppKey
 	ConfigFile
 	App
@@ -79,6 +81,7 @@ It has these top-level messages:
 	Controller
 	DebugRequest
 	DebugReply
+	DebugData
 	DeveloperKey
 	Developer
 	RunCmd
@@ -92,6 +95,7 @@ It has these top-level messages:
 	Metric
 	NodeKey
 	Node
+	NodeData
 	Notice
 	OperatorKey
 	Operator
@@ -173,6 +177,6 @@ var AlertComments = map[string]string{
 	"controller":  "Connected controller unique id",
 }
 var AlertSpecialArgs = map[string]string{
-	"annotations": "StringToString",
-	"labels":      "StringToString",
+	"alert.annotations": "StringToString",
+	"alert.labels":      "StringToString",
 }

@@ -148,6 +148,7 @@ var FlavorOptionalArgs = []string{
 	"optresmap",
 }
 var FlavorAliasArgs = []string{
+	"fields=flavor.fields",
 	"name=flavor.key.name",
 	"ram=flavor.ram",
 	"vcpus=flavor.vcpus",
@@ -155,6 +156,7 @@ var FlavorAliasArgs = []string{
 	"optresmap=flavor.optresmap",
 }
 var FlavorComments = map[string]string{
+	"fields":    "Fields are used for the Update API to specify which fields to apply",
 	"name":      "Flavor name",
 	"ram":       "RAM in megabytes",
 	"vcpus":     "Number of virtual CPUs",
@@ -162,5 +164,6 @@ var FlavorComments = map[string]string{
 	"optresmap": "Optional Resources request, key = [gpu, nas, nic] gpu kinds: [gpu, vgpu, pci] form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpus:nvidia-63:1",
 }
 var FlavorSpecialArgs = map[string]string{
-	"optresmap": "StringToString",
+	"flavor.fields":    "StringArray",
+	"flavor.optresmap": "StringToString",
 }

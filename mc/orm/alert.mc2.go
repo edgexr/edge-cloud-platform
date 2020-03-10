@@ -6,6 +6,7 @@ Package orm is a generated protocol buffer package.
 
 It is generated from these files:
 	alert.proto
+	alldata.proto
 	app.proto
 	appinst.proto
 	appinstclient.proto
@@ -34,6 +35,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	Alert
+	AllData
 	AppKey
 	ConfigFile
 	App
@@ -79,6 +81,7 @@ It has these top-level messages:
 	Controller
 	DebugRequest
 	DebugReply
+	DebugData
 	DeveloperKey
 	Developer
 	RunCmd
@@ -92,6 +95,7 @@ It has these top-level messages:
 	Metric
 	NodeKey
 	Node
+	NodeData
 	Notice
 	OperatorKey
 	Operator
@@ -225,6 +229,86 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowAlert", ShowAlert)
+	// swagger:route POST /auth/ctrl/UpdateSettings Settings UpdateSettings
+	// Update settings.
+	// The following values should be added to `Settings.fields` field array to specify which fields will be updated.
+	// ```
+	// ShepherdMetricsCollectionInterval: 2
+	// ShepherdHealthCheckRetries: 3
+	// ShepherdHealthCheckInterval: 4
+	// AutoDeployIntervalSec: 5
+	// AutoDeployOffsetSec: 6
+	// AutoDeployMaxIntervals: 7
+	// CreateAppInstTimeout: 8
+	// UpdateAppInstTimeout: 9
+	// DeleteAppInstTimeout: 10
+	// CreateClusterInstTimeout: 11
+	// UpdateClusterInstTimeout: 12
+	// DeleteClusterInstTimeout: 13
+	// MasterNodeFlavor: 14
+	// LoadBalancerMaxPortRange: 15
+	// MaxTrackedDmeClients: 16
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateSettings", UpdateSettings)
+	// swagger:route POST /auth/ctrl/ResetSettings Settings ResetSettings
+	// Reset all settings to their defaults.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ResetSettings", ResetSettings)
+	// swagger:route POST /auth/ctrl/ShowSettings Settings ShowSettings
+	// Show settings.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowSettings", ShowSettings)
+	// swagger:route POST /auth/ctrl/CreateOperatorCode OperatorCode CreateOperatorCode
+	// Create a code for an Operator.
+	//
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateOperatorCode", CreateOperatorCode)
+	// swagger:route POST /auth/ctrl/DeleteOperatorCode OperatorCode DeleteOperatorCode
+	// Delete a code for an Operator.
+	//
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteOperatorCode", DeleteOperatorCode)
+	// swagger:route POST /auth/ctrl/ShowOperatorCode OperatorCode ShowOperatorCode
+	// Show OperatorCodes.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowOperatorCode", ShowOperatorCode)
 	// swagger:route POST /auth/ctrl/CreateFlavor Flavor CreateFlavor
 	// Create a Flavor.
 	// Security:
@@ -296,115 +380,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RemoveFlavorRes", RemoveFlavorRes)
-	// swagger:route POST /auth/ctrl/CreateApp App CreateApp
-	// Create Application.
-	//  Creates a definition for an application instance for Cloudlet deployment.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateApp", CreateApp)
-	// swagger:route POST /auth/ctrl/DeleteApp App DeleteApp
-	// Delete Application.
-	//  Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteApp", DeleteApp)
-	// swagger:route POST /auth/ctrl/UpdateApp App UpdateApp
-	// Update Application.
-	//  Updates the definition of an Application instance.
-	// The following values should be added to `App.fields` field array to specify which fields will be updated.
-	// ```
-	// Key: 2
-	// KeyDeveloperKey: 2.1
-	// KeyDeveloperKeyName: 2.1.2
-	// KeyName: 2.2
-	// KeyVersion: 2.3
-	// ImagePath: 4
-	// ImageType: 5
-	// AccessPorts: 7
-	// DefaultFlavor: 9
-	// DefaultFlavorName: 9.1
-	// AuthPublicKey: 12
-	// Command: 13
-	// Annotations: 14
-	// Deployment: 15
-	// DeploymentManifest: 16
-	// DeploymentGenerator: 17
-	// AndroidPackageName: 18
-	// DelOpt: 20
-	// Configs: 21
-	// ConfigsKind: 21.1
-	// ConfigsConfig: 21.2
-	// ScaleWithCluster: 22
-	// InternalPorts: 23
-	// Revision: 24
-	// OfficialFqdn: 25
-	// Md5Sum: 26
-	// DefaultSharedVolumeSize: 27
-	// AutoProvPolicy: 28
-	// AccessType: 29
-	// DefaultPrivacyPolicy: 30
-	// ```
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/UpdateApp", UpdateApp)
-	// swagger:route POST /auth/ctrl/ShowApp App ShowApp
-	// Show Applications.
-	//  Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowApp", ShowApp)
-	// swagger:route POST /auth/ctrl/CreateOperatorCode OperatorCode CreateOperatorCode
-	// Create a code for an Operator.
-	//
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateOperatorCode", CreateOperatorCode)
-	// swagger:route POST /auth/ctrl/DeleteOperatorCode OperatorCode DeleteOperatorCode
-	// Delete a code for an Operator.
-	//
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteOperatorCode", DeleteOperatorCode)
-	// swagger:route POST /auth/ctrl/ShowOperatorCode OperatorCode ShowOperatorCode
-	// Show OperatorCodes.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowOperatorCode", ShowOperatorCode)
 	// swagger:route POST /auth/ctrl/CreateResTagTable ResTagTable CreateResTagTable
 	// Create TagTable.
 	// Security:
@@ -642,6 +617,215 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletInfo", ShowCloudletInfo)
+	// swagger:route POST /auth/ctrl/CreateCloudletPool CloudletPool CreateCloudletPool
+	// Create a CloudletPool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateCloudletPool", CreateCloudletPool)
+	// swagger:route POST /auth/ctrl/DeleteCloudletPool CloudletPool DeleteCloudletPool
+	// Delete a CloudletPool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteCloudletPool", DeleteCloudletPool)
+	// swagger:route POST /auth/ctrl/ShowCloudletPool CloudletPool ShowCloudletPool
+	// Show CloudletPools.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowCloudletPool", ShowCloudletPool)
+	// swagger:route POST /auth/ctrl/CreateCloudletPoolMember CloudletPoolMember CreateCloudletPoolMember
+	// Add a Cloudlet to a CloudletPool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateCloudletPoolMember", CreateCloudletPoolMember)
+	// swagger:route POST /auth/ctrl/DeleteCloudletPoolMember CloudletPoolMember DeleteCloudletPoolMember
+	// Remove a Cloudlet from a CloudletPool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteCloudletPoolMember", DeleteCloudletPoolMember)
+	// swagger:route POST /auth/ctrl/ShowCloudletPoolMember CloudletPoolMember ShowCloudletPoolMember
+	// Show the Cloudlet to CloudletPool relationships.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowCloudletPoolMember", ShowCloudletPoolMember)
+	// swagger:route POST /auth/ctrl/ShowPoolsForCloudlet CloudletKey ShowPoolsForCloudlet
+	// Show CloudletPools that have Cloudlet as a member.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowPoolsForCloudlet", ShowPoolsForCloudlet)
+	// swagger:route POST /auth/ctrl/ShowCloudletsForPool CloudletPoolKey ShowCloudletsForPool
+	// Show Cloudlets that belong to the Pool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
+	// swagger:route POST /auth/ctrl/CreateAutoScalePolicy AutoScalePolicy CreateAutoScalePolicy
+	// Create an Auto Scale Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateAutoScalePolicy", CreateAutoScalePolicy)
+	// swagger:route POST /auth/ctrl/DeleteAutoScalePolicy AutoScalePolicy DeleteAutoScalePolicy
+	// Delete an Auto Scale Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteAutoScalePolicy", DeleteAutoScalePolicy)
+	// swagger:route POST /auth/ctrl/UpdateAutoScalePolicy AutoScalePolicy UpdateAutoScalePolicy
+	// Update an Auto Scale Policy.
+	// The following values should be added to `AutoScalePolicy.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyDeveloper: 2.1
+	// KeyName: 2.2
+	// MinNodes: 3
+	// MaxNodes: 4
+	// ScaleUpCpuThresh: 5
+	// ScaleDownCpuThresh: 6
+	// TriggerTimeSec: 7
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateAutoScalePolicy", UpdateAutoScalePolicy)
+	// swagger:route POST /auth/ctrl/ShowAutoScalePolicy AutoScalePolicy ShowAutoScalePolicy
+	// Show Auto Scale Policies.
+	//  Any fields specified will be used to filter results.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowAutoScalePolicy", ShowAutoScalePolicy)
+	// swagger:route POST /auth/ctrl/CreateApp App CreateApp
+	// Create Application.
+	//  Creates a definition for an application instance for Cloudlet deployment.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateApp", CreateApp)
+	// swagger:route POST /auth/ctrl/DeleteApp App DeleteApp
+	// Delete Application.
+	//  Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteApp", DeleteApp)
+	// swagger:route POST /auth/ctrl/UpdateApp App UpdateApp
+	// Update Application.
+	//  Updates the definition of an Application instance.
+	// The following values should be added to `App.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyDeveloperKey: 2.1
+	// KeyDeveloperKeyName: 2.1.2
+	// KeyName: 2.2
+	// KeyVersion: 2.3
+	// ImagePath: 4
+	// ImageType: 5
+	// AccessPorts: 7
+	// DefaultFlavor: 9
+	// DefaultFlavorName: 9.1
+	// AuthPublicKey: 12
+	// Command: 13
+	// Annotations: 14
+	// Deployment: 15
+	// DeploymentManifest: 16
+	// DeploymentGenerator: 17
+	// AndroidPackageName: 18
+	// DelOpt: 20
+	// Configs: 21
+	// ConfigsKind: 21.1
+	// ConfigsConfig: 21.2
+	// ScaleWithCluster: 22
+	// InternalPorts: 23
+	// Revision: 24
+	// OfficialFqdn: 25
+	// Md5Sum: 26
+	// DefaultSharedVolumeSize: 27
+	// AutoProvPolicy: 28
+	// AccessType: 29
+	// DefaultPrivacyPolicy: 30
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateApp", UpdateApp)
+	// swagger:route POST /auth/ctrl/ShowApp App ShowApp
+	// Show Applications.
+	//  Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowApp", ShowApp)
 	// swagger:route POST /auth/ctrl/CreateClusterInst ClusterInst CreateClusterInst
 	// Create Cluster Instance.
 	//  Creates an instance of a Cluster on a Cloudlet, defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of compute resources on a Cloudlet on which AppInsts are deployed.
@@ -725,6 +909,143 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowClusterInst", ShowClusterInst)
+	// swagger:route POST /auth/ctrl/CreateAutoProvPolicy AutoProvPolicy CreateAutoProvPolicy
+	// Create an Auto Provisioning Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateAutoProvPolicy", CreateAutoProvPolicy)
+	// swagger:route POST /auth/ctrl/DeleteAutoProvPolicy AutoProvPolicy DeleteAutoProvPolicy
+	// Delete an Auto Provisioning Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteAutoProvPolicy", DeleteAutoProvPolicy)
+	// swagger:route POST /auth/ctrl/UpdateAutoProvPolicy AutoProvPolicy UpdateAutoProvPolicy
+	// Update an Auto Provisioning Policy.
+	// The following values should be added to `AutoProvPolicy.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyDeveloper: 2.1
+	// KeyName: 2.2
+	// DeployClientCount: 3
+	// DeployIntervalCount: 4
+	// Cloudlets: 5
+	// CloudletsKey: 5.1
+	// CloudletsKeyOperatorKey: 5.1.1
+	// CloudletsKeyOperatorKeyName: 5.1.1.1
+	// CloudletsKeyName: 5.1.2
+	// CloudletsLoc: 5.2
+	// CloudletsLocLatitude: 5.2.1
+	// CloudletsLocLongitude: 5.2.2
+	// CloudletsLocHorizontalAccuracy: 5.2.3
+	// CloudletsLocVerticalAccuracy: 5.2.4
+	// CloudletsLocAltitude: 5.2.5
+	// CloudletsLocCourse: 5.2.6
+	// CloudletsLocSpeed: 5.2.7
+	// CloudletsLocTimestamp: 5.2.8
+	// CloudletsLocTimestampSeconds: 5.2.8.1
+	// CloudletsLocTimestampNanos: 5.2.8.2
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateAutoProvPolicy", UpdateAutoProvPolicy)
+	// swagger:route POST /auth/ctrl/ShowAutoProvPolicy AutoProvPolicy ShowAutoProvPolicy
+	// Show Auto Provisioning Policies.
+	//  Any fields specified will be used to filter results.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowAutoProvPolicy", ShowAutoProvPolicy)
+	// swagger:route POST /auth/ctrl/AddAutoProvPolicyCloudlet AutoProvPolicyCloudlet AddAutoProvPolicyCloudlet
+	// Add a Cloudlet to the Auto Provisioning Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/AddAutoProvPolicyCloudlet", AddAutoProvPolicyCloudlet)
+	// swagger:route POST /auth/ctrl/RemoveAutoProvPolicyCloudlet AutoProvPolicyCloudlet RemoveAutoProvPolicyCloudlet
+	// Remove a Cloudlet from the Auto Provisioning Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RemoveAutoProvPolicyCloudlet", RemoveAutoProvPolicyCloudlet)
+	// swagger:route POST /auth/ctrl/CreatePrivacyPolicy PrivacyPolicy CreatePrivacyPolicy
+	// Create a Privacy Policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreatePrivacyPolicy", CreatePrivacyPolicy)
+	// swagger:route POST /auth/ctrl/DeletePrivacyPolicy PrivacyPolicy DeletePrivacyPolicy
+	// Delete a Privacy policy.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeletePrivacyPolicy", DeletePrivacyPolicy)
+	// swagger:route POST /auth/ctrl/UpdatePrivacyPolicy PrivacyPolicy UpdatePrivacyPolicy
+	// Update a Privacy policy.
+	// The following values should be added to `PrivacyPolicy.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyDeveloper: 2.1
+	// KeyName: 2.2
+	// OutboundSecurityRules: 3
+	// OutboundSecurityRulesProtocol: 3.1
+	// OutboundSecurityRulesPortRangeMin: 3.2
+	// OutboundSecurityRulesPortRangeMax: 3.3
+	// OutboundSecurityRulesRemoteCidr: 3.4
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdatePrivacyPolicy", UpdatePrivacyPolicy)
+	// swagger:route POST /auth/ctrl/ShowPrivacyPolicy PrivacyPolicy ShowPrivacyPolicy
+	// Show Privacy Policies.
+	//  Any fields specified will be used to filter results.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowPrivacyPolicy", ShowPrivacyPolicy)
 	// swagger:route POST /auth/ctrl/CreateAppInst AppInst CreateAppInst
 	// Create Application Instance.
 	//  Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition.
@@ -859,223 +1180,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowAppInstClient", ShowAppInstClient)
-	// swagger:route POST /auth/ctrl/CreateAutoScalePolicy AutoScalePolicy CreateAutoScalePolicy
-	// Create an Auto Scale Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateAutoScalePolicy", CreateAutoScalePolicy)
-	// swagger:route POST /auth/ctrl/DeleteAutoScalePolicy AutoScalePolicy DeleteAutoScalePolicy
-	// Delete an Auto Scale Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteAutoScalePolicy", DeleteAutoScalePolicy)
-	// swagger:route POST /auth/ctrl/UpdateAutoScalePolicy AutoScalePolicy UpdateAutoScalePolicy
-	// Update an Auto Scale Policy.
-	// The following values should be added to `AutoScalePolicy.fields` field array to specify which fields will be updated.
-	// ```
-	// Key: 2
-	// KeyDeveloper: 2.1
-	// KeyName: 2.2
-	// MinNodes: 3
-	// MaxNodes: 4
-	// ScaleUpCpuThresh: 5
-	// ScaleDownCpuThresh: 6
-	// TriggerTimeSec: 7
-	// ```
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/UpdateAutoScalePolicy", UpdateAutoScalePolicy)
-	// swagger:route POST /auth/ctrl/ShowAutoScalePolicy AutoScalePolicy ShowAutoScalePolicy
-	// Show Auto Scale Policies.
-	//  Any fields specified will be used to filter results.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowAutoScalePolicy", ShowAutoScalePolicy)
-	// swagger:route POST /auth/ctrl/CreateAutoProvPolicy AutoProvPolicy CreateAutoProvPolicy
-	// Create an Auto Provisioning Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateAutoProvPolicy", CreateAutoProvPolicy)
-	// swagger:route POST /auth/ctrl/DeleteAutoProvPolicy AutoProvPolicy DeleteAutoProvPolicy
-	// Delete an Auto Provisioning Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteAutoProvPolicy", DeleteAutoProvPolicy)
-	// swagger:route POST /auth/ctrl/UpdateAutoProvPolicy AutoProvPolicy UpdateAutoProvPolicy
-	// Update an Auto Provisioning Policy.
-	// The following values should be added to `AutoProvPolicy.fields` field array to specify which fields will be updated.
-	// ```
-	// Key: 2
-	// KeyDeveloper: 2.1
-	// KeyName: 2.2
-	// DeployClientCount: 3
-	// DeployIntervalCount: 4
-	// Cloudlets: 5
-	// CloudletsKey: 5.1
-	// CloudletsKeyOperatorKey: 5.1.1
-	// CloudletsKeyOperatorKeyName: 5.1.1.1
-	// CloudletsKeyName: 5.1.2
-	// CloudletsLoc: 5.2
-	// CloudletsLocLatitude: 5.2.1
-	// CloudletsLocLongitude: 5.2.2
-	// CloudletsLocHorizontalAccuracy: 5.2.3
-	// CloudletsLocVerticalAccuracy: 5.2.4
-	// CloudletsLocAltitude: 5.2.5
-	// CloudletsLocCourse: 5.2.6
-	// CloudletsLocSpeed: 5.2.7
-	// CloudletsLocTimestamp: 5.2.8
-	// CloudletsLocTimestampSeconds: 5.2.8.1
-	// CloudletsLocTimestampNanos: 5.2.8.2
-	// ```
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/UpdateAutoProvPolicy", UpdateAutoProvPolicy)
-	// swagger:route POST /auth/ctrl/ShowAutoProvPolicy AutoProvPolicy ShowAutoProvPolicy
-	// Show Auto Provisioning Policies.
-	//  Any fields specified will be used to filter results.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowAutoProvPolicy", ShowAutoProvPolicy)
-	// swagger:route POST /auth/ctrl/AddAutoProvPolicyCloudlet AutoProvPolicyCloudlet AddAutoProvPolicyCloudlet
-	// Add a Cloudlet to the Auto Provisioning Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/AddAutoProvPolicyCloudlet", AddAutoProvPolicyCloudlet)
-	// swagger:route POST /auth/ctrl/RemoveAutoProvPolicyCloudlet AutoProvPolicyCloudlet RemoveAutoProvPolicyCloudlet
-	// Remove a Cloudlet from the Auto Provisioning Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/RemoveAutoProvPolicyCloudlet", RemoveAutoProvPolicyCloudlet)
-	// swagger:route POST /auth/ctrl/CreateCloudletPool CloudletPool CreateCloudletPool
-	// Create a CloudletPool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateCloudletPool", CreateCloudletPool)
-	// swagger:route POST /auth/ctrl/DeleteCloudletPool CloudletPool DeleteCloudletPool
-	// Delete a CloudletPool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteCloudletPool", DeleteCloudletPool)
-	// swagger:route POST /auth/ctrl/ShowCloudletPool CloudletPool ShowCloudletPool
-	// Show CloudletPools.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletPool", ShowCloudletPool)
-	// swagger:route POST /auth/ctrl/CreateCloudletPoolMember CloudletPoolMember CreateCloudletPoolMember
-	// Add a Cloudlet to a CloudletPool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateCloudletPoolMember", CreateCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/DeleteCloudletPoolMember CloudletPoolMember DeleteCloudletPoolMember
-	// Remove a Cloudlet from a CloudletPool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteCloudletPoolMember", DeleteCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/ShowCloudletPoolMember CloudletPoolMember ShowCloudletPoolMember
-	// Show the Cloudlet to CloudletPool relationships.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletPoolMember", ShowCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/ShowPoolsForCloudlet CloudletKey ShowPoolsForCloudlet
-	// Show CloudletPools that have Cloudlet as a member.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowPoolsForCloudlet", ShowPoolsForCloudlet)
-	// swagger:route POST /auth/ctrl/ShowCloudletsForPool CloudletPoolKey ShowCloudletsForPool
-	// Show Cloudlets that belong to the Pool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
 	// swagger:route POST /auth/ctrl/ShowNode Node ShowNode
 	// Show all Nodes connected to all Controllers.
 	// Security:
@@ -1156,58 +1260,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowLogs", ShowLogs)
-	// swagger:route POST /auth/ctrl/CreatePrivacyPolicy PrivacyPolicy CreatePrivacyPolicy
-	// Create a Privacy Policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreatePrivacyPolicy", CreatePrivacyPolicy)
-	// swagger:route POST /auth/ctrl/DeletePrivacyPolicy PrivacyPolicy DeletePrivacyPolicy
-	// Delete a Privacy policy.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeletePrivacyPolicy", DeletePrivacyPolicy)
-	// swagger:route POST /auth/ctrl/UpdatePrivacyPolicy PrivacyPolicy UpdatePrivacyPolicy
-	// Update a Privacy policy.
-	// The following values should be added to `PrivacyPolicy.fields` field array to specify which fields will be updated.
-	// ```
-	// Key: 2
-	// KeyDeveloper: 2.1
-	// KeyName: 2.2
-	// OutboundSecurityRules: 3
-	// OutboundSecurityRulesProtocol: 3.1
-	// OutboundSecurityRulesPortRangeMin: 3.2
-	// OutboundSecurityRulesPortRangeMax: 3.3
-	// OutboundSecurityRulesRemoteCidr: 3.4
-	// ```
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/UpdatePrivacyPolicy", UpdatePrivacyPolicy)
-	// swagger:route POST /auth/ctrl/ShowPrivacyPolicy PrivacyPolicy ShowPrivacyPolicy
-	// Show Privacy Policies.
-	//  Any fields specified will be used to filter results.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowPrivacyPolicy", ShowPrivacyPolicy)
 	// swagger:route POST /auth/ctrl/ShowCloudletRefs CloudletRefs ShowCloudletRefs
 	// Show CloudletRefs (debug only).
 	// Security:
@@ -1228,52 +1280,4 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowClusterRefs", ShowClusterRefs)
-	// swagger:route POST /auth/ctrl/UpdateSettings Settings UpdateSettings
-	// Update settings.
-	// The following values should be added to `Settings.fields` field array to specify which fields will be updated.
-	// ```
-	// ShepherdMetricsCollectionInterval: 2
-	// ShepherdHealthCheckRetries: 3
-	// ShepherdHealthCheckInterval: 4
-	// AutoDeployIntervalSec: 5
-	// AutoDeployOffsetSec: 6
-	// AutoDeployMaxIntervals: 7
-	// CreateAppInstTimeout: 8
-	// UpdateAppInstTimeout: 9
-	// DeleteAppInstTimeout: 10
-	// CreateClusterInstTimeout: 11
-	// UpdateClusterInstTimeout: 12
-	// DeleteClusterInstTimeout: 13
-	// MasterNodeFlavor: 14
-	// LoadBalancerMaxPortRange: 15
-	// MaxTrackedDmeClients: 16
-	// ```
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/UpdateSettings", UpdateSettings)
-	// swagger:route POST /auth/ctrl/ResetSettings Settings ResetSettings
-	// Reset all settings to their defaults.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ResetSettings", ResetSettings)
-	// swagger:route POST /auth/ctrl/ShowSettings Settings ShowSettings
-	// Show settings.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowSettings", ShowSettings)
 }

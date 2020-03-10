@@ -66,6 +66,9 @@ func RunMcCloudletPoolApi(mcClient ormclient.Api, uri, token, region string, dat
 		case "delete":
 			_, st, err := mcClient.DeleteCloudletPool(uri, token, in)
 			checkMcErr("DeleteCloudletPool", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowCloudletPool(uri, token, in)
+			checkMcErr("ShowCloudletPool", st, err, rc)
 		default:
 			return
 		}
@@ -118,6 +121,9 @@ func RunMcCloudletPoolMemberApi(mcClient ormclient.Api, uri, token, region strin
 		case "delete":
 			_, st, err := mcClient.DeleteCloudletPoolMember(uri, token, in)
 			checkMcErr("DeleteCloudletPoolMember", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowCloudletPoolMember(uri, token, in)
+			checkMcErr("ShowCloudletPoolMember", st, err, rc)
 		default:
 			return
 		}
@@ -144,4 +150,36 @@ func TestShowCloudletsForPool(mcClient *ormclient.Client, uri, token, region str
 func TestPermShowCloudletsForPool(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Cloudlet, int, error) {
 	in := &edgeproto.CloudletPoolKey{}
 	return TestShowCloudletsForPool(mcClient, uri, token, region, in)
+}
+
+func RunMcCloudletPoolShowApi_CloudletKey(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletKey, dataMap interface{}, rc *bool, mode string) {
+	for _, cloudletKey := range *data {
+		in := &ormapi.RegionCloudletKey{
+			Region:      region,
+			CloudletKey: cloudletKey,
+		}
+		switch mode {
+		case "showpoolsforcloudlet":
+			_, st, err := mcClient.ShowPoolsForCloudlet(uri, token, in)
+			checkMcErr("ShowPoolsForCloudlet", st, err, rc)
+		default:
+			return
+		}
+	}
+}
+
+func RunMcCloudletPoolShowApi_CloudletPoolKey(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletPoolKey, dataMap interface{}, rc *bool, mode string) {
+	for _, cloudletPoolKey := range *data {
+		in := &ormapi.RegionCloudletPoolKey{
+			Region:          region,
+			CloudletPoolKey: cloudletPoolKey,
+		}
+		switch mode {
+		case "showcloudletsforpool":
+			_, st, err := mcClient.ShowCloudletsForPool(uri, token, in)
+			checkMcErr("ShowCloudletsForPool", st, err, rc)
+		default:
+			return
+		}
+	}
 }

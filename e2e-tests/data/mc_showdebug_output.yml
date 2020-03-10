@@ -1,4 +1,4 @@
-replies:
+requests:
 - - node:
       type: notifyroot
     output: api,notify

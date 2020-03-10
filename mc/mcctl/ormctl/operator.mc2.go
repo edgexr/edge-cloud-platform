@@ -80,12 +80,16 @@ var OperatorRequiredArgs = []string{
 }
 var OperatorOptionalArgs = []string{}
 var OperatorAliasArgs = []string{
+	"fields=operator.fields",
 	"name=operator.key.name",
 }
 var OperatorComments = map[string]string{
-	"name": "Company or Organization name of the operator",
+	"fields": "Fields are used for the Update API to specify which fields to apply",
+	"name":   "Company or Organization name of the operator",
 }
-var OperatorSpecialArgs = map[string]string{}
+var OperatorSpecialArgs = map[string]string{
+	"operator.fields": "StringArray",
+}
 var OperatorCodeRequiredArgs = []string{}
 var OperatorCodeOptionalArgs = []string{
 	"code",

@@ -128,6 +128,9 @@ func RunMcCloudletApi(mcClient ormclient.Api, uri, token, region string, data *[
 			in.Cloudlet.Fields = cli.GetSpecifiedFields(objMap, &in.Cloudlet, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateCloudlet(uri, token, in)
 			checkMcErr("UpdateCloudlet", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowCloudlet(uri, token, in)
+			checkMcErr("ShowCloudlet", st, err, rc)
 		default:
 			return
 		}
@@ -141,12 +144,28 @@ func RunMcCloudletApi_CloudletResMap(mcClient ormclient.Api, uri, token, region 
 			CloudletResMap: cloudletResMap,
 		}
 		switch mode {
-		case "add":
+		case "addcloudletresmapping":
 			_, st, err := mcClient.AddCloudletResMapping(uri, token, in)
 			checkMcErr("AddCloudletResMapping", st, err, rc)
-		case "remove":
+		case "removecloudletresmapping":
 			_, st, err := mcClient.RemoveCloudletResMapping(uri, token, in)
 			checkMcErr("RemoveCloudletResMapping", st, err, rc)
+		default:
+			return
+		}
+	}
+}
+
+func RunMcCloudletApi_FlavorMatch(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.FlavorMatch, dataMap interface{}, rc *bool, mode string) {
+	for _, flavorMatch := range *data {
+		in := &ormapi.RegionFlavorMatch{
+			Region:      region,
+			FlavorMatch: flavorMatch,
+		}
+		switch mode {
+		case "find":
+			_, st, err := mcClient.FindFlavorMatch(uri, token, in)
+			checkMcErr("FindFlavorMatch", st, err, rc)
 		default:
 			return
 		}
@@ -163,4 +182,20 @@ func TestPermShowCloudletInfo(mcClient *ormclient.Client, uri, token, region, or
 	in := &edgeproto.CloudletInfo{}
 	in.Key.OperatorKey.Name = org
 	return TestShowCloudletInfo(mcClient, uri, token, region, in)
+}
+
+func RunMcCloudletInfoApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletInfo, dataMap interface{}, rc *bool, mode string) {
+	for _, cloudletInfo := range *data {
+		in := &ormapi.RegionCloudletInfo{
+			Region:       region,
+			CloudletInfo: cloudletInfo,
+		}
+		switch mode {
+		case "show":
+			_, st, err := mcClient.ShowCloudletInfo(uri, token, in)
+			checkMcErr("ShowCloudletInfo", st, err, rc)
+		default:
+			return
+		}
+	}
 }

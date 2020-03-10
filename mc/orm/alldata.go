@@ -96,7 +96,7 @@ func CreateData(c echo.Context) error {
 
 		if appdata.Settings != nil && appdataMap != nil {
 			desc := fmt.Sprintf("Update Settings")
-			objMap, err := cli.GetGenericObj(appdataMap["Settings"])
+			objMap, err := cli.GetGenericObj(appdataMap["settings"])
 			if err != nil {
 				err = fmt.Errorf("invalid data map for settings: %v", err)
 			} else {
@@ -147,7 +147,7 @@ func CreateData(c echo.Context) error {
 			err = CreateClusterInstStream(ctx, rc, &cinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
-		for _, app := range appdata.Applications {
+		for _, app := range appdata.Apps {
 			desc := fmt.Sprintf("Create App %v", app.Key)
 			_, err = CreateAppObj(ctx, rc, &app)
 			streamReply(c, desc, err, &hadErr)
@@ -213,7 +213,7 @@ func DeleteData(c echo.Context) error {
 			err = DeleteAppInstStream(ctx, rc, &appinst, cb)
 			streamReply(c, desc, err, &hadErr)
 		}
-		for _, app := range appdata.Applications {
+		for _, app := range appdata.Apps {
 			desc := fmt.Sprintf("Delete App %v", app.Key)
 			_, err = DeleteAppObj(ctx, rc, &app)
 			streamReply(c, desc, err, &hadErr)
@@ -381,7 +381,7 @@ func ShowData(c echo.Context) error {
 		}
 		apps, err := ShowAppObj(ctx, rc, &edgeproto.App{})
 		if err == nil {
-			appdata.Applications = apps
+			appdata.Apps = apps
 		}
 		appinsts, err := ShowAppInstObj(ctx, rc, &edgeproto.AppInst{})
 		if err == nil {

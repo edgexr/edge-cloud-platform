@@ -92,6 +92,9 @@ func RunMcPrivacyPolicyApi(mcClient ormclient.Api, uri, token, region string, da
 			in.PrivacyPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.PrivacyPolicy, cli.YamlNamespace)
 			_, st, err := mcClient.UpdatePrivacyPolicy(uri, token, in)
 			checkMcErr("UpdatePrivacyPolicy", st, err, rc)
+		case "show":
+			_, st, err := mcClient.ShowPrivacyPolicy(uri, token, in)
+			checkMcErr("ShowPrivacyPolicy", st, err, rc)
 		default:
 			return
 		}

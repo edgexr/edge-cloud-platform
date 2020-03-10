@@ -884,7 +884,7 @@ func (s *Client) {{.MethodName}}Stream(uri, token string, in *ormapi.Region{{.In
 
 func (g *GenMC2) generateTestApi(service *descriptor.ServiceDescriptorProto) {
 	// group methods by input type
-	groups := gensupport.GetMethodGroups(g.Generator, service, nil)
+	groups := gensupport.GetMethodGroups(g.Generator, service)
 	for _, group := range groups {
 		g.generateTestGroupApi(service, group)
 	}
@@ -927,7 +927,7 @@ func (g *GenMC2) generateTestGroupApi(service *descriptor.ServiceDescriptorProto
 
 func (g *GenMC2) generateRunApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
 	// group methods by input type
-	groups := gensupport.GetMethodGroups(g.Generator, service, nil)
+	groups := gensupport.GetMethodGroups(g.Generator, service)
 	for _, group := range groups {
 		g.generateRunGroupApi(file, service, group)
 	}
@@ -970,8 +970,8 @@ func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, servi
 		if !info.Mc2Api {
 			continue
 		}
-		g.P("case \"", info.Action, "\":")
-		if info.Action == "update" {
+		g.P("case \"", strings.ToLower(info.Prefix), "\":")
+		if info.IsUpdate {
 			g.importCli = true
 			g.importOS = true
 			if group.SingularData {

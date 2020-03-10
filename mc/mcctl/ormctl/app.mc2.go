@@ -153,6 +153,7 @@ var AppOptionalArgs = []string{
 	"defaultprivacypolicy",
 }
 var AppAliasArgs = []string{
+	"fields=app.fields",
 	"developer=app.key.developerkey.name",
 	"appname=app.key.name",
 	"appvers=app.key.version",
@@ -181,6 +182,7 @@ var AppAliasArgs = []string{
 	"defaultprivacypolicy=app.defaultprivacypolicy",
 }
 var AppComments = map[string]string{
+	"fields":                  "Fields are used for the Update API to specify which fields to apply",
 	"developer":               "Organization or Company Name that a Developer is part of",
 	"appname":                 "App name",
 	"appvers":                 "App version",
@@ -208,4 +210,6 @@ var AppComments = map[string]string{
 	"accesstype":              "Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
 	"defaultprivacypolicy":    "Privacy policy when creating auto cluster",
 }
-var AppSpecialArgs = map[string]string{}
+var AppSpecialArgs = map[string]string{
+	"app.fields": "StringArray",
+}

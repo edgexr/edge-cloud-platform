@@ -142,6 +142,7 @@ var ClusterInstOptionalArgs = []string{
 	"masternodeflavor",
 }
 var ClusterInstAliasArgs = []string{
+	"fields=clusterinst.fields",
 	"cluster=clusterinst.key.clusterkey.name",
 	"operator=clusterinst.key.cloudletkey.operatorkey.name",
 	"cloudlet=clusterinst.key.cloudletkey.name",
@@ -173,6 +174,7 @@ var ClusterInstAliasArgs = []string{
 	"masternodeflavor=clusterinst.masternodeflavor",
 }
 var ClusterInstComments = map[string]string{
+	"fields":             "Fields are used for the Update API to specify which fields to apply",
 	"cluster":            "Cluster name",
 	"operator":           "Company or Organization name of the operator",
 	"cloudlet":           "Name of the cloudlet",
@@ -200,7 +202,8 @@ var ClusterInstComments = map[string]string{
 	"masternodeflavor":   "Generic flavor for k8s master VM when worker nodes > 0",
 }
 var ClusterInstSpecialArgs = map[string]string{
-	"errors": "StringArray",
+	"clusterinst.errors": "StringArray",
+	"clusterinst.fields": "StringArray",
 }
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
@@ -218,6 +221,7 @@ var ClusterInstInfoOptionalArgs = []string{
 	"status.stepname",
 }
 var ClusterInstInfoAliasArgs = []string{
+	"fields=clusterinstinfo.fields",
 	"key.clusterkey.name=clusterinstinfo.key.clusterkey.name",
 	"key.cloudletkey.operatorkey.name=clusterinstinfo.key.cloudletkey.operatorkey.name",
 	"key.cloudletkey.name=clusterinstinfo.key.cloudletkey.name",
@@ -231,6 +235,7 @@ var ClusterInstInfoAliasArgs = []string{
 	"status.stepname=clusterinstinfo.status.stepname",
 }
 var ClusterInstInfoComments = map[string]string{
+	"fields":                           "Fields are used for the Update API to specify which fields to apply",
 	"key.clusterkey.name":              "Cluster name",
 	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
 	"key.cloudletkey.name":             "Name of the cloudlet",
@@ -240,5 +245,6 @@ var ClusterInstInfoComments = map[string]string{
 	"errors":                           "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
-	"errors": "StringArray",
+	"clusterinstinfo.errors": "StringArray",
+	"clusterinstinfo.fields": "StringArray",
 }

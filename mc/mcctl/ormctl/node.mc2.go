@@ -76,6 +76,7 @@ var NodeOptionalArgs = []string{
 	"containerversion",
 }
 var NodeAliasArgs = []string{
+	"fields=node.fields",
 	"name=node.key.name",
 	"type=node.key.type",
 	"operator=node.key.cloudletkey.operatorkey.name",
@@ -89,6 +90,7 @@ var NodeAliasArgs = []string{
 	"containerversion=node.containerversion",
 }
 var NodeComments = map[string]string{
+	"fields":           "Fields are used for the Update API to specify which fields to apply",
 	"name":             "Name or hostname of node",
 	"type":             "Node type",
 	"operator":         "Company or Organization name of the operator",
@@ -101,4 +103,52 @@ var NodeComments = map[string]string{
 	"hostname":         "Hostname",
 	"containerversion": "Docker edge-cloud container version which node instance use",
 }
-var NodeSpecialArgs = map[string]string{}
+var NodeSpecialArgs = map[string]string{
+	"node.fields": "StringArray",
+}
+var NodeDataRequiredArgs = []string{}
+var NodeDataOptionalArgs = []string{
+	"nodes.fields",
+	"nodes.key.name",
+	"nodes.key.type",
+	"nodes.key.cloudletkey.operatorkey.name",
+	"nodes.key.cloudletkey.name",
+	"nodes.key.region",
+	"nodes.notifyid",
+	"nodes.buildmaster",
+	"nodes.buildhead",
+	"nodes.buildauthor",
+	"nodes.hostname",
+	"nodes.containerversion",
+}
+var NodeDataAliasArgs = []string{
+	"nodes.fields=nodedata.nodes.fields",
+	"nodes.key.name=nodedata.nodes.key.name",
+	"nodes.key.type=nodedata.nodes.key.type",
+	"nodes.key.cloudletkey.operatorkey.name=nodedata.nodes.key.cloudletkey.operatorkey.name",
+	"nodes.key.cloudletkey.name=nodedata.nodes.key.cloudletkey.name",
+	"nodes.key.region=nodedata.nodes.key.region",
+	"nodes.notifyid=nodedata.nodes.notifyid",
+	"nodes.buildmaster=nodedata.nodes.buildmaster",
+	"nodes.buildhead=nodedata.nodes.buildhead",
+	"nodes.buildauthor=nodedata.nodes.buildauthor",
+	"nodes.hostname=nodedata.nodes.hostname",
+	"nodes.containerversion=nodedata.nodes.containerversion",
+}
+var NodeDataComments = map[string]string{
+	"nodes.fields":                           "Fields are used for the Update API to specify which fields to apply",
+	"nodes.key.name":                         "Name or hostname of node",
+	"nodes.key.type":                         "Node type",
+	"nodes.key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
+	"nodes.key.cloudletkey.name":             "Name of the cloudlet",
+	"nodes.key.region":                       "Region the node is in",
+	"nodes.notifyid":                         "Id of client assigned by server (internal use only)",
+	"nodes.buildmaster":                      "Build Master Version",
+	"nodes.buildhead":                        "Build Head Version",
+	"nodes.buildauthor":                      "Build Author",
+	"nodes.hostname":                         "Hostname",
+	"nodes.containerversion":                 "Docker edge-cloud container version which node instance use",
+}
+var NodeDataSpecialArgs = map[string]string{
+	"nodedata.nodes.fields": "StringArray",
+}

@@ -30,3 +30,19 @@ func TestPermShowNode(mcClient *ormclient.Client, uri, token, region, org string
 	in := &edgeproto.Node{}
 	return TestShowNode(mcClient, uri, token, region, in)
 }
+
+func RunMcNodeApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Node, dataMap interface{}, rc *bool, mode string) {
+	for _, node := range *data {
+		in := &ormapi.RegionNode{
+			Region: region,
+			Node:   node,
+		}
+		switch mode {
+		case "show":
+			_, st, err := mcClient.ShowNode(uri, token, in)
+			checkMcErr("ShowNode", st, err, rc)
+		default:
+			return
+		}
+	}
+}

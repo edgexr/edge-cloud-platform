@@ -121,12 +121,31 @@ func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data
 			in.ResTagTable.Fields = cli.GetSpecifiedFields(objMap, &in.ResTagTable, cli.YamlNamespace)
 			_, st, err := mcClient.UpdateResTagTable(uri, token, in)
 			checkMcErr("UpdateResTagTable", st, err, rc)
-		case "add":
+		case "show":
+			_, st, err := mcClient.ShowResTagTable(uri, token, in)
+			checkMcErr("ShowResTagTable", st, err, rc)
+		case "addrestag":
 			_, st, err := mcClient.AddResTag(uri, token, in)
 			checkMcErr("AddResTag", st, err, rc)
-		case "remove":
+		case "removerestag":
 			_, st, err := mcClient.RemoveResTag(uri, token, in)
 			checkMcErr("RemoveResTag", st, err, rc)
+		default:
+			return
+		}
+	}
+}
+
+func RunMcResTagTableApi_ResTagTableKey(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ResTagTableKey, dataMap interface{}, rc *bool, mode string) {
+	for _, resTagTableKey := range *data {
+		in := &ormapi.RegionResTagTableKey{
+			Region:         region,
+			ResTagTableKey: resTagTableKey,
+		}
+		switch mode {
+		case "getrestagtable":
+			_, st, err := mcClient.GetResTagTable(uri, token, in)
+			checkMcErr("GetResTagTable", st, err, rc)
 		default:
 			return
 		}

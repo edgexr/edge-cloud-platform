@@ -54,3 +54,25 @@ func TestPermShowLogs(mcClient *ormclient.Client, uri, token, region, org string
 	in.AppInstKey.AppKey.DeveloperKey.Name = org
 	return TestShowLogs(mcClient, uri, token, region, in)
 }
+
+func RunMcExecApi_ExecRequest(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ExecRequest, dataMap interface{}, rc *bool, mode string) {
+	for _, execRequest := range *data {
+		in := &ormapi.RegionExecRequest{
+			Region:      region,
+			ExecRequest: execRequest,
+		}
+		switch mode {
+		case "runcommand":
+			_, st, err := mcClient.RunCommand(uri, token, in)
+			checkMcErr("RunCommand", st, err, rc)
+		case "runconsole":
+			_, st, err := mcClient.RunConsole(uri, token, in)
+			checkMcErr("RunConsole", st, err, rc)
+		case "showlogs":
+			_, st, err := mcClient.ShowLogs(uri, token, in)
+			checkMcErr("ShowLogs", st, err, rc)
+		default:
+			return
+		}
+	}
+}
