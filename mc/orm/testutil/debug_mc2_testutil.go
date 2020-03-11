@@ -4,6 +4,7 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -64,27 +65,50 @@ func TestPermRunDebug(mcClient *ormclient.Client, uri, token, region, org string
 	return TestRunDebug(mcClient, uri, token, region, in)
 }
 
-func RunMcDebugApi_DebugRequest(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.DebugRequest, dataMap interface{}, rc *bool, mode string) {
-	for _, debugRequest := range *data {
-		in := &ormapi.RegionDebugRequest{
-			Region:       region,
-			DebugRequest: debugRequest,
-		}
-		switch mode {
-		case "enabledebuglevels":
-			_, st, err := mcClient.EnableDebugLevels(uri, token, in)
-			checkMcErr("EnableDebugLevels", st, err, rc)
-		case "disabledebuglevels":
-			_, st, err := mcClient.DisableDebugLevels(uri, token, in)
-			checkMcErr("DisableDebugLevels", st, err, rc)
-		case "showdebuglevels":
-			_, st, err := mcClient.ShowDebugLevels(uri, token, in)
-			checkMcErr("ShowDebugLevels", st, err, rc)
-		case "rundebug":
-			_, st, err := mcClient.RunDebug(uri, token, in)
-			checkMcErr("RunDebug", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) EnableDebugLevels(ctx context.Context, in *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
+	inR := &ormapi.RegionDebugRequest{
+		Region:       s.Region,
+		DebugRequest: *in,
 	}
+	out, status, err := s.McClient.EnableDebugLevels(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DisableDebugLevels(ctx context.Context, in *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
+	inR := &ormapi.RegionDebugRequest{
+		Region:       s.Region,
+		DebugRequest: *in,
+	}
+	out, status, err := s.McClient.DisableDebugLevels(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowDebugLevels(ctx context.Context, in *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
+	inR := &ormapi.RegionDebugRequest{
+		Region:       s.Region,
+		DebugRequest: *in,
+	}
+	out, status, err := s.McClient.ShowDebugLevels(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RunDebug(ctx context.Context, in *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
+	inR := &ormapi.RegionDebugRequest{
+		Region:       s.Region,
+		DebugRequest: *in,
+	}
+	out, status, err := s.McClient.RunDebug(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

@@ -4,6 +4,7 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -55,24 +56,42 @@ func TestPermShowLogs(mcClient *ormclient.Client, uri, token, region, org string
 	return TestShowLogs(mcClient, uri, token, region, in)
 }
 
-func RunMcExecApi_ExecRequest(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ExecRequest, dataMap interface{}, rc *bool, mode string) {
-	for _, execRequest := range *data {
-		in := &ormapi.RegionExecRequest{
-			Region:      region,
-			ExecRequest: execRequest,
-		}
-		switch mode {
-		case "runcommand":
-			_, st, err := mcClient.RunCommand(uri, token, in)
-			checkMcErr("RunCommand", st, err, rc)
-		case "runconsole":
-			_, st, err := mcClient.RunConsole(uri, token, in)
-			checkMcErr("RunConsole", st, err, rc)
-		case "showlogs":
-			_, st, err := mcClient.ShowLogs(uri, token, in)
-			checkMcErr("ShowLogs", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) RunCommand(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	inR := &ormapi.RegionExecRequest{
+		Region:      s.Region,
+		ExecRequest: *in,
 	}
+	out, status, err := s.McClient.RunCommand(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RunConsole(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	inR := &ormapi.RegionExecRequest{
+		Region:      s.Region,
+		ExecRequest: *in,
+	}
+	out, status, err := s.McClient.RunConsole(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowLogs(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	inR := &ormapi.RegionExecRequest{
+		Region:      s.Region,
+		ExecRequest: *in,
+	}
+	out, status, err := s.McClient.ShowLogs(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) SendLocalRequest(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	return nil, nil
 }

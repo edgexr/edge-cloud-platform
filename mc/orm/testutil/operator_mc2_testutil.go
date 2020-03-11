@@ -4,6 +4,7 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -19,6 +20,22 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
+
+func (s *TestClient) CreateOperator(ctx context.Context, in *edgeproto.Operator) (*edgeproto.Result, error) {
+	return nil, nil
+}
+
+func (s *TestClient) DeleteOperator(ctx context.Context, in *edgeproto.Operator) (*edgeproto.Result, error) {
+	return nil, nil
+}
+
+func (s *TestClient) UpdateOperator(ctx context.Context, in *edgeproto.Operator) (*edgeproto.Result, error) {
+	return nil, nil
+}
+
+func (s *TestClient) ShowOperator(ctx context.Context, in *edgeproto.Operator) ([]edgeproto.Operator, error) {
+	return nil, nil
+}
 
 func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
@@ -53,24 +70,38 @@ func TestPermShowOperatorCode(mcClient *ormclient.Client, uri, token, region, or
 	return TestShowOperatorCode(mcClient, uri, token, region, in)
 }
 
-func RunMcOperatorCodeApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.OperatorCode, dataMap interface{}, rc *bool, mode string) {
-	for _, operatorCode := range *data {
-		in := &ormapi.RegionOperatorCode{
-			Region:       region,
-			OperatorCode: operatorCode,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateOperatorCode(uri, token, in)
-			checkMcErr("CreateOperatorCode", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteOperatorCode(uri, token, in)
-			checkMcErr("DeleteOperatorCode", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowOperatorCode(uri, token, in)
-			checkMcErr("ShowOperatorCode", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateOperatorCode(ctx context.Context, in *edgeproto.OperatorCode) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionOperatorCode{
+		Region:       s.Region,
+		OperatorCode: *in,
 	}
+	out, status, err := s.McClient.CreateOperatorCode(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeleteOperatorCode(ctx context.Context, in *edgeproto.OperatorCode) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionOperatorCode{
+		Region:       s.Region,
+		OperatorCode: *in,
+	}
+	out, status, err := s.McClient.DeleteOperatorCode(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowOperatorCode(ctx context.Context, in *edgeproto.OperatorCode) ([]edgeproto.OperatorCode, error) {
+	inR := &ormapi.RegionOperatorCode{
+		Region:       s.Region,
+		OperatorCode: *in,
+	}
+	out, status, err := s.McClient.ShowOperatorCode(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

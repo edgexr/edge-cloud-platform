@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -99,55 +98,86 @@ func TestPermGetResTagTable(mcClient *ormclient.Client, uri, token, region, org 
 	return TestGetResTagTable(mcClient, uri, token, region, in)
 }
 
-func RunMcResTagTableApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ResTagTable, dataMap interface{}, rc *bool, mode string) {
-	for ii, resTagTable := range *data {
-		in := &ormapi.RegionResTagTable{
-			Region:      region,
-			ResTagTable: resTagTable,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateResTagTable(uri, token, in)
-			checkMcErr("CreateResTagTable", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteResTagTable(uri, token, in)
-			checkMcErr("DeleteResTagTable", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for ResTagTable: %v", err)
-				os.Exit(1)
-			}
-			in.ResTagTable.Fields = cli.GetSpecifiedFields(objMap, &in.ResTagTable, cli.YamlNamespace)
-			_, st, err := mcClient.UpdateResTagTable(uri, token, in)
-			checkMcErr("UpdateResTagTable", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowResTagTable(uri, token, in)
-			checkMcErr("ShowResTagTable", st, err, rc)
-		case "addrestag":
-			_, st, err := mcClient.AddResTag(uri, token, in)
-			checkMcErr("AddResTag", st, err, rc)
-		case "removerestag":
-			_, st, err := mcClient.RemoveResTag(uri, token, in)
-			checkMcErr("RemoveResTag", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateResTagTable(ctx context.Context, in *edgeproto.ResTagTable) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
 	}
+	out, status, err := s.McClient.CreateResTagTable(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
 
-func RunMcResTagTableApi_ResTagTableKey(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ResTagTableKey, dataMap interface{}, rc *bool, mode string) {
-	for _, resTagTableKey := range *data {
-		in := &ormapi.RegionResTagTableKey{
-			Region:         region,
-			ResTagTableKey: resTagTableKey,
-		}
-		switch mode {
-		case "getrestagtable":
-			_, st, err := mcClient.GetResTagTable(uri, token, in)
-			checkMcErr("GetResTagTable", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) DeleteResTagTable(ctx context.Context, in *edgeproto.ResTagTable) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
 	}
+	out, status, err := s.McClient.DeleteResTagTable(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdateResTagTable(ctx context.Context, in *edgeproto.ResTagTable) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
+	}
+	out, status, err := s.McClient.UpdateResTagTable(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowResTagTable(ctx context.Context, in *edgeproto.ResTagTable) ([]edgeproto.ResTagTable, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
+	}
+	out, status, err := s.McClient.ShowResTagTable(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AddResTag(ctx context.Context, in *edgeproto.ResTagTable) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
+	}
+	out, status, err := s.McClient.AddResTag(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveResTag(ctx context.Context, in *edgeproto.ResTagTable) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionResTagTable{
+		Region:      s.Region,
+		ResTagTable: *in,
+	}
+	out, status, err := s.McClient.RemoveResTag(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) GetResTagTable(ctx context.Context, in *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
+	inR := &ormapi.RegionResTagTableKey{
+		Region:         s.Region,
+		ResTagTableKey: *in,
+	}
+	out, status, err := s.McClient.GetResTagTable(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

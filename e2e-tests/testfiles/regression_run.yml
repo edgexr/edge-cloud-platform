@@ -3,9 +3,6 @@ tests:
   - includefile: deploy_start.yml
   - includefile: mc_add_delete.yml
     loops: 2
-  - includefile: mc_add_delete.yml
-    mods: [sep]
-    loops: 2
   - includefile: mc_audit_setup.yml
   - includefile: mc_audit.yml
   - includefile: mc_audit.yml
@@ -13,9 +10,6 @@ tests:
   - includefile: mc_audit_done.yml
   - includefile: mc_add_delete.yml
     mods: [cli]
-    loops: 2
-  - includefile: mc_add_delete.yml
-    mods: [cli,sep]
     loops: 2
   - includefile: verify_loc.yml
     loops: 2

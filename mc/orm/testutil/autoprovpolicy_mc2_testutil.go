@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -96,52 +95,74 @@ func TestPermRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token
 	return TestRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 
-func RunMcAutoProvPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicy, dataMap interface{}, rc *bool, mode string) {
-	for ii, autoProvPolicy := range *data {
-		in := &ormapi.RegionAutoProvPolicy{
-			Region:         region,
-			AutoProvPolicy: autoProvPolicy,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateAutoProvPolicy(uri, token, in)
-			checkMcErr("CreateAutoProvPolicy", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteAutoProvPolicy(uri, token, in)
-			checkMcErr("DeleteAutoProvPolicy", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for AutoProvPolicy: %v", err)
-				os.Exit(1)
-			}
-			in.AutoProvPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoProvPolicy, cli.YamlNamespace)
-			_, st, err := mcClient.UpdateAutoProvPolicy(uri, token, in)
-			checkMcErr("UpdateAutoProvPolicy", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowAutoProvPolicy(uri, token, in)
-			checkMcErr("ShowAutoProvPolicy", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoProvPolicy{
+		Region:         s.Region,
+		AutoProvPolicy: *in,
 	}
+	out, status, err := s.McClient.CreateAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
 
-func RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoProvPolicyCloudlet, dataMap interface{}, rc *bool, mode string) {
-	for _, autoProvPolicyCloudlet := range *data {
-		in := &ormapi.RegionAutoProvPolicyCloudlet{
-			Region:                 region,
-			AutoProvPolicyCloudlet: autoProvPolicyCloudlet,
-		}
-		switch mode {
-		case "add":
-			_, st, err := mcClient.AddAutoProvPolicyCloudlet(uri, token, in)
-			checkMcErr("AddAutoProvPolicyCloudlet", st, err, rc)
-		case "remove":
-			_, st, err := mcClient.RemoveAutoProvPolicyCloudlet(uri, token, in)
-			checkMcErr("RemoveAutoProvPolicyCloudlet", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) DeleteAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoProvPolicy{
+		Region:         s.Region,
+		AutoProvPolicy: *in,
 	}
+	out, status, err := s.McClient.DeleteAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdateAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoProvPolicy{
+		Region:         s.Region,
+		AutoProvPolicy: *in,
+	}
+	out, status, err := s.McClient.UpdateAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) ([]edgeproto.AutoProvPolicy, error) {
+	inR := &ormapi.RegionAutoProvPolicy{
+		Region:         s.Region,
+		AutoProvPolicy: *in,
+	}
+	out, status, err := s.McClient.ShowAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AddAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoProvPolicyCloudlet{
+		Region:                 s.Region,
+		AutoProvPolicyCloudlet: *in,
+	}
+	out, status, err := s.McClient.AddAutoProvPolicyCloudlet(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoProvPolicyCloudlet{
+		Region:                 s.Region,
+		AutoProvPolicyCloudlet: *in,
+	}
+	out, status, err := s.McClient.RemoveAutoProvPolicyCloudlet(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

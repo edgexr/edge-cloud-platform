@@ -93,8 +93,17 @@ tests:
 - includefile: mc_debugtest.yml
 
   #going to need a second one for operator, or just use mexadmin instead of user2
-- name: check developer shepherd metrics in influx
+- name: check developer shepherd metrics in influx (separate calls)
   actions: [mcapi-showmetrics]
+  apifile: '{{datadir2}}/mc_metrics_targets.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_metrics_show.yml'
+    filetype: mcmetrics
+
+- name: check developer shepherd metrics in influx (single call)
+  actions: [mcapi-showmetricsall]
   apifile: '{{datadir2}}/mc_metrics_targets.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
   compareyaml:

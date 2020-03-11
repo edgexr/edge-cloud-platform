@@ -1,6 +1,7 @@
 package e2esetup
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,6 +21,18 @@ import (
 )
 
 var mcClient ormclient.Api
+var errs []Err
+
+type Err struct {
+	desc   string
+	status int
+	err    string
+}
+
+type AllDataOut struct {
+	Errors     []Err
+	RegionData []edgetestutil.AllDataOut
+}
 
 func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	mc := getMC(mcname)
@@ -108,8 +121,6 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 
 func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
 	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
-	sep := hasMod("sep", mods)
-
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
 	// We need to log in as that user.
@@ -119,24 +130,27 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return false
 	}
 
+	tag := ""
+	apiParams := strings.Split(api, "-")
+	if len(apiParams) > 1 {
+		api = apiParams[0]
+		tag = apiParams[1]
+	}
+
 	if api == "show" {
 		var showData *ormapi.AllData
-		if sep {
-			showData = showMcDataSep(uri, token, &rc)
-		} else {
-			showData = showMcDataAll(uri, token, &rc)
-		}
+		showData = showMcData(uri, token, tag, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
 		return rc
 	}
 
-	if api == "showmetrics" {
+	if strings.HasPrefix(api, "showmetrics") {
 		var showMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
 		var parsedMetrics *[]MetricsCompare
 		// retry a couple times since prometheus takes a while on startup
 		for i := 0; i < 100; i++ {
-			if sep {
+			if api == "showmetrics" {
 				showMetrics = showMcMetricsSep(uri, token, targets, &rc)
 			} else {
 				showMetrics = showMcMetricsAll(uri, token, targets, &rc)
@@ -159,26 +173,34 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	}
 	data := readMCDataFile(apiFile, vars)
 	regionDataMap := readMCRegionDataFileMap(apiFile, vars)
+	var errs []Err
 	switch api {
 	case "create":
-		if sep {
-			createMcDataSep(uri, token, data, regionDataMap, &rc)
-		} else {
-			createMcDataAll(uri, token, data, &rc)
-		}
+		output := &AllDataOut{}
+		createMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
 	case "delete":
-		if sep {
-			deleteMcDataSep(uri, token, data, regionDataMap, &rc)
-		} else {
-			deleteMcDataAll(uri, token, data, &rc)
-		}
+		output := &AllDataOut{}
+		deleteMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
 	case "update":
-		updateMcDataSep(uri, token, data, regionDataMap, &rc)
+		output := &AllDataOut{}
+		updateMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
 	case "showfiltered":
-		dataOut := showMcDataFiltered(uri, token, data, &rc)
+		dataOut := showMcDataFiltered(uri, token, tag, data, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
 	}
-
+	if tag != "expecterr" && errs != nil {
+		// no errors expected
+		for _, err := range errs {
+			log.Printf("\"%s\" %s failed %s/%d\n", api, err.desc, err.err, err.status)
+			rc = false
+		}
+	}
 	return rc
 }
 
@@ -259,6 +281,20 @@ func loginCurUser(uri, curUserFile string, vars map[string]string) (string, bool
 	return token, rc
 }
 
+func outMcErr(output *AllDataOut, desc string, status int, err error) {
+	if err == nil && status != http.StatusOK {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	if err != nil {
+		mcerr := Err{
+			desc:   desc,
+			status: status,
+			err:    err.Error(),
+		}
+		output.Errors = append(output.Errors, mcerr)
+	}
+}
+
 func checkMcErr(msg string, status int, err error, rc *bool) {
 	if err != nil || status != http.StatusOK {
 		log.Printf("%s failed %v/%d\n", msg, err, status)
@@ -287,27 +323,7 @@ func hasMod(mod string, mods []string) bool {
 	return false
 }
 
-func showMcDataAll(uri, token string, rc *bool) *ormapi.AllData {
-	showData, status, err := mcClient.ShowData(uri, token)
-	checkMcErr("ShowData", status, err, rc)
-	return showData
-}
-
-func createMcDataAll(uri, token string, data *ormapi.AllData, rc *bool) {
-	status, err := mcClient.CreateData(uri, token, data, func(res *ormapi.Result) {
-		log.Printf("CreateData: %s\n", res.Message)
-	})
-	checkMcErr("CreateData", status, err, rc)
-}
-
-func deleteMcDataAll(uri, token string, data *ormapi.AllData, rc *bool) {
-	status, err := mcClient.DeleteData(uri, token, data, func(res *ormapi.Result) {
-		log.Printf("DeleteData: %s\n", res.Message)
-	})
-	checkMcErr("DeleteData", status, err, rc)
-}
-
-func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
+func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	ctrls, status, err := mcClient.ShowController(uri, token)
 	checkMcErr("ShowControllers", status, err, rc)
 	orgs, status, err := mcClient.ShowOrg(uri, token)
@@ -324,218 +340,48 @@ func showMcDataSep(uri, token string, rc *bool) *ormapi.AllData {
 		OrgCloudletPools: ocs,
 	}
 	for _, ctrl := range ctrls {
-		inSettings := &ormapi.RegionSettings{
-			Region: ctrl.Region,
+		client := testutil.TestClient{
+			Region:          ctrl.Region,
+			Uri:             uri,
+			Token:           token,
+			McClient:        mcClient,
+			IgnoreForbidden: true, // avoid test failure for ShowSettings
 		}
-		settings, status, err := mcClient.ShowSettings(uri, token, inSettings)
-		if status == http.StatusForbidden {
-			// avoid test failure when user doesn't have perms
-			settings = nil
-			status = http.StatusOK
-			err = nil
-		}
-		checkMcCtrlErr("ShowSettings", status, err, rc)
-
-		inFlavor := &ormapi.RegionFlavor{
-			Region: ctrl.Region,
-		}
-		flavors, status, err := mcClient.ShowFlavor(uri, token, inFlavor)
-		checkMcCtrlErr("ShowFlavors", status, err, rc)
-
-		inCode := &ormapi.RegionOperatorCode{
-			Region: ctrl.Region,
-		}
-		codes, status, err := mcClient.ShowOperatorCode(uri, token, inCode)
-		checkMcCtrlErr("ShowOperatorCode", status, err, rc)
-
-		inCloudlet := &ormapi.RegionCloudlet{
-			Region: ctrl.Region,
-		}
-		cloudlets, status, err := mcClient.ShowCloudlet(uri, token, inCloudlet)
-		checkMcCtrlErr("ShowCloudlet", status, err, rc)
-
-		inCloudletInfo := &ormapi.RegionCloudletInfo{
-			Region: ctrl.Region,
-		}
-		cloudletInfos, status, err := mcClient.ShowCloudletInfo(uri, token, inCloudletInfo)
-		checkMcCtrlErr("ShowCloudletInfo", status, err, rc)
-
-		inCloudletPool := &ormapi.RegionCloudletPool{
-			Region: ctrl.Region,
-		}
-		pools, status, err := mcClient.ShowCloudletPool(uri, token, inCloudletPool)
-		checkMcCtrlErr("ShowCloudletPool", status, err, rc)
-
-		inCloudletPoolMember := &ormapi.RegionCloudletPoolMember{
-			Region: ctrl.Region,
-		}
-		members, status, err := mcClient.ShowCloudletPoolMember(uri, token, inCloudletPoolMember)
-		checkMcCtrlErr("ShowCloudletPoolMember", status, err, rc)
-
-		inAutoScalePolicy := &ormapi.RegionAutoScalePolicy{
-			Region: ctrl.Region,
-		}
-		asPolicies, status, err := mcClient.ShowAutoScalePolicy(uri, token, inAutoScalePolicy)
-		checkMcCtrlErr("ShowAutoScalePolicy", status, err, rc)
-
-		inAutoProvPolicy := &ormapi.RegionAutoProvPolicy{
-			Region: ctrl.Region,
-		}
-		apPolicies, status, err := mcClient.ShowAutoProvPolicy(uri, token, inAutoProvPolicy)
-		checkMcCtrlErr("ShowAutoProvPolicy", status, err, rc)
-
-		inClusterInst := &ormapi.RegionClusterInst{
-			Region: ctrl.Region,
-		}
-		clusterInsts, status, err := mcClient.ShowClusterInst(uri, token, inClusterInst)
-		checkMcCtrlErr("ShowClusterInst", status, err, rc)
-
-		inApp := &ormapi.RegionApp{
-			Region: ctrl.Region,
-		}
-		apps, status, err := mcClient.ShowApp(uri, token, inApp)
-		checkMcCtrlErr("ShowApp", status, err, rc)
-
-		inAppInst := &ormapi.RegionAppInst{
-			Region: ctrl.Region,
-		}
-		appInsts, status, err := mcClient.ShowAppInst(uri, token, inAppInst)
-		checkMcCtrlErr("ShowAppInst", status, err, rc)
-
-		// match what alldata.go does.
-		if len(flavors) == 0 && len(cloudlets) == 0 &&
-			len(clusterInsts) == 0 && len(apps) == 0 &&
-			len(appInsts) == 0 && len(codes) == 0 &&
-			len(asPolicies) == 0 && len(apPolicies) == 0 {
-			continue
-		}
-
+		filter := &edgeproto.AllData{}
+		appdata := &edgeproto.AllData{}
+		run := edgetestutil.NewRun(&client, context.Background(), "show", rc)
+		edgetestutil.RunAllDataShowApis(run, filter, appdata)
+		run.CheckErrs(fmt.Sprintf("show region %s", ctrl.Region), tag)
 		rd := ormapi.RegionData{
-			Region: ctrl.Region,
-			AppData: edgeproto.AllData{
-				Flavors:             flavors,
-				Cloudlets:           cloudlets,
-				CloudletInfos:       cloudletInfos,
-				CloudletPools:       pools,
-				CloudletPoolMembers: members,
-				ClusterInsts:        clusterInsts,
-				Apps:                apps,
-				AppInstances:        appInsts,
-				AutoScalePolicies:   asPolicies,
-				AutoProvPolicies:    apPolicies,
-				OperatorCodes:       codes,
-				Settings:            settings,
-			},
+			Region:  ctrl.Region,
+			AppData: *appdata,
 		}
 		showData.RegionData = append(showData.RegionData, rd)
 	}
 	return showData
 }
 
-func showMcDataFiltered(uri, token string, data *ormapi.AllData, rc *bool) *ormapi.AllData {
+func showMcDataFiltered(uri, token, tag string, data *ormapi.AllData, rc *bool) *ormapi.AllData {
 	dataOut := &ormapi.AllData{}
 
 	// currently only controller APIs support filtering
 	for ii, _ := range data.RegionData {
 		region := data.RegionData[ii].Region
-		appdata := &data.RegionData[ii].AppData
+		filter := &data.RegionData[ii].AppData
 
 		rd := ormapi.RegionData{}
 		rd.Region = region
-		ad := &rd.AppData
 
-		for jj, _ := range appdata.Flavors {
-			filter := &ormapi.RegionFlavor{
-				Region: region,
-				Flavor: appdata.Flavors[jj],
-			}
-			out, status, err := mcClient.ShowFlavor(uri, token, filter)
-			checkMcCtrlErr("ShowFlavor", status, err, rc)
-			ad.Flavors = append(ad.Flavors, out...)
+		client := testutil.TestClient{
+			Region:          region,
+			Uri:             uri,
+			Token:           token,
+			McClient:        mcClient,
+			IgnoreForbidden: true,
 		}
-		for jj, _ := range appdata.OperatorCodes {
-			filter := &ormapi.RegionOperatorCode{
-				Region:       region,
-				OperatorCode: appdata.OperatorCodes[jj],
-			}
-			out, status, err := mcClient.ShowOperatorCode(uri, token, filter)
-			checkMcCtrlErr("ShowOperatorCode", status, err, rc)
-			ad.OperatorCodes = append(ad.OperatorCodes, out...)
-		}
-		for jj, _ := range appdata.Cloudlets {
-			filter := &ormapi.RegionCloudlet{
-				Region:   region,
-				Cloudlet: appdata.Cloudlets[jj],
-			}
-			out, status, err := mcClient.ShowCloudlet(uri, token, filter)
-			checkMcCtrlErr("ShowCloudlet", status, err, rc)
-			ad.Cloudlets = append(ad.Cloudlets, out...)
-		}
-		for jj, _ := range appdata.CloudletPools {
-			filter := &ormapi.RegionCloudletPool{
-				Region:       region,
-				CloudletPool: appdata.CloudletPools[jj],
-			}
-			out, status, err := mcClient.ShowCloudletPool(uri, token, filter)
-			checkMcCtrlErr("ShowCloudletPool", status, err, rc)
-			ad.CloudletPools = append(ad.CloudletPools, out...)
-		}
-		for jj, _ := range appdata.CloudletPoolMembers {
-			filter := &ormapi.RegionCloudletPoolMember{
-				Region:             region,
-				CloudletPoolMember: appdata.CloudletPoolMembers[jj],
-			}
-			out, status, err := mcClient.ShowCloudletPoolMember(uri, token, filter)
-			checkMcCtrlErr("ShowCloudletPoolMember", status, err, rc)
-			ad.CloudletPoolMembers = append(ad.CloudletPoolMembers, out...)
-		}
-		for jj, _ := range appdata.AutoScalePolicies {
-			filter := &ormapi.RegionAutoScalePolicy{
-				Region:          region,
-				AutoScalePolicy: appdata.AutoScalePolicies[jj],
-			}
-			out, status, err := mcClient.ShowAutoScalePolicy(uri, token, filter)
-			checkMcCtrlErr("ShowAutoScalePolicy", status, err, rc)
-			ad.AutoScalePolicies = append(ad.AutoScalePolicies, out...)
-		}
-		for jj, _ := range appdata.AutoProvPolicies {
-			filter := &ormapi.RegionAutoProvPolicy{
-				Region:         region,
-				AutoProvPolicy: appdata.AutoProvPolicies[jj],
-			}
-			out, status, err := mcClient.ShowAutoProvPolicy(uri, token, filter)
-			checkMcCtrlErr("ShowAutoProvPolicy", status, err, rc)
-			ad.AutoProvPolicies = append(ad.AutoProvPolicies, out...)
-		}
-		for jj, _ := range appdata.ClusterInsts {
-			filter := &ormapi.RegionClusterInst{
-				Region:      region,
-				ClusterInst: appdata.ClusterInsts[jj],
-			}
-			out, status, err := mcClient.ShowClusterInst(uri, token, filter)
-			checkMcCtrlErr("ShowClusterInst", status, err, rc)
-			ad.ClusterInsts = append(ad.ClusterInsts, out...)
-		}
-		for jj, _ := range appdata.Apps {
-			filter := &ormapi.RegionApp{
-				Region: region,
-				App:    appdata.Apps[jj],
-			}
-			out, status, err := mcClient.ShowApp(uri, token, filter)
-			checkMcCtrlErr("ShowApp", status, err, rc)
-			ad.Apps = append(ad.Apps, out...)
-		}
-		for jj, _ := range appdata.AppInstances {
-			filter := &ormapi.RegionAppInst{
-				Region:  region,
-				AppInst: appdata.AppInstances[jj],
-			}
-			log.Printf("Show AppInstances filter %v\n", filter)
-			out, status, err := mcClient.ShowAppInst(uri, token, filter)
-			checkMcCtrlErr("ShowAppInst", status, err, rc)
-			log.Printf("Show AppInstances got %v\n", out)
-			ad.AppInstances = append(ad.AppInstances, out...)
-		}
+		run := edgetestutil.NewRun(&client, context.Background(), "showfiltered", rc)
+		edgetestutil.RunAllDataShowApis(run, filter, &rd.AppData)
+		run.CheckErrs(fmt.Sprintf("show-filtered region %s", region), tag)
 		dataOut.RegionData = append(dataOut.RegionData, rd)
 	}
 	return dataOut
@@ -555,116 +401,79 @@ func getRegionAppDataFromMap(regionDataMap interface{}) map[string]interface{} {
 	return appData
 }
 
-func runRegionDataApi(mcClient ormclient.Api, uri, token string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string) {
+func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string) *edgetestutil.AllDataOut {
 	appDataMap := getRegionAppDataFromMap(rdMap)
+	client := testutil.TestClient{
+		Region:   rd.Region,
+		Uri:      uri,
+		Token:    token,
+		McClient: mcClient,
+	}
+	output := &edgetestutil.AllDataOut{}
+	run := edgetestutil.NewRun(&client, context.Background(), mode, rc)
+
 	switch mode {
 	case "create":
 		fallthrough
 	case "update":
-		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
-		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "update")
-		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
-		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
-		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
-		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
-		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
-		if _, ok := mcClient.(*cliwrapper.Client); ok {
-			// cli can't handle list of Cloudlets in
-			// AutoProvPolicy, so add them separately.
-			policies := rd.AppData.AutoProvPolicies
-			add := make([]edgeproto.AutoProvPolicyCloudlet, 0)
-			for ii, _ := range policies {
-				if policies[ii].Cloudlets == nil || len(policies[ii].Cloudlets) == 0 {
-					continue
-				}
-				for jj, _ := range policies[ii].Cloudlets {
-					a := edgeproto.AutoProvPolicyCloudlet{}
-					a.Key = policies[ii].Key
-					a.CloudletKey = policies[ii].Cloudlets[jj].Key
-					add = append(add, a)
-				}
-				policies[ii].Cloudlets = nil
-			}
-			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &policies, appDataMap["autoprovpolicies"], rc, mode)
-			testutil.RunMcAutoProvPolicyApi_AutoProvPolicyCloudlet(mcClient, uri, token, rd.Region, &add, nil, rc, "add")
-		} else {
-			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoProvPolicies, appDataMap["autoprovpolicies"], rc, mode)
-		}
-		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
-		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Apps, appDataMap["apps"], rc, mode)
-		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
+		edgetestutil.RunAllDataApis(run, &rd.AppData, appDataMap, output)
 	case "delete":
-		testutil.RunMcAppInstApi(mcClient, uri, token, rd.Region, &rd.AppData.AppInstances, appDataMap["appinstances"], rc, mode)
-		testutil.RunMcAppApi(mcClient, uri, token, rd.Region, &rd.AppData.Apps, appDataMap["apps"], rc, mode)
-		testutil.RunMcClusterInstApi(mcClient, uri, token, rd.Region, &rd.AppData.ClusterInsts, appDataMap["clusterinsts"], rc, mode)
-		testutil.RunMcAutoScalePolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoScalePolicies, appDataMap["autoscalepolicies"], rc, mode)
-		if _, ok := mcClient.(*cliwrapper.Client); ok {
-			// cli can't handle list of Cloudlets,
-			// but no need to specify them for delete
-			policies := rd.AppData.AutoProvPolicies
-			for ii, _ := range policies {
-				policies[ii].Cloudlets = nil
-			}
-			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &policies, appDataMap["autoprovpolicies"], rc, mode)
-		} else {
-			testutil.RunMcAutoProvPolicyApi(mcClient, uri, token, rd.Region, &rd.AppData.AutoProvPolicies, appDataMap["autoprovpolicies"], rc, mode)
-		}
-		testutil.RunMcCloudletPoolMemberApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPoolMembers, appDataMap["cloudletpoolmembers"], rc, mode)
-		testutil.RunMcCloudletPoolApi(mcClient, uri, token, rd.Region, &rd.AppData.CloudletPools, appDataMap["cloudletpools"], rc, mode)
-		testutil.RunMcCloudletApi(mcClient, uri, token, rd.Region, &rd.AppData.Cloudlets, appDataMap["cloudlets"], rc, mode)
-		testutil.RunMcOperatorCodeApi(mcClient, uri, token, rd.Region, &rd.AppData.OperatorCodes, appDataMap["operatorcodes"], rc, mode)
-		testutil.RunMcSettingsApi(mcClient, uri, token, rd.Region, rd.AppData.Settings, appDataMap["settings"], rc, "reset")
-		testutil.RunMcFlavorApi(mcClient, uri, token, rd.Region, &rd.AppData.Flavors, appDataMap["flavors"], rc, mode)
+		edgetestutil.RunAllDataReverseApis(run, &rd.AppData, appDataMap, output)
 	}
+	run.CheckErrs(fmt.Sprintf("%s region %s", mode, rd.Region), tag)
+	return output
 }
 
-func createMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
-	for _, ctrl := range data.Controllers {
+func createMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
+	for ii, ctrl := range data.Controllers {
 		st, err := mcClient.CreateController(uri, token, &ctrl)
-		checkMcErr("CreateController", st, err, rc)
+		outMcErr(output, fmt.Sprintf("CreateController[%d]", ii), st, err)
 	}
-	for _, org := range data.Orgs {
+	for ii, org := range data.Orgs {
 		st, err := mcClient.CreateOrg(uri, token, &org)
-		checkMcErr("CreateOrg", st, err, rc)
+		outMcErr(output, fmt.Sprintf("CreateOrg[%d]", ii), st, err)
 	}
-	for _, role := range data.Roles {
+	for ii, role := range data.Roles {
 		st, err := mcClient.AddUserRole(uri, token, &role)
-		checkMcErr("AddUserRole", st, err, rc)
+		outMcErr(output, fmt.Sprintf("AddUserRole[%d]", ii), st, err)
 	}
 	for ii, rd := range data.RegionData {
-		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "create")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "create")
+		output.RegionData = append(output.RegionData, *rdout)
 	}
-	for _, oc := range data.OrgCloudletPools {
+	for ii, oc := range data.OrgCloudletPools {
 		st, err := mcClient.CreateOrgCloudletPool(uri, token, &oc)
-		checkMcErr("CreateOrgCloudletPool", st, err, rc)
+		outMcErr(output, fmt.Sprintf("CreateOrgCloudletPool[%d]", ii), st, err)
 	}
 }
 
-func deleteMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
-	for _, oc := range data.OrgCloudletPools {
+func deleteMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
+	for ii, oc := range data.OrgCloudletPools {
 		st, err := mcClient.DeleteOrgCloudletPool(uri, token, &oc)
-		checkMcErr("DeleteOrgCloudletPool", st, err, rc)
+		outMcErr(output, fmt.Sprintf("DeleteOrgCloudletPool[%d]", ii), st, err)
 	}
 	for ii, rd := range data.RegionData {
-		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "delete")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "delete")
+		output.RegionData = append(output.RegionData, *rdout)
 	}
-	for _, org := range data.Orgs {
+	for ii, org := range data.Orgs {
 		st, err := mcClient.DeleteOrg(uri, token, &org)
-		checkMcErr("DeleteOrg", st, err, rc)
+		outMcErr(output, fmt.Sprintf("DeleteOrg[%d]", ii), st, err)
 	}
-	for _, role := range data.Roles {
+	for ii, role := range data.Roles {
 		st, err := mcClient.RemoveUserRole(uri, token, &role)
-		checkMcErr("RemoveUserRole", st, err, rc)
+		outMcErr(output, fmt.Sprintf("RemoveUserRole[%d]", ii), st, err)
 	}
-	for _, ctrl := range data.Controllers {
+	for ii, ctrl := range data.Controllers {
 		st, err := mcClient.DeleteController(uri, token, &ctrl)
-		checkMcErr("DeleteController", st, err, rc)
+		outMcErr(output, fmt.Sprintf("DeleteController[%d]", ii), st, err)
 	}
 }
 
-func updateMcDataSep(uri, token string, data *ormapi.AllData, regionDataMap *[]interface{}, rc *bool) {
+func updateMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
 	for ii, rd := range data.RegionData {
-		runRegionDataApi(mcClient, uri, token, &rd, (*regionDataMap)[ii], rc, "update")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "update")
+		output.RegionData = append(output.RegionData, *rdout)
 	}
 }
 
@@ -725,12 +534,6 @@ type runCommandData struct {
 }
 
 func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
-	// Avoid for mod sep because webrtc takes a while to setup
-	// and it slows down the tests.
-	if hasMod("sep", mods) {
-		return true
-	}
-
 	token, rc := loginCurUser(uri, curUserFile, vars)
 	if !rc {
 		return false

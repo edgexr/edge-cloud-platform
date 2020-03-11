@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -88,39 +87,74 @@ func TestPermRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region, org
 	return TestRemoveFlavorRes(mcClient, uri, token, region, in)
 }
 
-func RunMcFlavorApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Flavor, dataMap interface{}, rc *bool, mode string) {
-	for ii, flavor := range *data {
-		in := &ormapi.RegionFlavor{
-			Region: region,
-			Flavor: flavor,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateFlavor(uri, token, in)
-			checkMcErr("CreateFlavor", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteFlavor(uri, token, in)
-			checkMcErr("DeleteFlavor", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for Flavor: %v", err)
-				os.Exit(1)
-			}
-			in.Flavor.Fields = cli.GetSpecifiedFields(objMap, &in.Flavor, cli.YamlNamespace)
-			_, st, err := mcClient.UpdateFlavor(uri, token, in)
-			checkMcErr("UpdateFlavor", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowFlavor(uri, token, in)
-			checkMcErr("ShowFlavor", st, err, rc)
-		case "addflavorres":
-			_, st, err := mcClient.AddFlavorRes(uri, token, in)
-			checkMcErr("AddFlavorRes", st, err, rc)
-		case "removeflavorres":
-			_, st, err := mcClient.RemoveFlavorRes(uri, token, in)
-			checkMcErr("RemoveFlavorRes", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateFlavor(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
 	}
+	out, status, err := s.McClient.CreateFlavor(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeleteFlavor(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
+	}
+	out, status, err := s.McClient.DeleteFlavor(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdateFlavor(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
+	}
+	out, status, err := s.McClient.UpdateFlavor(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowFlavor(ctx context.Context, in *edgeproto.Flavor) ([]edgeproto.Flavor, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
+	}
+	out, status, err := s.McClient.ShowFlavor(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AddFlavorRes(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
+	}
+	out, status, err := s.McClient.AddFlavorRes(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveFlavorRes(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionFlavor{
+		Region: s.Region,
+		Flavor: *in,
+	}
+	out, status, err := s.McClient.RemoveFlavorRes(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

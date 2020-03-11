@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -70,33 +69,50 @@ func TestPermShowPrivacyPolicy(mcClient *ormclient.Client, uri, token, region, o
 	return TestShowPrivacyPolicy(mcClient, uri, token, region, in)
 }
 
-func RunMcPrivacyPolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.PrivacyPolicy, dataMap interface{}, rc *bool, mode string) {
-	for ii, privacyPolicy := range *data {
-		in := &ormapi.RegionPrivacyPolicy{
-			Region:        region,
-			PrivacyPolicy: privacyPolicy,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreatePrivacyPolicy(uri, token, in)
-			checkMcErr("CreatePrivacyPolicy", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeletePrivacyPolicy(uri, token, in)
-			checkMcErr("DeletePrivacyPolicy", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for PrivacyPolicy: %v", err)
-				os.Exit(1)
-			}
-			in.PrivacyPolicy.Fields = cli.GetSpecifiedFields(objMap, &in.PrivacyPolicy, cli.YamlNamespace)
-			_, st, err := mcClient.UpdatePrivacyPolicy(uri, token, in)
-			checkMcErr("UpdatePrivacyPolicy", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowPrivacyPolicy(uri, token, in)
-			checkMcErr("ShowPrivacyPolicy", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreatePrivacyPolicy(ctx context.Context, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionPrivacyPolicy{
+		Region:        s.Region,
+		PrivacyPolicy: *in,
 	}
+	out, status, err := s.McClient.CreatePrivacyPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeletePrivacyPolicy(ctx context.Context, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionPrivacyPolicy{
+		Region:        s.Region,
+		PrivacyPolicy: *in,
+	}
+	out, status, err := s.McClient.DeletePrivacyPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdatePrivacyPolicy(ctx context.Context, in *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionPrivacyPolicy{
+		Region:        s.Region,
+		PrivacyPolicy: *in,
+	}
+	out, status, err := s.McClient.UpdatePrivacyPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowPrivacyPolicy(ctx context.Context, in *edgeproto.PrivacyPolicy) ([]edgeproto.PrivacyPolicy, error) {
+	inR := &ormapi.RegionPrivacyPolicy{
+		Region:        s.Region,
+		PrivacyPolicy: *in,
+	}
+	out, status, err := s.McClient.ShowPrivacyPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
