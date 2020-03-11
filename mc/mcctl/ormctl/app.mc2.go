@@ -180,6 +180,7 @@ var AppAliasArgs = []string{
 	"autoprovpolicy=app.autoprovpolicy",
 	"accesstype=app.accesstype",
 	"defaultprivacypolicy=app.defaultprivacypolicy",
+	"deleteprepare=app.deleteprepare",
 }
 var AppComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
@@ -209,6 +210,7 @@ var AppComments = map[string]string{
 	"autoprovpolicy":          "Auto provisioning policy name",
 	"accesstype":              "Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
 	"defaultprivacypolicy":    "Privacy policy when creating auto cluster",
+	"deleteprepare":           "Preparing to be deleted",
 }
 var AppSpecialArgs = map[string]string{
 	"app.fields": "StringArray",

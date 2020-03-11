@@ -13,6 +13,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+type RegionContext struct {
+	region    string
+	username  string
+	conn      *grpc.ClientConn
+	skipAuthz bool
+}
+
 func connectController(ctx context.Context, region string) (*grpc.ClientConn, error) {
 	addr, err := getControllerAddrForRegion(ctx, region)
 	if err != nil {

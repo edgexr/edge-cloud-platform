@@ -112,6 +112,7 @@ It has these top-level messages:
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -140,18 +141,14 @@ func TestPermShowAlert(mcClient *ormclient.Client, uri, token, region, org strin
 	return TestShowAlert(mcClient, uri, token, region, in)
 }
 
-func RunMcAlertApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Alert, dataMap interface{}, rc *bool, mode string) {
-	for _, alert := range *data {
-		in := &ormapi.RegionAlert{
-			Region: region,
-			Alert:  alert,
-		}
-		switch mode {
-		case "show":
-			_, st, err := mcClient.ShowAlert(uri, token, in)
-			checkMcErr("ShowAlert", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) ShowAlert(ctx context.Context, in *edgeproto.Alert) ([]edgeproto.Alert, error) {
+	inR := &ormapi.RegionAlert{
+		Region: s.Region,
+		Alert:  *in,
 	}
+	out, status, err := s.McClient.ShowAlert(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

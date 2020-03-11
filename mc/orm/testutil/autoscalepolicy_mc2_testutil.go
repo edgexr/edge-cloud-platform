@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -70,33 +69,50 @@ func TestPermShowAutoScalePolicy(mcClient *ormclient.Client, uri, token, region,
 	return TestShowAutoScalePolicy(mcClient, uri, token, region, in)
 }
 
-func RunMcAutoScalePolicyApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.AutoScalePolicy, dataMap interface{}, rc *bool, mode string) {
-	for ii, autoScalePolicy := range *data {
-		in := &ormapi.RegionAutoScalePolicy{
-			Region:          region,
-			AutoScalePolicy: autoScalePolicy,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateAutoScalePolicy(uri, token, in)
-			checkMcErr("CreateAutoScalePolicy", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteAutoScalePolicy(uri, token, in)
-			checkMcErr("DeleteAutoScalePolicy", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for AutoScalePolicy: %v", err)
-				os.Exit(1)
-			}
-			in.AutoScalePolicy.Fields = cli.GetSpecifiedFields(objMap, &in.AutoScalePolicy, cli.YamlNamespace)
-			_, st, err := mcClient.UpdateAutoScalePolicy(uri, token, in)
-			checkMcErr("UpdateAutoScalePolicy", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowAutoScalePolicy(uri, token, in)
-			checkMcErr("ShowAutoScalePolicy", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateAutoScalePolicy(ctx context.Context, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoScalePolicy{
+		Region:          s.Region,
+		AutoScalePolicy: *in,
 	}
+	out, status, err := s.McClient.CreateAutoScalePolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeleteAutoScalePolicy(ctx context.Context, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoScalePolicy{
+		Region:          s.Region,
+		AutoScalePolicy: *in,
+	}
+	out, status, err := s.McClient.DeleteAutoScalePolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdateAutoScalePolicy(ctx context.Context, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAutoScalePolicy{
+		Region:          s.Region,
+		AutoScalePolicy: *in,
+	}
+	out, status, err := s.McClient.UpdateAutoScalePolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowAutoScalePolicy(ctx context.Context, in *edgeproto.AutoScalePolicy) ([]edgeproto.AutoScalePolicy, error) {
+	inR := &ormapi.RegionAutoScalePolicy{
+		Region:          s.Region,
+		AutoScalePolicy: *in,
+	}
+	out, status, err := s.McClient.ShowAutoScalePolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

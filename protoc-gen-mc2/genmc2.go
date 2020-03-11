@@ -136,17 +136,17 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
 		return
 	}
-	if !genFile(file) {
-		return
-	}
-
-	g.P(gensupport.AutoGenComment)
 	g.genapi = g.hasParam("genapi")
 	g.gentest = g.hasParam("gentest")
 	g.gentestutil = g.hasParam("gentestutil")
 	g.genclient = g.hasParam("genclient")
 	g.genctl = g.hasParam("genctl")
 	g.gencliwrapper = g.hasParam("gencliwrapper")
+	if !g.genFile(file) {
+		return
+	}
+
+	g.P(gensupport.AutoGenComment)
 
 	for _, service := range file.FileDescriptorProto.Service {
 		g.generateService(service)
@@ -184,13 +184,19 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	}
 }
 
-func genFile(file *generator.FileDescriptor) bool {
+func (g *GenMC2) genFile(file *generator.FileDescriptor) bool {
 	if len(file.FileDescriptorProto.Service) != 0 {
 		for _, service := range file.FileDescriptorProto.Service {
 			if len(service.Method) == 0 {
 				continue
 			}
 			for _, method := range service.Method {
+				if gensupport.ClientStreaming(method) {
+					continue
+				}
+				if g.gentestutil {
+					return true
+				}
 				if GetMc2Api(method) != "" {
 					return true
 				}
@@ -934,68 +940,44 @@ func (g *GenMC2) generateRunApi(file *descriptor.FileDescriptorProto, service *d
 }
 
 func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, group *gensupport.MethodGroup) {
-	if !group.HasMc2Api {
-		return
-	}
-	apiName := *service.Name + group.Suffix
-	inType := group.InType
-	dataIn := "data *[]edgeproto." + inType
-	if group.SingularData {
-		dataIn = "obj *edgeproto." + inType
-	}
-
-	objStr := strings.ToLower(string(inType[0])) + string(inType[1:len(inType)])
-	g.P()
-	g.P("func RunMc", apiName, "(mcClient ormclient.Api, uri, token, region string, ", dataIn, ", dataMap interface{}, rc *bool, mode string) {")
-	if group.SingularData {
-		g.P("if obj == nil { return }")
-	} else {
-		if group.HasUpdate {
-			g.P("for ii, ", objStr, " := range *data {")
-		} else {
-			g.P("for _, ", objStr, " := range *data {")
-		}
-	}
-	g.P("in := &ormapi.Region", inType, "{")
-	g.P("Region: region,")
-	if group.SingularData {
-		g.P(inType, ": *obj,")
-	} else {
-		g.P(inType, ": ", objStr, ",")
-	}
-	g.P("}")
-
-	g.P("switch mode {")
 	for _, info := range group.MethodInfos {
+		inType := group.InType
+		pkg := g.support.GetPackage(group.In)
+		outPkg := g.support.GetPackage(info.Out)
+		outType := outPkg + info.OutType
+		if info.Stream {
+			outType = "[]" + outType
+		} else {
+			outType = "*" + outType
+		}
+		g.importContext = true
+		g.P()
+		g.P("func (s *TestClient) ", info.Name, "(ctx context.Context, in *", pkg, inType, ") (", outType, ", error) {")
 		if !info.Mc2Api {
+			g.P("return nil, nil")
+			g.P("}")
+			g.P()
 			continue
 		}
-		g.P("case \"", strings.ToLower(info.Prefix), "\":")
-		if info.IsUpdate {
-			g.importCli = true
-			g.importOS = true
-			if group.SingularData {
-				g.P("objMap, err := cli.GetGenericObj(dataMap)")
-			} else {
-				g.P("objMap, err := cli.GetGenericObjFromList(dataMap, ii)")
-			}
-			g.P("if err != nil {")
-			g.P("fmt.Fprintf(os.Stderr, \"bad dataMap for ", inType, ": %v\", err)")
-			g.P("os.Exit(1)")
+		g.P("inR := &ormapi.Region", inType, "{")
+		g.P("Region: s.Region,")
+		g.P(inType, ": *in,")
+		g.P("}")
+		g.P("out, status, err := s.McClient.", info.Name, "(s.Uri, s.Token, inR)")
+		g.P("if err == nil && status != 200 {")
+		g.P("err = fmt.Errorf(\"status: %d\\n\", status)")
+		g.P("}")
+		if group.SingularData && info.IsShow {
+			// Singular data show will return forbidden
+			// if no permissions, instead of just an empty list.
+			// For testing, ignore this error.
+			g.P("if status == 403 {")
+			g.P("err = nil")
 			g.P("}")
-
-			g.P("in.", inType, ".Fields = cli.GetSpecifiedFields(objMap, &in.", inType, ", cli.YamlNamespace)")
 		}
-		g.P("_, st, err := mcClient.", info.Name, "(uri, token, in)")
-		g.P("checkMcErr(\"", info.Name, "\", st, err, rc)")
-	}
-	g.P("default:")
-	g.P("return")
-	g.P("}")
-	if !group.SingularData {
+		g.P("return out, err")
 		g.P("}")
 	}
-	g.P("}")
 }
 
 type msgArgs struct {

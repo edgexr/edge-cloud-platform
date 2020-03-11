@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -70,33 +69,50 @@ func TestPermShowApp(mcClient *ormclient.Client, uri, token, region, org string)
 	return TestShowApp(mcClient, uri, token, region, in)
 }
 
-func RunMcAppApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.App, dataMap interface{}, rc *bool, mode string) {
-	for ii, app := range *data {
-		in := &ormapi.RegionApp{
-			Region: region,
-			App:    app,
-		}
-		switch mode {
-		case "create":
-			_, st, err := mcClient.CreateApp(uri, token, in)
-			checkMcErr("CreateApp", st, err, rc)
-		case "delete":
-			_, st, err := mcClient.DeleteApp(uri, token, in)
-			checkMcErr("DeleteApp", st, err, rc)
-		case "update":
-			objMap, err := cli.GetGenericObjFromList(dataMap, ii)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "bad dataMap for App: %v", err)
-				os.Exit(1)
-			}
-			in.App.Fields = cli.GetSpecifiedFields(objMap, &in.App, cli.YamlNamespace)
-			_, st, err := mcClient.UpdateApp(uri, token, in)
-			checkMcErr("UpdateApp", st, err, rc)
-		case "show":
-			_, st, err := mcClient.ShowApp(uri, token, in)
-			checkMcErr("ShowApp", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionApp{
+		Region: s.Region,
+		App:    *in,
 	}
+	out, status, err := s.McClient.CreateApp(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeleteApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionApp{
+		Region: s.Region,
+		App:    *in,
+	}
+	out, status, err := s.McClient.DeleteApp(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionApp{
+		Region: s.Region,
+		App:    *in,
+	}
+	out, status, err := s.McClient.UpdateApp(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
+	inR := &ormapi.RegionApp{
+		Region: s.Region,
+		App:    *in,
+	}
+	out, status, err := s.McClient.ShowApp(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

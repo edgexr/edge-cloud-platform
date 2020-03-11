@@ -4,6 +4,7 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -31,18 +32,14 @@ func TestPermShowNode(mcClient *ormclient.Client, uri, token, region, org string
 	return TestShowNode(mcClient, uri, token, region, in)
 }
 
-func RunMcNodeApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.Node, dataMap interface{}, rc *bool, mode string) {
-	for _, node := range *data {
-		in := &ormapi.RegionNode{
-			Region: region,
-			Node:   node,
-		}
-		switch mode {
-		case "show":
-			_, st, err := mcClient.ShowNode(uri, token, in)
-			checkMcErr("ShowNode", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) ShowNode(ctx context.Context, in *edgeproto.Node) ([]edgeproto.Node, error) {
+	inR := &ormapi.RegionNode{
+		Region: s.Region,
+		Node:   *in,
 	}
+	out, status, err := s.McClient.ShowNode(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

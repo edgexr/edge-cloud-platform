@@ -4,6 +4,7 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
@@ -31,20 +32,16 @@ func TestPermShowCloudletRefs(mcClient *ormclient.Client, uri, token, region, or
 	return TestShowCloudletRefs(mcClient, uri, token, region, in)
 }
 
-func RunMcCloudletRefsApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.CloudletRefs, dataMap interface{}, rc *bool, mode string) {
-	for _, cloudletRefs := range *data {
-		in := &ormapi.RegionCloudletRefs{
-			Region:       region,
-			CloudletRefs: cloudletRefs,
-		}
-		switch mode {
-		case "show":
-			_, st, err := mcClient.ShowCloudletRefs(uri, token, in)
-			checkMcErr("ShowCloudletRefs", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) ShowCloudletRefs(ctx context.Context, in *edgeproto.CloudletRefs) ([]edgeproto.CloudletRefs, error) {
+	inR := &ormapi.RegionCloudletRefs{
+		Region:       s.Region,
+		CloudletRefs: *in,
 	}
+	out, status, err := s.McClient.ShowCloudletRefs(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
 
 func TestShowClusterRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, int, error) {
@@ -58,18 +55,14 @@ func TestPermShowClusterRefs(mcClient *ormclient.Client, uri, token, region, org
 	return TestShowClusterRefs(mcClient, uri, token, region, in)
 }
 
-func RunMcClusterRefsApi(mcClient ormclient.Api, uri, token, region string, data *[]edgeproto.ClusterRefs, dataMap interface{}, rc *bool, mode string) {
-	for _, clusterRefs := range *data {
-		in := &ormapi.RegionClusterRefs{
-			Region:      region,
-			ClusterRefs: clusterRefs,
-		}
-		switch mode {
-		case "show":
-			_, st, err := mcClient.ShowClusterRefs(uri, token, in)
-			checkMcErr("ShowClusterRefs", st, err, rc)
-		default:
-			return
-		}
+func (s *TestClient) ShowClusterRefs(ctx context.Context, in *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, error) {
+	inR := &ormapi.RegionClusterRefs{
+		Region:      s.Region,
+		ClusterRefs: *in,
 	}
+	out, status, err := s.McClient.ShowClusterRefs(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }

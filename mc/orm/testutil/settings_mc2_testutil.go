@@ -4,10 +4,9 @@
 package testutil
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "os"
+import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "github.com/mobiledgex/edge-cloud/cli"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -55,31 +54,41 @@ func TestPermShowSettings(mcClient *ormclient.Client, uri, token, region, org st
 	return TestShowSettings(mcClient, uri, token, region, in)
 }
 
-func RunMcSettingsApi(mcClient ormclient.Api, uri, token, region string, obj *edgeproto.Settings, dataMap interface{}, rc *bool, mode string) {
-	if obj == nil {
-		return
+func (s *TestClient) UpdateSettings(ctx context.Context, in *edgeproto.Settings) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionSettings{
+		Region:   s.Region,
+		Settings: *in,
 	}
-	in := &ormapi.RegionSettings{
-		Region:   region,
-		Settings: *obj,
+	out, status, err := s.McClient.UpdateSettings(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
 	}
-	switch mode {
-	case "update":
-		objMap, err := cli.GetGenericObj(dataMap)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "bad dataMap for Settings: %v", err)
-			os.Exit(1)
-		}
-		in.Settings.Fields = cli.GetSpecifiedFields(objMap, &in.Settings, cli.YamlNamespace)
-		_, st, err := mcClient.UpdateSettings(uri, token, in)
-		checkMcErr("UpdateSettings", st, err, rc)
-	case "reset":
-		_, st, err := mcClient.ResetSettings(uri, token, in)
-		checkMcErr("ResetSettings", st, err, rc)
-	case "show":
-		_, st, err := mcClient.ShowSettings(uri, token, in)
-		checkMcErr("ShowSettings", st, err, rc)
-	default:
-		return
+	return out, err
+}
+
+func (s *TestClient) ResetSettings(ctx context.Context, in *edgeproto.Settings) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionSettings{
+		Region:   s.Region,
+		Settings: *in,
 	}
+	out, status, err := s.McClient.ResetSettings(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowSettings(ctx context.Context, in *edgeproto.Settings) (*edgeproto.Settings, error) {
+	inR := &ormapi.RegionSettings{
+		Region:   s.Region,
+		Settings: *in,
+	}
+	out, status, err := s.McClient.ShowSettings(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	if status == 403 {
+		err = nil
+	}
+	return out, err
 }
