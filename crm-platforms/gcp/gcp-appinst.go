@@ -36,7 +36,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, s.vaultConfig, client, names, app, appInst)
 		if err == nil {
 			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 		}
@@ -127,7 +127,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		return err
 	}
 
-	err = k8smgmt.UpdateAppInst(ctx, client, names, app, appInst)
+	err = k8smgmt.UpdateAppInst(ctx, s.vaultConfig, client, names, app, appInst)
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)

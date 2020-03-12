@@ -688,7 +688,7 @@ func CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string)
 			log.SpanLog(ctx, log.DebugLevelMexos, "delete file failed", "filePath", filePath)
 		}
 	}()
-	err = DownloadFile(ctx, imageUrl, filePath)
+	err = cloudcommon.DownloadFile(ctx, VaultConfig, imageUrl, filePath, nil)
 	if err != nil {
 		return fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
 	}

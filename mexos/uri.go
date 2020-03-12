@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -90,56 +89,6 @@ func Md5SumFile(filePath string) (string, error) {
 	}
 
 	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func DownloadFile(ctx context.Context, fileUrlPath string, filePath string) error {
-	var reqConfig *cloudcommon.RequestConfig
-
-	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to download file", "file-url", fileUrlPath)
-
-	// Adjust request timeout based on File Size
-	//  - Timeout is increased by 10min for every 5GB
-	//  - If less than 5GB, then use default timeout
-	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, VaultConfig, nil)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	contentLength := resp.Header.Get("Content-Length")
-	cLen, err := strconv.Atoi(contentLength)
-	if err == nil && cLen > 0 {
-		timeout := GetTimeout(cLen)
-		if timeout > 0 {
-			reqConfig = &cloudcommon.RequestConfig{
-				Timeout: timeout,
-			}
-			log.SpanLog(ctx, log.DebugLevelMexos, "increased request timeout", "file-url", fileUrlPath, "timeout", timeout.String())
-		}
-	}
-
-	resp, err = cloudcommon.SendHTTPReq(ctx, "GET", fileUrlPath, VaultConfig, reqConfig)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", resp.Status)
-	}
-
-	// Create the file
-	out, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to download file %v", err)
-	}
-
-	return nil
 }
 
 func DeleteFile(filePath string) error {
