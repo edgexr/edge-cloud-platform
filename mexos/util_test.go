@@ -2,7 +2,6 @@ package mexos
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -67,16 +66,4 @@ func TestParseFlavorProps(t *testing.T) {
 	propmap = ParseFlavorProperties(OSFlavors[2])
 	require.Equal(t, testprop3_map, propmap)
 
-}
-
-func TestTimeout(t *testing.T) {
-	var val time.Duration
-
-	oneG := 1073741824
-	val = GetTimeout(0)
-	require.Equal(t, val, 10*time.Minute)
-	val = GetTimeout(5 * oneG)
-	require.Equal(t, val, 10*time.Minute)
-	val = GetTimeout(10 * oneG)
-	require.Equal(t, val, 20*time.Minute)
 }

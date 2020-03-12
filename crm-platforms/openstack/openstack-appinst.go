@@ -61,7 +61,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 		if deployment == cloudcommon.AppDeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(ctx, client, names, app, appInst)
+			err = k8smgmt.CreateAppInst(ctx, s.vaultConfig, client, names, app, appInst)
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 
@@ -345,7 +345,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 
-		err = dockermgmt.CreateAppInst(ctx, dockerCommandTarget, app, appInst, dockerNetworkMode)
+		err = dockermgmt.CreateAppInst(ctx, s.vaultConfig, dockerCommandTarget, app, appInst, dockerNetworkMode)
 		if err != nil {
 			return err
 		}
@@ -519,7 +519,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			}
 		}
 
-		return dockermgmt.DeleteAppInst(ctx, dockerCommandTarget, app, appInst)
+		return dockermgmt.DeleteAppInst(ctx, s.vaultConfig, dockerCommandTarget, app, appInst)
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -548,7 +548,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		return k8smgmt.UpdateAppInst(ctx, client, names, app, appInst)
+		return k8smgmt.UpdateAppInst(ctx, s.vaultConfig, client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
 		dockerNetworkMode := dockermgmt.DockerBridgeMode
 		rootLBClient, err := s.GetPlatformClient(ctx, clusterInst)
@@ -570,7 +570,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return err
 			}
 		}
-		return dockermgmt.UpdateAppInst(ctx, dockerCommandTarget, app, appInst, dockerNetworkMode)
+		return dockermgmt.UpdateAppInst(ctx, s.vaultConfig, dockerCommandTarget, app, appInst, dockerNetworkMode)
 	case cloudcommon.AppDeploymentTypeHelm:
 		client, err := s.GetPlatformClient(ctx, clusterInst)
 		if err != nil {
