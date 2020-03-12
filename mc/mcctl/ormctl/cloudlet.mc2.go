@@ -396,6 +396,7 @@ var PlatformConfigOptionalArgs = []string{
 	"span",
 	"cleanupmode",
 	"region",
+	"commercialcerts",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -409,6 +410,7 @@ var PlatformConfigAliasArgs = []string{
 	"span=platformconfig.span",
 	"cleanupmode=platformconfig.cleanupmode",
 	"region=platformconfig.region",
+	"commercialcerts=platformconfig.commercialcerts",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -422,6 +424,7 @@ var PlatformConfigComments = map[string]string{
 	"span":                  "Span string",
 	"cleanupmode":           "Internal cleanup flag",
 	"region":                "Region",
+	"commercialcerts":       "Get certs from vault or generate your own",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -527,6 +530,7 @@ var CloudletAliasArgs = []string{
 	"config.span=cloudlet.config.span",
 	"config.cleanupmode=cloudlet.config.cleanupmode",
 	"config.region=cloudlet.config.region",
+	"config.commercialcerts=cloudlet.config.commercialcerts",
 	"restagmap.key=cloudlet.restagmap.key",
 	"restagmap.value.name=cloudlet.restagmap.value.name",
 	"restagmap.value.operatorkey.name=cloudlet.restagmap.value.operatorkey.name",
@@ -575,6 +579,7 @@ var CloudletComments = map[string]string{
 	"config.span":                         "Span string",
 	"config.cleanupmode":                  "Internal cleanup flag",
 	"config.region":                       "Region",
+	"config.commercialcerts":              "Get certs from vault or generate your own",
 	"restagmap.value.name":                "Resource Table Name",
 	"restagmap.value.operatorkey.name":    "Company or Organization name of the operator",
 	"accessvars":                          "Variables required to access cloudlet",
