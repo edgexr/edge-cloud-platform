@@ -40,7 +40,7 @@ type ProxyScrapePoint struct {
 	FailedChecksCount int
 	App               string
 	Cluster           string
-	Dev               string
+	ClusterOrg        string
 	Ports             []int32
 	Client            ssh.Client
 	ProxyContainer    string
@@ -59,7 +59,7 @@ func StartProxyScraper() {
 }
 
 func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
-	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" + appInstKey.AppKey.DeveloperKey.Name
+	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" + appInstKey.AppKey.Organization
 }
 
 // Figure out envoy proxy container name
@@ -102,11 +102,11 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 	// add/remove from the list of proxy endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
 		scrapePoint := ProxyScrapePoint{
-			Key:     appInst.Key,
-			App:     k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
-			Cluster: appInst.Key.ClusterInstKey.ClusterKey.Name,
-			Dev:     appInst.Key.AppKey.DeveloperKey.Name,
-			Ports:   make([]int32, 0),
+			Key:        appInst.Key,
+			App:        k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
+			Cluster:    appInst.Key.ClusterInstKey.ClusterKey.Name,
+			ClusterOrg: appInst.Key.ClusterInstKey.Organization,
+			Ports:      make([]int32, 0),
 		}
 		// TODO: track udp ports as well (when we add udp to envoy)
 		for _, p := range appInst.MappedPorts {
@@ -163,7 +163,7 @@ func ProxyScraper() {
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
 				span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-				span.SetTag("operator", cloudletKey.OperatorKey.Name)
+				span.SetTag("operator", cloudletKey.Organization)
 				span.SetTag("cloudlet", cloudletKey.Name)
 				span.SetTag("cluster", v.Cluster)
 				ctx := log.ContextWithSpan(context.Background(), span)
@@ -434,10 +434,11 @@ func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 		metric := edgeproto.Metric{}
 		metric.Name = "appinst-connections"
 		metric.Timestamp = *data.Ts
-		metric.AddTag("operator", cloudletKey.OperatorKey.Name)
+		metric.AddTag("cloudletorg", cloudletKey.Organization)
 		metric.AddTag("cloudlet", cloudletKey.Name)
 		metric.AddTag("cluster", scrapePoint.Cluster)
-		metric.AddTag("dev", scrapePoint.Dev)
+		metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
+		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
 		metric.AddTag("app", scrapePoint.App)
 		metric.AddTag("port", strconv.Itoa(int(port)))
 
@@ -461,10 +462,11 @@ func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 	metric := edgeproto.Metric{}
 	metric.Name = "appinst-connections"
 	metric.Timestamp = *data.Ts
-	metric.AddTag("operator", cloudletKey.OperatorKey.Name)
+	metric.AddTag("cloudletorg", cloudletKey.Organization)
 	metric.AddTag("cloudlet", cloudletKey.Name)
 	metric.AddTag("cluster", scrapePoint.Cluster)
-	metric.AddTag("dev", scrapePoint.Dev)
+	metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
+	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
 	metric.AddTag("app", scrapePoint.App)
 	metric.AddTag("port", "") //nginx doesnt support stats per port
 

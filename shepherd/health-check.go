@@ -22,7 +22,7 @@ func SetupHealthCheckSpan(appInstKey *edgeproto.AppInstKey) (opentracing.Span, c
 	span := log.StartSpan(log.DebugLevelInfo, "health-check")
 	span.SetTag("app", appInstKey.AppKey.Name)
 	span.SetTag("cloudlet", appInstKey.ClusterInstKey.CloudletKey.Name)
-	span.SetTag("operator", appInstKey.ClusterInstKey.CloudletKey.OperatorKey.Name)
+	span.SetTag("operator", appInstKey.ClusterInstKey.CloudletKey.Organization)
 	span.SetTag("cluster", appInstKey.ClusterInstKey.ClusterKey.Name)
 	ctx := log.ContextWithSpan(context.Background(), span)
 	return span, ctx
@@ -33,8 +33,8 @@ func getAlertFromAppInst(appInstKey *edgeproto.AppInstKey) *edgeproto.Alert {
 	alert.Labels = make(map[string]string)
 	alert.Annotations = make(map[string]string)
 	alert.Labels["alertname"] = cloudcommon.AlertAppInstDown
-	alert.Labels[cloudcommon.AlertLabelDev] = appInstKey.AppKey.DeveloperKey.Name
-	alert.Labels[cloudcommon.AlertLabelOperator] = appInstKey.ClusterInstKey.CloudletKey.OperatorKey.Name
+	alert.Labels[cloudcommon.AlertLabelClusterOrg] = appInstKey.AppKey.Organization
+	alert.Labels[cloudcommon.AlertLabelCloudletOrg] = appInstKey.ClusterInstKey.CloudletKey.Organization
 	alert.Labels[cloudcommon.AlertLabelCloudlet] = appInstKey.ClusterInstKey.CloudletKey.Name
 	alert.Labels[cloudcommon.AlertLabelCluster] = appInstKey.ClusterInstKey.ClusterKey.Name
 	alert.Labels[cloudcommon.AlertLabelApp] = appInstKey.AppKey.Name

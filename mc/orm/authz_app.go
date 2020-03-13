@@ -15,7 +15,7 @@ func authzCreateApp(ctx context.Context, region, username string, obj *edgeproto
 	if err := checkImagePath(ctx, obj); err != nil {
 		return err
 	}
-	if !authorized(ctx, username, obj.Key.DeveloperKey.Name, resource, action) {
+	if !authorized(ctx, username, obj.Key.Organization, resource, action) {
 		return echo.ErrForbidden
 	}
 	return nil
@@ -25,7 +25,7 @@ func authzUpdateApp(ctx context.Context, region, username string, obj *edgeproto
 	if err := checkImagePath(ctx, obj); err != nil {
 		return err
 	}
-	if !authorized(ctx, username, obj.Key.DeveloperKey.Name, resource, action) {
+	if !authorized(ctx, username, obj.Key.Organization, resource, action) {
 		return echo.ErrForbidden
 	}
 	return nil
@@ -92,8 +92,8 @@ func checkImagePath(ctx context.Context, obj *edgeproto.App) error {
 		return nil
 	}
 
-	if strings.ToLower(targetOrg) != strings.ToLower(obj.Key.DeveloperKey.Name) {
-		return fmt.Errorf("ImagePath for %s registry using organization '%s' does not match App developer name '%s', must match", dns, targetOrg, obj.Key.DeveloperKey.Name)
+	if strings.ToLower(targetOrg) != strings.ToLower(obj.Key.Organization) {
+		return fmt.Errorf("ImagePath for %s registry using organization '%s' does not match App developer name '%s', must match", dns, targetOrg, obj.Key.Organization)
 	}
 	return nil
 }

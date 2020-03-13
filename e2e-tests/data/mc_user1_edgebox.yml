@@ -10,8 +10,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: mexdev
+        organization: mexdev
         name: localtest
       accessuri: localtest.tmo
       location:

@@ -69,9 +69,9 @@ func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst 
 	cmd := fmt.Sprintf("kubectl create configmap mexcluster-info "+
 		"--from-literal=ClusterName='%s' "+
 		"--from-literal=CloudletName='%s' "+
-		"--from-literal=OperatorName='%s' --kubeconfig=%s",
+		"--from-literal=Organization='%s' --kubeconfig=%s",
 		clusterInst.Key.ClusterKey.Name, clusterInst.Key.CloudletKey.Name,
-		clusterInst.Key.CloudletKey.OperatorKey.Name,
+		clusterInst.Key.CloudletKey.Organization,
 		k8smgmt.GetKconfName(clusterInst))
 
 	out, err := client.Output(cmd)

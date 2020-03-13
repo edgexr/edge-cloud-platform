@@ -28,7 +28,7 @@ func TestRunCommand(mcClient *ormclient.Client, uri, token, region string, in *e
 }
 func TestPermRunCommand(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
 	in := &edgeproto.ExecRequest{}
-	in.AppInstKey.AppKey.DeveloperKey.Name = org
+	in.AppInstKey.AppKey.Organization = org
 	return TestRunCommand(mcClient, uri, token, region, in)
 }
 
@@ -40,7 +40,7 @@ func TestRunConsole(mcClient *ormclient.Client, uri, token, region string, in *e
 }
 func TestPermRunConsole(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
 	in := &edgeproto.ExecRequest{}
-	in.AppInstKey.AppKey.DeveloperKey.Name = org
+	in.AppInstKey.AppKey.Organization = org
 	return TestRunConsole(mcClient, uri, token, region, in)
 }
 
@@ -52,7 +52,7 @@ func TestShowLogs(mcClient *ormclient.Client, uri, token, region string, in *edg
 }
 func TestPermShowLogs(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
 	in := &edgeproto.ExecRequest{}
-	in.AppInstKey.AppKey.DeveloperKey.Name = org
+	in.AppInstKey.AppKey.Organization = org
 	return TestShowLogs(mcClient, uri, token, region, in)
 }
 

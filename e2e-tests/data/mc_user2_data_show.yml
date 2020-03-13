@@ -25,8 +25,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       location:
         latitude: 31
@@ -42,8 +41,7 @@ regiondata:
       physicalname: dmuus-cloud-1
       containerversion: 2020-10-10
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       location:
         latitude: 35
@@ -58,8 +56,7 @@ regiondata:
       physicalname: dmuus-cloud-2
       containerversion: 2020-10-10
     - key:
-        operatorkey:
-          name: azure
+        organization: azure
         name: azure-cloud-4
       location:
         latitude: 32
@@ -74,8 +71,7 @@ regiondata:
       physicalname: azure-cloud-4
       containerversion: 2019-10-24
     - key:
-        operatorkey:
-          name: gcp
+        organization: gcp
         name: gcp-cloud-5
       location:
         latitude: 36
@@ -107,7 +103,7 @@ regiondata:
       disk: 4
     autoscalepolicies:
     - key:
-        developer: AcmeAppCo
+        organization: AcmeAppCo
         name: scale1
       minnodes: 1
       maxnodes: 3
@@ -119,10 +115,9 @@ regiondata:
         clusterkey:
           name: SmallCluster
         cloudletkey:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-1
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -139,10 +134,9 @@ regiondata:
         clusterkey:
           name: SmallCluster
         cloudletkey:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-2
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -155,8 +149,7 @@ regiondata:
       numnodes: 1
     apps:
     - key:
-        developerkey:
-          name: AcmeAppCo
+        organization: AcmeAppCo
         name: someapplication1
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
@@ -247,8 +240,7 @@ regiondata:
       androidpackagename: com.acme.someapplication1
       permitsplatformapps: true
     - key:
-        developerkey:
-          name: AcmeAppCo
+        organization: AcmeAppCo
         name: autoprovapp
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
@@ -302,8 +294,7 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       autoprovpolicy: autoprov1
     - key:
-        developerkey:
-          name: platos
+        organization: platos
         name: platosEnablingLayer
         version: "1.0"
       imagepath: registry.mobiledgex.net/platos/dummyvalue
@@ -360,18 +351,16 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          developerkey:
-            name: AcmeAppCo
+          organization: AcmeAppCo
           name: someapplication1
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: SmallCluster
           cloudletkey:
-            operatorkey:
-              name: dmuus
+            organization: dmuus
             name: dmuus-cloud-1
-          developer: AcmeAppCo
+          organization: AcmeAppCo
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -396,18 +385,16 @@ regiondata:
       powerstate: PowerOn
     - key:
         appkey:
-          developerkey:
-            name: AcmeAppCo
+          organization: AcmeAppCo
           name: someapplication1
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: SmallCluster
           cloudletkey:
-            operatorkey:
-              name: dmuus
+            organization: dmuus
             name: dmuus-cloud-2
-          developer: AcmeAppCo
+          organization: AcmeAppCo
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -434,20 +421,18 @@ regiondata:
     autoprovpolicies:
     - key:
         name: autoprov1
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       deployclientcount: 3
       deployintervalcount: 3
       cloudlets:
       - key:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-1
         loc:
           latitude: 31
           longitude: -91
       - key:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-2
         loc:
           latitude: 35

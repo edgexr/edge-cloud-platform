@@ -40,7 +40,7 @@ func CreatePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.PrivacyPolicy.Key.Developer)
+	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := CreatePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -51,7 +51,7 @@ func CreatePrivacyPolicy(c echo.Context) error {
 }
 
 func CreatePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -85,7 +85,7 @@ func DeletePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.PrivacyPolicy.Key.Developer)
+	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := DeletePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -96,7 +96,7 @@ func DeletePrivacyPolicy(c echo.Context) error {
 }
 
 func DeletePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -130,7 +130,7 @@ func UpdatePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.PrivacyPolicy.Key.Developer)
+	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := UpdatePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -141,7 +141,7 @@ func UpdatePrivacyPolicy(c echo.Context) error {
 }
 
 func UpdatePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -177,7 +177,7 @@ func ShowPrivacyPolicy(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.PrivacyPolicy.Key.Developer)
+	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 
 	err = ShowPrivacyPolicyStream(ctx, rc, &in.PrivacyPolicy, func(res *edgeproto.PrivacyPolicy) {
 		payload := ormapi.StreamPayload{}
@@ -228,7 +228,7 @@ func ShowPrivacyPolicyStream(ctx context.Context, rc *RegionContext, obj *edgepr
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Developer) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

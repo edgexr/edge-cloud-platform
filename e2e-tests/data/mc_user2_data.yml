@@ -18,10 +18,9 @@ regiondata:
         clusterkey:
           name: SmallCluster
         cloudletkey:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-1
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -35,10 +34,9 @@ regiondata:
         clusterkey:
           name: SmallCluster
         cloudletkey:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-2
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -50,8 +48,7 @@ regiondata:
 
     apps:
     - key:
-        developerkey:
-          name: AcmeAppCo
+        organization: AcmeAppCo
         name: someapplication1
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
@@ -66,8 +63,7 @@ regiondata:
       permitsplatformapps: true
       authpublickey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END PUBLIC KEY-----\n"
     - key:
-        developerkey:
-          name: AcmeAppCo
+        organization: AcmeAppCo
         name: autoprovapp
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
@@ -78,8 +74,7 @@ regiondata:
       accessports: "tcp:81"
       autoprovpolicy: autoprov1
     - key:
-        developerkey:
-          name: platos
+        organization: platos
         name: platosEnablingLayer
         version: "1.0"
       imagepath: registry.mobiledgex.net/platos/dummyvalue
@@ -94,18 +89,16 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          developerkey:
-            name: AcmeAppCo
+          organization: AcmeAppCo
           name: someapplication1
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: SmallCluster
           cloudletkey:
-            operatorkey:
-              name: dmuus
+            organization: dmuus
             name: dmuus-cloud-1
-          developer: AcmeAppCo
+          organization: AcmeAppCo
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -114,18 +107,16 @@ regiondata:
         name: x1.small
     - key:
         appkey:
-          developerkey:
-            name: AcmeAppCo
+          organization: AcmeAppCo
           name: someapplication1
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: SmallCluster
           cloudletkey:
-            operatorkey:
-              name: dmuus
+            organization: dmuus
             name: dmuus-cloud-2
-          developer: AcmeAppCo
+          organization: AcmeAppCo
       cloudletloc:
         latitude: 35
         longitude: -95
@@ -135,7 +126,7 @@ regiondata:
 
     autoscalepolicies:
     - key:
-        developer: AcmeAppCo
+        organization: AcmeAppCo
         name: scale1
       minnodes: 1
       maxnodes: 3
@@ -146,15 +137,13 @@ regiondata:
     autoprovpolicies:
     - key:
         name: autoprov1
-        developer: AcmeAppCo
+        organization: AcmeAppCo
       deployclientcount: 3
       deployintervalcount: 3
       cloudlets:
       - key:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-1
       - key:
-          operatorkey:
-            name: dmuus
+          organization: dmuus
           name: dmuus-cloud-2

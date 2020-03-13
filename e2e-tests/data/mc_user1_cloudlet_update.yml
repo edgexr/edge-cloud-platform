@@ -3,8 +3,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       location:
         latitude: 31
@@ -15,8 +14,7 @@ regiondata:
       notifysrvaddr: 127.0.0.1:61001
       containerversion: 2020-10-10
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       location:
         latitude: 35

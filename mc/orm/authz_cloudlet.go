@@ -129,7 +129,7 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
 	if s.allowAll {
 		return true
 	}
-	if _, found := s.orgs[obj.Key.OperatorKey.Name]; found {
+	if _, found := s.orgs[obj.Key.Organization]; found {
 		// operator has access to cloudlets created by their org,
 		// regardless of whether that cloudlet belongs to
 		// developer pools or not.
@@ -156,7 +156,7 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
 
 func authzCreateClusterInst(ctx context.Context, region, username string, obj *edgeproto.ClusterInst, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.Developer, resource, action)
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func authzCreateClusterInst(ctx context.Context, region, username string, obj *e
 
 func authzCreateAppInst(ctx context.Context, region, username string, obj *edgeproto.AppInst, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.AppKey.DeveloperKey.Name, resource, action)
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.AppKey.Organization, resource, action)
 	if err != nil {
 		return err
 	}
@@ -185,8 +185,8 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	// This prevents Developers from using reservable ClusterInsts directly.
 	// Only auto-provisioning service (which goes direct to controller API)
 	// can instantiate AppInsts with mismatched orgs.
-	if !authzCloudlet.admin && obj.Key.ClusterInstKey.Developer != "" && obj.Key.ClusterInstKey.Developer != obj.Key.AppKey.DeveloperKey.Name {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("AppInst developer must match ClusterInst developer"))
+	if !authzCloudlet.admin && obj.Key.ClusterInstKey.Organization != "" && obj.Key.ClusterInstKey.Organization != obj.Key.AppKey.Organization {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("AppInst organization must match ClusterInst organization"))
 	}
 	return nil
 }

@@ -39,7 +39,7 @@ func ShowCloudletRefs(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.CloudletRefs.Key.OperatorKey.Name)
+	span.SetTag("org", in.CloudletRefs.Key.Organization)
 
 	err = ShowCloudletRefsStream(ctx, rc, &in.CloudletRefs, func(res *edgeproto.CloudletRefs) {
 		payload := ormapi.StreamPayload{}
@@ -90,7 +90,7 @@ func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgepro
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.OperatorKey.Name) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

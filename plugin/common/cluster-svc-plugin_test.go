@@ -20,7 +20,7 @@ func TestAutoScaleT(t *testing.T) {
 	clusterInst := testutil.ClusterInstData[0]
 
 	policy := edgeproto.AutoScalePolicy{}
-	policy.Key.Developer = clusterInst.Key.Developer
+	policy.Key.Organization = clusterInst.Key.Organization
 	policy.Key.Name = "test-policy"
 	policy.MinNodes = 1
 	policy.MaxNodes = 5

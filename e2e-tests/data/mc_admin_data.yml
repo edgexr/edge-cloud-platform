@@ -62,11 +62,10 @@ regiondata:
       disk: 4
     operatorcodes:
     - code: 31026
-      operatorname: dmuus
+      organization: dmuus
     cloudletinfos:
     - key:
-        operatorkey:
-          name: enterprise
+        organization: enterprise
         name: enterprise-1
       state: CloudletStateReady
       notifyid: 0
@@ -85,8 +84,7 @@ regiondata:
       containerversion: "2019-10-24"
     cloudlets:
     - key:
-        operatorkey:
-          name: enterprise
+        organization: enterprise
         name: enterprise-1
       location:
         latitude: 31
@@ -107,6 +105,5 @@ regiondata:
     - poolkey:
         name: enterprise-pool
       cloudletkey:
-        operatorkey:
-          name: enterprise
+        organization: enterprise
         name: enterprise-1

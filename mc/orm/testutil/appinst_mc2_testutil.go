@@ -34,7 +34,7 @@ func TestPermCreateAppInst(mcClient *ormclient.Client, uri, token, region, org s
 	if targetCloudlet != nil {
 		in.Key.ClusterInstKey.CloudletKey = *targetCloudlet
 	}
-	in.Key.AppKey.DeveloperKey.Name = org
+	in.Key.AppKey.Organization = org
 	return TestCreateAppInst(mcClient, uri, token, region, in)
 }
 
@@ -49,7 +49,7 @@ func TestPermDeleteAppInst(mcClient *ormclient.Client, uri, token, region, org s
 	if targetCloudlet != nil {
 		in.Key.ClusterInstKey.CloudletKey = *targetCloudlet
 	}
-	in.Key.AppKey.DeveloperKey.Name = org
+	in.Key.AppKey.Organization = org
 	return TestDeleteAppInst(mcClient, uri, token, region, in)
 }
 
@@ -64,7 +64,7 @@ func TestPermRefreshAppInst(mcClient *ormclient.Client, uri, token, region, org 
 	if targetCloudlet != nil {
 		in.Key.ClusterInstKey.CloudletKey = *targetCloudlet
 	}
-	in.Key.AppKey.DeveloperKey.Name = org
+	in.Key.AppKey.Organization = org
 	return TestRefreshAppInst(mcClient, uri, token, region, in)
 }
 
@@ -79,7 +79,7 @@ func TestPermUpdateAppInst(mcClient *ormclient.Client, uri, token, region, org s
 	if targetCloudlet != nil {
 		in.Key.ClusterInstKey.CloudletKey = *targetCloudlet
 	}
-	in.Key.AppKey.DeveloperKey.Name = org
+	in.Key.AppKey.Organization = org
 	return TestUpdateAppInst(mcClient, uri, token, region, in)
 }
 
@@ -91,7 +91,7 @@ func TestShowAppInst(mcClient *ormclient.Client, uri, token, region string, in *
 }
 func TestPermShowAppInst(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.AppInst, int, error) {
 	in := &edgeproto.AppInst{}
-	in.Key.AppKey.DeveloperKey.Name = org
+	in.Key.AppKey.Organization = org
 	return TestShowAppInst(mcClient, uri, token, region, in)
 }
 

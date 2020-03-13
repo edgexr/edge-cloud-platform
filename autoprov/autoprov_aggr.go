@@ -327,7 +327,7 @@ func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) 
 	policy := edgeproto.AutoProvPolicy{}
 	policyKey := edgeproto.PolicyKey{}
 	policyKey.Name = app.AutoProvPolicy
-	policyKey.Developer = appKey.DeveloperKey.Name
+	policyKey.Organization = appKey.Organization
 	if !s.policyCache.Get(&policyKey, &policy) {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", app.Key, "policy", app.AutoProvPolicy)
 		return
@@ -340,7 +340,7 @@ func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, policy *edgeproto.AutoP
 	appKeys := make([]edgeproto.AppKey, 0)
 	s.appCache.Mux.Lock()
 	for key, app := range s.appCache.Objs {
-		if app.AutoProvPolicy == policy.Key.Name && key.DeveloperKey.Name == policy.Key.Developer {
+		if app.AutoProvPolicy == policy.Key.Name && key.Organization == policy.Key.Organization {
 			appKeys = append(appKeys, key)
 		}
 	}

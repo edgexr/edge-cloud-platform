@@ -56,7 +56,7 @@ var OSAccessVars = "openrc.json"
 var mappedExternalIPs map[string]string
 
 func GetVaultCloudletPath(key *edgeproto.CloudletKey, region, physicalName, filePath string) string {
-	return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/%s", region, key.OperatorKey.Name, physicalName, filePath)
+	return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/%s", region, key.Organization, physicalName, filePath)
 }
 
 func GetVaultCloudletCommonPath(filePath string) string {
@@ -64,7 +64,7 @@ func GetVaultCloudletCommonPath(filePath string) string {
 }
 
 func GetCertFilePath(key *edgeproto.CloudletKey) string {
-	return fmt.Sprintf("/tmp/%s.%s.cert", key.Name, key.OperatorKey.Name)
+	return fmt.Sprintf("/tmp/%s.%s.cert", key.Name, key.Organization)
 }
 
 func GetCloudletVMImageName(imgVersion string) string {
@@ -135,7 +135,7 @@ func InitOpenstackProps(ctx context.Context, key *edgeproto.CloudletKey, region,
 		if strings.Contains(err.Error(), "no secrets") {
 			return fmt.Errorf("Failed to source access variables as '%s/%s' "+
 				"does not exist in secure secrets storage (Vault)",
-				key.OperatorKey.Name, physicalName)
+				key.Organization, physicalName)
 		}
 		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, openRcPath, err)
 	}

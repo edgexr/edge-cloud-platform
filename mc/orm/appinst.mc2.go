@@ -43,7 +43,7 @@ func StreamAppInst(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := streamAppInst.Get(in.AppInst.Key)
 	if streamer != nil {
@@ -94,7 +94,7 @@ func CreateAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -182,7 +182,7 @@ func DeleteAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -209,7 +209,7 @@ func DeleteAppInst(c echo.Context) error {
 }
 
 func DeleteAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 		ResourceAppInsts, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -268,7 +268,7 @@ func RefreshAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -295,7 +295,7 @@ func RefreshAppInst(c echo.Context) error {
 }
 
 func RefreshAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 		ResourceAppInsts, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -354,7 +354,7 @@ func UpdateAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -381,7 +381,7 @@ func UpdateAppInst(c echo.Context) error {
 }
 
 func UpdateAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 		ResourceAppInsts, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -440,7 +440,7 @@ func ShowAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInst.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	err = ShowAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.AppInst) {
 		payload := ormapi.StreamPayload{}
@@ -491,7 +491,7 @@ func ShowAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Ap
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.AppKey.DeveloperKey.Name) {
+			if !authz.Ok(res.Key.AppKey.Organization) {
 				continue
 			}
 		}

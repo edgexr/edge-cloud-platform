@@ -44,7 +44,7 @@ func StreamCloudlet(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.Cloudlet.Key.OperatorKey.Name)
+	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := streamCloudlet.Get(in.Cloudlet.Key)
 	if streamer != nil {
@@ -95,7 +95,7 @@ func CreateCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.Cloudlet.Key.OperatorKey.Name)
+	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -122,7 +122,7 @@ func CreateCloudlet(c echo.Context) error {
 }
 
 func CreateCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -181,7 +181,7 @@ func DeleteCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.Cloudlet.Key.OperatorKey.Name)
+	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -208,7 +208,7 @@ func DeleteCloudlet(c echo.Context) error {
 }
 
 func DeleteCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -267,7 +267,7 @@ func UpdateCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.Cloudlet.Key.OperatorKey.Name)
+	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -294,7 +294,7 @@ func UpdateCloudlet(c echo.Context) error {
 }
 
 func UpdateCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -438,7 +438,7 @@ func AddCloudletResMapping(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.CloudletResMap.Key.OperatorKey.Name)
+	span.SetTag("org", in.CloudletResMap.Key.Organization)
 	resp, err := AddCloudletResMappingObj(ctx, rc, &in.CloudletResMap)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -449,7 +449,7 @@ func AddCloudletResMapping(c echo.Context) error {
 }
 
 func AddCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -483,7 +483,7 @@ func RemoveCloudletResMapping(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.CloudletResMap.Key.OperatorKey.Name)
+	span.SetTag("org", in.CloudletResMap.Key.Organization)
 	resp, err := RemoveCloudletResMappingObj(ctx, rc, &in.CloudletResMap)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -494,7 +494,7 @@ func RemoveCloudletResMapping(c echo.Context) error {
 }
 
 func RemoveCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -528,7 +528,7 @@ func FindFlavorMatch(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.FlavorMatch.Key.OperatorKey.Name)
+	span.SetTag("org", in.FlavorMatch.Key.Organization)
 	resp, err := FindFlavorMatchObj(ctx, rc, &in.FlavorMatch)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -539,7 +539,7 @@ func FindFlavorMatch(c echo.Context) error {
 }
 
 func FindFlavorMatchObj(ctx context.Context, rc *RegionContext, obj *edgeproto.FlavorMatch) (*edgeproto.FlavorMatch, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.OperatorKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceCloudlets, ActionView) {
 		return nil, echo.ErrForbidden
 	}
@@ -575,7 +575,7 @@ func ShowCloudletInfo(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.CloudletInfo.Key.OperatorKey.Name)
+	span.SetTag("org", in.CloudletInfo.Key.Organization)
 
 	err = ShowCloudletInfoStream(ctx, rc, &in.CloudletInfo, func(res *edgeproto.CloudletInfo) {
 		payload := ormapi.StreamPayload{}
@@ -626,7 +626,7 @@ func ShowCloudletInfoStream(ctx context.Context, rc *RegionContext, obj *edgepro
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.OperatorKey.Name) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

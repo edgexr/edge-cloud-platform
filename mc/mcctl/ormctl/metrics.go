@@ -41,7 +41,7 @@ func GetMetricsCommand() *cobra.Command {
 }
 
 var AppMetricRequiredArgs = []string{
-	"developer",
+	"clusterorg",
 	"selector",
 }
 
@@ -50,29 +50,30 @@ var AppMetricOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"cloudlet",
-	"operator",
+	"cloudletorg",
 	"last",
 	"starttime",
 	"endtime",
 }
 
 var AppMetricAliasArgs = []string{
-	"developer=appinst.appkey.developerkey.name",
+	"apporg=appinst.appkey.organization",
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
 	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"operator=appinst.clusterinstkey.cloudletkey.operatorkey.name",
+	"clusterorg=appinst.clusterinstkey.clusterkey.organization",
+	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
 
 var ClusterMetricRequiredArgs = []string{
-	"developer",
+	"clusterorg",
 	"selector",
 }
 
 var ClusterMetricOptionalArgs = []string{
 	"cluster",
-	"operator",
+	"cloudletorg",
 	"cloudlet",
 	"last",
 	"starttime",
@@ -80,14 +81,14 @@ var ClusterMetricOptionalArgs = []string{
 }
 
 var ClusterMetricAliasArgs = []string{
-	"developer=clusterinst.developer",
+	"clusterorg=clusterinst.organization",
 	"cluster=clusterinst.clusterkey.name",
-	"operator=clusterinst.cloudletkey.operatorkey.name",
+	"cloudletorg=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
 }
 
 var CloudletMetricRequiredArgs = []string{
-	"operator",
+	"cloudletorg",
 	"selector",
 }
 
@@ -99,19 +100,20 @@ var CloudletMetricOptionalArgs = []string{
 }
 
 var CloudletMetricAliasArgs = []string{
-	"operator=cloudlet.operatorkey.name",
+	"organization=cloudlet.organization",
 	"cloudlet=cloudlet.name",
 }
 
 var MetricComments = map[string]string{
-	"developer": "Organization or Company Name that a Developer is part of",
-	"appname":   "App name",
-	"appvers":   "App version",
-	"cluster":   "Cluster name",
-	"operator":  "Company or Organization name of the operator",
-	"cloudlet":  "Name of the cloudlet",
-	"selector":  "Comma separated list of metrics to view",
-	"last":      "Display the last X metrics",
-	"starttime": "Time to start displaying stats from",
-	"endtime":   "Time up to which to display stats",
+	"apporg":      "Organization or Company name of the App",
+	"appname":     "App name",
+	"appvers":     "App version",
+	"cluster":     "Cluster name",
+	"cloudletorg": "Company or Organization name of the cloudlet",
+	"cloudlet":    "Name of the cloudlet",
+	"clusterorg":  "Organization or Company Name that a Cluster is used by",
+	"selector":    "Comma separated list of metrics to view",
+	"last":        "Display the last X metrics",
+	"starttime":   "Time to start displaying stats from",
+	"endtime":     "Time up to which to display stats",
 }

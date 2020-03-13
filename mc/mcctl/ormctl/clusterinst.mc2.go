@@ -101,28 +101,28 @@ var ClusterInstApiCmds = []*cli.Command{
 var ClusterInstKeyRequiredArgs = []string{}
 var ClusterInstKeyOptionalArgs = []string{
 	"clusterkey.name",
-	"cloudletkey.operatorkey.name",
+	"cloudletkey.organization",
 	"cloudletkey.name",
-	"developer",
+	"organization",
 }
 var ClusterInstKeyAliasArgs = []string{
 	"clusterkey.name=clusterinstkey.clusterkey.name",
-	"cloudletkey.operatorkey.name=clusterinstkey.cloudletkey.operatorkey.name",
+	"cloudletkey.organization=clusterinstkey.cloudletkey.organization",
 	"cloudletkey.name=clusterinstkey.cloudletkey.name",
-	"developer=clusterinstkey.developer",
+	"organization=clusterinstkey.organization",
 }
 var ClusterInstKeyComments = map[string]string{
-	"clusterkey.name":              "Cluster name",
-	"cloudletkey.operatorkey.name": "Company or Organization name of the operator",
-	"cloudletkey.name":             "Name of the cloudlet",
-	"developer":                    "Name of Developer that this cluster belongs to",
+	"clusterkey.name":          "Cluster name",
+	"cloudletkey.organization": "Organization of the cloudlet site",
+	"cloudletkey.name":         "Name of the cloudlet",
+	"organization":             "Name of Developer organization that this cluster belongs to",
 }
 var ClusterInstKeySpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
 	"cluster",
-	"operator",
+	"cloudlet-org",
 	"cloudlet",
-	"developer",
+	"cluster-org",
 }
 var ClusterInstOptionalArgs = []string{
 	"flavor",
@@ -144,9 +144,9 @@ var ClusterInstOptionalArgs = []string{
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
 	"cluster=clusterinst.key.clusterkey.name",
-	"operator=clusterinst.key.cloudletkey.operatorkey.name",
+	"cloudlet-org=clusterinst.key.cloudletkey.organization",
 	"cloudlet=clusterinst.key.cloudletkey.name",
-	"developer=clusterinst.key.developer",
+	"cluster-org=clusterinst.key.organization",
 	"flavor=clusterinst.flavor.name",
 	"liveness=clusterinst.liveness",
 	"auto=clusterinst.auto",
@@ -176,9 +176,9 @@ var ClusterInstAliasArgs = []string{
 var ClusterInstComments = map[string]string{
 	"fields":             "Fields are used for the Update API to specify which fields to apply",
 	"cluster":            "Cluster name",
-	"operator":           "Company or Organization name of the operator",
+	"cloudlet-org":       "Organization of the cloudlet site",
 	"cloudlet":           "Name of the cloudlet",
-	"developer":          "Name of Developer that this cluster belongs to",
+	"cluster-org":        "Name of Developer organization that this cluster belongs to",
 	"flavor":             "Flavor name",
 	"liveness":           "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic",
 	"auto":               "Auto is set to true when automatically created by back-end (internal use only)",
@@ -207,9 +207,9 @@ var ClusterInstSpecialArgs = map[string]string{
 }
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
-	"key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.organization",
 	"key.cloudletkey.name",
-	"key.developer",
+	"key.organization",
 }
 var ClusterInstInfoOptionalArgs = []string{
 	"notifyid",
@@ -223,9 +223,9 @@ var ClusterInstInfoOptionalArgs = []string{
 var ClusterInstInfoAliasArgs = []string{
 	"fields=clusterinstinfo.fields",
 	"key.clusterkey.name=clusterinstinfo.key.clusterkey.name",
-	"key.cloudletkey.operatorkey.name=clusterinstinfo.key.cloudletkey.operatorkey.name",
+	"key.cloudletkey.organization=clusterinstinfo.key.cloudletkey.organization",
 	"key.cloudletkey.name=clusterinstinfo.key.cloudletkey.name",
-	"key.developer=clusterinstinfo.key.developer",
+	"key.organization=clusterinstinfo.key.organization",
 	"notifyid=clusterinstinfo.notifyid",
 	"state=clusterinstinfo.state",
 	"errors=clusterinstinfo.errors",
@@ -235,14 +235,14 @@ var ClusterInstInfoAliasArgs = []string{
 	"status.stepname=clusterinstinfo.status.stepname",
 }
 var ClusterInstInfoComments = map[string]string{
-	"fields":                           "Fields are used for the Update API to specify which fields to apply",
-	"key.clusterkey.name":              "Cluster name",
-	"key.cloudletkey.operatorkey.name": "Company or Organization name of the operator",
-	"key.cloudletkey.name":             "Name of the cloudlet",
-	"key.developer":                    "Name of Developer that this cluster belongs to",
-	"notifyid":                         "Id of client assigned by server (internal use only)",
-	"state":                            "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
-	"errors":                           "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
+	"fields":                       "Fields are used for the Update API to specify which fields to apply",
+	"key.clusterkey.name":          "Cluster name",
+	"key.cloudletkey.organization": "Organization of the cloudlet site",
+	"key.cloudletkey.name":         "Name of the cloudlet",
+	"key.organization":             "Name of Developer organization that this cluster belongs to",
+	"notifyid":                     "Id of client assigned by server (internal use only)",
+	"state":                        "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"errors":                       "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
 	"clusterinstinfo.errors": "StringArray",

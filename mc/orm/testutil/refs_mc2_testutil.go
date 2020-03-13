@@ -28,7 +28,7 @@ func TestShowCloudletRefs(mcClient *ormclient.Client, uri, token, region string,
 }
 func TestPermShowCloudletRefs(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.CloudletRefs, int, error) {
 	in := &edgeproto.CloudletRefs{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestShowCloudletRefs(mcClient, uri, token, region, in)
 }
 

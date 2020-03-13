@@ -3,8 +3,8 @@
     app: someapplication1
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     recvBytes: 0
     sendBytes: 0
@@ -13,8 +13,8 @@
     app: someapplication1
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     mem: 3.756834298e+09
 - name: appinst-disk
@@ -22,8 +22,8 @@
     app: someapplication1
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     disk: 73728
 - name: appinst-cpu
@@ -31,16 +31,16 @@
     app: someapplication1
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     cpu: 0
 - name: cluster-udp
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     udpRecv: 400
     udpRecvErr: 500
@@ -49,8 +49,8 @@
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     tcpConns: 100
     tcpRetrans: 200
@@ -58,8 +58,8 @@
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     recvBytes: 0
     sendBytes: 0
@@ -67,23 +67,23 @@
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     mem: 75
 - name: cluster-disk
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     disk: 42.1
 - name: cluster-cpu
   tags:
     cloudlet: dmuus-cloud-1
     cluster: SmallCluster
-    dev: AcmeAppCo
-    operator: dmuus
+    apporg: AcmeAppCo
+    cloudletorg: dmuus
   values:
     cpu: 0

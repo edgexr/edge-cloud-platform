@@ -71,7 +71,7 @@ dmes:
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
-  cloudletkey: '{"operator_key":{"name":"mexdev"},"name":"mexdev-cloud-1"}'
+  cloudletkey: '{"organization":"mexdev","name":"mexdev-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"

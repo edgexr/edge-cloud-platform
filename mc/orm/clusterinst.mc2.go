@@ -41,7 +41,7 @@ func StreamClusterInst(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ClusterInst.Key.Developer)
+	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := streamClusterInst.Get(in.ClusterInst.Key)
 	if streamer != nil {
@@ -92,7 +92,7 @@ func CreateClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ClusterInst.Key.Developer)
+	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -180,7 +180,7 @@ func DeleteClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ClusterInst.Key.Developer)
+	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -207,7 +207,7 @@ func DeleteClusterInst(c echo.Context) error {
 }
 
 func DeleteClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceClusterInsts, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -266,7 +266,7 @@ func UpdateClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ClusterInst.Key.Developer)
+	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
 	defer streamer.Stop()
@@ -293,7 +293,7 @@ func UpdateClusterInst(c echo.Context) error {
 }
 
 func UpdateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceClusterInsts, ActionManage) {
 		return echo.ErrForbidden
 	}
@@ -352,7 +352,7 @@ func ShowClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ClusterInst.Key.Developer)
+	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	err = ShowClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.ClusterInst) {
 		payload := ormapi.StreamPayload{}
@@ -403,7 +403,7 @@ func ShowClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Developer) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

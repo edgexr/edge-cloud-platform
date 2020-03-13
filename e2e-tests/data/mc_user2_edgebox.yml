@@ -13,10 +13,9 @@ regiondata:
         clusterkey:
           name: AppCluster
         cloudletkey:
-          operatorkey:
-            name: mexdev
+          organization: mexdev
           name: localtest
-        developer: DevOrg
+        organization: DevOrg
       flavor:
         name: x1.medium
       liveness: LivenessStatic
@@ -25,8 +24,7 @@ regiondata:
       autoscalepolicy: scale1
     apps:
     - key:
-        developerkey:
-          name: DevOrg
+        organization: DevOrg
         name: DevOrg SDK Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
@@ -40,8 +38,7 @@ regiondata:
       androidpackagename: com.mobiledgex.sdkdemo
       permitsplatformapps: true
     - key:
-        developerkey:
-          name: DevOrg
+        organization: DevOrg
         name: Face Detection Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
@@ -70,33 +67,29 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          developerkey:
-            name: DevOrg
+          organization: DevOrg
           name: DevOrg SDK Demo
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: AppCluster
           cloudletkey:
-            operatorkey:
-              name: mexdev
+            organization: mexdev
             name: localtest
     - key:
         appkey:
-          developerkey:
-            name: DevOrg
+          organization: DevOrg
           name: Face Detection Demo
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: AppCluster
           cloudletkey:
-            operatorkey:
-              name: mexdev
+            organization: mexdev
             name: localtest
     autoscalepolicies:
     - key:
-        developer: DevOrg
+        organization: DevOrg
         name: scale1
       minnodes: 1
       maxnodes: 3

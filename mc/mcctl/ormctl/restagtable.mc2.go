@@ -134,20 +134,20 @@ var ResTagTableApiCmds = []*cli.Command{
 var ResTagTableKeyRequiredArgs = []string{}
 var ResTagTableKeyOptionalArgs = []string{
 	"name",
-	"operator",
+	"organization",
 }
 var ResTagTableKeyAliasArgs = []string{
 	"name=restagtablekey.name",
-	"operator=restagtablekey.operatorkey.name",
+	"organization=restagtablekey.organization",
 }
 var ResTagTableKeyComments = map[string]string{
-	"name":     "Resource Table Name",
-	"operator": "Company or Organization name of the operator",
+	"name":         "Resource Table Name",
+	"organization": "Operator organization of the cloudlet site.",
 }
 var ResTagTableKeySpecialArgs = map[string]string{}
 var ResTagTableRequiredArgs = []string{
 	"res",
-	"operator",
+	"organzation",
 	"tags",
 }
 var ResTagTableOptionalArgs = []string{
@@ -156,15 +156,15 @@ var ResTagTableOptionalArgs = []string{
 var ResTagTableAliasArgs = []string{
 	"fields=restagtable.fields",
 	"res=restagtable.key.name",
-	"operator=restagtable.key.operatorkey.name",
+	"organzation=restagtable.key.organization",
 	"tags=restagtable.tags",
 	"azone=restagtable.azone",
 }
 var ResTagTableComments = map[string]string{
-	"res":      "Resource Table Name",
-	"operator": "Company or Organization name of the operator",
-	"tags":     "one or more string tags",
-	"azone":    "availability zone(s) of resource if required",
+	"res":         "Resource Table Name",
+	"organzation": "Operator organization of the cloudlet site.",
+	"tags":        "one or more string tags",
+	"azone":       "availability zone(s) of resource if required",
 }
 var ResTagTableSpecialArgs = map[string]string{
 	"restagtable.fields": "StringArray",

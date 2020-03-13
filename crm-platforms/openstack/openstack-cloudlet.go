@@ -37,7 +37,7 @@ var PlatformServices = []string{
 
 func getPlatformVMName(key *edgeproto.CloudletKey) string {
 	// Form platform VM name based on cloudletKey
-	return util.HeatSanitize(key.Name + "." + key.OperatorKey.Name + ".pf")
+	return util.HeatSanitize(key.Name + "." + key.Organization + ".pf")
 }
 
 func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, client ssh.Client, serviceType string, updateCallback edgeproto.CacheUpdateCallback, cDone chan error) {

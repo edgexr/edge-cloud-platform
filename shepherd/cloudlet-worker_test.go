@@ -37,10 +37,9 @@ func TestCloudletStats(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	testOperatorKey := edgeproto.OperatorKey{Name: "testoper"}
 	cloudletKey = edgeproto.CloudletKey{
-		OperatorKey: testOperatorKey,
-		Name:        "testcloudlet",
+		Organization: "testoperator",
+		Name:         "testcloudlet",
 	}
 
 	// Test null handling
@@ -68,7 +67,7 @@ func TestCloudletStats(t *testing.T) {
 	for _, m := range metrics {
 		for _, v := range m.Tags {
 			if v.Name == "operator" {
-				assert.Equal(t, cloudletKey.OperatorKey.Name, v.Val)
+				assert.Equal(t, cloudletKey.Organization, v.Val)
 			}
 			if v.Name == "cloudlet" {
 				assert.Equal(t, cloudletKey.Name, v.Val)

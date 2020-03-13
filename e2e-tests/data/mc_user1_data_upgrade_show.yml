@@ -33,8 +33,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       location:
         latitude: 31
@@ -47,8 +46,7 @@ regiondata:
       physicalname: dmuus-cloud-1
       containerversion: 2020-10-10
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       location:
         latitude: 35
@@ -60,8 +58,7 @@ regiondata:
       physicalname: dmuus-cloud-2
       containerversion: 2020-10-10
     - key:
-        operatorkey:
-          name: azure
+        organization: azure
         name: azure-cloud-4
       location:
         latitude: 32
@@ -73,8 +70,7 @@ regiondata:
       physicalname: azure-cloud-4
       containerversion: 2019-10-24
     - key:
-        operatorkey:
-          name: gcp
+        organization: gcp
         name: gcp-cloud-5
       location:
         latitude: 36
@@ -103,8 +99,7 @@ regiondata:
       disk: 1
     cloudletinfos:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       state: CloudletStateReady
       notifyid: 5
@@ -122,8 +117,7 @@ regiondata:
         taskname: Deleting old CRMServer
       containerversion: "2020-10-10"
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       state: CloudletStateReady
       notifyid: 6
@@ -141,8 +135,7 @@ regiondata:
         taskname: Deleting old CRMServer
       containerversion: "2020-10-10"
     - key:
-        operatorkey:
-          name: azure
+        organization: azure
         name: azure-cloud-4
       state: CloudletStateReady
       notifyid: 3
@@ -160,8 +153,7 @@ regiondata:
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
     - key:
-        operatorkey:
-          name: gcp
+        organization: gcp
         name: gcp-cloud-5
       state: CloudletStateReady
       notifyid: 4

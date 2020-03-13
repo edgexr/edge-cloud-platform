@@ -30,7 +30,7 @@ func TestCreateCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 }
 func TestPermCreateCloudlet(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestCreateCloudlet(mcClient, uri, token, region, in)
 }
 
@@ -42,7 +42,7 @@ func TestDeleteCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 }
 func TestPermDeleteCloudlet(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestDeleteCloudlet(mcClient, uri, token, region, in)
 }
 
@@ -54,7 +54,7 @@ func TestUpdateCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 }
 func TestPermUpdateCloudlet(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestUpdateCloudlet(mcClient, uri, token, region, in)
 }
 
@@ -77,7 +77,7 @@ func TestAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region st
 }
 func TestPermAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletResMap{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestAddCloudletResMapping(mcClient, uri, token, region, in)
 }
 
@@ -89,7 +89,7 @@ func TestRemoveCloudletResMapping(mcClient *ormclient.Client, uri, token, region
 }
 func TestPermRemoveCloudletResMapping(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletResMap{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestRemoveCloudletResMapping(mcClient, uri, token, region, in)
 }
 
@@ -101,7 +101,7 @@ func TestFindFlavorMatch(mcClient *ormclient.Client, uri, token, region string, 
 }
 func TestPermFindFlavorMatch(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.FlavorMatch, int, error) {
 	in := &edgeproto.FlavorMatch{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestFindFlavorMatch(mcClient, uri, token, region, in)
 }
 
@@ -197,7 +197,7 @@ func TestShowCloudletInfo(mcClient *ormclient.Client, uri, token, region string,
 }
 func TestPermShowCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.CloudletInfo, int, error) {
 	in := &edgeproto.CloudletInfo{}
-	in.Key.OperatorKey.Name = org
+	in.Key.Organization = org
 	return TestShowCloudletInfo(mcClient, uri, token, region, in)
 }
 

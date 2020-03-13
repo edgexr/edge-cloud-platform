@@ -93,7 +93,7 @@ var AutoScalePolicyApiCmds = []*cli.Command{
 }
 
 var CreateAutoScalePolicyRequiredArgs = []string{
-	"developer",
+	"cluster-org",
 	"name",
 	"minnodes",
 	"maxnodes",
@@ -105,20 +105,20 @@ var CreateAutoScalePolicyOptionalArgs = []string{
 }
 var PolicyKeyRequiredArgs = []string{}
 var PolicyKeyOptionalArgs = []string{
-	"developer",
+	"organization",
 	"name",
 }
 var PolicyKeyAliasArgs = []string{
-	"developer=policykey.developer",
+	"organization=policykey.organization",
 	"name=policykey.name",
 }
 var PolicyKeyComments = map[string]string{
-	"developer": "Name of the Developer that this policy belongs to",
-	"name":      "Policy name",
+	"organization": "Name of the organization for the cluster that this policy will apply to",
+	"name":         "Policy name",
 }
 var PolicyKeySpecialArgs = map[string]string{}
 var AutoScalePolicyRequiredArgs = []string{
-	"developer",
+	"cluster-org",
 	"name",
 }
 var AutoScalePolicyOptionalArgs = []string{
@@ -130,7 +130,7 @@ var AutoScalePolicyOptionalArgs = []string{
 }
 var AutoScalePolicyAliasArgs = []string{
 	"fields=autoscalepolicy.fields",
-	"developer=autoscalepolicy.key.developer",
+	"cluster-org=autoscalepolicy.key.organization",
 	"name=autoscalepolicy.key.name",
 	"minnodes=autoscalepolicy.minnodes",
 	"maxnodes=autoscalepolicy.maxnodes",
@@ -140,7 +140,7 @@ var AutoScalePolicyAliasArgs = []string{
 }
 var AutoScalePolicyComments = map[string]string{
 	"fields":             "Fields are used for the Update API to specify which fields to apply",
-	"developer":          "Name of the Developer that this policy belongs to",
+	"cluster-org":        "Name of the organization for the cluster that this policy will apply to",
 	"name":               "Policy name",
 	"minnodes":           "Minimum number of cluster nodes",
 	"maxnodes":           "Maximum number of cluster nodes",

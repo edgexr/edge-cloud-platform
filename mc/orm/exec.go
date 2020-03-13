@@ -37,7 +37,7 @@ func RunWebrtcStream(c echo.Context) error {
 	rc.region = in.Region
 
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 
 	exchangeFunc := func(offer webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
 		offerBytes, err := json.Marshal(&offer)

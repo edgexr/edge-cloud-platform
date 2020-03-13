@@ -72,8 +72,8 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 
 	// alert labels for ClusterInst
 	keys := make(map[string]string)
-	keys[cloudcommon.AlertLabelDev] = cinst.Key.Developer
-	keys[cloudcommon.AlertLabelOperator] = cinst.Key.CloudletKey.OperatorKey.Name
+	keys[cloudcommon.AlertLabelClusterOrg] = cinst.Key.Organization
+	keys[cloudcommon.AlertLabelCloudletOrg] = cinst.Key.CloudletKey.Organization
 	keys[cloudcommon.AlertLabelCloudlet] = cinst.Key.CloudletKey.Name
 	keys[cloudcommon.AlertLabelCluster] = cinst.Key.ClusterKey.Name
 
@@ -172,8 +172,8 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 				"app",
 				"cloudlet",
 				"count",
-				"dev",
-				"oper",
+				"apporg",
+				"cloudletorg",
 				"ver",
 			},
 			Values: [][]interface{}{
@@ -182,8 +182,8 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 					app.Key.Name,
 					cloudletKey.Name,
 					count,
-					app.Key.DeveloperKey.Name,
-					cloudletKey.OperatorKey.Name,
+					app.Key.Organization,
+					cloudletKey.Organization,
 					app.Key.Version,
 				},
 			},

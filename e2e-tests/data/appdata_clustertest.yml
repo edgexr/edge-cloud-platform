@@ -18,10 +18,9 @@ clusterinsts:
     clusterkey:
       name: jlmcluster
     cloudletkey:
-      operatorkey:
-        name: GDDT
+      organization: GDDT
       name: jlmcloudlet
-    developer: MobiledgeX
+    organization: MobiledgeX
   flavor:
     name: x1.medium
   liveness: LivenessStatic
@@ -29,21 +28,9 @@ clusterinsts:
   numnodes: 1
 
 
-operators:
-- key:
-    name: GDDT
-
-developers:
-- key:
-    name: MobiledgeX
-  username: mex
-  passhash: 8136f09c17354891c642b9b9f1722c34
-  address: 123 Maple Street, Gainesville, FL 32604
-
 apps:
 - key:
-    developerkey:
-       name: MobiledgeX
+    organization: MobiledgeX
     name: "MobiledgeX SDK Demo"
     version: "1.0"
   imagepath: docker.mobiledgex.net/mobiledgex/images/mobiledgexsdkdemo
@@ -56,8 +43,7 @@ apps:
 
 cloudlets:
 - key:
-    operatorkey:
-      name: GDDT
+    organization: GDDT
     name: jlmcloudlet
   accessuri: jlm.cloudlet
   location:

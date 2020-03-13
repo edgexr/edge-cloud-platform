@@ -265,25 +265,22 @@ func TestPromStats(t *testing.T) {
 				Name: "testcluster",
 			},
 			CloudletKey: edgeproto.CloudletKey{
-				OperatorKey: edgeproto.OperatorKey{
-					Name: "testoper",
-				},
-				Name: "testcloudlet",
+				Organization: "testoper",
+				Name:         "testcloudlet",
 			},
-			Developer: "",
+			Organization: "",
 		},
 	}
 
-	testOperatorKey := edgeproto.OperatorKey{Name: "testoper"}
 	testCloudletKey := edgeproto.CloudletKey{
-		OperatorKey: testOperatorKey,
-		Name:        "testcloudlet",
+		Organization: "testoper",
+		Name:         "testcloudlet",
 	}
 	testClusterKey := edgeproto.ClusterKey{Name: "testcluster"}
 	testClusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey:  testClusterKey,
-		CloudletKey: testCloudletKey,
-		Developer:   "",
+		ClusterKey:   testClusterKey,
+		CloudletKey:  testCloudletKey,
+		Organization: "",
 	}
 	testClusterInst := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,

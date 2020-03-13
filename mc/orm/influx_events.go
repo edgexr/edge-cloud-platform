@@ -47,14 +47,14 @@ func getEventFields(eventType string) string {
 // Query is a template with a specific set of if/else
 func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents) string {
 	arg := influxQueryArgs{
-		Selector:      getEventFields(EVENT_APPINST),
-		Measurement:   EVENT_APPINST,
-		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
-		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
-		Last:          obj.Last,
+		Selector:     getEventFields(EVENT_APPINST),
+		Measurement:  EVENT_APPINST,
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		AppOrg:       obj.AppInst.AppKey.Organization,
+		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
+		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
@@ -62,13 +62,12 @@ func AppInstEventsQuery(obj *ormapi.RegionAppInstEvents) string {
 // Query is a template with a specific set of if/else
 func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents) string {
 	arg := influxQueryArgs{
-		Selector:      getEventFields(EVENT_CLUSTERINST),
-		Measurement:   EVENT_CLUSTERINST,
-		CloudletName:  obj.ClusterInst.CloudletKey.Name,
-		ClusterName:   obj.ClusterInst.ClusterKey.Name,
-		DeveloperName: obj.ClusterInst.Developer,
-		OperatorName:  obj.ClusterInst.CloudletKey.OperatorKey.Name,
-		Last:          obj.Last,
+		Selector:     getEventFields(EVENT_CLUSTERINST),
+		Measurement:  EVENT_CLUSTERINST,
+		CloudletName: obj.ClusterInst.CloudletKey.Name,
+		ClusterName:  obj.ClusterInst.ClusterKey.Name,
+		CloudletOrg:  obj.ClusterInst.CloudletKey.Organization,
+		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
@@ -79,7 +78,7 @@ func CloudletEventsQuery(obj *ormapi.RegionCloudletEvents) string {
 		Selector:     getEventFields(EVENT_CLOUDLET),
 		Measurement:  EVENT_CLOUDLET,
 		CloudletName: obj.Cloudlet.Name,
-		OperatorName: obj.Cloudlet.OperatorKey.Name,
+		CloudletOrg:  obj.Cloudlet.Organization,
 		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, operatorInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
@@ -104,11 +103,11 @@ func GetEventsCommon(c echo.Context) error {
 			return err
 		}
 		// Developer name has to be specified
-		if in.AppInst.AppKey.DeveloperKey.Name == "" {
+		if in.AppInst.AppKey.Organization == "" {
 			return setReply(c, fmt.Errorf("App details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.DeveloperKey.Name
+		org = in.AppInst.AppKey.Organization
 
 		cmd = AppInstEventsQuery(&in)
 
@@ -122,16 +121,16 @@ func GetEventsCommon(c echo.Context) error {
 		if !success {
 			return err
 		}
-		// Developer name has to be specified
-		if in.ClusterInst.Developer == "" {
+		// Developer org name has to be specified
+		if in.ClusterInst.Organization == "" {
 			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.ClusterInst.Developer
+		org = in.ClusterInst.Organization
 
 		cmd = ClusterEventsQuery(&in)
 
-		// Check the developer against who is logged in
+		// Check the developer org against who is logged in
 		if !authorized(ctx, rc.claims.Username, org, ResourceClusterAnalytics, ActionView) {
 			return echo.ErrForbidden
 		}
@@ -142,11 +141,11 @@ func GetEventsCommon(c echo.Context) error {
 			return err
 		}
 		// Operator name has to be specified
-		if in.Cloudlet.OperatorKey.Name == "" {
+		if in.Cloudlet.Organization == "" {
 			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.Cloudlet.OperatorKey.Name
+		org = in.Cloudlet.Organization
 
 		cmd = CloudletEventsQuery(&in)
 
