@@ -40,7 +40,7 @@ func CreateApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.App.Key.DeveloperKey.Name)
+	span.SetTag("org", in.App.Key.Organization)
 	resp, err := CreateAppObj(ctx, rc, &in.App)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -87,7 +87,7 @@ func DeleteApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.App.Key.DeveloperKey.Name)
+	span.SetTag("org", in.App.Key.Organization)
 	resp, err := DeleteAppObj(ctx, rc, &in.App)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -98,7 +98,7 @@ func DeleteApp(c echo.Context) error {
 }
 
 func DeleteAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceApps, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -132,7 +132,7 @@ func UpdateApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.App.Key.DeveloperKey.Name)
+	span.SetTag("org", in.App.Key.Organization)
 	resp, err := UpdateAppObj(ctx, rc, &in.App)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -181,7 +181,7 @@ func ShowApp(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.App.Key.DeveloperKey.Name)
+	span.SetTag("org", in.App.Key.Organization)
 
 	err = ShowAppStream(ctx, rc, &in.App, func(res *edgeproto.App) {
 		payload := ormapi.StreamPayload{}
@@ -232,7 +232,7 @@ func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, c
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.DeveloperKey.Name) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

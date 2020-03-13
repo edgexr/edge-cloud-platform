@@ -193,10 +193,8 @@ func TestController(t *testing.T) {
 	// cloudlet defaults to "public"
 	org3Cloudlet := edgeproto.Cloudlet{
 		Key: edgeproto.CloudletKey{
-			OperatorKey: edgeproto.OperatorKey{
-				Name: org3,
-			},
-			Name: org3,
+			Organization: org3,
+			Name:         org3,
 		},
 	}
 	ds.CloudletCache.Update(ctx, &org3Cloudlet, 0)
@@ -233,7 +231,7 @@ func TestController(t *testing.T) {
 
 	// bug 1756 - better error message for nonexisting org in image path
 	badApp := &edgeproto.App{}
-	badApp.Key.DeveloperKey.Name = "nonexistent"
+	badApp.Key.Organization = "nonexistent"
 	badApp.ImagePath = "docker-qa.mobiledgex.net/nonexistent/images/server_ping_threaded:5.0"
 	_, status, err = ormtestutil.TestCreateApp(mcClient, uri, token, ctrl.Region, badApp)
 	require.NotNil(t, err)
@@ -343,11 +341,11 @@ func TestController(t *testing.T) {
 	{
 		// developers can't create AppInsts on other developer's ClusterInsts
 		appinst := edgeproto.AppInst{}
-		appinst.Key.AppKey.DeveloperKey.Name = org1
-		appinst.Key.ClusterInstKey.Developer = cloudcommon.DeveloperMobiledgeX
+		appinst.Key.AppKey.Organization = org1
+		appinst.Key.ClusterInstKey.Organization = cloudcommon.DeveloperMobiledgeX
 		_, status, err := ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
 		require.NotNil(t, err)
-		require.Contains(t, err.Error(), "AppInst developer must match ClusterInst developer")
+		require.Contains(t, err.Error(), "AppInst organization must match ClusterInst organization")
 		// but admin can
 		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
@@ -505,7 +503,7 @@ func TestController(t *testing.T) {
 		Region: ctrl.Region,
 		ClusterInst: edgeproto.ClusterInst{
 			Key: edgeproto.ClusterInstKey{
-				Developer: "org1",
+				Organization: "org1",
 			},
 		},
 	}
@@ -705,7 +703,7 @@ func testRemoveUserRole(t *testing.T, mcClient *ormclient.Client, uri, token, or
 
 func setClusterInstDev(dev string, insts []edgeproto.ClusterInst) {
 	for ii, _ := range insts {
-		insts[ii].Key.Developer = dev
+		insts[ii].Key.Organization = dev
 	}
 }
 

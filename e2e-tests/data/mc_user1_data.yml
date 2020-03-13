@@ -20,8 +20,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       accessuri: cloud1.tmo
       location:
@@ -32,8 +31,7 @@ regiondata:
       platformtype: PlatformTypeFakeinfra
       notifysrvaddr: 127.0.0.1:51001
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       accessuri: cloud2.tmo
       location:
@@ -44,8 +42,7 @@ regiondata:
       platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51002
     - key:
-        operatorkey:
-          name: azure
+        organization: azure
         name: azure-cloud-4
       accessuri: cloud4.azure
       location:
@@ -56,8 +53,7 @@ regiondata:
       platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51004
     - key:
-        operatorkey:
-          name: gcp
+        organization: gcp
         name: gcp-cloud-5
       accessuri: cloud5.gcp
       location:

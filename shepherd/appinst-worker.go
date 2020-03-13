@@ -51,7 +51,7 @@ func (p *AppInstWorker) Stop(ctx context.Context) {
 
 func (p *AppInstWorker) sendMetrics() {
 	span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-	span.SetTag("operator", p.appInstKey.ClusterInstKey.CloudletKey.OperatorKey.Name)
+	span.SetTag("operator", p.appInstKey.ClusterInstKey.CloudletKey.Organization)
 	span.SetTag("cloudlet", p.appInstKey.ClusterInstKey.CloudletKey.Name)
 	span.SetTag("cluster", cloudcommon.DefaultVMCluster)
 	ctx := log.ContextWithSpan(context.Background(), span)

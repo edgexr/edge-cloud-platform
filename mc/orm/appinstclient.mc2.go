@@ -41,7 +41,7 @@ func ShowAppInstClient(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AppInstClientKey.Key.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.AppInstClientKey.Key.AppKey.Organization)
 
 	err = ShowAppInstClientStream(ctx, rc, &in.AppInstClientKey, func(res *edgeproto.AppInstClient) {
 		payload := ormapi.StreamPayload{}
@@ -55,7 +55,7 @@ func ShowAppInstClient(c echo.Context) error {
 }
 
 func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey, cb func(res *edgeproto.AppInstClient)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 		ResourceAppAnalytics, ActionView) {
 		return echo.ErrForbidden
 	}

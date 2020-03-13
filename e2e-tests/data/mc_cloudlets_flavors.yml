@@ -7,8 +7,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-1
       location:
         latitude: 31
@@ -23,8 +22,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
     - key:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: dmuus-cloud-2
       location:
         latitude: 35
@@ -38,8 +36,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
     - key:
-        operatorkey:
-          name: azure
+        organization: azure
         name: azure-cloud-4
       location:
         latitude: 32
@@ -53,8 +50,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: azure-cloud-4
     - key:
-        operatorkey:
-          name: gcp
+        organization: gcp
         name: gcp-cloud-5
       location:
         latitude: 36

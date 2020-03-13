@@ -104,11 +104,11 @@ var E2eClusterSelectors = []string{
 }
 
 var TagValues = map[string]struct{}{
-	"app":      struct{}{},
-	"cloudlet": struct{}{},
-	"cluster":  struct{}{},
-	"dev":      struct{}{},
-	"operator": struct{}{},
+	"app":         struct{}{},
+	"cloudlet":    struct{}{},
+	"cluster":     struct{}{},
+	"apporg":      struct{}{},
+	"cloudletorg": struct{}{},
 }
 
 var apiAddrsUpdated = false

@@ -41,7 +41,7 @@ func GetEventsCommand() *cobra.Command {
 }
 
 var AppEventRequiredArgs = []string{
-	"developer",
+	"apporg",
 }
 
 var AppEventOptionalArgs = []string{
@@ -49,28 +49,28 @@ var AppEventOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"cloudlet",
-	"operator",
+	"cloudletorg",
 	"last",
 	"starttime",
 	"endtime",
 }
 
 var AppEventAliasArgs = []string{
-	"developer=appinst.appkey.developerkey.name",
+	"apporg=appinst.appkey.organization",
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
 	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"operator=appinst.clusterinstkey.cloudletkey.operatorkey.name",
+	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
 
 var ClusterEventRequiredArgs = []string{
-	"developer",
+	"clusterorg",
 }
 
 var ClusterEventOptionalArgs = []string{
 	"cluster",
-	"operator",
+	"cloudletorg",
 	"cloudlet",
 	"last",
 	"starttime",
@@ -78,14 +78,14 @@ var ClusterEventOptionalArgs = []string{
 }
 
 var ClusterEventAliasArgs = []string{
-	"developer=clusterinst.developer",
+	"clusterorg=clusterinst.organization",
 	"cluster=clusterinst.clusterkey.name",
-	"operator=clusterinst.cloudletkey.operatorkey.name",
+	"cloudletorg=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
 }
 
 var CloudletEventRequiredArgs = []string{
-	"operator",
+	"cloudletorg",
 }
 
 var CloudletEventOptionalArgs = []string{
@@ -96,18 +96,18 @@ var CloudletEventOptionalArgs = []string{
 }
 
 var CloudletEventAliasArgs = []string{
-	"operator=cloudlet.operatorkey.name",
+	"cloudletorg=cloudlet.operatorkey.name",
 	"cloudlet=cloudlet.name",
 }
 
 var EventComments = map[string]string{
-	"developer": "Organization or Company Name that a Developer is part of",
-	"appname":   "App name",
-	"appvers":   "App version",
-	"cluster":   "Cluster name",
-	"operator":  "Company or Organization name of the operator",
-	"cloudlet":  "Name of the cloudlet",
-	"last":      "Display the last X Events",
-	"starttime": "Time to start displaying stats from",
-	"endtime":   "Time up to which to display stats",
+	"apporg":      "Organization or Company Name that a Developer is part of",
+	"appname":     "App name",
+	"appvers":     "App version",
+	"cluster":     "Cluster name",
+	"cloudletorg": "Organization name owning of the cloudlet",
+	"cloudlet":    "Name of the cloudlet",
+	"last":        "Display the last X Events",
+	"starttime":   "Time to start displaying stats from",
+	"endtime":     "Time up to which to display stats",
 }

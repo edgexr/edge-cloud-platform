@@ -4,18 +4,16 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          developerkey:
-            name: AcmeAppCo
+          organization: AcmeAppCo
           name: autoprovapp
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: Reservable1
           cloudletkey:
-            operatorkey:
-              name: dmuus
+            organization: dmuus
             name: dmuus-cloud-1
-          developer: MobiledgeX
+          organization: MobiledgeX
       cloudletloc:
         latitude: 31
         longitude: -91

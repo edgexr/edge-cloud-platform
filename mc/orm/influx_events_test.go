@@ -15,7 +15,7 @@ func testPermShowClusterEvents(mcClient *ormclient.Client, uri, token, region, o
 	var data []interface{}
 
 	in := &edgeproto.ClusterInstKey{}
-	in.Developer = org
+	in.Organization = org
 	in.ClusterKey.Name = "testcluster"
 	dat := &ormapi.RegionClusterInstMetrics{}
 	dat.Region = region
@@ -31,7 +31,7 @@ func testPermShowAppInstEvents(mcClient *ormclient.Client, uri, token, region, o
 	var data []interface{}
 
 	in := &edgeproto.AppInstKey{}
-	in.AppKey.DeveloperKey.Name = org
+	in.AppKey.Organization = org
 	in.ClusterInstKey.ClusterKey.Name = "testcluster"
 	dat := &ormapi.RegionAppInstMetrics{}
 	dat.Region = region
@@ -48,7 +48,7 @@ func testPermShowCloudletEvents(mcClient *ormclient.Client, uri, token, region, 
 
 	in := &edgeproto.CloudletKey{}
 	in.Name = "testcloudlet"
-	in.OperatorKey.Name = org
+	in.Organization = org
 	dat := &ormapi.RegionCloudletMetrics{}
 	dat.Region = region
 	dat.Cloudlet = *in

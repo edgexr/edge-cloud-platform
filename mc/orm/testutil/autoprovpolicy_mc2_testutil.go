@@ -31,7 +31,7 @@ func TestCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region str
 }
 func TestPermCreateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestCreateAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
@@ -43,7 +43,7 @@ func TestDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region str
 }
 func TestPermDeleteAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestDeleteAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
@@ -55,7 +55,7 @@ func TestUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region str
 }
 func TestPermUpdateAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestUpdateAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
@@ -67,7 +67,7 @@ func TestShowAutoProvPolicy(mcClient *ormclient.Client, uri, token, region strin
 }
 func TestPermShowAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.AutoProvPolicy, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestShowAutoProvPolicy(mcClient, uri, token, region, in)
 }
 
@@ -79,7 +79,7 @@ func TestAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, regio
 }
 func TestPermAddAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicyCloudlet{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestAddAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 
@@ -91,7 +91,7 @@ func TestRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, re
 }
 func TestPermRemoveAutoProvPolicyCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicyCloudlet{}
-	in.Key.Developer = org
+	in.Key.Organization = org
 	return TestRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, in)
 }
 

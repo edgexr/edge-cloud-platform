@@ -17,10 +17,10 @@ func autoScale(ctx context.Context, name string, alert *edgeproto.Alert) error {
 		return nil
 	}
 	inst := edgeproto.ClusterInst{}
-	inst.Key.Developer = alert.Labels[cloudcommon.AlertLabelDev]
+	inst.Key.Organization = alert.Labels[cloudcommon.AlertLabelClusterOrg]
 	inst.Key.ClusterKey.Name = alert.Labels[cloudcommon.AlertLabelCluster]
 	inst.Key.CloudletKey.Name = alert.Labels[cloudcommon.AlertLabelCloudlet]
-	inst.Key.CloudletKey.OperatorKey.Name = alert.Labels[cloudcommon.AlertLabelOperator]
+	inst.Key.CloudletKey.Organization = alert.Labels[cloudcommon.AlertLabelCloudletOrg]
 
 	nodecountStr := alert.Annotations[cloudcommon.AlertKeyNodeCount]
 	nodecount, err := strconv.Atoi(nodecountStr)

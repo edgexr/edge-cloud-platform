@@ -17,7 +17,7 @@ import (
 )
 
 type entry struct {
-	Org     string            // Organization/Developer
+	Org     string            // Organization/Organization
 	OrgType string            // Organization Type
 	Users   map[string]string // User:UserType
 }

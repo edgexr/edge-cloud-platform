@@ -6,10 +6,9 @@ regiondata:
         clusterkey:
           name: SmallCluster
         cloudletkey:
-          operatorkey:
-            name: enterprise
+          organization: enterprise
           name: enterprise-1
-        developer: enterprise
+        organization: enterprise
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -20,8 +19,7 @@ regiondata:
       numnodes: 1
     apps:
     - key:
-        developerkey:
-          name: enterprise
+        organization: enterprise
         name: ep1
         version: "1.0"
       imagepath: registry.mobiledgex.net/enterprise/ep1:1.0
@@ -35,18 +33,16 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          developerkey:
-            name: enterprise
+          organization: enterprise
           name: ep1
           version: "1.0"
         clusterinstkey:
           clusterkey:
             name: SmallCluster
           cloudletkey:
-            operatorkey:
-              name: enterprise
+            organization: enterprise
             name: enterprise-1
-          developer: enterprise
+          organization: enterprise
       cloudletloc:
         latitude: 31
         longitude: -91

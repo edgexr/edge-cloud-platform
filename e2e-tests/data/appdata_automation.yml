@@ -29,26 +29,9 @@ clusters:
 
 clusterinsts:
 
-operators:
-- key:
-    name: GDDT
-- key:
-    name: dmuus
-- key:
-    name: azure
-- key:
-    name: gcp
-- key:
-    name: att
-
-developers:
-- key:
-    name: automation_api
-
 cloudlets:
 - key:
-    operatorkey:
-      name: dmuus
+    organization: dmuus
     name: tmocloud-1
   accessuri: cloud1.tmo
   location:
@@ -57,8 +40,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: dmuus
+    organization: dmuus
     name: tmocloud-2
   accessuri: cloud2.tmo
   location:
@@ -67,8 +49,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: GDDT
+    organization: GDDT
     name: automationBuckhornCloudlet 
   accessuri: cloud3.tmo
   location:
@@ -77,8 +58,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: dmuus
+    organization: dmuus
     name: automationBeaconCloudlet
   accessuri: cloud4.tmo
   location:
@@ -87,8 +67,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: dmuus
+    organization: dmuus
     name: automationHawkinsCloudlet
   accessuri: cloud5.tmo
   location:
@@ -97,8 +76,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: att
+    organization: att
     name: attcloud-1
   accessuri: cloud6.tmo
   location:
@@ -107,8 +85,7 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
 - key:
-    operatorkey:
-      name: dmuus
+    organization: dmuus
     name: automationProdHawkinsCloudlet
   accessuri: cloud7.tmo
   location:
@@ -119,8 +96,7 @@ cloudlets:
 
 apps:
 - key:
-    developerkey:
-      name: automation_api
+    organization: automation_api
     name: automation_api_app
     version: "1.0"
   imagepath: registry.mobiledgex.net:5000/automation_api/automation_api_app:1.0
@@ -130,8 +106,7 @@ apps:
   cluster:
     name: automationapicluster
 - key:
-    developerkey:
-      name: automation_api
+    organization: automation_api
     name: automation_api_auth_app
     version: "1.0"
   imagepath: registry.mobiledgex.net:5000/automation_api/automation_api_auth_app:1.0
@@ -145,16 +120,14 @@ apps:
 appinstances:
 - key:
     appkey:
-      developerkey:
-        name: automation_api
+      organization: automation_api
       name: automation_api_app
       version: "1.0"
     clusterinstkey:
       clusterkey:
         name: autocluster1
       cloudletkey:
-        operatorkey:
-          name: dmuus
+        organization: dmuus
         name: tmocloud-1
   cloudletloc:
     latitude: 31

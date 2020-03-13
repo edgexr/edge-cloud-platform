@@ -94,19 +94,19 @@ var AppApiCmds = []*cli.Command{
 
 var AppKeyRequiredArgs = []string{}
 var AppKeyOptionalArgs = []string{
-	"developerkey.name",
+	"organization",
 	"name",
 	"version",
 }
 var AppKeyAliasArgs = []string{
-	"developerkey.name=appkey.developerkey.name",
+	"organization=appkey.organization",
 	"name=appkey.name",
 	"version=appkey.version",
 }
 var AppKeyComments = map[string]string{
-	"developerkey.name": "Organization or Company Name that a Developer is part of",
-	"name":              "App name",
-	"version":           "App version",
+	"organization": "App developer organization",
+	"name":         "App name",
+	"version":      "App version",
 }
 var AppKeySpecialArgs = map[string]string{}
 var ConfigFileRequiredArgs = []string{}
@@ -124,7 +124,7 @@ var ConfigFileComments = map[string]string{
 }
 var ConfigFileSpecialArgs = map[string]string{}
 var AppRequiredArgs = []string{
-	"developer",
+	"app-org",
 	"appname",
 	"appvers",
 }
@@ -154,7 +154,7 @@ var AppOptionalArgs = []string{
 }
 var AppAliasArgs = []string{
 	"fields=app.fields",
-	"developer=app.key.developerkey.name",
+	"app-org=app.key.organization",
 	"appname=app.key.name",
 	"appvers=app.key.version",
 	"imagepath=app.imagepath",
@@ -184,7 +184,7 @@ var AppAliasArgs = []string{
 }
 var AppComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
-	"developer":               "Organization or Company Name that a Developer is part of",
+	"app-org":                 "App developer organization",
 	"appname":                 "App name",
 	"appvers":                 "App version",
 	"imagepath":               "URI of where image resides",

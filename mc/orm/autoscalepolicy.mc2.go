@@ -40,7 +40,7 @@ func CreateAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AutoScalePolicy.Key.Developer)
+	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := CreateAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -51,7 +51,7 @@ func CreateAutoScalePolicy(c echo.Context) error {
 }
 
 func CreateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -85,7 +85,7 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AutoScalePolicy.Key.Developer)
+	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := DeleteAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -96,7 +96,7 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 }
 
 func DeleteAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -130,7 +130,7 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AutoScalePolicy.Key.Developer)
+	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := UpdateAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -141,7 +141,7 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 }
 
 func UpdateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Developer,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
 		ResourceDeveloperPolicy, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -177,7 +177,7 @@ func ShowAutoScalePolicy(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.AutoScalePolicy.Key.Developer)
+	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 
 	err = ShowAutoScalePolicyStream(ctx, rc, &in.AutoScalePolicy, func(res *edgeproto.AutoScalePolicy) {
 		payload := ormapi.StreamPayload{}
@@ -228,7 +228,7 @@ func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edge
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Developer) {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}

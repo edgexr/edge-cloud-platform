@@ -33,18 +33,19 @@ type InfluxDBContext struct {
 }
 
 type influxQueryArgs struct {
-	Selector      string
-	Measurement   string
-	AppInstName   string
-	ClusterName   string
-	DeveloperName string
-	CloudletName  string
-	OperatorName  string
-	Method        string
-	CellId        string
-	StartTime     string
-	EndTime       string
-	Last          int
+	Selector     string
+	Measurement  string
+	AppInstName  string
+	ClusterName  string
+	CloudletName string
+	CloudletOrg  string
+	AppOrg       string
+	ClusterOrg   string
+	Method       string
+	CellId       string
+	StartTime    string
+	EndTime      string
+	Last         int
 }
 
 var AppSelectors = []string{
@@ -74,31 +75,33 @@ var ClientSelectors = []string{
 	"api",
 }
 
+// AppFields are the field names used to query the DB
 var AppFields = []string{
 	"\"app\"",
 	"\"cluster\"",
-	"\"dev\"",
+	"\"clusterorg\"",
 	"\"cloudlet\"",
-	"\"operator\"",
+	"\"apporg\"",
 }
 
 var ClusterFields = []string{
 	"\"cluster\"",
-	"\"dev\"",
+	"\"clusterorg\"",
 	"\"cloudlet\"",
-	"\"operator\"",
+	"\"cloudletorg\"",
 }
 
 var CloudletFields = []string{
 	"\"cloudlet\"",
-	"\"operator\"",
+	"\"cloudletorg\"",
 }
 
+// ClientFields is DME metrics
 var ClientFields = []string{
-	"\"dev\"",
+	"\"apporg\"",
 	"\"app\"",
 	"\"ver\"",
-	"\"oper\"",
+	"\"cloudletorg\"",
 	"\"cloudlet\"",
 }
 
@@ -194,11 +197,11 @@ const (
 )
 
 var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
-	` WHERE "dev"='{{.DeveloperName}}'` +
+	` WHERE "apporg"='{{.AppOrg}}'` +
 	`{{if .AppInstName}} AND "app"=~/{{.AppInstName}}/{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
-	`{{if .OperatorName}} AND "operator"='{{.OperatorName}}'{{end}}` +
+	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
 	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
 	`{{if .CellId}} AND "cellID"='{{.CellId}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
@@ -206,7 +209,7 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
-	` WHERE "operator"='{{.OperatorName}}'` +
+	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
@@ -277,15 +280,16 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 
 func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      getFields(obj.Selector, CLIENT),
-		Measurement:   getMeasurementString(obj.Selector, CLIENT),
-		AppInstName:   obj.AppInst.AppKey.Name,
-		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
-		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
-		Method:        obj.Method,
-		Last:          obj.Last,
+		Selector:     getFields(obj.Selector, CLIENT),
+		Measurement:  getMeasurementString(obj.Selector, CLIENT),
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		AppOrg:       obj.AppInst.AppKey.Organization,
+		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
+		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
+		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		Method:       obj.Method,
+		Last:         obj.Last,
 	}
 	if obj.CellId != 0 {
 		arg.CellId = strconv.FormatUint(uint64(obj.CellId), 10)
@@ -296,14 +300,14 @@ func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 // Query is a template with a specific set of if/else
 func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      getFields(obj.Selector, APPINST),
-		Measurement:   getMeasurementString(obj.Selector, APPINST),
-		AppInstName:   k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		DeveloperName: obj.AppInst.AppKey.DeveloperKey.Name,
-		CloudletName:  obj.AppInst.ClusterInstKey.CloudletKey.Name,
-		ClusterName:   obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		OperatorName:  obj.AppInst.ClusterInstKey.CloudletKey.OperatorKey.Name,
-		Last:          obj.Last,
+		Selector:     getFields(obj.Selector, APPINST),
+		Measurement:  getMeasurementString(obj.Selector, APPINST),
+		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		AppOrg:       obj.AppInst.AppKey.Organization,
+		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
+		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
@@ -311,13 +315,13 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 // Query is a template with a specific set of if/else
 func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 	arg := influxQueryArgs{
-		Selector:      getFields(obj.Selector, CLUSTER),
-		Measurement:   getMeasurementString(obj.Selector, CLUSTER),
-		CloudletName:  obj.ClusterInst.CloudletKey.Name,
-		ClusterName:   obj.ClusterInst.ClusterKey.Name,
-		DeveloperName: obj.ClusterInst.Developer,
-		OperatorName:  obj.ClusterInst.CloudletKey.OperatorKey.Name,
-		Last:          obj.Last,
+		Selector:     getFields(obj.Selector, CLUSTER),
+		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
+		CloudletName: obj.ClusterInst.CloudletKey.Name,
+		ClusterName:  obj.ClusterInst.ClusterKey.Name,
+		AppOrg:       obj.ClusterInst.Organization,
+		CloudletOrg:  obj.ClusterInst.CloudletKey.Organization,
+		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
@@ -328,7 +332,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 		Selector:     getFields(obj.Selector, CLOUDLET),
 		Measurement:  getMeasurementString(obj.Selector, CLOUDLET),
 		CloudletName: obj.Cloudlet.Name,
-		OperatorName: obj.Cloudlet.OperatorKey.Name,
+		CloudletOrg:  obj.Cloudlet.Organization,
 		Last:         obj.Last,
 	}
 	return fillTimeAndGetCmd(&arg, operatorInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
@@ -495,11 +499,11 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		// Developer name has to be specified
-		if in.AppInst.AppKey.DeveloperKey.Name == "" {
+		if in.AppInst.AppKey.Organization == "" {
 			return setReply(c, fmt.Errorf("App details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.DeveloperKey.Name
+		org = in.AppInst.AppKey.Organization
 		if err = validateSelectorString(in.Selector, APPINST); err != nil {
 			return setReply(c, err, nil)
 		}
@@ -515,12 +519,12 @@ func GetMetricsCommon(c echo.Context) error {
 		if !success {
 			return err
 		}
-		// Developer name has to be specified
-		if in.ClusterInst.Developer == "" {
+		// Developer organization name has to be specified
+		if in.ClusterInst.Organization == "" {
 			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.ClusterInst.Developer
+		org = in.ClusterInst.Organization
 		if err = validateSelectorString(in.Selector, CLUSTER); err != nil {
 			return setReply(c, err, nil)
 		}
@@ -537,11 +541,11 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		// Operator name has to be specified
-		if in.Cloudlet.OperatorKey.Name == "" {
+		if in.Cloudlet.Organization == "" {
 			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.Cloudlet.OperatorKey.Name
+		org = in.Cloudlet.Organization
 		if err = validateSelectorString(in.Selector, CLOUDLET); err != nil {
 			return setReply(c, err, nil)
 		}
@@ -558,11 +562,11 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		// Developer name has to be specified
-		if in.AppInst.AppKey.DeveloperKey.Name == "" {
+		if in.AppInst.AppKey.Organization == "" {
 			return setReply(c, fmt.Errorf("App details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.DeveloperKey.Name
+		org = in.AppInst.AppKey.Organization
 		if err = validateSelectorString(in.Selector, CLIENT); err != nil {
 			return setReply(c, err, nil)
 		}

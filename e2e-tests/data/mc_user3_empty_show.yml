@@ -24,8 +24,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: enterprise
+        organization: enterprise
         name: enterprise-1
       location:
         latitude: 31

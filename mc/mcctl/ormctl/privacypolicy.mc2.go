@@ -113,7 +113,7 @@ var OutboundSecurityRuleComments = map[string]string{
 }
 var OutboundSecurityRuleSpecialArgs = map[string]string{}
 var PrivacyPolicyRequiredArgs = []string{
-	"developer",
+	"cluster-org",
 	"name",
 }
 var PrivacyPolicyOptionalArgs = []string{
@@ -124,7 +124,7 @@ var PrivacyPolicyOptionalArgs = []string{
 }
 var PrivacyPolicyAliasArgs = []string{
 	"fields=privacypolicy.fields",
-	"developer=privacypolicy.key.developer",
+	"cluster-org=privacypolicy.key.organization",
 	"name=privacypolicy.key.name",
 	"outboundsecurityrules.protocol=privacypolicy.outboundsecurityrules.protocol",
 	"outboundsecurityrules.portrangemin=privacypolicy.outboundsecurityrules.portrangemin",
@@ -133,7 +133,7 @@ var PrivacyPolicyAliasArgs = []string{
 }
 var PrivacyPolicyComments = map[string]string{
 	"fields":                             "Fields are used for the Update API to specify which fields to apply",
-	"developer":                          "Name of the Developer that this policy belongs to",
+	"cluster-org":                        "Name of the organization for the cluster that this policy will apply to",
 	"name":                               "Policy name",
 	"outboundsecurityrules.protocol":     "tcp, udp, icmp",
 	"outboundsecurityrules.portrangemin": "TCP or UDP port range start",

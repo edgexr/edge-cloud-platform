@@ -110,7 +110,7 @@ dmes:
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-1"}'
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
@@ -128,7 +128,7 @@ dmes:
   locverurl: "{{locverurl}}"
   toksrvurl: "{{toksrvurl}}"
   carrier: GDDT
-  cloudletkey: '{"operator_key":{"name":"dmuus"},"name":"dmuus-cloud-2"}'
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"

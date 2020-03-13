@@ -38,7 +38,7 @@ func RunCommand(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := RunCommandObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -49,7 +49,7 @@ func RunCommand(c echo.Context) error {
 }
 
 func RunCommandObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
 		ResourceAppInsts, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -83,7 +83,7 @@ func RunConsole(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := RunConsoleObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -94,7 +94,7 @@ func RunConsole(c echo.Context) error {
 }
 
 func RunConsoleObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
 		ResourceAppInsts, ActionManage) {
 		return nil, echo.ErrForbidden
 	}
@@ -128,7 +128,7 @@ func ShowLogs(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
-	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.DeveloperKey.Name)
+	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := ShowLogsObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -139,7 +139,7 @@ func ShowLogs(c echo.Context) error {
 }
 
 func ShowLogsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.DeveloperKey.Name,
+	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
 		ResourceAppInsts, ActionView) {
 		return nil, echo.ErrForbidden
 	}

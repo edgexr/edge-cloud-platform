@@ -31,16 +31,15 @@ backend4321::10.192.1.2:4321::health_flags::/failed_active_hc`
 	testEnvoyHealthCheckCurrent = testEnvoyHealthCheckGood
 
 	// Test App/Cluster state data
-	testOperatorKey = edgeproto.OperatorKey{Name: "testoper"}
 	testCloudletKey = edgeproto.CloudletKey{
-		OperatorKey: testOperatorKey,
-		Name:        "testcloudlet",
+		Organization: "testoperator",
+		Name:         "testcloudlet",
 	}
 	testClusterKey     = edgeproto.ClusterKey{Name: "testcluster"}
 	testClusterInstKey = edgeproto.ClusterInstKey{
-		ClusterKey:  testClusterKey,
-		CloudletKey: testCloudletKey,
-		Developer:   "",
+		ClusterKey:   testClusterKey,
+		CloudletKey:  testCloudletKey,
+		Organization: "",
 	}
 	testClusterInst = edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
@@ -99,11 +98,11 @@ func startServer() *httptest.Server {
 func TestEnvoyStats(t *testing.T) {
 
 	testScrapePoint := ProxyScrapePoint{
-		App:     "UnitTestApp",
-		Cluster: "UnitTestCluster",
-		Dev:     "UnitTestDev",
-		Ports:   []int32{1234, 4321},
-		Client:  &shepherd_unittest.UTClient{},
+		App:        "UnitTestApp",
+		Cluster:    "UnitTestCluster",
+		ClusterOrg: "UnitTestDev",
+		Ports:      []int32{1234, 4321},
+		Client:     &shepherd_unittest.UTClient{},
 	}
 	ctx := setupLog()
 	fakeEnvoyTestServer := startServer()
