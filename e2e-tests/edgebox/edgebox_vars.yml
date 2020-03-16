@@ -1,4 +1,5 @@
 cloudlet: hackthon-test
+cloudlet-org: mex
 controller: mexplat-stage-eu.ctrl.mobiledgex.net
 datadir: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/data
 datadir2: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/data
@@ -9,7 +10,6 @@ longitude: -96.61
 mc: console-stage.mobiledgex.net
 mc_pass: ENV=MC_PASSWORD
 mc_user: ENV=MC_USER
-operator: mex
 outputdir: /tmp/edgebox
 region: EU
 vault: https://vault-main.mobiledgex.net

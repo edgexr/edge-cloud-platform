@@ -11,7 +11,7 @@ except ImportError:
     from yaml import Loader, Dumper
 
 Debug = False
-Operator = None
+CloudletOrg = None
 Cloudlet = None
 Appinsts = None
 Controller = None
@@ -21,7 +21,7 @@ TlsDir = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud/tls/out"
 Varsfile = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/edgebox/edgebox_vars.yml"
 
 def readConfig():
-    global Operator
+    global CloudletOrg
     global Controller
     global Cloudlet
     global Controller
@@ -29,7 +29,7 @@ def readConfig():
 
     with open(Varsfile, 'r') as stream:
        data = load(stream, Loader=Loader)
-       Operator = data['operator']
+       CloudletOrg = data['cloudlet-org']
        Cloudlet = data['cloudlet']
        Controller = data['controller']
        Edgectl = "edgectl --addr %s:55001 --tls %s/mex-client.crt" % (Controller, TlsDir)
@@ -39,13 +39,13 @@ def getAppClusterInsts():
         global Clusterinsts
 
         print("getAppInsts")
-        if not Operator:
-                sys.exit("Missing Operator")
+        if not CloudletOrg:
+                sys.exit("CloudletOrg")
 
         if not Cloudlet:
                 sys.exit("missing cloudlet")
                 
-        p = subprocess.Popen([Edgectl+" controller ShowAppInst operator=\""+Operator+"\"   cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        p = subprocess.Popen([Edgectl+" controller ShowAppInst cloudlet-org=\""+CloudletOrg+"\"   cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
        
         out,err = p.communicate()
         Appinsts = load(out, Loader=Loader)
@@ -54,7 +54,7 @@ def getAppClusterInsts():
            print "ERROR: no data\n"
 
 
-        p = subprocess.Popen([Edgectl+" controller ShowClusterInst operator=\""+Operator+"\" cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        p = subprocess.Popen([Edgectl+" controller ShowClusterInst cloudlet-org=\""+CloudletOrg+"\" cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
        
         out,err = p.communicate()
         Clusterinsts = load(out, Loader=Loader)
@@ -71,18 +71,18 @@ def deleteAppInsts():
 
      for appinst in Appinsts:
          appname = appinst['key']['appkey']['name']
-         devname = appinst['key']['appkey']['developerkey']['name']
+         apporg = appinst['key']['appkey']['organization']
          appvers = appinst['key']['appkey']['version']
          cloudletname = appinst['key']['clusterinstkey']['cloudletkey']['name']
-         operator = appinst['key']['clusterinstkey']['cloudletkey']['operatorkey']['name']
+         cloudletorg = appinst['key']['clusterinstkey']['cloudletkey']['organization']
          clustername = appinst['key']['clusterinstkey']['clusterkey']['name']
          
-         if operator != Operator:
-             sys.exit("Mismatched operator -- this is a bug")
+         if cloudletorg != CloudletOrg:
+             sys.exit("Mismatched cloudlet org -- this is a bug")
          
-         command = (Edgectl+" controller DeleteAppInst developer=\""+devname+"\" appname=\""+appname+"\" appvers=\""+appvers+"\""
+         command = (Edgectl+" controller DeleteAppInst app-org=\""+apporg+"\" appname=\""+appname+"\" appvers=\""+appvers+"\""
                " cloudlet=\""+cloudletname+"\"  cluster=\""+clustername+"\""
-               " developer=\""+devname+"\""+ " operator=\""+operator+"\" crmoverride=IgnoreCrmAndTransientState")
+               " app-org=\""+apporg+"\""+ " cloudlet-org=\""+cloudletorg+"\" crmoverride=IgnoreCrmAndTransientState")
 
          print ("DELETE COMMAND: "+command)
          p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -102,19 +102,17 @@ def deleteClusterInsts():
      for clinst in Clusterinsts:
          devname = ""
          clustername = clinst['key']['clusterkey']['name']
-         if 'developer' in  clinst['key']:
-            devname = clinst['key']['developer']
+         if 'organization' in  clinst['key']:
+            clusterorg = clinst['key']['organization']
          cloudletname = clinst['key']['cloudletkey']['name']
-         operator = clinst['key']['cloudletkey']['operatorkey']['name']
+         cloudletorg = clinst['key']['cloudletkey']['organization']
          
-         if operator != Operator:
-             sys.exit("Mismatched operator -- this is a bug")
-         if cloudletname != Cloudlet:
-             sys.exit("Mismatched cloudlet -- this is a bug")        
+         if cloudletorg != CloudletOrg:
+             sys.exit("Mismatched cloudletorg -- this is a bug")        
  
-         command = (Edgectl+" controller DeleteClusterInst developer=\""+devname+"\""
+         command = (Edgectl+" controller DeleteClusterInst cluster-org=\""+clusterorg+"\""
                " cloudlet=\""+Cloudlet+"\" cluster=\""+clustername+"\""
-               " operator=\""+Operator+"\" crmoverride=IgnoreCrmAndTransientState")
+               " cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")
 
          print ("DELETE COMMAND: "+command)
          p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -125,7 +123,7 @@ def deleteClusterInsts():
              print("Error: "+err)
 
 def deleteCloudlet():
-    command = (Edgectl+" controller DeleteCloudlet name=\""+Cloudlet+"\" operator=\""+Operator+"\" crmoverride=IgnoreCrmAndTransientState")  
+    command = (Edgectl+" controller DeleteCloudlet name=\""+Cloudlet+"\" cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")  
     print ("DELETE COMMAND: "+command)
     p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
@@ -155,7 +153,7 @@ def crmCleanup():
 
 if __name__ == "__main__":
    readConfig()
-   if yesOrNo("CONFIRM: Delete operator: %s cloudlet: %s from controller: %s ?\n" % (Operator, Cloudlet, Controller)):
+   if yesOrNo("CONFIRM: Delete cloudlet org: %s cloudlet: %s from controller: %s ?\n" % (CloudletOrg, Cloudlet, Controller)):
      getAppClusterInsts()
      deleteAppInsts()
      deleteClusterInsts()

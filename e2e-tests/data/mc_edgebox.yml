@@ -3,8 +3,7 @@ regiondata:
   appdata:
     cloudlets:
     - key:
-        operatorkey:
-          name: {{operator}}
+        organization: {{cloudlet-org}}
         name: {{cloudlet}}
       location:
         latitude: {{latitude}}
