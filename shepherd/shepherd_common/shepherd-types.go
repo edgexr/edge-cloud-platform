@@ -123,4 +123,6 @@ type ConnectionsMetric struct {
 type MetricAppInstKey struct {
 	ClusterInstKey edgeproto.ClusterInstKey
 	Pod            string
+	App            string
+	Version        string
 }

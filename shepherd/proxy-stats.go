@@ -17,6 +17,7 @@ import (
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -439,7 +440,8 @@ func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 		metric.AddTag("cluster", scrapePoint.Cluster)
 		metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
 		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-		metric.AddTag("app", scrapePoint.App)
+		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
+		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
 		metric.AddTag("port", strconv.Itoa(int(port)))
 
 		metric.AddIntVal("active", data.EnvoyStats[port].ActiveConn)
@@ -467,7 +469,8 @@ func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 	metric.AddTag("cluster", scrapePoint.Cluster)
 	metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
 	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
-	metric.AddTag("app", scrapePoint.App)
+	metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
+	metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
 	metric.AddTag("port", "") //nginx doesnt support stats per port
 
 	metric.AddIntVal("active", data.ActiveConn)

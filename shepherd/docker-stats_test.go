@@ -105,7 +105,8 @@ func TestDockerStats(t *testing.T) {
 	testAppInstDocker2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
 			AppKey: edgeproto.AppKey{
-				Name: "DockerApp2",
+				Name:    "DockerApp2",
+				Version: "10",
 			},
 			ClusterInstKey: testClusterInstKey,
 		},
@@ -134,6 +135,7 @@ func TestDockerStats(t *testing.T) {
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp1")
+	testAppKey.App = k8smgmt.NormalizeName("DockerApp1")
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	assert.True(t, found, "Container DockerApp1 is not found")
@@ -146,6 +148,8 @@ func TestDockerStats(t *testing.T) {
 		assert.NotNil(t, stat.CpuTS, "CPU timestamp")
 	}
 	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp2")
+	testAppKey.App = k8smgmt.NormalizeName("DockerApp2")
+	testAppKey.Version = k8smgmt.NormalizeName("10")
 	stat, found = appsMetrics[testAppKey]
 	// Check PodStats - should be a sum of DockerApp2Container1 and DockerApp2Container2
 	assert.True(t, found, "Container DockerApp2 is not found")

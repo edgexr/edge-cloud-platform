@@ -25,3 +25,5 @@ prometheus:
   netSend: 11
   netRecv: 12
   appName: someapplication1
+  #appversion is 1.0, but DNSSanitized version is "10"
+  appVersion: "10"

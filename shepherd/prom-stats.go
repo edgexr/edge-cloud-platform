@@ -28,6 +28,9 @@ var promQUdpSentPktsClust = "node_netstat_Udp_OutDatagrams"
 var promQUdpRecvPktsClust = "node_netstat_Udp_InDatagrams"
 var promQUdpRecvErr = "node_netstat_Udp_InErrors"
 
+// This is a template which takes a pod query and adds instance label to it
+var promQAppDetailWrapperFmt = "max(kube_pod_labels)by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(%s)"
+
 var promQCpuPod = "sum(rate(container_cpu_usage_seconds_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod)"
 var promQMemPod = "sum(container_memory_working_set_bytes%7Bimage!%3D%22%22%7D)by(pod)"
 var promQDiskPod = "sum(container_fs_usage_bytes%7Bimage!%3D%22%22%7D)by(pod)"
@@ -48,6 +51,8 @@ type PromMetric struct {
 }
 type PromLabels struct {
 	PodName string `json:"pod,omitempty"`
+	App     string `json:"label_mexAppName,omitempty"`
+	Version string `json:"label_mexAppVersion,omitempty"`
 }
 type PromAlert struct {
 	Labels      map[string]string
@@ -126,22 +131,34 @@ func parseTime(timeFloat float64) *types.Timestamp {
 	return ts
 }
 
+func getAppMetricFromPromtheusData(p *K8sClusterStats, appStatsMap map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics, metric *PromMetric) *shepherd_common.AppMetrics {
+	appKey := shepherd_common.MetricAppInstKey{
+		ClusterInstKey: p.key,
+		Pod:            metric.Labels.PodName,
+		App:            metric.Labels.App,
+		Version:        metric.Labels.Version,
+	}
+	stat, found := appStatsMap[appKey]
+	if !found {
+		stat = &shepherd_common.AppMetrics{}
+		appStatsMap[appKey] = stat
+	}
+	return stat
+}
+
 func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
 
-	appKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: p.key,
-	}
 	// Get Pod CPU usage percentage
-	resp, err := getPromMetrics(ctx, p.promAddr, promQCpuPod, p.client)
+	q := fmt.Sprintf(promQAppDetailWrapperFmt, promQCpuPod)
+	resp, err := getPromMetrics(ctx, p.promAddr, q, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
-			appKey.Pod = metric.Labels.PodName
-			stat, found := appStatsMap[appKey]
-			if !found {
-				stat = &shepherd_common.AppMetrics{}
-				appStatsMap[appKey] = stat
+			// skip system pods
+			if metric.Labels.App == "" {
+				continue
 			}
+			stat := getAppMetricFromPromtheusData(p, appStatsMap, &metric)
 			stat.CpuTS = parseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
@@ -150,15 +167,15 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 		}
 	}
 	// Get Pod Mem usage
-	resp, err = getPromMetrics(ctx, p.promAddr, promQMemPod, p.client)
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQMemPod)
+	resp, err = getPromMetrics(ctx, p.promAddr, q, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
-			appKey.Pod = metric.Labels.PodName
-			stat, found := appStatsMap[appKey]
-			if !found {
-				stat = &shepherd_common.AppMetrics{}
-				appStatsMap[appKey] = stat
+			// skip system pods
+			if metric.Labels.App == "" {
+				continue
 			}
+			stat := getAppMetricFromPromtheusData(p, appStatsMap, &metric)
 			stat.MemTS = parseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
@@ -167,15 +184,15 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 		}
 	}
 	// Get Pod Disk usage
-	resp, err = getPromMetrics(ctx, p.promAddr, promQDiskPod, p.client)
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQDiskPod)
+	resp, err = getPromMetrics(ctx, p.promAddr, q, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
-			appKey.Pod = metric.Labels.PodName
-			stat, found := appStatsMap[appKey]
-			if !found {
-				stat = &shepherd_common.AppMetrics{}
-				appStatsMap[appKey] = stat
+			// skip system pods
+			if metric.Labels.App == "" {
+				continue
 			}
+			stat := getAppMetricFromPromtheusData(p, appStatsMap, &metric)
 			stat.DiskTS = parseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
@@ -184,15 +201,15 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 		}
 	}
 	// Get Pod NetRecv bytes rate averaged over 1m
-	resp, err = getPromMetrics(ctx, p.promAddr, promQNetRecvRate, p.client)
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetRecvRate)
+	resp, err = getPromMetrics(ctx, p.promAddr, q, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
-			appKey.Pod = metric.Labels.PodName
-			stat, found := appStatsMap[appKey]
-			if !found {
-				stat = &shepherd_common.AppMetrics{}
-				appStatsMap[appKey] = stat
+			// skip system pods
+			if metric.Labels.App == "" {
+				continue
 			}
+			stat := getAppMetricFromPromtheusData(p, appStatsMap, &metric)
 			stat.NetRecvTS = parseTime(metric.Values[0].(float64))
 			//copy only if we can parse the value
 			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
@@ -201,15 +218,15 @@ func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[sh
 		}
 	}
 	// Get Pod NetRecv bytes rate averaged over 1m
-	resp, err = getPromMetrics(ctx, p.promAddr, promQNetSentRate, p.client)
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetSentRate)
+	resp, err = getPromMetrics(ctx, p.promAddr, q, p.client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
-			appKey.Pod = metric.Labels.PodName
-			stat, found := appStatsMap[appKey]
-			if !found {
-				stat = &shepherd_common.AppMetrics{}
-				appStatsMap[appKey] = stat
+			// skip system pods
+			if metric.Labels.App == "" {
+				continue
 			}
+			stat := getAppMetricFromPromtheusData(p, appStatsMap, &metric)
 			//copy only if we can parse the value
 			stat.NetSentTS = parseTime(metric.Values[0].(float64))
 			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {

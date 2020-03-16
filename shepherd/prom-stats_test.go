@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -94,92 +95,6 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-
-	promQCpuPod: `{
-		"status": "success",
-		"data": {
-		  "resultType": "vector",
-		  "result": [
-			{
-			  "metric": {
-				"pod": "testPod1"
-			  },
-			  "value": [
-				1549491454.802,
-				"5.0"
-			  ]
-			}
-			]
-		  }
-		  }`,
-	promQMemPod: `{
-		"status": "success",
-		"data": {
-  		"resultType": "vector",
-  		"result": [
-			{
-	  		"metric": {
-				"pod": "testPod1"
-	  		},
-	  		"value": [
-				1549484450.932,
-				"100000000"
-	  		]
-			}
-  		]
-		}
-		}`,
-	promQDiskPod: `{
-		"status": "success",
-		"data": {
-		  "resultType": "vector",
-		  "result": [
-			{
-			  "metric": {
-				"pod": "testPod1"
-			},
-			"value": [
-				1549484450.932,
-				"300000000"
-			]
-			}
-		]
-		}
-		}`,
-	promQNetSentRate: `{
-		"status": "success",
-		"data": {
-  		"resultType": "vector",
-  		"result": [
-			{
-	  		"metric": {
-				"pod": "testPod1"
-	  		},
-	  		"value": [
-				1549484450.932,
-				"111111"
-	  		]
-			}
-  		]
-		}
-		}`,
-	promQNetRecvRate: `{
-		"status": "success",
-		"data": {
-  		"resultType": "vector",
-  		"result": [
-			{
-	  		"metric": {
-				"pod": "testPod1"
-	  		},
-	  		"value": [
-				1549484450.932,
-				"222222"
-	  		]
-			}
-  		]
-		}
-		}`,
 }
 
 var testAlertsData = `
@@ -249,6 +164,109 @@ var expectedTestAlerts = []edgeproto.Alert{
 	},
 }
 
+func initAppInstTestData() {
+	q := fmt.Sprintf(promQAppDetailWrapperFmt, promQCpuPod)
+	testPayloadData[q] = `{
+		"status": "success",
+		"data": {
+		  "resultType": "vector",
+		  "result": [
+			{
+			  "metric": {
+                "pod": "testPod1",
+                "label_mexAppName": "testPod1",
+                "label_mexAppVersion": "10"
+			  },
+			  "value": [
+				1549491454.802,
+				"5.0"
+			  ]
+			}
+			]
+		  }
+		  }`
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQMemPod)
+	testPayloadData[q] = `{
+		"status": "success",
+		"data": {
+  		"resultType": "vector",
+  		"result": [
+			{
+	  		"metric": {
+              "pod": "testPod1",
+              "label_mexAppName": "testPod1",
+              "label_mexAppVersion": "10"
+	  	    },
+	  		"value": [
+				1549484450.932,
+				"100000000"
+	  		]
+			}
+  		]
+		}
+		}`
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQDiskPod)
+	testPayloadData[q] = `{
+		"status": "success",
+		"data": {
+		  "resultType": "vector",
+		  "result": [
+			{
+			  "metric": {
+				"pod": "testPod1",
+				"label_mexAppName": "testPod1",
+				"label_mexAppVersion": "10"
+			},
+			"value": [
+				1549484450.932,
+				"300000000"
+			]
+			}
+		]
+		}
+		}`
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetSentRate)
+	testPayloadData[q] = `{
+		"status": "success",
+		"data": {
+  		"resultType": "vector",
+  		"result": [
+			{
+	  		"metric": {
+				"pod": "testPod1",
+				"label_mexAppName": "testPod1",
+				"label_mexAppVersion": "10"
+	  		},
+	  		"value": [
+				1549484450.932,
+				"111111"
+	  		]
+			}
+  		]
+		}
+		}`
+	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetRecvRate)
+	testPayloadData[q] = `{
+		"status": "success",
+		"data": {
+  		"resultType": "vector",
+  		"result": [
+			{
+	  		"metric": {
+				"pod": "testPod1",
+				"label_mexAppName": "testPod1",
+				"label_mexAppVersion": "10"
+	  		},
+	  		"value": [
+				1549484450.932,
+				"222222"
+	  		]
+			}
+  		]
+		}
+		}`
+}
+
 func testMetricSend(ctx context.Context, metric *edgeproto.Metric) bool {
 	testMetricSent = 1
 	return true
@@ -258,6 +276,7 @@ func TestPromStats(t *testing.T) {
 	log.InitTracer("")
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
+	initAppInstTestData()
 
 	testAppKey := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: edgeproto.ClusterInstKey{
@@ -323,6 +342,8 @@ func TestPromStats(t *testing.T) {
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	assert.NotNil(t, alerts, "Fill metrics from json")
 	testAppKey.Pod = "testPod1"
+	testAppKey.App = "testPod1"
+	testAppKey.Version = "10"
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	assert.True(t, found, "Pod testPod1 is not found")

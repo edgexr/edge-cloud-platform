@@ -61,7 +61,7 @@ var AppMetricAliasArgs = []string{
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
 	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"clusterorg=appinst.clusterinstkey.clusterkey.organization",
+	"clusterorg=appinst.clusterinstkey.organization",
 	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }

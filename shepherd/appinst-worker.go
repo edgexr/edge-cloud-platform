@@ -59,6 +59,8 @@ func (p *AppInstWorker) sendMetrics() {
 	key := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: p.appInstKey.ClusterInstKey,
 		Pod:            p.appInstKey.AppKey.Name,
+		App:            p.appInstKey.AppKey.Name,
+		Version:        p.appInstKey.AppKey.Version,
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Collecting metrics for app", "key", key)
 	stat, err := p.pf.GetVmStats(ctx, &p.appInstKey)
