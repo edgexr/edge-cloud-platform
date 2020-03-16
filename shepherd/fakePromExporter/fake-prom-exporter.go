@@ -34,6 +34,7 @@ type Prometheus struct {
 	NetSend        int    `yaml:"netSend"`
 	NetRecv        int    `yaml:"netRecv"`
 	AppName        string `yaml:"appName"`
+	AppVersion     string `yaml:"appVersion"`
 }
 
 var exportStr string
@@ -80,6 +81,9 @@ container_network_transmit_bytes_total{image="notTheEmptyString",pod="{{.AppName
 # HELP container_network_receive_bytes_total Cumulative count of bytes received. For mimicking the network stats
 # TYPE container_network_receive_bytes_total counter
 container_network_receive_bytes_total{image="notTheEmptyString",pod="{{.AppName}}"} {{.NetRecv}}
+# HELP kube_pod_labels is what each pod has as a list of labels - used to cross-reference with container stats
+# TYPE kube_pod_labels gauge
+kube_pod_labels{pod="{{.AppName}}",label_mexAppName="{{.AppName}}",label_mexAppVersion="{{.AppVersion}}"} 1
 `
 
 var port = flag.Int("port", 9100, "Port to export metrics on")

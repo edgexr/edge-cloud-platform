@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/influxsup"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 var devInfluxDBTemplate *template.Template
@@ -36,10 +37,12 @@ type influxQueryArgs struct {
 	Selector     string
 	Measurement  string
 	AppInstName  string
+	AppVersion   string
 	ClusterName  string
 	CloudletName string
+	OrgField     string
+	ApiCallerOrg string
 	CloudletOrg  string
-	AppOrg       string
 	ClusterOrg   string
 	Method       string
 	CellId       string
@@ -78,9 +81,12 @@ var ClientSelectors = []string{
 // AppFields are the field names used to query the DB
 var AppFields = []string{
 	"\"app\"",
+	"\"ver\"",
+	"\"pod\"",
 	"\"cluster\"",
 	"\"clusterorg\"",
 	"\"cloudlet\"",
+	"\"cloudletorg\"",
 	"\"apporg\"",
 }
 
@@ -197,9 +203,10 @@ const (
 )
 
 var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
-	` WHERE "apporg"='{{.AppOrg}}'` +
-	`{{if .AppInstName}} AND "app"=~/{{.AppInstName}}/{{end}}` +
+	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
+	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
+	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
 	`{{if .Method}} AND "method"='{{.Method}}'{{end}}` +
@@ -282,8 +289,10 @@ func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 	arg := influxQueryArgs{
 		Selector:     getFields(obj.Selector, CLIENT),
 		Measurement:  getMeasurementString(obj.Selector, CLIENT),
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		AppOrg:       obj.AppInst.AppKey.Organization,
+		AppInstName:  obj.AppInst.AppKey.Name,
+		AppVersion:   obj.AppInst.AppKey.Version,
+		OrgField:     "apporg",
+		ApiCallerOrg: obj.AppInst.AppKey.Organization,
 		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
 		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
@@ -303,7 +312,9 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 		Selector:     getFields(obj.Selector, APPINST),
 		Measurement:  getMeasurementString(obj.Selector, APPINST),
 		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
-		AppOrg:       obj.AppInst.AppKey.Organization,
+		AppVersion:   util.DNSSanitize(obj.AppInst.AppKey.Version),
+		OrgField:     "apporg",
+		ApiCallerOrg: obj.AppInst.AppKey.Organization,
 		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
@@ -319,7 +330,8 @@ func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
 		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
 		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
-		AppOrg:       obj.ClusterInst.Organization,
+		OrgField:     "clusterorg",
+		ApiCallerOrg: obj.ClusterInst.Organization,
 		CloudletOrg:  obj.ClusterInst.CloudletKey.Organization,
 		Last:         obj.Last,
 	}

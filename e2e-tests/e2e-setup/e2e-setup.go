@@ -108,6 +108,7 @@ var TagValues = map[string]struct{}{
 	"cloudlet":    struct{}{},
 	"cluster":     struct{}{},
 	"apporg":      struct{}{},
+	"clusterorg":  struct{}{},
 	"cloudletorg": struct{}{},
 }
 

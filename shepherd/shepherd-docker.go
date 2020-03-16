@@ -11,9 +11,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -29,7 +29,8 @@ type ContainerIO struct {
 	Block   string
 }
 type ContainerStats struct {
-	App       string
+	App       string `json:"app,omitempty"`
+	Version   string `json:"version,omitempty"`
 	Container string
 	Memory    ContainerMem
 	Cpu       string
@@ -104,7 +105,8 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 		for _, cID := range obj.RuntimeInfo.ContainerIds {
 			cData, found = containers[cID]
 			if found {
-				cData.App = obj.Key.AppKey.Name
+				cData.App = util.DNSSanitize(obj.Key.AppKey.Name)
+				cData.Version = util.DNSSanitize(obj.Key.AppKey.Version)
 				dockerResp.Containers = append(dockerResp.Containers, cData)
 			}
 		}
@@ -113,6 +115,8 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 	// Keep track of those containers not associated with any App, just in case
 	for _, container := range containers {
 		if container.App == "" {
+			// container and app are the same here
+			container.App = util.DNSSanitize(container.Container)
 			dockerResp.Containers = append(dockerResp.Containers, container)
 		}
 	}
@@ -201,12 +205,11 @@ func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[she
 	// We scraped it at the same time, so same timestamp for everything
 	ts, _ := types.TimestampProto(time.Now())
 	for _, containerStats := range stats.Containers {
-		// EDGECLOUD-1183  - once done we should not normalize the name
-		appKey.Pod = k8smgmt.NormalizeName(containerStats.App)
-		// TODO EDGECLOUD-1316 - for now keep pod same as containerID
-		if containerStats.App == "" {
-			appKey.Pod = k8smgmt.NormalizeName(containerStats.Container)
-		}
+		// TODO EDGECLOUD-1316 - set pod to the container
+		// appKey.Pod = containerStats.Container
+		appKey.Pod = containerStats.App
+		appKey.App = containerStats.App
+		appKey.Version = containerStats.Version
 		stat, found := appStatsMap[appKey]
 		if !found {
 			stat = &shepherd_common.AppMetrics{}
