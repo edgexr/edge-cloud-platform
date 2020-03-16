@@ -18,7 +18,7 @@ except ImportError:
 Mcuser = os.getenv("MC_USER", "")
 Mcpass = os.getenv("MC_PASSWORD", "")
 Region = None
-Operator = None
+CloudletOrg = None
 Cloudlet = None
 Mc = None
 Controller = None
@@ -55,7 +55,7 @@ def readConfig():
     global Mcuser
     global Mcpass
     global Region
-    global Operator
+    global CloudletOrg 
     global Controller
     global Cloudlet
     global Controller
@@ -67,7 +67,7 @@ def readConfig():
     with open(Varsfile, 'r') as stream:
        EdgevarData = load(stream, Loader=Loader)
        Mc = EdgevarData['mc']
-       Operator = EdgevarData['operator']
+       CloudletOrg = EdgevarData['cloudlet-org']
        Cloudlet = EdgevarData['cloudlet']
        Controller = EdgevarData['controller']
        Region = EdgevarData['region']
@@ -102,7 +102,7 @@ def saveConfig():
     global Mc
     global Controller
     global Region
-    global Operator
+    global CloudletOrg
     global Cloudlet
     global Controller
     global Latitude
@@ -113,7 +113,7 @@ def saveConfig():
     os.environ["MC_USER"] = Mcuser
     os.environ["MC_PASSWORD"] = Mcpass
     EdgevarData['mc'] = Mc
-    EdgevarData['operator'] = Operator
+    EdgevarData['cloudlet-org'] = CloudletOrg
     EdgevarData['cloudlet'] = Cloudlet
     EdgevarData['controller'] = Controller
     EdgevarData['region'] = Region
@@ -135,7 +135,7 @@ def getConfig():
    global Mcpass
    global Controller
    global Region
-   global Operator
+   global CloudletOrg
    global Cloudlet
    global Controller
    global Latitude
@@ -150,7 +150,7 @@ def getConfig():
      Mcpass = getpass.getpass(prompt="Enter MC password for console/mc login: ", stream=None)
      Region = prompt("Enter region, e.g. US, EU, JP", Region)
      Region = string.upper(Region)
-     Operator = prompt("Enter operator", Operator)
+     CloudletOrg = prompt("Enter cloudlet org", CloudletOrg)
      Controller = prompt("Enter controller", Controller)
      Cloudlet = prompt("Enter cloudlet", Cloudlet)
      Latitude = prompt("Enter latitude from -90 to 90", Latitude)
@@ -163,7 +163,7 @@ def getConfig():
      print("   MC password: %s" % "*******")
      print("   Region: %s" % Region)
      print("   Controller: %s" % Controller)
-     print("   Operator: %s\n" % Operator)
+     print("   Cloudlet Org: %s\n" % CloudletOrg)
      print("   Cloudlet: %s" % Cloudlet)
      print("   Latitude: %s" % Latitude)
      print("   Longitude: %s" % Longitude)

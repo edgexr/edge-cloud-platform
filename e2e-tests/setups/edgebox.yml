@@ -7,7 +7,7 @@ crms:
 - name: crm1
   apiaddr: "0.0.0.0:55091"
   notifyaddrs: "{{controller}}:37001"
-  cloudletkey: '{"operator_key":{"name":"{{operator}}"},"name":"{{cloudlet}}"}'
+  cloudletkey: '{"organization": "{{cloudlet-org}}","name":"{{cloudlet}}"}'
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
