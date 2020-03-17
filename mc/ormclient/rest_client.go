@@ -219,6 +219,23 @@ func (s *Client) ShowCloudletMetrics(uri, token string, query *ormapi.RegionClou
 	return &metrics, status, err
 }
 
+func (s *Client) ShowAppEvents(uri, token string, query *ormapi.RegionAppInstEvents) (*ormapi.AllMetrics, int, error) {
+	metrics := ormapi.AllMetrics{}
+	status, err := s.PostJson(uri+"/auth/events/app", token, query, &metrics)
+	return &metrics, status, err
+}
+func (s *Client) ShowClusterEvents(uri, token string, query *ormapi.RegionClusterInstEvents) (*ormapi.AllMetrics, int, error) {
+	metrics := ormapi.AllMetrics{}
+	status, err := s.PostJson(uri+"/auth/events/cluster", token, query, &metrics)
+	return &metrics, status, err
+}
+
+func (s *Client) ShowCloudletEvents(uri, token string, query *ormapi.RegionCloudletEvents) (*ormapi.AllMetrics, int, error) {
+	metrics := ormapi.AllMetrics{}
+	status, err := s.PostJson(uri+"/auth/events/cloudlet", token, query, &metrics)
+	return &metrics, status, err
+}
+
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
 	var body io.Reader
 	if reqData != nil {

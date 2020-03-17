@@ -144,6 +144,17 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if api == "showevents" {
+		var showEvents *ormapi.AllMetrics
+		targets := readMCMetricTargetsFile(apiFile, vars)
+		var parsedMetrics *[]MetricsCompare
+		showEvents = showMcEvents(uri, token, targets, &rc)
+		// convert showMetrics into something yml compatible
+		parsedMetrics = parseMetrics(showEvents)
+		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		return rc
+	}
+
 	if strings.HasPrefix(api, "showmetrics") {
 		var showMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
@@ -498,6 +509,34 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
 	return appMetrics
 }
+func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	appQuery := ormapi.RegionAppInstEvents{
+		Region:  "local",
+		AppInst: targets.AppInstKey,
+		Last:    1,
+	}
+	appMetrics, status, err := mcClient.ShowAppEvents(uri, token, &appQuery)
+	checkMcErr("ShowAppEvents", status, err, rc)
+	clusterQuery := ormapi.RegionClusterInstEvents{
+		Region:      "local",
+		ClusterInst: targets.ClusterInstKey,
+		Last:        1,
+	}
+	clusterMetrics, status, err := mcClient.ShowClusterEvents(uri, token, &clusterQuery)
+	checkMcErr("ShowClusterEvents", status, err, rc)
+	cloudletQuery := ormapi.RegionCloudletEvents{
+		Region:   "local",
+		Cloudlet: targets.CloudletKey,
+		Last:     1,
+	}
+	cloudletMetrics, status, err := mcClient.ShowCloudletEvents(uri, token, &cloudletQuery)
+	checkMcErr("ShowCloudletEvents", status, err, rc)
+
+	// combine them into one AllMetrics
+	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
+	appMetrics.Data = append(appMetrics.Data, cloudletMetrics.Data...)
+	return appMetrics
+}
 
 // same end result as showMcMetricsAll, but gets each metric individually instead of in a batch
 func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
@@ -691,8 +730,8 @@ func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
 				return nil
 			}
 			for i, val := range series.Values[0] {
-				// ignore timestamps
-				if series.Columns[i] == "time" || series.Columns[i] == "metadata" {
+				// ignore timestamps, metadata, or other
+				if series.Columns[i] == "time" || series.Columns[i] == "metadata" || series.Columns[i] == "other" {
 					continue
 				}
 				// put non measurement info separate

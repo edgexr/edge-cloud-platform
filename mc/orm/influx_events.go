@@ -65,6 +65,8 @@ func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents) string {
 	arg := influxQueryArgs{
 		Selector:     getEventFields(EVENT_CLUSTERINST),
 		Measurement:  EVENT_CLUSTERINST,
+		OrgField:     "clusterorg",
+		ApiCallerOrg: obj.ClusterInst.Organization,
 		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
 		CloudletOrg:  obj.ClusterInst.CloudletKey.Organization,
@@ -78,6 +80,8 @@ func CloudletEventsQuery(obj *ormapi.RegionCloudletEvents) string {
 	arg := influxQueryArgs{
 		Selector:     getEventFields(EVENT_CLOUDLET),
 		Measurement:  EVENT_CLOUDLET,
+		OrgField:     "cloudletorg",
+		ApiCallerOrg: obj.Cloudlet.Organization,
 		CloudletName: obj.Cloudlet.Name,
 		CloudletOrg:  obj.Cloudlet.Organization,
 		Last:         obj.Last,
