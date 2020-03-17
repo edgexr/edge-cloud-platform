@@ -96,7 +96,7 @@ var CloudletEventOptionalArgs = []string{
 }
 
 var CloudletEventAliasArgs = []string{
-	"cloudletorg=cloudlet.operatorkey.name",
+	"cloudletorg=cloudlet.organization",
 	"cloudlet=cloudlet.name",
 }
 

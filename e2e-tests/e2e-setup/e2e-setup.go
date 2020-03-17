@@ -84,6 +84,7 @@ type MetricsCompare struct {
 type MetricTargets struct {
 	AppInstKey     edgeproto.AppInstKey
 	ClusterInstKey edgeproto.ClusterInstKey
+	CloudletKey    edgeproto.CloudletKey
 }
 
 // metrics that e2e currently tests for
@@ -110,6 +111,10 @@ var TagValues = map[string]struct{}{
 	"apporg":      struct{}{},
 	"clusterorg":  struct{}{},
 	"cloudletorg": struct{}{},
+	// special event tags
+	"event":  struct{}{},
+	"status": struct{}{},
+	"flavor": struct{}{},
 }
 
 var apiAddrsUpdated = false

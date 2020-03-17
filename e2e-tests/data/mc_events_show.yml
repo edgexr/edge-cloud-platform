@@ -1,0 +1,29 @@
+- name: appinst
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    event: CREATED
+    status: UP
+- name: clusterinst
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    event: CREATED
+    flavor: x1.small
+    status: UP
+  values:
+    disk: 2
+    ram: 2048
+    vcpu: 2
+- name: cloudlet
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    event: UPDATE_COMPLETE
+    status: UP

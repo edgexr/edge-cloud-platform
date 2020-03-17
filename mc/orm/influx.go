@@ -127,6 +127,10 @@ var ApiFields = []string{
 	"\"inf\"",
 }
 
+var PodFields = []string{
+	"\"pod\"",
+}
+
 var CpuFields = []string{
 	"\"cpu\"",
 }
@@ -445,6 +449,10 @@ func getFields(selector, measurementType string) string {
 	switch measurementType {
 	case "appinst":
 		fields = AppFields
+		// If this is not connections selector add pod field
+		if selector != "connections" {
+			fields = append(fields, PodFields...)
+		}
 		selectors = AppSelectors
 	case "cluster":
 		fields = ClusterFields
