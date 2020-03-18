@@ -219,7 +219,7 @@ func TestController(t *testing.T) {
 	goodPermTestCloudletPoolMember(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
 
 	// test non-existent org check
-	badPermTestNonExistent(t, mcClient, uri, tokenAd, ctrl.Region, tc3)
+	// (no check by admin because it returns a different error code)
 	badPermTestNonExistent(t, mcClient, uri, tokenDev, ctrl.Region, tc3)
 	badPermTestNonExistent(t, mcClient, uri, tokenDev2, ctrl.Region, tc3)
 	badPermTestNonExistent(t, mcClient, uri, tokenDev3, ctrl.Region, tc3)
@@ -597,6 +597,7 @@ func testCreateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgType
 
 var updateOrgData = `{"Name":"%s","PublicImages":%t}`
 var updateOrgType = `{"Name":"%s","Type":"%s"}`
+var updateOrgDeleteInProgress = `{"Name":"%s","DeleteInProgress":%t}`
 
 func testUpdateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgName string) {
 	org := getOrg(t, mcClient, uri, token, orgName)
@@ -743,20 +744,15 @@ func badPermShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token
 func badPermTestNonExistent(t *testing.T, mcClient *ormclient.Client, uri, token, region string, tc *edgeproto.CloudletKey) {
 	neOrg := "non-existent-org"
 	badPermCreateApp(t, mcClient, uri, token, region, neOrg)
-	badPermDeleteApp(t, mcClient, uri, token, region, neOrg)
-	badPermUpdateApp(t, mcClient, uri, token, region, neOrg)
-
 	badPermCreateAppInst(t, mcClient, uri, token, region, neOrg, tc)
-	badPermDeleteAppInst(t, mcClient, uri, token, region, neOrg, tc)
-	badPermUpdateAppInst(t, mcClient, uri, token, region, neOrg, tc)
-
 	badPermCreateCloudlet(t, mcClient, uri, token, region, neOrg)
-	badPermDeleteCloudlet(t, mcClient, uri, token, region, neOrg)
-	badPermUpdateCloudlet(t, mcClient, uri, token, region, neOrg)
-
 	badPermCreateClusterInst(t, mcClient, uri, token, region, neOrg, tc)
-	badPermDeleteClusterInst(t, mcClient, uri, token, region, neOrg, tc)
-	badPermUpdateClusterInst(t, mcClient, uri, token, region, neOrg, tc)
+	badPermCreateOperatorCode(t, mcClient, uri, token, region, neOrg)
+	badPermCreateAutoProvPolicy(t, mcClient, uri, token, region, neOrg)
+	badPermCreateAutoScalePolicy(t, mcClient, uri, token, region, neOrg)
+	badPermCreatePrivacyPolicy(t, mcClient, uri, token, region, neOrg)
+	badPermCreateCloudletPool(t, mcClient, uri, token, region, neOrg)
+	badPermCreateResTagTable(t, mcClient, uri, token, region, neOrg)
 }
 
 type StreamDummyServer struct {

@@ -207,9 +207,11 @@ func DeleteClusterInst(c echo.Context) error {
 }
 
 func DeleteClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
-		ResourceClusterInsts, ActionManage) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceClusterInsts, ActionManage); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -293,9 +295,11 @@ func UpdateClusterInst(c echo.Context) error {
 }
 
 func UpdateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.Organization,
-		ResourceClusterInsts, ActionManage) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceClusterInsts, ActionManage); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)

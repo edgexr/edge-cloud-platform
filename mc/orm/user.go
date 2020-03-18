@@ -249,8 +249,10 @@ func DeleteUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("User Name not specified"))
 	}
 	// Only user themself or super-user can delete user.
-	if user.Name != claims.Username && !authorized(ctx, claims.Username, "", ResourceUsers, ActionManage) {
-		return echo.ErrForbidden
+	if user.Name != claims.Username {
+		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
+			return err
+		}
 	}
 	if user.Name == Superuser {
 		return c.JSON(http.StatusBadRequest, Msg("Cannot delete superuser"))
@@ -350,12 +352,12 @@ func ShowUser(c echo.Context) error {
 		}
 	}
 	users := []ormapi.User{}
-	if !authorized(ctx, claims.Username, filter.Name, ResourceUsers, ActionView) {
+	if err := authorized(ctx, claims.Username, filter.Name, ResourceUsers, ActionView); err != nil {
 		if filter.Name == "" && c.Request().ContentLength == 0 {
 			// user probably forgot to specify orgname
 			return c.JSON(http.StatusBadRequest, Msg("No organization name specified"))
 		}
-		return echo.ErrForbidden
+		return err
 	}
 	// if filter ID is 0, show all users (super user only)
 	db := loggedDB(ctx)
@@ -510,8 +512,8 @@ func RestrictedUserUpdate(c echo.Context) error {
 		return err
 	}
 	// Only admin user allowed to update user data.
-	if !authorized(ctx, claims.Username, "", ResourceUsers, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
+		return err
 	}
 	// Pull json directly so we can unmarshal twice.
 	// First time is to do lookup, second time is to apply

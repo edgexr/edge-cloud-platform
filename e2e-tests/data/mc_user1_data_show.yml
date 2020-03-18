@@ -170,3 +170,6 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+    operatorcodes:
+    - code: 31026
+      organization: dmuus

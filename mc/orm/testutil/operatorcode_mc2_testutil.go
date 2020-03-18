@@ -28,6 +28,7 @@ func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region strin
 }
 func TestPermCreateOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
+	in.Organization = org
 	return TestCreateOperatorCode(mcClient, uri, token, region, in)
 }
 
@@ -39,6 +40,7 @@ func TestDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region strin
 }
 func TestPermDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
+	in.Organization = org
 	return TestDeleteOperatorCode(mcClient, uri, token, region, in)
 }
 
@@ -50,6 +52,7 @@ func TestShowOperatorCode(mcClient *ormclient.Client, uri, token, region string,
 }
 func TestPermShowOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.OperatorCode, int, error) {
 	in := &edgeproto.OperatorCode{}
+	in.Organization = org
 	return TestShowOperatorCode(mcClient, uri, token, region, in)
 }
 

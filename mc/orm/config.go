@@ -33,8 +33,8 @@ func UpdateConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionManage); err != nil {
+		return err
 	}
 	config, err := getConfig(ctx)
 	if err != nil {
@@ -59,8 +59,8 @@ func ShowConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionManage); err != nil {
+		return err
 	}
 	config, err := getConfig(ctx)
 	if err != nil {

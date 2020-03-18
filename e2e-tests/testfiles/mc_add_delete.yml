@@ -88,6 +88,15 @@ tests:
     yaml2: '{{datadir2}}/mc_shownode.yml'
     filetype: appdata
 
+- name: test orgs in use
+  actions: [mcapi-delete-expecterr]
+  apifile: '{{datadir2}}/mc_orgsinuse.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/api-output.yml'
+    yaml2: '{{datadir2}}/mc_orgsinuse_error.yml'
+    filetype: orgdata
+
 - includefile: autoprov.yml
 
 - includefile: mc_debugtest.yml

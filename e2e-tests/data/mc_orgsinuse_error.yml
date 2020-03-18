@@ -1,0 +1,22 @@
+errors:
+- desc: DeleteOrg[0]
+  status: 400
+  err: 'Organization dmuus in use or check failed: region local: in use by some AppInst, Cloudlet, ClusterInst, OperatorCode'
+- desc: DeleteOrg[1]
+  status: 400
+  err: 'Organization AcmeAppCo in use or check failed: region local: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst'
+- desc: DeleteOrg[2]
+  status: 400
+  err: 'Organization enterprise in use or check failed: region local: in use by some App, AppInst, Cloudlet, ClusterInst'
+- desc: DeleteOrg[3]
+  status: 400
+  err: 'Organization MobiledgeX in use or check failed: region local: in use by some App, AppInst, ClusterInst'
+- desc: DeleteOrg[4]
+  status: 400
+  err: 'Organization azure in use or check failed: region local: in use by some Cloudlet'
+- desc: DeleteOrg[5]
+  status: 400
+  err: 'Organization gcp in use or check failed: region local: in use by some Cloudlet'
+- desc: DeleteOrg[6]
+  status: 400
+  err: 'Organization platos in use or check failed: region local: in use by some App'

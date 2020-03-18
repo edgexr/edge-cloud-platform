@@ -57,8 +57,8 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 	if op.CloudletPool == "" {
 		return fmt.Errorf("CloudletPool not specified")
 	}
-	if !authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage, withRequiresOrg(op.Org)); err != nil {
+		return err
 	}
 	found, err := hasCloudletPool(ctx, op.Region, op.CloudletPool)
 	if err != nil {
@@ -148,8 +148,8 @@ func DeleteOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		return fmt.Errorf("CloudletPool not specified")
 	}
 
-	if !authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage); err != nil {
+		return err
 	}
 	db := loggedDB(ctx)
 	// can't use db.Delete as we're not using primary key

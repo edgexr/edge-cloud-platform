@@ -311,7 +311,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	}
 	apiVals := strings.Split(api, ",")
 	if len(apiVals) != 3 {
-		g.Fail("invalid mc2_api string, expected ResourceType,Action,OrgNameField")
+		g.Fail(*method.Name, "invalid mc2_api string, expected ResourceType,Action,OrgNameField")
 	}
 	in := gensupport.GetDesc(g.Generator, method.GetInputType())
 	out := gensupport.GetDesc(g.Generator, method.GetOutputType())
@@ -360,6 +360,23 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 			args.TargetCloudletParam = ", targetCloudlet *edgeproto.CloudletKey"
 			args.TargetCloudletArg = ", targetCloudlet"
 		}
+	}
+	authops := []string{}
+	requiresOrg := GetMc2ApiRequiresOrg(method)
+	if requiresOrg != "" && requiresOrg != "none" {
+		authops = append(authops, "withRequiresOrg(obj."+requiresOrg+")")
+	}
+	usesOrg := GetUsesOrg(in.DescriptorProto)
+	if usesOrg != "" && usesOrg != "none" && !args.CustomAuthz {
+		prefix := gensupport.GetCamelCasePrefix(*method.Name)
+		if prefix == "Create" {
+			if requiresOrg == "" {
+				g.Fail("method", *method.Name, "input", inname, "has uses_org and is a create operation, so method must have mc2_api_requires_org specified")
+			}
+		}
+	}
+	if len(authops) > 0 {
+		args.AuthOps = ", " + strings.Join(authops, ", ")
 	}
 	var tmpl *template.Template
 	if g.genapi {
@@ -452,6 +469,7 @@ type tmplArgs struct {
 	StreamerCache        bool
 	NotifyRoot           bool
 	ExecReq              bool
+	AuthOps              string
 }
 
 var tmplApi = `
@@ -652,9 +670,11 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 		}
 	}
 {{- else}}
-	if !rc.skipAuthz && !authorized(ctx, rc.username, {{.Org}},
-		{{.Resource}}, {{.Action}}) {
-		return {{.ReturnErrArg}}echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, {{.Org}},
+			{{.Resource}}, {{.Action}}{{.AuthOps}}); err != nil {
+			return {{.ReturnErrArg}}err
+		}
 	}
 {{- end}}
 {{- end}}
@@ -906,8 +926,7 @@ func (g *GenMC2) generateTestGroupApi(service *descriptor.ServiceDescriptorProto
 	}
 
 	args := msgArgs{
-		Message: group.InType,
-		//Message:        *message.Name,
+		Message:        group.InType,
 		HasUpdate:      GetGenerateCudTestUpdate(message),
 		TargetCloudlet: GetMc2TargetCloudlet(message),
 	}
@@ -1132,6 +1151,10 @@ func GetMc2Api(method *descriptor.MethodDescriptorProto) string {
 	return gensupport.GetStringExtension(method.Options, protogen.E_Mc2Api, "")
 }
 
+func GetMc2ApiRequiresOrg(method *descriptor.MethodDescriptorProto) string {
+	return gensupport.GetStringExtension(method.Options, protogen.E_Mc2ApiRequiresOrg, "")
+}
+
 func GetMc2CustomAuthz(method *descriptor.MethodDescriptorProto) bool {
 	return proto.GetBoolExtension(method.Options, protogen.E_Mc2CustomAuthz, false)
 }
@@ -1162,4 +1185,8 @@ func GetGenerateCudTestUpdate(message *descriptor.DescriptorProto) bool {
 
 func GetGenerateAddrmTest(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateAddrmTest, false)
+}
+
+func GetUsesOrg(message *descriptor.DescriptorProto) string {
+	return gensupport.GetStringExtension(message.Options, protogen.E_UsesOrg, "")
 }

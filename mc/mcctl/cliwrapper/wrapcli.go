@@ -2,10 +2,13 @@ package cliwrapper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud/cli"
@@ -16,8 +19,9 @@ import (
 // direct REST API calls or go through the mcctl CLI.
 
 type Client struct {
-	DebugLog   bool
-	SkipVerify bool
+	DebugLog     bool
+	SkipVerify   bool
+	SilenceUsage bool
 }
 
 func (s *Client) run(uri, token string, args []string) ([]byte, error) {
@@ -29,6 +33,9 @@ func (s *Client) run(uri, token string, args []string) ([]byte, error) {
 	}
 	if s.SkipVerify {
 		args = append([]string{"--skipverify"}, args...)
+	}
+	if s.SilenceUsage {
+		args = append([]string{"--silence-usage"}, args...)
 	}
 	if s.DebugLog {
 		log.Printf("running mcctl %s\n", strings.Join(args, " "))
@@ -71,7 +78,21 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 				status = http.StatusForbidden
 			}
 		}
-		return status, fmt.Errorf("%s, %v", string(byt), err)
+		// ignore err, it's always something like "exit status 1"
+		// format of output should be "status (int), error msg"
+		outParts := strings.SplitN(out, ", ", 2)
+		if len(outParts) == 2 {
+			re := regexp.MustCompile(`^.+\((\d+)\)$`)
+			matched := re.FindStringSubmatch(outParts[0])
+			if len(matched) == 2 {
+				st, err := strconv.Atoi(string(matched[1]))
+				if err == nil {
+					out = strings.TrimSpace(outParts[1])
+					return st, errors.New(out)
+				}
+			}
+		}
+		return status, errors.New(out)
 	}
 	str := strings.TrimSpace(string(byt))
 	if out != nil && len(str) > 0 {

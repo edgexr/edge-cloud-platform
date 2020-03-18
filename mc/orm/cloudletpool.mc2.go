@@ -48,9 +48,11 @@ func CreateCloudletPool(c echo.Context) error {
 }
 
 func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceCloudletPools, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceCloudletPools, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -219,9 +221,11 @@ func CreateCloudletPoolMember(c echo.Context) error {
 }
 
 func CreateCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceCloudletPools, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceCloudletPools, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -262,9 +266,11 @@ func DeleteCloudletPoolMember(c echo.Context) error {
 }
 
 func DeleteCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceCloudletPools, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceCloudletPools, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)

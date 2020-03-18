@@ -189,7 +189,7 @@ func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
 	return false, setReply(c, fmt.Errorf("invalid or expired jwt"), nil)
 }
 
-func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) bool {
+func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) error {
 	opts := authOptions{}
 	for _, op := range ops {
 		op(&opts)
@@ -198,29 +198,54 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) b
 	allow, admin, err := enforcer.Enforce(ctx, sub, org, obj, act)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "enforcer failed", "err", err)
-		return false
+		return echo.ErrForbidden
 	}
-	if admin && org != "" && !opts.showAudit {
-		// make sure org actually exists
-		found, err := orgExists(ctx, org)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, org exists check failed", "err", err)
-			return false
-		}
-		if !found {
-			log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, but org not found", "org", org)
-			return false
+	if !allow {
+		return echo.ErrForbidden
+	}
+	if opts.requiresOrg != "" && !opts.showAudit {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, admin); err != nil {
+			return err
 		}
 	}
-	return allow
+	return nil
+}
+
+func checkRequiresOrg(ctx context.Context, org string, admin bool) error {
+	// make sure org actually exists, and is not in the
+	// process of being deleted.
+	lookup, err := orgExists(ctx, org)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "org exists check failed", "err", err)
+		if !admin {
+			return echo.ErrForbidden
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("org %s lookup failed: %v", org, err))
+	}
+	if lookup == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "org not found", "org", org)
+		if !admin {
+			return echo.ErrForbidden
+		}
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("org %s not found", org))
+	}
+	if lookup.DeleteInProgress {
+		return echo.NewHTTPError(http.StatusBadRequest, "operation not allowed for org with delete in progress")
+	}
+	return nil
 }
 
 type authOptions struct {
-	showAudit bool
+	showAudit   bool
+	requiresOrg string
 }
 
 type authOp func(opts *authOptions)
 
 func withShowAudit() authOp {
 	return func(opts *authOptions) { opts.showAudit = true }
+}
+
+func withRequiresOrg(org string) authOp {
+	return func(opts *authOptions) { opts.requiresOrg = org }
 }

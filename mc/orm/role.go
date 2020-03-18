@@ -47,6 +47,7 @@ var DeveloperResources = []string{
 var OperatorResources = []string{
 	ResourceCloudlets,
 	ResourceCloudletAnalytics,
+	ResourceResTagTable,
 }
 
 // built-in roles
@@ -174,7 +175,7 @@ func ShowRoleAssignment(c echo.Context) error {
 	ctx := GetContext(c)
 
 	super := false
-	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) {
+	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) == nil {
 		// super user, show all roles
 		super = true
 	}
@@ -347,11 +348,11 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	}
 
 	// make sure caller has perms to modify users of target org
-	if !authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage) {
+	if err := authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage); err != nil {
 		if role.Org == "" {
 			return fmt.Errorf("Organization not specified or no permissions")
 		}
-		return echo.ErrForbidden
+		return err
 	}
 	psub := rbac.GetCasbinGroup(role.Org, role.Username)
 	err = enforcer.AddGroupingPolicy(ctx, psub, role.Role)
@@ -412,8 +413,8 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 	}
 
 	// make sure caller has perms to modify users of target org
-	if !authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, role.Org, ResourceUsers, ActionManage); err != nil {
+		return err
 	}
 
 	// if we are removing a manager role, make sure we are not deleting the last manager of an org
@@ -496,8 +497,8 @@ func SyncAccessCheck(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 
-	if !authorized(ctx, claims.Username, "", ResourceControllers, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
+		return err
 	}
 	return nil
 }

@@ -81,7 +81,7 @@ func TestServer(t *testing.T) {
 	policies, status, err := showRolePerms(mcClient, uri, token)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
-	require.Equal(t, 125, len(policies), "number of role perms")
+	require.Equal(t, 133, len(policies), "number of role perms")
 	roles, status, err := showRoles(mcClient, uri, token)
 	require.Nil(t, err, "show roles err")
 	require.Equal(t, http.StatusOK, status, "show roles status")
@@ -350,6 +350,20 @@ func TestServer(t *testing.T) {
 
 	// test role + org combinations
 	testRoleOrgCombos(t, uri, token, mcClient)
+
+	// check that org cannot be deleted if it's already DeleteInProgress
+	dat := fmt.Sprintf(updateOrgDeleteInProgress, org1.Name, true)
+	status, err = mcClient.UpdateOrg(uri, tokenMisterX, dat)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org1)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "org already being deleted")
+	require.Equal(t, http.StatusBadRequest, status)
+	dat = fmt.Sprintf(updateOrgDeleteInProgress, org1.Name, false)
+	status, err = mcClient.UpdateOrg(uri, tokenMisterX, dat)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 
 	// delete orgs
 	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org1)

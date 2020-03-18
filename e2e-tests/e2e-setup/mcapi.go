@@ -24,9 +24,9 @@ var mcClient ormclient.Api
 var errs []Err
 
 type Err struct {
-	desc   string
-	status int
-	err    string
+	Desc   string
+	Status int
+	Err    string
 }
 
 type AllDataOut struct {
@@ -34,15 +34,16 @@ type AllDataOut struct {
 	RegionData []edgetestutil.AllDataOut
 }
 
-func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
 
 	if hasMod("cli", mods) {
 		mcClient = &cliwrapper.Client{
-			DebugLog:   true,
-			SkipVerify: true,
+			DebugLog:     true,
+			SkipVerify:   true,
+			SilenceUsage: true,
 		}
 	} else {
 		mcClient = &ormclient.Client{
@@ -53,7 +54,7 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if strings.HasPrefix(api, "audit") {
-		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if api == "runcommand" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "showlogs" {
@@ -63,7 +64,7 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	} else if strings.HasPrefix(api, "debug") {
 		return runMcDebug(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	}
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 }
 
 func getMC(name string) *intprocess.MC {
@@ -119,7 +120,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
 	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
@@ -141,6 +142,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		var showData *ormapi.AllData
 		showData = showMcData(uri, token, tag, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
+		*retry = true
 		return rc
 	}
 
@@ -204,11 +206,12 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	case "showfiltered":
 		dataOut := showMcDataFiltered(uri, token, tag, data, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
+		*retry = true
 	}
 	if tag != "expecterr" && errs != nil {
 		// no errors expected
 		for _, err := range errs {
-			log.Printf("\"%s\" %s failed %s/%d\n", api, err.desc, err.err, err.status)
+			log.Printf("\"%s\" %s failed %s/%d\n", api, err.Desc, err.Err, err.Status)
 			rc = false
 		}
 	}
@@ -298,9 +301,9 @@ func outMcErr(output *AllDataOut, desc string, status int, err error) {
 	}
 	if err != nil {
 		mcerr := Err{
-			desc:   desc,
-			status: status,
-			err:    err.Error(),
+			Desc:   desc,
+			Status: status,
+			Err:    err.Error(),
 		}
 		output.Errors = append(output.Errors, mcerr)
 	}
@@ -652,7 +655,7 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 	return true
 }
 
-func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
 	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
 
 	if apiFile == "" {
@@ -713,6 +716,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		checkMcErr("ShowAuditSelf", status, err, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, resp, true)
 	}
+	*retry = true
 	return rc
 }
 
