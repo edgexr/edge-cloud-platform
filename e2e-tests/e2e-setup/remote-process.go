@@ -16,6 +16,11 @@ import (
 var maxWaitForServiceSeconds = 900 //15 min
 
 func getAnsibleHome() string {
+	ebAbsible := os.Getenv("EBANSIBLE")
+	if ebAbsible != "" {
+		return ebAbsible
+	}
+
 	goPath := os.Getenv("GOPATH")
 	if goPath == "" {
 		log.Fatalf("GOPATH not set")

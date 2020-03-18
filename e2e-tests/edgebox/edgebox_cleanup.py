@@ -10,6 +10,12 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
+# Handle incompatibility between Pythons 2 and 3
+try:
+    input = raw_input
+except NameError:
+    pass
+
 Debug = False
 CloudletOrg = None
 Cloudlet = None
@@ -17,8 +23,10 @@ Appinsts = None
 Controller = None
 Clusterinsts = None
 Edgectl = None
-TlsDir = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud/tls/out"
-Varsfile = os.environ["GOPATH"]+"/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/edgebox/edgebox_vars.yml"
+TlsDir = "tlsout"
+
+Varsfile = "./edgebox_vars.yml"
+
 
 def readConfig():
     global CloudletOrg
@@ -45,28 +53,28 @@ def getAppClusterInsts():
         if not Cloudlet:
                 sys.exit("missing cloudlet")
                 
-        p = subprocess.Popen([Edgectl+" controller ShowAppInst cloudlet-org=\""+CloudletOrg+"\"   cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        p = subprocess.Popen([Edgectl+" controller ShowAppInst cloudlet-org=\""+CloudletOrg+"\"   cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
        
         out,err = p.communicate()
         Appinsts = load(out, Loader=Loader)
         print ("\nFound APPINST %s\n" % Appinsts)
         if not Appinsts or len(Appinsts) == 0:
-           print "ERROR: no data\n"
+           print("ERROR: no data\n")
 
 
-        p = subprocess.Popen([Edgectl+" controller ShowClusterInst cloudlet-org=\""+CloudletOrg+"\" cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        p = subprocess.Popen([Edgectl+" controller ShowClusterInst cloudlet-org=\""+CloudletOrg+"\" cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
        
         out,err = p.communicate()
         Clusterinsts = load(out, Loader=Loader)
         print ("\nFound CLUSTERINST %s]n" % Clusterinsts)
         if not Clusterinsts or len(Clusterinsts) == 0:
-           print "ERROR: no data\n"
+           print("ERROR: no data\n")
 
 def deleteAppInsts():
      print("\n\ndeleteAppInsts\n")
 
      if not Appinsts or len(Appinsts) == 0:
-           print "nothing to delete\n"
+           print("nothing to delete\n")
            return
 
      for appinst in Appinsts:
@@ -85,7 +93,7 @@ def deleteAppInsts():
                " app-org=\""+apporg+"\""+ " cloudlet-org=\""+cloudletorg+"\" crmoverride=IgnoreCrmAndTransientState")
 
          print ("DELETE COMMAND: "+command)
-         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
        
          out,err = p.communicate()
          print ("Command Out:"+out)
@@ -96,7 +104,7 @@ def deleteClusterInsts():
      print("\n\ndeleteClusterInsts\n")
 
      if not Clusterinsts or len(Clusterinsts) == 0:
-           print "nothing to delete\n"
+           print("nothing to delete\n")
            return
 
      for clinst in Clusterinsts:
@@ -115,7 +123,7 @@ def deleteClusterInsts():
                " cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")
 
          print ("DELETE COMMAND: "+command)
-         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
        
          out,err = p.communicate()
          print ("Command Out:"+out)
@@ -125,7 +133,7 @@ def deleteClusterInsts():
 def deleteCloudlet():
     command = (Edgectl+" controller DeleteCloudlet name=\""+Cloudlet+"\" cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")  
     print ("DELETE COMMAND: "+command)
-    p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
 
     out,err = p.communicate()
     print ("Command Out:"+out)
@@ -138,7 +146,7 @@ def dockerCleanup():
    print ("Cleaning up docker networks")
    subprocess.call('docker network list --format {{.Name}}|grep kubeadm|xargs docker network rm', shell=True)
 def yesOrNo(question):
-    reply = str(raw_input(question+' (y/n): ')).lower().strip()
+    reply = str(input(question+' (y/n): ')).lower().strip()
     if reply[0] == 'y':
         return True
     if reply[0] == 'n':
@@ -153,6 +161,7 @@ def crmCleanup():
 
 if __name__ == "__main__":
    readConfig()
+   print("\n")
    if yesOrNo("CONFIRM: Delete cloudlet org: %s cloudlet: %s from controller: %s ?\n" % (CloudletOrg, Cloudlet, Controller)):
      getAppClusterInsts()
      deleteAppInsts()
