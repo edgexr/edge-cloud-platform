@@ -57,3 +57,4 @@ mc/rbac.conf
 ansible.auto.tfvars
 .terraform.init.done
 vault/letsencrypt-plugin/letsencrypt/version.go
+/edgebox_bin

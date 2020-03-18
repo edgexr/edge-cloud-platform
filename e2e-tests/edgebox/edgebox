@@ -1,0 +1,105 @@
+#!/bin/bash
+PATH="/usr/bin:/bin:/usr/local/bin:/usr/sbin:/sbin"; export PATH
+
+USAGE="usage: $( basename $0 ) <start|cleanup>"
+DIND_REL=v0.3.0
+DIND_CLUST=dind-cluster-v1.14.sh
+DIND_CLUST_SHA256SUM=867050c3d4a752f24f2db64de2634bfe4a2b8ee3ffc6dd04b14cdcb2be21c6dd
+NGINX_DOCKER_IMG=docker.mobiledgex.net/mobiledgex/mobiledgex_public/nginx-with-curl:latest
+
+die() {
+	echo "ERROR: $*" >&2
+	exit 2
+}
+
+setup() {
+	echo "Checking requirements..."
+
+	# Ensure GITHUB_ID is set and valid
+	[[ -z "$GITHUB_ID" ]] && die "GITHUB_ID environment variable not set"
+	security find-internet-password -a "$GITHUB_ID" -s github.com >/dev/null 2>&1
+	if [[ $? -ne 0 ]]; then
+		cat >&1 <<EOT
+
+ERROR: Github personal access token for user "$GITHUB_ID" not found in keychain
+
+       Follow the process here (with "scopes" set to "repo") to generate a token:
+       https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
+
+       And then, do the following to store the token in the keychain:
+       security add-internet-password -a "$GITHUB_ID" -s github.com -T "" -w
+
+EOT
+		exit 2
+	fi
+
+	export GOPATH=$( cd $( dirname $0 ); pwd )
+	export PATH="$PATH:$GOPATH/bin"
+	export EBANSIBLE=$GOPATH/ansible
+
+	# Ensure dind-cluster-v1.14.sh is installed
+	DIND_BIN="$GOPATH/bin/$DIND_CLUST"
+	if [[ ! -x "$DIND_BIN" ]]; then
+		echo "Downloading $DIND_CLUST"
+		curl -sL "https://github.com/kubernetes-sigs/kubeadm-dind-cluster/releases/download/${DIND_REL}/${DIND_CLUST}" \
+			>"$DIND_BIN"
+		chmod +x "$DIND_BIN"
+	fi
+
+	SHA=$( openssl sha256 "$DIND_BIN" 2>/dev/null | awk '{print $NF}' )
+	[[ "$SHA" != "$DIND_CLUST_SHA256SUM" ]] \
+		&& die "Checksum mismatch: $DIND_BIN"
+
+	# Ensure that Python 3 is present
+	for _PY in /usr/local/bin/python3 /usr/bin/python3 /usr/local/bin/python /usr/bin/python; do
+		[[ ! -x "$_PY" ]] && continue
+		${_PY} -V 2>&1 | grep '^Python 3\.' >/dev/null 2>&1
+		[[ $? -ne 0 ]] && continue
+
+		PYTHON="$_PY"
+		break
+	done
+	[[ -z "$PYTHON" ]] && die "Python 3 not found"
+
+	# Ensure that the Python 3 venv is present
+	VENV_DIR="$GOPATH/venv"
+	if [[ ! -d "$VENV_DIR" ]]; then
+		echo "Setting up Python 3 virtualenv"
+		${PYTHON} -m venv "$VENV_DIR"
+		[[ $? -ne 0 ]] && die "Failed to set up Python 3 virtualenv"
+	fi
+
+	# Ensure requirements are met
+	PIP="$VENV_DIR/bin/pip"
+	${PIP} install -r requirements.txt
+
+	echo "Loading Python 3 virtualenv"
+	source "$VENV_DIR/bin/activate"
+
+	# Docker pull the nginx image
+	docker pull "$NGINX_DOCKER_IMG" \
+		|| die "Failed to pull docker image: $NGINX_DOCKER_IMG"
+}
+
+case "$1" in
+	start)
+		shift
+		setup
+		cd e2e-tests/edgebox
+		./edgebox_start.py "$@"
+		;;
+	cleanup)
+		shift
+		setup
+		cd e2e-tests/edgebox
+		./edgebox_cleanup.py "$@"
+		;;
+	help|-h|--help)
+		echo "$USAGE"
+		exit 0
+		;;
+	*)
+		echo "$USAGE" >&2
+		exit 1
+		;;
+esac

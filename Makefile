@@ -123,3 +123,26 @@ edgebox-start:
 
 edgebox-stop:
 	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+
+build-edgebox:
+	mkdir edgebox_bin
+	mkdir edgebox_bin/ansible
+	rsync -a ansible/playbooks edgebox_bin/ansible
+	rsync -a e2e-tests edgebox_bin
+	rsync -a ../edge-cloud/setup-env/e2e-tests/data edgebox_bin/e2e-tests/edgebox
+	rsync -a ../edge-cloud/tls/out/mex-* edgebox_bin/e2e-tests/edgebox/tlsout
+	rsync -a $(GOPATH)/plugins edgebox_bin
+	rsync -a $(GOPATH)/bin/crmserver \
+		 $(GOPATH)/bin/e2e-tests \
+		 $(GOPATH)/bin/edgectl \
+		 $(GOPATH)/bin/test-mex \
+		 $(GOPATH)/bin/test-mex-infra \
+		 edgebox_bin/bin
+	mv edgebox_bin/e2e-tests/edgebox/edgebox edgebox_bin
+	mv edgebox_bin/e2e-tests/edgebox/requirements.txt edgebox_bin
+	tar cf edgebox-bin-$(TAG).tar edgebox_bin
+	bzip2 edgebox-bin-$(TAG).tar
+	$(RM) -r edgebox_bin
+
+clean-edgebox:
+	rm -rf edgebox_bin
