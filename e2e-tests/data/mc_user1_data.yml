@@ -63,3 +63,6 @@ regiondata:
       numdynamicips: 254
       platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51005
+    operatorcodes:
+    - code: 31026
+      organization: dmuus

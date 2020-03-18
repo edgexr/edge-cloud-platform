@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // AuthzCloudlet provides an efficient way to check if the user
@@ -25,7 +24,12 @@ type AuthzCloudlet struct {
 const myPool int = 1
 const notMyPool int = 2
 
-func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilter, resource, action string) error {
+func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilter, resource, action string, authops ...authOp) error {
+	opts := authOptions{}
+	for _, op := range authops {
+		op(&opts)
+	}
+
 	// Get all orgs user has specified resource+action permissions for
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
@@ -41,15 +45,6 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 			s.allowAll = true
 			return nil
 		} else {
-			// make sure org actually exists
-			found, err := orgExists(ctx, orgfilter)
-			if err != nil {
-				return err
-			}
-			if !found {
-				log.SpanLog(ctx, log.DebugLevelApi, "admin authorized, but org does not exist", "org", orgfilter)
-				return nil
-			}
 			// ensure access (admin may not have explicit perms
 			// for specified org).
 			orgs[orgfilter] = struct{}{}
@@ -68,6 +63,13 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 		// no access to any orgs for given resource/action
 		return echo.ErrForbidden
 	}
+
+	if opts.requiresOrg != "" {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, s.admin); err != nil {
+			return err
+		}
+	}
+
 	s.orgs = orgs
 
 	s.noPoolOrgs = make(map[string]struct{})
@@ -156,7 +158,7 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
 
 func authzCreateClusterInst(ctx context.Context, region, username string, obj *edgeproto.ClusterInst, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action)
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization))
 	if err != nil {
 		return err
 	}
@@ -171,7 +173,7 @@ func authzCreateClusterInst(ctx context.Context, region, username string, obj *e
 
 func authzCreateAppInst(ctx context.Context, region, username string, obj *edgeproto.AppInst, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
-	err := authzCloudlet.populate(ctx, region, username, obj.Key.AppKey.Organization, resource, action)
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.AppKey.Organization, resource, action, withRequiresOrg(obj.Key.AppKey.Organization))
 	if err != nil {
 		return err
 	}

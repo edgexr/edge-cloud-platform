@@ -54,6 +54,8 @@ type Organization struct {
 	UpdatedAt time.Time `json:",omitempty"`
 	// read only: true
 	PublicImages bool `json:",omitempty"`
+	// read only: true
+	DeleteInProgress bool `json:",omitempty"`
 }
 
 type Controller struct {

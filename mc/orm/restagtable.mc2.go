@@ -8,6 +8,7 @@ import "github.com/labstack/echo"
 import "net/http"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
 import proto "github.com/gogo/protobuf/proto"
@@ -38,6 +39,8 @@ func CreateResTagTable(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := CreateResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -48,9 +51,11 @@ func CreateResTagTable(c echo.Context) error {
 }
 
 func CreateResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceResTagTable, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -81,6 +86,8 @@ func DeleteResTagTable(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := DeleteResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -91,9 +98,11 @@ func DeleteResTagTable(c echo.Context) error {
 }
 
 func DeleteResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceResTagTable, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -124,6 +133,8 @@ func UpdateResTagTable(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := UpdateResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -134,9 +145,11 @@ func UpdateResTagTable(c echo.Context) error {
 }
 
 func UpdateResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceResTagTable, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -169,6 +182,8 @@ func ShowResTagTable(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 
 	err = ShowResTagTableStream(ctx, rc, &in.ResTagTable, func(res *edgeproto.ResTagTable) {
 		payload := ormapi.StreamPayload{}
@@ -219,7 +234,7 @@ func ShowResTagTableStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok("") {
+			if !authz.Ok(res.Key.Organization) {
 				continue
 			}
 		}
@@ -250,6 +265,8 @@ func AddResTag(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := AddResTagObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -260,9 +277,11 @@ func AddResTag(c echo.Context) error {
 }
 
 func AddResTagObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceResTagTable, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -293,6 +312,8 @@ func RemoveResTag(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := RemoveResTagObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -303,9 +324,11 @@ func RemoveResTag(c echo.Context) error {
 }
 
 func RemoveResTagObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceResTagTable, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -346,9 +369,11 @@ func GetResTagTable(c echo.Context) error {
 }
 
 func GetResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceResTagTable, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceResTagTable, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)

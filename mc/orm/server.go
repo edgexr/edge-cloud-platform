@@ -464,8 +464,8 @@ func ShowVersion(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 
-	if !authorized(ctx, claims.Username, "", ResourceConfig, ActionView) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionView); err != nil {
+		return err
 	}
 	ver := ormapi.Version{
 		BuildMaster: version.BuildMaster,

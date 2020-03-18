@@ -7,11 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -65,7 +68,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		return fmt.Errorf("org name cannot be same as existing user name")
 	}
 	if strings.ToLower(org.Name) == strings.ToLower(cloudcommon.DeveloperMobiledgeX) {
-		if !authorized(ctx, claims.Username, "", ResourceUsers, ActionManage) {
+		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
 			return fmt.Errorf("Not authorized to create reserved org %s", org.Name)
 		}
 	}
@@ -119,12 +122,29 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if org.Name == "" {
 		return fmt.Errorf("Organization name not specified")
 	}
-	if !authorized(ctx, claims.Username, org.Name, ResourceUsers, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, org.Name, ResourceUsers, ActionManage); err != nil {
+		return err
 	}
-	// delete org
+	// mark org for delete in progress
 	db := loggedDB(ctx)
-	err := db.Delete(&org).Error
+	doMark := true
+	err := markOrgForDelete(db, org.Name, doMark)
+	if err != nil {
+		return err
+	}
+
+	// check for Controller objects belonging to org
+	err = orgInUse(ctx, org.Name)
+	if err != nil {
+		undoerr := markOrgForDelete(db, org.Name, !doMark)
+		if undoerr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
+		}
+		return err
+	}
+
+	// delete org
+	err = db.Delete(&org).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_org_fkey\"") {
 			return fmt.Errorf("Cannot delete organization because it is referenced by an OrgCloudletPool")
@@ -186,8 +206,8 @@ func UpdateOrg(c echo.Context) error {
 	}
 	oldType := org.Type
 
-	if !authorized(ctx, claims.Username, in.Name, ResourceUsers, ActionManage) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, claims.Username, in.Name, ResourceUsers, ActionManage); err != nil {
+		return err
 	}
 
 	// apply specified fields
@@ -220,7 +240,8 @@ func ShowOrg(c echo.Context) error {
 func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization, error) {
 	orgs := []ormapi.Organization{}
 	db := loggedDB(ctx)
-	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) {
+	err := authorized(ctx, claims.Username, "", ResourceUsers, ActionView)
+	if err == nil {
 		// super user, show all orgs
 		err := db.Find(&orgs).Error
 		if err != nil {
@@ -301,17 +322,103 @@ func getOrgType(orgName string, allOrgs map[string]*ormapi.Organization) string 
 	return ""
 }
 
-func orgExists(ctx context.Context, orgName string) (bool, error) {
+func orgExists(ctx context.Context, orgName string) (*ormapi.Organization, error) {
 	lookup := ormapi.Organization{
 		Name: orgName,
 	}
 	db := loggedDB(ctx)
-	res := db.Where(&lookup).First(&ormapi.Organization{})
+	org := ormapi.Organization{}
+	res := db.Where(&lookup).First(&org)
 	if res.RecordNotFound() {
-		return false, nil
+		return nil, nil
 	}
 	if res.Error != nil {
-		return false, res.Error
+		return nil, res.Error
 	}
-	return true, nil
+	return &org, nil
+}
+
+// Marking an org for delete must be done transactionally so other threads
+// cannot accidentally run the delete in parallel.
+func markOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error) {
+	tx := db.Begin()
+	defer func() {
+		if reterr != nil {
+			tx.Rollback()
+		}
+	}()
+	// lookup org
+	lookup := ormapi.Organization{
+		Name: name,
+	}
+	findOrg := ormapi.Organization{}
+	res := tx.Where(&lookup).First(&findOrg)
+	if res.RecordNotFound() {
+		return echo.NewHTTPError(http.StatusBadRequest, "org not found")
+	}
+	if res.Error != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, res.Error.Error())
+	}
+	if mark {
+		if findOrg.DeleteInProgress {
+			return echo.NewHTTPError(http.StatusBadRequest, "org already being deleted")
+		}
+		findOrg.DeleteInProgress = true
+	} else {
+		findOrg.DeleteInProgress = false
+	}
+	err := tx.Save(&findOrg).Error
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return tx.Commit().Error
+}
+
+func orgInUse(ctx context.Context, orgName string) error {
+	ctrls, err := ShowControllerObj(ctx, nil)
+	if err != nil {
+		return err
+	}
+	errs := make([]string, 0)
+	var mux sync.Mutex
+	var wg sync.WaitGroup
+
+	for _, ctrl := range ctrls {
+		wg.Add(1)
+		go func(c ormapi.Controller) {
+			err := orgInUseRegion(ctx, c, orgName)
+			if err != nil {
+				mux.Lock()
+				errs = append(errs, fmt.Sprintf("region %s: %v", c.Region, err))
+				mux.Unlock()
+			}
+			wg.Done()
+		}(ctrl)
+	}
+	wg.Wait()
+	if len(errs) == 0 {
+		return nil
+	}
+	return fmt.Errorf("Organization %s in use or check failed: %s", orgName, strings.Join(errs, "; "))
+}
+
+func orgInUseRegion(ctx context.Context, c ormapi.Controller, orgName string) error {
+	conn, err := connectGrpcAddr(c.Address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	api := edgeproto.NewOrganizationApiClient(conn)
+	org := edgeproto.Organization{
+		Name: orgName,
+	}
+	res, err := api.OrganizationInUse(ctx, &org)
+	if err != nil {
+		return err
+	}
+	if res.Code == 0 {
+		return nil
+	}
+	return fmt.Errorf(res.Message)
 }

@@ -49,9 +49,11 @@ func RunCommand(c echo.Context) error {
 }
 
 func RunCommandObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
-		ResourceAppInsts, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
+			ResourceAppInsts, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -94,9 +96,11 @@ func RunConsole(c echo.Context) error {
 }
 
 func RunConsoleObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
-		ResourceAppInsts, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
+			ResourceAppInsts, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -139,9 +143,11 @@ func ShowLogs(c echo.Context) error {
 }
 
 func ShowLogsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
-		ResourceAppInsts, ActionView) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
+			ResourceAppInsts, ActionView); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)

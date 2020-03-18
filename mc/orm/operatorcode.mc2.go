@@ -8,6 +8,7 @@ import "github.com/labstack/echo"
 import "net/http"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
 import proto "github.com/gogo/protobuf/proto"
@@ -37,6 +38,8 @@ func CreateOperatorCode(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.OperatorCode.Organization)
 	resp, err := CreateOperatorCodeObj(ctx, rc, &in.OperatorCode)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -47,9 +50,11 @@ func CreateOperatorCode(c echo.Context) error {
 }
 
 func CreateOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceCloudletPools, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Organization)); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -80,6 +85,8 @@ func DeleteOperatorCode(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.OperatorCode.Organization)
 	resp, err := DeleteOperatorCodeObj(ctx, rc, &in.OperatorCode)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -90,9 +97,11 @@ func DeleteOperatorCode(c echo.Context) error {
 }
 
 func DeleteOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceCloudletPools, ActionManage) {
-		return nil, echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return nil, err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
@@ -125,6 +134,8 @@ func ShowOperatorCode(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.OperatorCode.Organization)
 
 	err = ShowOperatorCodeStream(ctx, rc, &in.OperatorCode, func(res *edgeproto.OperatorCode) {
 		payload := ormapi.StreamPayload{}
@@ -141,7 +152,7 @@ func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgepro
 	var authz *ShowAuthz
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceCloudletPools, ActionView)
+		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}
@@ -175,7 +186,7 @@ func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgepro
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok("") {
+			if !authz.Ok(res.Organization) {
 				continue
 			}
 		}

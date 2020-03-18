@@ -29,6 +29,7 @@ func TestCreateResTagTable(mcClient *ormclient.Client, uri, token, region string
 }
 func TestPermCreateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestCreateResTagTable(mcClient, uri, token, region, in)
 }
 
@@ -40,6 +41,7 @@ func TestDeleteResTagTable(mcClient *ormclient.Client, uri, token, region string
 }
 func TestPermDeleteResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestDeleteResTagTable(mcClient, uri, token, region, in)
 }
 
@@ -51,6 +53,7 @@ func TestUpdateResTagTable(mcClient *ormclient.Client, uri, token, region string
 }
 func TestPermUpdateResTagTable(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestUpdateResTagTable(mcClient, uri, token, region, in)
 }
 
@@ -62,6 +65,7 @@ func TestShowResTagTable(mcClient *ormclient.Client, uri, token, region string, 
 }
 func TestPermShowResTagTable(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.ResTagTable, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestShowResTagTable(mcClient, uri, token, region, in)
 }
 
@@ -73,6 +77,7 @@ func TestAddResTag(mcClient *ormclient.Client, uri, token, region string, in *ed
 }
 func TestPermAddResTag(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestAddResTag(mcClient, uri, token, region, in)
 }
 
@@ -84,6 +89,7 @@ func TestRemoveResTag(mcClient *ormclient.Client, uri, token, region string, in 
 }
 func TestPermRemoveResTag(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
+	in.Key.Organization = org
 	return TestRemoveResTag(mcClient, uri, token, region, in)
 }
 

@@ -51,9 +51,11 @@ func EnableDebugLevels(c echo.Context) error {
 }
 
 func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceConfig, ActionManage) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceConfig, ActionManage); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectNotifyRoot(ctx)
@@ -122,9 +124,11 @@ func DisableDebugLevels(c echo.Context) error {
 }
 
 func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceConfig, ActionManage) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceConfig, ActionManage); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectNotifyRoot(ctx)
@@ -193,9 +197,11 @@ func ShowDebugLevels(c echo.Context) error {
 }
 
 func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceConfig, ActionView) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceConfig, ActionView); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectNotifyRoot(ctx)
@@ -264,9 +270,11 @@ func RunDebug(c echo.Context) error {
 }
 
 func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, "",
-		ResourceConfig, ActionManage) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceConfig, ActionManage); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectNotifyRoot(ctx)

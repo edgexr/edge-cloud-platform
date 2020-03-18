@@ -117,8 +117,8 @@ func GetEventsCommon(c echo.Context) error {
 		cmd = AppInstEventsQuery(&in)
 
 		// Check the developer against who is logged in
-		if !authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView) {
-			return setReply(c, echo.ErrForbidden, nil)
+		if err := authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView); err != nil {
+			return setReply(c, err, nil)
 		}
 	} else if strings.HasSuffix(c.Path(), "events/cluster") {
 		in := ormapi.RegionClusterInstEvents{}
@@ -136,8 +136,8 @@ func GetEventsCommon(c echo.Context) error {
 		cmd = ClusterEventsQuery(&in)
 
 		// Check the developer org against who is logged in
-		if !authorized(ctx, rc.claims.Username, org, ResourceClusterAnalytics, ActionView) {
-			return echo.ErrForbidden
+		if err := authorized(ctx, rc.claims.Username, org, ResourceClusterAnalytics, ActionView); err != nil {
+			return err
 		}
 	} else if strings.HasSuffix(c.Path(), "events/cloudlet") {
 		in := ormapi.RegionCloudletEvents{}
@@ -155,8 +155,8 @@ func GetEventsCommon(c echo.Context) error {
 		cmd = CloudletEventsQuery(&in)
 
 		// Check the operator against who is logged in
-		if !authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView) {
-			return setReply(c, echo.ErrForbidden, nil)
+		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
+			return setReply(c, err, nil)
 		}
 	} else {
 		return setReply(c, echo.ErrNotFound, nil)

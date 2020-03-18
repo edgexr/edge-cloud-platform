@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
 	log "github.com/mobiledgex/edge-cloud/log"
@@ -73,15 +74,46 @@ func main() {
 	}
 
 	ranTest := false
+	retryActions := []string{}
 	for _, a := range spec.Actions {
 		util.PrintStepBanner("running action: " + a)
-		errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars)
+		retry := false
+		errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &retry)
 		errors = append(errors, errs...)
+		if retry {
+			retryActions = append(retryActions, a)
+		}
 		ranTest = true
 	}
+	if len(errors) > 0 {
+		// no retry
+		retryActions = []string{}
+	}
 	if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
-		if !e2esetup.CompareYamlFiles(spec.CompareYaml.Yaml1,
-			spec.CompareYaml.Yaml2, spec.CompareYaml.FileType) {
+		retryOk := true
+		pass := false
+		for ii := 0; ii < 5 && retryOk; ii++ {
+			pass = e2esetup.CompareYamlFiles(spec.CompareYaml.Yaml1,
+				spec.CompareYaml.Yaml2, spec.CompareYaml.FileType)
+			if pass || len(retryActions) == 0 {
+				break
+			}
+			// retry (typically retry show command)
+			time.Sleep(100 * time.Millisecond)
+			msg := fmt.Sprintf("re-running actions %v count %d due to compare yaml failure", retryActions, ii)
+			util.PrintStepBanner(msg)
+			for _, a := range retryActions {
+				util.PrintStepBanner("re-running action: " + a)
+				retry := false
+				errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &retry)
+				errors = append(errors, errs...)
+				if len(errs) > 0 {
+					retryOk = false
+					break
+				}
+			}
+		}
+		if !pass {
 			errors = append(errors, "compare yaml failed")
 		}
 		ranTest = true

@@ -27,6 +27,9 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
 		}
+		if cli.SilenceUsage {
+			c.CobraCmd.SilenceUsage = true
+		}
 
 		in, err := c.ParseInput(args)
 		if err != nil {
@@ -75,7 +78,7 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 	// all failure cases result in error getting set (by PostJson)
 	if err != nil {
 		if status != 0 {
-			return fmt.Errorf("%s, %v", http.StatusText(status), err)
+			return fmt.Errorf("%s (%d), %v", http.StatusText(status), status, err)
 		}
 		return err
 	}

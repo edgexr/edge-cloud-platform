@@ -55,9 +55,11 @@ func ShowAppInstClient(c echo.Context) error {
 }
 
 func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey, cb func(res *edgeproto.AppInstClient)) error {
-	if !rc.skipAuthz && !authorized(ctx, rc.username, obj.Key.AppKey.Organization,
-		ResourceAppAnalytics, ActionView) {
-		return echo.ErrForbidden
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
+			ResourceAppAnalytics, ActionView); err != nil {
+			return err
+		}
 	}
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)

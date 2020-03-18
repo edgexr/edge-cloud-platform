@@ -25,6 +25,7 @@ It is generated from these files:
 	node.proto
 	notice.proto
 	operatorcode.proto
+	org.proto
 	privacypolicy.proto
 	refs.proto
 	restagtable.proto
@@ -95,6 +96,8 @@ It has these top-level messages:
 	NodeData
 	Notice
 	OperatorCode
+	Organization
+	OrganizationData
 	OutboundSecurityRule
 	PrivacyPolicy
 	CloudletRefs
@@ -366,8 +369,8 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/DeleteOperatorCode", DeleteOperatorCode)
 	// swagger:route POST /auth/ctrl/ShowOperatorCode OperatorCode ShowOperatorCode
-	// Delete Operator Code.
-	//   Show Codes for an Operator
+	// Show Operator Code.
+	//  Show Codes for an Operator.
 	// Security:
 	//   Bearer:
 	// responses:

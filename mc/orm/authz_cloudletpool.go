@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
 func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *edgeproto.CloudletPool, resource, action string) error {
-	if !authorized(ctx, username, "", resource, action) {
-		return echo.ErrForbidden
+	if err := authorized(ctx, username, "", resource, action); err != nil {
+		return err
 	}
 
 	// check if cloudletpool is in use by orgcloudletpool
