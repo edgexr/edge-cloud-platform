@@ -848,10 +848,15 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 
 	// dedicated rootLB requires a rootLB VM to be created in the stack
 	if dedicatedRootLB {
+		flavor := clusterInst.MasterNodeFlavor
+		if flavor == "" {
+			// master flavor not set, use the node flavor
+			flavor = clusterInst.NodeFlavor
+		}
 		cp.VMParams, err = GetVMParams(ctx,
 			RootLBVMDeployment,
 			rootLBName,
-			clusterInst.MasterNodeFlavor,
+			flavor,
 			clusterInst.ExternalVolumeSize,
 			imgName,
 			GetSecurityGroupName(ctx, rootLBName),
@@ -912,7 +917,6 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 		cp.MasterNodeFlavor = clusterInst.MasterNodeFlavor
 		log.SpanLog(ctx, log.DebugLevelMexos, "HeatGetClusterParams", "MasterNodeFlavor", cp.MasterNodeFlavor)
 	}
-
 	return &cp, nil
 }
 
