@@ -85,6 +85,6 @@
   status: 200
   starttime: "2019-09-26T15:30:00.278638-07:00"
   duration: 1.413ms
-  request: '{"Region":"local","Address":"127.0.0.1:55001","InfluxDB":"http://127.0.0.1:8086","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  request: '{"Region":"locala","Address":"127.0.0.1:55011","InfluxDB":"http://127.0.0.1:8087","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Controller deregistered"}'
   traceid: 7e61d350f6c309c3

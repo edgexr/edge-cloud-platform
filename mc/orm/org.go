@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 
@@ -399,6 +400,7 @@ func orgInUse(ctx context.Context, orgName string) error {
 	if len(errs) == 0 {
 		return nil
 	}
+	sort.Strings(errs)
 	return fmt.Errorf("Organization %s in use or check failed: %s", orgName, strings.Join(errs, "; "))
 }
 

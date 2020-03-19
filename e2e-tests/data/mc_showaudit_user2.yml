@@ -20,6 +20,15 @@
   username: user2
   clientip: 127.0.0.1
   status: 403
+  starttime: "2020-03-18T14:06:20.216288-07:00"
+  duration: 671µs
+  request: '{"Region":"locala","Settings":{}}'
+  response: '{"message":"code=403, message=Forbidden"}'
+  traceid: 33f2e0e8baa458b5
+- operationname: /api/v1/auth/ctrl/ShowSettings
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
   starttime: "2020-01-16T16:24:05.019808-08:00"
   duration: 578µs
   request: '{"Region":"local","Settings":{}}'
@@ -60,7 +69,7 @@
   status: 200
   starttime: "2019-12-18T13:42:42.48365-08:00"
   duration: 18.759ms
-  request: '{"Region":"local","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-1"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-2"},"loc":{}}]}}'
+  request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}]}}'
   response: '{}'
   traceid: 7af113ec2d0b698c
 - operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
@@ -69,7 +78,7 @@
   status: 200
   starttime: "2019-10-23T17:33:40.487278-07:00"
   duration: 14.316ms
-  request: '{"Region":"local","AutoScalePolicy":{"key":{"organization":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
+  request: '{"Region":"locala","AutoScalePolicy":{"key":{"organization":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
   response: '{}'
   traceid: 382475ae5bd5fddb
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
@@ -78,7 +87,7 @@
   status: 200
   starttime: "2019-08-11T09:36:02.782934-07:00"
   duration: 114.968ms
-  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{}}}'
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -88,19 +97,3 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 35078d27e23052f5
-- operationname: /api/v1/auth/ctrl/DeleteClusterInst
-  username: user2
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-11T09:36:02.685286-07:00"
-  duration: 93.375ms
-  request: '{"Region":"local","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1"}}'
-  response: |
-    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 79331c0ec70fb2d6
