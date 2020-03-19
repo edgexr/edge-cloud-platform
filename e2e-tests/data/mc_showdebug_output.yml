@@ -17,6 +17,14 @@ requests:
       region: local
     output: etcd,api,notify,metrics
   - node:
+      type: controller
+      region: locala
+    output: etcd,api,notify,metrics
+  - node:
+      type: controller
+      region: locala
+    output: etcd,api,notify,metrics
+  - node:
       type: dme
       region: local
       cloudletkey:
@@ -29,6 +37,20 @@ requests:
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
+    output: notify,dmedb,dmereq,locapi,metrics
+  - node:
+      type: dme
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-3
+    output: notify,dmedb,dmereq,locapi,metrics
+  - node:
+      type: dme
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-4
     output: notify,dmedb,dmereq,locapi,metrics
   - node:
       type: crm
@@ -66,16 +88,49 @@ requests:
         name: gcp-cloud-5
     output: api,notify,mexos,info
   - node:
+      type: crm
+      region: locala
+      cloudletkey:
+        organization: enterprise
+        name: enterprise-2
+    output: api,notify,mexos,info
+  - node:
+      type: crm
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-3
+    output: api,notify,mexos,info
+  - node:
+      type: crm
+      region: locala
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-4
+    output: api,notify,mexos,info
+  - node:
       type: cluster-svc
       region: local
     output: api,notify,mexos
   - node:
       type: cluster-svc
       region: local
+    output: api,notify,mexos
+  - node:
+      type: cluster-svc
+      region: locala
+    output: api,notify,mexos
+  - node:
+      type: cluster-svc
+      region: locala
     output: api,notify,mexos
   - node:
       type: autoprov
       region: local
+    output: api,notify,metrics
+  - node:
+      type: autoprov
+      region: locala
     output: api,notify,metrics
   - node:
       type: shepherd
@@ -83,4 +138,11 @@ requests:
         organization: dmuus
         name: dmuus-cloud-1
       region: local
+    output: api,notify,mexos,metrics
+  - node:
+      type: shepherd
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-3
+      region: locala
     output: api,notify,mexos,metrics

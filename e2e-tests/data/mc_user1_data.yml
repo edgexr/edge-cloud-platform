@@ -66,3 +66,31 @@ regiondata:
     operatorcodes:
     - code: 31026
       organization: dmuus
+- region: locala
+  appdata:
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-3
+      accessuri: cloud1.tmo
+      location:
+        latitude: 32
+        longitude: -92
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFakeinfra
+      notifysrvaddr: 127.0.0.1:51017
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-4
+      accessuri: cloud2.tmo
+      location:
+        latitude: 36
+        longitude: -96
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51018
+    operatorcodes:
+    - code: 31026
+      organization: dmuus

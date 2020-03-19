@@ -31,6 +31,12 @@ influxs:
   httpaddr: "http://127.0.0.1:8086"
   hostname: "127.0.0.1"
 
+influxs:
+- name: influxa1
+  datadir: /var/tmp/edge-cloud-local-influx/influx2
+  httpaddr: "http://127.0.0.1:8087"
+  hostname: "127.0.0.1"
+
 etcds:
 - name: etcd1
   datadir: /var/tmp/edge-cloud-local-etcd/etcd1
@@ -51,6 +57,27 @@ etcds:
   peeraddrs: "http://127.0.0.1:30013"
   clientaddrs: "http://127.0.0.1:30003"
   initialcluster: "etcd1=http://127.0.0.1:30011,etcd2=http://127.0.0.1:30012,etcd3=http://127.0.0.1:30013"
+  hostname: "127.0.0.1"
+
+- name: etcda1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda1
+  peeraddrs: "http://127.0.0.1:30021"
+  clientaddrs: "http://127.0.0.1:30031"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcda2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda2
+  peeraddrs: "http://127.0.0.1:30022"
+  clientaddrs: "http://127.0.0.1:30032"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcda3
+  datadir: /var/tmp/edge-cloud-local-etcd/etcda3
+  peeraddrs: "http://127.0.0.1:30023"
+  clientaddrs: "http://127.0.0.1:30033"
+  initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
   hostname: "127.0.0.1"
 
 controllers:
@@ -84,6 +111,38 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
 
+- name: ctrla1
+  etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
+  apiaddr: "127.0.0.1:55011"
+  httpaddr: "0.0.0.0:36011"
+  notifyaddr: "127.0.0.1:37011"
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52001"
+  notifyrootaddrs: "127.0.0.1:53001"
+  region: locala
+
+- name: ctrla2
+  etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
+  apiaddr: "127.0.0.1:55012"
+  httpaddr: "0.0.0.0:36012"
+  notifyaddr: "127.0.0.1:37012"
+  vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  notifyparentaddrs: "127.0.0.1:52002"
+  notifyrootaddrs: "127.0.0.1:53001"
+  region: locala
+
 clustersvcs:
 - name: cluster-svc1
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
@@ -97,6 +156,23 @@ clustersvcs:
 - name: cluster-svc2
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   ctrladdrs: "127.0.0.1:55002"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: cluster-svca1
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55011"
+  pluginrequired: true
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: cluster-svca2
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55012"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -130,6 +206,44 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+
+- name: dmea1
+  apiaddr: "0.0.0.0:50061"
+  httpaddr: "0.0.0.0:38011"
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-3"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  region: locala
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    serverkey: "{{tlsoutdir}}/mex-server.key"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+  envvars:
+    LOCAPI_USER: mexserver
+    LOCAPI_PASSWD: eC2835!
+
+- name: dmea2
+  apiaddr: "0.0.0.0:50062"
+  httpaddr: "0.0.0.0:38012"
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  locverurl: "{{locverurl}}"
+  toksrvurl: "{{toksrvurl}}"
+  carrier: GDDT
+  cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-4"}'
+  vaultaddr: "http://127.0.0.1:8200"
+  region: locala
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -195,6 +309,16 @@ autoprovs:
   ctrladdrs: "127.0.0.1:55001"
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8086"
+  tls:
+    servercert: "{{tlsoutdir}}/mex-server.crt"
+    clientcert: "{{tlsoutdir}}/mex-client.crt"
+  hostname: "127.0.0.1"
+
+- name: autoprova1
+  notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
+  ctrladdrs: "127.0.0.1:55011"
+  vaultaddr: "http://127.0.0.1:8200"
+  influxaddr: "http://127.0.0.1:8087"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
