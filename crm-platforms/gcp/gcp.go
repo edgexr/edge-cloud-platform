@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -24,6 +23,8 @@ type Platform struct {
 	config       platform.PlatformConfig
 	vaultConfig  *vault.Config
 	clusterCache *edgeproto.ClusterInstInfoCache
+	commonPf     mexos.CommonPlatform
+	envVars      map[string]*mexos.PropertyInfo
 }
 
 type GCPQuotas struct {
@@ -42,6 +43,17 @@ type GCPFlavor struct {
 	Name                         string
 }
 
+var gcpProps = map[string]*mexos.PropertyInfo{
+	"MEX_GCP_PROJECT": &mexos.PropertyInfo{
+		Value: "still-entity-201400",
+	},
+	"MEX_GCP_ZONE":            &mexos.PropertyInfo{},
+	"MEX_GCP_SERVICE_ACCOUNT": &mexos.PropertyInfo{},
+	"MEX_GCP_AUTH_KEY_PATH": &mexos.PropertyInfo{
+		Value: "/secret/data/cloudlet/gcp/auth_key.json",
+	},
+}
+
 func (s *Platform) GetType() string {
 	return "gcp"
 }
@@ -53,35 +65,30 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	}
 	s.vaultConfig = vaultConfig
 
-	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
+	if err := s.commonPf.InitInfraCommon(ctx, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
+
+	s.envVars = gcpProps
+	mexos.SetPropsFromVars(ctx, s.envVars, platformConfig.EnvVars)
+
 	s.config = *platformConfig
-	s.props.Project = os.Getenv("MEX_GCP_PROJECT")
-	if s.props.Project == "" {
-		//default
-		s.props.Project = "still-entity-201400"
-	}
+	s.props.Project = s.envVars["MEX_GCP_PROJECT"].Value
 	if err = SetProject(s.props.Project); err != nil {
 		return err
 	}
-	s.props.Zone = os.Getenv("MEX_GCP_ZONE")
+	s.props.Zone = s.envVars["MEX_GCP_ZONE"].Value
 	if s.props.Zone == "" {
 		return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
 	}
 	if err = SetZone(s.props.Zone); err != nil {
 		return err
 	}
-	s.props.ServiceAccount = os.Getenv("MEX_GCP_SERVICE_ACCOUNT")
+	s.props.ServiceAccount = s.envVars["MEX_GCP_SERVICE_ACCOUNT"].Value
 	if s.props.ServiceAccount == "" {
 		return fmt.Errorf("Env variable MEX_GCP_SERVICE_ACCOUNT not set")
 	}
-	s.props.GcpAuthKeyUrl = os.Getenv("MEX_GCP_AUTH_KEY_PATH")
-	if s.props.GcpAuthKeyUrl == "" {
-		//default it
-		s.props.GcpAuthKeyUrl = "/secret/data/cloudlet/gcp/auth_key.json"
-		log.SpanLog(ctx, log.DebugLevelMexos, "MEX_GCP_AUTH_KEY_PATH defaulted", "value", s.props.GcpAuthKeyUrl)
-	}
+	s.props.GcpAuthKeyUrl = s.envVars["MEX_GCP_AUTH_KEY_PATH"].Value
 	return nil
 }
 

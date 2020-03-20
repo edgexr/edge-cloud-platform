@@ -3,7 +3,6 @@ package edgebox
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -24,6 +23,14 @@ type Platform struct {
 	config        platform.PlatformConfig
 	vaultConfig   *vault.Config
 	NetworkScheme string
+	commonPf      mexos.CommonPlatform
+	envVars       map[string]*mexos.PropertyInfo
+}
+
+var edgeboxProps = map[string]*mexos.PropertyInfo{
+	"MEX_NETWORK_SCHEME": &mexos.PropertyInfo{
+		Value: cloudcommon.NetworkSchemePrivateIP,
+	},
 }
 
 func (s *Platform) GetType() string {
@@ -46,31 +53,34 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	}
 	s.vaultConfig = vaultConfig
 
-	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
+	if err := s.commonPf.InitInfraCommon(ctx, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
 
-	s.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
-	if s.NetworkScheme == "" {
-		s.NetworkScheme = cloudcommon.NetworkSchemePrivateIP
-	}
+	s.envVars = edgeboxProps
+	mexos.SetPropsFromVars(ctx, s.envVars, platformConfig.EnvVars)
+
+	s.NetworkScheme = s.GetCloudletNetworkScheme()
 	if s.NetworkScheme != cloudcommon.NetworkSchemePrivateIP &&
 		s.NetworkScheme != cloudcommon.NetworkSchemePublicIP {
 		return fmt.Errorf("Unsupported network scheme for DIND: %s", s.NetworkScheme)
 	}
-	mexos.CloudletInfraCommon.NetworkScheme = s.NetworkScheme
 
 	fqdn := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey)
 	ipaddr, err := s.GetDINDServiceIP(ctx)
 	if err != nil {
 		return fmt.Errorf("init cannot get service ip, %s", err.Error())
 	}
-	if err := mexos.ActivateFQDNA(ctx, fqdn, ipaddr); err != nil {
+	if err := s.commonPf.ActivateFQDNA(ctx, fqdn, ipaddr); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "error in ActivateFQDNA", "err", err)
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "done init edgebox")
 	return nil
+}
+
+func (s *Platform) GetCloudletNetworkScheme() string {
+	return s.envVars["MEX_NETWORK_SCHEME"].Value
 }
 
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

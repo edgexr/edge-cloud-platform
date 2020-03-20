@@ -38,11 +38,11 @@ var NoDnsOverride = ""
 // The passed in GetDnsSvcActionFunc function should provide this function
 // with the actions to perform for each service, since different platforms
 // will use different IPs and patching.
-func CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
+func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "createAppDNS")
 	useDns := true
-	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		if testMode {
 			useDns = false
 			log.SpanLog(ctx, log.DebugLevelMexos, "cannot init cloudflare api", "err", err)
@@ -94,12 +94,12 @@ func CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNam
 			}
 		}
 		if action.AddDNS && useDns {
-			mappedAddr := GetMappedExternalIP(action.ExternalIP)
+			mappedAddr := c.GetMappedExternalIP(action.ExternalIP)
 			fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 			if overrideDns != "" {
 				fqdn = overrideDns
 			}
-			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false); err != nil {
+			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false); err != nil {
 				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
 			}
 			log.SpanLog(ctx, log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
@@ -108,9 +108,9 @@ func CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNam
 	return nil
 }
 
-func DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
+func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
 
-	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
 	if kubeNames.AppURI == "" {
@@ -137,7 +137,7 @@ func DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.Kub
 		if overrideDns != "" {
 			fqdn = overrideDns
 		}
-		err := DeleteDNSRecords(ctx, fqdn)
+		err := c.DeleteDNSRecords(ctx, fqdn)
 		if err != nil {
 			return err
 		}
@@ -145,17 +145,17 @@ func DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.Kub
 	return nil
 }
 
-func DeleteDNSRecords(ctx context.Context, fqdn string) error {
-	if err := cloudflare.InitAPI(GetCloudletCFUser(), GetCloudletCFKey()); err != nil {
+func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) error {
+	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
-	recs, derr := cloudflare.GetDNSRecords(ctx, GetCloudletDNSZone(), fqdn)
+	recs, derr := cloudflare.GetDNSRecords(ctx, c.GetCloudletDNSZone(), fqdn)
 	if derr != nil {
-		return fmt.Errorf("error getting dns records for %s, %v", GetCloudletDNSZone(), derr)
+		return fmt.Errorf("error getting dns records for %s, %v", c.GetCloudletDNSZone(), derr)
 	}
 	for _, rec := range recs {
 		if rec.Type == "A" && rec.Name == fqdn {
-			if err := cloudflare.DeleteDNSRecord(GetCloudletDNSZone(), rec.ID); err != nil {
+			if err := cloudflare.DeleteDNSRecord(c.GetCloudletDNSZone(), rec.ID); err != nil {
 				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
 			}
 			log.SpanLog(ctx, log.DebugLevelMexos, "deleted DNS record", "name", fqdn)

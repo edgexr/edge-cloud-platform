@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -129,7 +128,7 @@ func startPlatformService(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Plat
 	return
 }
 
-func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
 	// Gather registry credentails from Vault
 	updateCallback(edgeproto.UpdateTask, "Fetching registry auth credentials")
 	regAuth, err := cloudcommon.GetRegistryAuth(ctx, pfConfig.ContainerRegistryPath, vaultConfig)
@@ -169,7 +168,7 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 
 	// Verify if Openstack API Endpoint is reachable
 	updateCallback(edgeproto.UpdateTask, "Verifying if Openstack API Endpoint is reachable")
-	osAuthUrl := os.Getenv("OS_AUTH_URL")
+	osAuthUrl := s.openRCVars["OS_AUTH_URL"]
 	if osAuthUrl == "" {
 		return fmt.Errorf("unable to find OS_AUTH_URL")
 	}
@@ -184,10 +183,10 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	); err != nil {
 		updateCallback(edgeproto.UpdateTask, "Adding route for API endpoint as it is unreachable")
 		// Fetch gateway IP of external network
-		gatewayAddr, err := mexos.GetExternalGateway(ctx, mexos.GetCloudletExternalNetwork())
+		gatewayAddr, err := s.GetExternalGateway(ctx, s.GetCloudletExternalNetwork())
 		if err != nil {
 			return fmt.Errorf("unable to fetch gateway IP for external network: %s, %v",
-				mexos.GetCloudletExternalNetwork(), err)
+				s.GetCloudletExternalNetwork(), err)
 		}
 		// Add route to reach API endpoint
 		if out, err := client.Output(
@@ -271,9 +270,9 @@ func setupPlatformService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 //   * Brings up Platform VM (using HEAT stack)
 //   * Sets up Security Group for access to Cloudlet
 // Returns ssh client
-func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) (ssh.Client, error) {
+func (s *Platform) setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) (ssh.Client, error) {
 	// Get Flavor Info
-	finfo, _, _, err := mexos.GetFlavorInfo(ctx)
+	finfo, _, _, err := s.GetFlavorInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -283,24 +282,24 @@ func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 		return nil, fmt.Errorf("unable to find matching vm spec for platform: %v", err)
 	}
 
-	pfImageName, err := mexos.AddImageIfNotPresent(ctx, pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, updateCallback)
+	pfImageName, err := s.AddImageIfNotPresent(ctx, pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, updateCallback)
 	if err != nil {
 		return nil, err
 	}
 
 	// Form platform VM name based on cloudletKey
 	platform_vm_name := getPlatformVMName(&cloudlet.Key)
-	secGrp := mexos.GetSecurityGroupName(ctx, platform_vm_name)
+	secGrp := GetSecurityGroupName(ctx, platform_vm_name)
 
-	vmp, err := mexos.GetVMParams(ctx,
-		mexos.PlatformVMDeployment,
+	vmp, err := s.GetVMParams(ctx,
+		PlatformVMDeployment,
 		platform_vm_name,
 		vmspec.FlavorName,
 		vmspec.ExternalVolumeSize,
 		pfImageName,
 		secGrp,
 		&cloudlet.Key,
-		mexos.WithAccessPorts("tcp:22"),
+		WithAccessPorts("tcp:22"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vm params: %v", err)
@@ -309,19 +308,19 @@ func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	// Deploy Platform VM
 	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
 	log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", platform_vm_name, "vmspec", vmspec)
-	err = mexos.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, mexos.VmTemplate, updateCallback)
+	err = s.CreateHeatStackFromTemplate(ctx, vmp, platform_vm_name, VmTemplate, updateCallback)
 	if err != nil {
 		return nil, fmt.Errorf("CreatePlatformVM error: %v", err)
 	}
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 
-	ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), platform_vm_name)
+	ip, err := s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), platform_vm_name)
 	if err != nil {
 		return nil, err
 	}
 	updateCallback(edgeproto.UpdateTask, "Platform VM external IP: "+ip.ExternalAddr)
 
-	client, err := mexos.GetSSHClient(ctx, platform_vm_name, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	client, err := s.GetSSHClient(ctx, platform_vm_name, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +328,7 @@ func setupPlatformVM(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	// setup SSH access to cloudlet for CRM
 	updateCallback(edgeproto.UpdateTask, "Setting up security group for SSH access")
 
-	if err := mexos.AddSecurityRuleCIDR(ctx, ip.ExternalAddr, "tcp", secGrp, "22"); err != nil {
+	if err := s.AddSecurityRuleCIDR(ctx, ip.ExternalAddr, "tcp", secGrp, "22"); err != nil {
 		return nil, fmt.Errorf("unable to add security rule for ssh access, err: %v", err)
 	}
 
@@ -347,7 +346,7 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	}
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
-	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
+	err = s.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
 	if err != nil {
 		return err
 	}
@@ -360,12 +359,12 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		pfConfig.ContainerRegistryPath = mexos.DefaultContainerRegistryPath
 	}
 
-	client, err := setupPlatformVM(ctx, cloudlet, pfConfig, pfFlavor, updateCallback)
+	client, err := s.setupPlatformVM(ctx, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
 		return err
 	}
 
-	return setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, client, updateCallback)
+	return s.setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, client, updateCallback)
 }
 
 func (s *Platform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -404,7 +403,7 @@ func (s *Platform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgepro
 		if !ok {
 			return fmt.Errorf("Invalid accessvars, missing CACERT_DATA")
 		}
-		certFile := mexos.GetCertFilePath(&cloudlet.Key)
+		certFile := GetCertFilePath(&cloudlet.Key)
 		err := ioutil.WriteFile(certFile, []byte(certData), 0644)
 		if err != nil {
 			return err
@@ -427,7 +426,7 @@ func (s *Platform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgepro
 		"data": varList,
 	}
 
-	path := mexos.GetVaultCloudletPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, mexos.OSAccessVars)
+	path := GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
 	err = mexos.PutDataToVault(vaultConfig, path, data)
 	if err != nil {
 		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
@@ -446,7 +445,7 @@ func (s *Platform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgep
 	if err != nil {
 		return err
 	}
-	path := mexos.GetVaultCloudletPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, mexos.OSAccessVars)
+	path := GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
 	err = mexos.DeleteDataFromVault(vaultConfig, path)
 	if err != nil {
 		return fmt.Errorf("Failed to delete access vars from vault: %v", err)
@@ -463,8 +462,9 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return err
 	}
+
 	// Source OpenRC file to access openstack API endpoint
-	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
+	err = s.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelMexos, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
@@ -473,14 +473,14 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 
 	platform_vm_name := getPlatformVMName(&cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", platform_vm_name))
-	err = mexos.HeatDeleteStack(ctx, platform_vm_name)
+	err = s.HeatDeleteStack(ctx, platform_vm_name)
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
 	}
 
 	rootLBName := getRootLBName(&cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
-	err = mexos.HeatDeleteStack(ctx, rootLBName)
+	err = s.HeatDeleteStack(ctx, rootLBName)
 	if err != nil {
 		return fmt.Errorf("DeleteCloudlet error: %v", err)
 	}
@@ -536,7 +536,7 @@ func getCRMPkgVersion(ctx context.Context, client ssh.Client) (string, error) {
 	return out, nil
 }
 
-func upgradeCloudletPkgs(ctx context.Context, vmType mexos.DeploymentType, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
+func upgradeCloudletPkgs(ctx context.Context, vmType DeploymentType, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Updating apt package lists", "cloudletName", cloudlet.Key.Name, "vmType", vmType)
 	if out, err := client.Output("sudo apt-get update"); err != nil {
 		return fmt.Errorf("Failed to update apt package lists, %v, %v", out, err)
@@ -561,12 +561,12 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	}
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Sourcing platform variables for %s cloudlet", cloudlet.PhysicalName))
-	err = mexos.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig)
+	err = s.InitOpenstackProps(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
 	if err != nil {
 		return defCloudletAction, err
 	}
 
-	pfClient, err := mexos.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	pfClient, err := s.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return defCloudletAction, err
 	}
@@ -577,13 +577,13 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	}
 
 	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key)
-	rlbClient, err := mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	rlbClient, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return defCloudletAction, err
 	}
-	upgradeMap := map[mexos.DeploymentType]ssh.Client{
-		mexos.PlatformVMDeployment: pfClient,
-		mexos.RootLBVMDeployment:   rlbClient,
+	upgradeMap := map[DeploymentType]ssh.Client{
+		PlatformVMDeployment: pfClient,
+		RootLBVMDeployment:   rlbClient,
 	}
 	for vmType, client := range upgradeMap {
 		if cloudlet.PackageVersion == "" {
@@ -631,7 +631,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 		}
 	}
 
-	err = setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, pfClient, updateCallback)
+	err = s.setupPlatformService(ctx, cloudlet, pfConfig, vaultConfig, pfClient, updateCallback)
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "failed to setup platform services", "err", err)
@@ -665,7 +665,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Cleaning up cloudlet", "cloudletName", cloudlet.Key.Name)
 
-	client, err := mexos.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	client, err := s.GetSSHClient(ctx, getPlatformVMName(&cloudlet.Key), s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,10 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		region = pfConfig.Region
 	}
 
+	for envKey, envVal := range cloudlet.EnvVar {
+		envVars[envKey] = envVal
+	}
+
 	opts = append(opts, process.WithDebug("api,mexos,notify,metrics"))
 
 	return &Shepherd{

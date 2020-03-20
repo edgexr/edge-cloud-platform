@@ -1,4 +1,4 @@
-package mexos
+package openstack
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/tmc/scp"
 )
 
-var sshOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}
-var SSHUser = "ubuntu"
-var SSHPrivateKeyName = "id_rsa_mex"
 var DefaultConnectTimeout time.Duration = 30 * time.Second
 var ClientVersion = "SSH-2.0-mobiledgex-ssh-client-1.0"
 
@@ -37,15 +35,15 @@ func (o *SSHOptions) Apply(ops []SSHClientOp) {
 }
 
 //CopySSHCredential copies over the ssh credential for mex to LB
-func CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
+func (s *Platform) CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
 	log.SpanLog(ctx, log.DebugLevelMexos, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	ip, err := GetServerIPAddr(ctx, networkName, serverName)
+	ip, err := s.GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return err
 	}
-	kf := PrivateSSHKey()
-	out, err := sh.Command("scp", "-o", sshOpts[0], "-o", sshOpts[1], "-i", kf, kf, userName+"@"+ip.ExternalAddr+":").Output()
+	kf := mexos.PrivateSSHKey()
+	out, err := sh.Command("scp", "-o", mexos.SSHOpts[0], "-o", mexos.SSHOpts[1], "-i", kf, kf, userName+"@"+ip.ExternalAddr+":").Output()
 	if err != nil {
 		return fmt.Errorf("can't copy %s to %s, %s, %v", kf, ip.ExternalAddr, out, err)
 	}
@@ -53,19 +51,19 @@ func CopySSHCredential(ctx context.Context, serverName, networkName, userName st
 }
 
 //GetSSHClient returns ssh client handle for the server
-func GetSSHClient(ctx context.Context, serverName, networkName, userName string, ops ...SSHClientOp) (ssh.Client, error) {
+func (s *Platform) GetSSHClient(ctx context.Context, serverName, networkName, userName string, ops ...SSHClientOp) (ssh.Client, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "GetSSHClient", "serverName", serverName)
 	opts := SSHOptions{Timeout: DefaultConnectTimeout}
 	opts.Apply(ops)
 
-	addr, err := GetServerIPAddr(ctx, networkName, serverName)
+	addr, err := s.GetServerIPAddr(ctx, networkName, serverName)
 	if err != nil {
 		return nil, err
 	}
 
 	var client ssh.Client
-	auth := ssh.Auth{Keys: []string{PrivateSSHKey()}}
-	gwhost, gwport := GetCloudletCRMGatewayIPAndPort()
+	auth := ssh.Auth{Keys: []string{mexos.PrivateSSHKey()}}
+	gwhost, gwport := s.GetCloudletCRMGatewayIPAndPort()
 	if gwhost != "" {
 		// start the client to GW and add the addr as next hop
 		client, err = ssh.NewNativeClient(userName, ClientVersion, gwhost, gwport, &auth, opts.Timeout, nil)
@@ -87,9 +85,9 @@ func GetSSHClient(ctx context.Context, serverName, networkName, userName string,
 	return client, nil
 }
 
-func SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Client, error) {
+func (s *Platform) SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Client, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "setting up ssh user", "user", user)
-	client, err := GetSSHClient(ctx, rootLB.Name, GetCloudletExternalNetwork(), user)
+	client, err := s.GetSSHClient(ctx, rootLB.Name, s.GetCloudletExternalNetwork(), user)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +98,9 @@ func SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Clie
 		fmt.Sprintf("sudo cp /root/.ssh/config /home/%s/.ssh/", user),
 		fmt.Sprintf("sudo chown %s:%s /home/%s/.ssh/config", user, user, user),
 		fmt.Sprintf("sudo chmod 600 /home/%s/.ssh/config", user),
-		fmt.Sprintf("sudo cp /root/%s /home/%s/", SSHPrivateKeyName, user),
-		fmt.Sprintf("sudo chown %s:%s   /home/%s/%s", user, user, user, SSHPrivateKeyName),
-		fmt.Sprintf("sudo chmod 600   /home/%s/%s", user, SSHPrivateKeyName),
+		fmt.Sprintf("sudo cp /root/%s /home/%s/", mexos.SSHPrivateKeyName, user),
+		fmt.Sprintf("sudo chown %s:%s   /home/%s/%s", user, user, user, mexos.SSHPrivateKeyName),
+		fmt.Sprintf("sudo chmod 600   /home/%s/%s", user, mexos.SSHPrivateKeyName),
 	} {
 		out, err := client.Output(cmd)
 		if err != nil {

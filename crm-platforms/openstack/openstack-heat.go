@@ -1,4 +1,4 @@
-package mexos
+package openstack
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -489,12 +490,12 @@ func WriteTemplateFile(filename string, buf *bytes.Buffer) error {
 	return nil
 }
 
-func waitForStack(ctx context.Context, stackname string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) waitForStack(ctx context.Context, stackname string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "waiting for stack", "name", stackname, "action", action)
 	start := time.Now()
 	for {
 		time.Sleep(10 * time.Second)
-		hd, err := getHeatStackDetail(ctx, stackname)
+		hd, err := s.getHeatStackDetail(ctx, stackname)
 		if action == heatDelete && hd == nil {
 			// it's gone
 			return nil
@@ -599,7 +600,7 @@ func WithPrivacyPolicy(pp *edgeproto.PrivacyPolicy) VMParamsOp {
 	}
 }
 
-func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavorName string, externalVolumeSize uint64, imageName, secGrp string, cloudletKey *edgeproto.CloudletKey, opts ...VMParamsOp) (*VMParams, error) {
+func (s *Platform) GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavorName string, externalVolumeSize uint64, imageName, secGrp string, cloudletKey *edgeproto.CloudletKey, opts ...VMParamsOp) (*VMParams, error) {
 	var vmp VMParams
 	var err error
 	vmp.VMName = serverName
@@ -615,7 +616,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 	if vmp.PrivacyPolicy == nil {
 		vmp.PrivacyPolicy = &edgeproto.PrivacyPolicy{}
 	}
-	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
 	if err != nil {
 		// The netspec should always be present but is not set when running OpenStack from the controller.
 		// For now, tolerate this as it will work with default settings but not anywhere that requires a non-default
@@ -626,11 +627,11 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 		vmp.IsInternal = true
 	}
 	if depType == RootLBVMDeployment {
-		vmp.GatewayIP, err = GetExternalGateway(ctx, GetCloudletExternalNetwork())
+		vmp.GatewayIP, err = s.GetExternalGateway(ctx, s.GetCloudletExternalNetwork())
 		if err != nil {
 			return nil, err
 		}
-		vmp.MEXRouterIP, err = GetMexRouterIP(ctx)
+		vmp.MEXRouterIP, err = s.GetMexRouterIP(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -638,7 +639,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 		if cloudletKey == nil {
 			return nil, fmt.Errorf("nil cloudlet key")
 		}
-		cloudletGrp, err := GetCloudletSecurityGroupID(ctx, cloudletKey)
+		cloudletGrp, err := s.GetCloudletSecurityGroupID(ctx, cloudletKey)
 		if err != nil {
 			return nil, err
 		}
@@ -646,7 +647,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 
 	}
 	if ni != nil && ni.FloatingIPNet != "" {
-		fips, err := ListFloatingIPs(ctx)
+		fips, err := s.ListFloatingIPs(ctx)
 		for _, f := range fips {
 			if f.Port == "" && f.FloatingIPAddress != "" {
 				vmp.FloatingIPAddressID = f.ID
@@ -661,7 +662,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 		vmp.NetworkName = ni.FloatingIPNet
 		vmp.SubnetName = ni.FloatingIPSubnet
 	} else {
-		vmp.NetworkName = GetCloudletExternalNetwork()
+		vmp.NetworkName = s.GetCloudletExternalNetwork()
 	}
 	if ni != nil {
 		vmp.VnicType = ni.VnicType
@@ -669,7 +670,7 @@ func GetVMParams(ctx context.Context, depType DeploymentType, serverName, flavor
 	return &vmp, nil
 }
 
-func createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName string, templateString string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName string, templateString string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "createHeatStackFromTemplate", "stackName", stackName)
 
 	var buf bytes.Buffer
@@ -707,35 +708,35 @@ func createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData inter
 		return fmt.Errorf("WriteTemplateFile failed: %s", err)
 	}
 	if action == heatCreate {
-		err = createHeatStack(ctx, filename, stackName)
+		err = s.createHeatStack(ctx, filename, stackName)
 	} else {
-		err = updateHeatStack(ctx, filename, stackName)
+		err = s.updateHeatStack(ctx, filename, stackName)
 	}
 	if err != nil {
 		return err
 	}
-	err = waitForStack(ctx, stackName, action, updateCallback)
+	err = s.waitForStack(ctx, stackName, action, updateCallback)
 	return err
 }
 
 // UpdateHeatStackFromTemplate fills the template from templateData and creates the stack
-func UpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName, templateString string, updateCallback edgeproto.CacheUpdateCallback) error {
-	return createOrUpdateHeatStackFromTemplate(ctx, templateData, stackName, templateString, heatUpdate, updateCallback)
+func (s *Platform) UpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName, templateString string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.createOrUpdateHeatStackFromTemplate(ctx, templateData, stackName, templateString, heatUpdate, updateCallback)
 }
 
 // CreateHeatStackFromTemplate fills the template from templateData and creates the stack
-func CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName, templateString string, updateCallback edgeproto.CacheUpdateCallback) error {
-	return createOrUpdateHeatStackFromTemplate(ctx, templateData, stackName, templateString, heatCreate, updateCallback)
+func (s *Platform) CreateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName, templateString string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.createOrUpdateHeatStackFromTemplate(ctx, templateData, stackName, templateString, heatCreate, updateCallback)
 }
 
 // HeatDeleteCluster deletes the stack and also cleans up rootLB port if needed
-func HeatDeleteCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
-	cp, err := getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, "", dedicatedRootLB, heatDelete)
+func (s *Platform) HeatDeleteCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, rootLBName string, dedicatedRootLB bool) error {
+	cp, err := s.getClusterParams(ctx, clusterInst, &edgeproto.PrivacyPolicy{}, rootLBName, "", dedicatedRootLB, heatDelete)
 	if err == nil {
 		// no need to detach the port from the dedicated RootLB because the VM is going away with the stack.  A nil client can be passed here in
 		// some rare cases because the server was somehow deleted
 		if cp.RootLBPortName != "" && !dedicatedRootLB && client != nil {
-			err = DetachAndDisableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+			err = s.DetachAndDisableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "unable to detach rootLB interface, proceed with stack deletion", "err", err)
 			}
@@ -745,37 +746,37 @@ func HeatDeleteCluster(ctx context.Context, client ssh.Client, clusterInst *edge
 		log.SpanLog(ctx, log.DebugLevelMexos, "unable to get cluster params, proceed with stack deletion", "err", err)
 	}
 	clusterName := util.HeatSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
-	return HeatDeleteStack(ctx, clusterName)
+	return s.HeatDeleteStack(ctx, clusterName)
 }
 
 // HeatDeleteStack deletes the VM resources
-func HeatDeleteStack(ctx context.Context, stackName string) error {
+func (s *Platform) HeatDeleteStack(ctx context.Context, stackName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "deleting heat stack for stack", "stackName", stackName)
-	err := deleteHeatStack(ctx, stackName)
+	err := s.deleteHeatStack(ctx, stackName)
 	if err != nil {
 		return err
 	}
-	return waitForStack(ctx, stackName, heatDelete, edgeproto.DummyUpdateCallback)
+	return s.waitForStack(ctx, stackName, heatDelete, edgeproto.DummyUpdateCallback)
 }
 
-func populateCommonClusterParamFields(ctx context.Context, cp *ClusterParams, rootLBName, cloudletSecGrp, action string) (string, error) {
+func (s *Platform) populateCommonClusterParamFields(ctx context.Context, cp *ClusterParams, rootLBName, cloudletSecGrp, action string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "populateCommonClusterParamFields", "clusterParams", cp, "rootLBName", rootLBName, "cloudletSecGrp", cloudletSecGrp, "action", action)
 
 	usedCidrs := make(map[string]string)
-	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
 	if err != nil {
 		return "", err
 	}
 	currentSubnetName := ""
 	nodeIPPrefix := ""
 	found := false
-	cp.MEXNetworkName = GetCloudletMexNetwork()
+	cp.MEXNetworkName = s.GetCloudletMexNetwork()
 	cp.ApplicationSecurityGroup = GetSecurityGroupName(ctx, rootLBName)
 
-	rtr := GetCloudletExternalRouter()
-	if rtr == NoConfigExternalRouter {
+	rtr := s.GetCloudletExternalRouter()
+	if rtr == mexos.NoConfigExternalRouter {
 		log.SpanLog(ctx, log.DebugLevelMexos, "NoConfigExternalRouter in use for cluster, cluster stack with no router interfaces")
-	} else if rtr == NoExternalRouter {
+	} else if rtr == mexos.NoExternalRouter {
 		log.SpanLog(ctx, log.DebugLevelMexos, "NoExternalRouter in use for cluster, cluster stack with rootlb connected to subnet")
 		cp.RootLBConnectToSubnet = rootLBName
 		cp.RootLBPortName = fmt.Sprintf("%s-%s-port", rootLBName, cp.ClusterName)
@@ -789,7 +790,7 @@ func populateCommonClusterParamFields(ctx context.Context, cp *ClusterParams, ro
 	if action != heatCreate {
 		currentSubnetName = "mex-k8s-subnet-" + cp.ClusterName
 	}
-	sns, snserr := ListSubnets(ctx, ni.Name)
+	sns, snserr := s.ListSubnets(ctx, ni.Name)
 	if snserr != nil {
 		return nodeIPPrefix, fmt.Errorf("can't get list of subnets for %s, %v", ni.Name, snserr)
 	}
@@ -817,12 +818,12 @@ func populateCommonClusterParamFields(ctx context.Context, cp *ClusterParams, ro
 }
 
 //GetClusterParams fills template parameters for the cluster.  A non blank rootLBName will add a rootlb VM
-func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
+func (s *Platform) getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName, imgName string, dedicatedRootLB bool, action string) (*ClusterParams, error) {
 	log.SpanLog(ctx, log.DebugLevelMexos, "getClusterParams", "cluster", clusterInst, "action", action)
 
 	var cp ClusterParams
 	var err error
-	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
 	if err != nil {
 		return nil, err
 	}
@@ -843,7 +844,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 	cp.VnicType = ni.VnicType
 
 	if imgName == "" {
-		imgName = GetCloudletOSImage()
+		imgName = s.GetCloudletOSImage()
 	}
 
 	// dedicated rootLB requires a rootLB VM to be created in the stack
@@ -853,7 +854,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			// master flavor not set, use the node flavor
 			flavor = clusterInst.NodeFlavor
 		}
-		cp.VMParams, err = GetVMParams(ctx,
+		cp.VMParams, err = s.GetVMParams(ctx,
 			RootLBVMDeployment,
 			rootLBName,
 			flavor,
@@ -862,7 +863,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
 			WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
-			WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
+			WithVolumeAvailabilityZone(s.GetCloudletVolumeAvailabilityZone()),
 			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
@@ -870,7 +871,7 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 		}
 	} else {
 		// we still use the security group from the VM params even for shared
-		cp.VMParams, err = GetVMParams(ctx,
+		cp.VMParams, err = s.GetVMParams(ctx,
 			SharedCluster,
 			"", // no server name since no rootlb
 			clusterInst.NodeFlavor,
@@ -879,21 +880,21 @@ func getClusterParams(ctx context.Context, clusterInst *edgeproto.ClusterInst, p
 			GetSecurityGroupName(ctx, rootLBName),
 			&clusterInst.Key.CloudletKey,
 			WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
-			WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
+			WithVolumeAvailabilityZone(s.GetCloudletVolumeAvailabilityZone()),
 			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to get shared VM params: %v", err)
 		}
 	}
-	cloudletGrp, err := GetCloudletSecurityGroupID(ctx, &clusterInst.Key.CloudletKey)
+	cloudletGrp, err := s.GetCloudletSecurityGroupID(ctx, &clusterInst.Key.CloudletKey)
 	if err != nil {
 		return nil, err
 	}
 	cp.PrivacyPolicy = privacyPolicy
 	cp.CloudletSecurityGroup = cloudletGrp
 
-	nodeIPPrefix, err := populateCommonClusterParamFields(ctx, &cp, rootLBName, cloudletGrp, action)
+	nodeIPPrefix, err := s.populateCommonClusterParamFields(ctx, &cp, rootLBName, cloudletGrp, action)
 	if err != nil {
 		return nil, err
 	}
@@ -935,9 +936,9 @@ func ParseHeatNodePrefix(name string) (bool, uint32) {
 }
 
 // HeatCreateRootLBVM creates a roobLB VM
-func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName string, vmspec *vmspec.VMCreationSpec, cloudletKey *edgeproto.CloudletKey, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName string, vmspec *vmspec.VMCreationSpec, cloudletKey *edgeproto.CloudletKey, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateRootLBVM", "serverName", serverName, "stackName", stackName, "vmspec", vmspec)
-	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
 	if err != nil {
 		return err
 	}
@@ -949,9 +950,9 @@ func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName stri
 		defer heatStackLock.Unlock()
 	}
 	if imgName == "" {
-		imgName = GetCloudletOSImage()
+		imgName = s.GetCloudletOSImage()
 	}
-	vmp, err := GetVMParams(ctx,
+	vmp, err := s.GetVMParams(ctx,
 		RootLBVMDeployment,
 		serverName,
 		vmspec.FlavorName,
@@ -960,17 +961,17 @@ func HeatCreateRootLBVM(ctx context.Context, serverName, stackName, imgName stri
 		GetSecurityGroupName(ctx, serverName),
 		cloudletKey,
 		WithComputeAvailabilityZone(vmspec.AvailabilityZone),
-		WithVolumeAvailabilityZone(GetCloudletVolumeAvailabilityZone()),
+		WithVolumeAvailabilityZone(s.GetCloudletVolumeAvailabilityZone()),
 		WithPrivacyPolicy(vmspec.PrivacyPolicy),
 	)
 	if err != nil {
 		return fmt.Errorf("Unable to get VM params: %v", err)
 	}
-	return CreateHeatStackFromTemplate(ctx, vmp, stackName, VmTemplate, updateCallback)
+	return s.CreateHeatStackFromTemplate(ctx, vmp, stackName, VmTemplate, updateCallback)
 }
 
 // HeatCreateCluster creates a docker or k8s cluster which may optionally include a dedicated root LB
-func HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateCluster", "clusterInst", clusterInst, "rootLBName", rootLBName)
 	// It is problematic to create 2 clusters at the exact same time because we will look for available subnet CIDRS when
 	// defining the template.  If 2 start at once they may end up trying to create the same subnet and one will fail.
@@ -980,7 +981,7 @@ func HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, 
 	heatStackLock.Lock()
 	defer heatStackLock.Unlock()
 
-	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatCreate)
+	cp, err := s.getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatCreate)
 	if err != nil {
 		return err
 	}
@@ -991,22 +992,22 @@ func HeatCreateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, 
 	if dedicatedRootLB {
 		templateString += vmTemplateResources
 	}
-	err = CreateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
+	err = s.CreateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
 	if err != nil {
 		return err
 	}
 	if cp.RootLBPortName != "" {
-		client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
+		client, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 		if err != nil {
 			return fmt.Errorf("unable to get rootlb SSH client: %v", err)
 		}
-		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+		return s.AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 	}
 	return nil
 }
 
 // HeatCreateAppVMWithRootLB creates a VM accessed via a new rootLB
-func HeatCreateAppVMWithRootLB(ctx context.Context, rootLBName string, rootLBImage string, appVMName string, vmAppParams *VMParams, rootLBParams *VMParams, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) HeatCreateAppVMWithRootLB(ctx context.Context, rootLBName string, rootLBImage string, appVMName string, vmAppParams *VMParams, rootLBParams *VMParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatCreateAppVMWithRootLB", "rootLBName", rootLBName, "appVMName", appVMName, "vmAppParams", vmAppParams, "rootLBParams", rootLBParams)
 
 	// Floating IPs can also be allocated within the stack and need to be locked as well.
@@ -1021,32 +1022,32 @@ func HeatCreateAppVMWithRootLB(ctx context.Context, rootLBName string, rootLBIma
 	cp.VMParams = rootLBParams
 	cp.VMAppParams = vmAppParams
 
-	_, err := populateCommonClusterParamFields(ctx, &cp, rootLBName, vmAppParams.CloudletSecurityGroup, heatCreate)
+	_, err := s.populateCommonClusterParamFields(ctx, &cp, rootLBName, vmAppParams.CloudletSecurityGroup, heatCreate)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelMexos, "Created ClusterParams", "clusterParams", cp)
 
 	templateString := clusterTemplate + vmTemplateResources
-	err = CreateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
+	err = s.CreateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
 	if err != nil {
 		return err
 	}
-	client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
+	client, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return fmt.Errorf("unable to get rootlb SSH client: %v", err)
 	}
 	if cp.RootLBPortName != "" {
-		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+		return s.AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 	}
 	return nil
 }
 
 // HeatUpdateCluster updates a cluster which may optionally include a dedicated root LB
-func HeatUpdateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) HeatUpdateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, rootLBName string, imgName string, dedicatedRootLB bool, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "HeatUpdateCluster", "clusterInst", clusterInst, "rootLBName", rootLBName, "dedicatedRootLB", dedicatedRootLB)
 
-	cp, err := getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatUpdate)
+	cp, err := s.getClusterParams(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, heatUpdate)
 	if err != nil {
 		return err
 	}
@@ -1056,17 +1057,17 @@ func HeatUpdateCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst, 
 	if dedicatedRootLB {
 		templateString += vmTemplateResources
 	}
-	err = UpdateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
+	err = s.UpdateHeatStackFromTemplate(ctx, cp, cp.ClusterName, templateString, updateCallback)
 	if err != nil {
 		return err
 	}
 	// It it is possible this cluster was created before the default was to use a router
 	if cp.RootLBPortName != "" {
-		client, err := GetSSHClient(ctx, rootLBName, GetCloudletExternalNetwork(), SSHUser)
+		client, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 		if err != nil {
 			return fmt.Errorf("unable to get rootlb SSH client: %v", err)
 		}
-		return AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
+		return s.AttachAndEnableRootLBInterface(ctx, client, rootLBName, cp.RootLBPortName, cp.GatewayIP)
 	}
 	return nil
 }

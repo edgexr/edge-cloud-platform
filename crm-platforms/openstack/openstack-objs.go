@@ -1,9 +1,4 @@
-package mexos
-
-import (
-	"fmt"
-	"strings"
-)
+package openstack
 
 type OSLimit struct {
 	Name  string
@@ -57,37 +52,6 @@ type OSSecurityGroupRule struct {
 	IPRange   string `json:"IP Range"`
 	PortRange string `json:"Port Range"`
 	Protocol  string `json:"IP Protocol"`
-}
-
-func getNameAndIPFromNetwork(network string) (string, string, error) {
-	nets := strings.Split(network, "=")
-	if len(nets) != 2 {
-		return "", "", fmt.Errorf("unable to parse net %s", network)
-	}
-	return nets[0], nets[1], nil
-}
-
-func (s *OSServer) GetServerNetworkIP(netmatch string) (string, error) {
-	for _, n := range strings.Split(s.Networks, "'") {
-		netname, ip, err := getNameAndIPFromNetwork(n)
-		if err != nil {
-			return "", err
-		}
-		if strings.Contains(netname, netmatch) {
-			return ip, nil
-		}
-	}
-	return "", fmt.Errorf("no network matching: %s", netmatch)
-}
-
-func (s *OSServer) GetServerExternalIP() (string, error) {
-	extNet := GetCloudletExternalNetwork()
-	return s.GetServerNetworkIP(extNet)
-}
-
-func (s *OSServer) GetServerInternalIP() (string, error) {
-	mexNet := GetCloudletMexNetwork()
-	return s.GetServerNetworkIP(mexNet)
 }
 
 type OSServerOpt struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -21,6 +20,16 @@ type Platform struct {
 	props       edgeproto.AzureProperties // AzureProperties should be moved to edge-cloud-infra
 	config      platform.PlatformConfig
 	vaultConfig *vault.Config
+	commonPf    mexos.CommonPlatform
+	envVars     map[string]*mexos.PropertyInfo
+}
+
+var azureProps = map[string]*mexos.PropertyInfo{
+	"MEX_AZURE_LOCATION": &mexos.PropertyInfo{},
+	"MEX_AZURE_USER":     &mexos.PropertyInfo{},
+	"MEX_AZURE_PASS": &mexos.PropertyInfo{
+		Secret: true,
+	},
 }
 
 func (s *Platform) GetType() string {
@@ -34,25 +43,29 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	}
 	s.vaultConfig = vaultConfig
 
-	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
+	if err := s.commonPf.InitInfraCommon(ctx, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
+
+	s.envVars = azureProps
+	mexos.SetPropsFromVars(ctx, s.envVars, platformConfig.EnvVars)
+
 	s.config = *platformConfig
-	s.props.Location = os.Getenv("MEX_AZURE_LOCATION")
+	s.props.Location = s.envVars["MEX_AZURE_LOCATION"].Value
 	if s.props.Location == "" {
 		return fmt.Errorf("Env variable MEX_AZURE_LOCATION not set")
 	}
 	/** resource group currently derived from cloudletName + cluster name
-			s.props.ResourceGroup = os.Getenv("MEX_AZURE_RESOURCE_GROUP")
+			s.props.ResourceGroup = s.envVars["MEX_AZURE_RESOURCE_GROUP"]
 			if s.props.ResourceGroup == "" {
 				return fmt.Errorf("Env variable MEX_AZURE_RESOURCE_GROUP not set")
 	                }
 	*/
-	s.props.UserName = os.Getenv("MEX_AZURE_USER")
+	s.props.UserName = s.envVars["MEX_AZURE_USER"].Value
 	if s.props.UserName == "" {
 		return fmt.Errorf("Env variable MEX_AZURE_USER not set, check contents of MEXENV_URL")
 	}
-	s.props.Password = os.Getenv("MEX_AZURE_PASS")
+	s.props.Password = s.envVars["MEX_AZURE_PASS"].Value
 	if s.props.Password == "" {
 		return fmt.Errorf("Env variable MEX_AZURE_PASS not set, check contents of MEXENV_URL")
 	}
