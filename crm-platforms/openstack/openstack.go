@@ -3,7 +3,6 @@ package openstack
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -21,11 +20,14 @@ const MINIMUM_DISK_SIZE uint64 = 20
 
 type Platform struct {
 	rootLBName  string
-	rootLB      *mexos.MEXRootLB
+	rootLB      *MEXRootLB
 	cloudletKey *edgeproto.CloudletKey
 	flavorList  []*edgeproto.FlavorInfo
 	config      platform.PlatformConfig
 	vaultConfig *vault.Config
+	openRCVars  map[string]string
+	commonPf    mexos.CommonPlatform
+	envVars     map[string]*mexos.PropertyInfo
 }
 
 func (s *Platform) GetType() string {
@@ -37,7 +39,7 @@ func (s *Platform) GetType() string {
 func (s *Platform) GetVMSpecForRootLB() (*vmspec.VMCreationSpec, error) {
 
 	var rootlbFlavor edgeproto.Flavor
-	err := mexos.GetCloudletSharedRootLBFlavor(&rootlbFlavor)
+	err := s.GetCloudletSharedRootLBFlavor(&rootlbFlavor)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
 	}
@@ -46,7 +48,7 @@ func (s *Platform) GetVMSpecForRootLB() (*vmspec.VMCreationSpec, error) {
 		return nil, fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
 	}
 	if vmspec.AvailabilityZone == "" {
-		vmspec.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
+		vmspec.AvailabilityZone = s.GetCloudletComputeAvailabilityZone()
 	}
 	return vmspec, nil
 }
@@ -71,24 +73,22 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	log.SpanLog(ctx, log.DebugLevelMexos, "vault auth", "type", vaultConfig.Auth.Type())
 
 	updateCallback(edgeproto.UpdateTask, "Fetching Openstack access credentials")
-	if err := mexos.InitInfraCommon(ctx, vaultConfig); err != nil {
+	if err := s.commonPf.InitInfraCommon(ctx, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
-	if err := mexos.InitOpenstackProps(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig); err != nil {
+
+	if err := s.InitOpenstackProps(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
-	mexos.CloudletInfraCommon.NetworkScheme = os.Getenv("MEX_NETWORK_SCHEME")
-	if mexos.CloudletInfraCommon.NetworkScheme == "" {
-		mexos.CloudletInfraCommon.NetworkScheme = "name=mex-k8s-net-1,cidr=10.101.X.0/24"
-	}
-	s.flavorList, _, _, err = mexos.GetFlavorInfo(ctx)
+
+	s.flavorList, _, _, err = s.GetFlavorInfo(ctx)
 	if err != nil {
 		return err
 	}
 
 	// create rootLB
 	updateCallback(edgeproto.UpdateTask, "Creating RootLB")
-	crmRootLB, cerr := mexos.NewRootLB(ctx, rootLBName)
+	crmRootLB, cerr := NewRootLB(ctx, rootLBName)
 	if cerr != nil {
 		return cerr
 	}
@@ -106,7 +106,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = mexos.SetupRootLB(ctx, rootLBName, vmspec, platformConfig.CloudletKey, platformConfig.CloudletVMImagePath, platformConfig.VMImageVersion, edgeproto.DummyUpdateCallback)
+	err = s.SetupRootLB(ctx, rootLBName, vmspec, platformConfig.CloudletKey, platformConfig.CloudletVMImagePath, platformConfig.VMImageVersion, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 }
 
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	return mexos.OSGetLimits(ctx, info)
+	return s.OSGetLimits(ctx, info)
 }
 
 func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName string) (ssh.Client, error) {
@@ -135,10 +135,10 @@ func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName strin
 	if rootLBName == "" {
 		return nil, fmt.Errorf("cannot GetPlatformClientRootLB, rootLB is empty")
 	}
-	if mexos.GetCloudletExternalNetwork() == "" {
+	if s.GetCloudletExternalNetwork() == "" {
 		return nil, fmt.Errorf("GetPlatformClientRootLB, missing external network in platform config")
 	}
-	return mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	return s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 }
 
 func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {

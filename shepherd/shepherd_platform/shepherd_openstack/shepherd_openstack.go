@@ -10,7 +10,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -34,7 +33,7 @@ func (s *Platform) GetType() string {
 	return "openstack"
 }
 
-func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string) error {
+func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string, vars map[string]string) error {
 	vaultConfig, err := vault.BestConfig(vaultAddr)
 	if err != nil {
 		return err
@@ -42,7 +41,7 @@ func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region,
 	s.vaultConfig = vaultConfig
 
 	//get the platform client so we can ssh in to make curl commands to the prometheus apps
-	if err = mexos.InitOpenstackProps(ctx, key, region, physicalName, vaultConfig); err != nil {
+	if err = s.pf.InitOpenstackProps(ctx, key, region, physicalName, vaultConfig, vars); err != nil {
 		return err
 	}
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,
@@ -62,7 +61,7 @@ func (s *Platform) GetMetricsCollectInterval() time.Duration {
 }
 
 func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
-	_, ip, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
+	_, ip, err := s.pf.GetMasterNameAndIP(ctx, clusterInst)
 	return ip, err
 }
 
@@ -109,8 +108,8 @@ func getIpCountFromPools(ipPools string) (uint64, error) {
 	return total, nil
 }
 
-func addIpUsageDetails(ctx context.Context, metric *shepherd_common.CloudletMetrics) error {
-	externalNet, err := mexos.GetNetworkDetail(ctx, mexos.GetCloudletExternalNetwork())
+func (s *Platform) addIpUsageDetails(ctx context.Context, metric *shepherd_common.CloudletMetrics) error {
+	externalNet, err := s.pf.GetNetworkDetail(ctx, s.pf.GetCloudletExternalNetwork())
 	if err != nil {
 		return err
 	}
@@ -122,18 +121,18 @@ func addIpUsageDetails(ctx context.Context, metric *shepherd_common.CloudletMetr
 		return nil
 	}
 	// Assume first subnet for now - see similar note in GetExternalGateway()
-	sd, err := mexos.GetSubnetDetail(ctx, subnets[0])
+	sd, err := s.pf.GetSubnetDetail(ctx, subnets[0])
 	if metric.Ipv4Max, err = getIpCountFromPools(sd.AllocationPools); err != nil {
 		return err
 	}
 	// Get current usage
-	srvs, err := mexos.ListServers(ctx)
+	srvs, err := s.pf.ListServers(ctx)
 	if err != nil {
 		return err
 	}
 	metric.Ipv4Used = 0
-	for _, s := range srvs {
-		if strings.Contains(s.Networks, mexos.GetCloudletExternalNetwork()) {
+	for _, srv := range srvs {
+		if strings.Contains(srv.Networks, s.pf.GetCloudletExternalNetwork()) {
 			metric.Ipv4Used++
 		}
 	}
@@ -142,7 +141,7 @@ func addIpUsageDetails(ctx context.Context, metric *shepherd_common.CloudletMetr
 
 func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	cloudletMetric := shepherd_common.CloudletMetrics{}
-	limits, err := mexos.OSGetAllLimits(ctx)
+	limits, err := s.pf.OSGetAllLimits(ctx)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "openstack limits", "error", err)
 		return cloudletMetric, err
@@ -173,7 +172,7 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 	// TODO - collect network data for all the VM instances
 
 	// Get Ip pool usage
-	if addIpUsageDetails(ctx, &cloudletMetric) != nil {
+	if s.addIpUsageDetails(ctx, &cloudletMetric) != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "get ip pool information", "error", err)
 	} else {
 		cloudletMetric.IpUsageTS, _ = types.TimestampProto(time.Now())
@@ -182,12 +181,12 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 }
 
 // Helper function to asynchronously get the metric from openstack
-func (s *Platform) goGetMetricforId(ctx context.Context, id string, measurement string, osMetric *mexos.OSMetricMeasurement) chan string {
+func (s *Platform) goGetMetricforId(ctx context.Context, id string, measurement string, osMetric *openstack.OSMetricMeasurement) chan string {
 	waitChan := make(chan string)
 	go func() {
 		// We don't want to have a bunch of data, just get from last 2*interval
 		startTime := time.Now().Add(-s.collectInterval * 2)
-		metrics, err := mexos.OSGetMetricsRangeForId(ctx, id, measurement, startTime)
+		metrics, err := s.pf.OSGetMetricsRangeForId(ctx, id, measurement, startTime)
 		if err == nil && len(metrics) > 0 {
 			*osMetric = metrics[len(metrics)-1]
 			waitChan <- ""
@@ -203,7 +202,7 @@ func (s *Platform) goGetMetricforId(ctx context.Context, id string, measurement 
 }
 
 func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
-	var Cpu, Mem, Disk, NetSent, NetRecv mexos.OSMetricMeasurement
+	var Cpu, Mem, Disk, NetSent, NetRecv openstack.OSMetricMeasurement
 	netSentChan := make(chan string)
 	netRecvChan := make(chan string)
 	appMetrics := shepherd_common.AppMetrics{}
@@ -212,7 +211,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 		return appMetrics, fmt.Errorf("Nil App passed")
 	}
 
-	server, err := mexos.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
+	server, err := s.pf.GetActiveServerDetails(ctx, cloudcommon.GetAppFQN(&key.AppKey))
 	if err != nil {
 		return appMetrics, err
 	}
@@ -223,7 +222,7 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 	diskChan := s.goGetMetricforId(ctx, server.ID, "disk.usage", &Disk)
 
 	// For network we try to get the id of the instance_network_interface for an instance
-	netIf, err := mexos.OSFindResourceByInstId(ctx, "instance_network_interface", server.ID)
+	netIf, err := s.pf.OSFindResourceByInstId(ctx, "instance_network_interface", server.ID)
 	if err == nil {
 		netSentChan = s.goGetMetricforId(ctx, netIf.Id, "network.outgoing.bytes.rate", &NetSent)
 		netRecvChan = s.goGetMetricforId(ctx, netIf.Id, "network.incoming.bytes.rate", &NetRecv)

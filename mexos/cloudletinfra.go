@@ -8,23 +8,45 @@ package mexos
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"net"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-var CloudletInfraCommon edgeproto.CloudletInfraCommon
-var OpenstackProps edgeproto.OpenStackProperties
+type PropertyInfo struct {
+	Value  string
+	Secret bool
+}
+
+// Cloudlet Infra Common Properties
+var infraCommonProps = map[string]*PropertyInfo{
+	// Property: Default-Value
+	"MEX_CF_KEY": &PropertyInfo{
+		Secret: true,
+	},
+	"MEX_CF_USER":         &PropertyInfo{},
+	"MEX_EXTERNAL_IP_MAP": &PropertyInfo{},
+	"MEX_REGISTRY_FILE_SERVER": &PropertyInfo{
+		Value: "registry.mobiledgex.net",
+	},
+	"MEX_DNS_ZONE": &PropertyInfo{
+		Value: "mobiledgex.net",
+	},
+}
+
+type CommonPlatform struct {
+	envVars map[string]*PropertyInfo
+	// mapping of FQDNs the CRM knows about to externally mapped IPs. This
+	// is used mainly in lab environments that have NATed IPs which can be used to
+	// access the cloudlet externally but are not visible in any way to OpenStack
+	mappedExternalIPs map[string]string
+}
 
 var MEXInfraVersion = "3.0.3"
 var ImageNamePrefix = "mobiledgex-v"
-var defaultOSImageName = ImageNamePrefix + MEXInfraVersion
+var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 var VaultConfig *vault.Config
 var ImageFormatQcow2 = "qcow2"
 
@@ -47,24 +69,8 @@ var NoExternalRouter = "NONE"
 // Package level test mode variable
 var testMode = false
 
-// Access variables used for cloudlet access
-var OSAccessVars = "openrc.json"
-
-// mapping of FQDNs the CRM knows about to externally mapped IPs. This
-// is used mainly in lab environments that have NATed IPs which can be used to
-// access the cloudlet externally but are not visible in any way to OpenStack
-var mappedExternalIPs map[string]string
-
-func GetVaultCloudletPath(key *edgeproto.CloudletKey, region, physicalName, filePath string) string {
-	return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/%s", region, key.Organization, physicalName, filePath)
-}
-
 func GetVaultCloudletCommonPath(filePath string) string {
 	return fmt.Sprintf("/secret/data/cloudlet/openstack/%s", filePath)
-}
-
-func GetCertFilePath(key *edgeproto.CloudletKey) string {
-	return fmt.Sprintf("/tmp/%s.%s.cert", key.Name, key.Organization)
 }
 
 func GetCloudletVMImageName(imgVersion string) string {
@@ -85,222 +91,123 @@ func GetCloudletVMImagePath(imgPath, imgVersion string) string {
 	return vmRegistryPath + GetCloudletVMImageName(imgVersion) + ".qcow2"
 }
 
-func InitInfraCommon(ctx context.Context, vaultConfig *vault.Config) error {
+func SetPropsFromVars(ctx context.Context, props map[string]*PropertyInfo, vars map[string]string) {
+	if vars == nil {
+		return
+	}
+	// Infra Props value is fetched in following order:
+	// 1. Fetch props from vars passed, if nothing set then
+	// 2. Fetch from env, if nothing set then
+	// 3. Use default value
+	for k, v := range props {
+		if val, ok := vars[k]; ok {
+			if props[k].Secret {
+				log.SpanLog(ctx, log.DebugLevelMexos, "set infra property (secret) from vars", "key", k)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelMexos, "set infra property from vars", "key", k, "val", val)
+			}
+			props[k].Value = val
+		} else if val, ok := os.LookupEnv(k); ok {
+			if props[k].Secret {
+				log.SpanLog(ctx, log.DebugLevelMexos, "set infra property (secret) from env", "key", k)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelMexos, "set infra property from env", "key", k, "val", val)
+			}
+			props[k].Value = val
+		} else {
+			if props[k].Secret {
+				log.SpanLog(ctx, log.DebugLevelMexos, "using default infra property (secret)", "key", k)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelMexos, "using default infra property", "key", k, "val", v.Value)
+			}
+		}
+	}
+}
+
+func (c *CommonPlatform) InitInfraCommon(ctx context.Context, vaultConfig *vault.Config, vars map[string]string) error {
 	if vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
 	VaultConfig = vaultConfig
 
+	// set default properties
+	c.envVars = infraCommonProps
+
+	// fetch properties from vault
 	mexEnvPath := GetVaultCloudletCommonPath("mexenv.json")
-	err := InternVaultEnv(ctx, vaultConfig, mexEnvPath)
+	log.SpanLog(ctx, log.DebugLevelMexos, "interning vault", "addr", vaultConfig.Addr, "path", mexEnvPath)
+	envData := &VaultEnvData{}
+	err := vault.GetData(vaultConfig, mexEnvPath, 0, envData)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "failed to InternVaultEnv", "addr", vaultConfig.Addr, "path", mexEnvPath, "err", err)
-		if !testMode {
-			return fmt.Errorf("failed to InternVaultEnv %s, %s: %v", vaultConfig.Addr, mexEnvPath, err)
+		if strings.Contains(err.Error(), "no secrets") {
+			return fmt.Errorf("Failed to source access variables as mexenv.json " +
+				"does not exist in secure secrets storage (Vault)")
+		}
+		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, mexEnvPath, err)
+	}
+	for _, envData := range envData.Env {
+		if _, ok := c.envVars[envData.Name]; ok {
+			c.envVars[envData.Name].Value = envData.Value
+		} else {
+			c.envVars[envData.Name] = &PropertyInfo{
+				Value: envData.Value,
+			}
 		}
 	}
-	CloudletInfraCommon.CfKey = os.Getenv("MEX_CF_KEY")
-	if CloudletInfraCommon.CfKey == "" {
+
+	// fetch properties from user input
+	SetPropsFromVars(ctx, c.envVars, vars)
+
+	if c.GetCloudletCFKey() == "" {
 		if testMode {
 			log.SpanLog(ctx, log.DebugLevelMexos, "Env variable MEX_CF_KEY not set")
 		} else {
 			return fmt.Errorf("Env variable MEX_CF_KEY not set")
 		}
 	}
-	CloudletInfraCommon.CfUser = os.Getenv("MEX_CF_USER")
-	if CloudletInfraCommon.CfKey == "" {
+	if c.GetCloudletCFUser() == "" {
 		if testMode {
 			log.SpanLog(ctx, log.DebugLevelMexos, "Env variable MEX_CF_USER not set")
 		} else {
 			return fmt.Errorf("Env variable MEX_CF_USER not set")
 		}
 	}
-	CloudletInfraCommon.DnsZone = "mobiledgex.net"
-	CloudletInfraCommon.RegistryFileServer = "registry.mobiledgex.net"
-	err = initMappedIPs()
+	err = c.initMappedIPs()
 	if err != nil {
 		return fmt.Errorf("unable to init Mapped IPs: %v", err)
 	}
 	return nil
 }
 
-func InitOpenstackProps(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config) error {
-	if vaultConfig.Addr == "" {
-		return fmt.Errorf("vaultAddr is not specified")
-	}
-	VaultConfig = vaultConfig
-	openRcPath := GetVaultCloudletPath(key, region, physicalName, OSAccessVars)
-	err := InternVaultEnv(ctx, vaultConfig, openRcPath)
-	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return fmt.Errorf("Failed to source access variables as '%s/%s' "+
-				"does not exist in secure secrets storage (Vault)",
-				key.Organization, physicalName)
-		}
-		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, openRcPath, err)
-	}
-	// these (and the resulting env vars) really need to be set on an
-	// object to deal with controller calling this function in parallel
-	// for Platform Create/Delete/UpdateCloudlet.
-	authURL := os.Getenv("OS_AUTH_URL")
-	if strings.HasPrefix(authURL, "https") {
-		certData := os.Getenv("OS_CACERT_DATA")
-		if certData != "" {
-			certFile := GetCertFilePath(key)
-			err = ioutil.WriteFile(certFile, []byte(certData), 0644)
-			if err != nil {
-				return err
-			}
-			os.Setenv("OS_CACERT", certFile)
-		}
-	}
-
-	OpenstackProps.OpenRcVars = make(map[string]string)
-
-	OpenstackProps.OsExternalNetworkName = os.Getenv("MEX_EXT_NETWORK")
-	if OpenstackProps.OsExternalNetworkName == "" {
-		OpenstackProps.OsExternalNetworkName = "external-network-shared"
-	}
-
-	OpenstackProps.OsImageName = os.Getenv("MEX_OS_IMAGE")
-	if OpenstackProps.OsImageName == "" {
-		OpenstackProps.OsImageName = defaultOSImageName
-	}
-
-	// defaulting some value
-	OpenstackProps.OsExternalRouterName = os.Getenv("MEX_ROUTER")
-	if OpenstackProps.OsExternalRouterName == "" {
-		OpenstackProps.OsExternalRouterName = NoExternalRouter
-	}
-	OpenstackProps.OsMexNetwork = "mex-k8s-net-1"
-	return nil
+func (c *CommonPlatform) GetCloudletDNSZone() string {
+	return c.envVars["MEX_DNS_ZONE"].Value
 }
 
-//GetCloudletExternalRouter returns default MEX external router name
-func GetCloudletExternalRouter() string {
-	//TODO validate existence and status
-	return OpenstackProps.OsExternalRouterName
+func (c *CommonPlatform) GetCloudletRegistryFileServer() string {
+	return c.envVars["MEX_REGISTRY_FILE_SERVER"].Value
 }
 
-func GetCloudletExternalNetwork() string {
-	// this will be unset if platform is not openstack
-	// because InitOpenstackProps() will not have been called.
-	return OpenstackProps.OsExternalNetworkName
+func (c *CommonPlatform) GetCloudletCFKey() string {
+	return c.envVars["MEX_CF_KEY"].Value
 }
 
-// Utility functions that used to be within manifest.
-//GetCloudletNetwork returns default MEX network, internal and prepped
-func GetCloudletMexNetwork() string {
-	//TODO validate existence and status
-	return OpenstackProps.OsMexNetwork
-}
-
-func GetCloudletDNSZone() string {
-	return CloudletInfraCommon.DnsZone
-}
-
-func GetCloudletNetworkScheme() string {
-	return CloudletInfraCommon.NetworkScheme
-}
-
-func GetCloudletOSImage() string {
-	return OpenstackProps.OsImageName
-}
-
-func GetCloudletRegistryFileServer() string {
-	return CloudletInfraCommon.RegistryFileServer
-}
-
-func GetCloudletCFKey() string {
-	return CloudletInfraCommon.CfKey
-}
-
-func GetCloudletCFUser() string {
-	return CloudletInfraCommon.CfUser
+func (c *CommonPlatform) GetCloudletCFUser() string {
+	return c.envVars["MEX_CF_USER"].Value
 }
 
 func SetTestMode(tMode bool) {
 	testMode = tMode
 }
 
-// GetCleanupOnFailure should be true unless we want to debug the failure,
-// in which case this env var can be set to no.  We could consider making
-// this configurable at the controller but really is only needed for debugging.
-func GetCleanupOnFailure(ctx context.Context) bool {
-	cleanup := os.Getenv("CLEANUP_ON_FAILURE")
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetCleanupOnFailure", "cleanup", cleanup)
-	cleanup = strings.ToLower(cleanup)
-	cleanup = strings.ReplaceAll(cleanup, "'", "")
-	if cleanup == "no" || cleanup == "false" {
-		return false
-	}
-	return true
-}
-
-func GetCloudletProjectName() string {
-	return os.Getenv("OS_PROJECT_NAME")
-}
-
-// These not in the proto file yet because they may not change for a while
-func GetCloudletTenant() string {
-	return "null"
-}
-
-func GetCloudletMexosAgentPort() string {
-	return "18889"
-}
-
-func GetCloudletFlavorMatchPattern() string {
-	pattern := os.Getenv("FLAVOR_MATCH_PATTERN")
-	if pattern == "" {
-		return ".*"
-	}
-	return pattern
-}
-
-func GetCloudletCRMGatewayIPAndPort() (string, int) {
-	gw := os.Getenv("MEX_CRM_GATEWAY_ADDR")
-	if gw == "" {
-		return "", 0
-	}
-	host, portstr, err := net.SplitHostPort(gw)
-	if err != nil {
-		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR format")
-	}
-	port, err := strconv.Atoi(portstr)
-	if err != nil {
-		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
-	}
-	return host, port
-}
-
 func GetCloudletNetworkIfaceFile() string {
 	return "/etc/network/interfaces.d/50-cloud-init.cfg"
 }
 
-// optional default AZ for the cloudlet for compute resources (VMs).
-func GetCloudletComputeAvailabilityZone() string {
-	return os.Getenv("MEX_COMPUTE_AVAILABILITY_ZONE")
-}
-
-// optional default AZ for the cloudlet for Volumes.
-func GetCloudletVolumeAvailabilityZone() string {
-	return os.Getenv("MEX_VOLUME_AVAILABILITY_ZONE")
-}
-
-func GetCloudletImageDiskFormat() string {
-	format := os.Getenv("MEX_IMAGE_DISK_FORMAT")
-	if format == "" {
-		return ImageFormatQcow2
-	}
-	return format
-}
-
 // initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:
 // fromip1=toip1,fromip2=toip2 and populates mappedExternalIPs
-func initMappedIPs() error {
-	mappedExternalIPs = make(map[string]string)
-	meip := os.Getenv("MEX_EXTERNAL_IP_MAP")
+func (c *CommonPlatform) initMappedIPs() error {
+	c.mappedExternalIPs = make(map[string]string)
+	meip := c.envVars["MEX_EXTERNAL_IP_MAP"].Value
 	if meip != "" {
 		ippair := strings.Split(meip, ",")
 		for _, i := range ippair {
@@ -310,7 +217,7 @@ func initMappedIPs() error {
 			}
 			fromip := ia[0]
 			toip := ia[1]
-			mappedExternalIPs[fromip] = toip
+			c.mappedExternalIPs[fromip] = toip
 		}
 
 	}
@@ -319,8 +226,8 @@ func initMappedIPs() error {
 
 // GetMappedExternalIP returns the IP that the input IP should be mapped to. This
 // is used for environments which used NATted external IPs
-func GetMappedExternalIP(ip string) string {
-	mappedip, ok := mappedExternalIPs[ip]
+func (c *CommonPlatform) GetMappedExternalIP(ip string) string {
+	mappedip, ok := c.mappedExternalIPs[ip]
 	if ok {
 		return mappedip
 	}

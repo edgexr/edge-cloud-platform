@@ -1,13 +1,21 @@
-package mexos
+package openstack
 
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 
+	valid "github.com/asaskevich/govalidator"
+	"github.com/mobiledgex/edge-cloud-infra/mexos"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -17,10 +25,10 @@ var actionAdd string = "ADD"
 var actionDelete string = "DELETE"
 
 // LBAddRouteAndSecRules adds an external route and sec rules
-func LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName string) error {
+func (s *Platform) LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "Adding route to reach internal networks", "rootLBName", rootLBName)
 
-	ni, err := ParseNetSpec(ctx, GetCloudletNetworkScheme())
+	ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
 	if err != nil {
 		return err
 	}
@@ -40,10 +48,10 @@ func LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName st
 	subnetNomask := fmt.Sprintf("%s.%s.0.0", ni.Octets[0], ni.Octets[1])
 	mask := "255.255.0.0"
 
-	rtr := GetCloudletExternalRouter()
+	rtr := s.GetCloudletExternalRouter()
 	gatewayIP := ni.RouterGatewayIP
-	if gatewayIP == "" && rtr != NoConfigExternalRouter && rtr != NoExternalRouter {
-		rd, err := GetRouterDetail(ctx, GetCloudletExternalRouter())
+	if gatewayIP == "" && rtr != mexos.NoConfigExternalRouter && rtr != mexos.NoExternalRouter {
+		rd, err := s.GetRouterDetail(ctx, s.GetCloudletExternalRouter())
 		if err != nil {
 			return err
 		}
@@ -76,7 +84,7 @@ func LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName st
 
 		// make the route persist by adding the following line if not already present via grep.
 		routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", subnetNomask, mask, gatewayIP)
-		interfacesFile := GetCloudletNetworkIfaceFile()
+		interfacesFile := mexos.GetCloudletNetworkIfaceFile()
 		cmd = fmt.Sprintf("grep -l '%s' %s", routeAddLine, interfacesFile)
 		out, err = client.Output(cmd)
 		if err != nil {
@@ -95,10 +103,10 @@ func LBAddRouteAndSecRules(ctx context.Context, client ssh.Client, rootLBName st
 	// open the firewall for internal traffic
 	groupName := GetSecurityGroupName(ctx, rootLBName)
 
-	allowedClientCIDR := GetAllowedClientCIDR()
+	allowedClientCIDR := mexos.GetAllowedClientCIDR()
 	for _, p := range rootLBPorts {
 		portString := fmt.Sprintf("%d", p)
-		if err := AddSecurityRuleCIDRWithRetry(ctx, allowedClientCIDR, "tcp", groupName, portString, rootLBName); err != nil {
+		if err := s.AddSecurityRuleCIDRWithRetry(ctx, allowedClientCIDR, "tcp", groupName, portString, rootLBName); err != nil {
 			return err
 		}
 	}
@@ -227,12 +235,12 @@ func setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfn
 
 // configureInternalInterfaceAndExternalForwarding sets up the new internal interface and then creates iptables rules to forward
 // traffic out the external interface
-func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, externalIPAddr, internalPortName, internalIPAddr string, action string) error {
+func (s *Platform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, externalIPAddr, internalPortName, internalIPAddr string, action string) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "configureInternalInterfaceAndExternalForwarding", "externalIPAddr", externalIPAddr, "internalPortName", internalPortName, "internalIPAddr", internalIPAddr)
 
 	// list the ports so we can find the internal and external port macs
-	ports, err := ListPorts(ctx)
+	ports, err := s.ListPorts(ctx)
 	if err != nil {
 		return err
 	}
@@ -340,27 +348,27 @@ func configureInternalInterfaceAndExternalForwarding(ctx context.Context, client
 }
 
 // AttachAndEnableRootLBInterface attaches the interface and enables it in the OS
-func AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
+func (s *Platform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "internalPortName", internalPortName)
 
-	err := AttachPortToServer(ctx, rootLBName, internalPortName)
+	err := s.AttachPortToServer(ctx, rootLBName, internalPortName)
 	if err != nil {
 		return err
 	}
-	rootLbIp, err := GetServerIPAddr(ctx, GetCloudletExternalNetwork(), rootLBName)
+	rootLbIp, err := s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), rootLBName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "fail to get RootLB IP address", "rootLBName", rootLBName)
 
-		deterr := DetachPortFromServer(ctx, rootLBName, internalPortName)
+		deterr := s.DetachPortFromServer(ctx, rootLBName, internalPortName)
 		if deterr != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "fail to detach port", "err", deterr)
 		}
 		return err
 	}
 
-	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLbIp.InternalAddr, internalPortName, internalIPAddr, actionAdd)
+	err = s.configureInternalInterfaceAndExternalForwarding(ctx, client, rootLbIp.InternalAddr, internalPortName, internalIPAddr, actionAdd)
 	if err != nil {
-		deterr := DetachPortFromServer(ctx, rootLBName, internalPortName)
+		deterr := s.DetachPortFromServer(ctx, rootLBName, internalPortName)
 		if deterr != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "fail to detach port", "err", deterr)
 		}
@@ -370,9 +378,9 @@ func AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, root
 }
 
 // DetachAndDisableRootLBInterface performs some cleanup when deleting the rootLB port.
-func DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
+func (s *Platform) DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, internalPortName, internalIPAddr string) error {
 	log.SpanLog(ctx, log.DebugLevelMexos, "DetachAndDisableRootLBInterface", "rootLBName", rootLBName, "internalPortName", internalPortName)
-	rootLB, err := getRootLB(ctx, rootLBName)
+	rootLB, err := GetRootLB(ctx, rootLBName)
 	if err != nil {
 		// this is unexpected
 		return fmt.Errorf("Cannot find rootLB %s", rootLBName)
@@ -380,14 +388,257 @@ func DetachAndDisableRootLBInterface(ctx context.Context, client ssh.Client, roo
 	if rootLB.IP == nil {
 		return fmt.Errorf("rootLB has no IP %s", rootLBName)
 	}
-	err = configureInternalInterfaceAndExternalForwarding(ctx, client, rootLB.IP.ExternalAddr, internalPortName, internalIPAddr, actionDelete)
+	err = s.configureInternalInterfaceAndExternalForwarding(ctx, client, rootLB.IP.ExternalAddr, internalPortName, internalIPAddr, actionDelete)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMexos, "error in configureInternalInterfaceAndExternalForwarding", "err", err)
 	}
-	err = DetachPortFromServer(ctx, rootLBName, internalPortName)
+	err = s.DetachPortFromServer(ctx, rootLBName, internalPortName)
 	if err != nil {
 		// might already be gone
 		log.SpanLog(ctx, log.DebugLevelMexos, "fail to detach port", "err", err)
 	}
+	return err
+}
+
+//MEXRootLB has rootLB data
+type MEXRootLB struct {
+	Name string
+	IP   *mexos.ServerIP
+}
+
+var rootLBLock sync.Mutex
+var MaxRootLBWait = 5 * time.Minute
+
+var MEXRootLBMap = make(map[string]*MEXRootLB)
+
+//NewRootLB gets a new rootLB instance
+func NewRootLB(ctx context.Context, rootLBName string) (*MEXRootLB, error) {
+	rootLBLock.Lock()
+	defer rootLBLock.Unlock()
+
+	log.SpanLog(ctx, log.DebugLevelMexos, "getting new rootLB", "rootLBName", rootLBName)
+	if _, ok := MEXRootLBMap[rootLBName]; ok {
+		return nil, fmt.Errorf("rootlb %s already exists", rootLBName)
+	}
+	newRootLB := &MEXRootLB{Name: rootLBName}
+	MEXRootLBMap[rootLBName] = newRootLB
+	return newRootLB, nil
+}
+
+//DeleteRootLB to be called by code that called NewRootLB
+func DeleteRootLB(rootLBName string) {
+	rootLBLock.Lock()
+	defer rootLBLock.Unlock()
+	delete(MEXRootLBMap, rootLBName)
+}
+
+func GetRootLB(ctx context.Context, name string) (*MEXRootLB, error) {
+	rootLB, ok := MEXRootLBMap[name]
+	if !ok {
+		return nil, fmt.Errorf("can't find rootlb %s", name)
+	}
+	if rootLB == nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "GetRootLB, rootLB is null")
+	}
+	return rootLB, nil
+}
+
+var rootLBPorts = []int{
+	int(cloudcommon.RootLBL7Port), // L7 access port
+}
+
+//CreateRootLB creates a seed presence node in cloudlet that also becomes first Agent node.
+//  It also sets up first basic network router and subnet, ready for running first MEX agent.
+func (s *Platform) CreateRootLB(
+	ctx context.Context, rootLB *MEXRootLB,
+	vmspec *vmspec.VMCreationSpec,
+	cloudletKey *edgeproto.CloudletKey,
+	imgPath, imgVersion string,
+	updateCallback edgeproto.CacheUpdateCallback,
+) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "enable rootlb", "name", rootLB.Name, "vmspec", vmspec)
+	if rootLB == nil {
+		return fmt.Errorf("cannot enable rootLB, rootLB is null")
+	}
+	if s.GetCloudletExternalNetwork() == "" {
+		return fmt.Errorf("enable rootlb, missing external network in manifest")
+	}
+
+	err := s.PrepNetwork(ctx)
+	if err != nil {
+		return err
+	}
+	sl, err := s.ListServers(ctx)
+	if err != nil {
+		return err
+	}
+	found := 0
+	for _, s := range sl {
+		if s.Name == rootLB.Name {
+			log.SpanLog(ctx, log.DebugLevelMexos, "found existing rootlb", "server", s)
+			found++
+		}
+	}
+	if found == 0 {
+		log.SpanLog(ctx, log.DebugLevelMexos, "not found existing server", "name", rootLB.Name)
+		imgName, err := s.AddImageIfNotPresent(ctx, imgPath, imgVersion, updateCallback)
+		if err != nil {
+			log.InfoLog("error with RootLB VM image", "name", rootLB.Name, "imgName", imgName, "error", err)
+			return err
+		}
+
+		err = s.HeatCreateRootLBVM(ctx, rootLB.Name, rootLB.Name, imgName, vmspec, cloudletKey, updateCallback)
+		if err != nil {
+			log.InfoLog("error while creating RootLB VM", "name", rootLB.Name, "imgName", imgName, "error", err)
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelMexos, "created VM", "name", rootLB.Name)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelMexos, "re-using existing kvm instance", "name", rootLB.Name)
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "done enabling rootlb", "name", rootLB.Name)
+
+	return nil
+}
+
+//SetupRootLB prepares the RootLB. It will optionally create the rootlb if the createRootLBFlavor
+// is not blank and no existing server found
+func (s *Platform) SetupRootLB(
+	ctx context.Context, rootLBName string,
+	rootLBSpec *vmspec.VMCreationSpec,
+	cloudletKey *edgeproto.CloudletKey,
+	imgPath, imgVersion string,
+	updateCallback edgeproto.CacheUpdateCallback,
+) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "SetupRootLB", "rootLBSpec", rootLBSpec)
+	//fqdn is that of the machine/kvm-instance running the agent
+	if !valid.IsDNSName(rootLBName) {
+		return fmt.Errorf("fqdn %s is not valid", rootLBName)
+	}
+	rootLB, err := GetRootLB(ctx, rootLBName)
+	if err != nil {
+		return fmt.Errorf("cannot find rootlb in map %s", rootLBName)
+	}
+	sd, err := s.GetActiveServerDetails(ctx, rootLBName)
+	if err == nil && sd.Name == rootLBName {
+		log.SpanLog(ctx, log.DebugLevelMexos, "server with same name as rootLB exists", "rootLBName", rootLBName)
+	} else if rootLBSpec != nil {
+		err = s.CreateRootLB(ctx, rootLB, rootLBSpec, cloudletKey, imgPath, imgVersion, updateCallback)
+		if err != nil {
+			log.InfoLog("can't create agent", "name", rootLB.Name, "err", err)
+			return fmt.Errorf("Failed to enable root LB %v", err)
+		}
+	}
+
+	// setup SSH access to cloudlet for CRM.  Since we are getting the external IP here, this will only work
+	// when CRM accessed via public internet.
+	log.SpanLog(ctx, log.DebugLevelMexos, "setup security group for SSH access")
+	groupName := GetSecurityGroupName(ctx, rootLBName)
+	my_ip, err := mexos.GetExternalPublicAddr(ctx)
+	if err != nil {
+		// this is not necessarily fatal
+		log.InfoLog("cannot fetch public ip", "err", err)
+	} else {
+		err = s.AddSecurityRuleCIDRWithRetry(ctx, my_ip, "tcp", groupName, "22", rootLBName)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.WaitForRootLB(ctx, rootLB)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "timeout waiting for agent to run", "name", rootLB.Name)
+		return fmt.Errorf("Error waiting for rootLB %v", err)
+	}
+	ip, err := s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), rootLBName)
+	if err != nil {
+		return fmt.Errorf("cannot get rootLB IP %sv", err)
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "set rootLB IP to", "ip", ip)
+	rootLB.IP = ip
+
+	client, err := s.SetupSSHUser(ctx, rootLB, mexos.SSHUser)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "Copy resource-tracker to rootLb", "rootLb", rootLBName)
+	err = CopyResourceTracker(client)
+	if err != nil {
+		return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
+	}
+
+	err = s.LBAddRouteAndSecRules(ctx, client, rootLBName)
+	if err != nil {
+		return fmt.Errorf("failed to LBAddRouteAndSecRules %v", err)
+	}
+	if err = s.commonPf.ActivateFQDNA(ctx, rootLBName, ip.ExternalAddr); err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated", "name", rootLB.Name)
+	return nil
+}
+
+//WaitForRootLB waits for the RootLB instance to be up and copies of SSH credentials for internal networks.
+//  Idempotent, but don't call all the time.
+func (s *Platform) WaitForRootLB(ctx context.Context, rootLB *MEXRootLB) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "wait for rootlb", "name", rootLB.Name)
+	if rootLB == nil {
+		return fmt.Errorf("cannot wait for lb, rootLB is null")
+	}
+
+	extNet := s.GetCloudletExternalNetwork()
+	if extNet == "" {
+		return fmt.Errorf("waiting for lb, missing external network in manifest")
+	}
+	client, err := s.GetSSHClient(ctx, rootLB.Name, extNet, mexos.SSHUser)
+	if err != nil {
+		return err
+	}
+	start := time.Now()
+	running := false
+	for {
+		log.SpanLog(ctx, log.DebugLevelMexos, "waiting for rootlb...", "rootLB", rootLB)
+		_, err := client.Output("sudo grep -i 'Finished mobiledgex init' /var/log/mobiledgex.log")
+		if err == nil {
+			log.SpanLog(ctx, log.DebugLevelMexos, "rootlb is running", "name", rootLB.Name)
+			running = true
+			break
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMexos, "error checking if rootLB is running", "err", err)
+		}
+		elapsed := time.Since(start)
+		if elapsed >= (MaxRootLBWait) {
+			break
+		}
+		log.SpanLog(ctx, log.DebugLevelMexos, "sleeping 10 seconds before retry", "elapsed", elapsed)
+		time.Sleep(10 * time.Second)
+	}
+	if !running {
+		return fmt.Errorf("timeout waiting for RootLB")
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "done waiting for rootlb", "name", rootLB.Name)
+
+	return nil
+}
+
+// This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics
+func CopyResourceTracker(client ssh.Client) error {
+	path, err := exec.LookPath("resource-tracker")
+	if err != nil {
+		return err
+	}
+	err = SCPFilePath(client, path, "/tmp/resource-tracker")
+	if err != nil {
+		return err
+	}
+	// copy to /usr/local/bin/resource-tracker
+	cmd := fmt.Sprintf("sudo cp /tmp/resource-tracker /usr/local/bin/resource-tracker")
+	_, err = client.Output(cmd)
+	if err != nil {
+		return err
+	}
+	// make it executable
+	cmd = fmt.Sprintf("sudo chmod a+rx /usr/local/bin/resource-tracker")
+	_, err = client.Output(cmd)
 	return err
 }

@@ -60,7 +60,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		action.AddDNS = !app.InternalPorts
 		return &action, nil
 	}
-	if err = mexos.CreateAppDNSAndPatchKubeSvc(ctx, client, names, mexos.NoDnsOverride, getDnsAction); err != nil {
+	if err = s.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, mexos.NoDnsOverride, getDnsAction); err != nil {
 		return err
 	}
 	return nil
@@ -94,7 +94,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	if app.InternalPorts {
 		return nil
 	}
-	return mexos.DeleteAppDNS(ctx, client, names, mexos.NoDnsOverride)
+	return s.commonPf.DeleteAppDNS(ctx, client, names, mexos.NoDnsOverride)
 }
 
 func SetupKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {

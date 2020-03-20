@@ -46,7 +46,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return err
 		}
 
-		_, masterIP, masterIpErr := mexos.GetMasterNameAndIP(ctx, clusterInst)
+		_, masterIP, masterIpErr := s.GetMasterNameAndIP(ctx, clusterInst)
 		// Add crm local replace variables
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
@@ -55,7 +55,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
-				DnsZone:      mexos.GetCloudletDNSZone(),
+				DnsZone:      s.commonPf.GetCloudletDNSZone(),
 			},
 		}
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
@@ -89,7 +89,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		// set up DNS
 		var rootLBIPaddr *mexos.ServerIP
 		if masterIpErr == nil {
-			rootLBIPaddr, err = mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), rootLBName)
+			rootLBIPaddr, err = s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), rootLBName)
 			if err == nil {
 				getDnsAction := func(svc v1.Service) (*mexos.DnsSvcAction, error) {
 					action := mexos.DnsSvcAction{}
@@ -102,11 +102,11 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				}
 				// If this is an internal ports, all we need is patch of kube service
 				if app.InternalPorts {
-					err = mexos.CreateAppDNSAndPatchKubeSvc(ctx, client, names, mexos.NoDnsOverride, getDnsAction)
+					err = s.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, mexos.NoDnsOverride, getDnsAction)
 				} else {
 					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					ops := mexos.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-					err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, cloudcommon.IPAddrAllInterfaces, masterIP, ops, s.vaultConfig, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
+					ops := ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
+					err = s.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, cloudcommon.IPAddrAllInterfaces, masterIP, ops, s.vaultConfig, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
 				}
 			}
 		}
@@ -126,7 +126,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "failed to fetch source image info, skip image validity checks")
 		}
-		imageDetail, err := mexos.GetImageDetail(ctx, imageName)
+		imageDetail, err := s.GetImageDetail(ctx, imageName)
 		createImage := false
 		if err != nil {
 			if strings.Contains(err.Error(), "Could not find resource") {
@@ -155,7 +155,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				if sourceImageTime.Sub(glanceImageTime) > 0 {
 					// Update the image in Glance
 					updateCallback(edgeproto.UpdateTask, "Image in store is outdated, deleting old image")
-					err = mexos.DeleteImage(ctx, imageName)
+					err = s.DeleteImage(ctx, imageName)
 					if err != nil {
 						return err
 					}
@@ -165,28 +165,28 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		if createImage {
 			updateCallback(edgeproto.UpdateTask, "Creating VM Image from URL")
-			err = mexos.CreateImageFromUrl(ctx, imageName, app.ImagePath, md5Sum)
+			err = s.CreateImageFromUrl(ctx, imageName, app.ImagePath, md5Sum)
 			if err != nil {
 				return err
 			}
 		}
 
 		objName := cloudcommon.GetAppFQN(&app.Key)
-		vmAppParams, err := mexos.GetVMParams(ctx,
-			mexos.UserVMDeployment,
+		vmAppParams, err := s.GetVMParams(ctx,
+			UserVMDeployment,
 			objName,
 			appInst.VmFlavor,
 			appInst.ExternalVolumeSize,
 			imageName,
-			mexos.GetSecurityGroupName(ctx, objName),
+			GetSecurityGroupName(ctx, objName),
 			&clusterInst.Key.CloudletKey,
-			mexos.WithPublicKey(app.AuthPublicKey),
-			mexos.WithAccessPorts(app.AccessPorts),
-			mexos.WithDeploymentManifest(app.DeploymentManifest),
-			mexos.WithCommand(app.Command),
-			mexos.WithComputeAvailabilityZone(appInst.AvailabilityZone),
-			mexos.WithVolumeAvailabilityZone(mexos.GetCloudletVolumeAvailabilityZone()),
-			mexos.WithPrivacyPolicy(privacyPolicy),
+			WithPublicKey(app.AuthPublicKey),
+			WithAccessPorts(app.AccessPorts),
+			WithDeploymentManifest(app.DeploymentManifest),
+			WithCommand(app.Command),
+			WithComputeAvailabilityZone(appInst.AvailabilityZone),
+			WithVolumeAvailabilityZone(s.GetCloudletVolumeAvailabilityZone()),
+			WithPrivacyPolicy(privacyPolicy),
 		)
 		if err != nil {
 			return fmt.Errorf("unable to get vm params: %v", err)
@@ -197,7 +197,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				CloudletName: k8smgmt.NormalizeName(appInst.Key.ClusterInstKey.CloudletKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
-				DnsZone:      mexos.GetCloudletDNSZone(),
+				DnsZone:      s.commonPf.GetCloudletDNSZone(),
 			},
 		}
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
@@ -206,43 +206,43 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 			rootLBname := objName + "-lb"
 			externalServerName = rootLBname
-			rootLBImage := mexos.GetCloudletOSImage()
+			rootLBImage := s.GetCloudletOSImage()
 			lbVMSpec, err := s.GetVMSpecForRootLB()
 			if err != nil {
 				return err
 			}
-			lbImage, err := mexos.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
+			lbImage, err := s.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
 			if err != nil {
 				return err
 			}
-			vmLbParams, err := mexos.GetVMParams(ctx,
-				mexos.RootLBVMDeployment,
+			vmLbParams, err := s.GetVMParams(ctx,
+				RootLBVMDeployment,
 				rootLBname,
 				lbVMSpec.FlavorName,
 				lbVMSpec.ExternalVolumeSize,
 				lbImage,
-				mexos.GetSecurityGroupName(ctx, rootLBname),
+				GetSecurityGroupName(ctx, rootLBname),
 				&clusterInst.Key.CloudletKey,
-				mexos.WithComputeAvailabilityZone(lbVMSpec.AvailabilityZone),
-				mexos.WithVolumeAvailabilityZone(mexos.GetCloudletVolumeAvailabilityZone()),
-				mexos.WithAccessPorts(app.AccessPorts),
+				WithComputeAvailabilityZone(lbVMSpec.AvailabilityZone),
+				WithVolumeAvailabilityZone(s.GetCloudletVolumeAvailabilityZone()),
+				WithAccessPorts(app.AccessPorts),
 			)
 			if err != nil {
 				return err
 			}
-			err = mexos.HeatCreateAppVMWithRootLB(ctx, rootLBname, rootLBImage, objName, vmAppParams, vmLbParams, updateCallback)
+			err = s.HeatCreateAppVMWithRootLB(ctx, rootLBname, rootLBImage, objName, vmAppParams, vmLbParams, updateCallback)
 			if err != nil {
 				return err
 			}
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Deploying VM standalone")
 			log.SpanLog(ctx, log.DebugLevelMexos, "Deploying VM", "stackName", objName, "flavor", appInst.VmFlavor, "ExternalVolumeSize", appInst.ExternalVolumeSize)
-			err = mexos.CreateHeatStackFromTemplate(ctx, vmAppParams, objName, mexos.VmTemplate, updateCallback)
+			err = s.CreateHeatStackFromTemplate(ctx, vmAppParams, objName, VmTemplate, updateCallback)
 			if err != nil {
 				return err
 			}
 		}
-		ip, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), externalServerName)
+		ip, err := s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), externalServerName)
 		if err != nil {
 			return err
 		}
@@ -265,13 +265,13 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				action.ExternalIP = ip.ExternalAddr
 				return &action, nil
 			}
-			vmIP, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletMexNetwork(), objName)
+			vmIP, err := s.GetServerIPAddr(ctx, s.GetCloudletMexNetwork(), objName)
 			if err != nil {
 				return err
 			}
 			updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules")
-			ops := mexos.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: false, AddSecurityRules: false}
-			err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, externalServerName, cloudcommon.IPAddrAllInterfaces, vmIP.ExternalAddr, ops, s.vaultConfig, proxyOps...)
+			ops := ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: false, AddSecurityRules: false}
+			err = s.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, externalServerName, cloudcommon.IPAddrAllInterfaces, vmIP.ExternalAddr, ops, s.vaultConfig, proxyOps...)
 			if err != nil {
 				return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 			}
@@ -287,7 +287,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if aac.DnsOverride != "" {
 				fqdn = aac.DnsOverride
 			}
-			if err = mexos.ActivateFQDNA(ctx, fqdn, ip.ExternalAddr); err != nil {
+			if err = s.commonPf.ActivateFQDNA(ctx, fqdn, ip.ExternalAddr); err != nil {
 				return err
 			}
 			log.SpanLog(ctx, log.DebugLevelMexos, "DNS A record activated",
@@ -320,7 +320,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		} else {
 			// Shared access uses a separate VM for docker.  This is used both for running the docker commands
 			// and as the backend ip for the proxy
-			_, backendIP, err = mexos.GetMasterNameAndIP(ctx, clusterInst)
+			_, backendIP, err = s.GetMasterNameAndIP(ctx, clusterInst)
 			if err != nil {
 				return err
 			}
@@ -332,7 +332,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			dockerNetworkMode = dockermgmt.DockerHostMode
 		}
 
-		rootLBIPaddr, err := mexos.GetServerIPAddr(ctx, mexos.GetCloudletExternalNetwork(), rootLBName)
+		rootLBIPaddr, err := s.GetServerIPAddr(ctx, s.GetCloudletExternalNetwork(), rootLBName)
 		if err != nil {
 			return err
 		}
@@ -366,8 +366,8 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			addproxy = true
 			listenIP = rootLBIPaddr.InternalAddr
 		}
-		ops := mexos.ProxyDnsSecOpts{AddProxy: addproxy, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-		err = mexos.AddProxySecurityRulesAndPatchDNS(ctx, rootLBClient, names, app, appInst, getDnsAction, rootLBName, listenIP, backendIP, ops, s.vaultConfig, proxyOps...)
+		ops := ProxyDnsSecOpts{AddProxy: addproxy, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
+		err = s.AddProxySecurityRulesAndPatchDNS(ctx, rootLBClient, names, app, appInst, getDnsAction, rootLBName, listenIP, backendIP, ops, s.vaultConfig, proxyOps...)
 		if err != nil {
 			return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 		}
@@ -387,7 +387,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to delete app", "rootLBName", rootLBName)
-			_, err := mexos.GetActiveServerDetails(ctx, rootLBName)
+			_, err := s.GetActiveServerDetails(ctx, rootLBName)
 			if err != nil {
 				if strings.Contains(err.Error(), "No server with a name or ID") {
 					log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
@@ -404,12 +404,12 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		_, masterIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
+		_, masterIP, err := s.GetMasterNameAndIP(ctx, clusterInst)
 		if err != nil {
 			if strings.Contains(err.Error(), mexos.ClusterNotFoundErr) {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cluster is gone, allow app deletion")
-				secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
-				mexos.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
+				secGrp := GetSecurityGroupName(ctx, rootLBName)
+				s.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
 				return nil
 			}
 		}
@@ -421,14 +421,14 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
-				DnsZone:      mexos.GetCloudletDNSZone(),
+				DnsZone:      s.commonPf.GetCloudletDNSZone(),
 			},
 		}
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
 
 		// Clean up security rules and proxy if app is external
-		secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
-		if err := mexos.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
+		secGrp := GetSecurityGroupName(ctx, rootLBName)
+		if err := s.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 		}
 		if !app.InternalPorts {
@@ -438,7 +438,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if err != nil {
 				return err
 			}
-			if err := mexos.DeleteAppDNS(ctx, client, names, aac.DnsOverride); err != nil {
+			if err := s.commonPf.DeleteAppDNS(ctx, client, names, aac.DnsOverride); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
@@ -452,7 +452,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	case cloudcommon.AppDeploymentTypeVM:
 		objName := cloudcommon.GetAppFQN(&app.Key)
 		log.SpanLog(ctx, log.DebugLevelMexos, "Deleting VM", "stackName", objName)
-		err := mexos.HeatDeleteStack(ctx, objName)
+		err := s.HeatDeleteStack(ctx, objName)
 		if err != nil {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
@@ -466,7 +466,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if aac.DnsOverride != "" {
 				fqdn = aac.DnsOverride
 			}
-			if err = mexos.DeleteDNSRecords(ctx, fqdn); err != nil {
+			if err = s.commonPf.DeleteDNSRecords(ctx, fqdn); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete DNS entries", "fqdn", fqdn)
 			}
 		}
@@ -485,12 +485,12 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 		} else {
-			_, backendIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
+			_, backendIP, err := s.GetMasterNameAndIP(ctx, clusterInst)
 			if err != nil {
 				if strings.Contains(err.Error(), mexos.ClusterNotFoundErr) {
 					log.SpanLog(ctx, log.DebugLevelMexos, "cluster is gone, allow app deletion")
-					secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
-					mexos.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
+					secGrp := GetSecurityGroupName(ctx, rootLBName)
+					s.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
 					return nil
 				}
 				return err
@@ -501,7 +501,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return err
 			}
 		}
-		_, err = mexos.GetActiveServerDetails(ctx, rootLBName)
+		_, err = s.GetActiveServerDetails(ctx, rootLBName)
 		if err != nil {
 			if strings.Contains(err.Error(), "No server with a name or ID") {
 				log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow app deletion")
@@ -515,9 +515,9 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		name := dockermgmt.GetContainerName(&app.Key)
 		if !app.InternalPorts {
-			secGrp := mexos.GetSecurityGroupName(ctx, rootLBName)
+			secGrp := GetSecurityGroupName(ctx, rootLBName)
 			//  the proxy does not yet exist for docker, but it eventually will.  Secgrp rules should be deleted in either case
-			if err := mexos.DeleteProxySecurityGroupRules(ctx, client, name, secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
+			if err := s.DeleteProxySecurityGroupRules(ctx, client, name, secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
 				log.SpanLog(ctx, log.DebugLevelMexos, "cannot delete security rules", "name", name, "rootlb", rootLBName, "error", err)
 			}
 		}
@@ -529,7 +529,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	_, masterIP, _ := mexos.GetMasterNameAndIP(ctx, clusterInst)
+	_, masterIP, _ := s.GetMasterNameAndIP(ctx, clusterInst)
 	// Add crm local replace variables
 	deploymentVars := crmutil.DeploymentReplaceVars{
 		Deployment: crmutil.CrmReplaceVars{
@@ -537,7 +537,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 			CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
-			DnsZone:      mexos.GetCloudletDNSZone(),
+			DnsZone:      s.commonPf.GetCloudletDNSZone(),
 		},
 	}
 	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
@@ -564,7 +564,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		dockerCommandTarget := rootLBClient
 
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
-			_, backendIP, err := mexos.GetMasterNameAndIP(ctx, clusterInst)
+			_, backendIP, err := s.GetMasterNameAndIP(ctx, clusterInst)
 			if err != nil {
 				return err
 			}
@@ -635,7 +635,7 @@ func (s *Platform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (strin
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeVM:
 		objName := cloudcommon.GetAppFQN(&app.Key)
-		consoleUrl, err := mexos.OSGetConsoleUrl(ctx, objName)
+		consoleUrl, err := s.OSGetConsoleUrl(ctx, objName)
 		if err != nil {
 			return "", err
 		}
@@ -655,7 +655,7 @@ func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appIns
 		log.SpanLog(ctx, log.DebugLevelMexos, "setting server state", "serverName", serverName, "fqdn", fqdn, "PowerState", PowerState)
 
 		updateCallback(edgeproto.UpdateTask, "Verifying AppInst state")
-		serverDetail, err := mexos.GetServerDetails(ctx, serverName)
+		serverDetail, err := s.GetServerDetails(ctx, serverName)
 		if err != nil {
 			return err
 		}
@@ -682,25 +682,25 @@ func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appIns
 		}
 
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-		oldServerIP, err := mexos.GetServerIPFromAddrs(ctx, mexos.GetCloudletExternalNetwork(), serverDetail.Addresses, serverName)
+		oldServerIP, err := mexos.GetServerIPFromAddrs(ctx, s.GetCloudletExternalNetwork(), serverDetail.Addresses, serverName)
 		if err != nil || oldServerIP.ExternalAddr == "" {
 			return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, serverDetail.Addresses, err)
 		}
 
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Performing action %s on %s", serverAction, serverName))
-		err = mexos.OSSetPowerState(ctx, serverName, serverAction)
+		err = s.OSSetPowerState(ctx, serverName, serverAction)
 		if err != nil {
 			return err
 		}
 
 		if PowerState == edgeproto.PowerState_POWER_ON_REQUESTED || PowerState == edgeproto.PowerState_REBOOT_REQUESTED {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Waiting for server %s to become active", serverName))
-			serverDetail, err := mexos.GetActiveServerDetails(ctx, serverName)
+			serverDetail, err := s.GetActiveServerDetails(ctx, serverName)
 			if err != nil {
 				return err
 			}
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-			newServerIP, err := mexos.GetServerIPFromAddrs(ctx, mexos.GetCloudletExternalNetwork(), serverDetail.Addresses, serverName)
+			newServerIP, err := mexos.GetServerIPFromAddrs(ctx, s.GetCloudletExternalNetwork(), serverDetail.Addresses, serverName)
 			if err != nil || newServerIP.ExternalAddr == "" {
 				return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, serverDetail.Addresses, err)
 			}
@@ -708,7 +708,7 @@ func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appIns
 				// IP changed, update DNS entry
 				updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Updating DNS entry as IP changed for %s", serverName))
 				log.SpanLog(ctx, log.DebugLevelMexos, "updating DNS entry", "serverName", serverName, "fqdn", fqdn, "ip", newServerIP)
-				err = mexos.ActivateFQDNA(ctx, fqdn, newServerIP.ExternalAddr)
+				err = s.commonPf.ActivateFQDNA(ctx, fqdn, newServerIP.ExternalAddr)
 				if err != nil {
 					return fmt.Errorf("unable to update fqdn for %s, addr %s, err %v", serverName, newServerIP.ExternalAddr, err)
 				}

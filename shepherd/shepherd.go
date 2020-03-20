@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
@@ -40,6 +41,8 @@ var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
 var AppCache edgeproto.AppCache
+var CloudletCache edgeproto.CloudletCache
+var CloudletInfoCache edgeproto.CloudletInfoCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
 var settings edgeproto.Settings
@@ -195,11 +198,68 @@ func main() {
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
-	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, *vaultAddr)
+
+	// register shepherd to receive appinst and clusterinst notifications from crm
+	edgeproto.InitAppInstCache(&AppInstCache)
+	AppInstCache.SetUpdatedCb(appInstCb)
+	edgeproto.InitClusterInstCache(&ClusterInstCache)
+	ClusterInstCache.SetUpdatedCb(clusterInstCb)
+	edgeproto.InitAppCache(&AppCache)
+	// also register to receive cloudlet details
+	edgeproto.InitCloudletCache(&CloudletCache)
+
+	addrs := strings.Split(*notifyAddrs, ",")
+	notifyClient := notify.NewClient(addrs, *tlsCertFile)
+	notifyClient.SetFilterByCloudletKey()
+	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
+	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
+	notifyClient.RegisterRecvAppCache(&AppCache)
+	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
+	// register to send metrics
+	MetricSender = notify.NewMetricSend()
+	notifyClient.RegisterSend(MetricSender)
+	edgeproto.InitAlertCache(&AlertCache)
+	notifyClient.RegisterSendAlertCache(&AlertCache)
+	// register to send cloudletInfo, to receive appinst/clusterinst/cloudlet notifications from crm
+	edgeproto.InitCloudletInfoCache(&CloudletInfoCache)
+	notifyClient.RegisterSendCloudletInfoCache(&CloudletInfoCache)
+
+	nodeMgr = node.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey))
+	nodeMgr.RegisterClient(notifyClient)
+
+	notifyClient.Start()
+	defer notifyClient.Stop()
+
+	cloudletInfo := edgeproto.CloudletInfo{
+		Key: cloudletKey,
+	}
+
+	// Send state INIT to get cloudlet obj from crm
+	cloudletInfo.State = edgeproto.CloudletState_CLOUDLET_STATE_INIT
+	CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
+
+	var cloudlet edgeproto.Cloudlet
+
+	// Fetch cloudlet cache from controller
+	// This also ensures that cloudlet is up before we start collecting metrics
+	found := false
+	log.SpanLog(ctx, log.DebugLevelInfo, "wait for cloudlet cache", "key", cloudletKey)
+	for i := 0; i < 50; i++ {
+		if CloudletCache.Get(&cloudletKey, &cloudlet) {
+			found = true
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	if !found {
+		log.FatalLog("failed to fetch cloudlet cache from controller")
+	}
+	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
+
+	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, *vaultAddr, cloudlet.EnvVar)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
-	nodeMgr = node.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey))
 	workerMap = make(map[string]*ClusterWorker)
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	// LB metrics are not supported in fake mode
@@ -209,26 +269,9 @@ func main() {
 	}
 	InitPlatformMetrics()
 
-	// register shepherd to receive appinst and clusterinst notifications from crm
-	edgeproto.InitAppInstCache(&AppInstCache)
-	AppInstCache.SetUpdatedCb(appInstCb)
-	ClusterInstCache.SetUpdatedCb(clusterInstCb)
-	edgeproto.InitClusterInstCache(&ClusterInstCache)
-	edgeproto.InitAppCache(&AppCache)
-	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient := notify.NewClient(addrs, *tlsCertFile)
-	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
-	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
-	notifyClient.RegisterRecvAppCache(&AppCache)
-	nodeMgr.RegisterClient(notifyClient)
-	// register to send metrics
-	MetricSender = notify.NewMetricSend()
-	notifyClient.RegisterSend(MetricSender)
-	edgeproto.InitAlertCache(&AlertCache)
-	notifyClient.RegisterSendAlertCache(&AlertCache)
-
-	notifyClient.Start()
-	defer notifyClient.Stop()
+	// Send state READY to get AppInst/ClusterInst objs from crm
+	cloudletInfo.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
+	CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
 
 	sigChan = make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)

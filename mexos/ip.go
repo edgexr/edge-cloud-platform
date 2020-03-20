@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -106,26 +103,6 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 	return ni, nil
 }
 
-//GetInternalIP returns IP of the server
-func GetInternalIP(name string, srvs []OSServer) (string, error) {
-	for _, s := range srvs {
-		if s.Name == name {
-			return s.GetServerInternalIP()
-		}
-	}
-	return "", fmt.Errorf("No internal IP found for %s", name)
-}
-
-//GetInternalCIDR returns CIDR of server
-func GetInternalCIDR(name string, srvs []OSServer) (string, error) {
-	addr, err := GetInternalIP(name, srvs)
-	if err != nil {
-		return "", err
-	}
-	cidr := addr + "/24" // XXX we use this convention of /24 in k8s priv-net
-	return cidr, nil
-}
-
 func GetAllowedClientCIDR() string {
 	//XXX TODO get real list of allowed clients from remote database or template configuration
 	return "0.0.0.0/0"
@@ -165,77 +142,4 @@ func GetServerIPFromAddrs(ctx context.Context, networkName, addresses, serverNam
 	// this is a bug
 	log.WarnLog("Unable to find network for server", "networkName", networkName, "serverName", serverName)
 	return &serverIP, fmt.Errorf("Unable to find network %s for server %s", networkName, serverName)
-}
-
-//GetServerIPAddr gets the server IP(s) for the given network
-func GetServerIPAddr(ctx context.Context, networkName, serverName string) (*ServerIP, error) {
-	// if this is a root lb, look it up and get the IP if we have it cached
-	rootLB, err := getRootLB(ctx, serverName)
-	if err == nil && rootLB != nil {
-		if rootLB.IP != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "IP", rootLB.IP)
-			return rootLB.IP, nil
-		}
-	}
-	sd, err := GetActiveServerDetails(ctx, serverName)
-	if err != nil {
-		return nil, err
-	}
-	return GetServerIPFromAddrs(ctx, networkName, sd.Addresses, serverName)
-}
-
-//FindNodeIP finds IP for the given node
-func FindNodeIP(name string, srvs []OSServer) (string, error) {
-	//log.SpanLog(ctx,log.DebugLevelMexos, "find node ip", "name", name)
-	if name == "" {
-		return "", fmt.Errorf("empty name")
-	}
-
-	for _, s := range srvs {
-		if s.Status == "ACTIVE" && s.Name == name {
-			ipaddr, err := s.GetServerInternalIP()
-			if err != nil {
-				return "", fmt.Errorf("can't get IP for %s, %v", s.Name, err)
-			}
-			//log.SpanLog(ctx,log.DebugLevelMexos, "found node ip", "name", name, "ipaddr", ipaddr)
-			return ipaddr, nil
-		}
-	}
-	return "", fmt.Errorf("node %s, ip not found", name)
-}
-
-// GetMasterNameAndIP gets the name and IP address of the cluster's master node.
-func GetMasterNameAndIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get master IP", "cluster", clusterInst.Key.ClusterKey.Name)
-	srvs, err := ListServers(ctx)
-	if err != nil {
-		return "", "", fmt.Errorf("error getting server list: %v", err)
-
-	}
-	namePrefix := ClusterTypeKubernetesMasterLabel
-	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
-		namePrefix = ClusterTypeDockerVMLabel
-	}
-
-	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	masterName, err := FindClusterMaster(ctx, namePrefix, nodeNameSuffix, srvs)
-	if err != nil {
-		return "", "", fmt.Errorf("%s -- %s, %v", ClusterNotFoundErr, nodeNameSuffix, err)
-	}
-	masterIP, err := FindNodeIP(masterName, srvs)
-	return masterName, masterIP, err
-}
-
-//FindClusterMaster finds cluster given a key string
-func FindClusterMaster(ctx context.Context, namePrefix, nameSuffix string, srvs []OSServer) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "FindClusterMaster", "namePrefix", namePrefix, "nameSuffix", nameSuffix)
-	if namePrefix == "" || nameSuffix == "" {
-		return "", fmt.Errorf("empty name component")
-	}
-	for _, s := range srvs {
-		if s.Status == "ACTIVE" && strings.HasSuffix(s.Name, nameSuffix) && strings.HasPrefix(s.Name, namePrefix) {
-			return s.Name, nil
-		}
-	}
-	return "", fmt.Errorf("VM %s not found", nameSuffix)
 }

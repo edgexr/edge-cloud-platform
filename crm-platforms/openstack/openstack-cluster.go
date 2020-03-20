@@ -49,7 +49,7 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	}
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "verify if cloudlet base image exists")
-	imgName, err := mexos.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
+	imgName, err := s.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
@@ -80,7 +80,7 @@ func (s *Platform) updateClusterInternal(ctx context.Context, client ssh.Client,
 				numMaster++
 				continue
 			}
-			ok, num := mexos.ParseHeatNodePrefix(n)
+			ok, num := ParseHeatNodePrefix(n)
 			if !ok {
 				log.SpanLog(ctx, log.DebugLevelMexos, "unable to parse node name, ignoring", "name", n)
 				continue
@@ -107,7 +107,7 @@ func (s *Platform) updateClusterInternal(ctx context.Context, client ssh.Client,
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 
-	err := mexos.HeatUpdateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
+	err := s.HeatUpdateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (s *Platform) deleteCluster(ctx context.Context, rootLBName string, cluster
 	log.SpanLog(ctx, log.DebugLevelMexos, "deleting kubernetes cluster", "clusterInst", clusterInst)
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
-	client, err := mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	client, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		if strings.Contains(err.Error(), "No server with a name or ID") {
 			log.SpanLog(ctx, log.DebugLevelMexos, "Dedicated RootLB is gone, allow stack delete to proceed")
@@ -129,13 +129,13 @@ func (s *Platform) deleteCluster(ctx context.Context, rootLBName string, cluster
 			return err
 		}
 	}
-	err = mexos.HeatDeleteCluster(ctx, client, clusterInst, rootLBName, dedicatedRootLB)
+	err = s.HeatDeleteCluster(ctx, client, clusterInst, rootLBName, dedicatedRootLB)
 	if err != nil {
 		return err
 	}
 	if dedicatedRootLB {
 		proxy.RemoveDedicatedCluster(ctx, clusterInst.Key.ClusterKey.Name)
-		mexos.DeleteRootLB(rootLBName)
+		DeleteRootLB(rootLBName)
 	}
 	return nil
 }
@@ -160,7 +160,7 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	timeout -= time.Minute
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "verify if cloudlet base image exists")
-	imgName, err := mexos.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
+	imgName, err := s.AddImageIfNotPresent(ctx, s.config.CloudletVMImagePath, s.config.VMImageVersion, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
@@ -177,7 +177,7 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 		}
 
 		log.SpanLog(ctx, log.DebugLevelMexos, "error in CreateCluster", "err", reterr)
-		if mexos.GetCleanupOnFailure(ctx) {
+		if s.GetCleanupOnFailure(ctx) {
 			log.SpanLog(ctx, log.DebugLevelMexos, "cleaning up cluster resources after cluster fail, set envvar CLEANUP_ON_FAILURE to 'no' to avoid this")
 			delerr := s.deleteCluster(ctx, rootLBName, clusterInst)
 			if delerr != nil {
@@ -199,7 +199,7 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 	var err error
 	if clusterInst.AvailabilityZone == "" {
 		//use the cloudlet default AZ if it exists
-		clusterInst.AvailabilityZone = mexos.GetCloudletComputeAvailabilityZone()
+		clusterInst.AvailabilityZone = s.GetCloudletComputeAvailabilityZone()
 	}
 
 	vmspec := vmspec.VMCreationSpec{
@@ -214,13 +214,13 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 		if dedicatedRootLB {
 			// in the dedicated case for docker, the RootLB and the docker worker are the same
 			updateCallback(edgeproto.UpdateTask, "Creating Dedicated VM for Docker")
-			err = mexos.HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), imgName, &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
+			err = s.HeatCreateRootLBVM(ctx, rootLBName, k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key), imgName, &vmspec, &clusterInst.Key.CloudletKey, updateCallback)
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating single-node cluster for docker using shared RootLB")
-			err = mexos.HeatCreateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
+			err = s.HeatCreateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
 		}
 	} else {
-		err = mexos.HeatCreateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
+		err = s.HeatCreateCluster(ctx, clusterInst, privacyPolicy, rootLBName, imgName, dedicatedRootLB, updateCallback)
 	}
 	if err != nil {
 		return err
@@ -229,18 +229,18 @@ func (s *Platform) createClusterInternal(ctx context.Context, rootLBName string,
 	// mex agent started
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		log.SpanLog(ctx, log.DebugLevelMexos, "need dedicated rootLB", "IpAccess", clusterInst.IpAccess)
-		_, err := mexos.NewRootLB(ctx, rootLBName)
+		_, err := NewRootLB(ctx, rootLBName)
 		if err != nil {
 			// likely already exists which means something went really wrong
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = mexos.SetupRootLB(ctx, rootLBName, &vmspec, &clusterInst.Key.CloudletKey, "", "", updateCallback)
+		err = s.SetupRootLB(ctx, rootLBName, &vmspec, &clusterInst.Key.CloudletKey, "", "", updateCallback)
 		if err != nil {
 			return err
 		}
 	}
-	client, err := mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	client, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
@@ -282,7 +282,7 @@ func (s *Platform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.
 
 	for {
 		if masterIP == "" {
-			masterName, masterIP, _ = mexos.GetMasterNameAndIP(ctx, clusterInst)
+			masterName, masterIP, _ = s.GetMasterNameAndIP(ctx, clusterInst)
 			if masterIP != "" {
 				updateCallback(edgeproto.UpdateStep, "Checking Master for Available Nodes")
 			}
@@ -317,7 +317,7 @@ func (s *Platform) isClusterReady(ctx context.Context, clusterInst *edgeproto.Cl
 	log.SpanLog(ctx, log.DebugLevelMexos, "checking if cluster is ready")
 
 	// some commands are run on the rootlb and some on the master directly, so we use separate clients
-	rootLBClient, err := mexos.GetSSHClient(ctx, rootLBName, mexos.GetCloudletExternalNetwork(), mexos.SSHUser)
+	rootLBClient, err := s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
 	if err != nil {
 		return false, 0, fmt.Errorf("can't get rootlb ssh client for cluster ready check, %v", err)
 	}
