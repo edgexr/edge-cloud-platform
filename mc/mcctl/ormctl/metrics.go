@@ -41,7 +41,7 @@ func GetMetricsCommand() *cobra.Command {
 }
 
 var AppMetricRequiredArgs = []string{
-	"clusterorg",
+	"app-org",
 	"selector",
 }
 
@@ -49,31 +49,32 @@ var AppMetricOptionalArgs = []string{
 	"appname",
 	"appvers",
 	"cluster",
+	"cluster-org",
 	"cloudlet",
-	"cloudletorg",
+	"cloudlet-org",
 	"last",
 	"starttime",
 	"endtime",
 }
 
 var AppMetricAliasArgs = []string{
-	"apporg=appinst.appkey.organization",
+	"app-org=appinst.appkey.organization",
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
 	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"clusterorg=appinst.clusterinstkey.organization",
-	"cloudletorg=appinst.clusterinstkey.cloudletkey.organization",
+	"cluster-org=appinst.clusterinstkey.organization",
+	"cloudlet-org=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
 
 var ClusterMetricRequiredArgs = []string{
-	"clusterorg",
+	"cluster-org",
 	"selector",
 }
 
 var ClusterMetricOptionalArgs = []string{
 	"cluster",
-	"cloudletorg",
+	"cloudlet-org",
 	"cloudlet",
 	"last",
 	"starttime",
@@ -81,14 +82,14 @@ var ClusterMetricOptionalArgs = []string{
 }
 
 var ClusterMetricAliasArgs = []string{
-	"clusterorg=clusterinst.organization",
+	"cluster-org=clusterinst.organization",
 	"cluster=clusterinst.clusterkey.name",
-	"cloudletorg=clusterinst.cloudletkey.organization",
+	"cloudlet-org=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
 }
 
 var CloudletMetricRequiredArgs = []string{
-	"cloudletorg",
+	"cloudlet-org",
 	"selector",
 }
 
@@ -100,20 +101,20 @@ var CloudletMetricOptionalArgs = []string{
 }
 
 var CloudletMetricAliasArgs = []string{
-	"organization=cloudlet.organization",
+	"cloudlet-org=cloudlet.organization",
 	"cloudlet=cloudlet.name",
 }
 
 var MetricComments = map[string]string{
-	"apporg":      "Organization or Company name of the App",
-	"appname":     "App name",
-	"appvers":     "App version",
-	"cluster":     "Cluster name",
-	"cloudletorg": "Company or Organization name of the cloudlet",
-	"cloudlet":    "Name of the cloudlet",
-	"clusterorg":  "Organization or Company Name that a Cluster is used by",
-	"selector":    "Comma separated list of metrics to view",
-	"last":        "Display the last X metrics",
-	"starttime":   "Time to start displaying stats from",
-	"endtime":     "Time up to which to display stats",
+	"app-org":      "Organization or Company name of the App",
+	"appname":      "App name",
+	"appvers":      "App version",
+	"cluster":      "Cluster name",
+	"cloudlet-org": "Company or Organization name of the cloudlet",
+	"cloudlet":     "Name of the cloudlet",
+	"cluster-org":  "Organization or Company Name that a Cluster is used by",
+	"selector":     "Comma separated list of metrics to view",
+	"last":         "Display the last X metrics",
+	"starttime":    "Time to start displaying stats from",
+	"endtime":      "Time up to which to display stats",
 }
