@@ -57,7 +57,6 @@ var openstackProps = map[string]*mexos.PropertyInfo{
 	"MEX_NETWORK_SCHEME": &mexos.PropertyInfo{
 		Value: "name=mex-k8s-net-1,cidr=10.101.X.0/24",
 	},
-	"OS_PROJECT_NAME":               &mexos.PropertyInfo{},
 	"MEX_COMPUTE_AVAILABILITY_ZONE": &mexos.PropertyInfo{},
 	"MEX_VOLUME_AVAILABILITY_ZONE":  &mexos.PropertyInfo{},
 	"MEX_IMAGE_DISK_FORMAT": &mexos.PropertyInfo{
@@ -151,7 +150,10 @@ func (s *Platform) GetCloudletOSImage() string {
 }
 
 func (s *Platform) GetCloudletProjectName() string {
-	return s.envVars["OS_PROJECT_NAME"].Value
+	if val, ok := s.openRCVars["OS_PROJECT_NAME"]; ok {
+		return val
+	}
+	return ""
 }
 
 func (s *Platform) GetCloudletFlavorMatchPattern() string {
