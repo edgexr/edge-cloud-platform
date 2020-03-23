@@ -26,6 +26,7 @@ Longitude = None
 OutputDir = "/tmp/edgebox_out"
 DefaultLatitude = 33.01
 DefaultLongitude = -96.61
+Vault = None
 
 Edgectl = None
 Varsfile = "./edgebox_vars.yml"
@@ -42,15 +43,15 @@ except NameError:
     pass
 
 def checkPrereqs():
-    gitid = os.getenv("GITHUB_ID", "")
+    ldapid = os.getenv("LDAP_ID", "")
     vaultRole = os.getenv("VAULT_ROLE_ID", "")
     vaultSecret = os.getenv("VAULT_SECRET_ID", "")
-    if gitid == "":
-       print("GITHUB_ID env var not set")
+    if ldapid == "":
+       print("LDAP_ID env var not set")
        if vaultRole != "" and vaultSecret != "":
            print("Using VAULT_ROLE_ID and VAULT_SECRET env vars")
        else:
-           print("No appropriate Vault auth found, please set GITHUB_ID or VAULT_ROLE_ID and VAULT_SECRET_ID")
+           print("No appropriate Vault auth found, please set LDAP_ID or VAULT_ROLE_ID and VAULT_SECRET_ID")
            return False
     return True 
 
@@ -83,6 +84,24 @@ def getLocDefaults():
     except Exception as e:
         return {}
 
+def getLdapPassFromKeychain(vault, user):
+    keychain_path = vault + "/ldap"
+    p = subprocess.Popen(["security", "find-internet-password", "-a", user,
+            "-s", keychain_path, "-w"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True)
+    out, err = p.communicate()
+    out = out.strip()
+    if len(out) < 1:
+        print("\nConsole password for user \"{0}\" not found in Keychain".format(user))
+        print("To add password to keychain, do the following:")
+        print("  security add-internet-password -a \"{0}\" -s {1} -T \"\" -w".format(
+            user, keychain_path))
+        sys.exit(2)
+
+    return out
+
 def readConfig():
     global Mc
     global Mcuser
@@ -96,6 +115,7 @@ def readConfig():
     global Longitude
     global EdgevarData
     global OutputDir
+    global Vault
 
     with open(Varsfile, 'r') as stream:
        EdgevarData = load(stream, Loader=Loader)
@@ -107,6 +127,7 @@ def readConfig():
        Latitude = EdgevarData['latitude']
        Longitude = EdgevarData['longitude']
        OutputDir = EdgevarData['outputdir']
+       Vault = EdgevarData['vault']
 
 def yesOrNo(question):
     reply = str(input(question+' (y/n): ')).lower().strip()
@@ -142,6 +163,7 @@ def saveConfig():
     global Longitude
     global EdgevarData
     global OutputDir
+    global Vault
 
     os.environ["MC_USER"] = Mcuser
     os.environ["MC_PASSWORD"] = Mcpass
@@ -153,16 +175,8 @@ def saveConfig():
     EdgevarData['latitude'] = float(Latitude)
     EdgevarData['longitude'] = float(Longitude)
     EdgevarData['outputdir'] = OutputDir
+    EdgevarData['vault'] = Vault
 
-    # Compute vault path from MC
-    m = re.match(r'console([^\.]*)\.', Mc)
-    if not m:
-        sys.exit("Failed to determine vault for MC: " + Mc)
-    deploy_env = m.group(1)
-    if not deploy_env:
-        deploy_env = "-main"
-    EdgevarData['vault'] = "https://vault{0}.mobiledgex.net".format(deploy_env)
- 
     bakfile = Varsfile+".bak"
     print("Backing up to %s" % bakfile) 
     shutil.copy(Varsfile, bakfile)
@@ -184,13 +198,24 @@ def getConfig():
    global Longitude
    global EdgevarData
    global OutputDir
+   global Vault
 
    done = False
    while not done:
      print("\n")
      Mc = prompt("Enter Master controller address", Mc)
-     Mcuser = prompt("Enter MC userid for console/mc login", Mcuser)
-     Mcpass = getpass.getpass(prompt="Enter MC password for console/mc login: ", stream=None)
+
+     # Compute vault path from MC
+     m = re.match(r'console([^\.]*)\.', Mc)
+     if not m:
+         sys.exit("Failed to determine vault for MC: " + Mc)
+     deploy_env = m.group(1)
+     if not deploy_env:
+         deploy_env = "-main"
+     Vault = "https://vault{0}.mobiledgex.net".format(deploy_env)
+
+     Mcuser = os.environ["LDAP_ID"]
+     Mcpass = getLdapPassFromKeychain(Vault, Mcuser)
 
      print("Logging in to MC...")
      token = getMcToken(Mc, Mcuser, Mcpass)

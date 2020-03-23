@@ -13,3 +13,4 @@ mc_user: ENV=MC_USER
 outputdir: /tmp/edgebox
 region: UNSET
 tlsoutdir: tlsout
+vault: UNSET
