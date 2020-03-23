@@ -1,11 +1,13 @@
 #!/bin/bash
 PATH="/usr/bin:/bin:/usr/local/bin:/usr/sbin:/sbin"; export PATH
 
-USAGE="usage: $( basename $0 ) <start|cleanup>"
+USAGE="usage: $( basename $0 ) <start|cleanup|reset>"
 DIND_REL=v0.3.0
 DIND_CLUST=dind-cluster-v1.14.sh
 DIND_CLUST_SHA256SUM=867050c3d4a752f24f2db64de2634bfe4a2b8ee3ffc6dd04b14cdcb2be21c6dd
 NGINX_DOCKER_IMG=docker.mobiledgex.net/mobiledgex/mobiledgex_public/nginx-with-curl:latest
+EDGEBOX_VARS=edgebox_vars.yml
+EDGEBOX_VARS_BACKUP="${EDGEBOX_VARS}.reset"
 
 die() {
 	echo "ERROR: $*" >&2
@@ -15,26 +17,14 @@ die() {
 setup() {
 	echo "Checking requirements..."
 
-	# Ensure GITHUB_ID is set and valid
-	[[ -z "$GITHUB_ID" ]] && die "GITHUB_ID environment variable not set"
-	security find-internet-password -a "$GITHUB_ID" -s github.com >/dev/null 2>&1
-	if [[ $? -ne 0 ]]; then
-		cat >&1 <<EOT
+	# Ensure LDAP_ID is set
+	[[ -z "$LDAP_ID" ]] && die "LDAP_ID environment variable not set"
 
-ERROR: Github personal access token for user "$GITHUB_ID" not found in keychain
-
-       Follow the process here (with "scopes" set to "repo") to generate a token:
-       https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
-
-       And then, do the following to store the token in the keychain:
-       security add-internet-password -a "$GITHUB_ID" -s github.com -T "" -w
-
-EOT
-		exit 2
-	fi
+	# Disable Github logins for EdgeBox
+	unset GITHUB_ID
 
 	export GOPATH=$( cd $( dirname $0 ); pwd )
-	export PATH="$PATH:$GOPATH/bin"
+	export PATH="$GOPATH/bin:$PATH"
 	export EBANSIBLE=$GOPATH/ansible
 
 	# Ensure dind-cluster-v1.14.sh is installed
@@ -68,6 +58,7 @@ EOT
 		${PYTHON} -m venv "$VENV_DIR"
 		[[ $? -ne 0 ]] && die "Failed to set up Python 3 virtualenv"
 	fi
+	export PATH="$VENV_DIR/bin:$PATH"
 
 	# Ensure requirements are met
 	PIP="$VENV_DIR/bin/pip"
@@ -86,6 +77,7 @@ case "$1" in
 		shift
 		setup
 		cd e2e-tests/edgebox
+		[[ ! -f "$EDGEBOX_VARS_BACKUP" ]] && cp "$EDGEBOX_VARS" "$EDGEBOX_VARS_BACKUP"
 		./edgebox_start.py "$@"
 		;;
 	cleanup)
@@ -94,6 +86,14 @@ case "$1" in
 		cd e2e-tests/edgebox
 		./edgebox_cleanup.py "$@"
 		;;
+	reset)
+		cd e2e-tests/edgebox
+		if [[ -f "$EDGEBOX_VARS_BACKUP" ]]; then
+			mv "$EDGEBOX_VARS" "${EDGEBOX_VARS}.$( date +'%Y-%m-%d-%H%M%S' )"
+			cp "$EDGEBOX_VARS_BACKUP" "$EDGEBOX_VARS"
+		fi
+		;;
+
 	help|-h|--help)
 		echo "$USAGE"
 		exit 0
