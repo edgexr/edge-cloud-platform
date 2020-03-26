@@ -92,9 +92,6 @@ func GetCloudletVMImagePath(imgPath, imgVersion string) string {
 }
 
 func SetPropsFromVars(ctx context.Context, props map[string]*PropertyInfo, vars map[string]string) {
-	if vars == nil {
-		return
-	}
 	// Infra Props value is fetched in following order:
 	// 1. Fetch props from vars passed, if nothing set then
 	// 2. Fetch from env, if nothing set then
