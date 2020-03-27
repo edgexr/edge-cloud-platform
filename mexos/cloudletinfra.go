@@ -47,7 +47,6 @@ type CommonPlatform struct {
 var MEXInfraVersion = "3.0.3"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
-var VaultConfig *vault.Config
 var ImageFormatQcow2 = "qcow2"
 
 // Default CloudletVM/Registry paths should only be used for local testing.
@@ -125,7 +124,6 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, vaultConfig *vault
 	if vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
-	VaultConfig = vaultConfig
 
 	// set default properties
 	c.envVars = infraCommonProps

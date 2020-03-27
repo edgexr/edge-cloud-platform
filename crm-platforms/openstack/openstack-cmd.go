@@ -1038,7 +1038,7 @@ func (s *Platform) AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgV
 	}
 	if err != nil {
 		// Validate if pfImageName is same as we expected
-		_, md5Sum, err := mexos.GetUrlInfo(ctx, imgPath)
+		_, md5Sum, err := mexos.GetUrlInfo(ctx, s.vaultConfig, imgPath)
 		if err != nil {
 			return "", err
 		}

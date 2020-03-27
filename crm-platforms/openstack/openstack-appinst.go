@@ -122,7 +122,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-		sourceImageTime, md5Sum, err := mexos.GetUrlInfo(ctx, app.ImagePath)
+		sourceImageTime, md5Sum, err := mexos.GetUrlInfo(ctx, s.vaultConfig, app.ImagePath)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMexos, "failed to fetch source image info, skip image validity checks")
 		}
