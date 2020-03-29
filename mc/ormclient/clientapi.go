@@ -72,4 +72,5 @@ type Api interface {
 	ExecApiClient
 	CloudletRefsApiClient
 	ClusterRefsApiClient
+	DeviceApiClient
 }

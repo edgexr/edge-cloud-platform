@@ -19,6 +19,7 @@ It is generated from these files:
 	common.proto
 	controller.proto
 	debug.proto
+	device.proto
 	exec.proto
 	flavor.proto
 	metric.proto
@@ -82,6 +83,9 @@ It has these top-level messages:
 	DebugRequest
 	DebugReply
 	DebugData
+	DeviceReport
+	DeviceKey
+	Device
 	RunCmd
 	RunVMConsole
 	ShowLog
@@ -1223,6 +1227,47 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RunDebug", RunDebug)
+	// swagger:route POST /auth/ctrl/InjectDevice Device InjectDevice
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/InjectDevice", InjectDevice)
+	// swagger:route POST /auth/ctrl/ShowDevice Device ShowDevice
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowDevice", ShowDevice)
+	// swagger:route POST /auth/ctrl/EvictDevice Device EvictDevice
+	// .
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/EvictDevice", EvictDevice)
+	// swagger:route POST /auth/ctrl/ShowDeviceReport DeviceReport ShowDeviceReport
+	// Device Reports API.
+	//
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowDeviceReport", ShowDeviceReport)
 	// swagger:route POST /auth/ctrl/RunCommand ExecRequest RunCommand
 	// Run a Command or Shell on a container.
 	// Security:
