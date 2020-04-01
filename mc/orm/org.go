@@ -68,7 +68,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if strings.ToLower(claims.Username) == strings.ToLower(org.Name) {
 		return fmt.Errorf("org name cannot be same as existing user name")
 	}
-	if strings.ToLower(org.Name) == strings.ToLower(cloudcommon.DeveloperMobiledgeX) || strings.ToLower(org.Name) == strings.ToLower(cloudcommon.DeveloperEdgeBox) {
+	if strings.ToLower(org.Name) == strings.ToLower(cloudcommon.OrganizationMobiledgeX) || strings.ToLower(org.Name) == strings.ToLower(cloudcommon.OrganizationEdgeBox) {
 		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
 			return fmt.Errorf("Not authorized to create reserved org %s", org.Name)
 		}
