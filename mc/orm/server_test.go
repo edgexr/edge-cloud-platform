@@ -198,7 +198,7 @@ func TestServer(t *testing.T) {
 
 	orgMex := ormapi.Organization{
 		Type:    "developer",
-		Name:    cloudcommon.DeveloperMobiledgeX,
+		Name:    cloudcommon.OrganizationMobiledgeX,
 		Address: "123",
 		Phone:   "123",
 	}

@@ -342,7 +342,7 @@ func TestController(t *testing.T) {
 		// developers can't create AppInsts on other developer's ClusterInsts
 		appinst := edgeproto.AppInst{}
 		appinst.Key.AppKey.Organization = org1
-		appinst.Key.ClusterInstKey.Organization = cloudcommon.DeveloperMobiledgeX
+		appinst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
 		_, status, err := ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
 		require.NotNil(t, err)
 		require.Contains(t, err.Error(), "AppInst organization must match ClusterInst organization")
