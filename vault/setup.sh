@@ -44,6 +44,10 @@ path "secret/data/+/accounts/influxdb" {
 path "secret/data/registry/*" {
   capabilities = [ "read" ]
 }
+
+path "pki-global/issue/*" {
+  capabilities = [ "read", "update" ]
+}
 EOF
 vault policy write mcorm /tmp/mcorm-pol.hcl
 rm /tmp/mcorm-pol.hcl
@@ -72,25 +76,6 @@ vault write auth/approle/role/rotator period="720h" policies="rotator"
 # get rotator app roleID and generate secretID
 vault read auth/approle/role/rotator/role-id
 vault write -f auth/approle/role/rotator/secret-id
-
-# autoprov approle
-# Just need access to influx db credentials
-cat > /tmp/autoprov-pol.hcl <<EOF
-path "auth/approle/login" {
-  capabilities = [ "create", "read" ]
-}
-
-path "secret/data/+/accounts/influxdb" {
-  capabilities = [ "read" ]
-}
-EOF
-vault policy write autoprov /tmp/autoprov-pol.hcl
-rm /tmp/autoprov-pol.hcl
-vault write auth/approle/role/autoprov period="720h" policies="autoprov"
-# get autoprov app roleID and generate secretID
-vault read auth/approle/role/autoprov/role-id
-vault write -f auth/approle/role/autoprov/secret-id
-
 
 # mexenv approle
 # This is used by edgebox to access registry secrets only.

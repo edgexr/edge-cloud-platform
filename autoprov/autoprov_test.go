@@ -54,7 +54,7 @@ func TestAutoProv(t *testing.T) {
 	dn := notify.NewDummyHandler()
 	serverMgr := notify.ServerMgr{}
 	dn.RegisterServer(&serverMgr)
-	serverMgr.Start(*notifyAddrs, "")
+	serverMgr.Start(*notifyAddrs, nil)
 	defer serverMgr.Stop()
 
 	start()

@@ -25,6 +25,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
+	edgetls "github.com/mobiledgex/edge-cloud/tls"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/version"
 	"github.com/nmcclain/ldap"
@@ -69,6 +70,7 @@ type ServerConfig struct {
 	Hostname         string
 	NotifyAddrs      string
 	NotifySrvAddr    string
+	NodeMgr          *node.NodeMgr
 }
 
 var DefaultDBUser = "mcuser"
@@ -92,6 +94,10 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
 	// keep global pointer to config stored in server for easy access
 	serverConfig = server.config
+	if config.NodeMgr == nil {
+		config.NodeMgr = &node.NodeMgr{}
+	}
+	nodeMgr = config.NodeMgr
 
 	span := log.StartSpan(log.DebugLevelInfo, "main")
 	defer span.Finish()
@@ -119,7 +125,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		superpass = DefaultSuperpass
 	}
 
-	nodeMgr = node.Init(ctx, "mc", node.WithName(config.Hostname))
+	err := nodeMgr.Init(ctx, "mc", node.WithName(config.Hostname))
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
@@ -159,7 +165,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		log.InfoLog("Note: No gitlab_token env var found")
 	}
 	gitlabClient = gitlab.NewClient(nil, gitlabToken)
-	if err := gitlabClient.SetBaseURL(config.GitlabAddr); err != nil {
+	if err = gitlabClient.SetBaseURL(config.GitlabAddr); err != nil {
 		return nil, fmt.Errorf("Gitlab client set base URL to %s, %s",
 			config.GitlabAddr, err.Error())
 	}
@@ -369,11 +375,25 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		server.notifyServer = &notify.ServerMgr{}
 		nodeMgr.RegisterServer(server.notifyServer)
 
-		server.notifyServer.Start(config.NotifySrvAddr, config.TlsCertFile)
+		tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
+			nodeMgr.CommonName(),
+			node.CertIssuerGlobal,
+			[]node.MatchCA{node.AnyRegionalMatchCA()})
+		if err != nil {
+			return nil, err
+		}
+		server.notifyServer.Start(config.NotifySrvAddr, tlsConfig)
 	}
 	if config.NotifyAddrs != "" {
+		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
+			nodeMgr.CommonName(),
+			node.CertIssuerGlobal,
+			[]node.MatchCA{node.GlobalMatchCA()})
+		if err != nil {
+			return nil, err
+		}
 		addrs := strings.Split(config.NotifyAddrs, ",")
-		server.notifyClient = notify.NewClient(addrs, config.TlsCertFile)
+		server.notifyClient = notify.NewClient(addrs, edgetls.GetGrpcDialOption(tlsConfig))
 		nodeMgr.RegisterClient(server.notifyClient)
 
 		server.notifyClient.Start()

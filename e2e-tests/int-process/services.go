@@ -26,6 +26,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	vaultAddr := ""
 	span := ""
 	region := ""
+	useVaultCerts := false
 	if pfConfig != nil {
 		// Same vault role-id/secret-id as CRM
 		for k, v := range pfConfig.EnvVar {
@@ -36,6 +37,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		vaultAddr = pfConfig.VaultAddr
 		span = pfConfig.Span
 		region = pfConfig.Region
+		useVaultCerts = pfConfig.UseVaultCerts
 	}
 
 	for envKey, envVal := range cloudlet.EnvVar {
@@ -55,10 +57,11 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		TLS: process.TLSCerts{
 			ServerCert: tlsCertFile,
 		},
-		VaultAddr:    vaultAddr,
-		PhysicalName: cloudlet.PhysicalName,
-		Span:         span,
-		Region:       region,
+		VaultAddr:     vaultAddr,
+		PhysicalName:  cloudlet.PhysicalName,
+		Span:          span,
+		Region:        region,
+		UseVaultCerts: useVaultCerts,
 	}, opts, nil
 }
 

@@ -19,11 +19,9 @@ import (
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
-var tlsCertFile = flag.String("tls", "", "server tls cert file.  Keyfile and CA file mex-ca.crt must be in same directory")
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:50001", "Comma separated list of controller notify listener addresses")
 var ctrlAddr = flag.String("ctrlAddrs", "127.0.0.1:55001", "controller api address")
 var influxAddr = flag.String("influxAddr", "http://127.0.0.1:8086", "InfluxDB listener address")
-var vaultAddr = flag.String("vaultAddr", "", "Vault address; local vault runs at http://127.0.0.1:8200")
 var region = flag.String("region", "local", "region name")
 var hostname = flag.String("hostname", "", "Unique hostname")
 
@@ -37,9 +35,10 @@ var notifyClient *notify.Client
 var vaultConfig *vault.Config
 var autoProvAggr *AutoProvAggr
 var settings edgeproto.Settings
-var nodeMgr *node.NodeMgr
+var nodeMgr node.NodeMgr
 
 func main() {
+	nodeMgr.InitFlags()
 	flag.Parse()
 
 	err := start()
@@ -58,7 +57,7 @@ func main() {
 
 func start() error {
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer(*tlsCertFile)
+	log.InitTracer(nodeMgr.TlsCertFile)
 	settings = *edgeproto.GetDefaultSettings()
 
 	span := log.StartSpan(log.DebugLevelInfo, "main")
@@ -66,18 +65,23 @@ func start() error {
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	var err error
-	vaultConfig, err = vault.BestConfig(*vaultAddr)
+	vaultConfig, err = vault.BestConfig(nodeMgr.VaultAddr)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", vaultConfig.Auth.Type())
 
-	dialOpts, err = tls.GetTLSClientDialOption(*ctrlAddr, *tlsCertFile, false)
-	if err != nil {
-		return fmt.Errorf("Failed to get TLS creds, %v", err)
-	}
+	err = nodeMgr.Init(ctx, "autoprov", node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
 
-	nodeMgr = node.Init(ctx, "autoprov", node.WithName(*hostname))
+	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
+		nodeMgr.CommonName(),
+		node.CertIssuerRegional,
+		[]node.MatchCA{node.SameRegionalMatchCA()})
+	if err != nil {
+		return err
+	}
+	dialOpts = tls.GetGrpcDialOption(clientTlsConfig)
+
 	edgeproto.InitAlertCache(&alertCache)
 	appHandler.Init()
 	autoProvPolicyHandler.Init()
@@ -87,7 +91,7 @@ func start() error {
 	autoProvAggr.Start()
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient = notify.NewClient(addrs, *tlsCertFile)
+	notifyClient = notify.NewClient(addrs, dialOpts)
 	notifyClient.RegisterRecv(notify.GlobalSettingsRecv(&settings, settingsUpdated))
 	notifyClient.RegisterRecvAlertCache(&alertCache)
 	notifyClient.RegisterRecv(notify.NewAutoProvPolicyRecv(&autoProvPolicyHandler))
