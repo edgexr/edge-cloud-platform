@@ -74,6 +74,7 @@ var NodeOptionalArgs = []string{
 	"buildauthor",
 	"hostname",
 	"containerversion",
+	"internalpki",
 }
 var NodeAliasArgs = []string{
 	"fields=node.fields",
@@ -88,6 +89,7 @@ var NodeAliasArgs = []string{
 	"buildauthor=node.buildauthor",
 	"hostname=node.hostname",
 	"containerversion=node.containerversion",
+	"internalpki=node.internalpki",
 }
 var NodeComments = map[string]string{
 	"fields":           "Fields are used for the Update API to specify which fields to apply",
@@ -102,6 +104,7 @@ var NodeComments = map[string]string{
 	"buildauthor":      "Build Author",
 	"hostname":         "Hostname",
 	"containerversion": "Docker edge-cloud container version which node instance use",
+	"internalpki":      "Internal PKI Config",
 }
 var NodeSpecialArgs = map[string]string{
 	"node.fields": "StringArray",
@@ -120,6 +123,7 @@ var NodeDataOptionalArgs = []string{
 	"nodes[#].buildauthor",
 	"nodes[#].hostname",
 	"nodes[#].containerversion",
+	"nodes[#].internalpki",
 }
 var NodeDataAliasArgs = []string{
 	"nodes[#].fields=nodedata.nodes[#].fields",
@@ -134,6 +138,7 @@ var NodeDataAliasArgs = []string{
 	"nodes[#].buildauthor=nodedata.nodes[#].buildauthor",
 	"nodes[#].hostname=nodedata.nodes[#].hostname",
 	"nodes[#].containerversion=nodedata.nodes[#].containerversion",
+	"nodes[#].internalpki=nodedata.nodes[#].internalpki",
 }
 var NodeDataComments = map[string]string{
 	"nodes[#].fields":                       "Fields are used for the Update API to specify which fields to apply",
@@ -148,6 +153,7 @@ var NodeDataComments = map[string]string{
 	"nodes[#].buildauthor":                  "Build Author",
 	"nodes[#].hostname":                     "Hostname",
 	"nodes[#].containerversion":             "Docker edge-cloud container version which node instance use",
+	"nodes[#].internalpki":                  "Internal PKI Config",
 }
 var NodeDataSpecialArgs = map[string]string{
 	"nodedata.nodes[#].fields": "StringArray",

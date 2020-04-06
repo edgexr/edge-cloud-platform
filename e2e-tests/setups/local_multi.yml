@@ -24,6 +24,7 @@ toksims:
 vaults:
 - name: vault
   hostname: "127.0.0.1"
+  regions: local,locala
 
 influxs:
 - name: influx1
@@ -319,6 +320,7 @@ autoprovs:
   ctrladdrs: "127.0.0.1:55011"
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8087"
+  region: locala
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"

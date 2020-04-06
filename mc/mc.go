@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -17,10 +18,8 @@ var localSql = flag.Bool("localSql", false, "Run local postgres db")
 var consoleProxyAddr = flag.String("consoleproxyaddr", "127.0.0.1:6080", "Console proxy address")
 var initSql = flag.Bool("initSql", false, "Init db when using localSql")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
-var tlsCertFile = flag.String("tls", "", "server tls cert file")
 var tlsKeyFile = flag.String("tlskey", "", "server tls key file")
 var clientCert = flag.String("clientCert", "", "internal tls client cert file")
-var vaultAddr = flag.String("vaultAddr", "http://127.0.0.1:8200", "Vault address")
 var localVault = flag.Bool("localVault", false, "Run local Vault")
 var ldapAddr = flag.String("ldapAddr", "127.0.0.1:9389", "LDAP listener address")
 var gitlabAddr = flag.String("gitlabAddr", "http://127.0.0.1:80", "Gitlab server address")
@@ -34,11 +33,13 @@ var notifySrvAddr = flag.String("notifySrvAddr", "127.0.0.1:52001", "Notify list
 var hostname = flag.String("hostname", "", "Unique hostname")
 
 var sigChan chan os.Signal
+var nodeMgr node.NodeMgr
 
 func main() {
+	nodeMgr.InitFlags()
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer(*tlsCertFile)
+	log.InitTracer(nodeMgr.TlsCertFile)
 	defer log.FinishTracer()
 
 	sigChan = make(chan os.Signal, 1)
@@ -46,12 +47,12 @@ func main() {
 	config := orm.ServerConfig{
 		ServAddr:         *addr,
 		SqlAddr:          *sqlAddr,
-		VaultAddr:        *vaultAddr,
+		VaultAddr:        nodeMgr.VaultAddr,
 		ConsoleProxyAddr: *consoleProxyAddr,
 		RunLocal:         *localSql,
 		InitLocal:        *initSql,
 		LocalVault:       *localVault,
-		TlsCertFile:      *tlsCertFile,
+		TlsCertFile:      nodeMgr.TlsCertFile,
 		TlsKeyFile:       *tlsKeyFile,
 		LDAPAddr:         *ldapAddr,
 		GitlabAddr:       *gitlabAddr,
@@ -64,6 +65,7 @@ func main() {
 		Hostname:         *hostname,
 		NotifyAddrs:      *notifyAddrs,
 		NotifySrvAddr:    *notifySrvAddr,
+		NodeMgr:          &nodeMgr,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {

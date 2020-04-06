@@ -19,14 +19,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
+	"github.com/mobiledgex/edge-cloud/tls"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
-var tlsCertFile = flag.String("tls", "", "server tls cert file.  Keyfile and CA file mex-ca.crt must be in same directory")
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:51001", "CRM notify listener addresses")
 var platformName = flag.String("platform", "", "Platform type of Cloudlet")
-var vaultAddr = flag.String("vaultAddr", "", "Address to vault")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
@@ -49,7 +48,7 @@ var settings edgeproto.Settings
 
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
-var nodeMgr *node.NodeMgr
+var nodeMgr node.NodeMgr
 
 var sigChan chan os.Signal
 
@@ -179,9 +178,10 @@ func getPlatform() (platform.Platform, error) {
 }
 
 func main() {
+	nodeMgr.InitFlags()
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer(*tlsCertFile)
+	log.InitTracer(nodeMgr.TlsCertFile)
 	defer log.FinishTracer()
 	var span opentracing.Span
 	if *parentSpan != "" {
@@ -193,7 +193,16 @@ func main() {
 	settings = *edgeproto.GetDefaultSettings()
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
-	var err error
+
+	err := nodeMgr.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey), node.WithRegion(*region))
+	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
+		nodeMgr.CommonName(),
+		node.CertIssuerRegionalCloudlet,
+		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
+	if err != nil {
+		log.FatalLog("Failed to get internal pki tls config", "err", err)
+	}
+
 	myPlatform, err = getPlatform()
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
@@ -209,7 +218,7 @@ func main() {
 	edgeproto.InitCloudletCache(&CloudletCache)
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient := notify.NewClient(addrs, *tlsCertFile)
+	notifyClient := notify.NewClient(addrs, tls.GetGrpcDialOption(clientTlsConfig))
 	notifyClient.SetFilterByCloudletKey()
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
@@ -224,7 +233,6 @@ func main() {
 	edgeproto.InitCloudletInfoCache(&CloudletInfoCache)
 	notifyClient.RegisterSendCloudletInfoCache(&CloudletInfoCache)
 
-	nodeMgr = node.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey))
 	nodeMgr.RegisterClient(notifyClient)
 
 	notifyClient.Start()
@@ -256,7 +264,7 @@ func main() {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
 
-	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, *vaultAddr, cloudlet.EnvVar)
+	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, nodeMgr.VaultAddr, cloudlet.EnvVar)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}

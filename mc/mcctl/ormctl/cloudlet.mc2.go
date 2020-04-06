@@ -397,6 +397,7 @@ var PlatformConfigOptionalArgs = []string{
 	"cleanupmode",
 	"region",
 	"commercialcerts",
+	"usevaultcerts",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -411,6 +412,7 @@ var PlatformConfigAliasArgs = []string{
 	"cleanupmode=platformconfig.cleanupmode",
 	"region=platformconfig.region",
 	"commercialcerts=platformconfig.commercialcerts",
+	"usevaultcerts=platformconfig.usevaultcerts",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -424,7 +426,8 @@ var PlatformConfigComments = map[string]string{
 	"span":                  "Span string",
 	"cleanupmode":           "Internal cleanup flag",
 	"region":                "Region",
-	"commercialcerts":       "Get certs from vault or generate your own",
+	"commercialcerts":       "Get certs from vault or generate your own for the root load balancer",
+	"usevaultcerts":         "Use Vault certs for internal TLS communication",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -531,6 +534,7 @@ var CloudletAliasArgs = []string{
 	"config.cleanupmode=cloudlet.config.cleanupmode",
 	"config.region=cloudlet.config.region",
 	"config.commercialcerts=cloudlet.config.commercialcerts",
+	"config.usevaultcerts=cloudlet.config.usevaultcerts",
 	"restagmap[#].key=cloudlet.restagmap[#].key",
 	"restagmap[#].value.name=cloudlet.restagmap[#].value.name",
 	"restagmap[#].value.organization=cloudlet.restagmap[#].value.organization",
@@ -579,7 +583,8 @@ var CloudletComments = map[string]string{
 	"config.span":                         "Span string",
 	"config.cleanupmode":                  "Internal cleanup flag",
 	"config.region":                       "Region",
-	"config.commercialcerts":              "Get certs from vault or generate your own",
+	"config.commercialcerts":              "Get certs from vault or generate your own for the root load balancer",
+	"config.usevaultcerts":                "Use Vault certs for internal TLS communication",
 	"restagmap[#].value.name":             "Resource Table Name",
 	"restagmap[#].value.organization":     "Operator organization of the cloudlet site.",
 	"accessvars":                          "Variables required to access cloudlet",

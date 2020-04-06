@@ -223,12 +223,14 @@ func (s *Platform) setupPlatformService(ctx context.Context, cloudlet *edgeproto
 	}
 
 	// edge-cloud image already contains the certs
-	_, crtFile := filepath.Split(pfConfig.TlsCertFile)
-	ext := filepath.Ext(crtFile)
-	if ext == "" {
-		return fmt.Errorf("invalid tls cert file name: %s", crtFile)
+	if pfConfig.TlsCertFile != "" {
+		_, crtFile := filepath.Split(pfConfig.TlsCertFile)
+		ext := filepath.Ext(crtFile)
+		if ext == "" {
+			return fmt.Errorf("invalid tls cert file name: %s", crtFile)
+		}
+		pfConfig.TlsCertFile = "/root/tls/" + crtFile
 	}
-	pfConfig.TlsCertFile = "/root/tls/" + crtFile
 
 	// Login to docker registry
 	updateCallback(edgeproto.UpdateTask, "Setting up docker registry")
