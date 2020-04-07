@@ -65,6 +65,7 @@ var openstackProps = map[string]*mexos.PropertyInfo{
 	"CLEANUP_ON_FAILURE": &mexos.PropertyInfo{
 		Value: "true",
 	},
+	"MEX_SUBNET_DNS": &mexos.PropertyInfo{},
 }
 
 func GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
@@ -158,6 +159,10 @@ func (s *Platform) GetCloudletProjectName() string {
 
 func (s *Platform) GetCloudletFlavorMatchPattern() string {
 	return s.envVars["FLAVOR_MATCH_PATTERN"].Value
+}
+
+func (s *Platform) GetSubnetDNS() string {
+	return s.envVars["MEX_SUBNET_DNS"].Value
 }
 
 func (s *Platform) GetCloudletCRMGatewayIPAndPort() (string, int) {
