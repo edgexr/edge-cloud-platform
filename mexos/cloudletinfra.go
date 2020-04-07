@@ -65,6 +65,9 @@ var NoConfigExternalRouter = "NOCONFIG"
 // this may eventually be the default and possibly only option
 var NoExternalRouter = "NONE"
 
+// NoSubnetDNS means that DNS servers are not specified when creating the subnet
+var NoSubnetDNS = "NONE"
+
 // Package level test mode variable
 var testMode = false
 

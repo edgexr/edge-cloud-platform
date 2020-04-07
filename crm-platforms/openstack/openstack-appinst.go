@@ -18,6 +18,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+var MaxDockerSeedWait = 1 * time.Minute
+
 func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 
@@ -341,9 +343,23 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			return fmt.Errorf("get kube names failed, %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
-		err = mexos.SeedDockerSecret(ctx, s, dockerCommandTarget, clusterInst, app, s.vaultConfig)
-		if err != nil {
-			return fmt.Errorf("seeding docker secret failed, %v", err)
+		// when creating the appinst immediately after the cluster is created, there is a chance
+		// of a failure if the VM is not fully ready and the resulting errors may vary.
+		// Allow some retries to account for this.
+		start := time.Now()
+		for {
+			err = mexos.SeedDockerSecret(ctx, s, dockerCommandTarget, clusterInst, app, s.vaultConfig)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelMexos, "seeding docker secret failed", "err", err)
+				elapsed := time.Since(start)
+				if elapsed > MaxDockerSeedWait {
+					return fmt.Errorf("can't seed docker secret - %v", err)
+				}
+				log.SpanLog(ctx, log.DebugLevelMexos, "retrying in 10 seconds")
+				time.Sleep(10 * time.Second)
+			} else {
+				break
+			}
 		}
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 

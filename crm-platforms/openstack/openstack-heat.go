@@ -45,6 +45,7 @@ type VMParams struct {
 	ComputeAvailabilityZone  string
 	VolumeAvailabilityZone   string
 	PrivacyPolicy            *edgeproto.PrivacyPolicy
+	VMDNSServers             string
 }
 
 type VMParamsOp func(vmp *VMParams) error
@@ -81,6 +82,9 @@ ssh_pwauth: False
 timezone: UTC
 runcmd:
  - [ echo, MOBILEDGEX, doing, ifconfig ]
+{{if .VMDNSServers}}
+ - echo "dns-nameservers {{.VMDNSServers}}" >> /etc/network/interfaces.d/50-cloud-init.cfg
+{{end}}
  - [ ifconfig, -a ]`
 
 // vmCloudConfigShareMount is appended optionally to vmCloudConfig.   It assumes
@@ -240,8 +244,9 @@ resources:
 
 // ClusterNode is a k8s node
 type ClusterNode struct {
-	NodeName string
-	NodeIP   string
+	NodeName     string
+	NodeIP       string
+	VMDNSServers string
 }
 
 // ClusterParams has the info needed to populate the heat template
@@ -894,6 +899,18 @@ func (s *Platform) getClusterParams(ctx context.Context, clusterInst *edgeproto.
 	cp.PrivacyPolicy = privacyPolicy
 	cp.CloudletSecurityGroup = cloudletGrp
 
+	// this is a hopefully short term workaround to a Contrail bug in which DNS resolution
+	// breaks when the DNS server is specified in the subnet on creation.  The workaround is to
+	// use cloud-init to specify the DNS server in the VM rather than the subnet.
+	// See EDGECLOUD-2420 for details
+	dns := []string{"1.1.1.1", "1.0.0.1"}
+	if s.GetSubnetDNS() == mexos.NoSubnetDNS {
+		log.SpanLog(ctx, log.DebugLevelMexos, "subnet DNS is NONE, using VM DNS", "dns", dns)
+		cp.VMDNSServers = strings.Join(dns, " ")
+	} else {
+		log.SpanLog(ctx, log.DebugLevelMexos, "using subnet dns", "dns", dns)
+		cp.DNSServers = dns
+	}
 	nodeIPPrefix, err := s.populateCommonClusterParamFields(ctx, &cp, rootLBName, cloudletGrp, action)
 	if err != nil {
 		return nil, err
@@ -910,10 +927,9 @@ func (s *Platform) getClusterParams(ctx context.Context, clusterInst *edgeproto.
 		nn := HeatNodePrefix(i)
 		nip := fmt.Sprintf("%s.%d", nodeIPPrefix, i+100)
 		cn := ClusterNode{NodeName: nn, NodeIP: nip}
+		cn.VMDNSServers = cp.VMDNSServers
 		cp.Nodes = append(cp.Nodes, cn)
 	}
-	// cloudflare primary and backup
-	cp.DNSServers = []string{"1.1.1.1", "1.0.0.1"}
 	if clusterInst.NumNodes > 0 && clusterInst.MasterNodeFlavor != "" {
 		cp.MasterNodeFlavor = clusterInst.MasterNodeFlavor
 		log.SpanLog(ctx, log.DebugLevelMexos, "HeatGetClusterParams", "MasterNodeFlavor", cp.MasterNodeFlavor)
