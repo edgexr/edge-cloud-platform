@@ -55,12 +55,14 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 			return check(c, st, err, nil)
 		}
 
-		exchangeFunc := func(offer webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
-			offerBytes, err := json.Marshal(&offer)
-			if err != nil {
-				return nil, nil, err
+		exchangeFunc := func(offer *webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
+			if offer != nil {
+				offerBytes, err := json.Marshal(offer)
+				if err != nil {
+					return nil, nil, err
+				}
+				req.ExecRequest.Offer = string(offerBytes)
 			}
-			req.ExecRequest.Offer = string(offerBytes)
 
 			reply := edgeproto.ExecRequest{}
 			st, err := client.PostJson(getUri()+path, Token, &req, &reply)
@@ -72,18 +74,24 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 			if reply.Err != "" {
 				return nil, nil, fmt.Errorf("%s", reply.Err)
 			}
-			if reply.Answer == "" {
-				return nil, nil, fmt.Errorf("empty answer")
-			}
+			if offer != nil {
+				if reply.Answer == "" {
+					return nil, nil, fmt.Errorf("empty answer")
+				}
 
-			answer := webrtc.SessionDescription{}
-			err = json.Unmarshal([]byte(reply.Answer), &answer)
-			if err != nil {
-				return nil, nil, fmt.Errorf("unable to unmarshal answer %s, %v",
-					reply.Answer, err)
+				answer := webrtc.SessionDescription{}
+				err = json.Unmarshal([]byte(reply.Answer), &answer)
+				if err != nil {
+					return nil, nil, fmt.Errorf("unable to unmarshal answer %s, %v",
+						reply.Answer, err)
+				}
+				return &reply, &answer, nil
 			}
-			return &reply, &answer, nil
+			return &reply, nil, nil
 		}
-		return edgecli.RunWebrtc(&req.ExecRequest, exchangeFunc, nil, edgecli.SetupLocalConsoleTunnel)
+		if req.ExecRequest.Webrtc {
+			return edgecli.RunWebrtc(&req.ExecRequest, exchangeFunc, nil, edgecli.SetupLocalConsoleTunnel)
+		}
+		return edgecli.RunEdgeTurn(&req.ExecRequest, exchangeFunc, nil)
 	}
 }

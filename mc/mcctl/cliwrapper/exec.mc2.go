@@ -23,7 +23,7 @@ var _ = math.Inf
 func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	args := []string{"region", "RunCommand"}
 	out := edgeproto.ExecRequest{}
-	noconfig := strings.Split("Offer,Answer,Err,Timeout,Log,Console", ",")
+	noconfig := strings.Split("Offer,Answer,Err,Timeout,Log,Console,AccessUrl,EdgeTurnAddr", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -37,7 +37,7 @@ func (s *Client) RunCommandStream(uri, token string, in *ormapi.RegionExecReques
 func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	args := []string{"region", "RunConsole"}
 	out := edgeproto.ExecRequest{}
-	noconfig := strings.Split("Offer,Answer,Err,Timeout,Log,Cmd,Console", ",")
+	noconfig := strings.Split("Offer,Answer,Err,Timeout,Log,Cmd,Console,AccessUrl,EdgeTurnAddr", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -51,7 +51,7 @@ func (s *Client) RunConsoleStream(uri, token string, in *ormapi.RegionExecReques
 func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	args := []string{"region", "ShowLogs"}
 	out := edgeproto.ExecRequest{}
-	noconfig := strings.Split("Offer,Answer,Err,Timeout,Cmd,Console", ",")
+	noconfig := strings.Split("Offer,Answer,Err,Timeout,Cmd,Console,AccessUrl,EdgeTurnAddr", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err

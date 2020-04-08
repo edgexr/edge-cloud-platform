@@ -39,12 +39,14 @@ func RunWebrtcStream(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 
-	exchangeFunc := func(offer webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
-		offerBytes, err := json.Marshal(&offer)
-		if err != nil {
-			return nil, nil, err
+	exchangeFunc := func(offer *webrtc.SessionDescription) (*edgeproto.ExecRequest, *webrtc.SessionDescription, error) {
+		if offer != nil {
+			offerBytes, err := json.Marshal(offer)
+			if err != nil {
+				return nil, nil, err
+			}
+			in.ExecRequest.Offer = string(offerBytes)
 		}
-		in.ExecRequest.Offer = string(offerBytes)
 
 		var reply *edgeproto.ExecRequest
 		if strings.HasSuffix(c.Path(), "ctrl/RunCommand") {
@@ -67,18 +69,24 @@ func RunWebrtcStream(c echo.Context) error {
 		if reply.Err != "" {
 			return nil, nil, fmt.Errorf("%s", reply.Err)
 		}
-		if reply.Answer == "" {
-			return nil, nil, fmt.Errorf("empty answer")
+		if offer != nil {
+			if reply.Answer == "" {
+				return nil, nil, fmt.Errorf("empty answer")
+			}
+			answer := webrtc.SessionDescription{}
+			err = json.Unmarshal([]byte(reply.Answer), &answer)
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to unmarshal answer %s, %v",
+					reply.Answer, err)
+			}
+			return reply, &answer, nil
 		}
-
-		answer := webrtc.SessionDescription{}
-		err = json.Unmarshal([]byte(reply.Answer), &answer)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to unmarshal answer %s, %v",
-				reply.Answer, err)
-		}
-		return reply, &answer, nil
+		return reply, nil, nil
 	}
-	err = edgecli.RunWebrtc(&in.ExecRequest, exchangeFunc, ws, edgecli.SetupLocalConsoleTunnel)
+	if in.ExecRequest.Webrtc {
+		err = edgecli.RunWebrtc(&in.ExecRequest, exchangeFunc, ws, edgecli.SetupLocalConsoleTunnel)
+	} else {
+		err = edgecli.RunEdgeTurn(&in.ExecRequest, exchangeFunc, ws)
+	}
 	return setReply(c, err, nil)
 }

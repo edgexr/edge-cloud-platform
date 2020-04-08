@@ -618,6 +618,8 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 		wsUri = strings.Replace(wsUri, "api/v1", "ws/api/v1", -1)
 		log.Printf("Using MC URI %s", wsUri)
 
+		data.Request.ExecRequest.Webrtc = true
+
 		client := &ormclient.Client{
 			SkipVerify: true,
 		}
