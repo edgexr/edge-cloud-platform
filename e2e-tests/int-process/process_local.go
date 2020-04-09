@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	yaml "gopkg.in/yaml.v2"
@@ -83,6 +85,23 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 
 	var err error
 	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envs, logfile)
+	if err == nil {
+		// wait until server is online
+		online := false
+		for ii := 0; ii < 10; ii++ {
+			resp, serr := http.Get("http://" + p.Addr)
+			if serr == nil {
+				resp.Body.Close()
+				online = true
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		if !online {
+			p.StopLocal()
+			return fmt.Errorf("failed to detect MC online")
+		}
+	}
 	return err
 }
 
