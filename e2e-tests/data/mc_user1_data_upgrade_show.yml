@@ -47,6 +47,8 @@ regiondata:
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
+      envvar:
+        foo: bar
       containerversion: 2020-10-10
     - key:
         organization: dmuus
