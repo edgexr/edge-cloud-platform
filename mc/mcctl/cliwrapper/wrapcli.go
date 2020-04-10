@@ -56,10 +56,10 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 			return 0, err
 		}
 		ignore := make(map[string]struct{})
-		objArgs := cli.MapToArgs([]string{}, m, ignore)
+		objArgs := cli.MapToArgs([]string{}, m, ignore, nil, nil)
 		args = append(args, objArgs...)
 	} else {
-		objArgs, err := cli.MarshalArgs(in, opts.ignore)
+		objArgs, err := cli.MarshalArgs(in, opts.ignore, nil)
 		if err != nil {
 			return 0, err
 		}
