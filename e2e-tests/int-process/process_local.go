@@ -88,7 +88,7 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 	if err == nil {
 		// wait until server is online
 		online := false
-		for ii := 0; ii < 10; ii++ {
+		for ii := 0; ii < 40; ii++ {
 			resp, serr := http.Get("http://" + p.Addr)
 			if serr == nil {
 				resp.Body.Close()

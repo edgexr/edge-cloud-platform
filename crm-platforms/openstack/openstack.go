@@ -80,6 +80,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	if err := s.InitOpenstackProps(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
+	s.initDebug(platformConfig.NodeMgr)
 
 	s.flavorList, _, _, err = s.GetFlavorInfo(ctx)
 	if err != nil {

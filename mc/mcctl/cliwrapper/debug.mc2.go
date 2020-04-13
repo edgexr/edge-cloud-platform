@@ -23,7 +23,7 @@ var _ = math.Inf
 func (s *Client) EnableDebugLevels(uri, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
 	args := []string{"region", "EnableDebugLevels"}
 	outlist := []edgeproto.DebugReply{}
-	noconfig := strings.Split("Cmd", ",")
+	noconfig := strings.Split("Cmd,Id", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
@@ -34,7 +34,7 @@ func (s *Client) EnableDebugLevels(uri, token string, in *ormapi.RegionDebugRequ
 func (s *Client) DisableDebugLevels(uri, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
 	args := []string{"region", "DisableDebugLevels"}
 	outlist := []edgeproto.DebugReply{}
-	noconfig := strings.Split("Cmd", ",")
+	noconfig := strings.Split("Cmd,Id", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
@@ -45,7 +45,7 @@ func (s *Client) DisableDebugLevels(uri, token string, in *ormapi.RegionDebugReq
 func (s *Client) ShowDebugLevels(uri, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
 	args := []string{"region", "ShowDebugLevels"}
 	outlist := []edgeproto.DebugReply{}
-	noconfig := strings.Split("Levels,Cmd", ",")
+	noconfig := strings.Split("Levels,Cmd,Id", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
@@ -56,7 +56,7 @@ func (s *Client) ShowDebugLevels(uri, token string, in *ormapi.RegionDebugReques
 func (s *Client) RunDebug(uri, token string, in *ormapi.RegionDebugRequest) ([]edgeproto.DebugReply, int, error) {
 	args := []string{"region", "RunDebug"}
 	outlist := []edgeproto.DebugReply{}
-	noconfig := strings.Split("Levels", ",")
+	noconfig := strings.Split("Levels,Id", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}

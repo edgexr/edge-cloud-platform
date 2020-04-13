@@ -90,7 +90,7 @@ var EnableDebugLevelsOptionalArgs = []string{
 	"cloudlet",
 	"region",
 	"pretty",
-	"id",
+	"args",
 }
 var DisableDebugLevelsRequiredArgs = []string{
 	"levels",
@@ -102,7 +102,7 @@ var DisableDebugLevelsOptionalArgs = []string{
 	"cloudlet",
 	"region",
 	"pretty",
-	"id",
+	"args",
 }
 var ShowDebugLevelsRequiredArgs = []string{}
 var ShowDebugLevelsOptionalArgs = []string{
@@ -112,7 +112,7 @@ var ShowDebugLevelsOptionalArgs = []string{
 	"cloudlet",
 	"region",
 	"pretty",
-	"id",
+	"args",
 }
 var RunDebugRequiredArgs = []string{}
 var RunDebugOptionalArgs = []string{
@@ -123,7 +123,7 @@ var RunDebugOptionalArgs = []string{
 	"region",
 	"cmd",
 	"pretty",
-	"id",
+	"args",
 }
 var DebugRequestRequiredArgs = []string{}
 var DebugRequestOptionalArgs = []string{
@@ -136,6 +136,7 @@ var DebugRequestOptionalArgs = []string{
 	"cmd",
 	"pretty",
 	"id",
+	"args",
 }
 var DebugRequestAliasArgs = []string{
 	"name=debugrequest.node.name",
@@ -147,6 +148,7 @@ var DebugRequestAliasArgs = []string{
 	"cmd=debugrequest.cmd",
 	"pretty=debugrequest.pretty",
 	"id=debugrequest.id",
+	"args=debugrequest.args",
 }
 var DebugRequestComments = map[string]string{
 	"name":         "Name or hostname of node",
@@ -158,6 +160,7 @@ var DebugRequestComments = map[string]string{
 	"cmd":          "Debug command",
 	"pretty":       "if possible, make output pretty",
 	"id":           "Id used internally",
+	"args":         "Additional arguments for cmd",
 }
 var DebugRequestSpecialArgs = map[string]string{}
 var DebugReplyRequiredArgs = []string{}
@@ -200,6 +203,7 @@ var DebugDataOptionalArgs = []string{
 	"requests[#].cmd",
 	"requests[#].pretty",
 	"requests[#].id",
+	"requests[#].args",
 }
 var DebugDataAliasArgs = []string{
 	"requests[#].node.name=debugdata.requests[#].node.name",
@@ -211,6 +215,7 @@ var DebugDataAliasArgs = []string{
 	"requests[#].cmd=debugdata.requests[#].cmd",
 	"requests[#].pretty=debugdata.requests[#].pretty",
 	"requests[#].id=debugdata.requests[#].id",
+	"requests[#].args=debugdata.requests[#].args",
 }
 var DebugDataComments = map[string]string{
 	"requests[#].node.name":                     "Name or hostname of node",
@@ -222,5 +227,6 @@ var DebugDataComments = map[string]string{
 	"requests[#].cmd":                           "Debug command",
 	"requests[#].pretty":                        "if possible, make output pretty",
 	"requests[#].id":                            "Id used internally",
+	"requests[#].args":                          "Additional arguments for cmd",
 }
 var DebugDataSpecialArgs = map[string]string{}
