@@ -144,6 +144,7 @@ var CreateAppInstOptionalArgs = []string{
 	"externalvolumesize",
 	"availabilityzone",
 	"vmflavor",
+	"optres",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"app-org",
@@ -196,6 +197,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"externalvolumesize",
 	"availabilityzone",
 	"vmflavor",
+	"optres",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"app-org",
@@ -225,6 +227,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"externalvolumesize",
 	"availabilityzone",
 	"vmflavor",
+	"optres",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"app-org",
@@ -253,6 +256,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"externalvolumesize",
 	"availabilityzone",
 	"vmflavor",
+	"optres",
 }
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
@@ -313,6 +317,7 @@ var AppInstOptionalArgs = []string{
 	"privacypolicy",
 	"powerstate",
 	"vmflavor",
+	"optres",
 }
 var AppInstAliasArgs = []string{
 	"fields=appinst.fields",
@@ -365,6 +370,7 @@ var AppInstAliasArgs = []string{
 	"externalvolumesize=appinst.externalvolumesize",
 	"availabilityzone=appinst.availabilityzone",
 	"vmflavor=appinst.vmflavor",
+	"optres=appinst.optres",
 }
 var AppInstComments = map[string]string{
 	"fields":                         "Fields are used for the Update API to specify which fields to apply",
@@ -409,6 +415,7 @@ var AppInstComments = map[string]string{
 	"externalvolumesize":             "Size of external volume to be attached to nodes.  This is for the root partition",
 	"availabilityzone":               "Optional Availability Zone if any",
 	"vmflavor":                       "OS node flavor to use",
+	"optres":                         "Optional Resources required by OS flavor if any",
 }
 var AppInstSpecialArgs = map[string]string{
 	"appinst.errors":                   "StringArray",
