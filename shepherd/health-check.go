@@ -98,7 +98,7 @@ func isEnvoyClusterHealthy(ctx context.Context, envoyResponse string, ports []in
 }
 
 func CheckEnvoyClusterHealth(ctx context.Context, scrapePoint *ProxyScrapePoint) {
-	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/clusters", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
+	request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/clusters", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Cluster status unknown", "request", request, "err", err.Error())
