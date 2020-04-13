@@ -51,6 +51,10 @@ openstack-tenant/agent/build
 mc/mc
 mc/mcctl/mcctl
 mc/orm/dump.sql
+mc/orm/*.csr
+mc/orm/*.pem
+mc/orm/vault.log
+mc/orm/roles.yaml
 *rbac.conf
 mc/rbac.conf
 *.postgres
@@ -58,3 +62,5 @@ ansible.auto.tfvars
 .terraform.init.done
 vault/letsencrypt-plugin/letsencrypt/version.go
 /edgebox_bin
+*.csr
+*.pem
