@@ -147,7 +147,7 @@ var ResTagTableKeyComments = map[string]string{
 var ResTagTableKeySpecialArgs = map[string]string{}
 var ResTagTableRequiredArgs = []string{
 	"res",
-	"organzation",
+	"organization",
 	"tags",
 }
 var ResTagTableOptionalArgs = []string{
@@ -156,15 +156,15 @@ var ResTagTableOptionalArgs = []string{
 var ResTagTableAliasArgs = []string{
 	"fields=restagtable.fields",
 	"res=restagtable.key.name",
-	"organzation=restagtable.key.organization",
+	"organization=restagtable.key.organization",
 	"tags=restagtable.tags",
 	"azone=restagtable.azone",
 }
 var ResTagTableComments = map[string]string{
-	"res":         "Resource Table Name",
-	"organzation": "Operator organization of the cloudlet site.",
-	"tags":        "one or more string tags",
-	"azone":       "availability zone(s) of resource if required",
+	"res":          "Resource Table Name",
+	"organization": "Operator organization of the cloudlet site.",
+	"tags":         "one or more string tags",
+	"azone":        "availability zone(s) of resource if required",
 }
 var ResTagTableSpecialArgs = map[string]string{
 	"restagtable.fields": "StringArray",
