@@ -193,7 +193,7 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	if scrapePoint.ProxyContainer == "nginx" {
 		return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
 	}
-	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/stats", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
+	request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/stats", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
@@ -263,7 +263,7 @@ func envoyConnections(ctx context.Context, respMap map[string]string, ports []in
 
 // converts the envoy stats page into a map for easy reading
 func parseEnvoyResp(ctx context.Context, resp string) map[string]string {
-	lines := strings.Split(outputTrim(resp), "\n")
+	lines := strings.Split(resp, "\n")
 	newMap := make(map[string]string)
 	for _, line := range lines {
 		keyValPair := strings.Split(line, ": ")
@@ -279,7 +279,7 @@ func parseEnvoyResp(ctx context.Context, resp string) map[string]string {
 // converts envoy cluster ouptut into a map
 // Example of cluster output string: backend8008::10.192.1.2:8008::health_flags::healthy
 func parseEnvoyClusterResp(ctx context.Context, resp string) map[string]string {
-	lines := strings.Split(outputTrim(resp), "\n")
+	lines := strings.Split(resp, "\n")
 	newMap := make(map[string]string)
 	for _, line := range lines {
 		items := strings.Split(line, "::")

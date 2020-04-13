@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -62,27 +61,15 @@ type PromAlert struct {
 	Value       PromValue
 }
 
-const platformClientHeaderSize = 3
-
-//trims the output from the Client.PlatformClient.Output request so that to get rid of the header stuff tacked on by it
-func outputTrim(output string) string {
-	lines := strings.SplitN(output, "\n", platformClientHeaderSize+1)
-	if len(lines) == 0 {
-		return ""
-	}
-	return lines[len(lines)-1]
-}
-
 func getPromMetrics(ctx context.Context, addr string, query string, client ssh.Client) (*PromResp, error) {
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
-	resp, err := client.Output("curl " + reqURI)
+	resp, err := client.Output("curl -s -S " + reqURI)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err)
 		return nil, err
 	}
-	trimmedResp := outputTrim(resp)
 	promResp := &PromResp{}
-	if err = json.Unmarshal([]byte(trimmedResp), promResp); err != nil {
+	if err = json.Unmarshal([]byte(resp), promResp); err != nil {
 		return nil, err
 	}
 	return promResp, nil
@@ -90,18 +77,17 @@ func getPromMetrics(ctx context.Context, addr string, query string, client ssh.C
 
 func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgeproto.Alert, error) {
 	reqURI := "'http://" + addr + "/api/v1/alerts'"
-	out, err := client.Output("curl " + reqURI)
+	out, err := client.Output("curl -s -S " + reqURI)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to run <%s>, %v", reqURI, err)
 	}
-	trimmedResp := outputTrim(out)
 	resp := struct {
 		Status string
 		Data   struct {
 			Alerts []PromAlert
 		}
 	}{}
-	if err = json.Unmarshal([]byte(trimmedResp), &resp); err != nil {
+	if err = json.Unmarshal([]byte(out), &resp); err != nil {
 		return nil, err
 	}
 	if resp.Status != "success" {
