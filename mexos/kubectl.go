@@ -46,7 +46,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterI
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
 		secretName, dockerServer, auth.Username, auth.Password,
 		k8smgmt.GetKconfName(clusterInst))
-	log.SpanLog(ctx, log.DebugLevelMexos, "CreateDockerRegistrySecret", "cmd", cmd)
+	log.SpanLog(ctx, log.DebugLevelMexos, "CreateDockerRegistrySecret", "secretName", secretName)
 	out, err = client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "AlreadyExists") {
