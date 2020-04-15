@@ -64,3 +64,10 @@ vault/letsencrypt-plugin/letsencrypt/version.go
 /edgebox_bin
 *.csr
 *.pem
+mgmt/vault/root-ca/openssl.cnf
+mgmt/vault/root-ca/intermediate/openssl.cnf
+mgmt/vault/root-ca/*.old
+mgmt/vault/root-ca/index.txt*
+mgmt/vault/root-ca/serial
+mgmt/vault/root-ca/intermediate/index.txt*
+mgmt/vault/root-ca/intermediate/serial
