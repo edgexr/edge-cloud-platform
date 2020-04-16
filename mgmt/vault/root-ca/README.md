@@ -54,10 +54,16 @@ vault write pki/intermediate/set-signed \
     certificate=@intermediate.cert.pem
 ```
 
-## Store the root CA certificates _very_ securely offline:
+## Store the root CA certificate and key _very_ securely offline:
 
 * `private/ca.key.pem`
 * `certs/ca.cert.pem`
+
+## Store the root CA certificate _only_ in vault
+
+```
+vault kv put secret/certs/root-ca cert=@certs/ca.cert.pem
+```
 
 ## References
 
