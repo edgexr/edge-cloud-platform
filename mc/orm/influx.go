@@ -49,6 +49,7 @@ type influxQueryArgs struct {
 	StartTime    string
 	EndTime      string
 	Last         int
+	GroupBy      string
 }
 
 var AppSelectors = []string{
@@ -217,6 +218,7 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .CellId}} AND "cellID"='{{.CellId}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
+	`{{if .GroupBy}} group by {{.GroupBy}} {{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
@@ -263,6 +265,17 @@ func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error
 }
 
 func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.Time, end *time.Time) string {
+	// We set max number of responses we will get from InfluxDB
+	if q.Last == 0 {
+		q.Last = MaxEntriesFromInfluxDb
+	} else {
+		// If last is specified but start time is not - set it to a month before now
+		// This is to limit the total number of pods
+		if start.IsZero() {
+			*start = time.Now().AddDate(0, -1, 0)
+		}
+	}
+
 	// Figure out the start/end time range for the query
 	if !start.IsZero() {
 		buf, err := start.MarshalText()
@@ -275,10 +288,6 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 		if err == nil {
 			q.EndTime = string(buf)
 		}
-	}
-	// We set max number of responses we will get from InfluxDB
-	if q.Last == 0 {
-		q.Last = MaxEntriesFromInfluxDb
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
@@ -323,6 +332,10 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
 		Last:         obj.Last,
+	}
+	// for a "last" also group by pod - this way we get the last measurement for each pod of the app
+	if obj.Last != 0 {
+		arg.GroupBy = "pod"
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
