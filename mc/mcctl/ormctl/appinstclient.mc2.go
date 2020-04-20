@@ -50,7 +50,8 @@ var AppInstClientKeyRequiredArgs = []string{
 	"cluster-org",
 }
 var AppInstClientKeyOptionalArgs = []string{
-	"uuid",
+	"uniqueid",
+	"uniqueidtype",
 }
 var AppInstClientKeyAliasArgs = []string{
 	"app-org=appinstclientkey.key.appkey.organization",
@@ -60,7 +61,8 @@ var AppInstClientKeyAliasArgs = []string{
 	"cloudlet-org=appinstclientkey.key.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinstclientkey.key.clusterinstkey.cloudletkey.name",
 	"cluster-org=appinstclientkey.key.clusterinstkey.organization",
-	"uuid=appinstclientkey.uuid",
+	"uniqueid=appinstclientkey.uniqueid",
+	"uniqueidtype=appinstclientkey.uniqueidtype",
 }
 var AppInstClientKeyComments = map[string]string{
 	"app-org":      "App developer organization",
@@ -70,7 +72,8 @@ var AppInstClientKeyComments = map[string]string{
 	"cloudlet-org": "Organization of the cloudlet site",
 	"cloudlet":     "Name of the cloudlet",
 	"cluster-org":  "Name of Developer organization that this cluster belongs to",
-	"uuid":         "AppInstClient UUID",
+	"uniqueid":     "AppInstClient Unique Id",
+	"uniqueidtype": "AppInstClient Unique Id Type",
 }
 var AppInstClientKeySpecialArgs = map[string]string{}
 var AppInstClientRequiredArgs = []string{}
@@ -82,7 +85,8 @@ var AppInstClientOptionalArgs = []string{
 	"clientkey.key.clusterinstkey.cloudletkey.organization",
 	"clientkey.key.clusterinstkey.cloudletkey.name",
 	"clientkey.key.clusterinstkey.organization",
-	"clientkey.uuid",
+	"clientkey.uniqueid",
+	"clientkey.uniqueidtype",
 	"location.latitude",
 	"location.longitude",
 	"location.horizontalaccuracy",
@@ -103,7 +107,8 @@ var AppInstClientAliasArgs = []string{
 	"clientkey.key.clusterinstkey.cloudletkey.organization=appinstclient.clientkey.key.clusterinstkey.cloudletkey.organization",
 	"clientkey.key.clusterinstkey.cloudletkey.name=appinstclient.clientkey.key.clusterinstkey.cloudletkey.name",
 	"clientkey.key.clusterinstkey.organization=appinstclient.clientkey.key.clusterinstkey.organization",
-	"clientkey.uuid=appinstclient.clientkey.uuid",
+	"clientkey.uniqueid=appinstclient.clientkey.uniqueid",
+	"clientkey.uniqueidtype=appinstclient.clientkey.uniqueidtype",
 	"location.latitude=appinstclient.location.latitude",
 	"location.longitude=appinstclient.location.longitude",
 	"location.horizontalaccuracy=appinstclient.location.horizontalaccuracy",
@@ -124,7 +129,8 @@ var AppInstClientComments = map[string]string{
 	"clientkey.key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
 	"clientkey.key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
 	"clientkey.key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
-	"clientkey.uuid":                                        "AppInstClient UUID",
+	"clientkey.uniqueid":                                    "AppInstClient Unique Id",
+	"clientkey.uniqueidtype":                                "AppInstClient Unique Id Type",
 	"location.latitude":                                     "latitude in WGS 84 coordinates",
 	"location.longitude":                                    "longitude in WGS 84 coordinates",
 	"location.horizontalaccuracy":                           "horizontal accuracy (radius in meters)",
