@@ -114,7 +114,7 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	log.SpanLog(ctx, log.DebugLevelMexos, "ok, SetupRootLB")
 
 	// set up L7 load balancer
-	client, err := s.GetPlatformClientRootLB(ctx, rootLBName)
+	client, err := s.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName})
 	if err != nil {
 		return err
 	}
@@ -130,24 +130,47 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return s.OSGetLimits(ctx, info)
 }
 
-func (s *Platform) GetPlatformClientRootLB(ctx context.Context, rootLBName string) (ssh.Client, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetPlatformClientRootLB", "rootLBName", rootLBName)
-
-	if rootLBName == "" {
-		return nil, fmt.Errorf("cannot GetPlatformClientRootLB, rootLB is empty")
-	}
-	if s.GetCloudletExternalNetwork() == "" {
-		return nil, fmt.Errorf("GetPlatformClientRootLB, missing external network in platform config")
-	}
-	return s.GetSSHClient(ctx, rootLBName, s.GetCloudletExternalNetwork(), mexos.SSHUser)
-}
-
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	rootLBName := s.rootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	return s.GetPlatformClientRootLB(ctx, rootLBName)
+	return s.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName})
+}
+
+func (s *Platform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "GetNodePlatformClient", "node", node)
+
+	if node == nil || node.Name == "" {
+		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
+	}
+	if s.GetCloudletExternalNetwork() == "" {
+		return nil, fmt.Errorf("GetNodePlatformClient, missing external network in platform config")
+	}
+	return s.GetSSHClient(ctx, node.Name, s.GetCloudletExternalNetwork(), mexos.SSHUser)
+}
+
+func (s *Platform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
+	log.SpanLog(ctx, log.DebugLevelMexos, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts)
+	mgmt_nodes := []edgeproto.CloudletMgmtNode{
+		edgeproto.CloudletMgmtNode{
+			Type: "platformvm",
+			Name: getPlatformVMName(s.cloudletKey),
+		},
+		edgeproto.CloudletMgmtNode{
+			Type: "sharedrootlb",
+			Name: s.rootLBName,
+		},
+	}
+	for _, clusterInst := range clusterInsts {
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
+				Type: "dedicatedrootlb",
+				Name: cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey),
+			})
+		}
+	}
+	return mgmt_nodes, nil
 }
 
 func getRootLBName(key *edgeproto.CloudletKey) string {

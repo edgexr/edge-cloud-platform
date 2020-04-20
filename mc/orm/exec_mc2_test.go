@@ -63,3 +63,17 @@ func goodPermShowLogs(t *testing.T, mcClient *ormclient.Client, uri, token, regi
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
+
+var _ = edgeproto.GetFields
+
+func badPermAccessCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermAccessCloudlet(mcClient, uri, token, region, org)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermAccessCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermAccessCloudlet(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}

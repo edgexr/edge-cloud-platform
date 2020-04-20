@@ -36,7 +36,7 @@ func NewClusterWorker(ctx context.Context, promAddr string, interval time.Durati
 	p.interval = interval
 	p.send = send
 	p.clusterInstKey = clusterInst.Key
-	p.client, err = pf.GetPlatformClient(ctx, clusterInst)
+	p.client, err = pf.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		// If we cannot get a platform client no point in trying to get metrics
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)

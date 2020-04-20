@@ -87,6 +87,14 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return s.generic.GatherCloudletInfo(ctx, info)
 }
 
-func (s *Platform) GetPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
-	return s.generic.GetPlatformClient(ctx, clusterInst)
+func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+	return s.generic.GetClusterPlatformClient(ctx, clusterInst)
+}
+
+func (s *Platform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
+	return s.generic.GetNodePlatformClient(ctx, node)
+}
+
+func (s *Platform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
+	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts)
 }

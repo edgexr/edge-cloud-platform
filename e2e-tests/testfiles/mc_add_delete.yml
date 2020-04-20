@@ -80,6 +80,11 @@ tests:
   apifile: '{{datadir2}}/mc_showlogs.yml'
   curuserfile: '{{datadir2}}/mc_user2.yml'
 
+- name: test AccessCloudlet
+  actions: [mcapi-accesscloudlet]
+  apifile: '{{datadir2}}/mc_accesscloudlet.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
 - name: test ShowNodes
   actions: [mcapi-nodeshow]
   curuserfile: '{{datadir2}}/mc_admin.yml'

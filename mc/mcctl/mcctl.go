@@ -31,6 +31,8 @@ func main() {
 	consoleCmd := ormctl.GetRunConsoleCmd()
 	consoleCmd.PersistentFlags().BoolVar(&ormctl.McProxy, "mcproxy", false, "use MC as proxy for WebRTC connection")
 	regionCmds.AddCommand(consoleCmd)
+	accessCmd := ormctl.GetAccessCloudletCmd()
+	regionCmds.AddCommand(accessCmd)
 
 	rootCmd.AddCommand(regionCmds)
 	rootCmd.AddCommand(ormctl.GetConfigCommand())

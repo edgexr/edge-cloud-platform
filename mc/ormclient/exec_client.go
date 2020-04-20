@@ -80,6 +80,26 @@ func (s *Client) ShowLogsStream(uri, token string, in *ormapi.RegionExecRequest)
 	return outlist, status, err
 }
 
+func (s *Client) AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
+	out := edgeproto.ExecRequest{}
+	status, err := s.PostJson(uri+"/auth/ctrl/AccessCloudlet", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+func (s *Client) AccessCloudletStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error) {
+	out := ormapi.WSStreamPayload{}
+	outlist := []ormapi.WSStreamPayload{}
+	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
+		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
+	}
+	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/AccessCloudlet", token, in, &out, func() {
+		outlist = append(outlist, out)
+	})
+	return outlist, status, err
+}
+
 type ExecApiClient interface {
 	RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
 	RunCommandStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
@@ -87,4 +107,6 @@ type ExecApiClient interface {
 	RunConsoleStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 	ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
 	ShowLogsStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
+	AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
+	AccessCloudletStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 }

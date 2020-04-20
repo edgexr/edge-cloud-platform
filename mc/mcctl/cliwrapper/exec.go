@@ -21,3 +21,11 @@ func (s *Client) ShowLogsOut(uri, token string, in *ormapi.RegionExecRequest) (s
 	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	return out, err
 }
+
+func (s *Client) AccessCloudletOut(uri, token string, in *ormapi.RegionExecRequest) (string, error) {
+	args := []string{"region", "AccessCloudlet"}
+	var out string
+	noconfig := strings.Split("Offer,Answer,Err", ",")
+	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	return out, err
+}

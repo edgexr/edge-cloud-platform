@@ -55,6 +55,8 @@ func RunWebrtcStream(c echo.Context) error {
 			reply, err = ShowLogsObj(ctx, rc, &in.ExecRequest)
 		} else if strings.HasSuffix(c.Path(), "ctrl/RunConsole") {
 			reply, err = RunConsoleObj(ctx, rc, &in.ExecRequest)
+		} else if strings.HasSuffix(c.Path(), "ctrl/AccessCloudlet") {
+			reply, err = AccessCloudletObj(ctx, rc, &in.ExecRequest)
 		} else {
 			return nil, nil, echo.ErrNotFound
 		}

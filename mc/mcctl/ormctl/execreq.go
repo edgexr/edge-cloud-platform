@@ -33,6 +33,11 @@ func GetShowLogsCmd() *cobra.Command {
 	return ShowLogsCmd.GenCmd()
 }
 
+func GetAccessCloudletCmd() *cobra.Command {
+	AccessCloudletCmd.Run = runExecRequest("/auth/ctrl/AccessCloudlet")
+	return AccessCloudletCmd.GenCmd()
+}
+
 func runExecRequest(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		input := cli.Input{

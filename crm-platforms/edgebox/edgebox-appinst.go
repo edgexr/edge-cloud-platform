@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
-	client, err := s.generic.GetPlatformClient(ctx, clusterInst)
+	client, err := s.generic.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	var err error
-	client, err := s.generic.GetPlatformClient(ctx, clusterInst)
+	client, err := s.generic.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}

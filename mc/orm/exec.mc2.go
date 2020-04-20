@@ -163,3 +163,48 @@ func ShowLogsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequ
 	api := edgeproto.NewExecApiClient(rc.conn)
 	return api.ShowLogs(ctx, obj)
 }
+
+func AccessCloudlet(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionExecRequest{}
+	if err := c.Bind(&in); err != nil {
+		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+	}
+	rc.region = in.Region
+	resp, err := AccessCloudletObj(ctx, rc, &in.ExecRequest)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
+	return setReply(c, err, resp)
+}
+
+func AccessCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, "",
+			ResourceCloudlets, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewExecApiClient(rc.conn)
+	return api.AccessCloudlet(ctx, obj)
+}

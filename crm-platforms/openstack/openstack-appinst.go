@@ -34,7 +34,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			rootLBName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 			log.SpanLog(ctx, log.DebugLevelMexos, "using dedicated RootLB to create app", "rootLBName", rootLBName)
 		}
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -251,7 +251,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 			updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
 			var proxyOps []proxy.Op
-			client, err := s.GetPlatformClientRootLB(ctx, externalServerName)
+			client, err := s.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: externalServerName})
 			if err != nil {
 				return err
 			}
@@ -303,7 +303,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		rootLBName := s.rootLBName
 		backendIP := cloudcommon.RemoteServerNone
 		dockerNetworkMode := dockermgmt.DockerBridgeMode
-		rootLBClient, err := s.GetPlatformClient(ctx, clusterInst)
+		rootLBClient, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -412,7 +412,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 				return err
 			}
 		}
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -490,7 +490,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	case cloudcommon.AppDeploymentTypeDocker:
 		rootLBName := s.rootLBName
-		rootLBClient, err := s.GetPlatformClient(ctx, clusterInst)
+		rootLBClient, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -525,7 +525,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			}
 			return err
 		}
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -560,7 +560,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.AppDeploymentTypeKubernetes:
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -571,7 +571,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		return k8smgmt.UpdateAppInst(ctx, s.vaultConfig, client, names, app, appInst)
 	case cloudcommon.AppDeploymentTypeDocker:
 		dockerNetworkMode := dockermgmt.DockerBridgeMode
-		rootLBClient, err := s.GetPlatformClient(ctx, clusterInst)
+		rootLBClient, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -592,7 +592,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		return dockermgmt.UpdateAppInst(ctx, s.vaultConfig, dockerCommandTarget, app, appInst, dockerNetworkMode)
 	case cloudcommon.AppDeploymentTypeHelm:
-		client, err := s.GetPlatformClient(ctx, clusterInst)
+		client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
 		}
@@ -609,7 +609,7 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 
-	client, err := s.GetPlatformClient(ctx, clusterInst)
+	client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}

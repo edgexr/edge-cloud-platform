@@ -86,6 +86,7 @@ It has these top-level messages:
 	DeviceReport
 	DeviceKey
 	Device
+	CloudletMgmtNode
 	RunCmd
 	RunVMConsole
 	ShowLog
@@ -1300,6 +1301,16 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowLogs", ShowLogs)
+	// swagger:route POST /auth/ctrl/AccessCloudlet ExecRequest AccessCloudlet
+	// Access Cloudlet VM.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/AccessCloudlet", AccessCloudlet)
 	// swagger:route POST /auth/ctrl/ShowCloudletRefs CloudletRefs ShowCloudletRefs
 	// Show CloudletRefs (debug only).
 	// Security:
