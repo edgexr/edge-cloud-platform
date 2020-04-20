@@ -44,3 +44,10 @@ type swaggerShowLogs struct {
 	// in: body
 	Body RegionExecRequest
 }
+
+// Request summary for AccessCloudlet
+// swagger:parameters AccessCloudlet
+type swaggerAccessCloudlet struct {
+	// in: body
+	Body RegionExecRequest
+}

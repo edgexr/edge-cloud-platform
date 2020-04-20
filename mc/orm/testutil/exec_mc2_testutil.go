@@ -56,6 +56,17 @@ func TestPermShowLogs(mcClient *ormclient.Client, uri, token, region, org string
 	return TestShowLogs(mcClient, uri, token, region, in)
 }
 
+func TestAccessCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, int, error) {
+	dat := &ormapi.RegionExecRequest{}
+	dat.Region = region
+	dat.ExecRequest = *in
+	return mcClient.AccessCloudlet(uri, token, dat)
+}
+func TestPermAccessCloudlet(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.ExecRequest, int, error) {
+	in := &edgeproto.ExecRequest{}
+	return TestAccessCloudlet(mcClient, uri, token, region, in)
+}
+
 func (s *TestClient) RunCommand(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
 	inR := &ormapi.RegionExecRequest{
 		Region:      s.Region,
@@ -86,6 +97,18 @@ func (s *TestClient) ShowLogs(ctx context.Context, in *edgeproto.ExecRequest) (*
 		ExecRequest: *in,
 	}
 	out, status, err := s.McClient.ShowLogs(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AccessCloudlet(ctx context.Context, in *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+	inR := &ormapi.RegionExecRequest{
+		Region:      s.Region,
+		ExecRequest: *in,
+	}
+	out, status, err := s.McClient.AccessCloudlet(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

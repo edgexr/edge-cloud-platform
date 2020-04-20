@@ -123,7 +123,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 			return
 		}
 		var err error
-		scrapePoint.Client, err = myPlatform.GetPlatformClient(ctx, &clusterInst)
+		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, &clusterInst)
 		if err != nil {
 			// If we cannot get a platform client no point in trying to get metrics
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)

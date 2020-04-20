@@ -43,7 +43,7 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(s.cloudletKey, &clusterInst.Key.ClusterKey)
 	}
-	client, err := s.GetPlatformClient(ctx, clusterInst)
+	client, err := s.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}

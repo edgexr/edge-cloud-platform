@@ -59,6 +59,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "showlogs" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+	} else if api == "accesscloudlet" {
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "nodeshow" {
 		return runMcShowNode(uri, curUserFile, outputDir, vars)
 	} else if strings.HasPrefix(api, "debug") {
@@ -600,6 +602,8 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 		var out string
 		if api == "runcommand" {
 			out, err = client.RunCommandOut(uri, token, &data.Request)
+		} else if api == "accesscloudlet" {
+			out, err = client.AccessCloudletOut(uri, token, &data.Request)
 		} else {
 			out, err = client.ShowLogsOut(uri, token, &data.Request)
 		}
@@ -629,6 +633,9 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 		var err error
 		if api == "runcommand" {
 			streamOut, status, err = client.RunCommandStream(wsUri, token, &data.Request)
+		} else if api == "accesscloudlet" {
+			// this command is to be run internally, hence websocket support is not required
+			return true
 		} else {
 			streamOut, status, err = client.ShowLogsStream(wsUri, token, &data.Request)
 		}

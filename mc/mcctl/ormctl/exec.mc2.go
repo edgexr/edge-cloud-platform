@@ -56,10 +56,23 @@ var ShowLogsCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/ShowLogs"),
 }
 
+var AccessCloudletCmd = &cli.Command{
+	Use:          "AccessCloudlet",
+	RequiredArgs: "region " + strings.Join(AccessCloudletRequiredArgs, " "),
+	OptionalArgs: strings.Join(AccessCloudletOptionalArgs, " "),
+	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
+	SpecialArgs:  &ExecRequestSpecialArgs,
+	Comments:     addRegionComment(ExecRequestComments),
+	ReqData:      &ormapi.RegionExecRequest{},
+	ReplyData:    &edgeproto.ExecRequest{},
+	Run:          runRest("/auth/ctrl/AccessCloudlet"),
+}
+
 var ExecApiCmds = []*cli.Command{
 	RunCommandCmd,
 	RunConsoleCmd,
 	ShowLogsCmd,
+	AccessCloudletCmd,
 }
 
 var RunCommandRequiredArgs = []string{
@@ -74,6 +87,8 @@ var RunCommandRequiredArgs = []string{
 var RunCommandOptionalArgs = []string{
 	"cluster-org",
 	"containerid",
+	"node-type",
+	"node-name",
 	"webrtc",
 }
 var RunConsoleRequiredArgs = []string{
@@ -86,7 +101,6 @@ var RunConsoleRequiredArgs = []string{
 }
 var RunConsoleOptionalArgs = []string{
 	"cluster-org",
-	"containerid",
 	"webrtc",
 }
 var ShowLogsRequiredArgs = []string{
@@ -106,15 +120,45 @@ var ShowLogsOptionalArgs = []string{
 	"follow",
 	"webrtc",
 }
+var AccessCloudletRequiredArgs = []string{
+	"cloudlet-org",
+	"cloudlet",
+}
+var AccessCloudletOptionalArgs = []string{
+	"command",
+	"node-type",
+	"node-name",
+	"webrtc",
+}
+var CloudletMgmtNodeRequiredArgs = []string{}
+var CloudletMgmtNodeOptionalArgs = []string{
+	"type",
+	"name",
+}
+var CloudletMgmtNodeAliasArgs = []string{
+	"type=cloudletmgmtnode.type",
+	"name=cloudletmgmtnode.name",
+}
+var CloudletMgmtNodeComments = map[string]string{
+	"type": "Type of Cloudlet Mgmt Node",
+	"name": "Name of Cloudlet Mgmt Node",
+}
+var CloudletMgmtNodeSpecialArgs = map[string]string{}
 var RunCmdRequiredArgs = []string{}
 var RunCmdOptionalArgs = []string{
 	"command",
+	"cloudletmgmtnode.type",
+	"cloudletmgmtnode.name",
 }
 var RunCmdAliasArgs = []string{
 	"command=runcmd.command",
+	"cloudletmgmtnode.type=runcmd.cloudletmgmtnode.type",
+	"cloudletmgmtnode.name=runcmd.cloudletmgmtnode.name",
 }
 var RunCmdComments = map[string]string{
-	"command": "Command or Shell",
+	"command":               "Command or Shell",
+	"cloudletmgmtnode.type": "Type of Cloudlet Mgmt Node",
+	"cloudletmgmtnode.name": "Name of Cloudlet Mgmt Node",
 }
 var RunCmdSpecialArgs = map[string]string{}
 var RunVMConsoleRequiredArgs = []string{}
@@ -160,6 +204,8 @@ var ExecRequestRequiredArgs = []string{
 var ExecRequestOptionalArgs = []string{
 	"containerid",
 	"command",
+	"node-type",
+	"node-name",
 	"since",
 	"tail",
 	"timestamps",
@@ -179,6 +225,8 @@ var ExecRequestAliasArgs = []string{
 	"answer=execrequest.answer",
 	"err=execrequest.err",
 	"command=execrequest.cmd.command",
+	"node-type=execrequest.cmd.cloudletmgmtnode.type",
+	"node-name=execrequest.cmd.cloudletmgmtnode.name",
 	"since=execrequest.log.since",
 	"tail=execrequest.log.tail",
 	"timestamps=execrequest.log.timestamps",
@@ -202,6 +250,8 @@ var ExecRequestComments = map[string]string{
 	"answer":       "WebRTC Answer",
 	"err":          "Any error message",
 	"command":      "Command or Shell",
+	"node-type":    "Type of Cloudlet Mgmt Node",
+	"node-name":    "Name of Cloudlet Mgmt Node",
 	"since":        "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
 	"tail":         "Show only a recent number of lines",
 	"timestamps":   "Show timestamps",
