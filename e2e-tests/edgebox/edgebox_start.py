@@ -27,6 +27,9 @@ OutputDir = "/tmp/edgebox_out"
 DefaultLatitude = 33.01
 DefaultLongitude = -96.61
 Vault = None
+Orgs = None
+Roles = None
+CloudletOrgRoleReqd = "OperatorManager"
 
 Edgectl = None
 Varsfile = "./edgebox_vars.yml"
@@ -35,6 +38,9 @@ CreateTestfile = "../testfiles/edgebox_create.yml"
 DeployTestfile = "../testfiles/edgebox_deploy.yml"
 
 EdgevarData = None
+
+# Reserved cloudlet names (lowercase)
+ReservedCloudletOrgs = ( "edgebox" )
 
 # Handle incompatibility between Pythons 2 and 3
 try:
@@ -65,10 +71,26 @@ def getMcToken(mc, user, password):
 
     return token
 
-def getRegions(mc, token):
+def getMc(mc, token):
+    headers = {
+        "Accept": "application/json",
+        "Authorization": "Bearer " + token,
+    }
+    mcapibase = "https://{0}/api/v1/auth/".format(mc)
+
+    def mcapi(path, method="POST", data={}, **kwargs):
+        if not data:
+            data = kwargs
+        r = requests.request(method, mcapibase + path,
+                             headers=headers,
+                             json=data)
+        return r
+
+    return mcapi
+
+def getRegions(mcapi):
     try:
-        r = requests.post("https://{0}/api/v1/auth/controller/show".format(mc),
-                          headers={"Authorization": "Bearer " + token})
+        r = mcapi("controller/show")
         regions = {}
         for ctrl in r.json():
             regions[ctrl["Region"]] = ctrl["Address"]
@@ -76,6 +98,25 @@ def getRegions(mc, token):
         sys.exit("Failed to load regions: {0}".format(e))
 
     return regions
+
+def getOrgs(mcapi):
+    try:
+        orgs = {}
+        r = mcapi("org/show")
+        for org in r.json():
+            orgs[org["Name"]] = org["Type"]
+    except Exception as e:
+        sys.exit("Failed to load orgs: {0}".format(e))
+
+    return orgs
+
+def getRoles(mcapi):
+    try:
+        r = mcapi("role/assignment/show")
+    except Exception as e:
+        sys.exit("Failed to load roles: {0}".format(e))
+
+    return r.json()
 
 def getLocDefaults():
     try:
@@ -140,17 +181,26 @@ def yesOrNo(question):
     else:
         return yesOrNo("please enter")
 
-def prompt(text, defval):
-   prompttxt = text
-   if defval != "":
-      prompttxt += " ("+str(defval)+")"
-   reply = str(input(prompttxt+": ")).lower().strip()
+def prompt(text, defval, lowercase=False, validate=None, errmsg=None):
+    prompttxt = text
+    if defval:
+        prompttxt += " ({})".format(defval)
+    prompttxt += ": "
 
-   if reply == "":
-      if defval == "":
-        return prompt(text, defval)
-      return defval      
-   return reply
+    reply = None
+    while not reply:
+        reply = str(input(prompttxt)).strip()
+        if lowercase:
+            reply = reply.lower()
+        if not reply and defval:
+            reply = defval
+        if validate:
+            vresp = validate(reply)
+            if vresp is not True:
+                reply = None
+                if vresp:
+                    print(vresp)
+    return reply
 
 def saveConfig():
     global Mc
@@ -199,11 +249,13 @@ def getConfig():
    global EdgevarData
    global OutputDir
    global Vault
+   global Orgs
+   global Roles
 
    done = False
    while not done:
      print("\n")
-     Mc = prompt("Enter Master controller address", Mc)
+     Mc = prompt("Enter Master controller address", Mc, lowercase=True)
 
      # Compute vault path from MC
      m = re.match(r'console([^\.]*)\.', Mc)
@@ -219,23 +271,59 @@ def getConfig():
 
      print("Logging in to MC...")
      token = getMcToken(Mc, Mcuser, Mcpass)
+     mcapi = getMc(Mc, token)
 
      print("Loading regions...")
-     regions = getRegions(Mc, token)
+     regions = getRegions(mcapi)
      region_codes = sorted(regions.keys())
+
+     print("Loading orgs...")
+     Orgs = getOrgs(mcapi)
+
+     print("Loading roles...")
+     Roles = getRoles(mcapi)
 
      if Region == "UNSET":
          Region = ''
 
      while True:
-         Region = prompt("Pick region (one of: {0})".format(", ".join(region_codes)), Region).upper()
+         Region = prompt("Pick region (one of: {0})".format(", ".join(region_codes)), Region)
          if Region in region_codes:
              break
          print("Unknown region: " + Region)
          Region = ''
 
      Controller = regions[Region].split(':')[0]
-     CloudletOrg = prompt("Enter cloudlet org", CloudletOrg)
+
+     def role_match(role, org, user):
+         if role["org"] == org and role["username"] == user \
+                 and role["role"] == "OperatorManager":
+             return True
+         return False
+
+
+     def validate_cloudlet_org(corg):
+         if corg.lower() in ReservedCloudletOrgs:
+             return "Sorry, {0} is a reserved org. Please pick another.".format(corg)
+         if corg not in Orgs:
+             return "Org does not exist: {0}".format(corg)
+         if Orgs[corg] != "operator":
+             return "Not an operator org: {0}".format(corg)
+
+         found_role = False
+         for r in Roles:
+             if r["org"] == corg \
+                     and r["username"] == Mcuser \
+                     and r["role"] == CloudletOrgRoleReqd:
+                 found_role = True
+                 break
+         if not found_role:
+             return "User \"{0}\" not {1} in org \"{2}\"".format(
+                 Mcuser, CloudletOrgRoleReqd, corg)
+
+         return True
+
+     CloudletOrg = prompt("Enter cloudlet org", CloudletOrg, validate=validate_cloudlet_org)
 
      if Cloudlet == "UNSET":
          Cloudlet = "hackathon-" + re.sub(r'\W+', '-', getpass.getuser())
