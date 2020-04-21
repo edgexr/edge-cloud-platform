@@ -135,6 +135,7 @@ build-edgebox:
 	rsync -a $(GOPATH)/bin/crmserver \
 		 $(GOPATH)/bin/e2e-tests \
 		 $(GOPATH)/bin/edgectl \
+		 $(GOPATH)/bin/mcctl \
 		 $(GOPATH)/bin/test-mex \
 		 $(GOPATH)/bin/test-mex-infra \
 		 edgebox_bin/bin

@@ -14,6 +14,10 @@ die() {
 	exit 2
 }
 
+warn() {
+	echo -e "$*" >&2
+}
+
 setup() {
 	echo "Checking requirements..."
 
@@ -50,6 +54,26 @@ setup() {
 		break
 	done
 	[[ -z "$PYTHON" ]] && die "Python 3 not found"
+
+	# Ensure additional dependencies are present
+	MISSING=()
+	for DEP in wget:wget \
+		   sha1sum:md5sha1sum \
+		   helm:kubernetes-helm; do
+		DEPBIN=${DEP%:*}
+		type -p "$DEPBIN" >/dev/null 2>&1 || MISSING+=( "$DEP" )
+	done
+
+	if [[ ! -z "$MISSING" ]]; then
+		for DEP in "${MISSING[@]}"; do
+			DEPBIN=${DEP%:*}
+			DEPPKG=${DEP#*:}
+			warn "Missing dependencies:"
+			warn "- $DEPBIN (install using \"brew install $DEPPKG\")"
+		done
+		warn "\nInstructions on installing brew: https://brew.sh/"
+		exit 1
+	fi
 
 	# Ensure that the Python 3 venv is present
 	VENV_DIR="$GOPATH/venv"
