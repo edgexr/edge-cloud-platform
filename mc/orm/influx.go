@@ -83,7 +83,6 @@ var ClientSelectors = []string{
 var AppFields = []string{
 	"\"app\"",
 	"\"ver\"",
-	"\"pod\"",
 	"\"cluster\"",
 	"\"clusterorg\"",
 	"\"cloudlet\"",
