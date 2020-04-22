@@ -147,8 +147,12 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, vaultConfig *vault
 		if _, ok := c.envVars[envData.Name]; ok {
 			c.envVars[envData.Name].Value = envData.Value
 		} else {
+			// quick fix for EDGECLOUD-2572.  Assume the mexenv.json item is secret if we have
+			// not defined it one way or another in code, of if the props that defines it is not
+			// run (e.g. an Azure property defined in mexenv.json when we are running openstack)
 			c.envVars[envData.Name] = &PropertyInfo{
-				Value: envData.Value,
+				Value:  envData.Value,
+				Secret: true,
 			}
 		}
 	}
