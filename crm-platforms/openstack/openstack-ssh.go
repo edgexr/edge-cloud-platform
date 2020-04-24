@@ -3,6 +3,7 @@ package openstack
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
@@ -124,4 +125,31 @@ func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
 	defer sessionInfo.CloseAll()
 	err = scp.CopyPath(srcPath, dstPath, session)
 	return err
+}
+
+// WaitServerSSHReachable waits up to the specified duration for the server to be reachable via
+// SSH. The server passed here is just for logging it can be an ip or a name
+func WaitServerSSHReachable(ctx context.Context, client ssh.Client, server string, timeout time.Duration) error {
+	log.SpanLog(ctx, log.DebugLevelMexos, "WaitServerSSHReachable", "server", server)
+	start := time.Now()
+	for {
+		out, err := client.Output(fmt.Sprintf("whoami"))
+		if err == nil {
+			break
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMexos, "error waiting for server", "out", out, "error", err)
+			if strings.Contains(err.Error(), "ssh client timeout") || strings.Contains(err.Error(), "ssh dial fail") {
+				elapsed := time.Since(start)
+				if elapsed > timeout {
+					return fmt.Errorf("timed out connecting to VM %s", server)
+				}
+				log.SpanLog(ctx, log.DebugLevelMexos, "sleeping 10 seconds before retry", "elapsed", elapsed)
+				time.Sleep(10 * time.Second)
+			} else {
+				return fmt.Errorf("WaitServerSSHReachable fail: server :%s is unreachable: %v, %s\n", server, err, out)
+			}
+		}
+	}
+	log.SpanLog(ctx, log.DebugLevelMexos, "WaitServerSSHReachable OK", "server", server)
+	return nil
 }

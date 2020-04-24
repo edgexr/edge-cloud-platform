@@ -238,12 +238,18 @@ func setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfn
 func (s *Platform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, externalIPAddr, internalPortName, internalIPAddr string, action string) error {
 
 	log.SpanLog(ctx, log.DebugLevelMexos, "configureInternalInterfaceAndExternalForwarding", "externalIPAddr", externalIPAddr, "internalPortName", internalPortName, "internalIPAddr", internalIPAddr)
-
 	// list the ports so we can find the internal and external port macs
 	ports, err := s.ListPorts(ctx)
 	if err != nil {
 		return err
 	}
+
+	err = WaitServerSSHReachable(ctx, client, externalIPAddr, time.Minute*1)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMexos, "server not reachable", "err", err)
+		return err
+	}
+
 	internalPortMac := ""
 	externalPortMac := ""
 	for _, p := range ports {
