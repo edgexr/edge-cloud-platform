@@ -380,7 +380,11 @@ resources:
         {{- end}}
       {{- end}}
       {{- if not .ExternalVolumeSize}}
+        {{- if .VMAppParams}}
+         image: {{.VMAppParams.ImageName}}
+        {{else}}
          image: {{.ImageName}}
+        {{- end}}
       {{- end}}
          flavor: {{.MasterNodeFlavor}}
          config_drive: true
