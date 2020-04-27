@@ -44,7 +44,7 @@ type CommonPlatform struct {
 	mappedExternalIPs map[string]string
 }
 
-var MEXInfraVersion = "3.1.0"
+var MEXInfraVersion = "3.1.1"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 var ImageFormatQcow2 = "qcow2"
