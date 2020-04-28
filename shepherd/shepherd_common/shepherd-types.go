@@ -2,10 +2,13 @@ package shepherd_common
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
+
+const ShepherdSshConnectTimeout = time.Second * 3
 
 // Prerequisite - install small edge-cloud utility on the VM running this docker containers
 var ResTrackerCmd = "resource-tracker"

@@ -194,7 +194,7 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 		return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
 	}
 	request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/stats", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
-	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
+	resp, err := scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
 		// Also this means that we need to notify the controller that this AppInst is no longer recheable
@@ -353,7 +353,7 @@ func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	defer span.Finish()
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
-	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
+	resp, err := scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
 	// if this is the first time, or the container got restarted, install curl (for old deployments)
 	if strings.Contains(resp, "executable file not found") {
 		log.SpanLog(ctx, log.DebugLevelMexos, "Installing curl onto docker container ", "Container", scrapePoint.App)
@@ -363,7 +363,7 @@ func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 			return nil, fmt.Errorf("can't install curl on nginx container %s, %s, %v", *name, resp, err)
 		}
 		// now retry curling
-		resp, err = scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
+		resp, err = scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
 	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run request", "request", request, "err", err.Error())
