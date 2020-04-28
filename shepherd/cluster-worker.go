@@ -72,6 +72,12 @@ func (p *ClusterWorker) Start(ctx context.Context) {
 func (p *ClusterWorker) Stop(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Stopping ClusterWorker thread\n")
 	close(p.stop)
+	// For dedicated clusters try to clean up ssh client cache
+	cluster := edgeproto.ClusterInst{}
+	found := ClusterInstCache.Get(&p.clusterInstKey, &cluster)
+	if found && cluster.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		p.client.StopPersistentConn()
+	}
 	p.waitGrp.Wait()
 	flushAlerts(ctx, &p.clusterInstKey)
 }

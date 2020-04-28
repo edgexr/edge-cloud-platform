@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	HealthCheckEnvoyOk              = "healthy"
-	HealthCheckEnvoyFail            = "/failed_active_hc"
-	HealthCheckRootLbConnectTimeout = time.Second * 3
+	HealthCheckEnvoyOk   = "healthy"
+	HealthCheckEnvoyFail = "/failed_active_hc"
 )
 
 func SetupHealthCheckSpan(appInstKey *edgeproto.AppInstKey) (opentracing.Span, context.Context) {
@@ -99,7 +98,7 @@ func isEnvoyClusterHealthy(ctx context.Context, envoyResponse string, ports []in
 
 func CheckEnvoyClusterHealth(ctx context.Context, scrapePoint *ProxyScrapePoint) {
 	request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/clusters", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
-	resp, err := scrapePoint.Client.OutputWithTimeout(request, HealthCheckRootLbConnectTimeout)
+	resp, err := scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Cluster status unknown", "request", request, "err", err.Error())
 		return
