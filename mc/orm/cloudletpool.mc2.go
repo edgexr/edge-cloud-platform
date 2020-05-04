@@ -5,7 +5,6 @@ package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
-import "net/http"
 import "context"
 import "io"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -35,7 +34,7 @@ func CreateCloudletPool(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPool{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := CreateCloudletPoolObj(ctx, rc, &in.CloudletPool)
@@ -80,7 +79,7 @@ func DeleteCloudletPool(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPool{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := DeleteCloudletPoolObj(ctx, rc, &in.CloudletPool)
@@ -208,7 +207,7 @@ func CreateCloudletPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := CreateCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)
@@ -253,7 +252,7 @@ func DeleteCloudletPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := DeleteCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)

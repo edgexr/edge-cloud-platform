@@ -49,6 +49,7 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		client.Debug = cli.Debug
 
 		if client.McProxy {
 			out := ormapi.WSStreamPayload{}

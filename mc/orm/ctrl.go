@@ -3,7 +3,6 @@ package orm
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -82,7 +81,7 @@ func CreateController(c echo.Context) error {
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid Post data"))
+		return bindErr(c, err)
 	}
 	err = CreateControllerObj(ctx, claims, &ctrl)
 	return setReply(c, err, Msg("Controller registered"))
@@ -115,7 +114,7 @@ func DeleteController(c echo.Context) error {
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid Post data"))
+		return bindErr(c, err)
 	}
 	err = DeleteControllerObj(ctx, claims, &ctrl)
 	return setReply(c, err, Msg("Controller deregistered"))

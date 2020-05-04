@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -38,7 +37,7 @@ func CreateOrgCloudletPool(c echo.Context) error {
 	ctx := GetContext(c)
 	op := ormapi.OrgCloudletPool{}
 	if err := c.Bind(&op); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", op.Org)
@@ -128,7 +127,7 @@ func DeleteOrgCloudletPool(c echo.Context) error {
 	ctx := GetContext(c)
 	op := ormapi.OrgCloudletPool{}
 	if err := c.Bind(&op); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", op.Org)

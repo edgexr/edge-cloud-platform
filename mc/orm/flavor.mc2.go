@@ -5,7 +5,6 @@ package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
-import "net/http"
 import "context"
 import "io"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -35,7 +34,7 @@ func CreateFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := CreateFlavorObj(ctx, rc, &in.Flavor)
@@ -80,7 +79,7 @@ func DeleteFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := DeleteFlavorObj(ctx, rc, &in.Flavor)
@@ -125,7 +124,7 @@ func UpdateFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := UpdateFlavorObj(ctx, rc, &in.Flavor)
@@ -237,7 +236,7 @@ func AddFlavorRes(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := AddFlavorResObj(ctx, rc, &in.Flavor)
@@ -282,7 +281,7 @@ func RemoveFlavorRes(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := RemoveFlavorResObj(ctx, rc, &in.Flavor)

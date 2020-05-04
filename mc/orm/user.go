@@ -54,7 +54,7 @@ func Login(c echo.Context) error {
 	ctx := GetContext(c)
 	login := ormapi.UserLogin{}
 	if err := c.Bind(&login); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	if login.Username == "" {
 		return c.JSON(http.StatusBadRequest, Msg("Username not specified"))
@@ -106,7 +106,7 @@ func CreateUser(c echo.Context) error {
 	ctx := GetContext(c)
 	createuser := ormapi.CreateUser{}
 	if err := c.Bind(&createuser); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	user := createuser.User
 	if user.Name == "" {
@@ -194,7 +194,7 @@ func ResendVerify(c echo.Context) error {
 
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
@@ -206,7 +206,7 @@ func VerifyEmail(c echo.Context) error {
 	ctx := GetContext(c)
 	tok := ormapi.Token{}
 	if err := c.Bind(&tok); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	claims := EmailClaims{}
 	token, err := Jwks.VerifyCookie(tok.Token, &claims)
@@ -243,7 +243,7 @@ func DeleteUser(c echo.Context) error {
 
 	user := ormapi.User{}
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	if user.Name == "" {
 		return c.JSON(http.StatusBadRequest, Msg("User Name not specified"))
@@ -348,7 +348,7 @@ func ShowUser(c echo.Context) error {
 	filter := ormapi.Organization{}
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&filter); err != nil {
-			return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+			return bindErr(c, err)
 		}
 	}
 	users := []ormapi.User{}
@@ -403,7 +403,7 @@ func NewPassword(c echo.Context) error {
 	}
 	in := ormapi.NewPassword{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	return setPassword(c, claims.Username, in.Password)
 }
@@ -431,7 +431,7 @@ func PasswordResetRequest(c echo.Context) error {
 	ctx := GetContext(c)
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
@@ -488,7 +488,7 @@ func PasswordResetRequest(c echo.Context) error {
 func PasswordReset(c echo.Context) error {
 	pw := ormapi.PasswordReset{}
 	if err := c.Bind(&pw); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	claims := EmailClaims{}
 	token, err := Jwks.VerifyCookie(pw.Token, &claims)

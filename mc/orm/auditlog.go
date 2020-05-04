@@ -171,7 +171,7 @@ func ShowAuditSelf(c echo.Context) error {
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 
 	tags := make(map[string]string)
@@ -197,7 +197,7 @@ func ShowAuditOrg(c echo.Context) error {
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 
 	if err := authorized(ctx, claims.Username, query.Org, ResourceUsers, ActionView, withShowAudit()); err != nil {
