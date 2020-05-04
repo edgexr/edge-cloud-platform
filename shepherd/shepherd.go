@@ -168,7 +168,7 @@ func getPlatform() (platform.Platform, error) {
 	case "PLATFORM_TYPE_EDGEBOX":
 		plat = &shepherd_edgebox.Platform{}
 	case "PLATFORM_TYPE_OPENSTACK":
-		plat = &shepherd_openstack.Platform{}
+		plat = &shepherd_openstack.ShepherdPlatform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		plat = &shepherd_fake.Platform{}
 	default:

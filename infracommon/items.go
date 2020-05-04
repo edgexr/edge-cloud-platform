@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 type genericItem struct {
 	Item interface{} `json:"items"`

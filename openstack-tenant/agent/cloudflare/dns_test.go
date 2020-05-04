@@ -18,7 +18,7 @@ func TestInit(t *testing.T) {
 	if mexTestInfra == "" {
 		return
 	}
-	log.SetDebugLevel(log.DebugLevelMexos)
+	log.SetDebugLevel(log.DebugLevelInfra)
 
 	user = os.Getenv("CF_USER")
 	key = os.Getenv("CF_KEY")
@@ -54,7 +54,7 @@ func TestGetAPI(t *testing.T) {
 }
 
 func TestGetDNSRecords(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelMexos)
+	log.SetDebugLevel(log.DebugLevelInfra)
 	log.InitTracer("")
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -74,7 +74,7 @@ func TestGetDNSRecords(t *testing.T) {
 }
 
 func TestCreateDNSRecord(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelMexos)
+	log.SetDebugLevel(log.DebugLevelInfra)
 	log.InitTracer("")
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())

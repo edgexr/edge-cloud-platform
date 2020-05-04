@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -16,15 +16,8 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-var GCPServiceAccount string //temp
-
-type Platform struct {
-	props        edgeproto.GcpProperties // GcpProperties needs to move to edge-cloud-infra
-	config       platform.PlatformConfig
-	vaultConfig  *vault.Config
-	clusterCache *edgeproto.ClusterInstInfoCache
-	commonPf     mexos.CommonPlatform
-	envVars      map[string]*mexos.PropertyInfo
+type GCPPlatform struct {
+	commonPf infracommon.CommonPlatform
 }
 
 type GCPQuotas struct {
@@ -43,69 +36,39 @@ type GCPFlavor struct {
 	Name                         string
 }
 
-var gcpProps = map[string]*mexos.PropertyInfo{
-	"MEX_GCP_PROJECT": &mexos.PropertyInfo{
-		Value: "still-entity-201400",
-	},
-	"MEX_GCP_ZONE":            &mexos.PropertyInfo{},
-	"MEX_GCP_SERVICE_ACCOUNT": &mexos.PropertyInfo{},
-	"MEX_GCP_AUTH_KEY_PATH": &mexos.PropertyInfo{
-		Value: "/secret/data/cloudlet/gcp/auth_key.json",
-	},
-}
-
-func (s *Platform) GetType() string {
+func (g *GCPPlatform) GetType() string {
 	return "gcp"
 }
 
-func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (g *GCPPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+
 	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
 	if err != nil {
 		return err
 	}
-	s.vaultConfig = vaultConfig
-
-	if err := s.commonPf.InitInfraCommon(ctx, vaultConfig, platformConfig.EnvVars); err != nil {
+	if err := g.commonPf.InitInfraCommon(ctx, platformConfig, gcpProps, vaultConfig); err != nil {
 		return err
 	}
-
-	s.envVars = gcpProps
-	mexos.SetPropsFromVars(ctx, s.envVars, platformConfig.EnvVars)
-
-	s.config = *platformConfig
-	s.props.Project = s.envVars["MEX_GCP_PROJECT"].Value
-	if err = SetProject(s.props.Project); err != nil {
-		return err
-	}
-	s.props.Zone = s.envVars["MEX_GCP_ZONE"].Value
-	if s.props.Zone == "" {
+	if g.GetGcpZone() == "" {
 		return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
 	}
-	if err = SetZone(s.props.Zone); err != nil {
-		return err
-	}
-	s.props.ServiceAccount = s.envVars["MEX_GCP_SERVICE_ACCOUNT"].Value
-	if s.props.ServiceAccount == "" {
-		return fmt.Errorf("Env variable MEX_GCP_SERVICE_ACCOUNT not set")
-	}
-	s.props.GcpAuthKeyUrl = s.envVars["MEX_GCP_AUTH_KEY_PATH"].Value
 	return nil
 }
 
-func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (GCP)")
-	err := s.GCPLogin(ctx)
+func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (GCP)")
+	err := g.GCPLogin(ctx)
 	if err != nil {
 		return err
 	}
 	var quotas []GCPQuotasList
 
-	filter := fmt.Sprintf("name=(%s) AND quotas.metric=(CPUS, DISKS_TOTAL_GB)", s.props.Zone)
+	filter := fmt.Sprintf("name=(%s) AND quotas.metric=(CPUS, DISKS_TOTAL_GB)", g.GetGcpZone())
 	flatten := "quotas[]"
 	format := "json(quotas.metric,quotas.limit)"
 
 	out, err := sh.Command("gcloud", "compute", "regions", "list",
-		"--project", s.props.Project, "--filter", filter, "--flatten", flatten,
+		"--project", g.GetGcpProject(), "--filter", filter, "--flatten", flatten,
 		"--format", format, sh.Dir("/tmp")).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("cannot get resource quotas from gcp, %s, %s", out, err.Error())
@@ -129,11 +92,11 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	}
 
 	var machinetypes []GCPFlavor
-	filter = fmt.Sprintf("zone=(%s) AND name:(standard)", s.props.Zone)
+	filter = fmt.Sprintf("zone=(%s) AND name:(standard)", g.GetGcpZone())
 	format = "json(name,guestCpus,memoryMb,maximumPersistentDisksSizeGb)"
 
 	out, err = sh.Command("gcloud", "compute", "machine-types", "list",
-		"--project", s.props.Project, "--filter", filter,
+		"--project", g.GetGcpProject(), "--filter", filter,
 		"--format", format, sh.Dir("/tmp")).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("cannot get machine-types from gcp, %s, %s", out, err.Error())
@@ -163,14 +126,14 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return nil
 }
 
-func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+func (g *GCPPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }
 
-func (s *Platform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
+func (g *GCPPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }
 
-func (s *Platform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
+func (g *GCPPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return []edgeproto.CloudletMgmtNode{}, nil
 }

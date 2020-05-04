@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import (
 	"github.com/mobiledgex/edge-cloud/testutil"

@@ -1,12 +1,12 @@
-package mexos
+package infracommon
 
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -14,6 +14,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
+
+var DefaultConnectTimeout time.Duration = 30 * time.Second
+var ClientVersion = "SSH-2.0-mobiledgex-ssh-client-1.0"
+
+var SSHOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}
+var SSHUser = "ubuntu"
+var SSHPrivateKeyName = "id_rsa_mex"
 
 func PrivateSSHKey() string {
 	return MEXDir() + "/id_rsa_mex"
@@ -39,15 +46,15 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(ctx context.Context, plat platform.Platform, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "seed docker secret", "imagepath", app.ImagePath)
+func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", app.ImagePath)
 
 	urlObj, err := util.ImagePathParse(app.ImagePath)
 	if err != nil {
 		return fmt.Errorf("Cannot parse image path: %s - %v", app.ImagePath, err)
 	}
 	if urlObj.Host == cloudcommon.DockerHub {
-		log.SpanLog(ctx, log.DebugLevelMexos, "no secret needed for public image")
+		log.SpanLog(ctx, log.DebugLevelInfra, "no secret needed for public image")
 		return nil
 	}
 	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
@@ -64,7 +71,7 @@ func SeedDockerSecret(ctx context.Context, plat platform.Platform, client ssh.Cl
 	if err != nil {
 		return fmt.Errorf("can't store docker password, %s, %v", out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "stored docker password")
+	log.SpanLog(ctx, log.DebugLevelInfra, "stored docker password")
 	defer func() {
 		cmd := fmt.Sprintf("rm .docker-pass")
 		out, err = client.Output(cmd)
@@ -75,6 +82,6 @@ func SeedDockerSecret(ctx context.Context, plat platform.Platform, client ssh.Cl
 	if err != nil {
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "docker login ok")
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker login ok")
 	return nil
 }

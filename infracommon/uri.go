@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func validateDomain(uri string) error {
 }
 
 func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "attempt to get http uri file", "uri", uri)
+	log.SpanLog(ctx, log.DebugLevelInfra, "attempt to get http uri file", "uri", uri)
 	resp, err := http.Get(uri)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
 }
 
 func GetUrlInfo(ctx context.Context, vaultConfig *vault.Config, fileUrlPath string) (time.Time, string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get url last-modified time", "file-url", fileUrlPath)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get url last-modified time", "file-url", fileUrlPath)
 	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, vaultConfig, nil)
 	if err != nil {
 		return time.Time{}, "", err
@@ -115,7 +115,7 @@ func GetExternalPublicAddr(ctx context.Context) (string, error) {
 }
 
 func stunGetMyIP(ctx context.Context) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get ip from stun server")
+	log.SpanLog(ctx, log.DebugLevelInfra, "get ip from stun server")
 	var myip string
 
 	// Creating a "connection" to STUN server.

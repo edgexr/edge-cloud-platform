@@ -44,7 +44,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		envVars[envKey] = envVal
 	}
 
-	opts = append(opts, process.WithDebug("api,mexos,notify,metrics"))
+	opts = append(opts, process.WithDebug("api,infra,notify,metrics"))
 
 	return &Shepherd{
 		NotifyAddrs: notifyAddr,
@@ -84,7 +84,7 @@ func StartShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	if err != nil {
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "started "+shepherdProc.GetExeName())
+	log.SpanLog(ctx, log.DebugLevelInfra, "started "+shepherdProc.GetExeName())
 
 	return shepherdProc, nil
 }
@@ -94,7 +94,7 @@ func StopShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet) erro
 	if cloudlet != nil {
 		ShepherdProc, _, err := getShepherdProc(cloudlet, nil)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "cannot stop Shepherdserver", "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "cannot stop Shepherdserver", "err", err)
 			return err
 		}
 		args = util.EscapeJson(ShepherdProc.LookupArgs())
@@ -106,6 +106,6 @@ func StopShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet) erro
 	c := make(chan string)
 	go process.KillProcessesByName("shepherd", maxwait, args, c)
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "stopped Shepherdserver", "msg", <-c)
+	log.SpanLog(ctx, log.DebugLevelInfra, "stopped Shepherdserver", "msg", <-c)
 	return nil
 }

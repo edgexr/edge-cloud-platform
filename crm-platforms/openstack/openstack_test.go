@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/stretchr/testify/require"
 )
@@ -87,11 +88,11 @@ func TestHeatNodePrefix(t *testing.T) {
 		{cloudcommon.MexNodePrefix + "15" + cloudcommon.MexNodePrefix + "35", 15},
 	}
 	for _, d := range data {
-		ok, num := ParseHeatNodePrefix(d.name)
+		ok, num := vmlayer.ParseClusterNodePrefix(d.name)
 		require.True(t, ok, "matched %s", d.name)
 		require.Equal(t, d.num, num, "matched num for %s", d.name)
 		// make sure prefix gen function works
-		prefix := HeatNodePrefix(d.num)
+		prefix := vmlayer.ClusterNodePrefix(d.num)
 		ok = strings.HasPrefix(d.name, prefix)
 		require.True(t, ok, "%s has prefix %s", d.name, prefix)
 	}
@@ -103,7 +104,7 @@ func TestHeatNodePrefix(t *testing.T) {
 		"mex-k8s-nod-1",
 	}
 	for _, b := range bad {
-		ok, _ := ParseHeatNodePrefix(b)
+		ok, _ := vmlayer.ParseClusterNodePrefix(b)
 		require.False(t, ok, "should not match %s", b)
 	}
 }
