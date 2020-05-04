@@ -11,9 +11,20 @@ tests:
   - name: find cloudlet for auto-prov app (3 of 3)
     apifile: "{{datadir2}}/find_cloudlet_ap.yml"
     actions: [dmeapi-findcloudlet]
+
+  - name: find cloudlet for auto-prov docker app (1 of 3)
+    apifile: "{{datadir2}}/find_cloudlet_apd.yml"
+    actions: [dmeapi-findcloudlet]
+  - name: find cloudlet for auto-prov docker app (2 of 3)
+    apifile: "{{datadir2}}/find_cloudlet_apd.yml"
+    actions: [dmeapi-findcloudlet]
+  - name: find cloudlet for auto-prov docker app (3 of 3)
+    apifile: "{{datadir2}}/find_cloudlet_apd.yml"
+    actions: [dmeapi-findcloudlet]
+
   - name: sleep, allow extra time for auto-prov to create AppInst
     actions: [sleep=1]
-  - name: check that AppInst was auto-provisioned
+  - name: check that AppInsts were auto-provisioned
     actions: [mcapi-showfiltered]
     apifile: '{{datadir2}}/autoprov_appinst.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'
@@ -21,7 +32,7 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/autoprov_appinst_show.yml'
       filetype: mcdata
-  - name: delete auto-provisioned AppInst
+  - name: delete auto-provisioned AppInsts
     actions: [mcapi-delete]
     apifile: '{{datadir2}}/autoprov_appinst.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'

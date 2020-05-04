@@ -299,6 +299,18 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       autoprovpolicy: autoprov1
     - key:
+        organization: AcmeAppCo
+        name: autoprovappd
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: ImageTypeDocker
+      accessports: tcp:81
+      defaultflavor:
+        name: x1.small
+      deployment: docker
+      autoprovpolicy: autoprov1
+      accesstype: AccessTypeLoadBalancer
+    - key:
         organization: platos
         name: platosEnablingLayer
         version: "1.0"
