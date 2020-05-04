@@ -58,7 +58,6 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--useVaultCerts")
 	}
 	args = append(args, "--hostname", p.Name)
-	args = append(args, "-skipVerifyEmail")
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {

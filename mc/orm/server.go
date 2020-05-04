@@ -335,6 +335,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/artifactory/resync", ArtifactoryResync)
 	auth.POST("/artifactory/summary", ArtifactorySummary)
 	auth.POST("/config/update", UpdateConfig)
+	auth.POST("/config/reset", ResetConfig)
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/config/version", ShowVersion)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)

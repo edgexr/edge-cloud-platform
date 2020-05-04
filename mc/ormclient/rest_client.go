@@ -179,6 +179,10 @@ func (s *Client) UpdateConfig(uri, token string, config map[string]interface{}) 
 	return s.PostJson(uri+"/auth/config/update", token, config, nil)
 }
 
+func (s *Client) ResetConfig(uri, token string) (int, error) {
+	return s.PostJson(uri+"/auth/config/reset", token, nil, nil)
+}
+
 func (s *Client) ShowConfig(uri, token string) (*ormapi.Config, int, error) {
 	config := ormapi.Config{}
 	status, err := s.PostJson(uri+"/auth/config/show", token, nil, &config)
