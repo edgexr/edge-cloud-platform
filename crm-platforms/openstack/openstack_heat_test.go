@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -59,6 +60,7 @@ func TestHeatTemplate(t *testing.T) {
 	log.InitTracer("")
 	defer log.FinishTracer()
 	log.SetDebugLevel(log.DebugLevelInfra)
+	infracommon.SetTestMode(true)
 
 	ctx := log.StartTestSpan(context.Background())
 	vaultServer, vaultConfig := vault.DummyServer()
