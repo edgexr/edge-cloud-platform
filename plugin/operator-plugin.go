@@ -10,7 +10,7 @@ import (
 )
 
 func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetOperatorApiGw", "operatorName", operatorName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetOperatorApiGw", "operatorName", operatorName)
 
 	var outApiGw operator.OperatorApiGw
 	switch operatorName {

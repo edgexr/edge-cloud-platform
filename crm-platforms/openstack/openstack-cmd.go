@@ -9,19 +9,20 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-func (s *Platform) TimedOpenStackCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
+func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
 	parmstr := ""
 	start := time.Now()
 	for _, a := range a {
 		parmstr += a + " "
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "OpenStack Command Start", "name", name, "parms", parmstr)
+	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Start", "name", name, "parms", parmstr)
 	newSh := sh.NewSession()
 	for key, val := range s.openRCVars {
 		newSh.SetEnv(key, val)
@@ -32,13 +33,13 @@ func (s *Platform) TimedOpenStackCommand(ctx context.Context, name string, a ...
 		log.InfoLog("Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
 		return out, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
+	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
 	return out, nil
 
 }
 
 //ListServers returns list of servers, KVM instances, running on the system
-func (s *Platform) ListServers(ctx context.Context) ([]OSServer, error) {
+func (s *OpenstackPlatform) ListServers(ctx context.Context) ([]OSServer, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "list", "-f", "json")
 
 	if err != nil {
@@ -55,7 +56,7 @@ func (s *Platform) ListServers(ctx context.Context) ([]OSServer, error) {
 }
 
 //ListServers returns list of servers, KVM instances, running on the system
-func (s *Platform) ListPorts(ctx context.Context) ([]OSPort, error) {
+func (s *OpenstackPlatform) ListPorts(ctx context.Context) ([]OSPort, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "-f", "json")
 
 	if err != nil {
@@ -72,7 +73,7 @@ func (s *Platform) ListPorts(ctx context.Context) ([]OSPort, error) {
 }
 
 //ListPortsServerNetwork returns ports for a particular server on a given network
-func (s *Platform) ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPort, error) {
+func (s *OpenstackPlatform) ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPort, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "--network", network, "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get port list, %s, %v", out, err)
@@ -84,12 +85,29 @@ func (s *Platform) ListPortsServerNetwork(ctx context.Context, server, network s
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list ports", "server", server, "network", network, "ports", ports)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list ports", "server", server, "network", network, "ports", ports)
+	return ports, nil
+}
+
+//ListPortsServerNetwork returns ports for a particular server on any network
+func (s *OpenstackPlatform) ListPortsServer(ctx context.Context, server string) ([]OSPort, error) {
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "-f", "json")
+	if err != nil {
+		err = fmt.Errorf("cannot get port list, %s, %v", out, err)
+		return nil, err
+	}
+	var ports []OSPort
+	err = json.Unmarshal(out, &ports)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "list ports", "server", server, "ports", ports)
 	return ports, nil
 }
 
 //ListImages lists avilable images in glance
-func (s *Platform) ListImages(ctx context.Context) ([]OSImage, error) {
+func (s *OpenstackPlatform) ListImages(ctx context.Context) ([]OSImage, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get image list, %s, %v", out, err)
@@ -101,12 +119,12 @@ func (s *Platform) ListImages(ctx context.Context) ([]OSImage, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list images", "images", images)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list images", "images", images)
 	return images, nil
 }
 
 //GetImageDetail show of a given image from Glance
-func (s *Platform) GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
+func (s *OpenstackPlatform) GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
 	out, err := s.TimedOpenStackCommand(
 		ctx, "openstack", "image", "show", name, "-f", "json",
 		"-c", "id",
@@ -125,12 +143,12 @@ func (s *Platform) GetImageDetail(ctx context.Context, name string) (*OSImageDet
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "show image Detail", "Detail", imageDetail)
+	log.SpanLog(ctx, log.DebugLevelInfra, "show image Detail", "Detail", imageDetail)
 	return &imageDetail, nil
 }
 
 // fetch tags + properties etc of all images for resource mapping
-func (s *Platform) ListImagesDetail(ctx context.Context) ([]OSImageDetail, error) {
+func (s *OpenstackPlatform) ListImagesDetail(ctx context.Context) ([]OSImageDetail, error) {
 	var img_details []OSImageDetail
 	images, err := s.ListImages(ctx)
 	if err != nil {
@@ -148,10 +166,10 @@ func (s *Platform) ListImagesDetail(ctx context.Context) ([]OSImageDetail, error
 
 //
 //ListNetworks lists networks known to the platform. Some created by the operator, some by users.
-func (s *Platform) ListNetworks(ctx context.Context) ([]OSNetwork, error) {
+func (s *OpenstackPlatform) ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "list", "-f", "json")
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "network list failed", "out", out)
+		log.SpanLog(ctx, log.DebugLevelInfra, "network list failed", "out", out)
 		err = fmt.Errorf("cannot get network list, %s, %v", out, err)
 		return nil, err
 	}
@@ -161,17 +179,17 @@ func (s *Platform) ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list networks", "networks", networks)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list networks", "networks", networks)
 	return networks, nil
 }
 
 //ShowFlavor returns the details of a given flavor.
-func (s *Platform) ShowFlavor(ctx context.Context, flavor string) (details OSFlavorDetail, err error) {
+func (s *OpenstackPlatform) ShowFlavor(ctx context.Context, flavor string) (details OSFlavorDetail, err error) {
 
 	var flav OSFlavorDetail
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "flavor", "show", flavor, "-f", "json")
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "flavor show failed", "out", out)
+		log.SpanLog(ctx, log.DebugLevelInfra, "flavor show failed", "out", out)
 		return flav, err
 	}
 
@@ -183,8 +201,8 @@ func (s *Platform) ShowFlavor(ctx context.Context, flavor string) (details OSFla
 }
 
 //ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
-func (s *Platform) ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
-	flavorMatchPattern := s.GetCloudletFlavorMatchPattern()
+func (s *OpenstackPlatform) ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
+	flavorMatchPattern := s.vmProperties.GetCloudletFlavorMatchPattern()
 	r, err := regexp.Compile(flavorMatchPattern)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot compile flavor match pattern")
@@ -210,7 +228,7 @@ func (s *Platform) ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 	return flavorsMatched, nil
 }
 
-func (s *Platform) ListAZones(ctx context.Context) ([]OSAZone, error) {
+func (s *OpenstackPlatform) ListAZones(ctx context.Context) ([]OSAZone, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "availability", "zone", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get availability zone list, %s, %v", out, err)
@@ -225,7 +243,7 @@ func (s *Platform) ListAZones(ctx context.Context) ([]OSAZone, error) {
 	return zones, nil
 }
 
-func (s *Platform) ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) {
+func (s *OpenstackPlatform) ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("cannot get floating ip list, %s, %v", out, err)
@@ -241,7 +259,7 @@ func (s *Platform) ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) 
 }
 
 //CreateServer instantiates a new server instance, which is a KVM instance based on a qcow2 image from glance
-func (s *Platform) CreateServer(ctx context.Context, opts *OSServerOpt) error {
+func (s *OpenstackPlatform) CreateServer(ctx context.Context, opts *OSServerOpt) error {
 	args := []string{
 		"server", "create",
 		"--config-drive", "true", //XXX always
@@ -264,9 +282,9 @@ func (s *Platform) CreateServer(ctx context.Context, opts *OSServerOpt) error {
 	for i, v := range args {
 		iargs[i] = v
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating server with args", "iargs", iargs)
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating server with args", "iargs", iargs)
 
-	//log.SpanLog(ctx,log.DebugLevelMexos, "openstack create server", "opts", opts, "iargs", iargs)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "openstack create server", "opts", opts, "iargs", iargs)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", iargs...)
 	if err != nil {
 		err = fmt.Errorf("cannot create server, %v, '%s'", err, out)
@@ -276,13 +294,15 @@ func (s *Platform) CreateServer(ctx context.Context, opts *OSServerOpt) error {
 }
 
 // GetActiveServerDetails returns details of the KVM instance waiting for it to be ACTIVE
-func (s *Platform) GetActiveServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
+func (s *OpenstackPlatform) GetActiveServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
 	active := false
 	srvDetail := &OSServerDetail{}
 	for i := 0; i < 10; i++ {
 		out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
 		if err != nil {
-			err = fmt.Errorf("can't show server %s, %s, %v", name, out, err)
+			if strings.Contains(err.Error(), "No server with a name or ID") {
+				err = fmt.Errorf("%s -- can't show server %s, %s, %v", vmlayer.ServerDoesNotExistError, name, out, err)
+			}
 			return nil, err
 		}
 		//fmt.Printf("%s\n", out)
@@ -295,18 +315,17 @@ func (s *Platform) GetActiveServerDetails(ctx context.Context, name string) (*OS
 			active = true
 			break
 		}
-		log.SpanLog(ctx, log.DebugLevelMexos, "wait for server to become ACTIVE", "server detail", srvDetail)
+		log.SpanLog(ctx, log.DebugLevelInfra, "wait for server to become ACTIVE", "server detail", srvDetail)
 		time.Sleep(30 * time.Second)
 	}
 	if !active {
 		return nil, fmt.Errorf("while getting server detail, waited but server %s is too slow getting to active state", name)
 	}
-	//log.SpanLog(ctx,log.DebugLevelMexos, "server detail", "server detail", srvDetail)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "server detail", "server detail", srvDetail)
 	return srvDetail, nil
 }
 
-// GetServerDetails returns details of the KVM instance
-func (s *Platform) GetServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
+func (s *OpenstackPlatform) GetOpenstackServerDetails(ctx context.Context, name string) (*OSServerDetail, error) {
 	srvDetail := &OSServerDetail{}
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
 	if err != nil {
@@ -323,8 +342,8 @@ func (s *Platform) GetServerDetails(ctx context.Context, name string) (*OSServer
 }
 
 // GetPortDetails gets details of the specified port
-func (s *Platform) GetPortDetails(ctx context.Context, name string) (*OSPortDetail, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get port details", "name", name)
+func (s *OpenstackPlatform) GetPortDetails(ctx context.Context, name string) (*OSPortDetail, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "get port details", "name", name)
 	portDetail := &OSPortDetail{}
 
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "show", name, "-f", "json")
@@ -334,7 +353,7 @@ func (s *Platform) GetPortDetails(ctx context.Context, name string) (*OSPortDeta
 	}
 	err = json.Unmarshal(out, &portDetail)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "port unmarshal failed", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "port unmarshal failed", "err", err)
 		err = fmt.Errorf("can't unmarshal port, %v", err)
 		return nil, err
 	}
@@ -342,17 +361,17 @@ func (s *Platform) GetPortDetails(ctx context.Context, name string) (*OSPortDeta
 }
 
 // AttachPortToServer attaches a port to a server
-func (s *Platform) AttachPortToServer(ctx context.Context, serverName, portName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "AttachPortToServer", "serverName", serverName, "portName", portName)
+func (s *OpenstackPlatform) AttachPortToServer(ctx context.Context, serverName, portName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "portName", portName)
 
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "add", "port", serverName, portName)
 	if err != nil {
 		if strings.Contains(string(out), "still in use") {
 			// port already attached
-			log.SpanLog(ctx, log.DebugLevelMexos, "port already attached", "serverName", serverName, "portName", portName, "out", out, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "port already attached", "serverName", serverName, "portName", portName, "out", out, "err", err)
 			return nil
 		}
-		log.SpanLog(ctx, log.DebugLevelMexos, "can't attach port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "can't attach port", "serverName", serverName, "portName", portName, "out", out, "err", err)
 		err = fmt.Errorf("can't attach port: %s, %s, %v", portName, out, err)
 		return err
 	}
@@ -360,18 +379,18 @@ func (s *Platform) AttachPortToServer(ctx context.Context, serverName, portName 
 }
 
 // DetachPortFromServer removes a port from a server
-func (s *Platform) DetachPortFromServer(ctx context.Context, serverName, portName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "DetachPortFromServer", "serverName", serverName, "portName", portName)
+func (s *OpenstackPlatform) DetachPortFromServer(ctx context.Context, serverName, portName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "serverName", serverName, "portName", portName)
 
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "remove", "port", serverName, portName)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
 		if strings.Contains(string(out), "No Port found") {
 			// when ports are removed they are detached from any server they are connected to.
-			log.SpanLog(ctx, log.DebugLevelMexos, "port is gone", "portName", portName)
+			log.SpanLog(ctx, log.DebugLevelInfra, "port is gone", "portName", portName)
 			err = nil
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMexos, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "can't remove port", "serverName", serverName, "portName", portName, "out", out, "err", err)
 		}
 		err = fmt.Errorf("can't detach port %s from server %s: %s, %v", portName, serverName, out, err)
 		return err
@@ -381,8 +400,8 @@ func (s *Platform) DetachPortFromServer(ctx context.Context, serverName, portNam
 
 //DeleteServer destroys a KVM instance
 //  sometimes it is not possible to destroy. Like most things in Openstack, try again.
-func (s *Platform) DeleteServer(ctx context.Context, id string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "deleting server", "id", id)
+func (s *OpenstackPlatform) DeleteServer(ctx context.Context, id string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting server", "id", id)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "delete", id)
 	if err != nil {
 		err = fmt.Errorf("can't delete server %s, %s, %v", id, out, err)
@@ -392,8 +411,8 @@ func (s *Platform) DeleteServer(ctx context.Context, id string) error {
 }
 
 // CreateNetwork creates a network with a name.
-func (s *Platform) CreateNetwork(ctx context.Context, name string, netType string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating network", "network", name)
+func (s *OpenstackPlatform) CreateNetwork(ctx context.Context, name string, netType string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating network", "network", name)
 	args := []string{"network", "create"}
 	if netType != "" {
 		args = append(args, []string{"--provider-network-type", netType}...)
@@ -409,8 +428,8 @@ func (s *Platform) CreateNetwork(ctx context.Context, name string, netType strin
 
 //DeleteNetwork destroys a named network
 //  Sometimes it will fail. Openstack will refuse if there are resources attached.
-func (s *Platform) DeleteNetwork(ctx context.Context, name string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "deleting network", "network", name)
+func (s *OpenstackPlatform) DeleteNetwork(ctx context.Context, name string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting network", "network", name)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "delete", name)
 	if err != nil {
 		err = fmt.Errorf("can't delete network %s, %s, %v", name, out, err)
@@ -420,7 +439,7 @@ func (s *Platform) DeleteNetwork(ctx context.Context, name string) error {
 }
 
 //CreateSubnet creates a subnet within a network. A subnet is assigned ranges. Optionally DHCP can be enabled.
-func (s *Platform) CreateSubnet(ctx context.Context, netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
+func (s *OpenstackPlatform) CreateSubnet(ctx context.Context, netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
 	var dhcpFlag string
 	if dhcpEnable {
 		dhcpFlag = "--dhcp"
@@ -446,11 +465,11 @@ func (s *Platform) CreateSubnet(ctx context.Context, netRange, networkName, gate
 				if serr != nil {
 					return fmt.Errorf("cannot get subnet detail for %s, while fixing overlap error, %v", subnetName, serr)
 				}
-				log.SpanLog(ctx, log.DebugLevelMexos, "create subnet, existing subnet detail", "subnet detail", sd)
+				log.SpanLog(ctx, log.DebugLevelInfra, "create subnet, existing subnet detail", "subnet detail", sd)
 
 				//XXX do more validation
 
-				log.SpanLog(ctx, log.DebugLevelMexos, "create subnet, reusing existing subnet", "result", out, "error", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "create subnet, reusing existing subnet", "result", out, "error", err)
 				return nil
 			}
 		}
@@ -461,8 +480,8 @@ func (s *Platform) CreateSubnet(ctx context.Context, netRange, networkName, gate
 }
 
 //DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
-func (s *Platform) DeleteSubnet(ctx context.Context, subnetName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "deleting subnet", "name", subnetName)
+func (s *OpenstackPlatform) DeleteSubnet(ctx context.Context, subnetName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting subnet", "name", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "subnet", "delete", subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't delete subnet %s, %s, %v", subnetName, out, err)
@@ -472,8 +491,8 @@ func (s *Platform) DeleteSubnet(ctx context.Context, subnetName string) error {
 }
 
 //CreateRouter creates new router. A router can be attached to network and subnets.
-func (s *Platform) CreateRouter(ctx context.Context, routerName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating router", "name", routerName)
+func (s *OpenstackPlatform) CreateRouter(ctx context.Context, routerName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating router", "name", routerName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "create", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't create router %s, %s, %v", routerName, out, err)
@@ -483,8 +502,8 @@ func (s *Platform) CreateRouter(ctx context.Context, routerName string) error {
 }
 
 //DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
-func (s *Platform) DeleteRouter(ctx context.Context, routerName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "deleting router", "name", routerName)
+func (s *OpenstackPlatform) DeleteRouter(ctx context.Context, routerName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting router", "name", routerName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "delete", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't delete router %s, %s, %v", routerName, out, err)
@@ -496,8 +515,8 @@ func (s *Platform) DeleteRouter(ctx context.Context, routerName string) error {
 //SetRouter assigns the router to a particular network. The network needs to be attached to
 // a real external network. This is intended only for routing to external network for now. No internal routers.
 // Sometimes, oftentimes, it will fail if the network is not external.
-func (s *Platform) SetRouter(ctx context.Context, routerName, networkName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "setting router to network", "router", routerName, "network", networkName)
+func (s *OpenstackPlatform) SetRouter(ctx context.Context, routerName, networkName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "setting router to network", "router", routerName, "network", networkName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "set", routerName, "--external-gateway", networkName)
 	if err != nil {
 		err = fmt.Errorf("can't set router %s to %s, %s, %v", routerName, networkName, out, err)
@@ -507,8 +526,8 @@ func (s *Platform) SetRouter(ctx context.Context, routerName, networkName string
 }
 
 //AddRouterSubnet will connect subnet to another network, possibly external, via a router
-func (s *Platform) AddRouterSubnet(ctx context.Context, routerName, subnetName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "adding router to subnet", "router", routerName, "network", subnetName)
+func (s *OpenstackPlatform) AddRouterSubnet(ctx context.Context, routerName, subnetName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "adding router to subnet", "router", routerName, "network", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "add", "subnet", routerName, subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't add router %s to subnet %s, %s, %v", routerName, subnetName, out, err)
@@ -519,8 +538,8 @@ func (s *Platform) AddRouterSubnet(ctx context.Context, routerName, subnetName s
 
 //RemoveRouterSubnet is useful to remove the router from the subnet before deletion. Otherwise subnet cannot
 //  be deleted.
-func (s *Platform) RemoveRouterSubnet(ctx context.Context, routerName, subnetName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "removing subnet from router", "router", routerName, "subnet", subnetName)
+func (s *OpenstackPlatform) RemoveRouterSubnet(ctx context.Context, routerName, subnetName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "removing subnet from router", "router", routerName, "subnet", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "remove", "subnet", routerName, subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't remove router %s from subnet %s, %s, %v", routerName, subnetName, out, err)
@@ -530,7 +549,7 @@ func (s *Platform) RemoveRouterSubnet(ctx context.Context, routerName, subnetNam
 }
 
 //ListSubnets returns a list of subnets available
-func (s *Platform) ListSubnets(ctx context.Context, netName string) ([]OSSubnet, error) {
+func (s *OpenstackPlatform) ListSubnets(ctx context.Context, netName string) ([]OSSubnet, error) {
 	var err error
 	var out []byte
 	if netName != "" {
@@ -548,12 +567,12 @@ func (s *Platform) ListSubnets(ctx context.Context, netName string) ([]OSSubnet,
 		err = fmt.Errorf("can't unmarshal subnets, %v", err)
 		return nil, err
 	}
-	//log.SpanLog(ctx,log.DebugLevelMexos, "list subnets", "subnets", subnets)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "list subnets", "subnets", subnets)
 	return subnets, nil
 }
 
 //ListProjects returns a list of projects we can see
-func (s *Platform) ListProjects(ctx context.Context) ([]OSProject, error) {
+func (s *OpenstackPlatform) ListProjects(ctx context.Context) ([]OSProject, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "project", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("can't get a list of projects, %s, %v", out, err)
@@ -565,12 +584,12 @@ func (s *Platform) ListProjects(ctx context.Context) ([]OSProject, error) {
 		err = fmt.Errorf("can't unmarshal projects, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list projects", "projects", projects)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list projects", "projects", projects)
 	return projects, nil
 }
 
 //ListSecurityGroups returns a list of security groups
-func (s *Platform) ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, error) {
+func (s *OpenstackPlatform) ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("can't get a list of security groups, %s, %v", out, err)
@@ -582,12 +601,12 @@ func (s *Platform) ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, e
 		err = fmt.Errorf("can't unmarshal security groups, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list security groups", "security groups", secgrps)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list security groups", "security groups", secgrps)
 	return secgrps, nil
 }
 
 //ListSecurityGroups returns a list of security groups
-func (s *Platform) ListSecurityGroupRules(ctx context.Context, secGrp string) ([]OSSecurityGroupRule, error) {
+func (s *OpenstackPlatform) ListSecurityGroupRules(ctx context.Context, secGrp string) ([]OSSecurityGroupRule, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "list", secGrp, "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("can't get a list of security group rules, %s, %v", out, err)
@@ -599,11 +618,11 @@ func (s *Platform) ListSecurityGroupRules(ctx context.Context, secGrp string) ([
 		err = fmt.Errorf("can't unmarshal security group rules, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list security group rules", "security groups", rules)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list security group rules", "security groups", rules)
 	return rules, nil
 }
 
-func (s *Platform) CreateSecurityGroup(ctx context.Context, groupName string) error {
+func (s *OpenstackPlatform) CreateSecurityGroup(ctx context.Context, groupName string) error {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "create", groupName)
 	if err != nil {
 		err = fmt.Errorf("can't create security group, %s, %v", out, err)
@@ -612,7 +631,7 @@ func (s *Platform) CreateSecurityGroup(ctx context.Context, groupName string) er
 	return nil
 }
 
-func (s *Platform) AddSecurityGroupToPort(ctx context.Context, portID, groupName string) error {
+func (s *OpenstackPlatform) AddSecurityGroupToPort(ctx context.Context, portID, groupName string) error {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "set", "--security-group", groupName, portID)
 	if err != nil {
 		err = fmt.Errorf("can't add security group to port, %s, %v", out, err)
@@ -622,7 +641,7 @@ func (s *Platform) AddSecurityGroupToPort(ctx context.Context, portID, groupName
 }
 
 //ListRouters returns a list of routers available
-func (s *Platform) ListRouters(ctx context.Context) ([]OSRouter, error) {
+func (s *OpenstackPlatform) ListRouters(ctx context.Context) ([]OSRouter, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "list", "-f", "json")
 	if err != nil {
 		err = fmt.Errorf("can't get a list of routers, %s, %v", out, err)
@@ -634,12 +653,12 @@ func (s *Platform) ListRouters(ctx context.Context) ([]OSRouter, error) {
 		err = fmt.Errorf("can't unmarshal routers, %v", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "list routers", "routers", routers)
+	log.SpanLog(ctx, log.DebugLevelInfra, "list routers", "routers", routers)
 	return routers, nil
 }
 
 //GetRouterDetail returns details per router
-func (s *Platform) GetRouterDetail(ctx context.Context, routerName string) (*OSRouterDetail, error) {
+func (s *OpenstackPlatform) GetOpenStackRouterDetail(ctx context.Context, routerName string) (*OSRouterDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "show", "-f", "json", routerName)
 	if err != nil {
 		err = fmt.Errorf("can't get router details for %s, %s, %v", routerName, out, err)
@@ -651,13 +670,13 @@ func (s *Platform) GetRouterDetail(ctx context.Context, routerName string) (*OSR
 		err = fmt.Errorf("can't unmarshal router detail, %v", err)
 		return nil, err
 	}
-	//log.SpanLog(ctx,log.DebugLevelMexos, "router detail", "router detail", routerDetail)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "router detail", "router detail", routerDetail)
 	return routerDetail, nil
 }
 
 //CreateServerImage snapshots running service into a qcow2 image
-func (s *Platform) CreateServerImage(ctx context.Context, serverName, imageName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating image snapshot from server", "server", serverName, "image", imageName)
+func (s *OpenstackPlatform) CreateServerImage(ctx context.Context, serverName, imageName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating image snapshot from server", "server", serverName, "image", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "image", "create", serverName, "--name", imageName)
 	if err != nil {
 		err = fmt.Errorf("can't create image from %s into %s, %s, %v", serverName, imageName, out, err)
@@ -667,11 +686,11 @@ func (s *Platform) CreateServerImage(ctx context.Context, serverName, imageName 
 }
 
 //CreateImage puts images into glance
-func (s *Platform) CreateImage(ctx context.Context, imageName, fileName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "creating image in glance", "image", imageName, "fileName", fileName)
+func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating image in glance", "image", imageName, "fileName", fileName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "create",
 		imageName,
-		"--disk-format", s.GetCloudletImageDiskFormat(),
+		"--disk-format", s.vmProperties.GetCloudletImageDiskFormat(),
 		"--container-format", "bare",
 		"--file", fileName)
 	if err != nil {
@@ -682,7 +701,7 @@ func (s *Platform) CreateImage(ctx context.Context, imageName, fileName string) 
 }
 
 //CreateImageFromUrl downloads image from URL and then puts into glance
-func (s *Platform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
+func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
 	fileExt, err := cloudcommon.GetFileNameWithExt(imageUrl)
 	if err != nil {
 		return err
@@ -690,21 +709,21 @@ func (s *Platform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, 
 	filePath := "/tmp/" + fileExt
 	defer func() {
 		// Stale file might be present if download fails/succeeds, deleting it
-		if delerr := mexos.DeleteFile(filePath); delerr != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "delete file failed", "filePath", filePath)
+		if delerr := infracommon.DeleteFile(filePath); delerr != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "filePath", filePath)
 		}
 	}()
-	err = cloudcommon.DownloadFile(ctx, s.vaultConfig, imageUrl, filePath, nil)
+	err = cloudcommon.DownloadFile(ctx, s.vmProperties.CommonPf.VaultConfig, imageUrl, filePath, nil)
 	if err != nil {
 		return fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
 	}
 	// Verify checksum
 	if md5Sum != "" {
-		fileMd5Sum, err := mexos.Md5SumFile(filePath)
+		fileMd5Sum, err := infracommon.Md5SumFile(filePath)
 		if err != nil {
 			return err
 		}
-		log.SpanLog(ctx, log.DebugLevelMexos, "verify md5sum", "downloaded-md5sum", fileMd5Sum, "actual-md5sum", md5Sum)
+		log.SpanLog(ctx, log.DebugLevelInfra, "verify md5sum", "downloaded-md5sum", fileMd5Sum, "actual-md5sum", md5Sum)
 		if fileMd5Sum != md5Sum {
 			return fmt.Errorf("mismatch in md5sum for downloaded image: %s", imageName)
 		}
@@ -721,8 +740,8 @@ func (s *Platform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, 
 // It will then save that into a local file. The image transfer happens from glance into your own laptop
 // or whatever.
 // This can take a while, transferring all the data.
-func (s *Platform) SaveImage(ctx context.Context, saveName, imageName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "saving image", "save name", saveName, "image name", imageName)
+func (s *OpenstackPlatform) SaveImage(ctx context.Context, saveName, imageName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "saving image", "save name", saveName, "image name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "save", "--file", saveName, imageName)
 	if err != nil {
 		err = fmt.Errorf("can't save image from %s to file %s, %s, %v", imageName, saveName, out, err)
@@ -734,8 +753,8 @@ func (s *Platform) SaveImage(ctx context.Context, saveName, imageName string) er
 //DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
-func (s *Platform) DeleteImage(ctx context.Context, imageName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "deleting image", "name", imageName)
+func (s *OpenstackPlatform) DeleteImage(ctx context.Context, imageName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {
 		err = fmt.Errorf("can't delete image %s, %s, %v", imageName, out, err)
@@ -747,7 +766,7 @@ func (s *Platform) DeleteImage(ctx context.Context, imageName string) error {
 //GetSubnetDetail returns details for the subnet. This is useful when getting router/gateway
 //  IP for a given subnet.  The gateway info is used for creating a server.
 //  Also useful in general, like other `detail` functions, to get the ID map for the name of subnet.
-func (s *Platform) GetSubnetDetail(ctx context.Context, subnetName string) (*OSSubnetDetail, error) {
+func (s *OpenstackPlatform) GetSubnetDetail(ctx context.Context, subnetName string) (*OSSubnetDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "subnet", "show", "-f", "json", subnetName)
 	if err != nil {
 		err = fmt.Errorf("can't get subnet details for %s, %s, %v", subnetName, out, err)
@@ -758,12 +777,12 @@ func (s *Platform) GetSubnetDetail(ctx context.Context, subnetName string) (*OSS
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal subnet detail, %v", err)
 	}
-	//log.SpanLog(ctx,log.DebugLevelMexos, "get subnet detail", "subnet detail", subnetDetail)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "get subnet detail", "subnet detail", subnetDetail)
 	return subnetDetail, nil
 }
 
 //GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
-func (s *Platform) GetNetworkDetail(ctx context.Context, networkName string) (*OSNetworkDetail, error) {
+func (s *OpenstackPlatform) GetNetworkDetail(ctx context.Context, networkName string) (*OSNetworkDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "show", "-f", "json", networkName)
 	if err != nil {
 		err = fmt.Errorf("can't get details for network %s, %s, %v", networkName, out, err)
@@ -774,12 +793,12 @@ func (s *Platform) GetNetworkDetail(ctx context.Context, networkName string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal network detail, %v", err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "get network detail", "network detail", networkDetail)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get network detail", "network detail", networkDetail)
 	return networkDetail, nil
 }
 
 //SetServerProperty sets properties for the server
-func (s *Platform) SetServerProperty(ctx context.Context, name, property string) error {
+func (s *OpenstackPlatform) SetServerProperty(ctx context.Context, name, property string) error {
 	if name == "" {
 		return fmt.Errorf("empty name")
 	}
@@ -790,13 +809,13 @@ func (s *Platform) SetServerProperty(ctx context.Context, name, property string)
 	if err != nil {
 		return fmt.Errorf("can't set property %s on server %s, %s, %v", property, name, out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "set server property", "name", name, "property", property)
+	log.SpanLog(ctx, log.DebugLevelInfra, "set server property", "name", name, "property", property)
 	return nil
 }
 
 // createHeatStack creates a stack with the given template
-func (s *Platform) createHeatStack(ctx context.Context, templateFile string, stackName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "create heat stack", "template", templateFile, "stackName", stackName)
+func (s *OpenstackPlatform) createHeatStack(ctx context.Context, templateFile string, stackName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "create heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "create", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error creating heat stack: %s, %s -- %v", templateFile, string(out), err)
@@ -804,8 +823,8 @@ func (s *Platform) createHeatStack(ctx context.Context, templateFile string, sta
 	return nil
 }
 
-func (s *Platform) updateHeatStack(ctx context.Context, templateFile string, stackName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "update heat stack", "template", templateFile, "stackName", stackName)
+func (s *OpenstackPlatform) updateHeatStack(ctx context.Context, templateFile string, stackName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "update heat stack", "template", templateFile, "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "update", "--template", templateFile, stackName)
 	if err != nil {
 		return fmt.Errorf("error udpating heat stack: %s -- %s, %v", templateFile, out, err)
@@ -814,17 +833,17 @@ func (s *Platform) updateHeatStack(ctx context.Context, templateFile string, sta
 }
 
 // deleteHeatStack delete a stack with the given name
-func (s *Platform) deleteHeatStack(ctx context.Context, stackName string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "delete heat stack", "stackName", stackName)
+func (s *OpenstackPlatform) deleteHeatStack(ctx context.Context, stackName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "delete heat stack", "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "delete", stackName)
 	if err != nil {
 		if strings.Contains("Stack not found", string(out)) {
-			log.SpanLog(ctx, log.DebugLevelMexos, "stack not found")
+			log.SpanLog(ctx, log.DebugLevelInfra, "stack not found")
 			return nil
 		}
-		log.SpanLog(ctx, log.DebugLevelMexos, "stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
 		if strings.Contains(string(out), "Stack not found") {
-			log.SpanLog(ctx, log.DebugLevelMexos, "stack already deleted", "stackName", stackName)
+			log.SpanLog(ctx, log.DebugLevelInfra, "stack already deleted", "stackName", stackName)
 			return nil
 		}
 		return fmt.Errorf("stack deletion failed: %s, %s %v", stackName, out, err)
@@ -833,7 +852,7 @@ func (s *Platform) deleteHeatStack(ctx context.Context, stackName string) error 
 }
 
 // getHeatStackDetail gets details of the provided stack
-func (s *Platform) getHeatStackDetail(ctx context.Context, stackName string) (*OSHeatStackDetail, error) {
+func (s *OpenstackPlatform) getHeatStackDetail(ctx context.Context, stackName string) (*OSHeatStackDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "show", "-f", "json", stackName)
 	if err != nil {
 		err = fmt.Errorf("can't get stack details for %s, %s, %v", stackName, out, err)
@@ -848,8 +867,8 @@ func (s *Platform) getHeatStackDetail(ctx context.Context, stackName string) (*O
 }
 
 // Get resource limits
-func (s *Platform) OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (Openstack) - Resources info & Supported flavors")
+func (s *OpenstackPlatform) OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (Openstack) - Resources info & Supported flavors")
 	var limits []OSLimit
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "limits", "show", "--absolute", "-f", "json")
 	if err != nil {
@@ -879,8 +898,8 @@ func (s *Platform) OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo
 	return nil
 }
 
-func (s *Platform) OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetLimits (Openstack) - Resources info and usage")
+func (s *OpenstackPlatform) OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (Openstack) - Resources info and usage")
 	var limits []OSLimit
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "limits", "show", "--absolute", "-f", "json")
 	if err != nil {
@@ -895,7 +914,7 @@ func (s *Platform) OSGetAllLimits(ctx context.Context) ([]OSLimit, error) {
 	return limits, nil
 }
 
-func (s *Platform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImage, error) {
+func (s *OpenstackPlatform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImage, error) {
 
 	var props map[string]string
 
@@ -930,7 +949,12 @@ func (s *Platform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, 
 	return finfo, zones, images, nil
 }
 
-func (s *Platform) GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID string) (string, error) {
+func (o *OpenstackPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
+	fl, _, _, err := o.GetFlavorInfo(ctx)
+	return fl, err
+}
+
+func (s *OpenstackPlatform) GetSecurityGroupIDForProject(ctx context.Context, grpname string, projectID string) (string, error) {
 	grps, err := s.ListSecurityGroups(ctx)
 	if err != nil {
 		return "", err
@@ -938,13 +962,13 @@ func (s *Platform) GetSecurityGroupIDForProject(ctx context.Context, grpname str
 	for _, g := range grps {
 		if g.Name == grpname {
 			if g.Project == projectID {
-				log.SpanLog(ctx, log.DebugLevelMexos, "GetSecurityGroupIDForProject", "projectID", projectID, "group", grpname)
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetSecurityGroupIDForProject", "projectID", projectID, "group", grpname)
 				return g.ID, nil
 			}
 			if g.Project == "" {
 				// This is an openstack bug in some environments in which it may not show the project ids when listing the group
 				// all we can do is hope for no conflicts in this case
-				log.SpanLog(ctx, log.DebugLevelMexos, "Warning: no project id returned for security group", "group", grpname)
+				log.SpanLog(ctx, log.DebugLevelInfra, "Warning: no project id returned for security group", "group", grpname)
 				return g.ID, nil
 			}
 		}
@@ -952,8 +976,8 @@ func (s *Platform) GetSecurityGroupIDForProject(ctx context.Context, grpname str
 	return "", fmt.Errorf("unable to find security group %s project %s", grpname, projectID)
 }
 
-func (s *Platform) OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get console url", "server", serverName)
+func (s *OpenstackPlatform) OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "get console url", "server", serverName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "console", "url", "show", "-f", "json", "-c", "url", "--novnc", serverName)
 	if err != nil {
 		err = fmt.Errorf("can't get console url details for %s, %s, %v", serverName, out, err)
@@ -973,8 +997,8 @@ func (s *Platform) OSGetConsoleUrl(ctx context.Context, serverName string) (*OSC
 // Openstack example call:
 //   <openstack metric resource search --type instance_network_interface instance_id=dc32daa6-0d0a-4512-a9fa-2b989e913014>
 // We only use the the first found result
-func (s *Platform) OSFindResourceByInstId(ctx context.Context, resourceType string, instId string) (*OSMetricResource, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "find resource for instance Id", "id", instId,
+func (s *OpenstackPlatform) OSFindResourceByInstId(ctx context.Context, resourceType string, instId string) (*OSMetricResource, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "find resource for instance Id", "id", instId,
 		"resource", resourceType)
 	osRes := []OSMetricResource{}
 	instArg := fmt.Sprintf("instance_id=%s", instId)
@@ -999,8 +1023,8 @@ func (s *Platform) OSFindResourceByInstId(ctx context.Context, resourceType stri
 // Example openstack call:
 //   <openstack metric measures show --resource-id a9bf10cf-a709-5a47-8b69-da920b8f65cd network.incoming.bytes>
 // This will return a range of measurements from the startTime
-func (s *Platform) OSGetMetricsRangeForId(ctx context.Context, resId string, metric string, startTime time.Time) ([]OSMetricMeasurement, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get measure for Id", "id", resId, "metric", metric)
+func (s *OpenstackPlatform) OSGetMetricsRangeForId(ctx context.Context, resId string, metric string, startTime time.Time) ([]OSMetricMeasurement, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "get measure for Id", "id", resId, "metric", metric)
 	measurements := []OSMetricMeasurement{}
 
 	startStr := startTime.Format(time.RFC3339)
@@ -1023,8 +1047,8 @@ func (s *Platform) OSGetMetricsRangeForId(ctx context.Context, resId string, met
 	return measurements, nil
 }
 
-func (s *Platform) AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
-	imgPath := mexos.GetCloudletVMImagePath(imgPathPrefix, imgVersion)
+func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
+	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion)
 
 	// Fetch platform base image name
 	pfImageName, err := cloudcommon.GetFileName(imgPath)
@@ -1038,7 +1062,7 @@ func (s *Platform) AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgV
 	}
 	if err != nil {
 		// Validate if pfImageName is same as we expected
-		_, md5Sum, err := mexos.GetUrlInfo(ctx, s.vaultConfig, imgPath)
+		_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.vmProperties.CommonPf.VaultConfig, imgPath)
 		if err != nil {
 			return "", err
 		}
@@ -1052,23 +1076,21 @@ func (s *Platform) AddImageIfNotPresent(ctx context.Context, imgPathPrefix, imgV
 	return pfImageName, nil
 }
 
-func (s *Platform) OSSetPowerState(ctx context.Context, serverName, serverAction string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "setting server state", "serverName", serverName, "serverAction", serverAction)
-
+func (s *OpenstackPlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "setting server state", "serverName", serverName, "serverAction", serverAction)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", serverAction, serverName)
 	if err != nil {
 		err = fmt.Errorf("unable to %s server %s, %s, %v", serverAction, serverName, out, err)
 		return err
 	}
-
 	return nil
 }
 
-func (s *Platform) AddSecurityRuleCIDR(ctx context.Context, cidr string, proto string, groupName string, port string) error {
+func (s *OpenstackPlatform) AddSecurityRuleCIDR(ctx context.Context, cidr string, proto string, groupName string, port string) error {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", groupName)
 	if err != nil {
 		if strings.Contains(string(out), "Security group rule already exists") {
-			log.SpanLog(ctx, log.DebugLevelMexos, "security group rule already exists, proceeding")
+			log.SpanLog(ctx, log.DebugLevelInfra, "security group rule already exists, proceeding")
 		} else {
 			return fmt.Errorf("can't add security group rule for port %s to %s,%s,%v", port, groupName, string(out), err)
 		}
@@ -1076,7 +1098,7 @@ func (s *Platform) AddSecurityRuleCIDR(ctx context.Context, cidr string, proto s
 	return nil
 }
 
-func (s *Platform) DeleteSecurityGroupRule(ctx context.Context, ruleID string) error {
+func (s *OpenstackPlatform) DeleteSecurityGroupRule(ctx context.Context, ruleID string) error {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "delete", ruleID)
 	if err != nil {
 		return fmt.Errorf("can't delete security group rule %s,%s,%v", ruleID, string(out), err)

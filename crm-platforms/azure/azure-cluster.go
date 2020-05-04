@@ -7,7 +7,7 @@ import (
 	"time"
 
 	sh "github.com/codeskyblue/go-sh"
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -15,9 +15,9 @@ import (
 )
 
 // AzureLogin logs into azure
-func (s *Platform) AzureLogin(ctx context.Context) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "doing azure login")
-	out, err := sh.Command("az", "login", "--username", s.props.UserName, "--password", s.props.Password).CombinedOutput()
+func (a *AzurePlatform) AzureLogin(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "doing azure login")
+	out, err := sh.Command("az", "login", "--username", a.GetAzureUser(), "--password", a.GetAzurePass()).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("Login Failed: %s %v", out, err)
 	}
@@ -28,12 +28,12 @@ func GetResourceGroupForCluster(clusterInst *edgeproto.ClusterInst) string {
 	return clusterInst.Key.CloudletKey.Name + "_" + clusterInst.Key.ClusterKey.Name
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *AzurePlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	var err error
 
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	clusterName := AzureSanitize(clusterInst.Key.ClusterKey.Name)
-	location := s.props.Location
+	location := s.GetAzureLocation()
 
 	if err = s.AzureLogin(ctx); err != nil {
 		return err
@@ -52,22 +52,22 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if err != nil {
 		return err
 	}
-	mexos.BackupKubeconfig(ctx, client)
+	infracommon.BackupKubeconfig(ctx, client)
 	if err = GetAKSCredentials(resourceGroup, clusterName); err != nil {
 		return err
 	}
 	kconf := k8smgmt.GetKconfName(clusterInst) // XXX
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "warning, using default config") //XXX
+	log.SpanLog(ctx, log.DebugLevelInfra, "warning, using default config") //XXX
 	//XXX watch out for multiple cluster contexts
-	if err = pc.CopyFile(client, mexos.DefaultKubeconfig(), kconf); err != nil {
+	if err = pc.CopyFile(client, infracommon.DefaultKubeconfig(), kconf); err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "created aks", "name", clusterName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "created aks", "name", clusterName)
 	return nil
 }
 
-func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
+func (s *AzurePlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	resourceGroup := GetResourceGroupForCluster(clusterInst)
 	if err := s.AzureLogin(ctx); err != nil {
 		return err
@@ -75,7 +75,7 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 	return DeleteAKSCluster(resourceGroup)
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *AzurePlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Update cluster inst not implemented for Azure")
 }
 

@@ -7,16 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/mexos"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 //FindNodeIP finds IP for the given node
-func (s *Platform) FindNodeIP(name string, srvs []OSServer) (string, error) {
-	//log.SpanLog(ctx,log.DebugLevelMexos, "find node ip", "name", name)
+func (s *OpenstackPlatform) FindNodeIP(name string, srvs []OSServer) (string, error) {
+	//log.SpanLog(ctx,log.DebugLevelInfra, "find node ip", "name", name)
 	if name == "" {
 		return "", fmt.Errorf("empty name")
 	}
@@ -27,7 +24,7 @@ func (s *Platform) FindNodeIP(name string, srvs []OSServer) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("can't get IP for %s, %v", srv.Name, err)
 			}
-			//log.SpanLog(ctx,log.DebugLevelMexos, "found node ip", "name", name, "ipaddr", ipaddr)
+			//log.SpanLog(ctx,log.DebugLevelInfra, "found node ip", "name", name, "ipaddr", ipaddr)
 			return ipaddr, nil
 		}
 	}
@@ -35,8 +32,8 @@ func (s *Platform) FindNodeIP(name string, srvs []OSServer) (string, error) {
 }
 
 //FindClusterMaster finds cluster given a key string
-func (s *Platform) FindClusterMaster(ctx context.Context, namePrefix, nameSuffix string, srvs []OSServer) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "FindClusterMaster", "namePrefix", namePrefix, "nameSuffix", nameSuffix)
+func (o *OpenstackPlatform) FindClusterMaster(ctx context.Context, namePrefix, nameSuffix string, srvs []OSServer) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FindClusterMaster", "namePrefix", namePrefix, "nameSuffix", nameSuffix)
 	if namePrefix == "" || nameSuffix == "" {
 		return "", fmt.Errorf("empty name component")
 	}
@@ -48,50 +45,28 @@ func (s *Platform) FindClusterMaster(ctx context.Context, namePrefix, nameSuffix
 	return "", fmt.Errorf("VM %s not found", nameSuffix)
 }
 
-//GetServerIPAddr gets the server IP(s) for the given network
-func (s *Platform) GetServerIPAddr(ctx context.Context, networkName, serverName string) (*mexos.ServerIP, error) {
+//GetIPFromServerName gets the server IP(s) for the given network
+func (o *OpenstackPlatform) GetIPFromServerName(ctx context.Context, networkName, serverName string) (*vmlayer.ServerIP, error) {
 	// if this is a root lb, look it up and get the IP if we have it cached
-	rootLB, err := GetRootLB(ctx, serverName)
+	rootLB, err := vmlayer.GetRootLB(ctx, serverName)
 	if err == nil && rootLB != nil {
 		if rootLB.IP != nil {
-			log.SpanLog(ctx, log.DebugLevelMexos, "using existing rootLB IP", "IP", rootLB.IP)
+			log.SpanLog(ctx, log.DebugLevelInfra, "using existing rootLB IP", "IP", rootLB.IP)
 			return rootLB.IP, nil
 		}
 	}
-	sd, err := s.GetActiveServerDetails(ctx, serverName)
+	sd, err := o.GetServerDetail(ctx, serverName)
 	if err != nil {
 		return nil, err
 	}
-	return mexos.GetServerIPFromAddrs(ctx, networkName, sd.Addresses, serverName)
-}
-
-// GetMasterNameAndIP gets the name and IP address of the cluster's master node.
-func (s *Platform) GetMasterNameAndIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, string, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "get master IP", "cluster", clusterInst.Key.ClusterKey.Name)
-	srvs, err := s.ListServers(ctx)
-	if err != nil {
-		return "", "", fmt.Errorf("error getting server list: %v", err)
-
-	}
-	namePrefix := ClusterTypeKubernetesMasterLabel
-	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
-		namePrefix = ClusterTypeDockerVMLabel
-	}
-
-	nodeNameSuffix := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-	masterName, err := s.FindClusterMaster(ctx, namePrefix, nodeNameSuffix, srvs)
-	if err != nil {
-		return "", "", fmt.Errorf("%s -- %s, %v", mexos.ClusterNotFoundErr, nodeNameSuffix, err)
-	}
-	masterIP, err := s.FindNodeIP(masterName, srvs)
-	return masterName, masterIP, err
+	return vmlayer.GetIPFromServerDetails(ctx, networkName, sd)
 }
 
 //GetExternalGateway retrieves Gateway IP from the external network information. It first gets external
 //  network information. Using that it further gets subnet information. Inside that subnet information
 //  there should be gateway IP if the network is set up correctly.
 // Not to be confused with GetRouterDetailExternalGateway.
-func (s *Platform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
+func (s *OpenstackPlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
 	nd, err := s.GetNetworkDetail(ctx, extNetName)
 	if err != nil {
 		return "", fmt.Errorf("can't get details for external network %s, %v", extNetName, err)
@@ -117,7 +92,7 @@ func (s *Platform) GetExternalGateway(ctx context.Context, extNetName string) (s
 	if sd.GatewayIP == "" {
 		return "", fmt.Errorf("cannot get external network's gateway IP")
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get external gatewayIP", "gatewayIP", sd.GatewayIP, "subnet detail", sd)
 	return sd.GatewayIP, nil
 }
 
@@ -135,7 +110,7 @@ func GetRouterDetailExternalGateway(rd *OSRouterDetail) (*OSExternalGateway, err
 	if err != nil {
 		return nil, fmt.Errorf("can't get unmarshal external gateway info, %v", err)
 	}
-	//log.SpanLog(ctx,log.DebugLevelMexos, "get router detail external gateway", "external gateway", externalGateway)
+	//log.SpanLog(ctx,log.DebugLevelInfra, "get router detail external gateway", "external gateway", externalGateway)
 	return externalGateway, nil
 }
 
@@ -150,81 +125,54 @@ func GetRouterDetailInterfaces(ctx context.Context, rd *OSRouterDetail) ([]OSRou
 	if err != nil {
 		return nil, fmt.Errorf("can't unmarshal router detail interfaces")
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "get router detail interfaces", "interfaces", interfaces)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get router detail interfaces", "interfaces", interfaces)
 	return interfaces, nil
 }
 
-func (s *Platform) GetMexRouterIP(ctx context.Context) (string, error) {
-	rtr := s.GetCloudletExternalRouter()
-	if rtr == mexos.NoConfigExternalRouter || rtr == mexos.NoExternalRouter {
-		return "", nil
-	}
-	rd, rderr := s.GetRouterDetail(ctx, rtr)
-	if rderr != nil {
-		return "", fmt.Errorf("can't get router detail for %s, %v", rtr, rderr)
-	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "router detail", "detail", rd)
-	reg, regerr := GetRouterDetailExternalGateway(rd)
-	if regerr != nil {
-		// some deployments will not be able to retrieve the router GW at all, allow this
-		log.SpanLog(ctx, log.DebugLevelMexos, "can't get router external GW, continuing", "error", regerr)
-		return "", nil
-	}
-	if reg != nil && len(reg.ExternalFixedIPs) > 0 {
-		fip := reg.ExternalFixedIPs[0]
-		log.SpanLog(ctx, log.DebugLevelMexos, "external fixed ips", "ips", fip)
-		return fip.IPAddress, nil
-	} else {
-		// some networks may not have an external fixed ip for the router.  This is not fatal
-		log.SpanLog(ctx, log.DebugLevelMexos, "can't get external fixed ips list from router detail external gateway, returning blank ip")
-		return "", nil
-	}
-}
-
-func (s *Platform) ValidateNetwork(ctx context.Context) error {
-	nets, err := s.ListNetworks(ctx)
+func (o *OpenstackPlatform) ValidateNetwork(ctx context.Context) error {
+	nets, err := o.ListNetworks(ctx)
 	if err != nil {
 		return err
 	}
 
 	found := false
 	for _, n := range nets {
-		if n.Name == s.GetCloudletExternalNetwork() {
+		if n.Name == o.vmProperties.GetCloudletExternalNetwork() {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return fmt.Errorf("cannot find external network %s", s.GetCloudletExternalNetwork())
+		return fmt.Errorf("cannot find external network %s", o.vmProperties.GetCloudletExternalNetwork())
 	}
 
 	found = false
 	for _, n := range nets {
-		if n.Name == s.GetCloudletMexNetwork() {
+		if n.Name == o.vmProperties.GetCloudletMexNetwork() {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return fmt.Errorf("cannot find network %s", s.GetCloudletMexNetwork())
+		return fmt.Errorf("cannot find network %s", o.vmProperties.GetCloudletMexNetwork())
 	}
 
-	rtr := s.GetCloudletExternalRouter()
-	if rtr != mexos.NoConfigExternalRouter && rtr != mexos.NoExternalRouter {
-		routers, err := s.ListRouters(ctx)
+	rtr := o.vmProperties.GetCloudletExternalRouter()
+	if rtr != vmlayer.NoConfigExternalRouter && rtr != vmlayer.NoExternalRouter {
+		routers, err := o.ListRouters(ctx)
 		if err != nil {
 			return err
 		}
 
 		found = false
 		for _, r := range routers {
-			if r.Name == s.GetCloudletExternalRouter() {
+			if r.Name == o.vmProperties.GetCloudletExternalRouter() {
 				found = true
 				break
 			}
 		}
 		if !found {
-			return fmt.Errorf("ext router %s not found", s.GetCloudletExternalRouter())
+			return fmt.Errorf("ext router %s not found", o.vmProperties.GetCloudletExternalRouter())
 		}
 	}
 
@@ -232,72 +180,65 @@ func (s *Platform) ValidateNetwork(ctx context.Context) error {
 }
 
 //PrepNetwork validates and does the work needed to ensure MEX network setup
-func (s *Platform) PrepNetwork(ctx context.Context) error {
-	nets, err := s.ListNetworks(ctx)
+func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
+	nets, err := o.ListNetworks(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Not having external network setup by GDDT is a hard error.
-	// GDDT must have setup a network connected to external / internet
-	// that is named properly.
-	// This is the case at Buckhorn.
-	// The providers are expected to set up one external shared internet
-	// routed network with a specific name.
-
 	found := false
 	for _, n := range nets {
-		if n.Name == s.GetCloudletExternalNetwork() {
+		if n.Name == o.vmProperties.GetCloudletExternalNetwork() {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return fmt.Errorf("cannot find ext net %s", s.GetCloudletExternalNetwork())
+		return fmt.Errorf("cannot find ext net %s", o.vmProperties.GetCloudletExternalNetwork())
 	}
 
 	found = false
 	for _, n := range nets {
-		if n.Name == s.GetCloudletMexNetwork() {
+		if n.Name == o.vmProperties.GetCloudletMexNetwork() {
 			found = true
 			break
 		}
 	}
 	if !found {
-		ni, err := mexos.ParseNetSpec(ctx, s.GetCloudletNetworkScheme())
+		ni, err := vmlayer.ParseNetSpec(ctx, o.vmProperties.GetCloudletNetworkScheme())
 		if err != nil {
 			return err
 		}
 		// We need at least one network for `mex` clusters
-		err = s.CreateNetwork(ctx, s.GetCloudletMexNetwork(), ni.NetworkType)
+		err = o.CreateNetwork(ctx, o.vmProperties.GetCloudletMexNetwork(), ni.NetworkType)
 		if err != nil {
-			return fmt.Errorf("cannot create mex network %s, %v", s.GetCloudletMexNetwork(), err)
+			return fmt.Errorf("cannot create mex network %s, %v", o.vmProperties.GetCloudletMexNetwork(), err)
 		}
 	}
 
-	rtr := s.GetCloudletExternalRouter()
-	if rtr != mexos.NoConfigExternalRouter && rtr != mexos.NoExternalRouter {
-		routers, err := s.ListRouters(ctx)
+	rtr := o.vmProperties.GetCloudletExternalRouter()
+	if rtr != vmlayer.NoConfigExternalRouter && rtr != vmlayer.NoExternalRouter {
+		routers, err := o.ListRouters(ctx)
 		if err != nil {
 			return err
 		}
 
 		found = false
 		for _, r := range routers {
-			if r.Name == s.GetCloudletExternalRouter() {
+			if r.Name == o.vmProperties.GetCloudletExternalRouter() {
 				found = true
 				break
 			}
 		}
 		if !found {
 			// We need at least one router for our `mex` network and external network
-			err = s.CreateRouter(ctx, s.GetCloudletExternalRouter())
+			err = o.CreateRouter(ctx, o.vmProperties.GetCloudletExternalRouter())
 			if err != nil {
-				return fmt.Errorf("cannot create the ext router %s, %v", s.GetCloudletExternalRouter(), err)
+				return fmt.Errorf("cannot create the ext router %s, %v", o.vmProperties.GetCloudletExternalRouter(), err)
 			}
-			err = s.SetRouter(ctx, s.GetCloudletExternalRouter(), s.GetCloudletExternalNetwork())
+			err = o.SetRouter(ctx, o.vmProperties.GetCloudletExternalRouter(), o.vmProperties.GetCloudletExternalNetwork())
 			if err != nil {
-				return fmt.Errorf("cannot set default network to router %s, %v", s.GetCloudletExternalRouter(), err)
+				return fmt.Errorf("cannot set default network to router %s, %v", o.vmProperties.GetCloudletExternalRouter(), err)
 			}
 		}
 	}
@@ -306,8 +247,8 @@ func (s *Platform) PrepNetwork(ctx context.Context) error {
 }
 
 //GetCloudletSubnets returns subnets inside MEX Network
-func (s *Platform) GetCloudletSubnets(ctx context.Context) ([]string, error) {
-	nd, err := s.GetNetworkDetail(ctx, s.GetCloudletMexNetwork())
+func (o *OpenstackPlatform) GetCloudletSubnets(ctx context.Context) ([]string, error) {
+	nd, err := o.GetNetworkDetail(ctx, o.vmProperties.GetCloudletMexNetwork())
 	if err != nil {
 		return nil, fmt.Errorf("can't get MEX network detail, %v", err)
 	}
@@ -341,18 +282,18 @@ func GetServerNetworkIP(networks, netmatch string) (string, error) {
 	return "", fmt.Errorf("no network matching: %s", netmatch)
 }
 
-func (s *Platform) GetServerExternalIP(networks string) (string, error) {
-	extNet := s.GetCloudletExternalNetwork()
+func (o *OpenstackPlatform) GetServerExternalIP(networks string) (string, error) {
+	extNet := o.vmProperties.GetCloudletExternalNetwork()
 	return GetServerNetworkIP(networks, extNet)
 }
 
-func (s *Platform) GetServerInternalIP(networks string) (string, error) {
-	mexNet := s.GetCloudletMexNetwork()
+func (o *OpenstackPlatform) GetServerInternalIP(networks string) (string, error) {
+	mexNet := o.vmProperties.GetCloudletMexNetwork()
 	return GetServerNetworkIP(networks, mexNet)
 }
 
 //GetInternalIP returns IP of the server
-func (s *Platform) GetInternalIP(name string, srvs []OSServer) (string, error) {
+func (s *OpenstackPlatform) GetInternalIP(name string, srvs []OSServer) (string, error) {
 	for _, srv := range srvs {
 		if srv.Name == name {
 			return s.GetServerInternalIP(srv.Networks)
@@ -362,7 +303,7 @@ func (s *Platform) GetInternalIP(name string, srvs []OSServer) (string, error) {
 }
 
 //GetInternalCIDR returns CIDR of server
-func (s *Platform) GetInternalCIDR(name string, srvs []OSServer) (string, error) {
+func (s *OpenstackPlatform) GetInternalCIDR(name string, srvs []OSServer) (string, error) {
 	addr, err := s.GetInternalIP(name, srvs)
 	if err != nil {
 		return "", err
@@ -397,4 +338,27 @@ func ParseFlavorProperties(f OSFlavorDetail) map[string]string {
 
 	}
 	return props
+}
+
+func (o *OpenstackPlatform) GetRouterDetail(ctx context.Context, routerName string) (*vmlayer.RouterDetail, error) {
+
+	var rd vmlayer.RouterDetail
+	rd.Name = routerName
+
+	ord, err := o.GetOpenStackRouterDetail(ctx, routerName)
+	if err != nil {
+		return nil, err
+	}
+	gw, err := GetRouterDetailExternalGateway(ord)
+	if err != nil {
+		return nil, err
+	}
+	fip := gw.ExternalFixedIPs
+	log.SpanLog(ctx, log.DebugLevelInfra, "external fixed ips", "ips", fip)
+
+	if len(fip) != 1 {
+		return nil, fmt.Errorf("Unexpected fixed ips for mex router %v", fip)
+	}
+	rd.ExternalIP = fip[0].IPAddress
+	return &rd, nil
 }

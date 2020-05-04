@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import "k8s.io/api/core/v1"
 

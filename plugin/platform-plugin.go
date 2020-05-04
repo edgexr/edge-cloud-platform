@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/azure"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
-	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/plugin/common"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 )
 
@@ -16,13 +17,21 @@ func GetPlatform(plat string) (platform.Platform, error) {
 	var outPlatform platform.Platform
 	switch plat {
 	case "PLATFORM_TYPE_OPENSTACK":
-		outPlatform = &openstack.Platform{}
+		openstackProvider := openstack.OpenstackPlatform{}
+		outPlatform = &vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderOpenstack,
+			VMProvider: &openstackProvider,
+		}
+	//case "PLATFORM_TYPE_VSPHERE":
+	//	outPlatform = &vmlayer.VMPlatform{
+	//		Type: vmlayer.VMProviderVSphere,
+	//	}
 	case "PLATFORM_TYPE_AZURE":
-		outPlatform = &azure.Platform{}
+		outPlatform = &azure.AzurePlatform{}
 	case "PLATFORM_TYPE_GCP":
-		outPlatform = &gcp.Platform{}
+		outPlatform = &gcp.GCPPlatform{}
 	case "PLATFORM_TYPE_EDGEBOX":
-		outPlatform = &edgebox.Platform{}
+		outPlatform = &edgebox.EdgeboxPlatform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		outPlatform = &fakeinfra.Platform{}
 	default:

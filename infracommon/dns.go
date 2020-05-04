@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import (
 	"context"
@@ -40,12 +40,12 @@ var NoDnsOverride = ""
 // will use different IPs and patching.
 func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
-	log.SpanLog(ctx, log.DebugLevelMexos, "createAppDNS")
+	log.SpanLog(ctx, log.DebugLevelInfra, "createAppDNS")
 	useDns := true
 	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		if testMode {
 			useDns = false
-			log.SpanLog(ctx, log.DebugLevelMexos, "cannot init cloudflare api", "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "cannot init cloudflare api", "err", err)
 		} else {
 			return fmt.Errorf("cannot init cloudflare api, %v", err)
 		}
@@ -102,7 +102,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false); err != nil {
 				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
 			}
-			log.SpanLog(ctx, log.DebugLevelMexos, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
+			log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 		}
 	}
 	return nil
@@ -158,7 +158,7 @@ func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) erro
 			if err := cloudflare.DeleteDNSRecord(c.GetCloudletDNSZone(), rec.ID); err != nil {
 				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
 			}
-			log.SpanLog(ctx, log.DebugLevelMexos, "deleted DNS record", "name", fqdn)
+			log.SpanLog(ctx, log.DebugLevelInfra, "deleted DNS record", "name", fqdn)
 		}
 	}
 	return nil
@@ -167,16 +167,16 @@ func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) erro
 // KubePatchServiceIP updates the service to have the given external ip.  This is done locally and not thru
 // an ssh client
 func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, servicename string, ipaddr string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "patch service IP", "servicename", servicename, "ipaddr", ipaddr)
+	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr)
 
 	cmd := fmt.Sprintf(`%s kubectl patch svc %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfEnv, servicename, ipaddr)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMexos, "patch svc failed",
+		log.SpanLog(ctx, log.DebugLevelInfra, "patch svc failed",
 			"servicename", servicename, "out", out, "err", err)
 		return fmt.Errorf("error patching for kubernetes service, %s, %s, %v", cmd, out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "patched externalIPs on service", "service", servicename, "externalIPs", ipaddr)
+	log.SpanLog(ctx, log.DebugLevelInfra, "patched externalIPs on service", "service", servicename, "externalIPs", ipaddr)
 	return nil
 }
 
@@ -205,6 +205,6 @@ func WaitforDNSRegistration(ctx context.Context, name string) error {
 		}
 		time.Sleep(dnsRegisterRetryDelay)
 	}
-	log.SpanLog(ctx, log.DebugLevelMexos, "DNS lookup timed out", "name", name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "DNS lookup timed out", "name", name)
 	return fmt.Errorf("error, timed out while looking up DNS for name %s", name)
 }

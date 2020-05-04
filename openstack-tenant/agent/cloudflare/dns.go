@@ -52,7 +52,7 @@ func GetAPI() (*cloudflare.API, error) {
 //GetDNSRecords returns a list of DNS records for the given domain name. Error returned otherewise.
 // if name is provided, that is used as a filter
 func GetDNSRecords(ctx context.Context, zone string, name string) ([]cloudflare.DNSRecord, error) {
-	log.SpanLog(ctx, log.DebugLevelMexos, "GetDNSRecords", "name", name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDNSRecords", "name", name)
 
 	if zone == "" {
 		return nil, fmt.Errorf("missing domain zone")
@@ -82,8 +82,7 @@ func GetDNSRecords(ctx context.Context, zone string, name string) ([]cloudflare.
 
 //CreateOrUpdateDNSRecord changes the existing record if found, or adds a new one
 func CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error {
-
-	log.SpanLog(ctx, log.DebugLevelMexos, "CreateOrUpdateDNSRecord", "name", name, "content", content)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord", "name", name, "content", content)
 
 	api, err := GetAPI()
 	if err != nil {
@@ -107,9 +106,9 @@ func CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content str
 	for _, r := range records {
 		found = true
 		if r.Content == content {
-			log.SpanLog(ctx, log.DebugLevelMexos, "CreateOrUpdateDNSRecord existing record matches", "name", name, "content", content)
+			log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord existing record matches", "name", name, "content", content)
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMexos, "CreateOrUpdateDNSRecord updating", "name", name, "content", content)
+			log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord updating", "name", name, "content", content)
 
 			updateRecord := cloudflare.DNSRecord{
 				Name:    strings.ToLower(name),
@@ -138,12 +137,11 @@ func CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content str
 		}
 	}
 	return nil
-
 }
 
 //CreateDNSRecord creates a new DNS record for the zone
 func CreateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "CreateDNSRecord", "name", name, "content", content)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateDNSRecord", "name", name, "content", content)
 
 	if zone == "" {
 		return fmt.Errorf("missing zone")

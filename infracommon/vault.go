@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import (
 	"context"
@@ -41,13 +41,13 @@ func internEnv(envs []EnvData) error {
 		if err != nil {
 			return err
 		}
-		//log.SpanLog(ctx,log.DebugLevelMexos, "setenv", "name", e.Name, "value", val)
+		//log.SpanLog(ctx,log.DebugLevelInfra, "setenv", "name", e.Name, "value", val)
 	}
 	return nil
 }
 
 func InternVaultEnv(ctx context.Context, config *vault.Config, path string) error {
-	log.SpanLog(ctx, log.DebugLevelMexos, "interning vault", "addr", config.Addr, "path", path)
+	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", config.Addr, "path", path)
 	envData := &VaultEnvData{}
 	err := vault.GetData(config, path, 0, envData)
 	if err != nil {
@@ -61,7 +61,7 @@ func InternVaultEnv(ctx context.Context, config *vault.Config, path string) erro
 }
 
 func GetVaultDataToFile(config *vault.Config, path, fileName string) error {
-	log.DebugLog(log.DebugLevelMexos, "get vault data to file", "addr", config.Addr, "path", path, "file", fileName)
+	log.DebugLog(log.DebugLevelInfra, "get vault data to file", "addr", config.Addr, "path", path, "file", fileName)
 	vaultData := &VaultData{}
 	err := vault.GetData(config, path, 0, vaultData)
 	if err != nil {
@@ -73,7 +73,7 @@ func GetVaultDataToFile(config *vault.Config, path, fileName string) error {
 		return err
 	}
 
-	log.DebugLog(log.DebugLevelMexos, "vault data imported to file successfully")
+	log.DebugLog(log.DebugLevelInfra, "vault data imported to file successfully")
 	return nil
 }
 

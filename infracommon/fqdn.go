@@ -1,4 +1,4 @@
-package mexos
+package infracommon
 
 import (
 	"context"
