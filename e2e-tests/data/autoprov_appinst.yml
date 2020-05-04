@@ -14,3 +14,15 @@ regiondata:
             organization: dmuus
             name: dmuus-cloud-1
           organization: MobiledgeX
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovappd
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: ReservableD
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: MobiledgeX

@@ -18,3 +18,18 @@ regiondata:
       nummasters: 1
       numnodes: 1
       reservable: true
+    - key:
+        clusterkey:
+          name: ReservableD
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+        organization: MobiledgeX
+      flavor:
+        name: x1.small
+      deployment: docker
+      liveness: LivenessStatic
+      ipaccess: IpAccessShared
+      nodeflavor: x1.small
+      masterflavor: x1.small
+      reservable: true
