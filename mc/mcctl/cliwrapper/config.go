@@ -7,6 +7,11 @@ func (s *Client) UpdateConfig(uri, token string, config map[string]interface{}) 
 	return s.runObjs(uri, token, args, config, nil)
 }
 
+func (s *Client) ResetConfig(uri, token string) (int, error) {
+	args := []string{"config", "reset"}
+	return s.runObjs(uri, token, args, nil, nil)
+}
+
 func (s *Client) ShowConfig(uri, token string) (*ormapi.Config, int, error) {
 	args := []string{"config", "show"}
 	config := ormapi.Config{}

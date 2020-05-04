@@ -90,7 +90,7 @@ func Login(c echo.Context) error {
 	if user.Locked {
 		return c.JSON(http.StatusBadRequest, Msg("Account is locked, please contact MobiledgeX support"))
 	}
-	if !serverConfig.SkipVerifyEmail && !user.EmailVerified {
+	if !getSkipVerifyEmail(ctx, nil) && !user.EmailVerified {
 		return c.JSON(http.StatusBadRequest, Msg("Email not verified yet"))
 	}
 
@@ -131,7 +131,11 @@ func CreateUser(c echo.Context) error {
 			}
 		}
 	}
-	if !serverConfig.SkipVerifyEmail {
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
+	if !getSkipVerifyEmail(ctx, config) {
 		// real email will be filled in later
 		createuser.Verify.Email = "dummy@dummy.com"
 		err := ValidEmailRequest(c, &createuser.Verify)
@@ -143,10 +147,6 @@ func CreateUser(c echo.Context) error {
 	span.SetTag("username", user.Name)
 	span.SetTag("email", user.Email)
 
-	config, err := getConfig(ctx)
-	if err != nil {
-		return err
-	}
 	user.Locked = false
 	if config.LockNewAccounts {
 		user.Locked = true

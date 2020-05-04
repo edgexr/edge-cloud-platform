@@ -99,7 +99,7 @@ Subject: {{.Subject}}
 `
 
 func sendNotify(ctx context.Context, to, subject, message string) error {
-	if serverConfig.SkipVerifyEmail {
+	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
 	noreply, err := getNoreply(ctx)
@@ -144,7 +144,7 @@ MobiledgeX Team
 `
 
 func sendVerifyEmail(ctx context.Context, username string, req *ormapi.EmailRequest) error {
-	if serverConfig.SkipVerifyEmail {
+	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
 	noreply, err := getNoreply(ctx)
@@ -290,7 +290,7 @@ MobiledgeX Team
 `
 
 func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) error {
-	if serverConfig.SkipVerifyEmail {
+	if getSkipVerifyEmail(ctx, nil) {
 		return nil
 	}
 	noreply, err := getNoreply(ctx)
@@ -312,4 +312,19 @@ func sendAddedEmail(ctx context.Context, admin, name, email, org, role string) e
 	log.SpanLog(ctx, log.DebugLevelApi, "send added email",
 		"from", noreply.Email, "to", email)
 	return sendEmail(noreply, email, &buf)
+}
+
+func getSkipVerifyEmail(ctx context.Context, config *ormapi.Config) bool {
+	if serverConfig.SkipVerifyEmail {
+		return true
+	}
+	if config == nil {
+		var err error
+		config, err = getConfig(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "unable to check config for skipVerifyEmail", "err", err)
+			return false
+		}
+	}
+	return config.SkipVerifyEmail
 }

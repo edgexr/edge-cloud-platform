@@ -67,9 +67,14 @@ type Controller struct {
 }
 
 type Config struct {
-	ID                 int `gorm:"primary_key;auto_increment:false"`
-	LockNewAccounts    bool
+	// read only: true
+	ID int `gorm:"primary_key;auto_increment:false"`
+	// Lock new accounts (must be unlocked by admin)
+	LockNewAccounts bool
+	// Email to notify when locked account is created
 	NotifyEmailAddress string
+	// Skip email verification for new accounts (testing only)
+	SkipVerifyEmail bool
 }
 
 type OrgCloudletPool struct {

@@ -29,62 +29,59 @@
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:30:00.385313-07:00"
-  duration: 9.015ms
+  starttime: "2020-04-22T13:11:38.325946-07:00"
+  duration: 9.133ms
   request: '{"username":"mexadmin","password":""}'
   response: '{"token":""}'
-  traceid: 3cf411aa24a1f7ae
-- operationname: /api/v1/auth/user/delete
+  traceid: 15aae46d89a3ede0
+- operationname: /api/v1/auth/config/update
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:30:00.378034-07:00"
-  duration: 4.117ms
-  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"user3password","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false}'
-  response: '{"message":"user deleted"}'
-  traceid: 793a44fa87a08ef
-- operationname: /api/v1/auth/user/delete
-  username: mexadmin
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-09-26T15:30:00.369995-07:00"
-  duration: 4.889ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"user2password","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false}'
-  response: '{"message":"user deleted"}'
-  traceid: 47e63a14d9bacd5f
-- operationname: /api/v1/auth/user/delete
-  username: mexadmin
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-09-26T15:30:00.361917-07:00"
-  duration: 4.404ms
-  request: '{"Name":"user1","Email":"user1@email.com","EmailVerified":false,"Passhash":"user1password","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false}'
-  response: '{"message":"user deleted"}'
-  traceid: 1d6a972e380a0fb0
+  starttime: "2020-04-22T13:05:08.227371-07:00"
+  duration: 2.377ms
+  request: '{"notifyemailaddress":"support@mobiledgex.com","skipverifyemail":true}'
+  traceid: 57c8051e9b691a7f
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:30:00.348454-07:00"
-  duration: 10.065ms
+  starttime: "2020-04-22T12:56:53.391151-07:00"
+  duration: 9.715ms
   request: '{"username":"mexadmin","password":""}'
   response: '{"token":""}'
-  traceid: 4887b9a61122c458
+  traceid: 710453eaedafa882
 - operationname: /api/v1/login
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:30:00.283661-07:00"
-  duration: 11.057ms
+  starttime: "2020-04-22T12:56:53.331889-07:00"
+  duration: 10.607ms
   request: '{"username":"mexadmin","password":""}'
   response: '{"token":""}'
-  traceid: 1a5c05d3a0ec7429
-- operationname: /api/v1/auth/controller/delete
+  traceid: 6b95d86fc535352b
+- operationname: /api/v1/auth/config/reset
   username: mexadmin
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-09-26T15:30:00.278638-07:00"
-  duration: 1.413ms
-  request: '{"Region":"locala","Address":"127.0.0.1:55011","InfluxDB":"http://127.0.0.1:8087","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
-  response: '{"message":"Controller deregistered"}'
-  traceid: 7e61d350f6c309c3
+  starttime: "2020-04-22T12:56:53.326122-07:00"
+  duration: 1.619ms
+  traceid: 2085dab13e0fe17b
+- operationname: /api/v1/login
+  username: mexadmin
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-04-22T12:56:53.312403-07:00"
+  duration: 9.806ms
+  request: '{"username":"mexadmin","password":""}'
+  response: '{"token":""}'
+  traceid: 626b3e5a5f60b4d
+- operationname: /api/v1/login
+  username: mexadmin
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-04-22T12:56:53.259193-07:00"
+  duration: 9.524ms
+  request: '{"username":"mexadmin","password":""}'
+  response: '{"token":""}'
+  traceid: 3e7a229ff604f5cc

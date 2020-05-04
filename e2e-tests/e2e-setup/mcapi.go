@@ -55,6 +55,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if strings.HasPrefix(api, "audit") {
 		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
+	} else if strings.HasPrefix(api, "config") {
+		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "runcommand" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "showlogs" {
@@ -118,6 +120,39 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 			status, err := mcClient.DeleteUser(uri, token, &user)
 			checkMcErr("DeleteUser", status, err, &rc)
 		}
+	}
+	return rc
+}
+
+func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+	log.Printf("Applying MC users via APIs for %s\n", apiFile)
+
+	token, rc := loginCurUser(uri, curUserFile, vars)
+	if !rc {
+		return false
+	}
+
+	switch api {
+	case "configshow":
+		config, st, err := mcClient.ShowConfig(uri, token)
+		checkMcErr("ShowConfig", st, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, config, true)
+	case "configreset":
+		st, err := mcClient.ResetConfig(uri, token)
+		checkMcErr("ResetConfig", st, err, &rc)
+	case "configupdate":
+		if apiFile == "" {
+			log.Println("Error: Cannot run MC config APIs without API file")
+			return false
+		}
+		data := make(map[string]interface{})
+		err := util.ReadYamlFile(apiFile, &data, util.WithVars(vars), util.ValidateReplacedVars())
+		if err != nil && !util.IsYamlOk(err, "config") {
+			log.Printf("error in unmarshal ormapi.Config for %s: %v\n", apiFile, err)
+			return false
+		}
+		st, err := mcClient.UpdateConfig(uri, token, data)
+		checkMcErr("UpdateConfig", st, err, &rc)
 	}
 	return rc
 }
@@ -187,22 +222,23 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return false
 	}
 	data := readMCDataFile(apiFile, vars)
-	regionDataMap := readMCRegionDataFileMap(apiFile, vars)
+	dataMap := readMCDataFileMap(apiFile, vars)
+
 	var errs []Err
 	switch api {
 	case "create":
 		output := &AllDataOut{}
-		createMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		createMcData(uri, token, tag, data, dataMap, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "delete":
 		output := &AllDataOut{}
-		deleteMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		deleteMcData(uri, token, tag, data, dataMap, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "update":
 		output := &AllDataOut{}
-		updateMcData(uri, token, tag, data, regionDataMap, output, &rc)
+		updateMcData(uri, token, tag, data, dataMap, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "showfiltered":
@@ -249,7 +285,7 @@ func readMCDataFile(file string, vars map[string]string) *ormapi.AllData {
 	return &data
 }
 
-func readMCRegionDataFileMap(file string, vars map[string]string) *[]interface{} {
+func readMCDataFileMap(file string, vars map[string]string) map[string]interface{} {
 	dataMap := make(map[string]interface{})
 	err := util.ReadYamlFile(file, &dataMap, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
@@ -258,15 +294,25 @@ func readMCRegionDataFileMap(file string, vars map[string]string) *[]interface{}
 			os.Exit(1)
 		}
 	}
-	if val, ok := dataMap["regiondata"]; ok {
-		retval, ok := val.([]interface{})
-		if ok {
-			return &retval
-		}
-		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, invalid data in regiondata: %v\n", file, val)
+	return dataMap
+}
+
+func getRegionDataMap(dataMap map[string]interface{}, index int) interface{} {
+	val, ok := dataMap["regiondata"]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "mcapi: no regiondata in %v\n", dataMap)
 		os.Exit(1)
 	}
-	return nil
+	arr, ok := val.([]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "mcapi: regiondata in map not []interface{}: %v\n", dataMap)
+		os.Exit(1)
+	}
+	if len(arr) <= index {
+		fmt.Fprintf(os.Stderr, "mcapi: regiondata lookup index %d out of bounds in %v\n", index, dataMap)
+		os.Exit(1)
+	}
+	return arr[index]
 }
 
 func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets {
@@ -440,7 +486,7 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi
 	return output
 }
 
-func createMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
+func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
 	for ii, ctrl := range data.Controllers {
 		st, err := mcClient.CreateController(uri, token, &ctrl)
 		outMcErr(output, fmt.Sprintf("CreateController[%d]", ii), st, err)
@@ -454,7 +500,8 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[
 		outMcErr(output, fmt.Sprintf("AddUserRole[%d]", ii), st, err)
 	}
 	for ii, rd := range data.RegionData {
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "create")
+		rdm := getRegionDataMap(dataMap, ii)
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "create")
 		output.RegionData = append(output.RegionData, *rdout)
 	}
 	for ii, oc := range data.OrgCloudletPools {
@@ -463,13 +510,14 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[
 	}
 }
 
-func deleteMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
+func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
 	for ii, oc := range data.OrgCloudletPools {
 		st, err := mcClient.DeleteOrgCloudletPool(uri, token, &oc)
 		outMcErr(output, fmt.Sprintf("DeleteOrgCloudletPool[%d]", ii), st, err)
 	}
 	for ii, rd := range data.RegionData {
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "delete")
+		rdm := getRegionDataMap(dataMap, ii)
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "delete")
 		output.RegionData = append(output.RegionData, *rdout)
 	}
 	for ii, org := range data.Orgs {
@@ -486,9 +534,10 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[
 	}
 }
 
-func updateMcData(uri, token, tag string, data *ormapi.AllData, regionDataMap *[]interface{}, output *AllDataOut, rc *bool) {
+func updateMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
 	for ii, rd := range data.RegionData {
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, (*regionDataMap)[ii], rc, "update")
+		rdm := getRegionDataMap(dataMap, ii)
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "update")
 		output.RegionData = append(output.RegionData, *rdout)
 	}
 }

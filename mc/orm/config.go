@@ -9,17 +9,18 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-const configID = 1
+var defaultConfig = ormapi.Config{
+	ID:                 1,
+	NotifyEmailAddress: "support@mobiledgex.com",
+}
 
 func InitConfig(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init config")
 
 	// create config if it doesn't exist
-	config := ormapi.Config{}
-	config.ID = configID
-	config.NotifyEmailAddress = "support@mobiledgex.com"
+	config := defaultConfig
 	db := loggedDB(ctx)
-	err := db.FirstOrCreate(&config, &ormapi.Config{ID: configID}).Error
+	err := db.FirstOrCreate(&config, &ormapi.Config{ID: config.ID}).Error
 	if err != nil {
 		return err
 	}
@@ -45,6 +46,26 @@ func UpdateConfig(c echo.Context) error {
 	if err := c.Bind(&config); err != nil {
 		return bindErr(c, err)
 	}
+	config.ID = defaultConfig.ID
+
+	db := loggedDB(ctx)
+	err = db.Save(&config).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ResetConfig(c echo.Context) error {
+	ctx := GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	if err := authorized(ctx, claims.Username, "", ResourceConfig, ActionManage); err != nil {
+		return err
+	}
+	config := defaultConfig
 	db := loggedDB(ctx)
 	err = db.Save(&config).Error
 	if err != nil {
@@ -66,12 +87,14 @@ func ShowConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// zero out ID so it is not shown to user
+	config.ID = 0
 	return c.JSON(http.StatusOK, config)
 }
 
 func getConfig(ctx context.Context) (*ormapi.Config, error) {
 	config := ormapi.Config{}
-	config.ID = configID
+	config.ID = defaultConfig.ID
 	db := loggedDB(ctx)
 	err := db.First(&config).Error
 	// note: should always exist

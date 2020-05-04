@@ -40,6 +40,7 @@ type Api interface {
 	ShowCloudletEvents(uri, token string, query *ormapi.RegionCloudletEvents) (*ormapi.AllMetrics, int, error)
 
 	UpdateConfig(uri, token string, config map[string]interface{}) (int, error)
+	ResetConfig(uri, token string) (int, error)
 	ShowConfig(uri, token string) (*ormapi.Config, int, error)
 
 	CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
