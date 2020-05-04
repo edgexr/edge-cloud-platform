@@ -246,6 +246,7 @@ var PlatformConfigOptionalArgs = []string{
 	"region",
 	"commercialcerts",
 	"usevaultcerts",
+	"usevaultcas",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -261,6 +262,7 @@ var PlatformConfigAliasArgs = []string{
 	"region=platformconfig.region",
 	"commercialcerts=platformconfig.commercialcerts",
 	"usevaultcerts=platformconfig.usevaultcerts",
+	"usevaultcas=platformconfig.usevaultcas",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -276,6 +278,7 @@ var PlatformConfigComments = map[string]string{
 	"region":                "Region",
 	"commercialcerts":       "Get certs from vault or generate your own for the root load balancer",
 	"usevaultcerts":         "Use Vault certs for internal TLS communication",
+	"usevaultcas":           "Use Vault CAs to authenticate TLS communication",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -383,6 +386,7 @@ var CloudletAliasArgs = []string{
 	"config.region=cloudlet.config.region",
 	"config.commercialcerts=cloudlet.config.commercialcerts",
 	"config.usevaultcerts=cloudlet.config.usevaultcerts",
+	"config.usevaultcas=cloudlet.config.usevaultcas",
 	"restagmap:#.key=cloudlet.restagmap:#.key",
 	"restagmap:#.value.name=cloudlet.restagmap:#.value.name",
 	"restagmap:#.value.organization=cloudlet.restagmap:#.value.organization",
@@ -433,6 +437,7 @@ var CloudletComments = map[string]string{
 	"config.region":                       "Region",
 	"config.commercialcerts":              "Get certs from vault or generate your own for the root load balancer",
 	"config.usevaultcerts":                "Use Vault certs for internal TLS communication",
+	"config.usevaultcas":                  "Use Vault CAs to authenticate TLS communication",
 	"restagmap:#.value.name":              "Resource Table Name",
 	"restagmap:#.value.organization":      "Operator organization of the cloudlet site.",
 	"accessvars":                          "Variables required to access cloudlet",
