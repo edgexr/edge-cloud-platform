@@ -15,6 +15,7 @@ type MC struct {
 	LdapAddr         string
 	NotifySrvAddr    string
 	ConsoleProxyAddr string
+	UseVaultCAs      bool
 	UseVaultCerts    bool
 	TLS              process.TLSCerts
 	cmd              *exec.Cmd
@@ -35,6 +36,7 @@ type Shepherd struct {
 	VaultAddr      string
 	PhysicalName   string
 	CloudletKey    string
+	UseVaultCAs    bool
 	UseVaultCerts  bool
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
@@ -48,6 +50,7 @@ type AutoProv struct {
 	VaultAddr      string
 	InfluxAddr     string
 	Region         string
+	UseVaultCAs    bool
 	UseVaultCerts  bool
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd

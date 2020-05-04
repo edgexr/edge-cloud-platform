@@ -545,6 +545,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigRegion: 21.12
 	// ConfigCommercialCerts: 21.13
 	// ConfigUseVaultCerts: 21.14
+	// ConfigUseVaultCas: 21.15
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2
