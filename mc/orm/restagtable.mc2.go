@@ -5,7 +5,6 @@ package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
-import "net/http"
 import "context"
 import "io"
 import "github.com/mobiledgex/edge-cloud/log"
@@ -36,7 +35,7 @@ func CreateResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -83,7 +82,7 @@ func DeleteResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -130,7 +129,7 @@ func UpdateResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -262,7 +261,7 @@ func AddResTag(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -309,7 +308,7 @@ func RemoveResTag(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -356,7 +355,7 @@ func GetResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTableKey{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := GetResTagTableObj(ctx, rc, &in.ResTagTableKey)

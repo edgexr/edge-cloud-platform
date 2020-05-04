@@ -5,7 +5,6 @@ package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
-import "net/http"
 import "context"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
@@ -34,7 +33,7 @@ func UpdateSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := UpdateSettingsObj(ctx, rc, &in.Settings)
@@ -79,7 +78,7 @@ func ResetSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := ResetSettingsObj(ctx, rc, &in.Settings)
@@ -124,7 +123,7 @@ func ShowSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	resp, err := ShowSettingsObj(ctx, rc, &in.Settings)

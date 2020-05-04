@@ -5,7 +5,6 @@ package orm
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
-import "net/http"
 import "context"
 import "io"
 import "github.com/mobiledgex/edge-cloud/log"
@@ -38,7 +37,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -85,7 +84,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -132,7 +131,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -264,7 +263,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -311,7 +310,7 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

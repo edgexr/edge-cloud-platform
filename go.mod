@@ -39,7 +39,7 @@ require (
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
 	github.com/lib/pq v1.1.1
 	github.com/miekg/dns v1.1.15
-	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mitchellh/mapstructure v1.2.4
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.8
 	github.com/mobiledgex/yaml/v2 v2.2.4
@@ -221,7 +221,7 @@ replace github.com/mitchellh/copystructure => github.com/mitchellh/copystructure
 
 replace github.com/mitchellh/go-testing-interface => github.com/mitchellh/go-testing-interface v1.0.0
 
-replace github.com/mitchellh/mapstructure => github.com/mitchellh/mapstructure v1.1.2
+replace github.com/mitchellh/mapstructure => github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5
 
 replace github.com/modern-go/concurrent => github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 

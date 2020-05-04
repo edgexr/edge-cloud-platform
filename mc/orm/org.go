@@ -32,7 +32,7 @@ func CreateOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
@@ -110,7 +110,7 @@ func DeleteOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)

@@ -74,7 +74,7 @@ func main() {
 		delete(dstReplaces, req.Path)
 	}
 	for _, rep := range srcMod.Replace {
-		replace := fmt.Sprintf("%s=%s", rep.Old, rep.New)
+		replace := fmt.Sprintf("%s=%s", rep.Old.PathVer(), rep.New.PathVer())
 		replaces = append(replaces, replace)
 		delete(dstReplaces, rep.Old.Path)
 	}
@@ -137,4 +137,11 @@ func (m mapFlags) String() string { return "map of strings" }
 func (m mapFlags) Set(value string) error {
 	m[value] = struct{}{}
 	return nil
+}
+
+func (m *Module) PathVer() string {
+	if m.Version == "" {
+		return m.Path
+	}
+	return m.Path + "@" + m.Version
 }

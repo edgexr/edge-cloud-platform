@@ -428,7 +428,6 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		if args.Outstream {
 			g.importIO = true
 		} else {
-			g.importHttp = true
 			g.importGrpcStatus = true
 		}
 	}
@@ -569,7 +568,7 @@ func {{.MethodName}}(c echo.Context) error {
 	defer CloseConn(c)
 {{- else}}
 	if err := c.Bind(&in); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 {{- end}}
 	rc.region = in.Region

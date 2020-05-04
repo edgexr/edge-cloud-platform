@@ -242,20 +242,20 @@ func (s *Client) ShowCloudletEvents(uri, token string, query *ormapi.RegionCloud
 
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
 	var body io.Reader
+	var datastr string
 	if reqData != nil {
 		str, ok := reqData.(string)
 		if ok {
 			// assume string is json data
 			body = bytes.NewBuffer([]byte(str))
+			datastr = str
 		} else {
 			out, err := json.Marshal(reqData)
 			if err != nil {
 				return nil, fmt.Errorf("post %s marshal req failed, %s", uri, err.Error())
 			}
-			if s.Debug {
-				fmt.Printf("posting %s\n", string(out))
-			}
 			body = bytes.NewBuffer(out)
+			datastr = string(out)
 		}
 	} else {
 		body = nil
@@ -274,10 +274,22 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	if s.SkipVerify {
 		tlsConfig.InsecureSkipVerify = true
 	}
-
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
 		Proxy:           http.ProxyFromEnvironment,
+	}
+	if s.Debug {
+		curlcmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json"`, uri)
+		if token != "" {
+			curlcmd += ` -H "Authorization: Bearer ${TOKEN}"`
+		}
+		if s.SkipVerify {
+			curlcmd += " -k"
+		}
+		if datastr != "" {
+			curlcmd += ` --data-raw '` + datastr + `'`
+		}
+		fmt.Printf("%s\n", curlcmd)
 	}
 
 	client := &http.Client{Transport: tr}

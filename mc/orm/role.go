@@ -244,7 +244,7 @@ func AddUserRole(c echo.Context) error {
 	}
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	err = AddUserRoleObj(GetContext(c), claims, &role)
 	return setReply(c, err, Msg("Role added to user"))
@@ -379,7 +379,7 @@ func RemoveUserRole(c echo.Context) error {
 
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid POST data"))
+		return bindErr(c, err)
 	}
 	err = RemoveUserRoleObj(ctx, claims, &role)
 	return setReply(c, err, Msg("Role removed from user"))
