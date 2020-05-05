@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
 )
@@ -26,8 +27,10 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 
 		lvl := log.DebugLevelApi
 
+		path := strings.Split(req.RequestURI, "/")
+		method := path[len(path)-1]
 		if strings.Contains(req.RequestURI, "show") ||
-			strings.Contains(req.RequestURI, "Show") ||
+			edgeproto.IsShow(method) ||
 			strings.Contains(req.RequestURI, "/auth/user/current") ||
 			strings.Contains(req.RequestURI, "/metrics/") ||
 			strings.Contains(req.RequestURI, "/ctrl/Stream") ||
