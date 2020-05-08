@@ -32,8 +32,9 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	}
 
 	// Use generic DIND to create the AppInst
-	err = e.generic.CreateAppInst(ctx, clusterInst, app, appInst, flavor, privacyPolicy, updateCallback)
+	err = e.generic.CreateAppInstInternal(ctx, clusterInst, app, appInst, names)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot create app", "error", err)
 		return err
 	}
 
@@ -45,6 +46,7 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	// set up DNS
 	cluster, err := dind.FindCluster(names.ClusterName)
 	if err != nil {
+		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst)
 		return err
 	}
 	masterIP := cluster.MasterAddr
@@ -68,6 +70,7 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	}
 	if err = e.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "cannot add DNS entries", "error", err)
+		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst)
 		return err
 	}
 	return nil
