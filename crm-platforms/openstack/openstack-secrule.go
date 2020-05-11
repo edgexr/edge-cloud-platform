@@ -39,7 +39,9 @@ func (s *OpenstackPlatform) GetSecurityGroupIDForName(ctx context.Context, group
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletSecurityGroupID", "groupName", groupName)
 
-	groupID := getCachedSecgrpID(ctx, groupName)
+	cloudletKey := s.vmProperties.CommonPf.PlatformConfig.CloudletKey.GetKeyString()
+	groupKey := cloudletKey + groupName
+	groupID := getCachedSecgrpID(ctx, groupKey)
 	if groupID != "" {
 		//cached
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletSecurityGroupID using existing value", "groupID", groupID)
@@ -60,7 +62,7 @@ func (s *OpenstackPlatform) GetSecurityGroupIDForName(ctx context.Context, group
 			if err != nil {
 				return "", err
 			}
-			setCachedCloudletSecgrpID(ctx, groupName, groupID)
+			setCachedCloudletSecgrpID(ctx, groupKey, groupID)
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletSecurityGroupID using new value", "groupID", groupID)
 			return groupID, nil
 		}
