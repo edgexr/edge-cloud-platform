@@ -79,6 +79,34 @@ func goodPermShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 	require.Equal(t, http.StatusOK, status)
 }
 
+var _ = edgeproto.GetFields
+
+func badPermAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, region, org)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+	_, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
 func badPermTestApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {

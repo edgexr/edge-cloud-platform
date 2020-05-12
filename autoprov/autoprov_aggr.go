@@ -33,15 +33,29 @@ type AutoProvAggr struct {
 	intervalNum  uint64
 }
 
+// An App may have multiple AutoProv Policies. However, DME stats
+// are independent of the policies, and only care that a client
+// wants to access the App on a particular Cloudlet.
+// Each policy must be checked to see if the stats meet its
+// threshold for deployment. Only one AppInst per Cloudlet will be
+// deployed even if multiple policies meet the deployment criteria.
 type apAppStats struct {
+	policies  map[string]*apPolicyTracker
+	cloudlets map[edgeproto.CloudletKey]*apCloudletStats
+}
+
+type apPolicyTracker struct {
 	deployClientCount   uint32 // cached from policy
 	deployIntervalCount uint32 // cached from policy
-	cloudlets           map[edgeproto.CloudletKey]*apCloudletStats
+	cloudletTrackers    map[edgeproto.CloudletKey]*apCloudletTracker
 }
 
 type apCloudletStats struct {
-	count              uint64 // absolute count
-	intervalNum        uint64
+	count       uint64 // absolute count
+	intervalNum uint64
+}
+
+type apCloudletTracker struct {
 	deployIntervalsMet uint32
 }
 
@@ -177,7 +191,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			}
 			appStats[ap.CloudletKey] += ap.Count
 			numStats++
-			log.DebugLog(log.DebugLevelMetrics, "stats", "app", ap.AppKey, "cloudlet", ap.CloudletKey, "count", ap.Count)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "stats", "app", ap.AppKey, "cloudlet", ap.CloudletKey, "count", ap.Count)
 		}
 	}
 
@@ -210,21 +224,39 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 				cstats.intervalNum = s.intervalNum
 				continue
 			}
+			log.SpanLog(ctx, log.DebugLevelMetrics, "runIter cloudlet", "interval", s.intervalNum, "app", appKey, "cloudlet", ckey, "count", count, "lastCount", cstats.count)
 			// We are looking for consecutive intervals that
 			// match the deployment/undeployment criteria.
+			resetIntervalsMet := false
 			if (s.intervalNum - 1) != cstats.intervalNum {
 				// missed interval means no change, so reset
 				// consecutive counter
-				cstats.deployIntervalsMet = 0
+				resetIntervalsMet = true
 			}
-			if (count - cstats.count) >= uint64(appStats.deployClientCount) {
-				cstats.deployIntervalsMet++
+			// check all policies to see if any meet criteria
+			doDeploy := false
+			for name, ap := range appStats.policies {
+				tracker, found := ap.cloudletTrackers[ckey]
+				if !found {
+					continue
+				}
+				if resetIntervalsMet {
+					tracker.deployIntervalsMet = 0
+				}
+				if (count - cstats.count) >= uint64(ap.deployClientCount) {
+					tracker.deployIntervalsMet++
+				} else {
+					tracker.deployIntervalsMet = 0
+				}
+				if tracker.deployIntervalsMet >= ap.deployIntervalCount {
+					doDeploy = true
+				}
+				log.SpanLog(ctx, log.DebugLevelMetrics, "runIter deploy check", "policy", name, "intervalsMet", tracker.deployIntervalsMet, "doDeploy", doDeploy)
 			}
 			cstats.count = count
 			cstats.intervalNum = s.intervalNum
-			log.DebugLog(log.DebugLevelMetrics, "intervalsMet", "app", appKey, "cloudlet", ckey, "deploysMet", cstats.deployIntervalsMet, "count", count)
 
-			if cstats.deployIntervalsMet >= appStats.deployIntervalCount {
+			if doDeploy {
 				go func() {
 					dspan := log.StartSpan(log.DebugLevelApi, "auto-prov-deploy", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 					dspan.SetTag("app", appKey)
@@ -314,39 +346,79 @@ func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) 
 		delete(s.allStats, *appKey)
 		return
 	}
-	if app.AutoProvPolicy == "" {
+	inAP := make(map[string]struct{})
+	if app.AutoProvPolicy != "" {
+		inAP[app.AutoProvPolicy] = struct{}{}
+	}
+	for _, name := range app.AutoProvPolicies {
+		inAP[name] = struct{}{}
+	}
+	if len(inAP) == 0 {
 		delete(s.allStats, app.Key)
 		return
 	}
 	appStats, found := s.allStats[app.Key]
 	if !found {
 		appStats = &apAppStats{}
+		appStats.policies = make(map[string]*apPolicyTracker)
 		appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
 		s.allStats[app.Key] = appStats
 	}
-	policy := edgeproto.AutoProvPolicy{}
-	policyKey := edgeproto.PolicyKey{}
-	policyKey.Name = app.AutoProvPolicy
-	policyKey.Organization = appKey.Organization
-	if !s.policyCache.Get(&policyKey, &policy) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", app.Key, "policy", app.AutoProvPolicy)
-		return
+	// remove policies
+	for name, _ := range appStats.policies {
+		if _, found := inAP[name]; !found {
+			delete(appStats.policies, name)
+		}
 	}
-	appStats.deployClientCount = policy.DeployClientCount
-	appStats.deployIntervalCount = policy.DeployIntervalCount
+	// add policies
+	for name, _ := range inAP {
+		_, found := appStats.policies[name]
+		if !found {
+			policy := edgeproto.AutoProvPolicy{}
+			policyKey := edgeproto.PolicyKey{
+				Organization: appKey.Organization,
+				Name:         name,
+			}
+			if !s.policyCache.Get(&policyKey, &policy) {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", app.Key, "policy", name)
+				continue
+			}
+			ap := &apPolicyTracker{}
+			updatePolicyTracker(ctx, ap, &policy)
+			appStats.policies[name] = ap
+		}
+	}
+}
+
+func updatePolicyTracker(ctx context.Context, ap *apPolicyTracker, policy *edgeproto.AutoProvPolicy) {
+	ap.deployClientCount = policy.DeployClientCount
+	ap.deployIntervalCount = policy.DeployIntervalCount
+
+	oldTrackers := ap.cloudletTrackers
+	ap.cloudletTrackers = make(map[edgeproto.CloudletKey]*apCloudletTracker, len(policy.Cloudlets))
+	for ii, _ := range policy.Cloudlets {
+		key := policy.Cloudlets[ii].Key
+
+		tr, found := oldTrackers[key]
+		if !found {
+			tr = &apCloudletTracker{}
+		}
+		ap.cloudletTrackers[key] = tr
+	}
 }
 
 func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, policy *edgeproto.AutoProvPolicy) {
-	appKeys := make([]edgeproto.AppKey, 0)
-	s.appCache.Mux.Lock()
-	for key, app := range s.appCache.Objs {
-		if app.AutoProvPolicy == policy.Key.Name && key.Organization == policy.Key.Organization {
-			appKeys = append(appKeys, key)
-		}
-	}
-	s.appCache.Mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-	for _, key := range appKeys {
-		s.UpdateApp(ctx, &key)
+	for appKey, appStats := range s.allStats {
+		if appKey.Organization != policy.Key.Organization {
+			continue
+		}
+		ap, found := appStats.policies[policy.Key.Name]
+		if !found {
+			continue
+		}
+		updatePolicyTracker(ctx, ap, policy)
 	}
 }
