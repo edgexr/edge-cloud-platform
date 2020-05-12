@@ -69,6 +69,30 @@ func TestPermShowApp(mcClient *ormclient.Client, uri, token, region, org string)
 	return TestShowApp(mcClient, uri, token, region, in)
 }
 
+func TestAddAppAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppAutoProvPolicy{}
+	dat.Region = region
+	dat.AppAutoProvPolicy = *in
+	return mcClient.AddAppAutoProvPolicy(uri, token, dat)
+}
+func TestPermAddAppAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppAutoProvPolicy{}
+	in.AppKey.Organization = org
+	return TestAddAppAutoProvPolicy(mcClient, uri, token, region, in)
+}
+
+func TestRemoveAppAutoProvPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppAutoProvPolicy{}
+	dat.Region = region
+	dat.AppAutoProvPolicy = *in
+	return mcClient.RemoveAppAutoProvPolicy(uri, token, dat)
+}
+func TestPermRemoveAppAutoProvPolicy(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppAutoProvPolicy{}
+	in.AppKey.Organization = org
+	return TestRemoveAppAutoProvPolicy(mcClient, uri, token, region, in)
+}
+
 func (s *TestClient) CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error) {
 	inR := &ormapi.RegionApp{
 		Region: s.Region,
@@ -111,6 +135,30 @@ func (s *TestClient) ShowApp(ctx context.Context, in *edgeproto.App) ([]edgeprot
 		App:    *in,
 	}
 	out, status, err := s.McClient.ShowApp(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AddAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppAutoProvPolicy{
+		Region:            s.Region,
+		AppAutoProvPolicy: *in,
+	}
+	out, status, err := s.McClient.AddAppAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppAutoProvPolicy{
+		Region:            s.Region,
+		AppAutoProvPolicy: *in,
+	}
+	out, status, err := s.McClient.RemoveAppAutoProvPolicy(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

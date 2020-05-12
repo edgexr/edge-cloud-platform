@@ -85,11 +85,37 @@ var ShowAppCmd = &cli.Command{
 	StreamOut:    true,
 }
 
+var AddAppAutoProvPolicyCmd = &cli.Command{
+	Use:          "AddAppAutoProvPolicy",
+	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
+	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAutoProvPolicyAliasArgs, " "),
+	SpecialArgs:  &AppAutoProvPolicySpecialArgs,
+	Comments:     addRegionComment(AppAutoProvPolicyComments),
+	ReqData:      &ormapi.RegionAppAutoProvPolicy{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/AddAppAutoProvPolicy"),
+}
+
+var RemoveAppAutoProvPolicyCmd = &cli.Command{
+	Use:          "RemoveAppAutoProvPolicy",
+	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
+	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAutoProvPolicyAliasArgs, " "),
+	SpecialArgs:  &AppAutoProvPolicySpecialArgs,
+	Comments:     addRegionComment(AppAutoProvPolicyComments),
+	ReqData:      &ormapi.RegionAppAutoProvPolicy{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/RemoveAppAutoProvPolicy"),
+}
+
 var AppApiCmds = []*cli.Command{
 	CreateAppCmd,
 	DeleteAppCmd,
 	UpdateAppCmd,
 	ShowAppCmd,
+	AddAppAutoProvPolicyCmd,
+	RemoveAppAutoProvPolicyCmd,
 }
 
 var AppKeyRequiredArgs = []string{}
@@ -152,6 +178,7 @@ var AppOptionalArgs = []string{
 	"autoprovpolicy",
 	"accesstype",
 	"defaultprivacypolicy",
+	"autoprovpolicies",
 }
 var AppAliasArgs = []string{
 	"fields=app.fields",
@@ -182,6 +209,7 @@ var AppAliasArgs = []string{
 	"accesstype=app.accesstype",
 	"defaultprivacypolicy=app.defaultprivacypolicy",
 	"deleteprepare=app.deleteprepare",
+	"autoprovpolicies=app.autoprovpolicies",
 }
 var AppComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
@@ -208,11 +236,33 @@ var AppComments = map[string]string{
 	"officialfqdn":            "Official FQDN is the FQDN that the app uses to connect by default",
 	"md5sum":                  "MD5Sum of the VM-based app image",
 	"defaultsharedvolumesize": "shared volume size when creating auto cluster",
-	"autoprovpolicy":          "Auto provisioning policy name",
+	"autoprovpolicy":          "(_deprecated_) Auto provisioning policy name",
 	"accesstype":              "Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
 	"defaultprivacypolicy":    "Privacy policy when creating auto cluster",
 	"deleteprepare":           "Preparing to be deleted",
+	"autoprovpolicies":        "Auto provisioning policy names",
 }
 var AppSpecialArgs = map[string]string{
-	"app.fields": "StringArray",
+	"app.autoprovpolicies": "StringArray",
+	"app.fields":           "StringArray",
 }
+var AppAutoProvPolicyRequiredArgs = []string{}
+var AppAutoProvPolicyOptionalArgs = []string{
+	"appkey.organization",
+	"appkey.name",
+	"appkey.version",
+	"autoprovpolicy",
+}
+var AppAutoProvPolicyAliasArgs = []string{
+	"appkey.organization=appautoprovpolicy.appkey.organization",
+	"appkey.name=appautoprovpolicy.appkey.name",
+	"appkey.version=appautoprovpolicy.appkey.version",
+	"autoprovpolicy=appautoprovpolicy.autoprovpolicy",
+}
+var AppAutoProvPolicyComments = map[string]string{
+	"appkey.organization": "App developer organization",
+	"appkey.name":         "App name",
+	"appkey.version":      "App version",
+	"autoprovpolicy":      "Auto Provisioning Policy name",
+}
+var AppAutoProvPolicySpecialArgs = map[string]string{}

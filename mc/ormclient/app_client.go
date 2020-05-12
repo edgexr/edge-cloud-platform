@@ -55,9 +55,29 @@ func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.A
 	return outlist, status, err
 }
 
+func (s *Client) AddAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/AddAppAutoProvPolicy", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
+func (s *Client) RemoveAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/RemoveAppAutoProvPolicy", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 type AppApiClient interface {
 	CreateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
 	DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
 	UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error)
 	ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error)
+	AddAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error)
+	RemoveAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error)
 }

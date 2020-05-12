@@ -52,3 +52,24 @@ type swaggerShowApp struct {
 	// in: body
 	Body RegionApp
 }
+
+// Request summary for AddAppAutoProvPolicy
+// swagger:parameters AddAppAutoProvPolicy
+type swaggerAddAppAutoProvPolicy struct {
+	// in: body
+	Body RegionAppAutoProvPolicy
+}
+
+type RegionAppAutoProvPolicy struct {
+	// required: true
+	// Region name
+	Region            string
+	AppAutoProvPolicy edgeproto.AppAutoProvPolicy
+}
+
+// Request summary for RemoveAppAutoProvPolicy
+// swagger:parameters RemoveAppAutoProvPolicy
+type swaggerRemoveAppAutoProvPolicy struct {
+	// in: body
+	Body RegionAppAutoProvPolicy
+}
