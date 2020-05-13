@@ -23,14 +23,14 @@ type ServerDetail struct {
 	Status    string
 }
 
-func GetIPFromServerDetails(ctx context.Context, networkName string, sd *ServerDetail) (*ServerIP, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "networkName", networkName, "serverDetail", sd)
+func GetIPFromServerDetails(ctx context.Context, networkName string, portName string, sd *ServerDetail) (*ServerIP, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "networkName", networkName, "portName", portName, "serverDetail", sd)
 	for _, s := range sd.Addresses {
-		if s.Network == networkName {
+		if (networkName != "" && s.Network == networkName) || (portName != "" && s.PortName == portName) {
 			return &s, nil
 		}
 	}
-	return nil, fmt.Errorf("unable to find IP for server: %s on network: %s", sd.Name, networkName)
+	return nil, fmt.Errorf("unable to find IP for server: %s on network: %s port: %s", sd.Name, networkName, portName)
 }
 
 func GetCloudletNetworkIfaceFile() string {
@@ -84,7 +84,7 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 		}
 
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-		oldServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), serverDetail)
+		oldServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetail)
 		if err != nil || oldServerIP.ExternalAddr == "" {
 			return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, v.VMProperties.GetCloudletExternalNetwork(), err)
 		}
@@ -101,7 +101,7 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 				return err
 			}
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-			newServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), serverDetail)
+			newServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetail)
 			if err != nil || newServerIP.ExternalAddr == "" {
 				return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, v.VMProperties.GetCloudletExternalNetwork(), err)
 			}
