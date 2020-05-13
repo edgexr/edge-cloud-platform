@@ -59,7 +59,7 @@ func (o *OpenstackPlatform) GetIPFromServerName(ctx context.Context, networkName
 	if err != nil {
 		return nil, err
 	}
-	return vmlayer.GetIPFromServerDetails(ctx, networkName, sd)
+	return vmlayer.GetIPFromServerDetails(ctx, networkName, "", sd)
 }
 
 //GetExternalGateway retrieves Gateway IP from the external network information. It first gets external

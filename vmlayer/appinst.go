@@ -227,7 +227,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				action.ExternalIP = ip.ExternalAddr
 				return &action, nil
 			}
-			vmIP, err := v.VMProvider.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), objName)
+			vmIP, err := v.VMProvider.GetIPFromServerName(ctx, newSubnetName, objName)
 			if err != nil {
 				return err
 			}
@@ -247,7 +247,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				if err != nil {
 					return err
 				}
-				err = v.AttachAndEnableRootLBInterface(ctx, client, lbName, GetPortName(lbName, v.VMProperties.GetCloudletMexNetwork()), gw)
+				err = v.AttachAndEnableRootLBInterface(ctx, client, lbName, GetPortName(lbName, newSubnetName), gw)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
 					return err

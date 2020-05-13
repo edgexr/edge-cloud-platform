@@ -472,7 +472,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		log.SpanLog(ctx, log.DebugLevelInfra, "Defining VM", "vm", vm)
 		var role VMRole
 		var newPorts []PortOrchestrationParams
-		internalPortName := GetPortName(vm.Name, internalNetName)
+		internalPortName := GetPortName(vm.Name, vm.ConnectToSubnet)
 		externalPortName := GetPortName(vm.Name, externalNetName)
 
 		connectToPreexistingSubnet := false

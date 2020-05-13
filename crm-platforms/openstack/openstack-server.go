@@ -3,6 +3,7 @@ package openstack
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -34,43 +35,84 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 
 // UpdateServerIPsFromAddrs gets the ServerIPs forthe given network from the addresses and ports
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail)
+	externalNetname := o.vmProperties.GetCloudletExternalNetwork()
 	its := strings.Split(addresses, ";")
 
 	for _, it := range its {
-		var serverIP vmlayer.ServerIP
 		sits := strings.Split(it, "=")
 		if len(sits) != 2 {
 			return fmt.Errorf("GetServerIPFromAddrs: Unable to parse '%s'", it)
 		}
 		network := strings.TrimSpace(sits[0])
-		serverIP.Network = network
+
 		addr := sits[1]
-		// the comma indicates a floating IP is present.
-		if strings.Contains(addr, ",") {
-			addrs := strings.Split(addr, ",")
-			if len(addrs) == 2 {
-				serverIP.InternalAddr = strings.TrimSpace(addrs[0])
-				serverIP.ExternalAddr = strings.TrimSpace(addrs[1])
-				serverIP.ExternalAddrIsFloating = true
+
+		if network == externalNetname {
+			var serverIP vmlayer.ServerIP
+			serverIP.Network = network
+			// multiple ips for an external network indicates a floating ip on a single port
+			if strings.Contains(addr, ",") {
+				addrs := strings.Split(addr, ",")
+				if len(addrs) == 2 {
+					serverIP.InternalAddr = strings.TrimSpace(addrs[0])
+					serverIP.ExternalAddr = strings.TrimSpace(addrs[1])
+					serverIP.ExternalAddrIsFloating = true
+				} else {
+					return fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
+				}
 			} else {
-				return fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
+				// no floating IP, internal and external are the same
+				addr = strings.TrimSpace(addr)
+				serverIP.InternalAddr = addr
+				serverIP.ExternalAddr = addr
+				serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
 			}
 		} else {
-			// no floating IP, internal and external are the same
-			addr = strings.TrimSpace(addr)
-			serverIP.InternalAddr = addr
-			serverIP.ExternalAddr = addr
-		}
-		for _, p := range ports {
-			if strings.Contains(p.FixedIPs, serverIP.InternalAddr) {
-				serverIP.MacAddress = p.MACAddress
+			// for internal networks we need to find the subnet and there are no floating ips.
+			// There maybe be multiple IPs due to multiple subnets for this network attached to this server
+			subnets, err := o.ListSubnets(ctx, network)
+			if err != nil {
+				return fmt.Errorf("unable to find subnet for network: %s", network)
+			}
+			addrs := strings.Split(addr, ",")
+			for _, addr := range addrs {
+				addr = strings.TrimSpace(addr)
+				ipaddr := net.ParseIP(addr)
+				subnetfound := false
+				for _, s := range subnets {
+					_, ipnet, err := net.ParseCIDR(s.Subnet)
+					if err != nil {
+						return fmt.Errorf("unable to parse subnet cidr %s -- %v", s.Subnet, err)
+					}
+					if ipnet.Contains(ipaddr) {
+						var serverIP vmlayer.ServerIP
+						serverIP.Network = s.Name
+						serverIP.InternalAddr = addr
+						serverIP.ExternalAddr = addr
+						serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
+						subnetfound = true
+						break
+					}
+				}
+				if !subnetfound {
+					log.SpanLog(ctx, log.DebugLevelInfra, "Did not find subnet for address", "addr", addr, "subnets", subnets)
+					return fmt.Errorf("no subnet found for internal addr: %s", addr)
+				}
 			}
 		}
-		serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
+		// now look through the ports and assign port name and mac addresses
+		for _, port := range ports {
+			for ai, serverAddr := range serverDetail.Addresses {
+				if strings.Contains(port.FixedIPs, serverAddr.InternalAddr) {
+					serverDetail.Addresses[ai].MacAddress = port.MACAddress
+					serverDetail.Addresses[ai].PortName = port.Name
+				}
+			}
+		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Updated ServerIPS", "serverDetail", serverDetail)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Updated ServerIPs", "serverDetail", serverDetail)
 	return nil
 }
 

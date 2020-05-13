@@ -22,6 +22,7 @@ type ServerIP struct {
 	InternalAddr           string // this is the address used inside the server
 	ExternalAddr           string // this is external with respect to the server, not necessarily internet reachable.  Can be a floating IP
 	Network                string
+	PortName               string
 	ExternalAddrIsFloating bool
 }
 
