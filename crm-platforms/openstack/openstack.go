@@ -25,6 +25,7 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 }
 
 func (o *OpenstackPlatform) InitProvider(ctx context.Context) error {
+	o.initDebug(o.vmProperties.CommonPf.PlatformConfig.NodeMgr)
 	return o.PrepNetwork(ctx)
 }
 
