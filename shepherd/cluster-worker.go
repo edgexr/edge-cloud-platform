@@ -253,7 +253,7 @@ func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_com
 }
 
 // Don't consider alerts, which are not destined for this cluster Instance and not clusterInst alerts
-func pruneForeignAlerts(clusterInstKey *edgeproto.ClusterInstKey, keys *map[edgeproto.AlertKey]context.Context) {
+func pruneForeignAlerts(clusterInstKey *edgeproto.ClusterInstKey, keys *map[edgeproto.AlertKey]struct{}) {
 	alertFromKey := edgeproto.Alert{}
 	for key, _ := range *keys {
 		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
@@ -273,8 +273,10 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 		return
 	}
 
-	stale := make(map[edgeproto.AlertKey]context.Context)
-	AlertCache.GetAllKeys(ctx, stale)
+	stale := make(map[edgeproto.AlertKey]struct{})
+	AlertCache.GetAllKeys(ctx, func(k *edgeproto.AlertKey, modRev int64) {
+		stale[*k] = struct{}{}
+	})
 
 	changeCount := 0
 	for ii, _ := range alerts {
@@ -319,7 +321,8 @@ func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey,
 func flushAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
 	toflush := []edgeproto.AlertKey{}
 	AlertCache.Mux.Lock()
-	for k, v := range AlertCache.Objs {
+	for k, data := range AlertCache.Objs {
+		v := data.Obj
 		if v.Labels[cloudcommon.AlertLabelClusterOrg] == key.Organization &&
 			v.Labels[cloudcommon.AlertLabelCloudletOrg] == key.CloudletKey.Organization &&
 			v.Labels[cloudcommon.AlertLabelCloudlet] == key.CloudletKey.Name &&
