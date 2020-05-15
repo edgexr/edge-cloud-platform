@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -102,7 +101,7 @@ func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgepro
 		return nil, err
 	}
 	policyConfig := &edgeproto.ConfigFile{
-		Kind:   k8smgmt.AppConfigHelmYaml,
+		Kind:   edgeproto.AppConfigHelmYaml,
 		Config: buf.String(),
 	}
 	configs := []*edgeproto.ConfigFile{policyConfig}

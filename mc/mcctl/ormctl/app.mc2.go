@@ -145,7 +145,7 @@ var ConfigFileAliasArgs = []string{
 	"config=configfile.config",
 }
 var ConfigFileComments = map[string]string{
-	"kind":   "kind (type) of config, i.e. envVarsYaml, hemlCustomizationYaml",
+	"kind":   "kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
 	"config": "config file contents or URI reference",
 }
 var ConfigFileSpecialArgs = map[string]string{}
@@ -228,7 +228,7 @@ var AppComments = map[string]string{
 	"deploymentgenerator":     "Deployment generator target to generate a basic deployment manifest",
 	"androidpackagename":      "Android package name used to match the App name from the Android package",
 	"delopt":                  "Override actions to Controller, one of NoAutoDelete, AutoDelete",
-	"configs:#.kind":          "kind (type) of config, i.e. envVarsYaml, hemlCustomizationYaml",
+	"configs:#.kind":          "kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
 	"configs:#.config":        "config file contents or URI reference",
 	"scalewithcluster":        "Option to run App on all nodes of the cluster",
 	"internalports":           "Should this app have access to outside world?",
