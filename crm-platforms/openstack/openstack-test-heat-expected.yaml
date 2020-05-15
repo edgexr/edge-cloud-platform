@@ -15,53 +15,53 @@ resources:
                  - 1.0.0.1
             name: 
                 subnet-test
-    rootlb-xyz-mex-k8s-net-1-port:
+    rootlb-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
-            name: rootlb-xyz-mex-k8s-net-1-port
+            name: rootlb-xyz-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.1
             port_security_enabled: false
-    rootlb-xyz-external-network-shared-port:
+    rootlb-xyz-DPGAdmin-port:
         type: OS::Neutron::Port
         properties:
-            name: rootlb-xyz-external-network-shared-port
-            network: external-network-shared
+            name: rootlb-xyz-DPGAdmin-port
+            network: DPGAdmin
             security_groups:
                 - { get_resource: testvmgroup-sg }
                 - default-testingID
-    master-xyz-mex-k8s-net-1-port:
+    master-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
-            name: master-xyz-mex-k8s-net-1-port
+            name: master-xyz-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.10
             port_security_enabled: false
-    master-xyz-external-network-shared-port:
+    master-xyz-DPGAdmin-port:
         type: OS::Neutron::Port
         properties:
-            name: master-xyz-external-network-shared-port
-            network: external-network-shared
+            name: master-xyz-DPGAdmin-port
+            network: DPGAdmin
             security_groups:
                 - { get_resource: testvmgroup-sg }
                 - default-testingID
-    node1-xyz-mex-k8s-net-1-port:
+    node1-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
-            name: node1-xyz-mex-k8s-net-1-port
+            name: node1-xyz-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.101
             port_security_enabled: false
-    node2-xyz-mex-k8s-net-1-port:
+    node2-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
-            name: node2-xyz-mex-k8s-net-1-port
+            name: node2-xyz-subnet-test-port
             network: mex-k8s-net-1
             fixed_ips:
                 - subnet: { get_resource: subnet-test }
@@ -94,7 +94,7 @@ resources:
         properties:
             name: rootlb-xyz
             networks:
-                - port: { get_resource: rootlb-xyz-external-network-shared-port }
+                - port: { get_resource: rootlb-xyz-DPGAdmin-port }
             availability_zone: nova1
             block_device_mapping:
                 - device_name: vda
@@ -133,8 +133,8 @@ resources:
         properties:
             name: master-xyz
             networks:
-                - port: { get_resource: master-xyz-mex-k8s-net-1-port }
-                - port: { get_resource: master-xyz-external-network-shared-port }
+                - port: { get_resource: master-xyz-subnet-test-port }
+                - port: { get_resource: master-xyz-DPGAdmin-port }
             availability_zone: nova1
             block_device_mapping:
                 - device_name: vda
@@ -168,7 +168,7 @@ resources:
         properties:
             name: node1-xyz
             networks:
-                - port: { get_resource: node1-xyz-mex-k8s-net-1-port }
+                - port: { get_resource: node1-xyz-subnet-test-port }
             availability_zone: nova1
             image: mobiledgex-v9.9.9 
             flavor: m1.medium
@@ -199,7 +199,7 @@ resources:
         properties:
             name: node2-xyz
             networks:
-                - port: { get_resource: node2-xyz-mex-k8s-net-1-port }
+                - port: { get_resource: node2-xyz-subnet-test-port }
             availability_zone: nova1
             image: mobiledgex-v9.9.9 
             flavor: m1.medium
