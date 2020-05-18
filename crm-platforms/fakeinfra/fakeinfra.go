@@ -21,7 +21,10 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return err
 	}
-	return ShepherdStartup(ctx, cloudlet, pfConfig, updateCallback)
+	if err = ShepherdStartup(ctx, cloudlet, pfConfig, updateCallback); err != nil {
+		return err
+	}
+	return CloudletPrometheusStartup(ctx, cloudlet, pfConfig, updateCallback)
 }
 
 func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -53,6 +56,19 @@ func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Clou
 		return err
 	}
 	return nil
+}
+
+// Start prometheus container
+func CloudletPrometheusStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	// for fakeinfra we only start the first cloudlet prometheus, since it's going to run on the same port as
+	// other cloudlet prometheus
+	if intprocess.CloudletPrometheusExists(ctx) {
+		updateCallback(edgeproto.UpdateTask, "Skipping Cloudlet Monitoring for fakeinfra platform")
+		return nil
+	}
+
+	updateCallback(edgeproto.UpdateTask, "Starting Cloudlet Monitoring")
+	return intprocess.StartCloudletPrometheus(ctx, cloudlet)
 }
 
 func ShepherdStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
