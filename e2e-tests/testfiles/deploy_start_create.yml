@@ -1,0 +1,71 @@
+##
+##
+description: Deploys and starts a system. Does not stop or cleanup
+
+tests:
+  - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
+  - includefile: deploy_start.yml
+  
+  - name: admin setup config so users can be created
+    actions: [mcapi-configupdate,mcapi-configshow]
+    apifile: '{{datadir2}}/mcconfig.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcconfig.yml'
+      filetype: mcconfig
+
+  - name: create users
+    actions: [mcapi-createusers]
+    apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user3.yml'
+
+  - name: admin creates controllers, flavors, sets up enterprise; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_admin_data.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_admin_data.yml'
+      filetype: mcdata
+
+  - name: user1 creates operator/cloudlets; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user1_data.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user1_data_show.yml'
+      filetype: mcdata
+
+  - name: user1 upgrades cloudlet; verify it is upgraded
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_user1_cloudlet_update.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user1_data_upgrade_show.yml'
+      filetype: mcdata
+
+  - name: admin creates reservable clusterinst on user1 cloudlet
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/mc_admin_reservable.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: user2 creates apps; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user2_data.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user2_data_show.yml'
+      filetype: mcdata
+
+  - name: enterprise user3 creates apps; verify it is there
+    actions: [mcapi-create, mcapi-show]
+    apifile: '{{datadir2}}/mc_user3_data.yml'
+    curuserfile: '{{datadir2}}/mc_user3.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user3_data_show.yml'
+      filetype: mcdata
+

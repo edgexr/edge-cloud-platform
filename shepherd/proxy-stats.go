@@ -60,7 +60,8 @@ func StartProxyScraper() {
 }
 
 func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
-	return appInstKey.GetKeyString()
+	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" +
+		appInstKey.AppKey.Organization + "-" + appInstKey.AppKey.Version
 }
 
 // Figure out envoy proxy container name
@@ -87,17 +88,17 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 	return container, nil
 }
 
-func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
+func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	// ignore apps not exposed to the outside world as they dont have a envoy/nginx proxy
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.Key.AppKey.Name)
-		return
+		return ""
 	} else if app.InternalPorts {
-		return
+		return ""
 	} else if app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-		return
+		return ""
 	}
 	ProxyMapKey := getProxyKey(appInst.GetKey())
 	// add/remove from the list of proxy endpoints to hit
@@ -120,30 +121,31 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) {
 		found := ClusterInstCache.Get(&appInst.Key.ClusterInstKey, &clusterInst)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for "+appInst.Key.AppKey.Name)
-			return
+			return ""
 		}
 		var err error
 		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, &clusterInst)
 		if err != nil {
 			// If we cannot get a platform client no point in trying to get metrics
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
-			return
+			return ""
 		}
 		// Now that we have a client - figure out what container name we should ping
 		scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, scrapePoint)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
-			return
+			return ""
 		}
 		ProxyMutex.Lock()
 		ProxyMap[ProxyMapKey] = scrapePoint
 		ProxyMutex.Unlock()
-	} else {
-		// if the app is anything other than ready, stop tracking it
-		ProxyMutex.Lock()
-		delete(ProxyMap, ProxyMapKey)
-		ProxyMutex.Unlock()
+		return ProxyMapKey
 	}
+	// if the app is anything other than ready, stop tracking it
+	ProxyMutex.Lock()
+	delete(ProxyMap, ProxyMapKey)
+	ProxyMutex.Unlock()
+	return ProxyMapKey
 }
 
 func copyMapValues() []ProxyScrapePoint {
@@ -154,6 +156,16 @@ func copyMapValues() []ProxyScrapePoint {
 	}
 	ProxyMutex.Unlock()
 	return scrapePoints
+}
+
+func getProxyScrapePoint(key string) *ProxyScrapePoint {
+	ProxyMutex.Lock()
+	defer ProxyMutex.Unlock()
+	scrapePoint, found := ProxyMap[key]
+	if !found {
+		return nil
+	}
+	return &scrapePoint
 }
 
 func ProxyScraper() {

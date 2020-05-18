@@ -25,12 +25,16 @@ import (
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:51001", "CRM notify listener addresses")
+var metricsAddr = flag.String("metricsAddr", "0.0.0.0:9091", "Metrics Proxy Address")
 var platformName = flag.String("platform", "", "Platform type of Cloudlet")
 var physicalName = flag.String("physicalName", "", "Physical infrastructure cloudlet name, defaults to cloudlet name in cloudletKey")
 var cloudletKeyStr = flag.String("cloudletKey", "", "Json or Yaml formatted cloudletKey for the cloudlet in which this CRM is instantiated; e.g. '{\"operator_key\":{\"name\":\"DMUUS\"},\"name\":\"tmocloud1\"}'")
 var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
+var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
+var promAlertsFile = flag.String("alertsFile", "/tmp/prom_rules.yml", "Prometheus alerts file")
+
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 //map keeping track of all the currently running prometheuses
@@ -55,7 +59,9 @@ var sigChan chan os.Signal
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	// LB metrics are not supported in fake mode
 	if myPlatform.GetType() != "fake" {
-		CollectProxyStats(ctx, new)
+		if target := CollectProxyStats(ctx, new); target != "" {
+			go writePrometheusTargetsFile()
+		}
 	}
 	var port int32
 	var exists bool
@@ -206,6 +212,10 @@ func main() {
 	myPlatform, err = getPlatform()
 	if err != nil {
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
+	}
+
+	if err = startPrometheusMetricsProxy(ctx); err != nil {
+		log.FatalLog("Failed to start prometheus metrics proxy", "err", err)
 	}
 
 	// register shepherd to receive appinst and clusterinst notifications from crm

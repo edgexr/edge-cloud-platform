@@ -173,6 +173,7 @@ func HealthCheckUp(ctx context.Context, appInstKey *edgeproto.AppInstKey, reason
 			return
 		}
 		scrapePoint.FailedChecksCount = 0
+		ProxyMap[getProxyKey(appInstKey)] = scrapePoint
 	}
 	return
 }
