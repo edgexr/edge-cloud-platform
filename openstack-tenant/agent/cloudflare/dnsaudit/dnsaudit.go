@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	cloudflare "github.com/cloudflare/cloudflare-go"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 )
 
 var (
 	delete       *bool
 	matchPattern *string
+	zoneName     *string
 	recordsFound []cloudflare.DNSRecord
 	api          *cloudflare.API
 	zoneID       string
@@ -26,12 +26,14 @@ func printUsage() {
 	fmt.Println("   --match -- regexp to filter records, e.g. \"facedetect.*automation\"")
 	fmt.Println("              select \".*\" to match all ")
 	fmt.Println("   --delete -- delete the matching records. Use with care.")
+	fmt.Println("   --zonename  cloudflare zone (defaults to mobiledgex.net).")
 }
 
 func init() {
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	delete = flag.Bool("delete", false, "delete matching records, must be used with --match.  Use double escapes for regex")
 	matchPattern = flag.String("match", "", "matching regexp pattern")
+	zoneName = flag.String("zonename", "mobiledgex.net", "cloudflare zone (defaulst to mobiledgex.net")
 
 	user, apiKey := getCloudflareUserAndKey()
 	if user == "" || apiKey == "" {
@@ -69,7 +71,7 @@ func doAudit() error {
 		fmt.Printf("invalid regexp match pattern: %v", err)
 		os.Exit(1)
 	}
-	zoneID, err = api.ZoneIDByName(cloudcommon.AppDNSRoot)
+	zoneID, err = api.ZoneIDByName(*zoneName)
 	if err != nil {
 		fmt.Printf("Cloudflare zone error: %v\n", err)
 		return err

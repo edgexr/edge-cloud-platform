@@ -43,6 +43,7 @@ type Shepherd struct {
 	cmd            *exec.Cmd
 	Span           string
 	Region         string
+	AppDNSRoot     string
 }
 type AutoProv struct {
 	process.Common `yaml:",inline"`

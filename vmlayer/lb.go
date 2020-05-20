@@ -347,7 +347,7 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 }
 
 func (v *VMPlatform) GetRootLBName(key *edgeproto.CloudletKey) string {
-	name := cloudcommon.GetRootLBFQDN(key)
+	name := cloudcommon.GetRootLBFQDN(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	return v.VMProvider.NameSanitize(name)
 }
 
