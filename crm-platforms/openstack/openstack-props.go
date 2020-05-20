@@ -17,7 +17,7 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, key *edgeproto.Cl
 	if vaultConfig == nil || vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
-	openRCPath := vmlayer.GetVaultCloudletAccessPath(key, region, o.GetType(), physicalName)
+	openRCPath := vmlayer.GetVaultCloudletAccessPath(key, region, o.GetType(), physicalName, o.GetApiAccessFilename())
 	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", vaultConfig.Addr, "path", openRCPath)
 	envData := &infracommon.VaultEnvData{}
 	err := vault.GetData(vaultConfig, openRCPath, 0, envData)
@@ -48,12 +48,20 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, key *edgeproto.Cl
 	return nil
 }
 
+func (o *OpenstackPlatform) GetProviderSpecificProps() map[string]*infracommon.PropertyInfo {
+	return map[string]*infracommon.PropertyInfo{}
+}
+
 func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error {
 	err := o.GetOpenRCVars(ctx, key, region, physicalName, vaultConfig)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (o *OpenstackPlatform) GetApiAccessFilename() string {
+	return "openrc.json"
 }
 
 func (o *OpenstackPlatform) GetCloudletProjectName() string {

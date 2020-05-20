@@ -24,7 +24,7 @@ func (a *AzurePlatform) GetType() string {
 	return "azure"
 }
 
-func (a *AzurePlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AzurePlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
 	if err != nil {
@@ -32,15 +32,6 @@ func (a *AzurePlatform) Init(ctx context.Context, platformConfig *platform.Platf
 	}
 	if err := a.commonPf.InitInfraCommon(ctx, platformConfig, azureProps, vaultConfig); err != nil {
 		return err
-	}
-	if a.GetAzureLocation() == "" {
-		return fmt.Errorf("Env variable MEX_AZURE_LOCATION not set")
-	}
-	if a.GetAzureUser() == "" {
-		return fmt.Errorf("Env variable MEX_AZURE_USER not set, check contents of MEXENV_URL")
-	}
-	if a.GetAzurePass() == "" {
-		return fmt.Errorf("Env variable MEX_AZURE_PASS not set, check contents of MEXENV_URL")
 	}
 	return nil
 }

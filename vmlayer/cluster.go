@@ -10,12 +10,15 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
+
+const MexSubnetPrefix = "mex-k8s-subnet-"
 
 //ClusterNodeFlavor contains details of flavor for the node
 type ClusterNodeFlavor struct {
@@ -38,24 +41,28 @@ type ClusterFlavor struct {
 	Topology       string
 }
 
-func (v *VMPlatform) GetClusterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return v.VMProvider.NameSanitize(k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key))
+func GetClusterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
+	return k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
 }
 
-func (v *VMPlatform) GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return "mex-k8s-subnet-" + v.GetClusterName(ctx, clusterInst)
+func GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
+	return MexSubnetPrefix + GetClusterName(ctx, clusterInst)
 }
 
-func (v *VMPlatform) GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return ClusterTypeKubernetesMasterLabel + "-" + v.GetClusterName(ctx, clusterInst)
+func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
+	namePrefix := ClusterTypeKubernetesMasterLabel
+	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+		namePrefix = ClusterTypeDockerVMLabel
+	}
+	return namePrefix + "-" + GetClusterName(ctx, clusterInst)
 }
 
-func (v *VMPlatform) GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
-	return ClusterNodePrefix(nodeNum) + "-" + v.GetClusterName(ctx, clusterInst)
+func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
+	return ClusterNodePrefix(nodeNum) + "-" + GetClusterName(ctx, clusterInst)
 }
 
 func (v *VMPlatform) GetDockerNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return ClusterTypeDockerVMLabel + "-" + v.GetClusterName(ctx, clusterInst)
+	return ClusterTypeDockerVMLabel + "-" + GetClusterName(ctx, clusterInst)
 }
 
 func ClusterNodePrefix(num uint32) string {
@@ -135,7 +142,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			return nil
 		}
 	}
-	_, err := v.CreateOrUpdateVMsForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionUpdate, updateCallback)
+	_, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionUpdate, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -149,24 +156,24 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 //DeleteCluster deletes kubernetes cluster
 func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting kubernetes cluster", "clusterInst", clusterInst)
-	name := v.GetClusterName(ctx, clusterInst)
+	name := GetClusterName(ctx, clusterInst)
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
-		if strings.Contains(err.Error(), "No server with a name or ID") {
+		if strings.Contains(err.Error(), ServerDoesNotExistError) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB is gone, allow stack delete to proceed")
 		} else {
 			return err
 		}
 	}
 	if !dedicatedRootLB {
-		ip, err := v.VMProvider.GetIPFromServerName(ctx, v.GetClusterSubnetName(ctx, clusterInst), rootLBName)
+		clusterSnName := GetClusterSubnetName(ctx, clusterInst)
+		ip, err := v.GetIPFromServerName(ctx, clusterSnName, clusterSnName, rootLBName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get ips from server, proceed with VM deletion", "err", err)
 		} else {
-			subnetName := v.GetClusterSubnetName(ctx, clusterInst)
-			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, GetPortName(rootLBName, subnetName), ip.InternalAddr)
+			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, true, clusterSnName, GetPortName(rootLBName, clusterSnName), ip.InternalAddr)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to detach rootLB interface, proceed with VM deletion", "err", err)
 			}
@@ -234,7 +241,7 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		//use the cloudlet default AZ if it exists
 		clusterInst.AvailabilityZone = v.VMProperties.GetCloudletComputeAvailabilityZone()
 	}
-	vmgp, err := v.CreateOrUpdateVMsForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionCreate, updateCallback)
+	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionCreate, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Cluster VM create Failed: %v", err)
 	}
@@ -249,14 +256,19 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 			(clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 
-			subnetName := v.GetClusterSubnetName(ctx, clusterInst)
 			// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
 			// this IP is used on the rootLB to server as the GW for this new subnet
+			subnetName := GetClusterSubnetName(ctx, clusterInst)
 			gw, err := v.GetSubnetGatewayFromVMGroupParms(ctx, subnetName, vmgp)
 			if err != nil {
 				return err
 			}
-			err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, GetPortName(rootLBName, subnetName), gw)
+
+			attachPort := true
+			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED && v.VMProvider.GetInternalPortPolicy() == AttachPortDuringCreate {
+				attachPort = false
+			}
+			err = v.AttachAndEnableRootLBInterface(ctx, client, rootLBName, attachPort, subnetName, GetPortName(rootLBName, subnetName), gw)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
 				return err
@@ -319,8 +331,9 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 
 	for {
 		if masterIP == "" {
-			masterName, masterIP, _ = v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
-			if masterIP != "" {
+			mip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+			if err == nil {
+				masterIP = mip.ExternalAddr
 				updateCallback(edgeproto.UpdateStep, "Checking Master for Available Nodes")
 			}
 		}
@@ -453,7 +466,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		log.SpanLog(ctx, log.DebugLevelInfo, "creating shared rootlb port")
 		// shared access means docker vm goes on its own subnet which is connected
 		// via shared rootlb
-		newSubnetName = v.GetClusterSubnetName(ctx, clusterInst)
+		newSubnetName = GetClusterSubnetName(ctx, clusterInst)
 		dockerVmType = VMTypeClusterNode
 		dockerVMName = v.GetDockerNodeName(ctx, clusterInst)
 
@@ -483,12 +496,57 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 	return vms, newSubnetName, newSecgrpName, nil
 }
 
-func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateCallback edgeproto.CacheUpdateCallback) (*VMGroupOrchestrationParams, error) {
-	log.SpanLog(ctx, log.DebugLevelInfo, "CreateVMsForCluster", "clusterInst", clusterInst)
+func (v *VMPlatform) syncClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "syncClusterInst", "clusterInst", clusterInst)
+	imgName, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+	if err != nil {
+		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
+		return err
+	}
+	_, err = v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionSync, updateCallback)
+	return err
+}
+
+func (v *VMPlatform) SyncClusterInsts(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts")
+	clusterKeys := make(map[edgeproto.ClusterInstKey]struct{})
+	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
+		clusterKeys[*k] = struct{}{}
+	})
+
+	for k := range clusterKeys {
+		log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts found cluster", "key", k)
+		var clus edgeproto.ClusterInst
+		if caches.ClusterInstCache.Get(&k, &clus) {
+			policy := edgeproto.PrivacyPolicy{}
+			if clus.PrivacyPolicy != "" {
+				policy.Key.Organization = clus.Key.Organization
+				policy.Key.Name = clus.PrivacyPolicy
+				if !caches.PrivacyPolicyCache.Get(&policy.Key, &policy) {
+					log.SpanLog(ctx, log.DebugLevelInfra, "Privacy Policy not found for ClusterInst", "policyName", policy.Key.Name)
+					return fmt.Errorf("unable to sync clusterinst, privacy policy not found: %s", clus.PrivacyPolicy)
+				}
+			}
+			err := v.syncClusterInst(ctx, &clus, &policy, updateCallback)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "syncClusterInst failed", "err", err)
+				clus.State = edgeproto.TrackedState_CREATE_ERROR
+				caches.ClusterInstCache.Update(ctx, &clus, 0)
+			}
+		} else {
+			return fmt.Errorf("fail to fetch cluster %s", k)
+		}
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts done")
+	return nil
+}
+
+func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateCallback edgeproto.CacheUpdateCallback) (*VMGroupOrchestrationParams, error) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "PerformOrchestrationForCluster", "clusterInst", clusterInst, "action", action)
 
 	var vms []*VMRequestSpec
 	var err error
-	vmgroupName := v.GetClusterName(ctx, clusterInst)
+	vmgroupName := GetClusterName(ctx, clusterInst)
 	var newSubnetName string
 	var newSecgrpName string
 
@@ -498,7 +556,7 @@ func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName st
 			return nil, err
 		}
 	} else {
-		newSubnetName = v.GetClusterSubnetName(ctx, clusterInst)
+		newSubnetName = GetClusterSubnetName(ctx, clusterInst)
 		var rootlb *VMRequestSpec
 		var err error
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
@@ -516,8 +574,6 @@ func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName st
 				return nil, err
 			}
 			vms = append(vms, rootlb)
-			// docker goes into a new subnet, the rootlb will be connected to it later
-			newSubnetName = v.GetClusterSubnetName(ctx, clusterInst)
 		}
 
 		masterFlavor := clusterInst.MasterNodeFlavor
@@ -526,7 +582,7 @@ func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName st
 		}
 		master, err := v.GetVMRequestSpec(ctx,
 			VMTypeClusterMaster,
-			v.GetClusterMasterName(ctx, clusterInst),
+			GetClusterMasterName(ctx, clusterInst),
 			masterFlavor,
 			v.VMProperties.GetCloudletOSImage(),
 			false, //connect external
@@ -542,7 +598,7 @@ func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName st
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			node, err := v.GetVMRequestSpec(ctx,
 				VMTypeClusterNode,
-				v.GetClusterNodeName(ctx, clusterInst, nn),
+				GetClusterNodeName(ctx, clusterInst, nn),
 				clusterInst.NodeFlavor,
 				v.VMProperties.GetCloudletOSImage(),
 				false, //connect external
@@ -555,13 +611,5 @@ func (v *VMPlatform) CreateOrUpdateVMsForCluster(ctx context.Context, imgName st
 			vms = append(vms, node)
 		}
 	}
-
-	//	return v.GetVMGroupOrchestrationParamsFromVMSpec(ctx, name, vms, WithNewSubnet(subnetname))
-	if action == ActionCreate {
-		return v.CreateVMsFromVMSpec(ctx, vmgroupName, vms, updateCallback, WithNewSubnet(newSubnetName), WithPrivacyPolicy(privacyPolicy), WithNewSecurityGroup(newSecgrpName))
-	} else if action == ActionUpdate {
-		return v.UpdateVMsFromVMSpec(ctx, vmgroupName, vms, updateCallback, WithNewSubnet(newSubnetName), WithPrivacyPolicy(privacyPolicy), WithNewSecurityGroup(newSecgrpName))
-	} else {
-		return nil, fmt.Errorf("unexpected action: %s", action)
-	}
+	return v.OrchestrateVMsFromVMSpec(ctx, vmgroupName, vms, action, updateCallback, WithNewSubnet(newSubnetName), WithPrivacyPolicy(privacyPolicy), WithNewSecurityGroup(newSecgrpName))
 }

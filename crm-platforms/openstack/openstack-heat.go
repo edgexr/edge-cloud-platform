@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -185,43 +184,7 @@ func reindent(str string, indent int) string {
 	return strings.TrimSuffix(out, "\n")
 }
 
-func (o *OpenstackPlatform) getVMUserData(sharedVolume bool, dnsServers string, manifest string, command string) string {
-	var rc string
-	if manifest != "" {
-		return reindent(manifest, 16)
-	}
-	if command != "" {
-		rc = `
-#cloud-config
-runcmd:
-- ` + command
-	} else {
-		rc = vmlayer.VmCloudConfig
-		if dnsServers != "" {
-			rc += fmt.Sprintf("\n - echo \"dns-nameservers %s\" >> /etc/network/interfaces.d/50-cloud-init.cfg", dnsServers)
-		}
-		if sharedVolume {
-			return reindent(rc+vmlayer.VmCloudConfigShareMount, 16)
-		}
-	}
-	return reindent(rc, 16)
-}
-
-func (o *OpenstackPlatform) getVMMetaData(role vmlayer.VMRole, masterIP string) string {
-	var str string
-	if role == vmlayer.RoleUser {
-		return ""
-	}
-	skipk8s := vmlayer.SkipK8sYes
-	if role == vmlayer.RoleMaster || role == vmlayer.RoleNode {
-		skipk8s = vmlayer.SkipK8sNo
-	}
-	str = `skipk8s: ` + string(skipk8s) + `
-role: ` + string(role)
-	if masterIP != "" {
-		str += `
-k8smaster: ` + masterIP
-	}
+func reindent16(str string) string {
 	return reindent(str, 16)
 }
 
@@ -241,23 +204,6 @@ func (o *OpenstackPlatform) getFreeFloatingIpid(ctx context.Context) (string, er
 		return "", fmt.Errorf("Unable to allocate a floating IP")
 	}
 	return fipid, nil
-}
-
-func WriteTemplateFile(filename string, buf *bytes.Buffer) error {
-	outFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("unable to write heat template %s: %s", filename, err.Error())
-	}
-	_, err = outFile.WriteString(buf.String())
-
-	if err != nil {
-		outFile.Close()
-		os.Remove(filename)
-		return fmt.Errorf("unable to write heat template file %s: %s", filename, err.Error())
-	}
-	outFile.Sync()
-	outFile.Close()
-	return nil
 }
 
 func (o *OpenstackPlatform) waitForStack(ctx context.Context, stackname string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -331,7 +277,7 @@ func (o *OpenstackPlatform) createOrUpdateHeatStackFromTemplate(ctx context.Cont
 		return fmt.Errorf("Template Execute Failed: %s", err)
 	}
 	filename := stackName + "-heat.yaml"
-	err = WriteTemplateFile(filename, &buf)
+	err = infracommon.WriteTemplateFile(filename, &buf)
 	if err != nil {
 		return fmt.Errorf("WriteTemplateFile failed: %s", err)
 	}
@@ -385,7 +331,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	if len(VMGroupOrchestrationParams.Subnets) > 0 {
 		currentSubnetName := ""
 		if action != heatCreate {
-			currentSubnetName = "mex-k8s-subnet-" + VMGroupOrchestrationParams.GroupName
+			currentSubnetName = vmlayer.MexSubnetPrefix + VMGroupOrchestrationParams.GroupName
 		}
 		var sns []OSSubnet
 		var snserr error
@@ -449,8 +395,8 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 
 	// populate the user data
 	for i, v := range VMGroupOrchestrationParams.VMs {
-		VMGroupOrchestrationParams.VMs[i].MetaData = o.getVMMetaData(v.Role, masterIP)
-		VMGroupOrchestrationParams.VMs[i].UserData = o.getVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command)
+		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
+		VMGroupOrchestrationParams.VMs[i].UserData = vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, reindent16)
 	}
 
 	// populate the floating ips

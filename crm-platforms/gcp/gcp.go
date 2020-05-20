@@ -40,7 +40,7 @@ func (g *GCPPlatform) GetType() string {
 	return "gcp"
 }
 
-func (g *GCPPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (g *GCPPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
 	if err != nil {
@@ -48,9 +48,6 @@ func (g *GCPPlatform) Init(ctx context.Context, platformConfig *platform.Platfor
 	}
 	if err := g.commonPf.InitInfraCommon(ctx, platformConfig, gcpProps, vaultConfig); err != nil {
 		return err
-	}
-	if g.GetGcpZone() == "" {
-		return fmt.Errorf("Env variable MEX_GCP_ZONE not set")
 	}
 	return nil
 }

@@ -70,20 +70,15 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 	// fetch properties from user input
 	SetPropsFromVars(ctx, c.Properties, c.PlatformConfig.EnvVars)
 
-	if c.GetCloudletCFKey() == "" {
-		if testMode {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Env variable MEX_CF_KEY not set")
-		} else {
-			return fmt.Errorf("Env variable MEX_CF_KEY not set")
+	if !testMode {
+		for name, val := range c.Properties {
+			if val.Mandatory && val.Value == "" {
+				log.SpanLog(ctx, log.DebugLevelInfra, "mandatory property not set", "name", name)
+				return fmt.Errorf("mandatory property not set: %s", name)
+			}
 		}
 	}
-	if c.GetCloudletCFUser() == "" {
-		if testMode {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Env variable MEX_CF_USER not set")
-		} else {
-			return fmt.Errorf("Env variable MEX_CF_USER not set")
-		}
-	}
+
 	err = c.initMappedIPs()
 	if err != nil {
 		return fmt.Errorf("unable to init Mapped IPs: %v", err)
