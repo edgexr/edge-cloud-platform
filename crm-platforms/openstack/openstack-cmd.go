@@ -241,11 +241,13 @@ func (s *OpenstackPlatform) ListAZones(ctx context.Context) ([]OSAZone, error) {
 	return zones, nil
 }
 
-func (s *OpenstackPlatform) ListFloatingIPs(ctx context.Context) ([]OSFloatingIP, error) {
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "-f", "json")
-	if err != nil {
-		err = fmt.Errorf("cannot get floating ip list, %s, %v", out, err)
-		return nil, err
+func (s *OpenstackPlatform) ListFloatingIPs(ctx context.Context, network string) ([]OSFloatingIP, error) {
+	var err error
+	var out []byte
+	if network == "" {
+		out, err = s.TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "-f", "json")
+	} else {
+		out, err = s.TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "--network", network, "-f", "json")
 	}
 	var fips []OSFloatingIP
 	err = json.Unmarshal(out, &fips)
@@ -412,11 +414,14 @@ func (s *OpenstackPlatform) DeleteServer(ctx context.Context, id string) error {
 }
 
 // CreateNetwork creates a network with a name.
-func (s *OpenstackPlatform) CreateNetwork(ctx context.Context, name string, netType string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating network", "network", name)
+func (s *OpenstackPlatform) CreateNetwork(ctx context.Context, name, netType, availabilityZone string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating network", "network", name, "netType", netType, "availabilityZone", availabilityZone)
 	args := []string{"network", "create"}
 	if netType != "" {
 		args = append(args, []string{"--provider-network-type", netType}...)
+	}
+	if availabilityZone != "" {
+		args = append(args, []string{"--availability-zone-hint", availabilityZone}...)
 	}
 	args = append(args, name)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", args...)

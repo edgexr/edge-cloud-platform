@@ -188,8 +188,8 @@ func reindent16(str string) string {
 	return reindent(str, 16)
 }
 
-func (o *OpenstackPlatform) getFreeFloatingIpid(ctx context.Context) (string, error) {
-	fips, err := o.ListFloatingIPs(ctx)
+func (o *OpenstackPlatform) getFreeFloatingIpid(ctx context.Context, extNet string) (string, error) {
+	fips, err := o.ListFloatingIPs(ctx, extNet)
 	if err != nil {
 		return "", fmt.Errorf("Unable to list floating IPs %v", err)
 	}
@@ -336,9 +336,9 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		var sns []OSSubnet
 		var snserr error
 		if action != heatTest {
-			sns, snserr = o.ListSubnets(ctx, VMGroupOrchestrationParams.Netspec.Name)
+			sns, snserr = o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
 			if snserr != nil {
-				return fmt.Errorf("can't get list of subnets for %s, %v", VMGroupOrchestrationParams.Netspec.Name, snserr)
+				return fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
 			}
 			for _, s := range sns {
 				usedCidrs[s.Subnet] = s.Name
@@ -408,7 +408,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			if action == heatTest {
 				fipid = "test-fip-id"
 			} else {
-				fipid, err = o.getFreeFloatingIpid(ctx)
+				fipid, err = o.getFreeFloatingIpid(ctx, VMGroupOrchestrationParams.Netspec.FloatingIPExternalNet)
 				if err != nil {
 					return err
 				}
