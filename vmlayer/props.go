@@ -48,41 +48,42 @@ var DefaultCloudletVMImagePath = "https://artifactory.mobiledgex.net/artifactory
 var VMProviderProps = map[string]*infracommon.PropertyInfo{
 	// Property: Default-Value
 
-	"MEX_EXT_NETWORK": &infracommon.PropertyInfo{
+	"MEX_EXT_NETWORK": {
 		Value: "external-network-shared",
 	},
-	"MEX_NETWORK": &infracommon.PropertyInfo{
+	"MEX_NETWORK": {
 		Value: "mex-k8s-net-1",
 	},
 	// note OS_IMAGE refers to Operating System
-	"MEX_OS_IMAGE": &infracommon.PropertyInfo{
+	"MEX_OS_IMAGE": {
 		Value: DefaultOSImageName,
 	},
-	"MEX_SECURITY_GROUP": &infracommon.PropertyInfo{
+	"MEX_SECURITY_GROUP": {
 		Value: "default",
 	},
-	"MEX_SHARED_ROOTLB_RAM": &infracommon.PropertyInfo{
+	"MEX_SHARED_ROOTLB_RAM": {
 		Value: "4096",
 	},
-	"MEX_SHARED_ROOTLB_VCPUS": &infracommon.PropertyInfo{
+	"MEX_SHARED_ROOTLB_VCPUS": {
 		Value: "2",
 	},
-	"MEX_SHARED_ROOTLB_DISK": &infracommon.PropertyInfo{
+	"MEX_SHARED_ROOTLB_DISK": {
 		Value: "40",
 	},
-	"MEX_NETWORK_SCHEME": &infracommon.PropertyInfo{
-		Value: "name=mex-k8s-net-1,cidr=10.101.X.0/24",
+	"MEX_NETWORK_SCHEME": {
+		Value: "cidr=10.101.X.0/24",
 	},
-	"MEX_COMPUTE_AVAILABILITY_ZONE": &infracommon.PropertyInfo{},
-	"MEX_VOLUME_AVAILABILITY_ZONE":  &infracommon.PropertyInfo{},
-	"MEX_IMAGE_DISK_FORMAT": &infracommon.PropertyInfo{
+	"MEX_COMPUTE_AVAILABILITY_ZONE": {},
+	"MEX_NETWORK_AVAILABILITY_ZONE": {},
+	"MEX_VOLUME_AVAILABILITY_ZONE":  {},
+	"MEX_IMAGE_DISK_FORMAT": {
 		Value: ImageFormatQcow2,
 	},
-	"MEX_ROUTER": &infracommon.PropertyInfo{
+	"MEX_ROUTER": {
 		Value: NoExternalRouter,
 	},
-	"MEX_CRM_GATEWAY_ADDR": &infracommon.PropertyInfo{},
-	"MEX_SUBNET_DNS":       &infracommon.PropertyInfo{},
+	"MEX_CRM_GATEWAY_ADDR": {},
+	"MEX_SUBNET_DNS":       {},
 }
 
 func GetVaultCloudletCommonPath(filePath string) string {
@@ -173,6 +174,10 @@ func (vp *VMProperties) GetCloudletVolumeAvailabilityZone() string {
 
 func (vp *VMProperties) GetCloudletComputeAvailabilityZone() string {
 	return vp.CommonPf.Properties["MEX_COMPUTE_AVAILABILITY_ZONE"].Value
+}
+
+func (vp *VMProperties) GetCloudletNetworkAvailabilityZone() string {
+	return vp.CommonPf.Properties["MEX_NETWORK_AVAILABILITY_ZONE"].Value
 }
 
 func (vp *VMProperties) GetCloudletImageDiskFormat() string {

@@ -159,7 +159,7 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
 			return err
 		}
 		// We need at least one network for `mex` clusters
-		err = o.CreateNetwork(ctx, o.VMProperties.GetCloudletMexNetwork(), ni.NetworkType)
+		err = o.CreateNetwork(ctx, o.VMProperties.GetCloudletMexNetwork(), ni.NetworkType, o.VMProperties.GetCloudletNetworkAvailabilityZone())
 		if err != nil {
 			return fmt.Errorf("cannot create mex network %s, %v", o.VMProperties.GetCloudletMexNetwork(), err)
 		}
