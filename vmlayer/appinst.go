@@ -50,12 +50,14 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-
-		_, masterIP, masterIpErr := v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+		masterIP, masterIpErr := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 		// Add crm local replace variables
+		if masterIpErr != nil {
+			return masterIpErr
+		}
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
-				ClusterIp:    masterIP,
+				ClusterIp:    masterIP.ExternalAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
@@ -93,28 +95,27 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 		// set up DNS
 		var rootLBIPaddr *ServerIP
-		if masterIpErr == nil {
-			rootLBIPaddr, err = v.VMProvider.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), rootLBName)
-			if err == nil {
-				getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
-					action := infracommon.DnsSvcAction{}
-					action.PatchKube = true
-					action.PatchIP = masterIP
-					action.ExternalIP = rootLBIPaddr.ExternalAddr
-					// Should only add DNS for external ports
-					action.AddDNS = !app.InternalPorts
-					return &action, nil
-				}
-				// If this is an internal ports, all we need is patch of kube service
-				if app.InternalPorts {
-					err = v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
-				} else {
-					updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-					ops := ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-					err = v.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, cloudcommon.IPAddrAllInterfaces, masterIP, ops, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
-				}
+		rootLBIPaddr, err = v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), GetClusterSubnetName(ctx, clusterInst), rootLBName)
+		if err == nil {
+			getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
+				action := infracommon.DnsSvcAction{}
+				action.PatchKube = true
+				action.PatchIP = masterIP.ExternalAddr
+				action.ExternalIP = rootLBIPaddr.ExternalAddr
+				// Should only add DNS for external ports
+				action.AddDNS = !app.InternalPorts
+				return &action, nil
+			}
+			// If this is an internal ports, all we need is patch of kube service
+			if app.InternalPorts {
+				err = v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
+			} else {
+				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
+				ops := ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
+				err = v.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, rootLBName, cloudcommon.IPAddrAllInterfaces, masterIP.ExternalAddr, ops, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
 			}
 		}
+
 		appWaitErr := <-appWaitChan
 		if appWaitErr != "" {
 			return fmt.Errorf("app wait error, %v", appWaitErr)
@@ -185,7 +186,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		vms = append(vms, appVm)
 
 		updateCallback(edgeproto.UpdateTask, "Deploying App")
-		vmgp, err = v.CreateVMsFromVMSpec(ctx, objName, vms, updateCallback, WithNewSubnet(newSubnetName),
+		vmgp, err = v.OrchestrateVMsFromVMSpec(ctx, objName, vms, ActionCreate, updateCallback, WithNewSubnet(newSubnetName),
 			WithPrivacyPolicy(privacyPolicy),
 			WithAccessPorts(app.AccessPorts),
 			WithNewSecurityGroup(v.GetServerSecurityGroupName(objName)),
@@ -195,7 +196,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 
-		ip, err := v.VMProvider.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), externalServerName)
+		ip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", externalServerName)
 		if err != nil {
 			return err
 		}
@@ -227,7 +228,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				action.ExternalIP = ip.ExternalAddr
 				return &action, nil
 			}
-			vmIP, err := v.VMProvider.GetIPFromServerName(ctx, newSubnetName, objName)
+			vmIP, err := v.GetIPFromServerName(ctx, "", newSubnetName, objName)
 			if err != nil {
 				return err
 			}
@@ -247,7 +248,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				if err != nil {
 					return err
 				}
-				err = v.AttachAndEnableRootLBInterface(ctx, client, lbName, GetPortName(lbName, newSubnetName), gw)
+				attachPort := v.VMProvider.GetInternalPortPolicy() == AttachPortAfterCreate
+				err = v.AttachAndEnableRootLBInterface(ctx, client, lbName, attachPort, newSubnetName, GetPortName(lbName, newSubnetName), gw)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface failed", "err", err)
 					return err
@@ -300,19 +302,19 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		} else {
 			// Shared access uses a separate VM for docker.  This is used both for running the docker commands
 			// and as the backend ip for the proxy
-			_, backendIP, err = v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+			backendIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				return err
 			}
 			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP, 22)
+			dockerCommandTarget, err = rootLBClient.AddHop(backendIP.ExternalAddr, 22)
 			if err != nil {
 				return err
 			}
 			dockerNetworkMode = dockermgmt.DockerHostMode
 		}
 
-		rootLBIPaddr, err := v.VMProvider.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), rootLBName)
+		rootLBIPaddr, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", rootLBName)
 		if err != nil {
 			return err
 		}
@@ -395,7 +397,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
-		_, masterIP, err := v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+		masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 		if err != nil {
 			if strings.Contains(err.Error(), ServerDoesNotExistError) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
@@ -407,7 +409,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// Add crm local replace variables
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
-				ClusterIp:    masterIP,
+				ClusterIp:    masterIP.ExternalAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
@@ -474,7 +476,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		dockerCommandTarget := rootLBClient
 
 		if clusterInst.IpAccess != edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-			_, backendIP, err := v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+			backendIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				if strings.Contains(err.Error(), ServerDoesNotExistError) {
 					log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
@@ -485,7 +487,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 				return err
 			}
 			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP, 22)
+			dockerCommandTarget, err = rootLBClient.AddHop(backendIP.ExternalAddr, 22)
 			if err != nil {
 				return err
 			}
@@ -519,11 +521,15 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 }
 
 func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	_, masterIP, _ := v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+	masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+	if err != nil {
+		return err
+	}
+
 	// Add crm local replace variables
 	deploymentVars := crmutil.DeploymentReplaceVars{
 		Deployment: crmutil.CrmReplaceVars{
-			ClusterIp:    masterIP,
+			ClusterIp:    masterIP.ExternalAddr,
 			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 			CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
@@ -554,12 +560,12 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		dockerCommandTarget := rootLBClient
 
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
-			_, backendIP, err := v.VMProvider.GetClusterMasterNameAndIP(ctx, clusterInst)
+			masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				return err
 			}
 			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP, 22)
+			dockerCommandTarget, err = rootLBClient.AddHop(masterIP.ExternalAddr, 22)
 			if err != nil {
 				return err
 			}

@@ -37,7 +37,7 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
-	externalNetname := o.vmProperties.GetCloudletExternalNetwork()
+	externalNetname := o.VMProperties.GetCloudletExternalNetwork()
 	its := strings.Split(addresses, ";")
 
 	for _, it := range its {
@@ -123,6 +123,12 @@ func (o *OpenstackPlatform) UpdateVMs(ctx context.Context, VMGroupOrchestrationP
 	return o.HeatUpdateVMs(ctx, VMGroupOrchestrationParams, updateCallback)
 }
 
+func (o *OpenstackPlatform) SyncVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SyncVMs")
+	// nothing to do right now for openstack
+	return nil
+
+}
 func (o *OpenstackPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 	return o.deleteHeatStack(ctx, vmGroupName)
 }

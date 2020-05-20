@@ -1,6 +1,7 @@
 package infracommon
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -83,5 +84,22 @@ func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgep
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "docker login ok")
+	return nil
+}
+
+func WriteTemplateFile(filename string, buf *bytes.Buffer) error {
+	outFile, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("unable to write heat template %s: %s", filename, err.Error())
+	}
+	_, err = outFile.WriteString(buf.String())
+
+	if err != nil {
+		outFile.Close()
+		os.Remove(filename)
+		return fmt.Errorf("unable to write heat template file %s: %s", filename, err.Error())
+	}
+	outFile.Sync()
+	outFile.Close()
 	return nil
 }

@@ -47,7 +47,7 @@ func (o *SSHOptions) Apply(ops []SSHClientOp) {
 func (v *VMPlatform) CopySSHCredential(ctx context.Context, serverName, networkName, userName string) error {
 	//TODO multiple keys to be copied and added to authorized_keys if needed
 	log.SpanLog(ctx, log.DebugLevelInfra, "copying ssh credentials", "server", serverName, "network", networkName, "user", userName)
-	ip, err := v.VMProvider.GetIPFromServerName(ctx, networkName, serverName)
+	ip, err := v.GetIPFromServerName(ctx, networkName, "", serverName)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, netw
 		}
 	}
 	if externalAddr == "" {
-		serverIp, err := v.VMProvider.GetIPFromServerName(ctx, networkName, serverName)
+		serverIp, err := v.GetIPFromServerName(ctx, networkName, "", serverName)
 		if err != nil {
 			return nil, err
 		}

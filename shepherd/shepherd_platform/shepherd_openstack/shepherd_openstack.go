@@ -85,8 +85,17 @@ func (s *ShepherdPlatform) GetMetricsCollectInterval() time.Duration {
 }
 
 func (s *ShepherdPlatform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
-	_, ip, err := s.opf.GetClusterMasterNameAndIP(ctx, clusterInst)
-	return ip, err
+	sd, err := s.opf.GetServerDetail(ctx, vmlayer.GetClusterMasterName(ctx, clusterInst))
+	if err != nil {
+		return "", err
+	}
+	mexNet := s.opf.VMProperties.GetCloudletMexNetwork()
+	subnetName := vmlayer.GetClusterSubnetName(ctx, clusterInst)
+	sip, err := vmlayer.GetIPFromServerDetails(ctx, mexNet, subnetName, sd)
+	if err != nil {
+		return "", err
+	}
+	return sip.ExternalAddr, nil
 }
 
 func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {

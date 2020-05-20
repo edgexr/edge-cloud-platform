@@ -8,7 +8,9 @@ var gcpProps = map[string]*infracommon.PropertyInfo{
 	"MEX_GCP_PROJECT": &infracommon.PropertyInfo{
 		Value: "still-entity-201400",
 	},
-	"MEX_GCP_ZONE":            &infracommon.PropertyInfo{},
+	"MEX_GCP_ZONE": &infracommon.PropertyInfo{
+		Mandatory: true,
+	},
 	"MEX_GCP_SERVICE_ACCOUNT": &infracommon.PropertyInfo{},
 	"MEX_GCP_AUTH_KEY_PATH": &infracommon.PropertyInfo{
 		Value: "/secret/data/cloudlet/gcp/auth_key.json",

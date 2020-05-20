@@ -26,7 +26,7 @@ func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, app *ed
 	if err != nil {
 		return err
 	}
-	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, o.vmProperties.CommonPf.VaultConfig, app.ImagePath)
+	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, o.VMProperties.CommonPf.VaultConfig, app.ImagePath)
 	imageDetail, err := o.GetImageDetail(ctx, imageName)
 	createImage := false
 	if err != nil {

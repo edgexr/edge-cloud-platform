@@ -10,8 +10,9 @@ import (
 )
 
 type PropertyInfo struct {
-	Value  string
-	Secret bool
+	Value     string
+	Secret    bool
+	Mandatory bool
 }
 
 // Default CloudletVM/Registry paths should only be used for local testing.
@@ -24,9 +25,12 @@ var DefaultContainerRegistryPath = "registry.mobiledgex.net:5000/mobiledgex/edge
 var infraCommonProps = map[string]*PropertyInfo{
 	// Property: Default-Value
 	"MEX_CF_KEY": &PropertyInfo{
-		Secret: true,
+		Secret:    true,
+		Mandatory: true,
 	},
-	"MEX_CF_USER":         &PropertyInfo{},
+	"MEX_CF_USER": &PropertyInfo{
+		Mandatory: true,
+	},
 	"MEX_EXTERNAL_IP_MAP": &PropertyInfo{},
 	"MEX_REGISTRY_FILE_SERVER": &PropertyInfo{
 		Value: "registry.mobiledgex.net",
