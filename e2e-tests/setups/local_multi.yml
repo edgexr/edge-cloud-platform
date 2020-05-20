@@ -97,6 +97,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   edgeturnaddr: "127.0.0.1:8080"
+  appdnsroot: mobiledgex.net
 
 - name: ctrl2
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
@@ -113,6 +114,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
   edgeturnaddr: "127.0.0.1:8080"
+  appdnsroot: mobiledgex.net
 
 - name: ctrla1
   etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
@@ -130,6 +132,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
   edgeturnaddr: "127.0.0.1:8081"
+  appdnsroot: mobiledgex.net
 
 - name: ctrla2
   etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
@@ -147,6 +150,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
   edgeturnaddr: "127.0.0.1:8081"
+  appdnsroot: mobiledgex.net
 
 clustersvcs:
 - name: cluster-svc1

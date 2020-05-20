@@ -409,6 +409,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		VMImageVersion:      cloudlet.VmImageVersion,
 		PackageVersion:      cloudlet.PackageVersion,
 		EnvVars:             pfConfig.EnvVar,
+		AppDNSRoot:          pfConfig.AppDnsRoot,
 	}
 
 	err = v.InitProps(ctx, &pc, vaultConfig)
@@ -518,7 +519,7 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return defCloudletAction, err
 	}
 
-	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key)
+	rootLBName := cloudcommon.GetRootLBFQDN(&cloudlet.Key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	rlbClient, err := v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork())
 	if err != nil {
 		return defCloudletAction, err

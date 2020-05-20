@@ -34,18 +34,20 @@ type ShepherdPlatform struct {
 	vmpf            *vmlayer.VMPlatform
 	collectInterval time.Duration
 	vaultConfig     *vault.Config
+	appDNSRoot      string
 }
 
 func (s *ShepherdPlatform) GetType() string {
 	return "openstack"
 }
 
-func (s *ShepherdPlatform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr string, vars map[string]string) error {
+func (s *ShepherdPlatform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr, appDNSRoot string, vars map[string]string) error {
 	vaultConfig, err := vault.BestConfig(vaultAddr)
 	if err != nil {
 		return err
 	}
 	s.vaultConfig = vaultConfig
+	s.appDNSRoot = appDNSRoot
 
 	// For now we will have a reference to both the VM Platform and the contained Provider, which is openstack.  TODO: all openstack
 	// specific stuff needs to be separated out to have a shepherd that will work for any VM platform.
@@ -63,7 +65,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, key *edgeproto.CloudletKey,
 	}
 
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,
-	s.rootLbName = cloudcommon.GetRootLBFQDN(key)
+	s.rootLbName = cloudcommon.GetRootLBFQDN(key, s.appDNSRoot)
 	s.SharedClient, err = s.vmpf.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: s.rootLbName})
 	if err != nil {
 		return err
@@ -100,7 +102,7 @@ func (s *ShepherdPlatform) GetClusterIP(ctx context.Context, clusterInst *edgepr
 
 func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	if clusterInst != nil && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		rootLb := cloudcommon.GetDedicatedLBFQDN(&clusterInst.Key.CloudletKey, &clusterInst.Key.ClusterKey)
+		rootLb := cloudcommon.GetDedicatedLBFQDN(&clusterInst.Key.CloudletKey, &clusterInst.Key.ClusterKey, s.appDNSRoot)
 		pc, err := s.vmpf.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLb})
 		if err != nil {
 			return nil, err
