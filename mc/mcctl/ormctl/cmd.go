@@ -65,7 +65,9 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 			}
 			st, err := client.PostJsonStreamOut(getUri()+path,
 				Token, in, c.ReplyData, replyReady)
-			return check(c, st, err, outs)
+			// print output
+			check(c, st, nil, outs)
+			return check(c, st, err, nil)
 		} else {
 			st, err := client.PostJson(getUri()+path, Token,
 				in, c.ReplyData)

@@ -24,11 +24,11 @@ resources:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.1
             port_security_enabled: false
-    rootlb-xyz-DPGAdmin-port:
+    rootlb-xyz-external-network-shared-port:
         type: OS::Neutron::Port
         properties:
-            name: rootlb-xyz-DPGAdmin-port
-            network: DPGAdmin
+            name: rootlb-xyz-external-network-shared-port
+            network: external-network-shared
             security_groups:
                 - { get_resource: testvmgroup-sg }
                 - default-testingID
@@ -41,11 +41,11 @@ resources:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.10
             port_security_enabled: false
-    master-xyz-DPGAdmin-port:
+    master-xyz-external-network-shared-port:
         type: OS::Neutron::Port
         properties:
-            name: master-xyz-DPGAdmin-port
-            network: DPGAdmin
+            name: master-xyz-external-network-shared-port
+            network: external-network-shared
             security_groups:
                 - { get_resource: testvmgroup-sg }
                 - default-testingID
@@ -94,7 +94,7 @@ resources:
         properties:
             name: rootlb-xyz
             networks:
-                - port: { get_resource: rootlb-xyz-DPGAdmin-port }
+                - port: { get_resource: rootlb-xyz-external-network-shared-port }
             availability_zone: nova1
             block_device_mapping:
                 - device_name: vda
@@ -134,7 +134,7 @@ resources:
             name: master-xyz
             networks:
                 - port: { get_resource: master-xyz-subnet-test-port }
-                - port: { get_resource: master-xyz-DPGAdmin-port }
+                - port: { get_resource: master-xyz-external-network-shared-port }
             availability_zone: nova1
             block_device_mapping:
                 - device_name: vda
