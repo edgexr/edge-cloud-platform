@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -48,23 +47,31 @@ var RootLBPorts = []dme.AppPort{{
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
 func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac string, action *InterfaceActionsOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "persistInterfaceName", "ifName", ifName, "mac", mac)
-	cmd := fmt.Sprintf("sudo cat %s", udevRulesFile)
 	newFileContents := ""
 
-	out, err := client.Output(cmd)
+	out, err := client.Output("cat /etc/issue")
 	if err != nil {
-		return fmt.Errorf("unable to cat udev rules file: %s - %v", out, err)
+		return fmt.Errorf("unable to cat /etc/issue: %s - %v", out, err)
 	}
+	// Bionic has no rule file default, no need to check for existing macs. Does this happen? Thinking centos
+	if strings.Contains(out, "16.04") {
+		cmd := fmt.Sprintf("sudo cat %s", udevRulesFile)
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("unable to cat udev rules file: %s - %v", out, err)
+		}
 
-	lines := strings.Split(out, "\n")
-	for _, l := range lines {
-		// if the mac is already there remove it, it will be appended later
-		if strings.Contains(l, mac) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "found existing rule for mac", "line", l)
-		} else {
-			newFileContents = newFileContents + l + "\n"
+		lines := strings.Split(out, "\n")
+		for _, l := range lines {
+			// if the mac is already there remove it, it will be appended later
+			if strings.Contains(l, mac) {
+				log.SpanLog(ctx, log.DebugLevelInfra, "found existing rule for mac", "line", l)
+			} else {
+				newFileContents = newFileContents + l + "\n"
+			}
 		}
 	}
+
 	newRule := fmt.Sprintf("SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"%s\", NAME=\"%s\"", mac, ifName)
 	if action.addInterface {
 		newFileContents = newFileContents + newRule + "\n"
@@ -186,40 +193,19 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "running ifconfig to list interfaces")
-	// list all the interfaces
-	cmd := fmt.Sprintf("sudo ifconfig -a")
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("unable to run ifconfig: %s - %v", out, err)
-	}
-	//                ifname        encap              mac
-	matchPattern := "(\\w+)\\s+Link \\S+\\s+HWaddr\\s+(\\S+)"
-	reg, err := regexp.Compile(matchPattern)
-	if err != nil {
-		// this is a bug if the regex does not compile
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to compile regex", "pattern", matchPattern)
-		return fmt.Errorf("Internal Error compiling regex for interface")
-	}
-
-	//find the interfaces matching our macs
+	log.SpanLog(ctx, log.DebugLevelInfra, "running ip to map interface names")
+	// find the interfaces matching our macs
 	externalIfname := ""
 	internalIfname := ""
-	lines := strings.Split(out, "\n")
-	for _, l := range lines {
-		if reg.MatchString(l) {
-			matches := reg.FindStringSubmatch(l)
-			ifn := matches[1]
-			mac := matches[2]
-			log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", ifn, "mac", mac)
-			if mac == externalIP.MacAddress {
-				externalIfname = ifn
-			}
-			if mac == internalIP.MacAddress {
-				internalIfname = ifn
-			}
-		}
-	}
+	cmd := fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", internalIP.MacAddress)
+	out, _ := client.Output(cmd)
+	internalIfname = out
+	log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", internalIfname, "mac", internalIP.MacAddress)
+	cmd = fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", externalIP.MacAddress)
+	out, _ = client.Output(cmd)
+	externalIfname = out
+	log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", externalIfname, "mac", externalIP.MacAddress)
+
 	if externalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", externalIP.MacAddress)
 		if action.addInterface {
@@ -274,12 +260,13 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		}
 
 		// now bring the new internal interface up.
-		cmd = fmt.Sprintf("sudo ifdown --force %s;sudo ifup %s", internalIfname, internalIfname)
+
+		cmd = fmt.Sprintf("sudo ip addr add %s/24 dev  %s; sudo ip link set dev %s up", internalIP.InternalAddr, internalIfname, internalIfname)
 		log.SpanLog(ctx, log.DebugLevelInfra, "bringing up interface", "internalIfname", internalIfname, "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "unable to run ifup", "out", out, "err", err)
-			return fmt.Errorf("unable to run ifup: %s - %v", out, err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "unable to run ", "cmd", cmd, "out", out, "err", err)
+			return fmt.Errorf("unable to run ip link up: %s - %v", out, err)
 		}
 	} else if action.deleteInterface {
 		cmd := fmt.Sprintf("sudo rm %s", filename)
