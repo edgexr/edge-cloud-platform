@@ -16,6 +16,10 @@ const ServerDoesNotExistError string = "Server does not exist"
 var ServerActive = "ACTIVE"
 var ServerShutoff = "SHUTOFF"
 
+var ActionStart = "start"
+var ActionStop = "stop"
+var ActionReboot = "reboot"
+
 type ServerDetail struct {
 	Addresses []ServerIP
 	ID        string
@@ -92,14 +96,14 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 			if serverDetail.Status == ServerActive {
 				return fmt.Errorf("server %s is already active", serverName)
 			}
-			serverAction = "start"
+			serverAction = ActionStart
 		case edgeproto.PowerState_POWER_OFF_REQUESTED:
 			if serverDetail.Status == ServerShutoff {
 				return fmt.Errorf("server %s is already stopped", serverName)
 			}
-			serverAction = "stop"
+			serverAction = ActionStop
 		case edgeproto.PowerState_REBOOT_REQUESTED:
-			serverAction = "reboot"
+			serverAction = ActionReboot
 			if serverDetail.Status != ServerActive {
 				return fmt.Errorf("server %s is not active", serverName)
 			}

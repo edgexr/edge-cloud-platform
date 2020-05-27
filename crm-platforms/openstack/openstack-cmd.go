@@ -708,33 +708,16 @@ func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName
 
 //CreateImageFromUrl downloads image from URL and then puts into glance
 func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
-	fileExt, err := cloudcommon.GetFileNameWithExt(imageUrl)
+	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.VaultConfig, imageName, imageUrl, md5Sum)
 	if err != nil {
 		return err
 	}
-	filePath := "/tmp/" + fileExt
 	defer func() {
 		// Stale file might be present if download fails/succeeds, deleting it
 		if delerr := infracommon.DeleteFile(filePath); delerr != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "filePath", filePath)
 		}
 	}()
-	err = cloudcommon.DownloadFile(ctx, s.VMProperties.CommonPf.VaultConfig, imageUrl, filePath, nil)
-	if err != nil {
-		return fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
-	}
-	// Verify checksum
-	if md5Sum != "" {
-		fileMd5Sum, err := infracommon.Md5SumFile(filePath)
-		if err != nil {
-			return err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "verify md5sum", "downloaded-md5sum", fileMd5Sum, "actual-md5sum", md5Sum)
-		if fileMd5Sum != md5Sum {
-			return fmt.Errorf("mismatch in md5sum for downloaded image: %s", imageName)
-		}
-	}
-
 	err = s.CreateImage(ctx, imageName, filePath)
 	if err != nil {
 		return fmt.Errorf("error creating image %v", err)
@@ -763,8 +746,13 @@ func (s *OpenstackPlatform) DeleteImage(ctx context.Context, imageName string) e
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {
-		err = fmt.Errorf("can't delete image %s, %s, %v", imageName, out, err)
-		return err
+		if strings.Contains(err.Error(), "Could not find resource") {
+			log.SpanLog(ctx, log.DebugLevelInfra, "image not found", "name", imageName)
+			return nil
+		} else {
+			err = fmt.Errorf("can't delete image %s, %s, %v", imageName, out, err)
+			return err
+		}
 	}
 	return nil
 }

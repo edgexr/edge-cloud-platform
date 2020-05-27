@@ -28,6 +28,7 @@ type VMProvider interface {
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)
 	AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error)
 	AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, updateCallback edgeproto.CacheUpdateCallback) error
+	DeleteImage(ctx context.Context, image string) error
 	GetServerDetail(ctx context.Context, serverName string) (*ServerDetail, error)
 	GetConsoleUrl(ctx context.Context, serverName string) (string, error)
 	GetInternalPortPolicy() InternalPortAttachPolicy
@@ -219,6 +220,10 @@ func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.C
 	}
 	// TODO v.SyncAppInsts
 	err = v.SyncSharedRootLB(ctx, caches)
+	if err != nil {
+		return err
+	}
+	err = v.SyncAppInsts(ctx, caches, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}
