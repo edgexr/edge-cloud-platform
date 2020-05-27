@@ -87,7 +87,7 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 }
 
 func (c *CommonPlatform) GetCloudletDNSZone() string {
-	return c.Properties["MEX_DNS_ZONE"].Value
+	return c.PlatformConfig.AppDNSRoot
 }
 
 func (c *CommonPlatform) GetCloudletRegistryFileServer() string {

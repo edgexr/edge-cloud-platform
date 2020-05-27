@@ -35,9 +35,6 @@ var infraCommonProps = map[string]*PropertyInfo{
 	"MEX_REGISTRY_FILE_SERVER": &PropertyInfo{
 		Value: "registry.mobiledgex.net",
 	},
-	"MEX_DNS_ZONE": &PropertyInfo{
-		Value: "mobiledgex.net",
-	},
 	"FLAVOR_MATCH_PATTERN": &PropertyInfo{
 		Value: ".*",
 	},

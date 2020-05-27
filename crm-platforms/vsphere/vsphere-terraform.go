@@ -43,7 +43,6 @@ type VSphereGeneralParams struct {
 	DataStore         string
 	VmIpTagCategory   string
 	SubnetTagCategory string
-	CustomizeVMs      bool
 }
 
 type VSphereVMGroupParams struct {
@@ -202,14 +201,10 @@ func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName st
 	vgp.ResourcePool = v.IdSanitize(getResourcePool(planName))
 	vgp.SubnetTagCategory = v.GetSubnetTagCategory(ctx)
 	vgp.VmIpTagCategory = v.GetVmIpTagCategory(ctx)
-	if action != terraformSync {
-		vgp.CustomizeVMs = true
-	}
-
 	return nil
 }
 
-func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, action string) error {
+func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, vgp *VSphereGeneralParams, action string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateVMOrchParams")
 
 	masterIP := ""
@@ -250,7 +245,6 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetSubnetTagCategory(ctx), Id: tagid, Name: tagname})
 				break
 			}
-
 		}
 		if !found {
 			return fmt.Errorf("cannot find subnet cidr")
@@ -268,6 +262,20 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				vmgp.VMs[vmidx].Vcpus = f.Vcpus
 				vmgp.VMs[vmidx].Disk = f.Disk
 				vmgp.VMs[vmidx].Ram = f.Ram
+			}
+		}
+		if vm.Role == vmlayer.RoleVMApplication {
+			// AppVMs use a generic template with the disk attached separately
+			vol := vmlayer.VolumeOrchestrationParams{
+				Name:      "disk0",
+				ImageName: vmgp.VMs[vmidx].ImageName + "/" + vmgp.VMs[vmidx].ImageName + ".vmdk",
+			}
+			vmgp.VMs[vmidx].Volumes = append(vmgp.VMs[vmidx].Volumes, vol)
+			vmgp.VMs[vmidx].ImageName = ""
+			vmgp.VMs[vmidx].CustomizeGuest = false
+		} else {
+			if action != terraformSync {
+				vmgp.VMs[vmidx].CustomizeGuest = true
 			}
 		}
 
@@ -415,10 +423,12 @@ var vmGroupTemplate = `
 	{{- end}}
 
 	{{- range .VMs}}
+	{{- if .ImageName}}
 	data "vsphere_virtual_machine" "{{.ImageName}}-tmplt-{{.Id}}" {
 		name          = "{{.ImageName}}"
 		datacenter_id = "${data.vsphere_datacenter.dc.id}"
 	}
+	{{- end}}
 
 	## import vsphere_virtual_machine.{{.Id}} /{{$.DataCenterName}}/vm/{{.Name}}
 	resource "vsphere_virtual_machine" "{{.Id}}" {
@@ -441,14 +451,25 @@ var vmGroupTemplate = `
 		{{- end}}
 		## END NETWORK INTERFACES for {{.Name}}
 
+		{{- if .Volumes}}
+		{{- range .Volumes}}
+		disk {
+			label = "{{.Name}}"
+			path = "{{.ImageName}}"
+			datastore_id = data.vsphere_datastore.datastore.id
+			attach = true
+		}
+		{{- end}}
+		{{- else}}
   		disk {
 			label = "disk0"
 			size = {{.Disk}}
 			thin_provisioned = true
 			eagerly_scrub = false
-  		}
+		}
+		{{- end}}
 
-		{{- if $.CustomizeVMs}}
+		{{- if .CustomizeGuest}}
 		extra_config = {
 			"guestinfo.userdata" = "{{.UserData}}"
 			"guestinfo.userdata.encoding" = "base64"
@@ -460,7 +481,7 @@ var vmGroupTemplate = `
 			customize{
 				linux_options {
 					host_name = "{{.HostName}}"
-					domain = "mobiledgex.net"
+					domain = "{{.DomainName}}"
 				}
 				timeout = 2
 				{{- range .FixedIPs}}
@@ -653,7 +674,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 	if err != nil {
 		return err
 	}
-	err = v.populateVMOrchParams(ctx, vmGroupOrchestrationParams, action)
+	err = v.populateVMOrchParams(ctx, vmGroupOrchestrationParams, &vgp, action)
 	if err != nil {
 		return err
 	}
@@ -674,7 +695,6 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 		return err
 	}
 	if action == terraformSync {
-		log.SpanLog(ctx, log.DebugLevelInfra, "SKIP IMPORT FOR NOW", "terraformFile", terraformFile)
 		return nil
 	}
 	return terraform.ApplyTerraformPlan(

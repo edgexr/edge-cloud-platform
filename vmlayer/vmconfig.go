@@ -70,7 +70,7 @@ runcmd:
 
 func GetVMMetaData(role VMRole, masterIP string, formatter VmConfigDataFormatter) string {
 	var str string
-	if role == RoleUser {
+	if role == RoleVMApplication {
 		return ""
 	}
 	skipk8s := SkipK8sYes

@@ -51,7 +51,7 @@ type VMRole string
 var RoleAgent VMRole = "mex-agent-node"
 var RoleMaster VMRole = "k8s-master"
 var RoleNode VMRole = "k8s-node"
-var RoleUser VMRole = "user"
+var RoleVMApplication VMRole = "vmapp"
 
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free
@@ -317,6 +317,7 @@ type VMOrchestrationParams struct {
 	Role                    VMRole
 	ImageName               string
 	HostName                string
+	DomainName              string
 	FlavorName              string
 	Vcpus                   uint64
 	Ram                     uint64
@@ -334,6 +335,7 @@ type VMOrchestrationParams struct {
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	ExternalGateway         string
 	Tags                    string
+	CustomizeGuest          bool
 }
 
 // VMGroupOrchestrationParams contains all the details used by the orchestator to create a set of associated VMs
@@ -527,7 +529,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			}
 
 		case VMTypeAppVM:
-			role = RoleUser
+			role = RoleVMApplication
 			if vm.ConnectToSubnet != "" {
 				// connect via internal network to LB
 				internalPort := PortOrchestrationParams{
@@ -648,6 +650,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				ImageName:               vm.ImageName,
 				FlavorName:              vm.FlavorName,
 				HostName:                util.DNSSanitize(strings.Split(vm.Name, ".")[0]),
+				DomainName:              v.VMProperties.CommonPf.GetCloudletDNSZone(),
 				DeploymentManifest:      vm.DeploymentManifest,
 				Command:                 vm.Command,
 				ComputeAvailabilityZone: vm.ComputeAvailabilityZone,

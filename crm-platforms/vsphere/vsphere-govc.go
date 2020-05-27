@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -49,8 +50,9 @@ type GovcRuntime struct {
 }
 
 type GovcVMGuest struct {
-	GuestState string
-	Net        []GovcVMNet
+	GuestState  string
+	ToolsStatus string
+	Net         []GovcVMNet
 }
 
 type GovcVM struct {
@@ -312,7 +314,6 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 	*/
 	for _, net := range govcVm.Guest.Net {
 		var sip vmlayer.ServerIP
-
 		sip.Network = net.Network
 		sip.MacAddress = net.MacAddress
 		sip.PortName = vmlayer.GetPortName(govcVm.Name, net.Network)
@@ -329,6 +330,21 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 			}
 		}
 		sd.Addresses = append(sd.Addresses, sip)
+	}
+	// if there is not guest net info, populate what is available from tags for the external network
+	// this can happen for VMs which do not have vmtools installed
+	if len(govcVm.Guest.Net) == 0 {
+		var sip vmlayer.ServerIP
+		sip.Network = v.vmProperties.GetCloudletExternalNetwork()
+		sip.PortName = vmlayer.GetPortName(govcVm.Name, sip.Network)
+		ip, err := v.GetIpFromTagsForVM(ctx, sd.Name, sip.Network)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "err", err)
+		} else {
+			sip.ExternalAddr = ip
+			sip.InternalAddr = ip
+			sd.Addresses = append(sd.Addresses, sip)
+		}
 	}
 	return &sd
 
@@ -364,7 +380,7 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 		}
 
 		sd = v.getServerDetailFromGovcVm(ctx, &vms.VirtualMachines[0])
-		if len(vms.VirtualMachines[0].Guest.Net) > 0 || sd.Status == vmlayer.ServerShutoff {
+		if len(vms.VirtualMachines[0].Guest.Net) > 0 || sd.Status == vmlayer.ServerShutoff || vms.VirtualMachines[0].Guest.ToolsStatus == "toolsNotInstalled" {
 			break
 		}
 		elapsed := time.Since(start)
@@ -402,5 +418,72 @@ func (v *VSpherePlatform) GetVMs(ctx context.Context) (*GovcVMs, error) {
 }
 
 func (v *VSpherePlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
-	return fmt.Errorf("SetPowerState TODO")
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetPowerState", "serverName", serverName, "serverAction", serverAction)
+	dcName := v.GetDatacenterName(ctx)
+	vmPath := "/" + dcName + "/vm/" + serverName
+	var err error
+
+	switch serverAction {
+	case vmlayer.ActionStop:
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-off", vmPath)
+	case vmlayer.ActionStart:
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-on", vmPath)
+	case vmlayer.ActionReboot:
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-reset", vmPath)
+	default:
+		return fmt.Errorf("unsupported server action: %s", serverAction)
+	}
+	return err
+}
+
+func (v *VSpherePlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetConsoleUrl", "serverName", serverName)
+	dcName := v.GetDatacenterName(ctx)
+	vmPath := "/" + dcName + "/vm/" + serverName
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.console", "-h5", vmPath)
+
+	consoleUrl := strings.TrimSpace(string(out))
+	urlObj, err := url.Parse(consoleUrl)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse console url - %v", err)
+	}
+	//append the port if it is not there
+	if !strings.Contains(urlObj.Host, ":") {
+		if urlObj.Scheme == "https" {
+			urlObj.Host = urlObj.Host + ":443"
+		} else {
+			urlObj.Host = urlObj.Host + ":80"
+		}
+	}
+	return urlObj.String(), nil
+}
+
+func (v *VSpherePlatform) ImportImage(ctx context.Context, imageFile string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile)
+	ds := v.GetDataStore()
+	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
+	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, imageFile)
+
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage fail", "out", string(out), "err", err)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage OK", "out", string(out))
+	}
+	return err
+}
+
+func (v *VSpherePlatform) DeleteImage(ctx context.Context, image string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage", "image", image)
+	ds := v.GetDataStore()
+	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, image)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage -- dir does not exist", "out", string(out), "err", err)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage fail", "out", string(out), "err", err)
+		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage OK", "out", string(out))
+	}
+	return err
 }
