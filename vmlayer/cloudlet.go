@@ -474,6 +474,16 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return nil
 	}
 
+	pc := pf.PlatformConfig{
+		CloudletKey: &cloudlet.Key,
+		AppDNSRoot:  pfConfig.AppDnsRoot,
+	}
+
+	err = v.InitProps(ctx, &pc, vaultConfig)
+	if err != nil {
+		return err
+	}
+
 	platformVMName := v.GetPlatformVMName(&cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", platformVMName))
 	err = v.VMProvider.DeleteVMs(ctx, platformVMName)
