@@ -49,18 +49,10 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 	log.SpanLog(ctx, log.DebugLevelInfra, "persistInterfaceName", "ifName", ifName, "mac", mac)
 	newFileContents := ""
 
-	out, err := client.Output("cat /etc/issue")
-	if err != nil {
-		return fmt.Errorf("unable to cat /etc/issue: %s - %v", out, err)
-	}
-	// Bionic has no rule file default, no need to check for existing macs. Does this happen? Thinking centos
-	if strings.Contains(out, "16.04") {
-		cmd := fmt.Sprintf("sudo cat %s", udevRulesFile)
-		out, err := client.Output(cmd)
-		if err != nil {
-			return fmt.Errorf("unable to cat udev rules file: %s - %v", out, err)
-		}
-
+	cmd := fmt.Sprintf("sudo cat %s", udevRulesFile)
+	out, err := client.Output(cmd)
+	// if the file exists, check for old entries
+	if err == nil {
 		lines := strings.Split(out, "\n")
 		for _, l := range lines {
 			// if the mac is already there remove it, it will be appended later
@@ -71,11 +63,11 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 			}
 		}
 	}
-
 	newRule := fmt.Sprintf("SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"%s\", NAME=\"%s\"", mac, ifName)
 	if action.addInterface {
 		newFileContents = newFileContents + newRule + "\n"
 	}
+	// preexisting or not, write it
 	return pc.WriteFile(client, udevRulesFile, newFileContents, "udev-rules", pc.SudoOn)
 }
 
@@ -193,8 +185,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "running ip to map interface names")
-	// find the interfaces matching our macs
+	// discover the interface names matching our macs
 	externalIfname := ""
 	internalIfname := ""
 	cmd := fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", internalIP.MacAddress)
@@ -268,6 +259,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to run ", "cmd", cmd, "out", out, "err", err)
 			return fmt.Errorf("unable to run ip link up: %s - %v", out, err)
 		}
+
 	} else if action.deleteInterface {
 		cmd := fmt.Sprintf("sudo rm %s", filename)
 		out, err := client.Output(cmd)
