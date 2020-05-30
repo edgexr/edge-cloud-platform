@@ -33,7 +33,6 @@ var name = flag.String("name", "shepherd", "Unique name to identify a process")
 var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
-var promAlertsFile = flag.String("alertsFile", "/tmp/prom_rules.yml", "Prometheus alerts file")
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
@@ -49,6 +48,7 @@ var CloudletCache edgeproto.CloudletCache
 var CloudletInfoCache edgeproto.CloudletInfoCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
+var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
 var settings edgeproto.Settings
 
 var cloudletKey edgeproto.CloudletKey
@@ -62,6 +62,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	if myPlatform.GetType() != "fake" {
 		if target := CollectProxyStats(ctx, new); target != "" {
 			go writePrometheusTargetsFile()
+			go writePrometheusAlertRuleForAppInst(ctx, new)
 		}
 	}
 	var port int32
@@ -233,6 +234,7 @@ func main() {
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
 	ClusterInstCache.SetUpdatedCb(clusterInstCb)
 	edgeproto.InitAppCache(&AppCache)
+	edgeproto.InitAutoProvPolicyCache(&AutoProvPoliciesCache)
 	// also register to receive cloudlet details
 	edgeproto.InitCloudletCache(&CloudletCache)
 
@@ -243,6 +245,7 @@ func main() {
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
+	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
 	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)

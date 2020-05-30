@@ -114,8 +114,8 @@ func (p *ClusterWorker) RunNotify() {
 			}
 
 			clusterAlerts := p.clusterStat.GetAlerts(actx)
-			updateAlerts(actx, &p.clusterInstKey, clusterAlerts)
-
+			clusterAlerts = addClusterDetailsToAlerts(clusterAlerts, &p.clusterInstKey)
+			UpdateAlerts(actx, clusterAlerts, &p.clusterInstKey, pruneClusterForeignAlerts)
 			span.Finish()
 			aspan.Finish()
 		case <-p.stop:
@@ -250,90 +250,4 @@ func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_com
 	stat.NetRecvTS = nil
 
 	return metrics
-}
-
-// Don't consider alerts, which are not destined for this cluster Instance and not clusterInst alerts
-func pruneForeignAlerts(clusterInstKey *edgeproto.ClusterInstKey, keys *map[edgeproto.AlertKey]struct{}) {
-	alertFromKey := edgeproto.Alert{}
-	for key, _ := range *keys {
-		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
-		if _, found := alertFromKey.Labels[cloudcommon.AlertLabelApp]; found ||
-			alertFromKey.Labels[cloudcommon.AlertLabelClusterOrg] != clusterInstKey.Organization ||
-			alertFromKey.Labels[cloudcommon.AlertLabelCloudletOrg] != clusterInstKey.CloudletKey.Organization ||
-			alertFromKey.Labels[cloudcommon.AlertLabelCloudlet] != clusterInstKey.CloudletKey.Name ||
-			alertFromKey.Labels[cloudcommon.AlertLabelCluster] != clusterInstKey.ClusterKey.Name {
-			delete(*keys, key)
-		}
-	}
-}
-
-func updateAlerts(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey, alerts []edgeproto.Alert) {
-	if alerts == nil {
-		// some error occurred, do not modify existing cache set
-		return
-	}
-
-	stale := make(map[edgeproto.AlertKey]struct{})
-	AlertCache.GetAllKeys(ctx, func(k *edgeproto.AlertKey, modRev int64) {
-		stale[*k] = struct{}{}
-	})
-
-	changeCount := 0
-	for ii, _ := range alerts {
-		alert := &alerts[ii]
-		alert.Labels[cloudcommon.AlertLabelClusterOrg] = clusterInstKey.Organization
-		alert.Labels[cloudcommon.AlertLabelCloudletOrg] = clusterInstKey.CloudletKey.Organization
-		alert.Labels[cloudcommon.AlertLabelCloudlet] = clusterInstKey.CloudletKey.Name
-		alert.Labels[cloudcommon.AlertLabelCluster] = clusterInstKey.ClusterKey.Name
-
-		AlertCache.UpdateModFunc(ctx, alert.GetKey(), 0, func(old *edgeproto.Alert) (*edgeproto.Alert, bool) {
-			if old == nil {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Update alert", "alert", alert)
-				changeCount++
-				return alert, true
-			}
-			// don't update if nothing changed
-			changed := !alert.Matches(old)
-			if changed {
-				changeCount++
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Update alert", "alert", alert)
-			}
-			return alert, changed
-		})
-		delete(stale, alert.GetKeyVal())
-	}
-	// delete our stale entries
-	pruneForeignAlerts(clusterInstKey, &stale)
-	for key, _ := range stale {
-		buf := edgeproto.Alert{}
-		buf.SetKey(&key)
-		AlertCache.Delete(ctx, &buf, 0)
-		changeCount++
-	}
-	if changeCount == 0 {
-		// suppress span log since nothing logged
-		span := log.SpanFromContext(ctx)
-		log.NoLogSpan(span)
-	}
-}
-
-// flushAlerts removes Alerts for clusters that have been deleted
-func flushAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
-	toflush := []edgeproto.AlertKey{}
-	AlertCache.Mux.Lock()
-	for k, data := range AlertCache.Objs {
-		v := data.Obj
-		if v.Labels[cloudcommon.AlertLabelClusterOrg] == key.Organization &&
-			v.Labels[cloudcommon.AlertLabelCloudletOrg] == key.CloudletKey.Organization &&
-			v.Labels[cloudcommon.AlertLabelCloudlet] == key.CloudletKey.Name &&
-			v.Labels[cloudcommon.AlertLabelCluster] == key.ClusterKey.Name {
-			toflush = append(toflush, k)
-		}
-	}
-	AlertCache.Mux.Unlock()
-	for _, k := range toflush {
-		buf := edgeproto.Alert{}
-		buf.SetKey(&k)
-		AlertCache.Delete(ctx, &buf, 0)
-	}
 }
