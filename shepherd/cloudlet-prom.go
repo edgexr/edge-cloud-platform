@@ -7,27 +7,35 @@ import (
 	"io/ioutil"
 	baselog "log"
 	"net/http"
+	"os"
+	"strconv"
 	"text/template"
 
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var promTargetTemplate *template.Template
+const HealthCheckRulesPrefix = "healthcheck"
+
+var CloudletPrometheusAddr = "0.0.0.0:" + intprocess.CloudletPrometheusPort
+
+var promTargetTemplate, promAutoProvAlertTemplate *template.Template
 
 var promTargetT = `
 {
 	"targets": ["{{.MetricsProxyAddr}}"],
 	"labels": {
-		"app": "{{.Key.AppKey.Name}}",
-		"ver": "{{.Key.AppKey.Version}}",
-		"apporg": "{{.Key.AppKey.Organization}}",
-		"cluster": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
-		"clusterorg": "{{.Key.ClusterInstKey.Organization}}",
-		"cloudlet": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
-		"cloudletorg": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
+		"` + cloudcommon.AlertLabelApp + `": "{{.Key.AppKey.Name}}",
+		"` + cloudcommon.AlertLabelAppVer + `": "{{.Key.AppKey.Version}}",
+		"` + cloudcommon.AlertLabelAppOrg + `": "{{.Key.AppKey.Organization}}",
+		"` + cloudcommon.AlertLabelCluster + `": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
+		"` + cloudcommon.AlertLabelClusterOrg + `": "{{.Key.ClusterInstKey.Organization}}",
+		"` + cloudcommon.AlertLabelCloudlet + `": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
+		"` + cloudcommon.AlertLabelCloudletOrg + `": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
@@ -35,11 +43,22 @@ var promTargetT = `
 var promHealthCheckAlerts = `groups:
 - name: StaticRules
   rules:
-  - alert: RootLbProxyDown
+  - alert: ` + cloudcommon.AlertAppInstDown + `
     expr: up == 0
-    for: 1m
-  - alert: HealthCheck
+    for: 15s
+    labels:
+      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)) + `
+  - alert: ` + cloudcommon.AlertAppInstDown + `
     expr: envoy_cluster_health_check_healthy == 0
+    labels:
+      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL))
+
+var promAutoProvAlertT = `groups:
+- name: ` + cloudcommon.AlertAutoProvDown + `
+  rules:
+  - alert: ScaleDown
+    expr: envoy_cluster_upstream_cx_active{` + cloudcommon.AlertLabelApp + `="{{.AppKey.Name}}",` + cloudcommon.AlertLabelAppVer + `="{{.AppKey.Version}}",` + cloudcommon.AlertLabelAppOrg + `="{{.AppKey.Organization}}"} == 0
+    for: 5m
 `
 
 type targetData struct {
@@ -88,10 +107,27 @@ func writePrometheusTargetsFile() {
 	ioutil.WriteFile(*promTargetsFile, []byte(targets), 0644)
 }
 
+// Delete Alert file and reload rules
+func deleteCloudletPrometheusAlertFile(ctx context.Context, file string) error {
+	// remove alerting rules
+	err := os.Remove(file)
+	if err != nil {
+		return err
+	}
+	// need to force prometheus to re-read the rules file
+	resp, err := http.Post("http://0.0.0.0:9092/-/reload", "", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload prometheus", "err", err)
+		return nil
+	}
+	resp.Body.Close()
+	return nil
+}
+
 // Write prometheus rules file and reload rules
-func writeCloudletPrometheusAlerts(ctx context.Context, alertsBuf []byte) error {
+func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf []byte) error {
 	// write alerting rules
-	err := ioutil.WriteFile(*promAlertsFile, alertsBuf, 0644)
+	err := ioutil.WriteFile(file, alertsBuf, 0644)
 	if err != nil {
 		return err
 	}
@@ -135,17 +171,23 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getPrometheusFileName(name string) string {
+	return "/tmp/" + intprocess.PrometheusRulesPrefix + name + ".yml"
+}
+
 // Starts Cloudlet Prometheus MetricsProxy thread to serve as a target for metrics
 func startPrometheusMetricsProxy(ctx context.Context) error {
 	// This works for edgebox and openstack cloudlets for now
 	if *platformName == "PLATFORM_TYPE_EDGEBOX" ||
 		*platformName == "PLATFORM_TYPE_OPENSTACK" {
-		// Init prometheus targets template
+		// Init prometheus targets and alert templates
 		promTargetTemplate = template.Must(template.New("prometheustarget").Parse(promTargetT))
-		err := writeCloudletPrometheusAlerts(ctx, []byte(promHealthCheckAlerts))
+		promAutoProvAlertTemplate = template.Must(template.New("autoprovalert").Parse(promAutoProvAlertT))
+		healthCeckFile := getPrometheusFileName(HealthCheckRulesPrefix)
+		err := writeCloudletPrometheusAlerts(ctx, healthCeckFile, []byte(promHealthCheckAlerts))
 		if err != nil {
 			return fmt.Errorf("Failed to write prometheus rules to %s, err: %s",
-				*promAlertsFile, err.Error())
+				healthCeckFile, err.Error())
 		}
 		// Init http metricsProxy for Prometheus API endpoints
 		var nullLogger baselog.Logger
@@ -165,4 +207,67 @@ func startPrometheusMetricsProxy(ctx context.Context) error {
 		}()
 	}
 	return nil
+}
+
+func shouldAddAutoDeprovPolicy(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App) bool {
+	// if the clusterInst is not reservable, no policies for this appInst
+	if appInst.Key.ClusterInstKey.Organization != cloudcommon.OrganizationMobiledgeX {
+		return false
+	}
+	policy := edgeproto.AutoProvPolicy{}
+	for _, polName := range app.AutoProvPolicies {
+		polKey := edgeproto.PolicyKey{
+			Organization: app.Key.Organization,
+			Name:         polName,
+		}
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Eval policy", "app", app, "policy", polKey)
+		found := AutoProvPoliciesCache.Get(&polKey, &policy)
+		if !found {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find polocy", "policy", polKey)
+			continue
+		}
+		// Check if one of the cloudlets in the policy matches ours
+		for _, cloudlet := range policy.Cloudlets {
+			if cloudletKey.Matches(&cloudlet.Key) {
+				return true
+			}
+		}
+	}
+	// Didn't find any policies that should be enacted on this cloudlet
+	return false
+}
+
+func writePrometheusAlertRuleForAppInst(ctx context.Context, appInst *edgeproto.AppInst) {
+	// AppInst is being deleted - delete rules
+	if appInst.State != edgeproto.TrackedState_READY {
+		fileName := getPrometheusFileName(k8smgmt.NormalizeName(appInst.Key.AppKey.Name))
+		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
+		}
+		return
+	}
+	// check cluster name if this is a VM App
+	app := edgeproto.App{}
+	found := AppCache.Get(&appInst.Key.AppKey, &app)
+	if !found {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.Key.AppKey.Name)
+		return
+	}
+	// check if there is an auto-prov policy first
+	if !shouldAddAutoDeprovPolicy(ctx, appInst, &app) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "no autoprovisioning for this AppInst", "appInst", appInst, "app", app)
+		return
+	}
+	buf := bytes.Buffer{}
+	if err := promAutoProvAlertTemplate.Execute(&buf, appInst.Key); err != nil {
+		log.DebugLog(log.DebugLevelMetrics, "Failed to create autoprov alerts", "template", promAutoProvAlertTemplate,
+			"data", appInst, "error", err)
+		return
+	}
+
+	fileName := getPrometheusFileName(k8smgmt.NormalizeName(appInst.Key.AppKey.Name))
+	err := writeCloudletPrometheusAlerts(ctx, fileName, buf.Bytes())
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to write prometheus rules", "file", fileName, "err", err)
+	}
 }

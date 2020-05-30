@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -14,6 +16,7 @@ var cloudletMetrics shepherd_common.CloudletMetrics
 // Don't need to do much, just spin up a metrics collection thread
 func InitPlatformMetrics() {
 	go CloudletScraper()
+	go CloudletPrometheusScraper()
 }
 
 func CloudletScraper() {
@@ -37,7 +40,29 @@ func CloudletScraper() {
 			span.Finish()
 		}
 	}
+}
 
+func CloudletPrometheusScraper() {
+	for {
+		// check if there are any new apps we need to start/stop scraping for
+		select {
+		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
+			//TODO  - cloudletEnvoyStats, err := getEnvoyStats
+			aspan := log.StartSpan(log.DebugLevelMetrics, "send-cloudlet-alerts")
+			aspan.SetTag("operator", cloudletKey.Organization)
+			aspan.SetTag("cloudlet", cloudletKey.Name)
+			actx := log.ContextWithSpan(context.Background(), aspan)
+			// platform client is a local ssh
+			alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, &pc.LocalClient{})
+			if err != nil {
+				log.SpanLog(actx, log.DebugLevelMetrics, "Could not collect alerts",
+					"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
+			}
+			// key is nil, since we just check against the predefined set of rules
+			UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
+			aspan.Finish()
+		}
+	}
 }
 
 func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.Metric {

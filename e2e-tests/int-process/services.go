@@ -17,12 +17,16 @@ import (
 )
 
 const (
-	PrometheusContainer = "cloudletPrometheus"
-	PrometheusImagePath = "prom/prometheus:latest"
+	PrometheusContainer    = "cloudletPrometheus"
+	PrometheusImagePath    = "prom/prometheus:latest"
+	PrometheusRulesPrefix  = "rulefile_"
+	CloudletPrometheusPort = "9092"
 )
 
-var prometheusConfig = `rule_files:
-- "/tmp/prom_rules.yml"
+var prometheusConfig = `global:
+  evaluation_interval: 15s
+rule_files:
+- "/tmp/` + PrometheusRulesPrefix + `*"
 scrape_configs:
 - job_name: envoy_targets
   scrape_interval: 5s
@@ -147,7 +151,7 @@ func GetCloudletPrometheusConfigHostFilePath() string {
 func GetCloudletPrometheusCmdArgs() []string {
 	return []string{
 		"--config.file=/etc/prometheus/prometheus.yml",
-		"--web.listen-address=:9092",
+		"--web.listen-address=:" + CloudletPrometheusPort,
 		"--web.enable-lifecycle",
 	}
 }
@@ -162,7 +166,7 @@ func GetCloudletPrometheusDockerArgs(cloudlet *edgeproto.Cloudlet, cfgFile strin
 	return []string{
 		"-l", "cloudlet=" + cloudletName,
 		"-l", "cloudletorg=" + cloudletOrg,
-		"-p", "9092:9092", // container interface
+		"-p", CloudletPrometheusPort + ":" + CloudletPrometheusPort, // container interface
 		"-v", "/tmp:/tmp",
 		"-v", cfgFile + ":/etc/prometheus/prometheus.yml",
 	}
