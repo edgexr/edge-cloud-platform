@@ -2,6 +2,7 @@ package vsphere
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -455,7 +456,14 @@ func (v *VSpherePlatform) GetConsoleUrl(ctx context.Context, serverName string) 
 			urlObj.Host = urlObj.Host + ":80"
 		}
 	}
-	return urlObj.String(), nil
+	// now we need a session cookie
+	cookieString, err := v.GetVCenterConsoleSessionCookie(ctx)
+	if err != nil {
+		return "", err
+	}
+	cookie64 := base64.StdEncoding.EncodeToString([]byte(cookieString))
+
+	return urlObj.String() + "&" + "sessioncookie=" + cookie64, nil
 }
 
 func (v *VSpherePlatform) ImportImage(ctx context.Context, imageFile string) error {

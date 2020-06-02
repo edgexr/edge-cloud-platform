@@ -121,6 +121,14 @@ func (v *VSpherePlatform) GetVCenterPassword() string {
 	return v.vcenterVars["VCENTER_PASSWORD"]
 }
 
+func (v *VSpherePlatform) GetVCenterConsoleUser() string {
+	return v.vcenterVars["VCENTER_CONSOLE_USER"]
+}
+
+func (v *VSpherePlatform) GetVCenterConsolePassword() string {
+	return v.vcenterVars["VCENTER_CONSOLE_PASSWORD"]
+}
+
 func (v *VSpherePlatform) GetVCenterInsecure() string {
 	val, ok := v.vcenterVars["VCENTER_INSECURE"]
 	if !ok {
