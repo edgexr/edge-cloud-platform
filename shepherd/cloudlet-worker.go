@@ -77,9 +77,9 @@ func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.
 	}
 
 	// If the timestamp for any given metric is null, don't send anything
-	if data.ComputeTS != nil {
+	if data.CollectTime != nil {
 		cMetric.Name = "cloudlet-utilization"
-		cMetric.Timestamp = *data.ComputeTS
+		cMetric.Timestamp = *data.CollectTime
 		cMetric.AddTag("cloudletorg", cloudletKey.Organization)
 		cMetric.AddTag("cloudlet", cloudletKey.Name)
 		cMetric.AddIntVal("vCpuUsed", data.VCpuUsed)
@@ -88,29 +88,24 @@ func MarshalCloudletMetrics(data *shepherd_common.CloudletMetrics) []*edgeproto.
 		cMetric.AddIntVal("memMax", data.MemMax)
 		cMetric.AddIntVal("diskUsed", data.DiskUsed)
 		cMetric.AddIntVal("diskMax", data.DiskMax)
-
 		metrics = append(metrics, &cMetric)
-	}
-	if data.NetworkTS != nil {
+
 		nMetric.Name = "cloudlet-network"
-		nMetric.Timestamp = *data.NetworkTS
+		nMetric.Timestamp = *data.CollectTime
 		nMetric.AddTag("cloudletorg", cloudletKey.Organization)
 		nMetric.AddTag("cloudlet", cloudletKey.Name)
 		nMetric.AddIntVal("netSent", data.NetSent)
 		nMetric.AddIntVal("netRecv", data.NetRecv)
-
 		metrics = append(metrics, &nMetric)
-	}
-	if data.IpUsageTS != nil {
+
 		iMetric.Name = "cloudlet-ipusage"
-		iMetric.Timestamp = *data.IpUsageTS
+		iMetric.Timestamp = *data.CollectTime
 		iMetric.AddTag("cloudletorg", cloudletKey.Organization)
 		iMetric.AddTag("cloudlet", cloudletKey.Name)
 		iMetric.AddIntVal("ipv4Max", data.Ipv4Max)
 		iMetric.AddIntVal("ipv4Used", data.Ipv4Used)
 		iMetric.AddIntVal("floatingIpsMax", data.FloatingIpsMax)
 		iMetric.AddIntVal("floatingIpsUsed", data.FloatingIpsUsed)
-
 		metrics = append(metrics, &iMetric)
 	}
 	return metrics

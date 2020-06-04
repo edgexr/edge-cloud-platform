@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
@@ -49,6 +50,8 @@ type VMProvider interface {
 	UpdateVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
 	SyncVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
 	DeleteVMs(ctx context.Context, vmGroupName string) error
+	GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*VMMetrics, error)
+	GetPlatformResourceInfo(ctx context.Context) (*PlatformResources, error)
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -57,6 +60,49 @@ type VMPlatform struct {
 	VMProvider   VMProvider
 	VMProperties VMProperties
 	FlavorList   []*edgeproto.FlavorInfo
+}
+
+// VMMetrics contains stats and timestamp
+type VMMetrics struct {
+	Cpu       float64
+	CpuTS     *types.Timestamp
+	Mem       uint64
+	MemTS     *types.Timestamp
+	Disk      uint64
+	DiskTS    *types.Timestamp
+	NetSent   uint64
+	NetSentTS *types.Timestamp
+	NetRecv   uint64
+	NetRecvTS *types.Timestamp
+}
+
+type PlatformResources struct {
+	// Timestamp when this was collected
+	CollectTime *types.Timestamp
+	// Total number of CPUs
+	VCpuMax uint64
+	// Current number of CPUs used
+	VCpuUsed uint64
+	// Total amount of RAM(in MB)
+	MemMax uint64
+	// Currently used RAM(in MB)
+	MemUsed uint64
+	// Total amount of Storage(in GB)
+	DiskUsed uint64
+	// Currently used Storage(in GB)
+	DiskMax uint64
+	// Total number of Floating IPs available
+	FloatingIpsMax uint64
+	// Currently used number of Floating IPs
+	FloatingIpsUsed uint64
+	// Total KBytes received
+	NetRecv uint64
+	// Total KBytes sent
+	NetSent uint64
+	// Total available IP addresses
+	Ipv4Max uint64
+	// Currently used IP addrs
+	Ipv4Used uint64
 }
 
 // ResourceType is not exhaustive list, currently only ResourceTypeSecurityGroup is needed

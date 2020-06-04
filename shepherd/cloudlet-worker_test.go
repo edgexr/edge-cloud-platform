@@ -168,10 +168,8 @@ func TestCloudletStats(t *testing.T) {
 
 	// Test null handling
 	assert.Nil(t, MarshalCloudletMetrics(nil))
-	testCloudletData.ComputeTS, err = types.TimestampProto(time.Now())
+	testCloudletData.CollectTime, err = types.TimestampProto(time.Now())
 	assert.Nil(t, err, "Couldn't get current timestamp")
-	testCloudletData.NetworkTS = testCloudletData.ComputeTS
-	testCloudletData.IpUsageTS = testCloudletData.ComputeTS
 	buf, err := json.Marshal(testCloudletData)
 	assert.Nil(t, err, "marshal cloudlet metrics")
 	myPlatform = &shepherd_unittest.Platform{
