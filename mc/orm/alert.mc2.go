@@ -809,6 +809,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DefaultPrivacyPolicy: 30
 	// DeletePrepare: 31
 	// AutoProvPolicies: 32
+	// TemplateDelimiter: 33
 	// ```
 	// Security:
 	//   Bearer:
