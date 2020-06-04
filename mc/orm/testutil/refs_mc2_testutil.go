@@ -66,3 +66,27 @@ func (s *TestClient) ShowClusterRefs(ctx context.Context, in *edgeproto.ClusterR
 	}
 	return out, err
 }
+
+func TestShowAppInstRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
+	dat := &ormapi.RegionAppInstRefs{}
+	dat.Region = region
+	dat.AppInstRefs = *in
+	return mcClient.ShowAppInstRefs(uri, token, dat)
+}
+func TestPermShowAppInstRefs(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.AppInstRefs, int, error) {
+	in := &edgeproto.AppInstRefs{}
+	in.Key.Organization = org
+	return TestShowAppInstRefs(mcClient, uri, token, region, in)
+}
+
+func (s *TestClient) ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error) {
+	inR := &ormapi.RegionAppInstRefs{
+		Region:      s.Region,
+		AppInstRefs: *in,
+	}
+	out, status, err := s.McClient.ShowAppInstRefs(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}

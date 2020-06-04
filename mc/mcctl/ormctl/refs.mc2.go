@@ -54,6 +54,23 @@ var ClusterRefsApiCmds = []*cli.Command{
 	ShowClusterRefsCmd,
 }
 
+var ShowAppInstRefsCmd = &cli.Command{
+	Use:          "ShowAppInstRefs",
+	RequiredArgs: "region",
+	OptionalArgs: strings.Join(append(AppInstRefsRequiredArgs, AppInstRefsOptionalArgs...), " "),
+	AliasArgs:    strings.Join(AppInstRefsAliasArgs, " "),
+	SpecialArgs:  &AppInstRefsSpecialArgs,
+	Comments:     addRegionComment(AppInstRefsComments),
+	ReqData:      &ormapi.RegionAppInstRefs{},
+	ReplyData:    &edgeproto.AppInstRefs{},
+	Run:          runRest("/auth/ctrl/ShowAppInstRefs"),
+	StreamOut:    true,
+}
+
+var AppInstRefsApiCmds = []*cli.Command{
+	ShowAppInstRefsCmd,
+}
+
 var CloudletRefsRequiredArgs = []string{
 	"key.organization",
 	"key.name",
@@ -134,3 +151,25 @@ var ClusterRefsComments = map[string]string{
 	"useddisk":                     "Used disk in GB",
 }
 var ClusterRefsSpecialArgs = map[string]string{}
+var AppInstRefsRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+	"key.version",
+}
+var AppInstRefsOptionalArgs = []string{
+	"insts:#.key",
+	"insts:#.value",
+}
+var AppInstRefsAliasArgs = []string{
+	"key.organization=appinstrefs.key.organization",
+	"key.name=appinstrefs.key.name",
+	"key.version=appinstrefs.key.version",
+	"insts:#.key=appinstrefs.insts:#.key",
+	"insts:#.value=appinstrefs.insts:#.value",
+}
+var AppInstRefsComments = map[string]string{
+	"key.organization": "App developer organization",
+	"key.name":         "App name",
+	"key.version":      "App version",
+}
+var AppInstRefsSpecialArgs = map[string]string{}

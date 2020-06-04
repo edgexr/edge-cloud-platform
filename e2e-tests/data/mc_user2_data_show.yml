@@ -454,6 +454,28 @@ regiondata:
         loc:
           latitude: 35
           longitude: -95
+    appinstrefs:
+    - key:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      insts:
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}}'
+        : 1
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
+        : 1
+    - key:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+    - key:
+        organization: AcmeAppCo
+        name: autoprovappd
+        version: "1.0"
+    - key:
+        organization: platos
+        name: platosEnablingLayer
+        version: "1.0"
 - region: locala
   appdata:
     flavors:
@@ -840,3 +862,21 @@ regiondata:
         nanos: 585740000
       powerstate: PowerOn
       vmflavor: x1.small
+    appinstrefs:
+    - key:
+        organization: AcmeAppCo
+        name: someapplication1
+        version: "1.0"
+      insts:
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}}'
+        : 1
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}}'
+        : 1
+    - key:
+        organization: AcmeAppCo
+        name: autoprovapp
+        version: "1.0"
+    - key:
+        organization: platos
+        name: platosEnablingLayer
+        version: "1.0"

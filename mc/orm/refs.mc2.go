@@ -189,3 +189,88 @@ func ShowClusterRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.C
 	})
 	return arr, err
 }
+
+func ShowAppInstRefs(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionAppInstRefs{}
+	success, err := ReadConn(c, &in)
+	if !success {
+		return err
+	}
+	defer CloseConn(c)
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.AppInstRefs.Key.Organization)
+
+	err = ShowAppInstRefsStream(ctx, rc, &in.AppInstRefs, func(res *edgeproto.AppInstRefs) {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		WriteStream(c, &payload)
+	})
+	if err != nil {
+		WriteError(c, err)
+	}
+	return nil
+}
+
+func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs, cb func(res *edgeproto.AppInstRefs)) error {
+	var authz *ShowAuthz
+	var err error
+	if !rc.skipAuthz {
+		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceAppInsts, ActionView)
+		if err == echo.ErrForbidden {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewAppInstRefsApiClient(rc.conn)
+	stream, err := api.ShowAppInstRefs(ctx, obj)
+	if err != nil {
+		return err
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if !rc.skipAuthz {
+			if !authz.Ok(res.Key.Organization) {
+				continue
+			}
+		}
+		cb(res)
+	}
+	return nil
+}
+
+func ShowAppInstRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error) {
+	arr := []edgeproto.AppInstRefs{}
+	err := ShowAppInstRefsStream(ctx, rc, obj, func(res *edgeproto.AppInstRefs) {
+		arr = append(arr, *res)
+	})
+	return arr, err
+}
