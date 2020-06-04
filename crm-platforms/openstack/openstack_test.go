@@ -108,3 +108,29 @@ func TestHeatNodePrefix(t *testing.T) {
 		require.False(t, ok, "should not match %s", b)
 	}
 }
+
+func TestIpPoolRange(t *testing.T) {
+	// single pool
+	n, err := getIpCountFromPools("10.10.10.1-10.10.10.20")
+	require.Nil(t, err)
+	require.Equal(t, uint64(20), n)
+	// several pools
+	n, err = getIpCountFromPools("10.10.10.1-10.10.10.20,10.10.10.30-10.10.10.40")
+	require.Nil(t, err)
+	require.Equal(t, uint64(31), n)
+	// ipv6 pool
+	n, err = getIpCountFromPools("2a01:598:4:4011::2-2a01:598:4:4011:ffff:ffff:ffff:ffff")
+	require.Nil(t, err)
+	require.Equal(t, uint64(18446744073709551614), n)
+	// empty pool
+	n, err = getIpCountFromPools("")
+	require.Contains(t, err.Error(), "invalid ip pool format")
+	require.Equal(t, uint64(0), n)
+	// invalid pool
+	n, err = getIpCountFromPools("invalid pool")
+	require.Contains(t, err.Error(), "invalid ip pool format")
+	require.Equal(t, uint64(0), n)
+	n, err = getIpCountFromPools("invalid-pool")
+	require.Contains(t, err.Error(), "Could not parse ip pool limits")
+	require.Equal(t, uint64(0), n)
+}

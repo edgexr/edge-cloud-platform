@@ -47,8 +47,7 @@ func (s *Platform) GetMetricsCollectInterval() time.Duration {
 
 func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	cloudletMetric := shepherd_common.CloudletMetrics{}
-	cloudletMetric.ComputeTS, _ = types.TimestampProto(time.Now())
-	cloudletMetric.NetworkTS = cloudletMetric.ComputeTS
+	cloudletMetric.CollectTime, _ = types.TimestampProto(time.Now())
 
 	cpu, err := cpu.CountsWithContext(ctx, true)
 	if err != nil {

@@ -97,3 +97,11 @@ func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlaye
 	}
 	return "", fmt.Errorf("GetResourceID not implemented for resource type: %s ", resourceType)
 }
+
+func (o *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+	return nil, fmt.Errorf("vm stats not supported for VSphere")
+}
+
+func (s *VSpherePlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
+	return nil, fmt.Errorf("platform resource stats not supported for VSphere")
+}
