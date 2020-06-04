@@ -40,3 +40,14 @@ func (s *Client) ShowClusterRefs(uri, token string, in *ormapi.RegionClusterRefs
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
 }
+
+func (s *Client) ShowAppInstRefs(uri, token string, in *ormapi.RegionAppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
+	args := []string{"region", "ShowAppInstRefs"}
+	outlist := []edgeproto.AppInstRefs{}
+	noconfig := strings.Split("", ",")
+	ops := []runOp{
+		withIgnore(noconfig),
+	}
+	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
+	return outlist, st, err
+}

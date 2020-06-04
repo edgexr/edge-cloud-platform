@@ -186,6 +186,14 @@ regiondata:
       createdat:
         seconds: 1569534854
         nanos: 528573000
+    appinstrefs:
+    - key:
+        organization: enterprise
+        name: ep1
+        version: "1.0"
+      insts:
+        ? '{"app_key":{"organization":"enterprise","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"enterprise"}}'
+        : 1
 - region: locala
   appdata:
     flavors:

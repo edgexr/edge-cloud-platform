@@ -44,3 +44,17 @@ type RegionClusterRefs struct {
 	Region      string
 	ClusterRefs edgeproto.ClusterRefs
 }
+
+// Request summary for ShowAppInstRefs
+// swagger:parameters ShowAppInstRefs
+type swaggerShowAppInstRefs struct {
+	// in: body
+	Body RegionAppInstRefs
+}
+
+type RegionAppInstRefs struct {
+	// required: true
+	// Region name
+	Region      string
+	AppInstRefs edgeproto.AppInstRefs
+}

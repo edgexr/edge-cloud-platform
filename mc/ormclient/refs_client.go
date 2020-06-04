@@ -43,3 +43,16 @@ func (s *Client) ShowClusterRefs(uri, token string, in *ormapi.RegionClusterRefs
 type ClusterRefsApiClient interface {
 	ShowClusterRefs(uri, token string, in *ormapi.RegionClusterRefs) ([]edgeproto.ClusterRefs, int, error)
 }
+
+func (s *Client) ShowAppInstRefs(uri, token string, in *ormapi.RegionAppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
+	out := edgeproto.AppInstRefs{}
+	outlist := []edgeproto.AppInstRefs{}
+	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/ShowAppInstRefs", token, in, &out, func() {
+		outlist = append(outlist, out)
+	})
+	return outlist, status, err
+}
+
+type AppInstRefsApiClient interface {
+	ShowAppInstRefs(uri, token string, in *ormapi.RegionAppInstRefs) ([]edgeproto.AppInstRefs, int, error)
+}
