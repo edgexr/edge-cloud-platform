@@ -164,6 +164,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		if strings.Contains(err.Error(), ServerDoesNotExistError) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB is gone, allow stack delete to proceed")
 		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Error in getting platform client", "err", err)
 			return err
 		}
 	}

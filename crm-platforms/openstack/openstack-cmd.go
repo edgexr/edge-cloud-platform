@@ -300,7 +300,7 @@ func (s *OpenstackPlatform) GetActiveServerDetails(ctx context.Context, name str
 	for i := 0; i < 10; i++ {
 		out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
 		if err != nil {
-			if strings.Contains(err.Error(), "No server with a name or ID") {
+			if strings.Contains(string(out), "No server with a name or ID") {
 				err = fmt.Errorf("%s -- can't show server %s, %s, %v", vmlayer.ServerDoesNotExistError, name, out, err)
 			}
 			return nil, err
@@ -329,7 +329,9 @@ func (s *OpenstackPlatform) GetOpenstackServerDetails(ctx context.Context, name 
 	srvDetail := &OSServerDetail{}
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "show", "-f", "json", name)
 	if err != nil {
-		err = fmt.Errorf("can't show server %s, %s, %v", name, out, err)
+		if strings.Contains(string(out), "No server with a name or ID") {
+			err = fmt.Errorf("%s -- can't show server %s, %s, %v", vmlayer.ServerDoesNotExistError, name, out, err)
+		}
 		return nil, err
 	}
 	//fmt.Printf("%s\n", out)
@@ -746,7 +748,7 @@ func (s *OpenstackPlatform) DeleteImage(ctx context.Context, imageName string) e
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {
-		if strings.Contains(err.Error(), "Could not find resource") {
+		if strings.Contains(string(out), "Could not find resource") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "image not found", "name", imageName)
 			return nil
 		} else {
