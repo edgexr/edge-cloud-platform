@@ -121,7 +121,10 @@ resources:
     {{.Name}}:
         type: OS::Cinder::Volume
         properties:
+            {{- if .ImageName}}
             image: {{.ImageName}}
+            {{- end}}
+            name: {{.Name}}
             size: {{.Size}}
             {{- if .AvailabilityZone}}
             availability_zone: {{.AvailabilityZone}}
