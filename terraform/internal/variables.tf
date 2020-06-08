@@ -52,6 +52,7 @@ variable "influxdb_instance_name" {
 variable "influxdb_vm_hostname" {
   description = "InfluxDB VM domain name"
   type        = "string"
+  default     = "influxdb.internal.mobiledgex.net"
 }
 
 variable "vouch_domain_name" {
@@ -108,6 +109,18 @@ variable "backups_domain_name" {
 
 variable "backups_instance_name" {
   default     = "backups"
+}
+
+variable "chef_domain_name" {
+  default     = "chef.mobiledgex.net"
+}
+
+variable "chef_instance_name" {
+  default     = "chef-master"
+}
+
+variable "chef_zone" {
+  default     = "us-central1-a"
 }
 
 variable "ssh_public_key_file" {
