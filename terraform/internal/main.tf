@@ -37,7 +37,7 @@ module "influxdb" {
   instance_size           = "custom-1-4864"
   zone                    = "${var.gcp_zone}"
   boot_disk_size          = 100
-  tags                    = [ "internal", "influxdb", "http-server", "https-server" ]
+  tags                    = [ "internal", "influxdb", "http-server", "https-server", "mosh-default" ]
   ssh_public_key_file     = "${var.ssh_public_key_file}"
 }
 
@@ -91,23 +91,6 @@ module "kibana_dns" {
   ip                            = "${module.elasticsearch.external_ip}"
 }
 
-module "infra" {
-  source                        = "../modules/vm_gcp"
-
-  instance_name                 = "${var.infra_instance_name}"
-  instance_size                 = "n1-standard-1"
-  zone                          = "${var.gcp_zone}"
-  boot_disk_size                = 20
-  tags                          = [ "mexplat-${var.environ_tag}", "infra" ]
-  ssh_public_key_file           = "${var.ssh_public_key_file}"
-}
-
-module "infra_dns" {
-  source                        = "../modules/cloudflare_record"
-  hostname                      = "${var.infra_domain_name}"
-  ip                            = "${module.infra.external_ip}"
-}
-
 module "apt" {
   source                        = "../modules/vm_gcp"
 
@@ -138,4 +121,22 @@ module "backups_dns" {
   source                        = "../modules/cloudflare_record"
   hostname                      = "${var.backups_domain_name}"
   ip                            = "${module.backups.external_ip}"
+}
+
+module "chef" {
+  source                        = "../modules/vm_gcp"
+
+  instance_name                 = "${var.chef_instance_name}"
+  instance_size                 = "n1-standard-1"
+  zone                          = "${var.chef_zone}"
+  boot_image                    = "ubuntu-1604-xenial-v20200407"
+  boot_disk_size                = 20
+  tags                          = [ "mexplat-${var.environ_tag}", "http-server", "https-server" ]
+  ssh_public_key_file           = "${var.ssh_public_key_file}"
+}
+
+module "chef_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.chef_domain_name}"
+  ip                            = "${module.chef.external_ip}"
 }
