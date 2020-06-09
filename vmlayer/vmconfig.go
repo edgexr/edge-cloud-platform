@@ -2,9 +2,19 @@ package vmlayer
 
 import (
 	"fmt"
+
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 )
 
 var VmCloudConfig = `#cloud-config
+chef:
+  server_url: {{.ServerPath}}
+  node_name: {{.NodeName}}
+  environment: ""
+  validation_name: mobiledgex-validator
+  validation_key: /etc/chef/client.pem
+  validation_cert: |
+{{ Indent .ClientKey 10 }}
 bootcmd:
  - echo MOBILEDGEX CLOUD CONFIG START
  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -46,10 +56,10 @@ mounts:
 // VmConfigDataFormatter formats user or meta data to fit into orchestration templates
 type VmConfigDataFormatter func(instring string) string
 
-func GetVMUserData(sharedVolume bool, dnsServers string, manifest string, command string, formatter VmConfigDataFormatter) string {
+func GetVMUserData(sharedVolume bool, dnsServers, manifest, command string, chefParams *chefmgmt.VMChefParams, formatter VmConfigDataFormatter) (string, error) {
 	var rc string
 	if manifest != "" {
-		return formatter(manifest)
+		return formatter(manifest), nil
 	}
 	if command != "" {
 		rc = `
@@ -58,14 +68,21 @@ runcmd:
 - ` + command
 	} else {
 		rc = VmCloudConfig
+		if chefParams != nil {
+			buf, err := ExecTemplate(chefParams.NodeName, VmCloudConfig, chefParams)
+			if err != nil {
+				return "", fmt.Errorf("failed to generate template from chef params %v, err %v", chefParams, err)
+			}
+			rc = buf.String()
+		}
 		if dnsServers != "" {
 			rc += fmt.Sprintf("\n - echo \"dns-nameservers %s\" >> /etc/network/interfaces.d/50-cloud-init.cfg", dnsServers)
 		}
 		if sharedVolume {
-			return formatter(rc + VmCloudConfigShareMount)
+			return formatter(rc + VmCloudConfigShareMount), nil
 		}
 	}
-	return formatter(rc)
+	return formatter(rc), nil
 }
 
 func GetVMMetaData(role VMRole, masterIP string, formatter VmConfigDataFormatter) string {

@@ -67,7 +67,7 @@ func GetCloudletNetworkIfaceFile() string {
 
 func (v *VMPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeVM:
+	case cloudcommon.DeploymentTypeVM:
 		objName := cloudcommon.GetAppFQN(&app.Key)
 		return v.VMProvider.GetConsoleUrl(ctx, objName)
 	default:
@@ -78,7 +78,7 @@ func (v *VMPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (str
 func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	PowerState := appInst.PowerState
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeVM:
+	case cloudcommon.DeploymentTypeVM:
 		serverName := cloudcommon.GetAppFQN(&app.Key)
 		fqdn := appInst.Uri
 

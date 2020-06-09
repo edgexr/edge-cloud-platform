@@ -36,7 +36,7 @@ func (g *GCPPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.
 	}
 
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeKubernetes:
+	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.CreateAppInst(ctx, g.commonPf.VaultConfig, client, names, app, appInst)
 		if err == nil {
 			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
@@ -83,7 +83,7 @@ func (g *GCPPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.
 	}
 
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeKubernetes:
+	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)

@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-chef/chef"
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/log"
-
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
@@ -21,6 +22,9 @@ type CommonPlatform struct {
 	PlatformConfig    *pf.PlatformConfig
 	VaultConfig       *vault.Config
 	MappedExternalIPs map[string]string
+	ChefClient        *chef.Client
+	ChefServerPath    string
+	DeploymentTag     string
 }
 
 // Package level test mode variable
@@ -83,6 +87,34 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 	if err != nil {
 		return fmt.Errorf("unable to init Mapped IPs: %v", err)
 	}
+
+	if testMode {
+		return nil
+	}
+
+	if platformConfig.DeploymentTag == "" {
+		return fmt.Errorf("missing deployment tag")
+	}
+
+	chefAuth, err := chefmgmt.GetChefAuthKeys(ctx, vaultConfig)
+	if err != nil {
+		return err
+	}
+
+	chefServerPath := platformConfig.ChefServerPath
+	if chefServerPath == "" {
+		chefServerPath = chefmgmt.DefaultChefServerPath
+	}
+
+	chefClient, err := chefmgmt.GetChefClient(ctx, chefAuth.ApiKey, chefServerPath)
+	if err != nil {
+		return err
+	}
+	// Set chef client, note here object is just initialised and
+	// no connection has formed with chef server
+	c.ChefClient = chefClient
+	c.ChefServerPath = chefServerPath
+	c.DeploymentTag = platformConfig.DeploymentTag
 	return nil
 }
 

@@ -44,13 +44,13 @@ func NewClusterWorker(ctx context.Context, promAddr string, interval time.Durati
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "NewClusterWorker", "cluster", clusterInst.Key, "promAddr", promAddr)
 	// only support K8s deployments
-	if p.deployment == cloudcommon.AppDeploymentTypeKubernetes {
+	if p.deployment == cloudcommon.DeploymentTypeKubernetes {
 		p.clusterStat = &K8sClusterStats{
 			key:      p.clusterInstKey,
 			client:   p.client,
 			promAddr: p.promAddr,
 		}
-	} else if p.deployment == cloudcommon.AppDeploymentTypeDocker {
+	} else if p.deployment == cloudcommon.DeploymentTypeDocker {
 		p.clusterStat = &DockerClusterStats{
 			key:    p.clusterInstKey,
 			client: p.client,

@@ -37,7 +37,7 @@ func (a *AzurePlatform) CreateAppInst(ctx context.Context, clusterInst *edgeprot
 	}
 
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeKubernetes:
+	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.CreateAppInst(ctx, a.commonPf.VaultConfig, client, names, app, appInst)
 		if err == nil {
 			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
@@ -89,7 +89,7 @@ func (a *AzurePlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeprot
 	}
 
 	switch deployment := app.Deployment; deployment {
-	case cloudcommon.AppDeploymentTypeKubernetes:
+	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)

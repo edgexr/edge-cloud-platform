@@ -36,28 +36,6 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }
 
-func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (edgeproto.CloudletAction, error) {
-	updateCallback(edgeproto.UpdateTask, "Stopping old Shepherd service")
-	err := intprocess.StopShepherdService(ctx, cloudlet)
-	if err != nil {
-		return edgeproto.CloudletAction_ACTION_NONE, err
-	}
-	cloudletAction, err := s.Platform.UpdateCloudlet(ctx, cloudlet, pfConfig, updateCallback)
-	if err != nil {
-		return edgeproto.CloudletAction_ACTION_NONE, err
-	}
-	err = ShepherdStartup(ctx, cloudlet, pfConfig, updateCallback)
-	return cloudletAction, err
-}
-
-func (s *Platform) CleanupCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.Platform.CleanupCloudlet(ctx, cloudlet, pfConfig, updateCallback)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Start prometheus container
 func CloudletPrometheusStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	// for fakeinfra we only start the first cloudlet prometheus, since it's going to run on the same port as

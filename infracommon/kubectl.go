@@ -127,7 +127,7 @@ func GetSvcExternalIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt
 func GetServices(ctx context.Context, client ssh.Client, names *k8smgmt.KubeNames) ([]v1.Service, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get services", "kconf", names.KconfName)
 	svcs := svcItems{}
-	if names.DeploymentType == cloudcommon.AppDeploymentTypeDocker {
+	if names.DeploymentType == cloudcommon.DeploymentTypeDocker {
 		// just populate the service names
 		for _, sn := range names.ServiceNames {
 			item := v1.Service{}

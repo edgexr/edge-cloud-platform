@@ -1,0 +1,6 @@
+name 'preflight_crm_checks'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Pre-Flight checks before setting up cloudlet services'
+version '1.0.0'
+chef_version '>= 14.0'

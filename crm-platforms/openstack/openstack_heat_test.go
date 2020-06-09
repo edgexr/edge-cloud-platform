@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -75,8 +76,17 @@ func TestHeatTemplate(t *testing.T) {
 	}
 	err := vmp.InitProps(ctx, &pc, vaultConfig)
 	log.SpanLog(ctx, log.DebugLevelInfra, "init props done", "err", err)
-	op.VMProperties.CommonPf.Properties["MEX_EXT_NETWORK"].Value = "external-network-shared"
 	require.Nil(t, err)
+	op.VMProperties.CommonPf.Properties["MEX_EXT_NETWORK"].Value = "external-network-shared"
+
+	// Add chef params
+	for _, vm := range vms {
+		vm.ChefParams = &chefmgmt.VMChefParams{
+			NodeName:   vm.Name,
+			ServerPath: "cheftestserver.mobiledgex.net/organizations/mobiledgex",
+			ClientKey:  "testKey",
+		}
+	}
 
 	vmgp, err := vmp.GetVMGroupOrchestrationParamsFromVMSpec(ctx,
 		testGroupName,

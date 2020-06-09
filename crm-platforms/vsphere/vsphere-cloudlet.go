@@ -5,34 +5,16 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var clusterLock sync.Mutex
 var appLock sync.Mutex
 
 var flavors []*edgeproto.FlavorInfo
-
-func (v *VSpherePlatform) VerifyApiEndpoint(ctx context.Context, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error {
-	// Verify if Openstack API Endpoint is reachable
-	updateCallback(edgeproto.UpdateTask, "Verifying if VCenter API Endpoint is reachable")
-	host, portstr, err := v.GetVCenterAddress()
-	if err != nil {
-		return err
-	}
-	_, err = client.Output(
-		fmt.Sprintf(
-			"nc %s %s -w 5", host, portstr,
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("unable to reach Vcenter Address: %s", host)
-	}
-	return nil
-}
 
 func (o *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
@@ -125,4 +107,38 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 		}
 	}
 	return terraform.RunTerraformApply(ctx, terraform.WithRetries(NumTerraformRetries))
+}
+
+func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
+	vcaddr := v.vcenterVars["VCENTER_ADDR"]
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "vcaddr", vcaddr)
+	if vcaddr == "" {
+		return "", fmt.Errorf("unable to find VCENTER_ADDR")
+	}
+	return vcaddr, nil
+}
+
+func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name, "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
+	// because we look for free IPs when defining the orchestration parms which are not reserved
+	// until the plan is created, we need to lock this whole function
+	vmOrchestrateLock.Lock()
+	defer vmOrchestrateLock.Unlock()
+
+	planName := v.NameSanitize(VMGroupOrchestrationParams.GroupName)
+	var vgp VSphereGeneralParams
+	err := v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
+	if err != nil {
+		return "", err
+	}
+	err = v.populateVMOrchParams(ctx, VMGroupOrchestrationParams, &vgp, terraformCreate)
+	if err != nil {
+		return "", err
+	}
+
+	buf, err := vmlayer.ExecTemplate(name, vmGroupTemplate, VMGroupOrchestrationParams)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

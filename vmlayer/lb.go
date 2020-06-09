@@ -11,6 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 
 	valid "github.com/asaskevich/govalidator"
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
@@ -371,7 +372,7 @@ var MEXRootLBMap = make(map[string]*MEXRootLB)
 
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
-func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
+func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, tags []string, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB", "rootLbName", rootLbName)
 
@@ -395,6 +396,10 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	if err != nil {
 		return nil, err
 	}
+	chefAttributes := make(map[string]interface{})
+	chefAttributes["tags"] = tags
+	clientName := v.GetChefClientName(rootLbName)
+	chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	return v.GetVMRequestSpec(ctx,
 		VMTypeRootLB,
 		rootLbName,
@@ -402,7 +407,8 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		imageName,
 		true,
 		WithExternalVolume(vmspec.ExternalVolumeSize),
-		WithSubnetConnection(subnetConnect))
+		WithSubnetConnection(subnetConnect),
+		WithChefParams(chefParams))
 }
 
 // GetVMSpecForRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
@@ -457,6 +463,7 @@ func (v *VMPlatform) CreateRootLB(
 	cloudletKey *edgeproto.CloudletKey,
 	imgPath, imgVersion string,
 	action ActionType,
+	tags []string,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 
@@ -471,7 +478,7 @@ func (v *VMPlatform) CreateRootLB(
 			return nil
 		}
 	}
-	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLB.Name, "", updateCallback)
+	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLB.Name, "", tags, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -638,7 +645,14 @@ func (v *VMPlatform) DeleteProxySecurityGroupRules(ctx context.Context, client s
 func (v *VMPlatform) SyncSharedRootLB(ctx context.Context, caches *platform.Caches) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncSharedRootLB")
 
-	err := v.CreateRootLB(ctx, v.VMProperties.sharedRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionSync, edgeproto.DummyUpdateCallback)
+	tags := []string{
+		v.VMProperties.CommonPf.PlatformConfig.DeploymentTag,
+		v.VMProperties.CommonPf.PlatformConfig.Region,
+		v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Name,
+		v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Organization,
+		string(VMTypeRootLB),
+	}
+	err := v.CreateRootLB(ctx, v.VMProperties.sharedRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionSync, tags, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err
 	}

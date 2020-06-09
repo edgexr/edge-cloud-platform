@@ -20,7 +20,7 @@ func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *ed
 		return err
 	}
 	// The rest is k8s specific
-	if clusterInst.Deployment == cloudcommon.AppDeploymentTypeDocker {
+	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		return nil
 	}
 	client, err := e.generic.GetClusterPlatformClient(ctx, clusterInst)

@@ -20,7 +20,7 @@ var (
 	}
 	TestClusterInst = edgeproto.ClusterInst{
 		Key:        TestClusterInstKey,
-		Deployment: cloudcommon.AppDeploymentTypeDocker,
+		Deployment: cloudcommon.DeploymentTypeDocker,
 	}
 	TestAppKey = edgeproto.AppKey{
 		Name: "App",

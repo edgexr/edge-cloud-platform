@@ -1,0 +1,6 @@
+name 'setup_infra'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Infra specific config'
+version '1.0.0'
+chef_version '>= 14.0'

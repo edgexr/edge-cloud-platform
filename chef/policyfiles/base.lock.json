@@ -1,0 +1,42 @@
+{
+  "revision_id": "486d3b4bf0dd7d2b32ff7b369132d30b60588490bca08ed129bd3b36006474c5",
+  "name": "base",
+  "run_list": [
+    "recipe[runstatus_handler::default]"
+  ],
+  "included_policy_locks": [
+
+  ],
+  "cookbook_locks": {
+    "runstatus_handler": {
+      "version": "1.0.0",
+      "identifier": "9753ebd571a62add318f1eb5b018dd4ed3d3cf0a",
+      "dotted_decimal_identifier": "42594993846724138.62260460618362904.243330631061258",
+      "cache_key": "runstatus_handler-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    }
+  },
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "solution_dependencies": {
+    "Policyfile": [
+      [
+        "runstatus_handler",
+        "= 1.0.0"
+      ]
+    ],
+    "dependencies": {
+      "runstatus_handler (1.0.0)": [
+
+      ]
+    }
+  }
+}

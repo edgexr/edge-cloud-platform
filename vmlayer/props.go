@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-chef/chef"
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -24,7 +26,7 @@ type VMProperties struct {
 var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
-var MEXInfraVersion = "3.1.1"
+var MEXInfraVersion = "3.1.2"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 
@@ -159,6 +161,10 @@ func (vp *VMProperties) GetCloudletExternalNetwork() string {
 	return vp.CommonPf.Properties["MEX_EXT_NETWORK"].Value
 }
 
+func (vp *VMProperties) SetCloudletExternalNetwork(name string) {
+	vp.CommonPf.Properties["MEX_EXT_NETWORK"].Value = name
+}
+
 // GetCloudletNetwork returns default MEX network, internal and prepped
 func (vp *VMProperties) GetCloudletMexNetwork() string {
 	return vp.CommonPf.Properties["MEX_NETWORK"].Value
@@ -222,4 +228,23 @@ func (vp *VMProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
 		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
 	}
 	return host, port
+}
+
+func (vp *VMProperties) GetChefClient() *chef.Client {
+	return vp.CommonPf.ChefClient
+}
+
+func (vp *VMProperties) GetChefServerPath() string {
+	if vp.CommonPf.ChefServerPath == "" {
+		return chefmgmt.DefaultChefServerPath
+	}
+	return vp.CommonPf.ChefServerPath
+}
+
+func (vp *VMProperties) GetRegion() string {
+	return vp.CommonPf.PlatformConfig.Region
+}
+
+func (vp *VMProperties) GetDeploymentTag() string {
+	return vp.CommonPf.DeploymentTag
 }

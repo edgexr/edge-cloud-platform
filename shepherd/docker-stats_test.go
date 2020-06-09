@@ -100,7 +100,7 @@ func TestDockerStats(t *testing.T) {
 	}
 	testClusterInst := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
-		Deployment: cloudcommon.AppDeploymentTypeDocker,
+		Deployment: cloudcommon.DeploymentTypeDocker,
 	}
 	testAppInstDocker2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{

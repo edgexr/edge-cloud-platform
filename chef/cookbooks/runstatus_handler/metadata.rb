@@ -1,0 +1,6 @@
+name 'runstatus_handler'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Reports running status of chef-client'
+version '1.0.0'
+chef_version '>= 14.0'

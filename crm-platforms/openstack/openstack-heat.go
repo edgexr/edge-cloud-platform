@@ -1,12 +1,10 @@
 package openstack
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -250,37 +248,13 @@ func (o *OpenstackPlatform) waitForStack(ctx context.Context, stackname string, 
 func (o *OpenstackPlatform) createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName string, templateString string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "createHeatStackFromTemplate", "stackName", stackName, "action", action)
 
-	var buf bytes.Buffer
 	updateCallback(edgeproto.UpdateTask, "Creating Heat Stack for "+stackName)
-
-	funcMap := template.FuncMap{
-		"Indent": func(values ...interface{}) string {
-			s := values[0].(string)
-			l := 4
-			if len(values) > 1 {
-				l = values[1].(int)
-			}
-			var newStr []string
-			for _, v := range strings.Split(string(s), "\n") {
-				nV := fmt.Sprintf("%s%s", strings.Repeat(" ", l), v)
-				newStr = append(newStr, nV)
-			}
-			return strings.Join(newStr, "\n")
-		},
-	}
-
-	tmpl, err := template.New(stackName).Funcs(funcMap).Parse(templateString)
+	buf, err := vmlayer.ExecTemplate(stackName, templateString, templateData)
 	if err != nil {
-		// this is a bug
-		log.WarnLog("template new failed", "templateString", templateString, "err", err)
-		return fmt.Errorf("template new failed: %s", err)
-	}
-	err = tmpl.Execute(&buf, templateData)
-	if err != nil {
-		return fmt.Errorf("Template Execute Failed: %s", err)
+		return err
 	}
 	filename := stackName + "-heat.yaml"
-	err = infracommon.WriteTemplateFile(filename, &buf)
+	err = infracommon.WriteTemplateFile(filename, buf)
 	if err != nil {
 		return fmt.Errorf("WriteTemplateFile failed: %s", err)
 	}
@@ -336,10 +310,8 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		if action != heatCreate {
 			currentSubnetName = vmlayer.MexSubnetPrefix + VMGroupOrchestrationParams.GroupName
 		}
-		var sns []OSSubnet
-		var snserr error
-		if action != heatTest {
-			sns, snserr = o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
+		if action != heatTest && !VMGroupOrchestrationParams.SkipInfraSpecificCheck {
+			sns, snserr := o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
 			if snserr != nil {
 				return fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
 			}
@@ -362,7 +334,9 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 				if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
 					found = true
 					VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
-					VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
+					if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
+						VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
+					}
 					VMGroupOrchestrationParams.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet)
 					masterIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 10)
 					break
@@ -399,7 +373,11 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	// populate the user data
 	for i, v := range VMGroupOrchestrationParams.VMs {
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
-		VMGroupOrchestrationParams.VMs[i].UserData = vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, reindent16)
+		userdata, err := vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, v.ChefParams, reindent16)
+		if err != nil {
+			return err
+		}
+		VMGroupOrchestrationParams.VMs[i].UserData = userdata
 	}
 
 	// populate the floating ips

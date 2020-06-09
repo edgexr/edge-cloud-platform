@@ -59,8 +59,10 @@ It has these top-level messages:
 	OperationTimeLimits
 	PlatformConfig
 	CloudletResMap
+	InfraConfig
 	Cloudlet
 	FlavorMatch
+	CloudletManifest
 	FlavorInfo
 	OSAZone
 	OSImage
@@ -248,6 +250,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// MasterNodeFlavor: 14
 	// LoadBalancerMaxPortRange: 15
 	// MaxTrackedDmeClients: 16
+	// ChefClientInterval: 17
 	// ```
 	// Security:
 	//   Bearer:
@@ -549,6 +552,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigUseVaultCerts: 21.14
 	// ConfigUseVaultCas: 21.15
 	// ConfigAppDnsRoot: 21.16
+	// ConfigChefServerPath: 21.17
+	// ConfigChefClientInterval: 21.18
+	// ConfigDeploymentTag: 21.19
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2
@@ -558,7 +564,14 @@ func addControllerApis(method string, group *echo.Group) {
 	// AccessVarsKey: 23.1
 	// AccessVarsValue: 23.2
 	// VmImageVersion: 24
-	// PackageVersion: 25
+	// Deployment: 26
+	// InfraApiAccess: 27
+	// InfraConfig: 28
+	// InfraConfigExternalNetworkName: 28.1
+	// InfraConfigFlavorName: 28.2
+	// ChefClientKey: 29
+	// ChefClientKeyKey: 29.1
+	// ChefClientKeyValue: 29.2
 	// ```
 	// Security:
 	//   Bearer:
@@ -579,6 +592,17 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudlet", ShowCloudlet)
+	// swagger:route POST /auth/ctrl/GetCloudletManifest Cloudlet GetCloudletManifest
+	// Get Cloudlet Manifest.
+	//  Shows deployment manifest required to setup cloudlet
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetCloudletManifest", GetCloudletManifest)
 	// swagger:route POST /auth/ctrl/AddCloudletResMapping CloudletResMap AddCloudletResMapping
 	// Add Optional Resource tag table.
 	// Security:
