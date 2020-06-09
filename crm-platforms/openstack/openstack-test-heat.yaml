@@ -87,6 +87,7 @@ resources:
         type: OS::Cinder::Volume
         properties:
             image: mobiledgex-v9.9.9
+            name: rootlb-xyz-volume
             size: 100
         
     rootlb-xyz:
@@ -134,6 +135,7 @@ resources:
         type: OS::Cinder::Volume
         properties:
             image: mobiledgex-v9.9.9
+            name: master-xyz-volume
             size: 100
         
     master-xyz:
