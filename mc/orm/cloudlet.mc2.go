@@ -428,6 +428,53 @@ func ShowCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Clou
 	return arr, err
 }
 
+func GetCloudletManifest(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionCloudlet{}
+	if err := c.Bind(&in); err != nil {
+		return bindErr(c, err)
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.Cloudlet.Key.Organization)
+	resp, err := GetCloudletManifestObj(ctx, rc, &in.Cloudlet)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
+	return setReply(c, err, resp)
+}
+
+func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet) (*edgeproto.CloudletManifest, error) {
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewCloudletApiClient(rc.conn)
+	return api.GetCloudletManifest(ctx, obj)
+}
+
 func AddCloudletResMapping(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}

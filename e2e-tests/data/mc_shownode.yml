@@ -42,14 +42,14 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-  containerversion: "2020-10-10"
+  containerversion: "2019-10-24"
 - key:
     type: crm
     region: local
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-  containerversion: "2020-10-10"
+  containerversion: "2019-10-24"
 - key:
     type: crm
     region: local

@@ -27,6 +27,7 @@ type VMProvider interface {
 	InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error
 	ImportDataFromInfra(ctx context.Context) error
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)
+	GetNetworkList(ctx context.Context) ([]string, error)
 	AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error)
 	AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, updateCallback edgeproto.CacheUpdateCallback) error
 	DeleteImage(ctx context.Context, image string) error
@@ -41,10 +42,12 @@ type VMProvider interface {
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
 	GetApiAccessFilename() string
 	InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error
-	VerifyApiEndpoint(ctx context.Context, client ssh.Client, updateCallback edgeproto.CacheUpdateCallback) error
+	GetApiEndpointAddr(ctx context.Context) (string, error)
+	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
 	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error
 	SetPowerState(ctx context.Context, serverName, serverAction string) error
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
+	GetCloudletManifest(ctx context.Context, name string, VMGroupOrchestrationParams *VMGroupOrchestrationParams) (string, error)
 	GetRouterDetail(ctx context.Context, routerName string) (*RouterDetail, error)
 	CreateVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
 	UpdateVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
@@ -171,7 +174,6 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 }
 
 func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) error {
-	//infraSpecifcProps :=
 	providerProps := v.VMProvider.GetProviderSpecificProps()
 	for k, v := range VMProviderProps {
 		providerProps[k] = v
@@ -231,7 +233,15 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	v.VMProperties.sharedRootLB = crmRootLB
 	log.SpanLog(ctx, log.DebugLevelInfra, "created shared rootLB", "name", v.VMProperties.sharedRootLBName)
 
-	err = v.CreateRootLB(ctx, crmRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionCreate, updateCallback)
+	tags := []string{
+		platformConfig.DeploymentTag,
+		platformConfig.Region,
+		platformConfig.CloudletKey.Name,
+		platformConfig.CloudletKey.Organization,
+		string(VMTypeRootLB),
+	}
+
+	err = v.CreateRootLB(ctx, crmRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionCreate, tags, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}

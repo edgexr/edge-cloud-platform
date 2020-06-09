@@ -95,6 +95,7 @@ var SettingsOptionalArgs = []string{
 	"masternodeflavor",
 	"loadbalancermaxportrange",
 	"maxtrackeddmeclients",
+	"chefclientinterval",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -113,6 +114,7 @@ var SettingsAliasArgs = []string{
 	"masternodeflavor=settings.masternodeflavor",
 	"loadbalancermaxportrange=settings.loadbalancermaxportrange",
 	"maxtrackeddmeclients=settings.maxtrackeddmeclients",
+	"chefclientinterval=settings.chefclientinterval",
 }
 var SettingsComments = map[string]string{
 	"fields":                            "Fields are used for the Update API to specify which fields to apply",
@@ -131,6 +133,7 @@ var SettingsComments = map[string]string{
 	"masternodeflavor":                  "Default flavor for k8s master VM and > 0  workers",
 	"loadbalancermaxportrange":          "Max IP Port range when using a load balancer",
 	"maxtrackeddmeclients":              "Max DME clients to be tracked at the same time.",
+	"chefclientinterval":                "Default chef client interval (duration)",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",

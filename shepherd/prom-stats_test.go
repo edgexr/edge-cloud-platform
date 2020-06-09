@@ -303,11 +303,11 @@ func TestPromStats(t *testing.T) {
 	}
 	testClusterInst := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
-		Deployment: cloudcommon.AppDeploymentTypeKubernetes,
+		Deployment: cloudcommon.DeploymentTypeKubernetes,
 	}
 	testClusterInstUnsupported := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
-		Deployment: cloudcommon.AppDeploymentTypeHelm,
+		Deployment: cloudcommon.DeploymentTypeHelm,
 	}
 
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-services
+  labels:
+    app: crm-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-services
+  template:
+    metadata:
+      labels:
+        app: crm-services
+    spec:
+       containers:
+       <% @services.each do |service, service_attrs| %>
+       - name: <%= service %>
+         image: <%= node['edgeCloudImage'] %>:<%= node['edgeCloudVersion'] %>
+         imagePullPolicy: Always
+         resources:
+           requests:
+             cpu: 10m
+         command:
+         <% cmdArgs = service_attrs[:cmd].split(" ")
+              cmd = cmdArgs.shift() %>
+          - <%= cmd %>
+         args:
+         <% cmdArgs.each do |args| %>
+          - <%= args %>
+         <% end %>
+         env:
+         <% service_attrs[:env].each do |envVar|
+              key, val = envVar.split('=') %>
+          - name: "<%= key %>"
+            value: "<%= val %>"
+         <% end %>
+       <% end %>
+       dnsConfig:
+         nameservers:
+          - 1.1.1.1
+       imagePullSecrets:
+        - name: mexreg-secret

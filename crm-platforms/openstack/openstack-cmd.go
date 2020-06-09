@@ -181,6 +181,20 @@ func (s *OpenstackPlatform) ListNetworks(ctx context.Context) ([]OSNetwork, erro
 	return networks, nil
 }
 
+func (o *OpenstackPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
+	var networks []string
+	nl, err := o.ListNetworks(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, n := range nl {
+		networks = append(networks, n.Name)
+	}
+	return networks, nil
+}
+
 //ShowFlavor returns the details of a given flavor.
 func (s *OpenstackPlatform) ShowFlavor(ctx context.Context, flavor string) (details OSFlavorDetail, err error) {
 

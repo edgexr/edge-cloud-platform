@@ -87,6 +87,7 @@ regiondata:
       deleteclusterinsttimeout: 2s
       loadbalancermaxportrange: 100
       maxtrackeddmeclients: 100
+      chefclientinterval: 10m
     cloudlets:
     - key:
         organization: dmuus

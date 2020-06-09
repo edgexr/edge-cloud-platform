@@ -105,6 +105,14 @@ resources:
             user_data_format: RAW
             user_data: |
                 #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: rootlb-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          testKey
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -145,6 +153,14 @@ resources:
             user_data_format: RAW
             user_data: |
                 #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: master-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          testKey
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -176,6 +192,14 @@ resources:
             user_data_format: RAW
             user_data: |
                 #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: node1-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          testKey
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -207,6 +231,14 @@ resources:
             user_data_format: RAW
             user_data: |
                 #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: node2-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          testKey
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable

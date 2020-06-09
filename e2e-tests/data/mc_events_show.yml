@@ -25,5 +25,5 @@
   tags:
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
-    event: UPDATE_COMPLETE
+    event: CREATED
     status: UP

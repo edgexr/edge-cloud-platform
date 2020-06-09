@@ -170,11 +170,11 @@ func (v *VSpherePlatform) GetExternalNetmask() string {
 	}
 	return ""
 }
-func (v *VSpherePlatform) GetExternalGateway() string {
+func (v *VSpherePlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
 	if val, ok := v.vmProperties.CommonPf.Properties["MEX_EXTERNAL_NETWORK_GATEWAY"]; ok {
-		return val.Value
+		return val.Value, nil
 	}
-	return ""
+	return "", nil
 }
 
 func (v *VSpherePlatform) GetInternalNetmask() string {

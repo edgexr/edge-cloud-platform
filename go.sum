@@ -74,6 +74,7 @@ github.com/coreos/go-systemd v0.0.0-20181012123002-c6f51f82210d/go.mod h1:F5haX7
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f h1:lBNOc5arjvs8E5mO2tbpBpLoyyu8B6e44T7hJy6potg=
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
+github.com/ctdk/goiardi v0.11.10/go.mod h1:Pr6Cj6Wsahw45myttaOEZeZ0LE7p1qzWmzgsBISkrNI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -116,6 +117,8 @@ github.com/fsouza/go-dockerclient v1.3.6 h1:oL0e3fpCjF+AHuUUBnwbkVcelFhxQifgTPQK
 github.com/fsouza/go-dockerclient v1.3.6/go.mod h1:ptN6nXBwrXuiHAz2TYGOFCBB1aKGr371sGjMFdJEr1A=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/go-chef/chef v0.20.1 h1:7j653Pk7CrTGALp7xxVI2W7wdj4Y/dq7p3wkhcnwUDw=
+github.com/go-chef/chef v0.20.1/go.mod h1:y3ffcKqjT0vdGFnUx+1yVORHV+gPxeZ5fd0kjkDVpto=
 github.com/go-ldap/ldap v3.0.2+incompatible h1:kD5HQcAzlQ7yrhfn+h+MSABeAy/jAJhvIJ/QDllP44g=
 github.com/go-ldap/ldap v3.0.2+incompatible/go.mod h1:qfd9rJvER9Q0/D/Sqn1DfHRoBp40uXYvFoEVrNEPqRc=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
@@ -322,14 +325,14 @@ github.com/mobiledgex/golang-ssh v0.0.6 h1:8tstuVuLeFpbWFV1XlyYRi3f8+49pL7RONUy/
 github.com/mobiledgex/golang-ssh v0.0.6/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/golang-ssh v0.0.7 h1:RLtsT/qUvXVCfU9G/TecaRF73nMh9ejwGVucetH4M4M=
 github.com/mobiledgex/golang-ssh v0.0.7/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
+github.com/mobiledgex/golang-ssh v0.0.8 h1:h86ltTZ1ZnE+YSllrq16AEDKAcQPLGdA/Oy4KY0v2ww=
+github.com/mobiledgex/golang-ssh v0.0.8/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200427235940-30d27df8e747 h1:vRTJWwkGJ77wjHthCcrAf5yitjshfOedff3/4glV+iw=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200427235940-30d27df8e747/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200428201711-4db174db0173 h1:l5jidft/E7HosFZ88HP0heCJrpXtukivupIEttOXapQ=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200428201711-4db174db0173/go.mod h1:BmvP2AmuxmsVnZalBdNcImukJxRGn8wIA2QiunDSUT8=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5 h1:HVqsqIZH1daOCnojV5KHRSHBEW3bkEgyScQ9eipPSPc=
 github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5/go.mod h1:BmvP2AmuxmsVnZalBdNcImukJxRGn8wIA2QiunDSUT8=
-github.com/mobiledgex/golang-ssh v0.0.8 h1:h86ltTZ1ZnE+YSllrq16AEDKAcQPLGdA/Oy4KY0v2ww=
-github.com/mobiledgex/golang-ssh v0.0.8/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/yaml/v2 v2.2.4 h1:9biPviMHWPA+THM6GVuR8Rp10JmP7rFfizgDFpSXNpA=
 github.com/mobiledgex/yaml/v2 v2.2.4/go.mod h1:9xwjeLnIOTcA1fPBSAYKGRjeRy/bP/LnodFNfuZ9kqE=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
@@ -423,6 +426,7 @@ github.com/prometheus/common v0.0.0-20181218105931-67670fe90761 h1:z6tvbDJ5OLJ48
 github.com/prometheus/common v0.0.0-20181218105931-67670fe90761/go.mod h1:daVV7qP5qjZbuso7PdcryaAu0sAZbrN9i7WWcTMWvro=
 github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1 h1:/K3IL0Z1quvmJ7X0A1AwNEK7CRkVK3YwfOU/QAL4WGg=
 github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
+github.com/r3labs/diff v0.0.0-20191120142937-b4ed99a31f5a/go.mod h1:ozniNEFS3j1qCwHKdvraMn1WJOsUxHd7lYfukEIS4cs=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rogpeppe/fastuuid v1.1.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
@@ -442,6 +446,7 @@ github.com/smartystreets/assertions v1.0.0/go.mod h1:kHHU4qYBaI3q23Pp3VPrmWhuIUr
 github.com/smartystreets/go-aws-auth v0.0.0-20180515143844-0c1422d1fdb9/go.mod h1:SnhjPscd9TpLiy1LpzGSKh3bXCfxxXuqd9xmQJy3slM=
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a h1:pa8hGb/2YqsZKovtsgrwcDH1RZhVbTKCjLp47XpqCDs=
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
+github.com/smartystreets/goconvey v1.6.4/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/smartystreets/gunit v1.0.0/go.mod h1:qwPWnhz6pn0NnRBP++URONOVyNkPyr4SauJk4cUOwJs=
 github.com/soheilhy/cmux v0.1.4 h1:0HKaf1o97UwFjHH9o5XsHUOF+tqmdA7KEzXLpiyaw0E=
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=

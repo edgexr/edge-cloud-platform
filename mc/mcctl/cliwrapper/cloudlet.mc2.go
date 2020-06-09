@@ -24,7 +24,7 @@ var _ = math.Inf
 func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "CreateCloudlet"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr", ",")
+	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -36,7 +36,7 @@ func (s *Client) CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 func (s *Client) DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteCloudlet"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr", ",")
+	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -48,7 +48,7 @@ func (s *Client) DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateCloudlet"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr", ",")
+	noconfig := strings.Split("PlatformType,Errors,Status,State,DeploymentLocal,Config,NotifySrvAddr,Flavor,PhysicalName,EnvVar,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,ChefClientKey", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -60,12 +60,23 @@ func (s *Client) UpdateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([
 func (s *Client) ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Cloudlet, int, error) {
 	args := []string{"region", "ShowCloudlet"}
 	outlist := []edgeproto.Cloudlet{}
-	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr", ",")
+	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
+}
+
+func (s *Client) GetCloudletManifest(uri, token string, in *ormapi.RegionCloudlet) (*edgeproto.CloudletManifest, int, error) {
+	args := []string{"region", "GetCloudletManifest"}
+	out := edgeproto.CloudletManifest{}
+	noconfig := strings.Split("Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
 }
 
 func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {

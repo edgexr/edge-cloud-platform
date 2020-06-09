@@ -77,7 +77,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", new.Key.AppKey.Name)
 		return
 	}
-	if app.Deployment == cloudcommon.AppDeploymentTypeVM {
+	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		mapKey = new.Key.GetKeyString()
 		stats, exists := vmAppWorkerMap[mapKey]
 		if new.State == edgeproto.TrackedState_READY && !exists {
@@ -142,7 +142,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
 	// This is for Docker deployments only
-	if new.Deployment != cloudcommon.AppDeploymentTypeDocker {
+	if new.Deployment != cloudcommon.DeploymentTypeDocker {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New cluster instace", "clusterInst", new)
 		return
 	}

@@ -44,7 +44,7 @@ regiondata:
       physicalname: dmuus-cloud-1
       envvar:
         foo: bar
-      containerversion: 2020-10-10
+      containerversion: 2019-10-24
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -59,7 +59,7 @@ regiondata:
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
-      containerversion: 2020-10-10
+      containerversion: 2019-10-24
     - key:
         organization: azure
         name: azure-cloud-4

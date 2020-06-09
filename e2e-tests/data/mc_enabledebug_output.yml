@@ -11,19 +11,19 @@ requests:
   - node:
       type: controller
       region: local
-    output: etcd,api,notify,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade
   - node:
       type: controller
       region: local
-    output: etcd,api,notify,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade
   - node:
       type: controller
       region: locala
-    output: etcd,api,notify,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade
   - node:
       type: controller
       region: locala
-    output: etcd,api,notify,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade
   - node:
       type: dme
       region: local

@@ -81,3 +81,7 @@ func (v *VSpherePlatform) GetRouterDetail(ctx context.Context, routerName string
 func (v *VSpherePlatform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolicy {
 	return vmlayer.AttachPortDuringCreate
 }
+
+func (v *VSpherePlatform) GetNetworkList(ctx context.Context) ([]string, error) {
+	return []string{v.vmProperties.GetCloudletExternalNetwork()}, nil
+}

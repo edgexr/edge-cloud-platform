@@ -52,8 +52,8 @@ var DeleteCloudletCmd = &cli.Command{
 
 var UpdateCloudletCmd = &cli.Command{
 	Use:          "UpdateCloudlet",
-	RequiredArgs: "region " + strings.Join(CloudletRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(UpdateCloudletRequiredArgs, " "),
+	OptionalArgs: strings.Join(UpdateCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
 	Comments:     addRegionComment(CloudletComments),
@@ -90,6 +90,18 @@ var ShowCloudletCmd = &cli.Command{
 	ReplyData:    &edgeproto.Cloudlet{},
 	Run:          runRest("/auth/ctrl/ShowCloudlet"),
 	StreamOut:    true,
+}
+
+var GetCloudletManifestCmd = &cli.Command{
+	Use:          "GetCloudletManifest",
+	RequiredArgs: "region " + strings.Join(CloudletRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
+	Comments:     addRegionComment(CloudletComments),
+	ReqData:      &ormapi.RegionCloudlet{},
+	ReplyData:    &edgeproto.CloudletManifest{},
+	Run:          runRest("/auth/ctrl/GetCloudletManifest"),
 }
 
 var AddCloudletResMappingCmd = &cli.Command{
@@ -133,6 +145,7 @@ var CloudletApiCmds = []*cli.Command{
 	DeleteCloudletCmd,
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
+	GetCloudletManifestCmd,
 	AddCloudletResMappingCmd,
 	RemoveCloudletResMappingCmd,
 	FindFlavorMatchCmd,
@@ -171,7 +184,39 @@ var CreateCloudletOptionalArgs = []string{
 	"restagmap:#.value.organization",
 	"accessvars",
 	"vmimageversion",
-	"packageversion",
+	"deployment",
+	"infraapiaccess",
+	"infraconfig.externalnetworkname",
+	"infraconfig.flavorname",
+}
+var UpdateCloudletRequiredArgs = []string{
+	"cloudlet-org",
+	"cloudlet",
+}
+var UpdateCloudletOptionalArgs = []string{
+	"location.latitude",
+	"location.longitude",
+	"location.horizontalaccuracy",
+	"location.verticalaccuracy",
+	"location.altitude",
+	"location.course",
+	"location.speed",
+	"location.timestamp.seconds",
+	"location.timestamp.nanos",
+	"ipsupport",
+	"staticips",
+	"numdynamicips",
+	"timelimits.createclusterinsttimeout",
+	"timelimits.updateclusterinsttimeout",
+	"timelimits.deleteclusterinsttimeout",
+	"timelimits.createappinsttimeout",
+	"timelimits.updateappinsttimeout",
+	"timelimits.deleteappinsttimeout",
+	"crmoverride",
+	"restagmap:#.key",
+	"restagmap:#.value.name",
+	"restagmap:#.value.organization",
+	"accessvars",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -248,6 +293,9 @@ var PlatformConfigOptionalArgs = []string{
 	"usevaultcerts",
 	"usevaultcas",
 	"appdnsroot",
+	"chefserverpath",
+	"chefclientinterval",
+	"deploymenttag",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -265,6 +313,9 @@ var PlatformConfigAliasArgs = []string{
 	"usevaultcerts=platformconfig.usevaultcerts",
 	"usevaultcas=platformconfig.usevaultcas",
 	"appdnsroot=platformconfig.appdnsroot",
+	"chefserverpath=platformconfig.chefserverpath",
+	"chefclientinterval=platformconfig.chefclientinterval",
+	"deploymenttag=platformconfig.deploymenttag",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -282,6 +333,9 @@ var PlatformConfigComments = map[string]string{
 	"usevaultcerts":         "Use Vault certs for internal TLS communication",
 	"usevaultcas":           "Use Vault CAs to authenticate TLS communication",
 	"appdnsroot":            "App domain name root",
+	"chefserverpath":        "Path to Chef Server",
+	"chefclientinterval":    "Chef client interval",
+	"deploymenttag":         "Deployment Tag",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -305,6 +359,20 @@ var CloudletResMapComments = map[string]string{
 var CloudletResMapSpecialArgs = map[string]string{
 	"cloudletresmap.mapping": "StringToString",
 }
+var InfraConfigRequiredArgs = []string{}
+var InfraConfigOptionalArgs = []string{
+	"externalnetworkname",
+	"flavorname",
+}
+var InfraConfigAliasArgs = []string{
+	"externalnetworkname=infraconfig.externalnetworkname",
+	"flavorname=infraconfig.flavorname",
+}
+var InfraConfigComments = map[string]string{
+	"externalnetworkname": "Infra specific external network name",
+	"flavorname":          "Infra specific flavor name",
+}
+var InfraConfigSpecialArgs = map[string]string{}
 var CloudletRequiredArgs = []string{
 	"cloudlet-org",
 	"cloudlet",
@@ -338,7 +406,10 @@ var CloudletOptionalArgs = []string{
 	"restagmap:#.value.organization",
 	"accessvars",
 	"vmimageversion",
-	"packageversion",
+	"deployment",
+	"infraapiaccess",
+	"infraconfig.externalnetworkname",
+	"infraconfig.flavorname",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -391,12 +462,19 @@ var CloudletAliasArgs = []string{
 	"config.usevaultcerts=cloudlet.config.usevaultcerts",
 	"config.usevaultcas=cloudlet.config.usevaultcas",
 	"config.appdnsroot=cloudlet.config.appdnsroot",
+	"config.chefserverpath=cloudlet.config.chefserverpath",
+	"config.chefclientinterval=cloudlet.config.chefclientinterval",
+	"config.deploymenttag=cloudlet.config.deploymenttag",
 	"restagmap:#.key=cloudlet.restagmap:#.key",
 	"restagmap:#.value.name=cloudlet.restagmap:#.value.name",
 	"restagmap:#.value.organization=cloudlet.restagmap:#.value.organization",
 	"accessvars=cloudlet.accessvars",
 	"vmimageversion=cloudlet.vmimageversion",
-	"packageversion=cloudlet.packageversion",
+	"deployment=cloudlet.deployment",
+	"infraapiaccess=cloudlet.infraapiaccess",
+	"infraconfig.externalnetworkname=cloudlet.infraconfig.externalnetworkname",
+	"infraconfig.flavorname=cloudlet.infraconfig.flavorname",
+	"chefclientkey=cloudlet.chefclientkey",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -443,14 +521,22 @@ var CloudletComments = map[string]string{
 	"config.usevaultcerts":                "Use Vault certs for internal TLS communication",
 	"config.usevaultcas":                  "Use Vault CAs to authenticate TLS communication",
 	"config.appdnsroot":                   "App domain name root",
+	"config.chefserverpath":               "Path to Chef Server",
+	"config.chefclientinterval":           "Chef client interval",
+	"config.deploymenttag":                "Deployment Tag",
 	"restagmap:#.value.name":              "Resource Table Name",
 	"restagmap:#.value.organization":      "Operator organization of the cloudlet site.",
 	"accessvars":                          "Variables required to access cloudlet",
 	"vmimageversion":                      "MobiledgeX baseimage version where CRM services reside",
-	"packageversion":                      "MobiledgeX OS package version on baseimage where CRM services reside",
+	"deployment":                          "Deployment type to bring up CRM services (docker, kubernetes)",
+	"infraapiaccess":                      "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
+	"infraconfig.externalnetworkname":     "Infra specific external network name",
+	"infraconfig.flavorname":              "Infra specific flavor name",
+	"chefclientkey":                       "Chef client key",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":    "StringToString",
+	"cloudlet.chefclientkey": "StringToString",
 	"cloudlet.config.envvar": "StringToString",
 	"cloudlet.envvar":        "StringToString",
 	"cloudlet.errors":        "StringArray",
@@ -475,6 +561,20 @@ var FlavorMatchComments = map[string]string{
 	"cloudlet":     "Name of the cloudlet",
 }
 var FlavorMatchSpecialArgs = map[string]string{}
+var CloudletManifestRequiredArgs = []string{}
+var CloudletManifestOptionalArgs = []string{
+	"imagepath",
+	"manifest",
+}
+var CloudletManifestAliasArgs = []string{
+	"imagepath=cloudletmanifest.imagepath",
+	"manifest=cloudletmanifest.manifest",
+}
+var CloudletManifestComments = map[string]string{
+	"imagepath": "Image path of cloudlet VM base image",
+	"manifest":  "Manifest to bringup cloudlet VM and services",
+}
+var CloudletManifestSpecialArgs = map[string]string{}
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{
 	"name",

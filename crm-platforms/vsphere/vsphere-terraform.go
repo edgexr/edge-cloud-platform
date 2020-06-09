@@ -255,7 +255,11 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 	for vmidx, vm := range vmgp.VMs {
 		//var vmtags []string
 		vmgp.VMs[vmidx].MetaData = vmlayer.GetVMMetaData(vm.Role, masterIP, vmsphereMetaDataFormatter)
-		vmgp.VMs[vmidx].UserData = vmlayer.GetVMUserData(vm.SharedVolume, vm.DNSServers, vm.DeploymentManifest, vm.Command, vmsphereUserDataFormatter)
+		userdata, err := vmlayer.GetVMUserData(vm.SharedVolume, vm.DNSServers, vm.DeploymentManifest, vm.Command, vm.ChefParams, vmsphereUserDataFormatter)
+		if err != nil {
+			return err
+		}
+		vmgp.VMs[vmidx].UserData = userdata
 		vmgp.VMs[vmidx].DNSServers = "\"1.1.1.1\", \"1.0.0.1\""
 		for _, f := range flavors {
 			if f.Name == vm.FlavorName {
@@ -303,7 +307,7 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				tagname := vm.Name + TagDelimiter + portref.NetworkId + TagDelimiter + eip
 				tagid := v.IdSanitize(tagname)
 				vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
-				vmgp.VMs[vmidx].ExternalGateway = v.GetExternalGateway()
+				vmgp.VMs[vmidx].ExternalGateway, _ = v.GetExternalGateway(ctx, "")
 			}
 		}
 
