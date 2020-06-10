@@ -1,5 +1,5 @@
 {
-  "revision_id": "ba9f4ec7e265e3a4d5a1e0d6f395149893dceb4d4e46e8a2276c09b5d8d62dbc",
+  "revision_id": "b5e86174dfde97f867395c732800a9c23200a471b43db4fcfa255316ad2900ed",
   "name": "k8s_crm",
   "run_list": [
     "recipe[runstatus_handler::default]",
@@ -67,14 +67,14 @@
       }
     },
     "setup_services": {
-      "version": "1.0.0",
-      "identifier": "f43aa030a2a0862f87dca1be6f07954dc6ac72a8",
-      "dotted_decimal_identifier": "68744354002542726.13378705581567751.164161278210728",
-      "cache_key": "setup_services-1.0.0",
+      "version": "1.0.1",
+      "identifier": "f6cfa5d476ba719ee43c060f10032f4e0ec7c614",
+      "dotted_decimal_identifier": "69471155411925617.44723992771104771.52012301927956",
+      "cache_key": "setup_services-1.0.1",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
-        "version": "1.0.0"
+        "version": "1.0.1"
       }
     }
   },
@@ -108,7 +108,7 @@
       ],
       [
         "setup_services",
-        "= 1.0.0"
+        "= 1.0.1"
       ]
     ],
     "dependencies": {
@@ -127,7 +127,7 @@
       "setup_infra (1.0.0)": [
 
       ],
-      "setup_services (1.0.0)": [
+      "setup_services (1.0.1)": [
         [
           "docker",
           ">= 0.0.0"

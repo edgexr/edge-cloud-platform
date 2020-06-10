@@ -13,5 +13,5 @@ run_list 'recipe[runstatus_handler]', 'recipe[setup_infra]', 'recipe[preflight_c
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.0.0'
+cookbook 'setup_services', '= 1.0.1'
 cookbook 'docker', '= 6.0.0'
