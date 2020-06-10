@@ -32,6 +32,19 @@ func (v *VSpherePlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgP
 	return img, nil
 }
 
+func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*edgeproto.FlavorInfo, error) {
+	flavs, err := v.GetFlavorList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range flavs {
+		if f.Name == flavorName {
+			return f, nil
+		}
+	}
+	return nil, fmt.Errorf("no flavor found named: %s", flavorName)
+}
+
 func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
 	// we just send the controller back the same list of flavors it gave us, because VSphere has no flavor concept
 
@@ -45,14 +58,31 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 		if v.caches.FlavorCache.Get(&k, &flav) {
 			var flavInfo edgeproto.FlavorInfo
 			flavInfo.Name = flav.Key.Name
-			flavInfo.Disk = flav.Disk
 			flavInfo.Ram = flav.Ram
 			flavInfo.Vcpus = flav.Vcpus
+			if flav.Disk >= vmlayer.MINIMUM_DISK_SIZE {
+				flavInfo.Disk = flav.Disk
+			} else {
+				flavInfo.Disk = vmlayer.MINIMUM_DISK_SIZE
+			}
 			flavors = append(flavors, &flavInfo)
 		} else {
 			return nil, fmt.Errorf("fail to fetch flavor %s", k)
 		}
 	}
+	// add the default platform flavor as well
+	var rlbFlav edgeproto.Flavor
+	err := v.vmProperties.GetCloudletSharedRootLBFlavor(&rlbFlav)
+	if err != nil {
+		return nil, err
+	}
+	rootlbFlavorInfo := edgeproto.FlavorInfo{
+		Name:  "mex-rootlb-flavor",
+		Vcpus: rlbFlav.Vcpus,
+		Ram:   rlbFlav.Ram,
+		Disk:  rlbFlav.Disk,
+	}
+	flavors = append(flavors, &rootlbFlavorInfo)
 	return flavors, nil
 }
 
@@ -96,7 +126,7 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import VMs")
-	vms, err := v.GetVMs(ctx)
+	vms, err := v.GetVMs(ctx, VMMatchAny)
 	if err != nil {
 		return err
 	}

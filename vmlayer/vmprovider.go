@@ -29,8 +29,8 @@ type VMProvider interface {
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)
 	GetNetworkList(ctx context.Context) ([]string, error)
 	AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error)
-	AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, updateCallback edgeproto.CacheUpdateCallback) error
-	DeleteImage(ctx context.Context, image string) error
+	AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error
+	DeleteImage(ctx context.Context, folder, image string) error
 	GetServerDetail(ctx context.Context, serverName string) (*ServerDetail, error)
 	GetConsoleUrl(ctx context.Context, serverName string) (string, error)
 	GetInternalPortPolicy() InternalPortAttachPolicy
@@ -67,14 +67,19 @@ type VMPlatform struct {
 
 // VMMetrics contains stats and timestamp
 type VMMetrics struct {
-	Cpu       float64
-	CpuTS     *types.Timestamp
-	Mem       uint64
-	MemTS     *types.Timestamp
-	Disk      uint64
-	DiskTS    *types.Timestamp
+	// Cpu is a percentage
+	Cpu   float64
+	CpuTS *types.Timestamp
+	// Mem is bytes used
+	Mem   uint64
+	MemTS *types.Timestamp
+	// Disk is bytes used
+	Disk   uint64
+	DiskTS *types.Timestamp
+	// NetSent is bytes/second average
 	NetSent   uint64
 	NetSentTS *types.Timestamp
+	// NetRecv is bytes/second average
 	NetRecv   uint64
 	NetRecvTS *types.Timestamp
 }

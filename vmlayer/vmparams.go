@@ -97,6 +97,7 @@ type VMRequestSpec struct {
 	Type                    VMType
 	FlavorName              string
 	ImageName               string
+	ImageFolder             string
 	ComputeAvailabilityZone string
 	AuthPublicKey           string
 	ExternalVolumeSize      uint64
@@ -164,6 +165,12 @@ func WithSubnetConnection(subnetName string) VMReqOp {
 func WithCreatePortsOnly(portsonly bool) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.CreatePortsOnly = portsonly
+		return nil
+	}
+}
+func WithImageFolder(folder string) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.ImageFolder = folder
 		return nil
 	}
 }
@@ -348,6 +355,7 @@ type VMOrchestrationParams struct {
 	Name                    string
 	Role                    VMRole
 	ImageName               string
+	ImageFolder             string
 	HostName                string
 	DomainName              string
 	FlavorName              string
@@ -722,6 +730,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				Role:                    role,
 				DNSServers:              vmDns,
 				ImageName:               vm.ImageName,
+				ImageFolder:             vm.ImageFolder,
 				FlavorName:              vm.FlavorName,
 				HostName:                util.DNSSanitize(strings.Split(vm.Name, ".")[0]),
 				DomainName:              v.VMProperties.CommonPf.GetCloudletDNSZone(),

@@ -270,11 +270,15 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 		}
 		if vm.Role == vmlayer.RoleVMApplication {
 			// AppVMs use a generic template with the disk attached separately
-			vol := vmlayer.VolumeOrchestrationParams{
-				Name:      "disk0",
-				ImageName: vmgp.VMs[vmidx].ImageName + "/" + vmgp.VMs[vmidx].ImageName + ".vmdk",
+			if action != terraformSync {
+				// do not reattach on sync
+
+				vol := vmlayer.VolumeOrchestrationParams{
+					Name:      "disk0",
+					ImageName: vmgp.VMs[vmidx].ImageFolder + "/" + vmgp.VMs[vmidx].ImageName + ".vmdk",
+				}
+				vmgp.VMs[vmidx].Volumes = append(vmgp.VMs[vmidx].Volumes, vol)
 			}
-			vmgp.VMs[vmidx].Volumes = append(vmgp.VMs[vmidx].Volumes, vol)
 			vmgp.VMs[vmidx].ImageName = ""
 			vmgp.VMs[vmidx].CustomizeGuest = false
 		} else {

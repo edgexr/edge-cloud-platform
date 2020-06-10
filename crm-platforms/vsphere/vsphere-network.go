@@ -74,6 +74,18 @@ func (v *VSpherePlatform) GetFreeExternalIP(ctx context.Context) (string, error)
 	return "", fmt.Errorf("No available IPs")
 }
 
+// GetExternalIPCounts returns Total, Used
+func (v *VSpherePlatform) GetExternalIPCounts(ctx context.Context) (uint64, uint64, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalIPCounts")
+
+	ips, err := v.GetExternalIpRanges()
+	if err != nil {
+		return 0, 0, err
+	}
+	ipsUsed, err := v.GetUsedExternalIPs(ctx)
+	return uint64(len(ips)), uint64(len(ipsUsed)), nil
+}
+
 func (v *VSpherePlatform) GetRouterDetail(ctx context.Context, routerName string) (*vmlayer.RouterDetail, error) {
 	return nil, fmt.Errorf("Router not supported for VSphere")
 }

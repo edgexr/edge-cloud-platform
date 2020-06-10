@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 	"unicode"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-
+	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -98,10 +100,110 @@ func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlaye
 	return "", fmt.Errorf("GetResourceID not implemented for resource type: %s ", resourceType)
 }
 
-func (o *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
-	return nil, fmt.Errorf("vm stats not supported for VSphere")
+func (v *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+	log.DebugLog(log.DebugLevelSampled, "GetVMStats")
+	vmName := cloudcommon.GetAppFQN(&key.AppKey)
+	vmMetrics := vmlayer.VMMetrics{}
+
+	cr := MetricsCollectionRequestType{CollectNetworkStats: true, CollectCPUStats: true, CollectMemStats: true}
+	mets, err := v.GetMetrics(ctx, vmName, &cr)
+	if err != nil {
+		return &vmMetrics, err
+	}
+	time, err := time.Parse(time.RFC3339, mets.Timestamp)
+	if err != nil {
+		return &vmMetrics, err
+	}
+	ts, err := types.TimestampProto(time)
+	if err != nil {
+		return &vmMetrics, err
+
+	}
+	vmMetrics.CpuTS = ts
+	vmMetrics.NetRecv = mets.BytesRxAverage
+	vmMetrics.NetRecvTS = ts
+	vmMetrics.NetSent = mets.BytesTxAverage
+	vmMetrics.NetSentTS = ts
+	vmMetrics.Cpu = mets.CpuUsagePercent
+	vmMetrics.CpuTS = ts
+	vmMetrics.Mem = mets.MemUsageBytes
+	vmMetrics.MemTS = ts
+
+	vms, err := v.GetVMs(ctx, vmName)
+	if err != nil || vms == nil || len(vms.VirtualMachines) != 1 {
+		return &vmMetrics, fmt.Errorf("unable to get VMs - %v", err)
+	}
+	for _, f := range vms.VirtualMachines[0].LayoutEx.File {
+		vmMetrics.Disk += f.Size
+	}
+	vmMetrics.DiskTS = ts
+	return &vmMetrics, nil
 }
 
-func (s *VSpherePlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
-	return nil, fmt.Errorf("platform resource stats not supported for VSphere")
+func (v *VSpherePlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo")
+	platformRes := vmlayer.PlatformResources{}
+	platformRes.CollectTime, _ = types.TimestampProto(time.Now())
+
+	hosts, err := v.GetHosts(ctx)
+	if err != nil {
+		return &platformRes, err
+	}
+
+	for _, hs := range hosts.HostSystems {
+		platformRes.MemMax = platformRes.MemMax + hs.Hardware.MemorySize
+		platformRes.VCpuMax = platformRes.VCpuMax + hs.Hardware.CpuInfo.NumCpuCores
+	}
+	// convert to MB
+	if platformRes.MemMax > 0 {
+		platformRes.MemMax = uint64(platformRes.MemMax / (1024 * 1024))
+	}
+
+	vms, err := v.GetVMs(ctx, VMMatchAny)
+	if err != nil {
+		return &platformRes, err
+	}
+	for _, vm := range vms.VirtualMachines {
+		platformRes.VCpuUsed = platformRes.VCpuUsed + vm.Config.Hardware.NumCPU
+		platformRes.MemUsed = platformRes.VCpuUsed + vm.Config.Hardware.MemoryMB
+	}
+
+	ds, err := v.GetDataStoreInfo(ctx)
+	if err != nil {
+		return &platformRes, err
+	}
+	// we only have 1 DS right now and maybe forever but in theory could be aggregated
+	var totalDs uint64
+	var freeDs uint64
+	var usedDs uint64
+
+	for _, ds := range ds.Datastores {
+		totalDs = totalDs + ds.Summary.Capacity
+		freeDs = usedDs + ds.Summary.FreeSpace
+	}
+	usedDs = totalDs - freeDs
+
+	// convert to GB
+	if usedDs > 0 {
+		platformRes.DiskUsed = uint64(usedDs / (1024 * 1024 * 1024))
+	}
+	if totalDs > 0 {
+		platformRes.DiskMax = uint64(totalDs / (1024 * 1024 * 1024))
+	}
+
+	ipMax, ipUsed, err := v.GetExternalIPCounts(ctx)
+	if err != nil {
+		return &platformRes, err
+	}
+	platformRes.Ipv4Max = ipMax
+	platformRes.Ipv4Used = ipUsed
+
+	cr := MetricsCollectionRequestType{CollectNetworkStats: true}
+	mets, err := v.GetMetrics(ctx, VMMatchAny, &cr)
+	if err != nil {
+		return &platformRes, err
+	}
+	platformRes.NetRecv = mets.BytesRxAverage * mets.Interval
+	platformRes.NetSent = mets.BytesTxAverage * mets.Interval
+	return &platformRes, nil
 }
