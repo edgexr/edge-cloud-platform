@@ -44,6 +44,7 @@ regiondata:
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
       imagetype: ImageTypeDocker
       accessports: tcp:8008
+      skiphcports: tcp:8008
       defaultflavor:
         name: x1.small
       cluster:

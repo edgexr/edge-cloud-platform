@@ -41,7 +41,7 @@ func (v *VMPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, clien
 			/*if aac.LbTlsCertCommonName != "" {
 			        ... get cert here
 			}*/
-			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, proxyops...)
+			proxyerr := proxy.CreateNginxProxy(ctx, client, dockermgmt.GetContainerName(&app.Key), listenIP, backendIP, appInst.MappedPorts, app.SkipHcPorts, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {
