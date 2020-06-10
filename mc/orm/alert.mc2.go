@@ -834,6 +834,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DeletePrepare: 31
 	// AutoProvPolicies: 32
 	// TemplateDelimiter: 33
+	// SkipHcPorts: 34
 	// ```
 	// Security:
 	//   Bearer:
