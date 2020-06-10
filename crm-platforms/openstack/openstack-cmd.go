@@ -758,7 +758,7 @@ func (s *OpenstackPlatform) SaveImage(ctx context.Context, saveName, imageName s
 //DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
-func (s *OpenstackPlatform) DeleteImage(ctx context.Context, imageName string) error {
+func (s *OpenstackPlatform) DeleteImage(ctx context.Context, folder, imageName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {

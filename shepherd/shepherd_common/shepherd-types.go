@@ -29,14 +29,19 @@ type ClusterStats interface {
 }
 
 type AppMetrics struct {
-	Cpu       float64
-	CpuTS     *types.Timestamp
-	Mem       uint64
-	MemTS     *types.Timestamp
-	Disk      uint64
-	DiskTS    *types.Timestamp
+	// Cpu is a percentage
+	Cpu   float64
+	CpuTS *types.Timestamp
+	// Mem is bytes used
+	Mem   uint64
+	MemTS *types.Timestamp
+	// Disk is bytes used
+	Disk   uint64
+	DiskTS *types.Timestamp
+	// NetSent is bytes/second average
 	NetSent   uint64
 	NetSentTS *types.Timestamp
+	// NetRecv is bytes/second average
 	NetRecv   uint64
 	NetRecvTS *types.Timestamp
 }

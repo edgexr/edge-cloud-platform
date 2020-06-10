@@ -9,10 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
-	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_openstack"
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_vmprovider"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
@@ -176,7 +179,23 @@ func getPlatform() (platform.Platform, error) {
 	case "PLATFORM_TYPE_EDGEBOX":
 		plat = &shepherd_edgebox.Platform{}
 	case "PLATFORM_TYPE_OPENSTACK":
-		plat = &shepherd_openstack.ShepherdPlatform{}
+		osProvider := openstack.OpenstackPlatform{}
+		vmPlatform := vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderOpenstack,
+			VMProvider: &osProvider,
+		}
+		plat = &shepherd_vmprovider.ShepherdPlatform{
+			VMPlatform: &vmPlatform,
+		}
+	case "PLATFORM_TYPE_VSPHERE":
+		vsphereProvider := vsphere.VSpherePlatform{}
+		vmPlatform := vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderVSphere,
+			VMProvider: &vsphereProvider,
+		}
+		plat = &shepherd_vmprovider.ShepherdPlatform{
+			VMPlatform: &vmPlatform,
+		}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		plat = &shepherd_fake.Platform{}
 	default:

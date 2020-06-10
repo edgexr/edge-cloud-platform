@@ -16,6 +16,14 @@ import (
 
 var maxGuestWait = time.Minute * 2
 
+const VMMatchAny = "*"
+
+type MetricsCollectionRequestType struct {
+	CollectNetworkStats bool
+	CollectCPUStats     bool
+	CollectMemStats     bool
+}
+
 type GovcVMNet struct {
 	IpAddress  []string
 	MacAddress string
@@ -46,6 +54,17 @@ type GovcNetworkObjects struct {
 	Elements []GovcNetworkElement `json:"elements"`
 }
 
+type GovcDatastoreSummary struct {
+	Capacity  uint64
+	FreeSpace uint64
+}
+type GovcDatastore struct {
+	Summary GovcDatastoreSummary
+}
+type GovcDatastoreInfo struct {
+	Datastores []GovcDatastore
+}
+
 type GovcRuntime struct {
 	PowerState string
 }
@@ -56,11 +75,31 @@ type GovcVMGuest struct {
 	Net         []GovcVMNet
 }
 
+type GovcVMHardware struct {
+	MemoryMB uint64
+	NumCPU   uint64
+}
+
+type GovcVMConfig struct {
+	Hardware GovcVMHardware
+}
+
+type GovcVMFile struct {
+	Name string
+	Size uint64
+}
+
+type GovcVMLayout struct {
+	File []GovcVMFile
+}
+
 type GovcVM struct {
-	Name    string
-	Runtime GovcRuntime
-	Guest   GovcVMGuest
-	Path    string
+	Name     string
+	Runtime  GovcRuntime
+	Config   GovcVMConfig
+	Guest    GovcVMGuest
+	Path     string
+	LayoutEx GovcVMLayout
 }
 
 type GovcVMs struct {
@@ -77,12 +116,70 @@ type GovcTag struct {
 	Category string `json:"category_id"`
 }
 
+type GovcHostCpuInfo struct {
+	NumCpuCores   uint64
+	NumCpuThreads uint64
+}
+
+type GovcHostHardware struct {
+	CpuInfo    GovcHostCpuInfo
+	MemorySize uint64
+}
+
+type GovcHost struct {
+	Hardware GovcHostHardware
+}
+
+type GovcHosts struct {
+	HostSystems []GovcHost
+}
+
+type GovcResourceInfo struct {
+	MaxUsage     uint64
+	OverallUsage uint64
+}
+
+type GovcPoolRuntime struct {
+	Memory GovcResourceInfo
+	Cpu    GovcResourceInfo
+}
 type GovcPool struct {
-	Name string
-	Path string
+	Name    string
+	Path    string
+	Runtime GovcPoolRuntime
 }
 type GovcPools struct {
 	ResourcePools []GovcPool
+}
+
+type GovcMetricSampleInfo struct {
+	Interval  uint64
+	Timestamp string
+}
+
+type GovcMetricSampleValue struct {
+	Instance string
+	Name     string
+	Value    []uint64
+}
+
+type GovcMetricSample struct {
+	SampleInfo []GovcMetricSampleInfo
+	Value      []GovcMetricSampleValue
+}
+
+type GovcMetricSamples struct {
+	Sample []GovcMetricSample
+}
+
+type MetricsResult struct {
+	BytesTxAverage  uint64
+	BytesRxAverage  uint64
+	CpuUsagePercent float64
+	MemUsageBytes   uint64
+	DiskUsageBytes  uint64
+	Interval        uint64
+	Timestamp       string
 }
 
 func (v *VSpherePlatform) TimedGovcCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
@@ -158,6 +255,46 @@ func (v *VSpherePlatform) GetResourcePools(ctx context.Context) (*GovcPools, err
 		pools.ResourcePools[i].Path = pathPrefix + p.Name
 	}
 	return &pools, err
+}
+
+func (v *VSpherePlatform) GetHosts(ctx context.Context) (*GovcHosts, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetHosts")
+
+	dcName := v.GetDatacenterName(ctx)
+	computeCluster := v.GetComputeCluster()
+	pathPrefix := fmt.Sprintf("/%s/host/%s/", dcName, computeCluster)
+	poolSearchPath := pathPrefix + "*"
+
+	out, err := v.TimedGovcCommand(ctx, "govc", "host.info", "-json", "-dc", dcName, poolSearchPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var hosts GovcHosts
+	err = json.Unmarshal(out, &hosts)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal hosts: %v", err)
+	}
+	return &hosts, nil
+}
+
+func (v *VSpherePlatform) GetDataStoreInfo(ctx context.Context) (*GovcDatastoreInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDataStoreInfo")
+
+	dcName := v.GetDatacenterName(ctx)
+	dsName := v.GetDataStore()
+
+	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.info", "-json", "-dc", dcName, dsName)
+	if err != nil {
+		return nil, err
+	}
+
+	var dsinfo GovcDatastoreInfo
+	err = json.Unmarshal(out, &dsinfo)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal datastores: %v", err)
+	}
+	return &dsinfo, nil
 }
 
 func (v *VSpherePlatform) GetUsedSubnetCIDRs(ctx context.Context) (map[string]string, error) {
@@ -352,7 +489,6 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 }
 
 func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*vmlayer.ServerDetail, error) {
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail", "vmname", vmname)
 	var sd *vmlayer.ServerDetail
 	dcName := v.GetDatacenterName(ctx)
@@ -396,13 +532,13 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 	return sd, nil
 }
 
-func (v *VSpherePlatform) GetVMs(ctx context.Context) (*GovcVMs, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMs")
+func (v *VSpherePlatform) GetVMs(ctx context.Context, vmMatch string) (*GovcVMs, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMs", "vmMatch", vmMatch)
 	var vms GovcVMs
 	dcName := v.GetDatacenterName(ctx)
 
 	vmPath := "/" + dcName + "/vm/"
-	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-json", vmPath+"*")
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-json", vmPath+vmMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -466,11 +602,15 @@ func (v *VSpherePlatform) GetConsoleUrl(ctx context.Context, serverName string) 
 	return urlObj.String() + "&" + "sessioncookie=" + cookie64, nil
 }
 
-func (v *VSpherePlatform) ImportImage(ctx context.Context, imageFile string) error {
+func (v *VSpherePlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile)
 	ds := v.GetDataStore()
+
+	// first delete anything that may be there for this image
+	v.DeleteImage(ctx, folder, imageFile)
+
 	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
-	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, imageFile)
+	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, imageFile, folder)
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage fail", "out", string(out), "err", err)
@@ -480,12 +620,12 @@ func (v *VSpherePlatform) ImportImage(ctx context.Context, imageFile string) err
 	return err
 }
 
-func (v *VSpherePlatform) DeleteImage(ctx context.Context, image string) error {
+func (v *VSpherePlatform) DeleteImage(ctx context.Context, folder, image string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage", "image", image)
 	ds := v.GetDataStore()
-	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, image)
+	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, folder)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(string(out), "not found") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage -- dir does not exist", "out", string(out), "err", err)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage fail", "out", string(out), "err", err)
@@ -493,5 +633,61 @@ func (v *VSpherePlatform) DeleteImage(ctx context.Context, image string) error {
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage OK", "out", string(out))
 	}
+
 	return err
+}
+
+func (v *VSpherePlatform) GetMetrics(ctx context.Context, vmMatch string, collectRequest *MetricsCollectionRequestType) (*MetricsResult, error) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetMetrics", "vm", vmMatch)
+	var result MetricsResult
+	dcName := v.GetDatacenterName(ctx)
+	vmPath := "/" + dcName + "/vm/" + vmMatch
+	var err error
+
+	args := []string{"metric.sample", "-n", "1", "-json", "-dc", dcName, vmPath}
+	if collectRequest.CollectNetworkStats {
+		args = append(args, "net.bytesTx.average")
+		args = append(args, "net.bytesRx.average")
+	}
+	if collectRequest.CollectCPUStats {
+		args = append(args, "cpu.usage.average")
+	}
+	if collectRequest.CollectMemStats {
+		args = append(args, "mem.active.average")
+	}
+	out, err := v.TimedGovcCommand(ctx, "govc", args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var samples GovcMetricSamples
+	err = json.Unmarshal(out, &samples)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unmarshal network samples: %v", err)
+	}
+
+	for _, s := range samples.Sample {
+		if len(s.SampleInfo) > 0 {
+			result.Interval = s.SampleInfo[0].Interval
+			result.Timestamp = s.SampleInfo[0].Timestamp
+		} else {
+			return nil, fmt.Errorf("no network metric sample info returned")
+		}
+		for _, sampleVal := range s.Value {
+			if len(sampleVal.Value) > 0 {
+				switch sampleVal.Name {
+				case "net.bytesRx.average":
+					result.BytesRxAverage += sampleVal.Value[0]
+				case "net.bytesTx.average":
+					result.BytesTxAverage += sampleVal.Value[0]
+				case "cpu.usage.average":
+					result.CpuUsagePercent = float64(sampleVal.Value[0]) / 100
+				case "mem.active.average":
+					// mem.active.average is in KB, convert to bytes
+					result.MemUsageBytes = sampleVal.Value[0] * 1024
+				}
+			}
+		}
+	}
+	return &result, nil
 }

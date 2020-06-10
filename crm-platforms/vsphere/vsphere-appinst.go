@@ -17,9 +17,13 @@ import (
 
 var qcowConvertTimeout = 5 * time.Minute
 
-func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath)
+func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "flavor", flavor)
 
+	f, err := v.GetFlavor(ctx, flavor)
+	if err != nil {
+		return err
+	}
 	imageName, err := cloudcommon.GetFileName(app.ImagePath)
 	if err != nil {
 		return err
@@ -34,7 +38,7 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 
 	vmdkFile := filePath
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
-		vmdkFile, err = v.ConvertQcowToVmdk(ctx, filePath)
+		vmdkFile, err = v.ConvertQcowToVmdk(ctx, filePath, f.Disk)
 		if err != nil {
 			return err
 		}
@@ -51,18 +55,27 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 			}
 		}
 	}()
-	return v.ImportImage(ctx, vmdkFile)
+	return v.ImportImage(ctx, cloudcommon.GetAppFQN(&app.Key), vmdkFile)
 }
 
-func (v *VSpherePlatform) ConvertQcowToVmdk(ctx context.Context, sourceFile string) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConvertQcowToVmdk", "sourceFile", sourceFile)
+func (v *VSpherePlatform) ConvertQcowToVmdk(ctx context.Context, sourceFile string, size uint64) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConvertQcowToVmdk", "sourceFile", sourceFile, "size", size)
 	destFile := strings.ReplaceAll(sourceFile, ".qcow2", "")
 	destFile = destFile + ".vmdk"
 
 	convertChan := make(chan string, 1)
 	var convertErr string
 	go func() {
-		out, err := sh.Command("qemu-img", "convert", "-O", "vmdk", "-o", "subformat=streamOptimized", sourceFile, destFile).CombinedOutput()
+		//resize to the correct size
+		sizeInGB := fmt.Sprintf("%dG", size)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Resizing to", "size", sizeInGB)
+		out, err := sh.Command("qemu-img", "resize", sourceFile, "--shrink", sizeInGB).CombinedOutput()
+
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "qemu-img resize failed", "out", string(out), "err", err)
+			convertChan <- fmt.Sprintf("qemu-img resize failed: %s %v", out, err)
+		}
+		out, err = sh.Command("qemu-img", "convert", "-O", "vmdk", "-o", "subformat=streamOptimized", sourceFile, destFile).CombinedOutput()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "qemu-img convert failed", "out", string(out), "err", err)
 			convertChan <- fmt.Sprintf("qemu-img convert failed: %s %v", out, err)

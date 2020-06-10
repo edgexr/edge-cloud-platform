@@ -85,6 +85,12 @@ func GetDNSRecords(ctx context.Context, zone string, name string) ([]cloudflare.
 func CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content string, ttl int, proxy bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord", "zone", zone, "name", name, "content", content)
 
+	if !strings.Contains(name, zone) {
+		// mismatch between what the controller thinks is the appdnsroot is and what the value
+		// the CRM is running with.
+		return fmt.Errorf("Mismatch between requested DNS record zone: %s and CRM zone: %s", name, zone)
+	}
+
 	if zone == LocalTestZone {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skip record creation for test zone", "zone", zone)
 		return nil
@@ -138,6 +144,7 @@ func CreateOrUpdateDNSRecord(ctx context.Context, zone, name, rtype, content str
 		}
 		_, err := api.CreateDNSRecord(zoneID, addRecord)
 		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "CreateOrUpdateDNSRecord failed", "zone", zone, "name", name, "err", err)
 			return fmt.Errorf("cannot create DNS record for zone %s, %v", zone, err)
 		}
 	}
