@@ -30,9 +30,11 @@ func (g *GCPPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.
 	if err != nil {
 		return err
 	}
-	err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, app, g.commonPf.VaultConfig, names)
-	if err != nil {
-		return err
+	for _, imagePath := range names.ImagePaths {
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, imagePath, g.commonPf.VaultConfig, names)
+		if err != nil {
+			return err
+		}
 	}
 
 	switch deployment := app.Deployment; deployment {

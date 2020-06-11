@@ -31,9 +31,11 @@ func (a *AzurePlatform) CreateAppInst(ctx context.Context, clusterInst *edgeprot
 	}
 	updateCallback(edgeproto.UpdateTask, "Creating Registry Secret")
 
-	err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, app, a.commonPf.VaultConfig, names)
-	if err != nil {
-		return err
+	for _, imagePath := range names.ImagePaths {
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, imagePath, a.commonPf.VaultConfig, names)
+		if err != nil {
+			return err
+		}
 	}
 
 	switch deployment := app.Deployment; deployment {

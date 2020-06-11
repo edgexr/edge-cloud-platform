@@ -145,9 +145,11 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
-		err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, app, v.VMProperties.CommonPf.VaultConfig, names)
-		if err != nil {
-			return err
+		for _, imagePath := range names.ImagePaths {
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, imagePath, v.VMProperties.CommonPf.VaultConfig, names)
+			if err != nil {
+				return err
+			}
 		}
 		masterIP, masterIpErr := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 		// Add crm local replace variables
