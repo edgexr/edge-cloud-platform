@@ -25,9 +25,11 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 		return err
 	}
 	if app.Deployment != cloudcommon.DeploymentTypeDocker {
-		err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, app, e.commonPf.VaultConfig, names)
-		if err != nil {
-			return err
+		for _, imagePath := range names.ImagePaths {
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, clusterInst, imagePath, e.commonPf.VaultConfig, names)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

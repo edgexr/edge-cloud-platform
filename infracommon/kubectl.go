@@ -17,10 +17,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
 	var out string
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster")
-	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
 		return nil
@@ -55,7 +55,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterI
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, docker registry secret already exists.")
 		}
 	}
-	names.ImagePullSecret = secretName
+	names.ImagePullSecrets = append(names.ImagePullSecrets, secretName)
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, created registry secret", "out", out)
 	return nil
 }
