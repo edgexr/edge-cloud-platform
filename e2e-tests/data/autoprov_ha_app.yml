@@ -1,0 +1,35 @@
+regiondata:
+- region: local
+  appdata:
+    autoprovpolicies:
+    - key:
+        name: autoprovHA
+        organization: AcmeAppCo
+      minactiveinstances: 2
+      maxinstances: 4
+      cloudlets:
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-1
+      - key:
+          organization: dmuus
+          name: dmuus-cloud-2
+      - key:
+          organization: azure
+          name: azure-cloud-4
+      - key:
+          organization: gcp
+          name: gcp-cloud-5
+    apps:
+    - key:
+        organization: AcmeAppCo
+        name: autoprovHA
+        version: "1.0"
+      imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
+      imagetype: ImageTypeDocker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.small
+      accessports: "tcp:82"
+      autoprovpolicies:
+      - autoprovHA

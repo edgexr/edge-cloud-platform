@@ -1,0 +1,10 @@
+regiondata:
+- region: local
+  appdata:
+    autoprovpolicycloudlets:
+    - key:
+        name: autoprovHA
+        organization: AcmeAppCo
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-2

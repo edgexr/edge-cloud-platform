@@ -1,0 +1,9 @@
+regiondata:
+- region: local
+  appdata:
+    appinstances:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"

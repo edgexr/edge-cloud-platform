@@ -108,7 +108,7 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 	requireClusterInstNumNodes(t, &ds.ClusterInstCache, &cinst.Key, numnodes-1)
 	dn.AlertCache.Delete(ctx, &scaledown, 0)
 	ds.ClusterInstCache.Delete(ctx, &cinst, 0)
-	require.Equal(t, 0, len(frClusterInsts.InstsByCloudlet))
+	require.Equal(t, 0, len(cacheData.frClusterInsts.InstsByCloudlet))
 }
 
 func requireClusterInstNumNodes(t *testing.T, cache *edgeproto.ClusterInstCache, key *edgeproto.ClusterInstKey, numnodes int) {
@@ -164,8 +164,8 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	app := testutil.AppData[11]
 	dn.AppCache.Update(ctx, &app, 0)
 
-	notify.WaitFor(&appHandler.cache, 1)
-	notify.WaitFor(&autoProvPolicyHandler.cache, 2)
+	notify.WaitFor(&cacheData.appCache, 1)
+	notify.WaitFor(&cacheData.autoProvPolicyCache, 2)
 
 	// check stats exist for app, check cached policy values
 	appStats, found := autoProvAggr.allStats[app.Key]
