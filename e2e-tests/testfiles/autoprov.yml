@@ -36,3 +36,45 @@ tests:
     actions: [mcapi-delete]
     apifile: '{{datadir2}}/autoprov_appinst.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: create auto-prov HA app and policy, will trigger auto-deployment
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/autoprov_ha_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were created
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_show.yml'
+      filetype: mcdata
+
+  - name: remove Cloudlet from policy, will trigger failover and orphaned cleanup
+    actions: [mcapi-remove]
+    apifile: '{{datadir2}}/autoprov_ha_policycloudlet.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were failed over
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_failedover.yml'
+      filetype: mcdata
+
+  - name: delete auto-prov HA app and policy
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/autoprov_ha_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: check that HA AppInsts were deleted
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_empty.yml'
+      filetype: mcdata

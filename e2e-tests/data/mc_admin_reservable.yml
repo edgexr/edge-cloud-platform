@@ -33,3 +33,51 @@ regiondata:
       nodeflavor: x1.small
       masterflavor: x1.small
       reservable: true
+    - key:
+        clusterkey:
+          name: Reservable2
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-2
+        organization: MobiledgeX
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      ipaccess: IpAccessShared
+      nodeflavor: x1.small
+      masterflavor: x1.small
+      nummasters: 1
+      numnodes: 1
+      reservable: true
+    - key:
+        clusterkey:
+          name: Reservable3
+        cloudletkey:
+          organization: azure
+          name: azure-cloud-4
+        organization: MobiledgeX
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      ipaccess: IpAccessDedicated
+      nodeflavor: x1.small
+      masterflavor: x1.small
+      nummasters: 1
+      numnodes: 1
+      reservable: true
+    - key:
+        clusterkey:
+          name: Reservable4
+        cloudletkey:
+          organization: gcp
+          name: gcp-cloud-5
+        organization: MobiledgeX
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      ipaccess: IpAccessDedicated
+      nodeflavor: x1.small
+      masterflavor: x1.small
+      nummasters: 1
+      numnodes: 1
+      reservable: true

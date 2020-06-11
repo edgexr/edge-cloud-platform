@@ -236,9 +236,13 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		deleteMcData(uri, token, tag, data, dataMap, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
+	case "add":
+		fallthrough
+	case "remove":
+		fallthrough
 	case "update":
 		output := &AllDataOut{}
-		updateMcData(uri, token, tag, data, dataMap, output, &rc)
+		updateMcData(api, uri, token, tag, data, dataMap, output, &rc)
 		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
 		errs = output.Errors
 	case "showfiltered":
@@ -477,8 +481,12 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi
 	switch mode {
 	case "create":
 		fallthrough
+	case "add":
+		fallthrough
 	case "update":
 		edgetestutil.RunAllDataApis(run, &rd.AppData, appDataMap, output)
+	case "remove":
+		fallthrough
 	case "delete":
 		edgetestutil.RunAllDataReverseApis(run, &rd.AppData, appDataMap, output)
 	}
@@ -534,10 +542,10 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 	}
 }
 
-func updateMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
+func updateMcData(mode, uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
 	for ii, rd := range data.RegionData {
 		rdm := getRegionDataMap(dataMap, ii)
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "update")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, mode)
 		output.RegionData = append(output.RegionData, *rdout)
 	}
 }

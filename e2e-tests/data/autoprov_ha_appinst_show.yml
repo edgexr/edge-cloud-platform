@@ -5,7 +5,37 @@ regiondata:
     - key:
         appkey:
           organization: AcmeAppCo
-          name: autoprovapp
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: Reservable1
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: dmuus-cloud-1.dmuus.mobiledgex.net
+      liveness: LivenessDynamic
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 82
+        publicport: 82
+        fqdnprefix: autoprovha-tcp.
+      flavor:
+        name: x1.small
+      state: Ready
+      createdat:
+        seconds: 1591661539
+        nanos: 376315000
+      powerstate: PowerOn
+      vmflavor: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
           version: "1.0"
         clusterinstkey:
           clusterkey:
@@ -21,43 +51,14 @@ regiondata:
       liveness: LivenessDynamic
       mappedports:
       - proto: LProtoTcp
-        internalport: 81
-        publicport: 81
-        fqdnprefix: autoprovapp-tcp.
-      flavor:
-        name: x1.small
-      state: Ready
-      powerstate: PowerOn
-      createdat:
-        seconds: 1576628584
-        nanos: 73154000
-      vmflavor: x1.small
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovappd
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: ReservableD
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      uri: dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessDynamic
-      mappedports:
-      - proto: LProtoTcp
-        internalport: 81
-        publicport: 81
+        internalport: 82
+        publicport: 82
+        fqdnprefix: autoprovha-tcp.
       flavor:
         name: x1.small
       state: Ready
       createdat:
-        seconds: 1587747310
-        nanos: 358952000
+        seconds: 1591661539
+        nanos: 352091000
       powerstate: PowerOn
       vmflavor: x1.small

@@ -138,6 +138,8 @@ var CreateAutoProvPolicyOptionalArgs = []string{
 	"cloudlets:#.loc.speed",
 	"cloudlets:#.loc.timestamp.seconds",
 	"cloudlets:#.loc.timestamp.nanos",
+	"minactiveinstances",
+	"maxinstances",
 }
 var AutoProvPolicyRequiredArgs = []string{
 	"app-org",
@@ -157,6 +159,8 @@ var AutoProvPolicyOptionalArgs = []string{
 	"cloudlets:#.loc.speed",
 	"cloudlets:#.loc.timestamp.seconds",
 	"cloudlets:#.loc.timestamp.nanos",
+	"minactiveinstances",
+	"maxinstances",
 }
 var AutoProvPolicyAliasArgs = []string{
 	"fields=autoprovpolicy.fields",
@@ -175,6 +179,8 @@ var AutoProvPolicyAliasArgs = []string{
 	"cloudlets:#.loc.speed=autoprovpolicy.cloudlets:#.loc.speed",
 	"cloudlets:#.loc.timestamp.seconds=autoprovpolicy.cloudlets:#.loc.timestamp.seconds",
 	"cloudlets:#.loc.timestamp.nanos=autoprovpolicy.cloudlets:#.loc.timestamp.nanos",
+	"minactiveinstances=autoprovpolicy.minactiveinstances",
+	"maxinstances=autoprovpolicy.maxinstances",
 }
 var AutoProvPolicyComments = map[string]string{
 	"fields":                             "Fields are used for the Update API to specify which fields to apply",
@@ -191,6 +197,8 @@ var AutoProvPolicyComments = map[string]string{
 	"cloudlets:#.loc.altitude":           "On android only lat and long are guaranteed to be supplied altitude in meters",
 	"cloudlets:#.loc.course":             "course (IOS) / bearing (Android) (degrees east relative to true north)",
 	"cloudlets:#.loc.speed":              "speed (IOS) / velocity (Android) (meters/sec)",
+	"minactiveinstances":                 "Minimum number of active instances for High-Availability",
+	"maxinstances":                       "Maximum number of instances (active or not)",
 }
 var AutoProvPolicySpecialArgs = map[string]string{
 	"autoprovpolicy.fields": "StringArray",

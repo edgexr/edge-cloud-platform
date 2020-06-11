@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -14,23 +13,19 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/opentracing/opentracing-go"
-	"google.golang.org/grpc"
 )
 
 // AutoProvAggr aggregates auto-provisioning stats pulled from influxdb,
 // and deploys or undeploys AppInsts if they meet the policy criteria.
 type AutoProvAggr struct {
-	mux          sync.Mutex
-	intervalSec  float64
-	offsetSec    float64
-	waitGroup    sync.WaitGroup
-	stop         chan struct{}
-	appCache     *edgeproto.AppCache
-	policyCache  *edgeproto.AutoProvPolicyCache
-	freeClusters *edgeproto.FreeReservableClusterInstCache
-	allStats     map[edgeproto.AppKey]*apAppStats
-	intervalNum  uint64
+	mux         sync.Mutex
+	intervalSec float64
+	offsetSec   float64
+	waitGroup   sync.WaitGroup
+	stop        chan struct{}
+	caches      *CacheData
+	allStats    map[edgeproto.AppKey]*apAppStats
+	intervalNum uint64
 }
 
 // An App may have multiple AutoProv Policies. However, DME stats
@@ -52,6 +47,7 @@ type apPolicyTracker struct {
 
 type apCloudletStats struct {
 	count       uint64 // absolute count
+	lastCount   uint64 // absolute count
 	intervalNum uint64
 }
 
@@ -59,13 +55,11 @@ type apCloudletTracker struct {
 	deployIntervalsMet uint32
 }
 
-func NewAutoProvAggr(intervalSec, offsetSec float64, appCache *edgeproto.AppCache, policyCache *edgeproto.AutoProvPolicyCache, freeClusters *edgeproto.FreeReservableClusterInstCache) *AutoProvAggr {
+func NewAutoProvAggr(intervalSec, offsetSec float64, caches *CacheData) *AutoProvAggr {
 	s := AutoProvAggr{}
 	s.intervalSec = intervalSec
 	s.offsetSec = offsetSec
-	s.appCache = appCache
-	s.freeClusters = freeClusters
-	s.policyCache = policyCache
+	s.caches = caches
 	return &s
 }
 
@@ -206,7 +200,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			continue
 		}
 		app := edgeproto.App{}
-		if !s.appCache.Get(&appKey, &app) {
+		if !s.caches.appCache.Get(&appKey, &app) {
 			// deleted
 			continue
 		}
@@ -253,19 +247,12 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 				}
 				log.SpanLog(ctx, log.DebugLevelMetrics, "runIter deploy check", "policy", name, "intervalsMet", tracker.deployIntervalsMet, "doDeploy", doDeploy)
 			}
+			cstats.lastCount = cstats.count
 			cstats.count = count
 			cstats.intervalNum = s.intervalNum
 
 			if doDeploy {
-				go func() {
-					dspan := log.StartSpan(log.DebugLevelApi, "auto-prov-deploy", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-					dspan.SetTag("app", appKey)
-					dspan.SetTag("cloudlet", ckey)
-					defer dspan.Finish()
-					dctx := log.ContextWithSpan(context.Background(), dspan)
-					err := s.deploy(dctx, &app, &ckey)
-					log.SpanLog(dctx, log.DebugLevelApi, "auto-prov result", "err", err)
-				}()
+				s.deploy(ctx, &app, &ckey)
 				numDeploy++
 			}
 
@@ -285,39 +272,20 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	return nil
 }
 
-func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletKey *edgeproto.CloudletKey) error {
+func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletKey *edgeproto.CloudletKey) {
+	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy App", "app", app.Key, "cloudlet", *cloudletKey)
+
 	// find free reservable ClusterInst
-	cinstKey := s.freeClusters.GetForCloudlet(cloudletKey, app.Deployment)
+	cinstKey := s.caches.frClusterInsts.GetForCloudlet(cloudletKey, app.Deployment)
 	if cinstKey == nil {
-		return fmt.Errorf("no free ClusterInst found")
+		log.SpanLog(ctx, log.DebugLevelApi, "auto-prov no free ClusterInst")
+		return
 	}
 	inst := edgeproto.AppInst{}
 	inst.Key.AppKey = app.Key
 	inst.Key.ClusterInstKey = *cinstKey
 
-	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy AppInst", "AppInst", inst)
-	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(), grpc.WithWaitForHandshake(), grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc), grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
-	if err != nil {
-		return fmt.Errorf("failed to connect to controller, %v", err)
-	}
-	defer conn.Close()
-
-	client := edgeproto.NewAppInstApiClient(conn)
-	stream, err := client.CreateAppInst(ctx, &inst)
-	if err != nil {
-		return err
-	}
-	for {
-		_, err = stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			break
-		}
-	}
-	return err
+	go goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonDemand, "")
 }
 
 func (s *AutoProvAggr) DeleteApp(ctx context.Context, appKey *edgeproto.AppKey) {
@@ -326,22 +294,12 @@ func (s *AutoProvAggr) DeleteApp(ctx context.Context, appKey *edgeproto.AppKey) 
 	delete(s.allStats, *appKey)
 }
 
-func (s *AutoProvAggr) Prune(apps map[edgeproto.AppKey]struct{}) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	for akey, _ := range s.allStats {
-		if _, found := apps[akey]; !found {
-			delete(s.allStats, akey)
-		}
-	}
-}
-
 func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	app := edgeproto.App{}
-	if !s.appCache.Get(appKey, &app) {
+	if !s.caches.appCache.Get(appKey, &app) {
 		// must have been deleted
 		delete(s.allStats, *appKey)
 		return
@@ -379,7 +337,7 @@ func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) 
 				Organization: appKey.Organization,
 				Name:         name,
 			}
-			if !s.policyCache.Get(&policyKey, &policy) {
+			if !s.caches.autoProvPolicyCache.Get(&policyKey, &policy) {
 				log.SpanLog(ctx, log.DebugLevelMetrics, "cannot find policy for app", "app", app.Key, "policy", name)
 				continue
 			}
@@ -407,10 +365,15 @@ func updatePolicyTracker(ctx context.Context, ap *apPolicyTracker, policy *edgep
 	}
 }
 
-func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, policy *edgeproto.AutoProvPolicy) {
+func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, key *edgeproto.PolicyKey) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
+	policy := edgeproto.AutoProvPolicy{}
+	if !s.caches.autoProvPolicyCache.Get(key, &policy) {
+		// deleted
+		return
+	}
 	for appKey, appStats := range s.allStats {
 		if appKey.Organization != policy.Key.Organization {
 			continue
@@ -419,6 +382,6 @@ func (s *AutoProvAggr) UpdatePolicy(ctx context.Context, policy *edgeproto.AutoP
 		if !found {
 			continue
 		}
-		updatePolicyTracker(ctx, ap, policy)
+		updatePolicyTracker(ctx, ap, &policy)
 	}
 }

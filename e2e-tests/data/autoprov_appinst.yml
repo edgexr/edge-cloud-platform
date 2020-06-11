@@ -9,10 +9,10 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: Reservable1
+            name: Reservable2
           cloudletkey:
             organization: dmuus
-            name: dmuus-cloud-1
+            name: dmuus-cloud-2
           organization: MobiledgeX
     - key:
         appkey:
