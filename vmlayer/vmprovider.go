@@ -238,14 +238,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	v.VMProperties.sharedRootLB = crmRootLB
 	log.SpanLog(ctx, log.DebugLevelInfra, "created shared rootLB", "name", v.VMProperties.sharedRootLBName)
 
-	tags := []string{
-		platformConfig.DeploymentTag,
-		platformConfig.Region,
-		platformConfig.CloudletKey.Name,
-		platformConfig.CloudletKey.Organization,
-		string(VMTypeRootLB),
-	}
-
+	tags := GetChefRootLBTags(platformConfig)
 	err = v.CreateRootLB(ctx, crmRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionCreate, tags, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)

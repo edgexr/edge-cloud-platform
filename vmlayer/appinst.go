@@ -73,21 +73,12 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	var vms []*VMRequestSpec
 	orchVals.externalServerName = objName
 	var lbName string
-	region := v.VMProperties.GetRegion()
-	deploymentTag := v.VMProperties.GetDeploymentTag()
 
 	if usesLb {
 		orchVals.lbName = objName + "-lb"
 		orchVals.externalServerName = lbName
 		orchVals.newSubnetName = objName + "-subnet"
-		tags := []string{
-			deploymentTag,
-			region,
-			appInst.Key.ClusterInstKey.ClusterKey.Name,
-			appInst.Key.ClusterInstKey.CloudletKey.Name,
-			appInst.Key.ClusterInstKey.CloudletKey.Organization,
-			string(VMTypeRootLB),
-		}
+		tags := v.GetChefClusterTags(&appInst.Key.ClusterInstKey, VMTypeRootLB)
 		lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, updateCallback)
 		if err != nil {
 			return &orchVals, err

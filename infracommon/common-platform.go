@@ -110,6 +110,20 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 	if err != nil {
 		return err
 	}
+	supportedTags, err := chefmgmt.ChefPolicyGroupList(ctx, chefClient)
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, tag := range supportedTags {
+		if tag == platformConfig.DeploymentTag {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("invalid deployment tag %s, supported tags: %v", platformConfig.DeploymentTag, supportedTags)
+	}
 	// Set chef client, note here object is just initialised and
 	// no connection has formed with chef server
 	c.ChefClient = chefClient

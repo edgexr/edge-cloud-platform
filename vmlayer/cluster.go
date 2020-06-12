@@ -486,6 +486,20 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 	return true, readyCount, nil
 }
 
+func (v *VMPlatform) GetChefClusterTags(key *edgeproto.ClusterInstKey, vmType VMType) []string {
+	region := v.VMProperties.GetRegion()
+	deploymentTag := v.VMProperties.GetDeploymentTag()
+	return []string{
+		"deploytag/" + deploymentTag,
+		"cluster/" + key.ClusterKey.Name,
+		"clusterorg/" + key.Organization,
+		"cloudlet/" + key.CloudletKey.Name,
+		"cloudletorg/" + key.CloudletKey.Organization,
+		"region/" + region,
+		"vmtype/" + string(vmType),
+	}
+}
+
 func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, string, string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "getVMRequestSpecForDockerCluster", "clusterInst", clusterInst)
@@ -521,17 +535,8 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 			vms = append(vms, rootlb)
 		}
 	}
-	region := v.VMProperties.GetRegion()
-	deploymentTag := v.VMProperties.GetDeploymentTag()
 	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = []string{
-		deploymentTag,
-		clusterInst.Key.ClusterKey.Name,
-		clusterInst.Key.CloudletKey.Name,
-		clusterInst.Key.CloudletKey.Organization,
-		region,
-		string(dockerVmType),
-	}
+	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, dockerVmType)
 	clientName := v.GetChefClientName(dockerVMName)
 	chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	dockervm, err := v.GetVMRequestSpec(
@@ -606,9 +611,6 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 	var newSubnetName string
 	var newSecgrpName string
 
-	region := v.VMProperties.GetRegion()
-	deploymentTag := v.VMProperties.GetDeploymentTag()
-
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		vms, newSubnetName, newSecgrpName, err = v.getVMRequestSpecForDockerCluster(ctx, imgName, clusterInst, privacyPolicy, action, updateCallback)
 		if err != nil {
@@ -620,14 +622,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		var err error
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			// dedicated for docker means the docker VM acts as its own rootLB
-			tags := []string{
-				deploymentTag,
-				region,
-				clusterInst.Key.ClusterKey.Name,
-				clusterInst.Key.CloudletKey.Name,
-				clusterInst.Key.CloudletKey.Organization,
-				string(VMTypeRootLB),
-			}
+			tags := v.GetChefClusterTags(&clusterInst.Key, VMTypeRootLB)
 			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, updateCallback)
 			if err != nil {
 				return nil, err
@@ -644,14 +639,8 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		}
 
 		chefAttributes := make(map[string]interface{})
-		chefAttributes["tags"] = []string{
-			deploymentTag,
-			region,
-			clusterInst.Key.ClusterKey.Name,
-			clusterInst.Key.CloudletKey.Name,
-			clusterInst.Key.CloudletKey.Organization,
-			string(VMTypeClusterMaster),
-		}
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, VMTypeClusterMaster)
+
 		clientName := v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
 		chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
@@ -676,14 +665,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		vms = append(vms, master)
 
 		chefAttributes = make(map[string]interface{})
-		chefAttributes["tags"] = []string{
-			region,
-			deploymentTag,
-			clusterInst.Key.ClusterKey.Name,
-			clusterInst.Key.CloudletKey.Name,
-			clusterInst.Key.CloudletKey.Organization,
-			string(VMTypeClusterNode),
-		}
+		chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, VMTypeClusterNode)
 		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
 			clientName := v.GetChefClientName(GetClusterNodeName(ctx, clusterInst, nn))
 			chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
