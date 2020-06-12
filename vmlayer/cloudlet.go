@@ -370,11 +370,11 @@ func (v *VMPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Clo
 
 func GetChefCloudletTags(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vmType VMType) []string {
 	return []string{
-		pfConfig.DeploymentTag,
-		pfConfig.Region,
-		cloudlet.Key.Name,
-		cloudlet.Key.Organization,
-		string(vmType),
+		"deploytag/" + pfConfig.DeploymentTag,
+		"region/" + pfConfig.Region,
+		"cloudlet/" + cloudlet.Key.Name,
+		"cloudletorg/" + cloudlet.Key.Organization,
+		"vmtype/" + string(vmType),
 	}
 }
 

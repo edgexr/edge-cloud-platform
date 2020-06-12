@@ -642,16 +642,20 @@ func (v *VMPlatform) DeleteProxySecurityGroupRules(ctx context.Context, client s
 	return v.VMProvider.RemoveWhitelistSecurityRules(ctx, secGrpName, allowedClientCIDR, ports)
 }
 
+func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
+	return []string{
+		"deploytag/" + platformConfig.DeploymentTag,
+		"region/" + platformConfig.Region,
+		"cloudlet/" + platformConfig.CloudletKey.Name,
+		"cloudletorg/" + platformConfig.CloudletKey.Organization,
+		"vmtype/" + string(VMTypeRootLB),
+	}
+}
+
 func (v *VMPlatform) SyncSharedRootLB(ctx context.Context, caches *platform.Caches) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncSharedRootLB")
 
-	tags := []string{
-		v.VMProperties.CommonPf.PlatformConfig.DeploymentTag,
-		v.VMProperties.CommonPf.PlatformConfig.Region,
-		v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Name,
-		v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Organization,
-		string(VMTypeRootLB),
-	}
+	tags := GetChefRootLBTags(v.VMProperties.CommonPf.PlatformConfig)
 	err := v.CreateRootLB(ctx, v.VMProperties.sharedRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionSync, tags, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-module MyKnifePlugins
+module KnifePlugins
 
   class NodeRunListStatus < Chef::Knife
 
@@ -14,7 +14,7 @@ module MyKnifePlugins
 
     def run
       if name_args.size == 1
-        role = name_args.first
+        @node_name = name_args.first
       else
         ui.fatal "Please provide a node name to get run-list status for"
         exit 1

@@ -238,7 +238,7 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMCh
 
 	nodeObj := chef.Node{
 		Name:             clientName,
-		Environment:      "_default",
+		Environment:      "",
 		ChefType:         "node",
 		JsonClass:        "Chef::Node",
 		NormalAttributes: chefParams.Attributes,
@@ -250,11 +250,24 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMCh
 		return "", fmt.Errorf("failed to create node %s: %v", clientName, err)
 	}
 
-	acl := chef.NewACL("update", []string{clientName}, []string{"admins", "users"})
-	err = client.ACLs.Put("nodes", clientName, "update", acl)
-	if err != nil {
-		return "", fmt.Errorf("unable to add update acl for node %s", clientName)
+	aclTypes := []string{"update", "create", "delete", "read"}
+	for _, aclType := range aclTypes {
+		acl := &chef.ACL{
+			aclType: chef.ACLitems{
+				Groups: chef.ACLitem{"admins", chefParams.PolicyGroup},
+				Actors: chef.ACLitem{clientName},
+			},
+		}
+		err = client.ACLs.Put("nodes", clientName, aclType, acl)
+		if err != nil {
+			return "", fmt.Errorf("unable to add %s acl for node %s", aclType, clientName)
+		}
+		err = client.ACLs.Put("clients", clientName, aclType, acl)
+		if err != nil {
+			return "", fmt.Errorf("unable to add %s acl for client %s", aclType, clientName)
+		}
 	}
+
 	return clientKey, nil
 }
 
@@ -315,4 +328,18 @@ func GetChefDockerArgs(cmdArgs []string) map[string]interface{} {
 		}
 	}
 	return chefArgs
+}
+
+func ChefPolicyGroupList(ctx context.Context, client *chef.Client) ([]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "chef policy group list")
+	policies, err := client.PolicyGroups.List()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get list of chef policy groups: %v", err)
+	}
+
+	policyGroups := []string{}
+	for groupName, _ := range policies {
+		policyGroups = append(policyGroups, groupName)
+	}
+	return policyGroups, nil
 }
