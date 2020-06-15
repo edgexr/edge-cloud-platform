@@ -30,6 +30,16 @@ const (
 	VMTypeClusterNode           VMType = "cluster-node"
 )
 
+// VMCategory is to differentiate platform vs computing VMs
+type VMDomain string
+
+const (
+	VMDomainCompute  VMDomain = "compute"
+	VMDomainPlatform VMDomain = "platform"
+	VMDomainAny      VMDomain = "any" // used for matching only
+
+)
+
 type ActionType string
 
 const (
@@ -55,6 +65,10 @@ var RoleAgent VMRole = "mex-agent-node"
 var RoleMaster VMRole = "k8s-master"
 var RoleNode VMRole = "k8s-node"
 var RoleVMApplication VMRole = "vmapp"
+var RoleVMPlatform VMRole = "platform"
+var RoleMatchAny VMRole = "any" // not a real role, used for matching
+
+const TagDelimiter = "__"
 
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free
@@ -107,6 +121,7 @@ type VMRequestSpec struct {
 	ConnectToExternalNet    bool
 	CreatePortsOnly         bool
 	ConnectToSubnet         string
+	VMDomain                string
 	ChefParams              *chefmgmt.VMChefParams
 }
 
@@ -174,6 +189,12 @@ func WithImageFolder(folder string) VMReqOp {
 		return nil
 	}
 }
+func WithDomain(d VMDomain) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.VMDomain = string(d)
+		return nil
+	}
+}
 func WithChefParams(chefParams *chefmgmt.VMChefParams) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.ChefParams = chefParams
@@ -192,6 +213,7 @@ type VMGroupRequestSpec struct {
 	SkipDefaultSecGrp      bool
 	SkipSubnetGateway      bool
 	SkipInfraSpecificCheck bool
+	InitOrchestrator       bool
 }
 
 type VMGroupReqOp func(vmp *VMGroupRequestSpec) error
@@ -235,6 +257,12 @@ func WithSkipSubnetGateway(skip bool) VMGroupReqOp {
 func WithSkipInfraSpecificCheck(skip bool) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.SkipInfraSpecificCheck = skip
+		return nil
+	}
+}
+func WithInitOrchestrator(init bool) VMGroupReqOp {
+	return func(s *VMGroupRequestSpec) error {
+		s.InitOrchestrator = init
 		return nil
 	}
 }
@@ -374,8 +402,8 @@ type VMOrchestrationParams struct {
 	Ports                   []PortResourceReference      // depending on the orchestrator, IPs may be assigned to ports or
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	ExternalGateway         string
-	Tags                    string
 	CustomizeGuest          bool
+	VMDomain                string
 	ChefParams              *chefmgmt.VMChefParams
 }
 
@@ -416,6 +444,7 @@ type VMGroupOrchestrationParams struct {
 	Tags                   []TagOrchestrationParams
 	SkipInfraSpecificCheck bool
 	SkipSubnetGateway      bool
+	InitOrchestrator       bool
 }
 
 func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, vmtype VMType, serverName, flavorName string, imageName string, connectExternal bool, opts ...VMReqOp) (*VMRequestSpec, error) {
@@ -456,7 +485,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Context, spec *VMGroupRequestSpec) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMGroupOrchestrationParams", "spec", spec)
 
-	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName}
+	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName, InitOrchestrator: spec.InitOrchestrator}
 	internalNetName := v.VMProperties.GetCloudletMexNetwork()
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
@@ -573,7 +602,6 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			// It therefore has to be a preexisting subnet
 			connectToPreexistingSubnet = true
 		}
-
 		switch vm.Type {
 		case VMTypePlatform:
 			fallthrough
@@ -722,6 +750,11 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, externalport)
 			}
 		}
+		// default to compute
+		vmdomain := vm.VMDomain
+		if vmdomain == "" {
+			vmdomain = string(VMDomainCompute)
+		}
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
 			newVM := VMOrchestrationParams{
@@ -738,6 +771,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				Command:                 vm.Command,
 				ComputeAvailabilityZone: vm.ComputeAvailabilityZone,
 				ChefParams:              vm.ChefParams,
+				VMDomain:                vmdomain,
 			}
 			if vm.ExternalVolumeSize > 0 {
 				externalVolume := VolumeOrchestrationParams{

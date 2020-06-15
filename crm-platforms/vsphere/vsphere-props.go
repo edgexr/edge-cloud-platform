@@ -80,10 +80,6 @@ func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, key *edgeproto.Clo
 	pass := v.GetVCenterPassword()
 	v.vcenterVars["GOVC_PASSWORD"] = pass
 	v.vcenterVars["GOVC_INSECURE"] = v.GetVCenterInsecure()
-	_, err = v.GetExternalIpRanges()
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

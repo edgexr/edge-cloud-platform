@@ -30,6 +30,10 @@ func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.C
 	return o.PrepNetwork(ctx)
 }
 
+func (o *OpenstackPlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
+	// openstack doesn't need caches
+}
+
 func (o *OpenstackPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	return o.OSGetLimits(ctx, info)
 }
