@@ -20,6 +20,7 @@ import (
 var terraformLock sync.Mutex
 
 var TerraformDir = "terraformdir"
+var terraformRetryDelay = 10 * time.Second
 
 type TerraformResources struct {
 	Address   string                     `json:"address"`
@@ -154,12 +155,13 @@ func RunTerraformApply(ctx context.Context, opts ...TerraformOp) error {
 	}
 
 	for i := 0; i <= topts.numRetries; i++ {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Doing terraform apply")
-		_, err := TimedTerraformCommand(ctx, TerraformDir, "terraform", "apply", "--auto-approve")
+		log.SpanLog(ctx, log.DebugLevelInfra, "Doing terraform apply", "attempt", i, "max", topts.numRetries)
+		_, err = TimedTerraformCommand(ctx, TerraformDir, "terraform", "apply", "--auto-approve")
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Apply failed")
 			if i < topts.numRetries {
-				log.SpanLog(ctx, log.DebugLevelInfra, "Retry terraform apply", "retry num", i+1)
+				log.SpanLog(ctx, log.DebugLevelInfra, "Retry terraform apply after delay", "retry num", i+1, "max retries", topts.numRetries)
+				time.Sleep(terraformRetryDelay)
 			}
 		} else {
 			break

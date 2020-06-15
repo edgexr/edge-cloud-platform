@@ -14,8 +14,6 @@ import (
 var clusterLock sync.Mutex
 var appLock sync.Mutex
 
-var flavors []*edgeproto.FlavorInfo
-
 func (o *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
 }
@@ -47,7 +45,11 @@ func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*ed
 
 func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
 	// we just send the controller back the same list of flavors it gave us, because VSphere has no flavor concept
-
+	var flavors []*edgeproto.FlavorInfo
+	if v.caches == nil {
+		log.WarnLog("flavor cache is nil")
+		return nil, fmt.Errorf("Flavor cache is nil")
+	}
 	flavorkeys := make(map[edgeproto.FlavorKey]struct{})
 	v.caches.FlavorCache.GetAllKeys(ctx, func(k *edgeproto.FlavorKey, modRev int64) {
 		flavorkeys[*k] = struct{}{}
@@ -70,6 +72,7 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 			return nil, fmt.Errorf("fail to fetch flavor %s", k)
 		}
 	}
+
 	// add the default platform flavor as well
 	var rlbFlav edgeproto.Flavor
 	err := v.vmProperties.GetCloudletSharedRootLBFlavor(&rlbFlav)
@@ -126,7 +129,8 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import VMs")
-	vms, err := v.GetVMs(ctx, VMMatchAny)
+	// filter on compute VMs so we don't delete anything else
+	vms, err := v.GetVMs(ctx, VMMatchAny, vmlayer.VMDomainCompute)
 	if err != nil {
 		return err
 	}

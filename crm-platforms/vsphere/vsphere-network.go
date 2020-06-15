@@ -20,6 +20,8 @@ func incrIP(ip net.IP) {
 }
 
 func (v *VSpherePlatform) GetExternalIpRanges() ([]string, error) {
+	log.DebugLog(log.DebugLevelInfra, "GetExternalIpRanges", "vmp", v.vmProperties)
+
 	extIPs, ok := v.vmProperties.CommonPf.Properties["MEX_EXTERNAL_IP_RANGES"]
 	if !ok || extIPs.Value == "" {
 		return nil, fmt.Errorf("MEX_EXTERNAL_IP_RANGES not defined")

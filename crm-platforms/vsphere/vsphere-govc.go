@@ -307,7 +307,7 @@ func (v *VSpherePlatform) GetUsedSubnetCIDRs(ctx context.Context) (map[string]st
 	}
 	for _, t := range tags {
 		// tags are format subnet__cidr
-		ts := strings.Split(t.Name, TagDelimiter)
+		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
 		if len(ts) != 2 {
 			log.SpanLog(ctx, log.DebugLevelInfra, "incorrect subnet tag format", "tag", t)
 			return nil, fmt.Errorf("incorrect subnet tag format %s", t)
@@ -377,7 +377,7 @@ func (v *VSpherePlatform) GetIpFromTagsForVM(ctx context.Context, vmName, netnam
 	}
 	for _, t := range tags {
 		// vmtags are format vm__network__cidr
-		ts := strings.Split(t.Name, TagDelimiter)
+		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
 		if len(ts) != 3 {
 			log.SpanLog(ctx, log.DebugLevelInfra, "incorrect tag format", "tag", t)
 			continue
@@ -420,7 +420,7 @@ func (v *VSpherePlatform) GetUsedExternalIPs(ctx context.Context) (map[string]st
 
 	for _, t := range tags {
 		// tags are format vm__network__ip
-		ts := strings.Split(t.Name, TagDelimiter)
+		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
 		if len(ts) != 3 {
 			return nil, fmt.Errorf("notice: incorrect tag format for tag: %s", t)
 		}
@@ -532,13 +532,34 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 	return sd, nil
 }
 
-func (v *VSpherePlatform) GetVMs(ctx context.Context, vmMatch string) (*GovcVMs, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMs", "vmMatch", vmMatch)
+func getVmNamesForDomain(ctx context.Context, domainMatch vmlayer.VMDomain, tags []GovcTag) (map[string]string, error) {
+	names := make(map[string]string)
+	for _, tag := range tags {
+		ts := strings.Split(tag.Name, vmlayer.TagDelimiter)
+		if len(ts) != 2 {
+			return nil, fmt.Errorf("Incorrect VM Domain tag format %s", ts)
+		}
+		vmname := ts[0]
+		domain := ts[1]
+		if domainMatch == vmlayer.VMDomainAny || domain == string(domainMatch) {
+			names[vmname] = vmname
+		}
+	}
+	return names, nil
+}
+
+func (v *VSpherePlatform) GetVMs(ctx context.Context, vmNameMatch string, domainMatch vmlayer.VMDomain) (*GovcVMs, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMs", "vmNameMatch", vmNameMatch, "domainMatch", domainMatch)
 	var vms GovcVMs
 	dcName := v.GetDatacenterName(ctx)
 
+	vmtags, err := v.getTagsForCategory(ctx, v.GetVMDomainTagCategory(ctx))
+	if err != nil {
+		return nil, err
+	}
+
 	vmPath := "/" + dcName + "/vm/"
-	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-json", vmPath+vmMatch)
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-json", vmPath+vmNameMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -551,7 +572,26 @@ func (v *VSpherePlatform) GetVMs(ctx context.Context, vmMatch string) (*GovcVMs,
 	for i, vm := range vms.VirtualMachines {
 		vms.VirtualMachines[i].Path = vmPath + vm.Name
 	}
-	return &vms, nil
+	if domainMatch == vmlayer.VMDomainAny {
+		// no tag filtering
+		return &vms, nil
+	}
+	namematch, err := getVmNamesForDomain(ctx, domainMatch, vmtags)
+	if err != nil {
+		return nil, err
+	}
+	// filter the list
+	var matchedVms GovcVMs
+	for _, vm := range vms.VirtualMachines {
+		_, ok := namematch[vm.Name]
+		if ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "VM Matched tag", "vmName", vm.Name, "tagMatch", domainMatch)
+			matchedVms.VirtualMachines = append(matchedVms.VirtualMachines, vm)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "VM Did not match tag", "vmName", vm.Name, "tagMatch", domainMatch)
+		}
+	}
+	return &matchedVms, nil
 }
 
 func (v *VSpherePlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {

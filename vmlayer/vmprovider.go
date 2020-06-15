@@ -24,6 +24,7 @@ type VMProvider interface {
 	IdSanitize(string) string
 	GetProviderSpecificProps() map[string]*infracommon.PropertyInfo
 	SetVMProperties(vmProperties *VMProperties)
+	SetCaches(ctx context.Context, caches *platform.Caches)
 	InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error
 	ImportDataFromInfra(ctx context.Context) error
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)

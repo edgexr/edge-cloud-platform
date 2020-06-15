@@ -31,17 +31,20 @@ func (v *VSpherePlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
 }
 
+func (v *VSpherePlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetCaches")
+	v.caches = caches
+}
+
 func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VSphere")
-	v.caches = caches
+	v.SetCaches(ctx, caches)
 	err := v.TerraformSetupVsphere(ctx, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "TerraformSetupVsphere failed", "err", err)
 		return fmt.Errorf("TerraformSetupVsphere failed - %v", err)
 	}
-
 	return nil
-
 }
 
 func (v *VSpherePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
@@ -129,7 +132,7 @@ func (v *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInst
 	vmMetrics.Mem = mets.MemUsageBytes
 	vmMetrics.MemTS = ts
 
-	vms, err := v.GetVMs(ctx, vmName)
+	vms, err := v.GetVMs(ctx, vmName, vmlayer.VMDomainAny)
 	if err != nil || vms == nil || len(vms.VirtualMachines) != 1 {
 		return &vmMetrics, fmt.Errorf("unable to get VMs - %v", err)
 	}
@@ -159,7 +162,7 @@ func (v *VSpherePlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer
 		platformRes.MemMax = uint64(platformRes.MemMax / (1024 * 1024))
 	}
 
-	vms, err := v.GetVMs(ctx, VMMatchAny)
+	vms, err := v.GetVMs(ctx, VMMatchAny, vmlayer.VMDomainAny)
 	if err != nil {
 		return &platformRes, err
 	}
