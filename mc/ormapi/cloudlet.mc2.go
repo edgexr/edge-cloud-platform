@@ -109,3 +109,17 @@ type RegionCloudletInfo struct {
 	Region       string
 	CloudletInfo edgeproto.CloudletInfo
 }
+
+// Request summary for InjectCloudletInfo
+// swagger:parameters InjectCloudletInfo
+type swaggerInjectCloudletInfo struct {
+	// in: body
+	Body RegionCloudletInfo
+}
+
+// Request summary for EvictCloudletInfo
+// swagger:parameters EvictCloudletInfo
+type swaggerEvictCloudletInfo struct {
+	// in: body
+	Body RegionCloudletInfo
+}

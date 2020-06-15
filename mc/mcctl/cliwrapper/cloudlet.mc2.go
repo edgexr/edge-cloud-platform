@@ -122,3 +122,25 @@ func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletIn
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
 }
+
+func (s *Client) InjectCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+	args := []string{"region", "InjectCloudletInfo"}
+	out := edgeproto.Result{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}
+
+func (s *Client) EvictCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+	args := []string{"region", "EvictCloudletInfo"}
+	out := edgeproto.Result{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}

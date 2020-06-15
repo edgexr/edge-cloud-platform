@@ -643,6 +643,26 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletInfo", ShowCloudletInfo)
+	// swagger:route POST /auth/ctrl/InjectCloudletInfo CloudletInfo InjectCloudletInfo
+	// Inject (create) a CloudletInfo for regression testing.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/InjectCloudletInfo", InjectCloudletInfo)
+	// swagger:route POST /auth/ctrl/EvictCloudletInfo CloudletInfo EvictCloudletInfo
+	// Evict (delete) a CloudletInfo for regression testing.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/EvictCloudletInfo", EvictCloudletInfo)
 	// swagger:route POST /auth/ctrl/CreateCloudletPool CloudletPool CreateCloudletPool
 	// Create a CloudletPool.
 	// Security:

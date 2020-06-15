@@ -232,8 +232,34 @@ var ShowCloudletInfoCmd = &cli.Command{
 	StreamOut:    true,
 }
 
+var InjectCloudletInfoCmd = &cli.Command{
+	Use:          "InjectCloudletInfo",
+	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletInfoOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
+	SpecialArgs:  &CloudletInfoSpecialArgs,
+	Comments:     addRegionComment(CloudletInfoComments),
+	ReqData:      &ormapi.RegionCloudletInfo{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/InjectCloudletInfo"),
+}
+
+var EvictCloudletInfoCmd = &cli.Command{
+	Use:          "EvictCloudletInfo",
+	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletInfoOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
+	SpecialArgs:  &CloudletInfoSpecialArgs,
+	Comments:     addRegionComment(CloudletInfoComments),
+	ReqData:      &ormapi.RegionCloudletInfo{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/EvictCloudletInfo"),
+}
+
 var CloudletInfoApiCmds = []*cli.Command{
 	ShowCloudletInfoCmd,
+	InjectCloudletInfoCmd,
+	EvictCloudletInfoCmd,
 }
 
 var CloudletKeyRequiredArgs = []string{}
