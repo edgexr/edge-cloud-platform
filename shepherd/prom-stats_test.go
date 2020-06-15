@@ -278,19 +278,7 @@ func TestPromStats(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	initAppInstTestData()
 
-	testAppKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name: "testcluster",
-			},
-			CloudletKey: edgeproto.CloudletKey{
-				Organization: "testoper",
-				Name:         "testcloudlet",
-			},
-			Organization: "",
-		},
-	}
-
+	testDeveloperOrg := "testdeveloperorg"
 	testCloudletKey := edgeproto.CloudletKey{
 		Organization: "testoper",
 		Name:         "testcloudlet",
@@ -299,15 +287,20 @@ func TestPromStats(t *testing.T) {
 	testClusterInstKey := edgeproto.ClusterInstKey{
 		ClusterKey:   testClusterKey,
 		CloudletKey:  testCloudletKey,
-		Organization: "",
+		Organization: "MobiledgeX",
 	}
 	testClusterInst := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
 		Deployment: cloudcommon.DeploymentTypeKubernetes,
+		Reservable: true,
+		ReservedBy: testDeveloperOrg,
 	}
 	testClusterInstUnsupported := edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
 		Deployment: cloudcommon.DeploymentTypeHelm,
+	}
+	testAppKey := shepherd_common.MetricAppInstKey{
+		ClusterInstKey: testClusterInstKey,
 	}
 
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
@@ -372,10 +365,18 @@ func TestPromStats(t *testing.T) {
 
 	// Check callback is called
 	assert.Equal(t, int(0), testMetricSent)
-	testPromStats.send(ctx, MarshalClusterMetrics(testPromStats.clusterInstKey, clusterMetrics)[0])
+	clusterMetricsData := testPromStats.MarshalClusterMetrics(clusterMetrics)
+	testPromStats.send(ctx, clusterMetricsData[0])
 	assert.Equal(t, int(1), testMetricSent)
-
+	// Test the autoprov cluster - marshalled clusterorg should be the same as apporg
+	for _, metric := range clusterMetricsData {
+		for _, tag := range metric.Tags {
+			if tag.Name == "clusterorg" {
+				assert.Equal(t, testDeveloperOrg, tag.Val)
+			}
+		}
+	}
 	// Check null handling for Marshal functions
-	assert.Nil(t, MarshalClusterMetrics(testPromStats.clusterInstKey, nil), "Nil metrics should marshal into a nil")
+	assert.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
 	assert.Nil(t, MarshalAppMetrics(&testAppKey, nil), "Nil metrics should marshal into a nil")
 }

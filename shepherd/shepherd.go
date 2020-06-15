@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
@@ -42,6 +43,7 @@ var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 //map keeping track of all the currently running prometheuses
 var workerMap map[string]*ClusterWorker
+var workerMapMutex *sync.Mutex
 var vmAppWorkerMap map[string]*AppInstWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
@@ -102,6 +104,8 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	} else {
 		return
 	}
+	workerMapMutex.Lock()
+	defer workerMapMutex.Unlock()
 	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
@@ -144,24 +148,31 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 }
 
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
+	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
+	workerMapMutex.Lock()
+	defer workerMapMutex.Unlock()
+	stats, exists := workerMap[mapKey]
+	if new.State == edgeproto.TrackedState_READY && exists {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Update cluster details", "old", old, "new", new)
+		if new.Reservable {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Update reserved-by setting")
+			stats.reservedBy = new.ReservedBy
+			workerMap[mapKey] = stats
+		}
+		return
+	}
 	// This is for Docker deployments only
 	if new.Deployment != cloudcommon.DeploymentTypeDocker {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New cluster instace", "clusterInst", new)
 		return
 	}
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
-	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
-	stats, exists := workerMap[mapKey]
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
-		if !exists {
-			stats, err := NewClusterWorker(ctx, "", collectInterval, MetricSender.Update, new, myPlatform)
-			if err == nil {
-				workerMap[mapKey] = stats
-				stats.Start(ctx)
-			}
-		} else { //somehow this cluster's prometheus was already registered
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, This cluster is already registered")
+		stats, err := NewClusterWorker(ctx, "", collectInterval, MetricSender.Update, new, myPlatform)
+		if err == nil {
+			workerMap[mapKey] = stats
+			stats.Start(ctx)
 		}
 	} else { //if its anything other than ready just stop it
 		//try to remove it from the workerMap
@@ -312,6 +323,7 @@ func main() {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	workerMap = make(map[string]*ClusterWorker)
+	workerMapMutex = &sync.Mutex{}
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	// LB metrics are not supported in fake mode
 	if myPlatform.GetType() != "fake" {
