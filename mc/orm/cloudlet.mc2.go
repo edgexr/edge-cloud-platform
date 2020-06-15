@@ -700,3 +700,97 @@ func ShowCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.
 	})
 	return arr, err
 }
+
+func InjectCloudletInfo(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionCloudletInfo{}
+	if err := c.Bind(&in); err != nil {
+		return bindErr(c, err)
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.CloudletInfo.Key.Organization)
+	resp, err := InjectCloudletInfoObj(ctx, rc, &in.CloudletInfo)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
+	return setReply(c, err, resp)
+}
+
+func InjectCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewCloudletInfoApiClient(rc.conn)
+	return api.InjectCloudletInfo(ctx, obj)
+}
+
+func EvictCloudletInfo(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionCloudletInfo{}
+	if err := c.Bind(&in); err != nil {
+		return bindErr(c, err)
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("org", in.CloudletInfo.Key.Organization)
+	resp, err := EvictCloudletInfoObj(ctx, rc, &in.CloudletInfo)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
+	return setReply(c, err, resp)
+}
+
+func EvictCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewCloudletInfoApiClient(rc.conn)
+	return api.EvictCloudletInfo(ctx, obj)
+}

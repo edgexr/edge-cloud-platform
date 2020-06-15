@@ -225,6 +225,30 @@ func TestPermShowCloudletInfo(mcClient *ormclient.Client, uri, token, region, or
 	return TestShowCloudletInfo(mcClient, uri, token, region, in)
 }
 
+func TestInjectCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionCloudletInfo{}
+	dat.Region = region
+	dat.CloudletInfo = *in
+	return mcClient.InjectCloudletInfo(uri, token, dat)
+}
+func TestPermInjectCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+	in := &edgeproto.CloudletInfo{}
+	in.Key.Organization = org
+	return TestInjectCloudletInfo(mcClient, uri, token, region, in)
+}
+
+func TestEvictCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionCloudletInfo{}
+	dat.Region = region
+	dat.CloudletInfo = *in
+	return mcClient.EvictCloudletInfo(uri, token, dat)
+}
+func TestPermEvictCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+	in := &edgeproto.CloudletInfo{}
+	in.Key.Organization = org
+	return TestEvictCloudletInfo(mcClient, uri, token, region, in)
+}
+
 func (s *TestClient) ShowCloudletInfo(ctx context.Context, in *edgeproto.CloudletInfo) ([]edgeproto.CloudletInfo, error) {
 	inR := &ormapi.RegionCloudletInfo{
 		Region:       s.Region,
@@ -238,11 +262,27 @@ func (s *TestClient) ShowCloudletInfo(ctx context.Context, in *edgeproto.Cloudle
 }
 
 func (s *TestClient) InjectCloudletInfo(ctx context.Context, in *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
-	return nil, nil
+	inR := &ormapi.RegionCloudletInfo{
+		Region:       s.Region,
+		CloudletInfo: *in,
+	}
+	out, status, err := s.McClient.InjectCloudletInfo(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
 
 func (s *TestClient) EvictCloudletInfo(ctx context.Context, in *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
-	return nil, nil
+	inR := &ormapi.RegionCloudletInfo{
+		Region:       s.Region,
+		CloudletInfo: *in,
+	}
+	out, status, err := s.McClient.EvictCloudletInfo(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
 }
 
 func (s *TestClient) ShowCloudletMetrics(ctx context.Context, in *edgeproto.CloudletMetrics) ([]edgeproto.CloudletMetrics, error) {

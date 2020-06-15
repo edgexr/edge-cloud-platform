@@ -112,6 +112,26 @@ func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletIn
 	return outlist, status, err
 }
 
+func (s *Client) InjectCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/InjectCloudletInfo", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
+func (s *Client) EvictCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/EvictCloudletInfo", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 type CloudletInfoApiClient interface {
 	ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error)
+	InjectCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error)
+	EvictCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error)
 }
