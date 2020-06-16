@@ -31,30 +31,23 @@ func (s *ShepherdPlatform) GetType() string {
 	return s.VMPlatform.Type
 }
 
-func (s *ShepherdPlatform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr, appDNSRoot string, vars map[string]string) error {
-	vaultConfig, err := vault.BestConfig(vaultAddr)
+func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
+	vaultConfig, err := vault.BestConfig(pc.VaultAddr)
 	if err != nil {
 		return err
 	}
 	s.vaultConfig = vaultConfig
-	s.appDNSRoot = appDNSRoot
+	s.appDNSRoot = pc.AppDNSRoot
 
-	pc := platform.PlatformConfig{
-		CloudletKey: key,
-		VaultAddr:   vaultAddr,
-		Region:      region,
-		EnvVars:     vars,
-	}
-
-	if err = s.VMPlatform.InitProps(ctx, &pc, vaultConfig); err != nil {
+	if err = s.VMPlatform.InitProps(ctx, pc, vaultConfig); err != nil {
 		return err
 	}
-	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, key, region, physicalName, vaultConfig, vars); err != nil {
+	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.CloudletKey, pc.Region, pc.PhysicalName, vaultConfig, pc.EnvVars); err != nil {
 		return err
 	}
 
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,
-	s.rootLbName = cloudcommon.GetRootLBFQDN(key, s.appDNSRoot)
+	s.rootLbName = cloudcommon.GetRootLBFQDN(pc.CloudletKey, s.appDNSRoot)
 	s.SharedClient, err = s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: s.rootLbName})
 	if err != nil {
 		return err
@@ -67,7 +60,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, key *edgeproto.CloudletKey,
 
 	s.collectInterval = VmScrapeInterval
 	log.SpanLog(ctx, log.DebugLevelInfra, "init openstack", "rootLB", s.rootLbName,
-		"physicalName", physicalName, "vaultAddr", vaultAddr)
+		"physicalName", pc.PhysicalName, "vaultAddr", pc.VaultAddr)
 	return nil
 }
 
