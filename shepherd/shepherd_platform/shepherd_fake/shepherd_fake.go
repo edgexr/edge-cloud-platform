@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -18,7 +19,7 @@ func (s *Platform) GetType() string {
 	return "fake"
 }
 
-func (s *Platform) Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr, appDNSRoot string, vars map[string]string) error {
+func (s *Platform) Init(ctx context.Context, pfConfig *platform.PlatformConfig) error {
 	return nil
 }
 

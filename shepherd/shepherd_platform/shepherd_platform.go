@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -14,7 +15,7 @@ type Platform interface {
 	// GetType Returns the Cloudlet's stack type, i.e. Openstack, Azure, etc.
 	GetType() string
 	// Init is called once during shepherd startup.
-	Init(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName, vaultAddr, appDNSRoot string, vars map[string]string) error
+	Init(ctx context.Context, pc *platform.PlatformConfig) error
 	// Gets the IP for a cluster
 	GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error)
 	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)

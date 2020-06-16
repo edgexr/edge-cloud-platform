@@ -44,6 +44,7 @@ type Shepherd struct {
 	Span           string
 	Region         string
 	AppDNSRoot     string
+	DeploymentTag  string
 }
 type AutoProv struct {
 	process.Common `yaml:",inline"`

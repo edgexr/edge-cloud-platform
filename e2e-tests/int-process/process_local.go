@@ -293,6 +293,10 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
 	}
+	if p.DeploymentTag != "" {
+		args = append(args, "--deploymentTag")
+		args = append(args, p.DeploymentTag)
+	}
 
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)

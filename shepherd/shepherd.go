@@ -18,6 +18,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_vmprovider"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -38,6 +39,7 @@ var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
+var deploymentTag = flag.String("deploymentTag", "", "Tag to indicate type of deployment setup. Ex: production, staging, etc")
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
@@ -317,7 +319,17 @@ func main() {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
 
-	err = myPlatform.Init(ctx, &cloudletKey, *region, *physicalName, nodeMgr.VaultAddr, *appDNSRoot, cloudlet.EnvVar)
+	pc := pf.PlatformConfig{
+		CloudletKey:   &cloudletKey,
+		VaultAddr:     nodeMgr.VaultAddr,
+		Region:        *region,
+		EnvVars:       cloudlet.EnvVar,
+		DeploymentTag: *deploymentTag,
+		PhysicalName:  *physicalName,
+		AppDNSRoot:    *appDNSRoot,
+	}
+
+	err = myPlatform.Init(ctx, &pc)
 	if err != nil {
 		span.Finish()
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
