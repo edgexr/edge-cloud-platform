@@ -28,8 +28,38 @@ regiondata:
         name: x1.small
       state: Ready
       createdat:
-        seconds: 1591661539
-        nanos: 376315000
+        seconds: 1592262054
+        nanos: 484967000
+      powerstate: PowerOn
+      vmflavor: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: autoprovHA
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: Reservable2
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 35
+        longitude: -95
+      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      liveness: LivenessDynamic
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 82
+        publicport: 82
+        fqdnprefix: autoprovha-tcp.
+      flavor:
+        name: x1.small
+      state: Ready
+      createdat:
+        seconds: 1592262054
+        nanos: 635702000
       powerstate: PowerOn
       vmflavor: x1.small
     - key:
@@ -58,37 +88,7 @@ regiondata:
         name: x1.small
       state: Ready
       createdat:
-        seconds: 1591723327
-        nanos: 84689000
-      powerstate: PowerOn
-      vmflavor: x1.small
-    - key:
-        appkey:
-          organization: AcmeAppCo
-          name: autoprovHA
-          version: "1.0"
-        clusterinstkey:
-          clusterkey:
-            name: Reservable4
-          cloudletkey:
-            organization: gcp
-            name: gcp-cloud-5
-          organization: MobiledgeX
-      cloudletloc:
-        latitude: 36
-        longitude: -95
-      uri: acmeappcoautoprovha10.reservable4.gcp-cloud-5.gcp.mobiledgex.net
-      liveness: LivenessDynamic
-      mappedports:
-      - proto: LProtoTcp
-        internalport: 82
-        publicport: 82
-        fqdnprefix: autoprovha-tcp.
-      flavor:
-        name: x1.small
-      state: Ready
-      createdat:
-        seconds: 1592262339
-        nanos: 24456000
+        seconds: 1592262055
+        nanos: 628000000
       powerstate: PowerOn
       vmflavor: x1.small

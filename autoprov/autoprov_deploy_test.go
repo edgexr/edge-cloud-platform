@@ -55,6 +55,7 @@ type DummyController struct {
 	appInstRefsCache *edgeproto.AppInstRefsCache
 	serv             *grpc.Server
 	lis              *bufconn.Listener
+	failCreate       bool
 }
 
 func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *edgeproto.AppInstRefsCache) *DummyController {
@@ -100,6 +101,9 @@ func (s *DummyController) waitForAppInsts(count int) error {
 }
 
 func (s *DummyController) CreateAppInst(in *edgeproto.AppInst, server edgeproto.AppInstApi_CreateAppInstServer) error {
+	if s.failCreate {
+		return fmt.Errorf("Some error")
+	}
 	s.updateAppInst(server.Context(), in)
 	return nil
 }

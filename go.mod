@@ -43,7 +43,7 @@ require (
 	github.com/mitchellh/mapstructure v1.2.4
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.8
-	github.com/mobiledgex/yaml/v2 v2.2.4
+	github.com/mobiledgex/yaml/v2 v2.2.5
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
@@ -295,7 +295,7 @@ replace k8s.io/client-go => k8s.io/client-go v0.0.0-20180517072830-4bb327ea2f8e
 
 replace sigs.k8s.io/yaml => sigs.k8s.io/yaml v1.1.0
 
-replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.4
+replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.5
 
 replace github.com/kr/pty => github.com/kr/pty v1.1.3
 

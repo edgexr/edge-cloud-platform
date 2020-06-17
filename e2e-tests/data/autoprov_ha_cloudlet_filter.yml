@@ -1,0 +1,7 @@
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1

@@ -52,6 +52,7 @@ regiondata:
       loadbalancermaxportrange: 100
       maxtrackeddmeclients: 100
       chefclientinterval: 10m
+      cloudletmaintenancetimeout: 2s
     flavors:
     - key:
         name: x1.tiny
@@ -132,6 +133,7 @@ regiondata:
       loadbalancermaxportrange: 100
       maxtrackeddmeclients: 100
       chefclientinterval: 10m
+      cloudletmaintenancetimeout: 2s
     flavors:
     - key:
         name: x1.tiny

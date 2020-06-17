@@ -76,7 +76,14 @@ func setUpdateCloudletFields(in map[string]interface{}) {
 	if !ok {
 		return
 	}
-	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.Cloudlet{}, cli.JsonNamespace)
+	fields := cli.GetSpecifiedFields(objmap, &edgeproto.Cloudlet{}, cli.JsonNamespace)
+	// include fields already specified
+	if inFields, found := objmap["fields"]; found {
+		if fieldsArr, ok := inFields.([]string); ok {
+			fields = append(fields, fieldsArr...)
+		}
+	}
+	objmap["fields"] = fields
 }
 
 var ShowCloudletCmd = &cli.Command{
@@ -188,6 +195,7 @@ var CreateCloudletOptionalArgs = []string{
 	"infraapiaccess",
 	"infraconfig.externalnetworkname",
 	"infraconfig.flavorname",
+	"maintenancestate",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -217,6 +225,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"restagmap:#.value.name",
 	"restagmap:#.value.organization",
 	"accessvars",
+	"maintenancestate",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -436,6 +445,7 @@ var CloudletOptionalArgs = []string{
 	"infraapiaccess",
 	"infraconfig.externalnetworkname",
 	"infraconfig.flavorname",
+	"maintenancestate",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -501,6 +511,7 @@ var CloudletAliasArgs = []string{
 	"infraconfig.externalnetworkname=cloudlet.infraconfig.externalnetworkname",
 	"infraconfig.flavorname=cloudlet.infraconfig.flavorname",
 	"chefclientkey=cloudlet.chefclientkey",
+	"maintenancestate=cloudlet.maintenancestate",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -559,6 +570,7 @@ var CloudletComments = map[string]string{
 	"infraconfig.externalnetworkname":     "Infra specific external network name",
 	"infraconfig.flavorname":              "Infra specific flavor name",
 	"chefclientkey":                       "Chef client key",
+	"maintenancestate":                    "State for maintenance, one of NormalOperation, MaintenanceStart, MaintenanceStartNoFailover",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":    "StringToString",
@@ -686,6 +698,7 @@ var CloudletInfoOptionalArgs = []string{
 	"osimages:#.properties",
 	"osimages:#.diskformat",
 	"controllercachereceived",
+	"maintenancestate",
 }
 var CloudletInfoAliasArgs = []string{
 	"fields=cloudletinfo.fields",
@@ -715,6 +728,7 @@ var CloudletInfoAliasArgs = []string{
 	"osimages:#.properties=cloudletinfo.osimages:#.properties",
 	"osimages:#.diskformat=cloudletinfo.osimages:#.diskformat",
 	"controllercachereceived=cloudletinfo.controllercachereceived",
+	"maintenancestate=cloudletinfo.maintenancestate",
 }
 var CloudletInfoComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
@@ -738,6 +752,7 @@ var CloudletInfoComments = map[string]string{
 	"osimages:#.properties":   "image properties/metadata",
 	"osimages:#.diskformat":   "format qcow2, img, etc",
 	"controllercachereceived": "Indicates all controller data has been sent to CRM",
+	"maintenancestate":        "State for maintenance, one of NormalOperation, MaintenanceStart, MaintenanceStartNoFailover",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"cloudletinfo.errors":            "StringArray",

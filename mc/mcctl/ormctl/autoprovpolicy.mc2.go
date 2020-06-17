@@ -71,7 +71,14 @@ func setUpdateAutoProvPolicyFields(in map[string]interface{}) {
 	if !ok {
 		return
 	}
-	objmap["fields"] = cli.GetSpecifiedFields(objmap, &edgeproto.AutoProvPolicy{}, cli.JsonNamespace)
+	fields := cli.GetSpecifiedFields(objmap, &edgeproto.AutoProvPolicy{}, cli.JsonNamespace)
+	// include fields already specified
+	if inFields, found := objmap["fields"]; found {
+		if fieldsArr, ok := inFields.([]string); ok {
+			fields = append(fields, fieldsArr...)
+		}
+	}
+	objmap["fields"] = fields
 }
 
 var ShowAutoProvPolicyCmd = &cli.Command{
@@ -355,3 +362,36 @@ var AutoProvPolicyCloudletComments = map[string]string{
 	"cloudlet":     "Name of the cloudlet",
 }
 var AutoProvPolicyCloudletSpecialArgs = map[string]string{}
+var AutoProvInfoRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+}
+var AutoProvInfoOptionalArgs = []string{
+	"notifyid",
+	"maintenancestate",
+	"completed",
+	"errors",
+}
+var AutoProvInfoAliasArgs = []string{
+	"fields=autoprovinfo.fields",
+	"key.organization=autoprovinfo.key.organization",
+	"key.name=autoprovinfo.key.name",
+	"notifyid=autoprovinfo.notifyid",
+	"maintenancestate=autoprovinfo.maintenancestate",
+	"completed=autoprovinfo.completed",
+	"errors=autoprovinfo.errors",
+}
+var AutoProvInfoComments = map[string]string{
+	"fields":           "Fields are used for the Update API to specify which fields to apply",
+	"key.organization": "Organization of the cloudlet site",
+	"key.name":         "Name of the cloudlet",
+	"notifyid":         "Id of client assigned by server (internal use only)",
+	"maintenancestate": "failover result state, one of NormalOperation, MaintenanceStart, MaintenanceStartNoFailover",
+	"completed":        "Failover actions done if any",
+	"errors":           "Errors if any",
+}
+var AutoProvInfoSpecialArgs = map[string]string{
+	"autoprovinfo.completed": "StringArray",
+	"autoprovinfo.errors":    "StringArray",
+	"autoprovinfo.fields":    "StringArray",
+}

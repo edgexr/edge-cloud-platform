@@ -83,7 +83,7 @@ func start() error {
 	cacheData.init()
 	autoProvAggr = NewAutoProvAggr(settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec, &cacheData)
 	minMaxChecker = newMinMaxChecker(&cacheData)
-	cacheData.initCb(autoProvAggr, minMaxChecker)
+	cacheData.alertCache.SetUpdatedCb(alertChanged)
 
 	autoProvAggr.Start()
 	minMaxChecker.Start()
