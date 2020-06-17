@@ -53,6 +53,7 @@ It has these top-level messages:
 	AutoProvCount
 	AutoProvCounts
 	AutoProvPolicyCloudlet
+	AutoProvInfo
 	PolicyKey
 	AutoScalePolicy
 	CloudletKey
@@ -252,6 +253,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// MaxTrackedDmeClients: 16
 	// ChefClientInterval: 17
 	// InfluxDbMetricsRetention: 18
+	// CloudletMaintenanceTimeout: 19
 	// ```
 	// Security:
 	//   Bearer:
@@ -573,6 +575,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ChefClientKey: 29
 	// ChefClientKeyKey: 29.1
 	// ChefClientKeyValue: 29.2
+	// MaintenanceState: 30
 	// ```
 	// Security:
 	//   Bearer:

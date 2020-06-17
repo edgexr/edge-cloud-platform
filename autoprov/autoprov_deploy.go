@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -14,7 +15,7 @@ import (
 
 var testDialOpt grpc.DialOption
 
-func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcommon.Action, reason, policyName string) {
+func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcommon.Action, reason, policyName string) error {
 	span := log.StartSpan(log.DebugLevelApi, "auto-prov deploy "+action.String(), opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 	span.SetTag("AppInst", inst.Key)
 	span.SetTag("reason", reason)
@@ -24,10 +25,11 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy "+action.String(), "AppInst", inst.Key, "reason", reason, "policyName", policyName)
 	if action != cloudcommon.Create && action != cloudcommon.Delete {
 		log.SpanLog(ctx, log.DebugLevelApi, "invalid action", "action", action.String())
-		return
+		return fmt.Errorf("invalid action")
 	}
 	err := runAppInstApi(ctx, inst, action, reason, policyName)
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy result", "err", err)
+	return err
 }
 
 func runAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcommon.Action, reason, policyName string) error {

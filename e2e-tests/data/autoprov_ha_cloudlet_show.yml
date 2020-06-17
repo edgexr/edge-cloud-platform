@@ -1,0 +1,22 @@
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: PlatformTypeFakeinfra
+      notifysrvaddr: 127.0.0.1:51001
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-1
+      envvar:
+        foo: bar
+      containerversion: "2019-10-24"
+      deployment: docker

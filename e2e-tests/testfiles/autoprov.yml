@@ -51,6 +51,29 @@ tests:
       yaml2: '{{datadir2}}/autoprov_ha_appinst_show.yml'
       filetype: mcdata
 
+  - name: put Cloudlet into maintenance, will trigger create of another AppInst
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_maintenance.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: verify Cloudlet is in maintenance
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_cloudlet_maintenance_show.yml'
+      filetype: mcdata
+
+  - name: check that another AppInst was created
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_appinst_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_appinst_maintenance.yml'
+      filetype: mcdata
+
   - name: remove Cloudlet from policy, will trigger failover and orphaned cleanup
     actions: [mcapi-remove]
     apifile: '{{datadir2}}/autoprov_ha_policycloudlet.yml'
@@ -63,6 +86,20 @@ tests:
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/autoprov_ha_appinst_failedover.yml'
+      filetype: mcdata
+
+  - name: undo Cloudlet maintenance
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_normalop.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: verify Cloudlet is not in maintenance
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_ha_cloudlet_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_ha_cloudlet_show.yml'
       filetype: mcdata
 
   - name: delete auto-prov HA app and policy

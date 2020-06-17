@@ -10,9 +10,11 @@ type CacheData struct {
 	appInstCache        edgeproto.AppInstCache
 	appInstRefsCache    edgeproto.AppInstRefsCache
 	autoProvPolicyCache edgeproto.AutoProvPolicyCache
+	cloudletCache       edgeproto.CloudletCache
 	cloudletInfoCache   edgeproto.CloudletInfoCache
 	frClusterInsts      edgeproto.FreeReservableClusterInstCache
 	alertCache          edgeproto.AlertCache
+	autoProvInfoCache   edgeproto.AutoProvInfoCache
 }
 
 func (s *CacheData) init() {
@@ -20,23 +22,11 @@ func (s *CacheData) init() {
 	edgeproto.InitAppInstCache(&s.appInstCache)
 	edgeproto.InitAppInstRefsCache(&s.appInstRefsCache)
 	edgeproto.InitAutoProvPolicyCache(&s.autoProvPolicyCache)
+	edgeproto.InitCloudletCache(&s.cloudletCache)
 	edgeproto.InitCloudletInfoCache(&s.cloudletInfoCache)
 	s.frClusterInsts.Init()
 	edgeproto.InitAlertCache(&s.alertCache)
-}
-
-func (s *CacheData) initCb(autoProvAggr *AutoProvAggr, minMaxChecker *MinMaxChecker) {
-	// set callbacks to respond to changes
-	s.appCache.SetUpdatedKeyCb(autoProvAggr.UpdateApp)
-	s.appCache.SetDeletedKeyCb(autoProvAggr.DeleteApp)
-	s.appCache.SetUpdatedCb(minMaxChecker.UpdatedApp)
-	s.appInstCache.SetUpdatedCb(minMaxChecker.UpdatedAppInst)
-	s.appInstCache.SetDeletedKeyCb(minMaxChecker.DeletedAppInst)
-	s.autoProvPolicyCache.SetUpdatedKeyCb(autoProvAggr.UpdatePolicy)
-	s.autoProvPolicyCache.SetUpdatedCb(minMaxChecker.UpdatedPolicy)
-	s.cloudletInfoCache.SetUpdatedCb(minMaxChecker.UpdatedCloudletInfo)
-	s.appInstRefsCache.SetUpdatedCb(minMaxChecker.UpdatedAppInstRefs)
-	s.alertCache.SetUpdatedCb(alertChanged)
+	edgeproto.InitAutoProvInfoCache(&s.autoProvInfoCache)
 }
 
 func (s *CacheData) initNotifyClient(client *notify.Client) {
@@ -44,7 +34,9 @@ func (s *CacheData) initNotifyClient(client *notify.Client) {
 	notifyClient.RegisterRecvAppInstCache(&s.appInstCache)
 	notifyClient.RegisterRecvAppInstRefsCache(&s.appInstRefsCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&s.autoProvPolicyCache)
+	notifyClient.RegisterRecvCloudletCache(&s.cloudletCache)
 	notifyClient.RegisterRecvCloudletInfoCache(&s.cloudletInfoCache)
 	notifyClient.RegisterRecv(notify.NewClusterInstRecv(&s.frClusterInsts))
 	notifyClient.RegisterRecvAlertCache(&s.alertCache)
+	notifyClient.RegisterSendAutoProvInfoCache(&s.autoProvInfoCache)
 }
