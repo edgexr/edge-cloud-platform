@@ -96,6 +96,7 @@ var SettingsOptionalArgs = []string{
 	"loadbalancermaxportrange",
 	"maxtrackeddmeclients",
 	"chefclientinterval",
+	"influxdbmetricsretention",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -115,6 +116,7 @@ var SettingsAliasArgs = []string{
 	"loadbalancermaxportrange=settings.loadbalancermaxportrange",
 	"maxtrackeddmeclients=settings.maxtrackeddmeclients",
 	"chefclientinterval=settings.chefclientinterval",
+	"influxdbmetricsretention=settings.influxdbmetricsretention",
 }
 var SettingsComments = map[string]string{
 	"fields":                            "Fields are used for the Update API to specify which fields to apply",
@@ -134,6 +136,7 @@ var SettingsComments = map[string]string{
 	"loadbalancermaxportrange":          "Max IP Port range when using a load balancer",
 	"maxtrackeddmeclients":              "Max DME clients to be tracked at the same time.",
 	"chefclientinterval":                "Default chef client interval (duration)",
+	"influxdbmetricsretention":          "Default influxDB metrics retention policy (duration)",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",

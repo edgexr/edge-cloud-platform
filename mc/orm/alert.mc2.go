@@ -251,6 +251,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// LoadBalancerMaxPortRange: 15
 	// MaxTrackedDmeClients: 16
 	// ChefClientInterval: 17
+	// InfluxDbMetricsRetention: 18
 	// ```
 	// Security:
 	//   Bearer:
