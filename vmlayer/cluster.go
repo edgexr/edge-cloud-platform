@@ -194,6 +194,14 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 
 	// Delete Chef configs
 	clientName := ""
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		// Dedicated RootLB
+		clientName = v.GetChefClientName(v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst))
+		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+		}
+	}
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		// Docker node
 		clientName = v.GetChefClientName(v.GetDockerNodeName(ctx, clusterInst))
@@ -202,14 +210,6 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
 		}
 	} else {
-		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-			// Dedicated RootLB
-			clientName = v.GetChefClientName(v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst))
-			err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
-			}
-		}
 		// Master node
 		clientName = v.GetChefClientName(GetClusterMasterName(ctx, clusterInst))
 		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
@@ -295,7 +295,7 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 
 	if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
-			(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED) {
+			(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Need to attach internal interface on rootlb", "IpAccess", clusterInst.IpAccess, "deployment", clusterInst.Deployment)
 
 			// after vm creation, the orchestrator will update some fields in the group params including gateway IP.
@@ -505,27 +505,23 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 	log.SpanLog(ctx, log.DebugLevelInfo, "getVMRequestSpecForDockerCluster", "clusterInst", clusterInst)
 
 	var vms []*VMRequestSpec
-	dockerVmConnectExternal := false
-	var dockerVmType VMType
-	var dockerVMName string
-	var newSubnetName string
 	var newSecgrpName string
+	dockerVmName := v.GetDockerNodeName(ctx, clusterInst)
+	newSubnetName := GetClusterSubnetName(ctx, clusterInst)
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		// dedicated access means the docker VM acts as its own rootLB
-		dockerVmConnectExternal = true
-		dockerVmType = VMTypeRootLB
-		dockerVMName = v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-		newSecgrpName = v.GetServerSecurityGroupName(dockerVMName)
+		tags := v.GetChefClusterTags(&clusterInst.Key, VMTypeRootLB)
+		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, tags, updateCallback)
+		if err != nil {
+			return vms, newSubnetName, newSecgrpName, err
+		}
+		vms = append(vms, rootlb)
+		newSecgrpName = v.GetServerSecurityGroupName(rootlb.Name)
 	} else {
 
 		log.SpanLog(ctx, log.DebugLevelInfo, "creating shared rootlb port")
 		// shared access means docker vm goes on its own subnet which is connected
 		// via shared rootlb
-		newSubnetName = GetClusterSubnetName(ctx, clusterInst)
-		dockerVmType = VMTypeClusterNode
-		dockerVMName = v.GetDockerNodeName(ctx, clusterInst)
-
 		if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 			// If no router in use, create ports on the existing shared rootLB
 			rootlb, err := v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.sharedRootLBName, newSubnetName)
@@ -536,16 +532,16 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		}
 	}
 	chefAttributes := make(map[string]interface{})
-	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, dockerVmType)
-	clientName := v.GetChefClientName(dockerVMName)
+	chefAttributes["tags"] = v.GetChefClusterTags(&clusterInst.Key, VMTypeClusterNode)
+	clientName := v.GetChefClientName(dockerVmName)
 	chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 	dockervm, err := v.GetVMRequestSpec(
 		ctx,
-		dockerVmType,
-		dockerVMName,
+		VMTypeClusterNode,
+		dockerVmName,
 		clusterInst.NodeFlavor,
 		imgName,
-		dockerVmConnectExternal,
+		false,
 		WithExternalVolume(clusterInst.ExternalVolumeSize),
 		WithSubnetConnection(newSubnetName),
 		WithChefParams(chefParams),

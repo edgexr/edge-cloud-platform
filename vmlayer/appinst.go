@@ -308,7 +308,6 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	case cloudcommon.DeploymentTypeDocker:
 		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 		backendIP := cloudcommon.RemoteServerNone
-		dockerNetworkMode := dockermgmt.DockerBridgeMode
 		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
@@ -316,27 +315,19 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// docker commands can be run on either the rootlb or on the docker
 		// vm.  The default is to run on the rootlb client
 		dockerCommandTarget := rootLBClient
-
-		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-			log.SpanLog(ctx, log.DebugLevelInfra, "using dedicated RootLB to create app", "rootLBName", rootLBName)
-			if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-				backendIP = cloudcommon.IPAddrDockerHost
-			} else {
-				dockerNetworkMode = dockermgmt.DockerHostMode
-			}
-		} else {
-			// Shared access uses a separate VM for docker.  This is used both for running the docker commands
-			// and as the backend ip for the proxy
-			backendIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+		// if using a load balancer access, a separate VM is always used for
+		// docker vs the LB, and we always use host networking mode
+		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			sip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				return err
 			}
+			backendIP = sip.ExternalAddr
 			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP.ExternalAddr, 22)
+			dockerCommandTarget, err = rootLBClient.AddHop(backendIP, 22)
 			if err != nil {
 				return err
 			}
-			dockerNetworkMode = dockermgmt.DockerHostMode
 		}
 
 		rootLBIPaddr, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", rootLBName)
@@ -367,7 +358,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 
-		err = dockermgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst, dockerNetworkMode)
+		err = dockermgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst)
 		if err != nil {
 			return err
 		}
@@ -509,7 +500,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// vm.  The default is to run on the rootlb client
 		dockerCommandTarget := rootLBClient
 
-		if clusterInst.IpAccess != edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 			backendIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				if strings.Contains(err.Error(), ServerDoesNotExistError) {
@@ -584,7 +575,6 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeDocker:
-		dockerNetworkMode := dockermgmt.DockerBridgeMode
 		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
 			return err
@@ -604,7 +594,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				return err
 			}
 		}
-		return dockermgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst, dockerNetworkMode)
+		return dockermgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
 		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
 		if err != nil {
