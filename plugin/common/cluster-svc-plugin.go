@@ -34,9 +34,9 @@ var MEXPrometheusAutoScaleT = `additionalPrometheusRules:
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:)
       record: node:node_cpu_utilisation:avg1m
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"[[.NodePrefix]].*"} > bool .[[.ScaleUpCpuThresh]])
+    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"[[.NodePrefix]].*"} > bool [[printf "%.2f" .ScaleUpCpuThreshF]])
       record: 'node_cpu_high_count'
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"[[.NodePrefix]].*"} < bool .[[.ScaleDownCpuThresh]])
+    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"[[.NodePrefix]].*"} < bool [[printf "%.2f" .ScaleDownCpuThreshF]])
       record: 'node_cpu_low_count'
     - expr: count(kube_node_info) - count(kube_node_spec_taint)
       record: 'node_count'
@@ -66,6 +66,8 @@ type AutoScaleArgs struct {
 	AutoScaleDownName   string
 	ScaleUpCpuThresh    uint32
 	ScaleDownCpuThresh  uint32
+	ScaleUpCpuThreshF   float32
+	ScaleDownCpuThreshF float32
 	TriggerTimeSec      uint32
 	MaxNodes            int
 	MinNodes            int
@@ -87,6 +89,8 @@ func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgepro
 		AutoScaleDownName:   cloudcommon.AlertAutoScaleDown,
 		ScaleUpCpuThresh:    policy.ScaleUpCpuThresh,
 		ScaleDownCpuThresh:  policy.ScaleDownCpuThresh,
+		ScaleUpCpuThreshF:   float32(policy.ScaleUpCpuThresh) / 100.0,
+		ScaleDownCpuThreshF: float32(policy.ScaleDownCpuThresh) / 100.0,
 		TriggerTimeSec:      policy.TriggerTimeSec,
 		MaxNodes:            int(policy.MaxNodes),
 		MinNodes:            int(policy.MinNodes),
