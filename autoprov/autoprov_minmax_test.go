@@ -227,6 +227,29 @@ func TestAppChecker(t *testing.T) {
 	err = dc.waitForAppInsts(0)
 	require.Nil(t, err)
 
+	// Check it works the same with MaxInstances=0
+	pt1.policy.MinActiveInstances = 2
+	pt1.policy.MaxInstances = 0
+	pt1.updatePolicy(ctx)
+	pt2.policy.MinActiveInstances = 3
+	pt2.policy.MaxInstances = 0
+	pt2.updatePolicy(ctx)
+	minmax.runIter(ctx)
+	countMin = int(pt1.policy.MinActiveInstances + pt2.policy.MinActiveInstances)
+	err = dc.waitForAppInsts(countMin)
+	require.Nil(t, err)
+
+	// set min/max to 0 to clean up everything
+	pt1.policy.MinActiveInstances = 0
+	pt1.policy.MaxInstances = 0
+	pt1.updatePolicy(ctx)
+	pt2.policy.MinActiveInstances = 0
+	pt2.policy.MaxInstances = 0
+	pt2.updatePolicy(ctx)
+	minmax.runIter(ctx)
+	err = dc.waitForAppInsts(0)
+	require.Nil(t, err)
+
 	// go back to reasonable settings (only using one policy from now)
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 3
