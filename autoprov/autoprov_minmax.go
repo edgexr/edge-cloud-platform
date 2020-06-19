@@ -492,7 +492,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 		go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonMinMax, pname)
 	}
 
-	if totalCount >= int(policy.MaxInstances) {
+	if totalCount >= int(policy.MaxInstances) && policy.MaxInstances != 0 {
 		// don't bother with min because we're already at max
 		return
 	}
