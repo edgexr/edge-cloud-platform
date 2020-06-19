@@ -248,3 +248,56 @@ func ShowOrgCloudlet(c echo.Context) error {
 	})
 	return setReply(c, err, show)
 }
+
+// Used by UI to show cloudlets for the current organization
+func ShowOrgCloudletInfo(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+	oc := ormapi.OrgCloudlet{}
+	success, err := ReadConn(c, &oc)
+	if !success {
+		return err
+	}
+
+	if oc.Org == "" {
+		return setReply(c, fmt.Errorf("Organization must be specified"), nil)
+	}
+	if oc.Region == "" {
+		return setReply(c, fmt.Errorf("Region must be specified"), nil)
+	}
+
+	db := loggedDB(ctx)
+	org := ormapi.Organization{}
+	res := db.Where(&ormapi.Organization{Name: oc.Org}).First(&org)
+	if res.RecordNotFound() {
+		return setReply(c, fmt.Errorf("Specified Organization not found"), nil)
+	}
+	if res.Error != nil {
+		return dbErr(res.Error)
+	}
+
+	authzCloudlet := AuthzCloudlet{}
+	err = authzCloudlet.populate(ctx, oc.Region, claims.Username, oc.Org, ResourceCloudlets, ActionView)
+	if err != nil {
+		return err
+	}
+
+	rc := RegionContext{
+		region:    oc.Region,
+		username:  claims.Username,
+		skipAuthz: true,
+	}
+	show := make([]*edgeproto.CloudletInfo, 0)
+	err = ShowCloudletInfoStream(ctx, &rc, &edgeproto.CloudletInfo{}, func(CloudletInfo *edgeproto.CloudletInfo) {
+		cloudlet := edgeproto.Cloudlet{
+			Key: CloudletInfo.Key,
+		}
+		if authzCloudlet.Ok(&cloudlet) {
+			show = append(show, CloudletInfo)
+		}
+	})
+	return setReply(c, err, show)
+}

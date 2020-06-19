@@ -115,6 +115,12 @@ func (s *Client) ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]e
 	return out, status, err
 }
 
+func (s *Client) ShowOrgCloudletInfo(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.CloudletInfo, int, error) {
+	out := []edgeproto.CloudletInfo{}
+	status, err := s.PostJson(uri+"/auth/orgcloudletinfo/show", token, in, &out)
+	return out, status, err
+}
+
 func (s *Client) AddUserRole(uri, token string, role *ormapi.Role) (int, error) {
 	return s.PostJson(uri+"/auth/role/adduser", token, role, nil)
 }

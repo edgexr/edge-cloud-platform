@@ -28,3 +28,10 @@ func (s *Client) ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]e
 	st, err := s.runObjs(uri, token, args, in, &out)
 	return out, st, err
 }
+
+func (s *Client) ShowOrgCloudletInfo(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.CloudletInfo, int, error) {
+	args := []string{"orgcloudletinfo", "show"}
+	out := []edgeproto.CloudletInfo{}
+	st, err := s.runObjs(uri, token, args, in, &out)
+	return out, st, err
+}
