@@ -47,20 +47,21 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, vaultConfig *vault.Config) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", app.ImagePath)
+func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, vaultConfig *vault.Config) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", imagePath)
 
-	urlObj, err := util.ImagePathParse(app.ImagePath)
+	urlObj, err := util.ImagePathParse(imagePath)
 	if err != nil {
-		return fmt.Errorf("Cannot parse image path: %s - %v", app.ImagePath, err)
+		return fmt.Errorf("Cannot parse image path: %s - %v", imagePath, err)
 	}
 	if urlObj.Host == cloudcommon.DockerHub {
 		log.SpanLog(ctx, log.DebugLevelInfra, "no secret needed for public image")
 		return nil
 	}
-	auth, err := cloudcommon.GetRegistryAuth(ctx, app.ImagePath, vaultConfig)
+	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
 	if err != nil {
-		return err
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
+		return nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
 		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
