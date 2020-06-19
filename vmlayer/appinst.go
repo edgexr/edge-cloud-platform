@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 
 	v1 "k8s.io/api/core/v1"
@@ -338,21 +339,38 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return fmt.Errorf("get kube names failed, %v", err)
 		}
+		// Fetch image paths from zip file
+		if app.DeploymentManifest != "" && strings.HasSuffix(app.DeploymentManifest, ".zip") {
+			filename := util.DockerSanitize(app.Key.Name + app.Key.Organization + app.Key.Version)
+			zipfile := "/tmp/" + filename + ".zip"
+			zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, v.VMProperties.CommonPf.VaultConfig, app.DeploymentManifest, zipfile, cloudcommon.Download)
+			if err != nil {
+				return err
+			}
+			for _, containers := range zipContainers {
+				for _, container := range containers {
+					names.ImagePaths = append(names.ImagePaths, container.Image)
+				}
+			}
+		}
+
 		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
 
 		start := time.Now()
-		for {
-			err = infracommon.SeedDockerSecret(ctx, dockerCommandTarget, clusterInst, app, v.VMProperties.CommonPf.VaultConfig)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
-				elapsed := time.Since(start)
-				if elapsed > MaxDockerSeedWait {
-					return fmt.Errorf("can't seed docker secret - %v", err)
+		for _, imagePath := range names.ImagePaths {
+			for {
+				err = infracommon.SeedDockerSecret(ctx, dockerCommandTarget, clusterInst, imagePath, v.VMProperties.CommonPf.VaultConfig)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
+					elapsed := time.Since(start)
+					if elapsed > MaxDockerSeedWait {
+						return fmt.Errorf("can't seed docker secret - %v", err)
+					}
+					log.SpanLog(ctx, log.DebugLevelInfra, "retrying in 10 seconds")
+					time.Sleep(10 * time.Second)
+				} else {
+					break
 				}
-				log.SpanLog(ctx, log.DebugLevelInfra, "retrying in 10 seconds")
-				time.Sleep(10 * time.Second)
-			} else {
-				break
 			}
 		}
 
