@@ -198,6 +198,10 @@ func TestController(t *testing.T) {
 		},
 	}
 	ds.CloudletCache.Update(ctx, &org3Cloudlet, 0)
+	org3CloudletInfo := edgeproto.CloudletInfo{
+		Key: org3Cloudlet.Key,
+	}
+	ds.CloudletInfoCache.Update(ctx, &org3CloudletInfo, 0)
 	tc3 := &org3Cloudlet.Key
 
 	// +1 count for Cloudlets because of extra one above
@@ -716,6 +720,10 @@ func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Nil(t, err, "show org cloudlet")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, showcount, len(list))
+	infolist, infostatus, err := mcClient.ShowOrgCloudletInfo(uri, token, &oc)
+	require.Nil(t, err, "show org cloudletinfo")
+	require.Equal(t, http.StatusOK, infostatus)
+	require.Equal(t, showcount, len(infolist))
 }
 
 func badPermTestOrgCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token string, op *ormapi.OrgCloudletPool) {
@@ -738,6 +746,10 @@ func badPermShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token
 	_, status, err := mcClient.ShowOrgCloudlet(uri, token, &oc)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+
+	_, infostatus, err := mcClient.ShowOrgCloudletInfo(uri, token, &oc)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, infostatus)
 }
 
 // Test that we get forbidden for Orgs that don't exist

@@ -36,3 +36,14 @@ func GetOrgCloudletCommand() *cobra.Command {
 	}}
 	return cli.GenGroup("orgcloudlet", "manage Org Cloudlets", cmds)
 }
+
+func GetOrgCloudletInfoCommand() *cobra.Command {
+	cmds := []*cli.Command{&cli.Command{
+		Use:          "show",
+		RequiredArgs: "region org",
+		ReqData:      &ormapi.OrgCloudlet{},
+		ReplyData:    &[]edgeproto.CloudletInfo{},
+		Run:          runRest("/auth/orgcloudletinfo/show"),
+	}}
+	return cli.GenGroup("orgcloudletinfo", "manage Org CloudletInfos", cmds)
+}

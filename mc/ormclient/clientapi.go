@@ -47,6 +47,7 @@ type Api interface {
 	DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
 	ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error)
 	ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.Cloudlet, int, error)
+	ShowOrgCloudletInfo(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.CloudletInfo, int, error)
 
 	ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 	ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)

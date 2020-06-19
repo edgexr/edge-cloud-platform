@@ -345,6 +345,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/orgcloudletpool/delete", DeleteOrgCloudletPool)
 	auth.POST("/orgcloudletpool/show", ShowOrgCloudletPool)
 	auth.POST("/orgcloudlet/show", ShowOrgCloudlet)
+	auth.POST("/orgcloudletinfo/show", ShowOrgCloudletInfo)
 
 	// Support multiple connection types: HTTP(s), Websockets
 	addControllerApis("POST", auth)
