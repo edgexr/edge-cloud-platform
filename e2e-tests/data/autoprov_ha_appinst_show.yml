@@ -18,7 +18,7 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessDynamic
+      liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
@@ -48,7 +48,7 @@ regiondata:
         latitude: 35
         longitude: -95
       uri: dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: LivenessDynamic
+      liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
