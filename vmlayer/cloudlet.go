@@ -34,6 +34,15 @@ var PlatformServices = []string{
 	ServiceTypeCloudletPrometheus,
 }
 
+// VMDomain is to differentiate platform vs computing VMs and associated resources
+type VMDomain string
+
+const (
+	VMDomainCompute  VMDomain = "compute"
+	VMDomainPlatform VMDomain = "platform"
+	VMDomainAny      VMDomain = "any" // used for matching only
+)
+
 func (v *VMPlatform) GetPlatformVMName(key *edgeproto.CloudletKey) string {
 	// Form platform VM name based on cloudletKey
 	return v.VMProvider.NameSanitize(key.Name + "-" + key.Organization + "-pf")
@@ -91,6 +100,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, vaultConfig *vault.Con
 			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithInitOrchestrator(true),
+			WithDomain(VMDomainPlatform),
 		)
 	} else {
 		subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
@@ -619,7 +629,6 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 			pfImageName,
 			true, //connect external
 			WithChefParams(chefParams),
-			WithDomain(VMDomainPlatform),
 		)
 		if err != nil {
 			return nil, err
@@ -642,7 +651,6 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 					true, //connect external
 					WithSubnetConnection(subnetName),
 					WithChefParams(chefParams),
-					WithDomain(VMDomainPlatform),
 				)
 			} else {
 				nodeAttributes := make(map[string]interface{})
@@ -656,7 +664,6 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 					true, //connect external
 					WithSubnetConnection(subnetName),
 					WithChefParams(chefParams),
-					WithDomain(VMDomainPlatform),
 				)
 			}
 			if err != nil {

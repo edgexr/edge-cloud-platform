@@ -455,13 +455,16 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 		sip.Network = net.Network
 		sip.MacAddress = net.MacAddress
 		sip.PortName = vmlayer.GetPortName(govcVm.Name, net.Network)
+		if net.Network == "" {
+			continue
+		}
 		if len(net.IpAddress) > 0 {
 			sip.ExternalAddr = net.IpAddress[0]
 			sip.InternalAddr = net.IpAddress[0]
 		} else {
 			ip, err := v.GetIpFromTagsForVM(ctx, sd.Name, sip.Network)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "net", sip.Network, "err", err)
 			} else {
 				sip.ExternalAddr = ip
 				sip.InternalAddr = ip
@@ -477,7 +480,7 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 		sip.PortName = vmlayer.GetPortName(govcVm.Name, sip.Network)
 		ip, err := v.GetIpFromTagsForVM(ctx, sd.Name, sip.Network)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "net", sip.Network, "err", err)
 		} else {
 			sip.ExternalAddr = ip
 			sip.InternalAddr = ip

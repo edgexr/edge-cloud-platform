@@ -3,6 +3,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -44,7 +45,8 @@ func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*ed
 }
 
 func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
-	// we just send the controller back the same list of flavors it gave us, because VSphere has no flavor concept
+	// we just send the controller back the same list of flavors it gave us, because VSphere has no flavor concept.
+	// Make sure each flavor is at least a minimum size to run the platform
 	var flavors []*edgeproto.FlavorInfo
 	if v.caches == nil {
 		log.WarnLog("flavor cache is nil")
@@ -60,8 +62,16 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 		if v.caches.FlavorCache.Get(&k, &flav) {
 			var flavInfo edgeproto.FlavorInfo
 			flavInfo.Name = flav.Key.Name
-			flavInfo.Ram = flav.Ram
-			flavInfo.Vcpus = flav.Vcpus
+			if flav.Ram >= vmlayer.MINIMUM_RAM_SIZE {
+				flavInfo.Ram = flav.Ram
+			} else {
+				flavInfo.Ram = vmlayer.MINIMUM_RAM_SIZE
+			}
+			if flav.Vcpus >= vmlayer.MINIMUM_VCPUS {
+				flavInfo.Vcpus = flav.Vcpus
+			} else {
+				flavInfo.Vcpus = vmlayer.MINIMUM_VCPUS
+			}
 			if flav.Disk >= vmlayer.MINIMUM_DISK_SIZE {
 				flavInfo.Disk = flav.Disk
 			} else {
@@ -91,6 +101,7 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 
 func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra")
+
 	// first import existing resources
 	pools, err := v.GetResourcePools(ctx)
 	if err != nil {
@@ -98,9 +109,11 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import Resource Pools")
 	for _, p := range pools.ResourcePools {
-		err = v.ImportTerraformResourcePool(ctx, p.Name, p.Path)
-		if err != nil {
-			return err
+		if strings.HasSuffix(p.Name, string(vmlayer.VMDomainCompute)) {
+			err = v.ImportTerraformResourcePool(ctx, p.Name, p.Path)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -161,7 +174,7 @@ func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, 
 
 	planName := v.NameSanitize(VMGroupOrchestrationParams.GroupName)
 	var vgp VSphereGeneralParams
-	err := v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
+	err := v.populateGeneralParams(ctx, planName, "", &vgp, terraformCreate)
 	if err != nil {
 		return "", err
 	}
