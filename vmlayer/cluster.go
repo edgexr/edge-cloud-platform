@@ -19,7 +19,13 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-const MexSubnetPrefix = "mex-k8s-subnet-"
+const (
+	MexSubnetPrefix = "mex-k8s-subnet-"
+
+	ActionAdd    = "add"
+	ActionRemove = "remove"
+	ActionNone   = "none"
+)
 
 //ClusterNodeFlavor contains details of flavor for the node
 type ClusterNodeFlavor struct {
@@ -98,7 +104,9 @@ func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgepro
 
 func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Client, rootLBName, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Resources")
+	start := time.Now()
 
+	chefUpdateInfo := make(map[string]string)
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
@@ -128,6 +136,9 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			// heat will remove the higher-numbered nodes
 			if num > clusterInst.NumNodes {
 				toRemove = append(toRemove, n)
+				chefUpdateInfo[n] = ActionRemove
+			} else {
+				chefUpdateInfo[n] = ActionNone
 			}
 		}
 		if len(toRemove) > 0 {
@@ -137,21 +148,24 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				return err
 			}
 		}
+		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
+			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
+			if _, ok := chefUpdateInfo[nodeName]; !ok {
+				chefUpdateInfo[nodeName] = ActionAdd
+			}
+		}
 		if numMaster == clusterInst.NumMasters && numNodes == clusterInst.NumNodes {
 			// nothing changing
 			log.SpanLog(ctx, log.DebugLevelInfra, "no change in nodes", "ClusterInst", clusterInst.Key, "nummaster", numMaster, "numnodes", numNodes)
 			return nil
 		}
 	}
-	_, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionUpdate, updateCallback)
+	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionUpdate, chefUpdateInfo, updateCallback)
 	if err != nil {
 		return err
 	}
-	updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Update")
 	//todo: calculate timeouts instead of hardcoded value
-
-	return v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, time.Minute*15)
-
+	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, time.Minute*15, vmgp, ActionUpdate)
 }
 
 //DeleteCluster deletes kubernetes cluster
@@ -283,16 +297,19 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		//use the cloudlet default AZ if it exists
 		clusterInst.AvailabilityZone = v.VMProperties.GetCloudletComputeAvailabilityZone()
 	}
-	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionCreate, updateCallback)
+	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionCreate, nil, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Cluster VM create Failed: %v", err)
 	}
 
+	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, timeout, vmgp, ActionCreate)
+}
+
+func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, start time.Time, timeout time.Duration, vmgp *VMGroupOrchestrationParams, action ActionType) (reterr error) {
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst)
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
 	}
-
 	if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes ||
 			(clusterInst.Deployment == cloudcommon.DeploymentTypeDocker) {
@@ -326,13 +343,15 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 	// mex agent started
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		log.SpanLog(ctx, log.DebugLevelInfra, "new dedicated rootLB", "IpAccess", clusterInst.IpAccess)
-		_, err := v.NewRootLB(ctx, rootLBName)
-		if err != nil {
-			// likely already exists which means something went really wrong
-			return err
+		if action == ActionCreate {
+			_, err := v.NewRootLB(ctx, rootLBName)
+			if err != nil {
+				// likely already exists which means something went really wrong
+				return err
+			}
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err = v.SetupRootLB(ctx, rootLBName, &clusterInst.Key.CloudletKey, updateCallback)
+		err := v.SetupRootLB(ctx, rootLBName, &clusterInst.Key.CloudletKey, updateCallback)
 		if err != nil {
 			return err
 		}
@@ -355,7 +374,7 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		proxy.NewDedicatedCluster(ctx, clusterInst.Key.ClusterKey.Name, client)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "created kubernetes cluster")
+	log.SpanLog(ctx, log.DebugLevelInfra, "created cluster")
 	return nil
 }
 
@@ -560,7 +579,7 @@ func (v *VMPlatform) syncClusterInst(ctx context.Context, clusterInst *edgeproto
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
 	}
-	_, err = v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionSync, updateCallback)
+	_, err = v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionSync, nil, updateCallback)
 	return err
 }
 
@@ -598,7 +617,7 @@ func (v *VMPlatform) SyncClusterInsts(ctx context.Context, caches *platform.Cach
 	return nil
 }
 
-func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateCallback edgeproto.CacheUpdateCallback) (*VMGroupOrchestrationParams, error) {
+func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName string, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateInfo map[string]string, updateCallback edgeproto.CacheUpdateCallback) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "PerformOrchestrationForCluster", "clusterInst", clusterInst, "action", action)
 
 	var vms []*VMRequestSpec
@@ -689,5 +708,6 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		WithNewSubnet(newSubnetName),
 		WithPrivacyPolicy(privacyPolicy),
 		WithNewSecurityGroup(newSecgrpName),
+		WithChefUpdateInfo(updateInfo),
 	)
 }
