@@ -282,6 +282,10 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
+	if !s.isAutoProvApp(&new.Key.AppKey) {
+		return
+	}
+
 	// recheck if online state changed
 	if old != nil {
 		cloudletInfo := edgeproto.CloudletInfo{}
@@ -308,6 +312,9 @@ func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppIn
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
+	if !s.isAutoProvApp(&key.AppKey) {
+		return
+	}
 	s.needsCheck[key.AppKey] = struct{}{}
 	s.wakeup()
 }
@@ -315,8 +322,23 @@ func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppIn
 func (s *MinMaxChecker) UpdatedAppInstRefs(ctx context.Context, old *edgeproto.AppInstRefs, new *edgeproto.AppInstRefs) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	if !s.isAutoProvApp(&new.Key) {
+		return
+	}
 	s.needsCheck[new.Key] = struct{}{}
 	s.wakeup()
+}
+
+func (s *MinMaxChecker) isAutoProvApp(key *edgeproto.AppKey) bool {
+	s.caches.appCache.Mux.Lock()
+	defer s.caches.appCache.Mux.Unlock()
+
+	data, found := s.caches.appCache.Objs[*key]
+	if found && (data.Obj.AutoProvPolicy != "" || len(data.Obj.AutoProvPolicies) > 0) {
+		return true
+	}
+	return false
 }
 
 func getPolicies(app *edgeproto.App) map[string]struct{} {
@@ -418,7 +440,7 @@ func (s *AppChecker) check(ctx context.Context) {
 			continue
 		}
 		for appInstKey, _ := range insts {
-			if !isAutoProvInst(&appInstKey) {
+			if !s.isAutoProvInst(&appInstKey) {
 				continue
 			}
 			inst := edgeproto.AppInst{
@@ -471,7 +493,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 				if s.appInstOnline(&appInstKey) {
 					onlineCount++
 				}
-				if isAutoProvInst(&appInstKey) {
+				if s.isAutoProvInst(&appInstKey) {
 					potentialDelete = append(potentialDelete, appInstKey)
 				}
 				if f, found := s.failoverRequested[appInstKey.ClusterInstKey.CloudletKey]; found {
@@ -613,11 +635,13 @@ func (s *AppChecker) cloudletOnline(key *edgeproto.CloudletKey) bool {
 	return cloudcommon.AutoProvCloudletOnline(&cloudlet) && cloudcommon.AutoProvCloudletInfoOnline(&cloudletInfo)
 }
 
-func isAutoProvInst(key *edgeproto.AppInstKey) bool {
-	// Assumes:
-	// 1. this is not a prometheus app
-	// 2. users cannot deploy manually to MobiledgeX ClusterInsts
-	if key.ClusterInstKey.Organization == cloudcommon.OrganizationMobiledgeX {
+func (s *AppChecker) isAutoProvInst(key *edgeproto.AppInstKey) bool {
+	// direct lookup to avoid copy
+	s.caches.appInstCache.Mux.Lock()
+	defer s.caches.appInstCache.Mux.Unlock()
+
+	data, found := s.caches.appInstCache.Objs[*key]
+	if found && data.Obj.Liveness == edgeproto.Liveness_LIVENESS_AUTOPROV {
 		return true
 	}
 	return false

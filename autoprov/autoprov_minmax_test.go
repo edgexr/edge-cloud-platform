@@ -450,6 +450,31 @@ func TestAppChecker(t *testing.T) {
 	minmax.runIter(ctx)
 	err = dc.waitForAppInsts(0)
 	require.Nil(t, err)
+
+	// create App with MobiledgeX org, no policies
+	// make sure they don't get deleted (edgecloud-3053)
+	app2 := edgeproto.App{}
+	app2.Key.Name = "app2"
+	app2.Key.Organization = cloudcommon.OrganizationMobiledgeX
+	cacheData.appCache.Update(ctx, &app2, 0)
+
+	refs2 := edgeproto.AppInstRefs{}
+	refs2.Key = app2.Key
+	refs2.Insts = make(map[string]uint32)
+	cacheData.appInstRefsCache.Update(ctx, &refs2, 0)
+
+	insts = pt1.getAppInsts(&app2.Key)
+	for _, inst := range insts {
+		inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		dc.updateAppInst(ctx, &inst)
+	}
+	minmax.runIter(ctx)
+	err = dc.waitForAppInsts(len(insts))
+	require.Nil(t, err)
+	// clean up
+	for _, inst := range insts {
+		dc.deleteAppInst(ctx, &inst)
+	}
 }
 
 type policyTest struct {

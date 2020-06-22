@@ -18,7 +18,7 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessDynamic
+      liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
@@ -48,7 +48,7 @@ regiondata:
         latitude: 32
         longitude: -91
       uri: acmeappcoautoprovha10.reservable3.azure-cloud-4.azure.mobiledgex.net
-      liveness: LivenessDynamic
+      liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
@@ -78,7 +78,7 @@ regiondata:
         latitude: 36
         longitude: -95
       uri: acmeappcoautoprovha10.reservable4.gcp-cloud-5.gcp.mobiledgex.net
-      liveness: LivenessDynamic
+      liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82

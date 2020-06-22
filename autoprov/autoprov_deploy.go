@@ -59,6 +59,7 @@ func runAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcom
 	var stream edgeproto.AppInstApi_CreateAppInstClient
 	switch action {
 	case cloudcommon.Create:
+		inst.Liveness = edgeproto.Liveness_LIVENESS_AUTOPROV
 		stream, err = client.CreateAppInst(ctx, inst)
 	case cloudcommon.Delete:
 		stream, err = client.DeleteAppInst(ctx, inst)
