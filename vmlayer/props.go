@@ -31,6 +31,8 @@ var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 
 const MINIMUM_DISK_SIZE uint64 = 20
+const MINIMUM_RAM_SIZE uint64 = 2048
+const MINIMUM_VCPUS uint64 = 2
 
 // NoSubnetDNS means that DNS servers are not specified when creating the subnet
 var NoSubnetDNS = "NONE"

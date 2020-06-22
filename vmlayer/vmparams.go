@@ -30,16 +30,6 @@ const (
 	VMTypeClusterNode           VMType = "cluster-node"
 )
 
-// VMCategory is to differentiate platform vs computing VMs
-type VMDomain string
-
-const (
-	VMDomainCompute  VMDomain = "compute"
-	VMDomainPlatform VMDomain = "platform"
-	VMDomainAny      VMDomain = "any" // used for matching only
-
-)
-
 type ActionType string
 
 const (
@@ -121,7 +111,6 @@ type VMRequestSpec struct {
 	ConnectToExternalNet    bool
 	CreatePortsOnly         bool
 	ConnectToSubnet         string
-	VMDomain                string
 	ChefParams              *chefmgmt.VMChefParams
 }
 
@@ -189,12 +178,6 @@ func WithImageFolder(folder string) VMReqOp {
 		return nil
 	}
 }
-func WithDomain(d VMDomain) VMReqOp {
-	return func(s *VMRequestSpec) error {
-		s.VMDomain = string(d)
-		return nil
-	}
-}
 func WithChefParams(chefParams *chefmgmt.VMChefParams) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.ChefParams = chefParams
@@ -214,6 +197,7 @@ type VMGroupRequestSpec struct {
 	SkipSubnetGateway      bool
 	SkipInfraSpecificCheck bool
 	InitOrchestrator       bool
+	Domain                 string
 	ChefUpdateInfo         map[string]string
 }
 
@@ -264,6 +248,12 @@ func WithSkipInfraSpecificCheck(skip bool) VMGroupReqOp {
 func WithInitOrchestrator(init bool) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.InitOrchestrator = init
+		return nil
+	}
+}
+func WithDomain(domain VMDomain) VMGroupReqOp {
+	return func(s *VMGroupRequestSpec) error {
+		s.Domain = string(domain)
 		return nil
 	}
 }
@@ -392,7 +382,7 @@ type VMOrchestrationParams struct {
 	ImageName               string
 	ImageFolder             string
 	HostName                string
-	DomainName              string
+	DNSDomain               string
 	FlavorName              string
 	Vcpus                   uint64
 	Ram                     uint64
@@ -410,7 +400,6 @@ type VMOrchestrationParams struct {
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	ExternalGateway         string
 	CustomizeGuest          bool
-	VMDomain                string
 	ChefParams              *chefmgmt.VMChefParams
 }
 
@@ -452,6 +441,7 @@ type VMGroupOrchestrationParams struct {
 	SkipInfraSpecificCheck bool
 	SkipSubnetGateway      bool
 	InitOrchestrator       bool
+	VMDomain               string
 	ChefUpdateInfo         map[string]string
 }
 
@@ -526,6 +516,10 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 	if spec.SkipInfraSpecificCheck {
 		vmgp.SkipInfraSpecificCheck = true
+	}
+	vmgp.VMDomain = spec.Domain
+	if vmgp.VMDomain == "" {
+		vmgp.VMDomain = string(VMDomainCompute)
 	}
 	if spec.ChefUpdateInfo != nil {
 		vmgp.ChefUpdateInfo = spec.ChefUpdateInfo
@@ -761,11 +755,6 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts = append(newPorts, externalport)
 			}
 		}
-		// default to compute
-		vmdomain := vm.VMDomain
-		if vmdomain == "" {
-			vmdomain = string(VMDomainCompute)
-		}
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
 			newVM := VMOrchestrationParams{
@@ -777,12 +766,11 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				ImageFolder:             vm.ImageFolder,
 				FlavorName:              vm.FlavorName,
 				HostName:                util.DNSSanitize(strings.Split(vm.Name, ".")[0]),
-				DomainName:              v.VMProperties.CommonPf.GetCloudletDNSZone(),
+				DNSDomain:               v.VMProperties.CommonPf.GetCloudletDNSZone(),
 				DeploymentManifest:      vm.DeploymentManifest,
 				Command:                 vm.Command,
 				ComputeAvailabilityZone: vm.ComputeAvailabilityZone,
 				ChefParams:              vm.ChefParams,
-				VMDomain:                vmdomain,
 			}
 			if vm.ExternalVolumeSize > 0 {
 				externalVolume := VolumeOrchestrationParams{

@@ -19,6 +19,8 @@ import (
 
 var NumTerraformRetries = 2
 
+var terraformProviderVersion = "1.18.3"
+
 var terraformCreate string = "CREATE"
 var terraformUpdate string = "UPDATE"
 var terraformSync string = "SYNC"
@@ -29,19 +31,20 @@ const DoesNotExistError string = "does not exist"
 var vmOrchestrateLock sync.Mutex
 
 type VSphereGeneralParams struct {
-	VsphereUser         string
-	VspherePassword     string
-	VsphereServer       string
-	DataCenterName      string
-	ResourcePool        string
-	ComputeCluster      string
-	ExternalNetwork     string
-	ExternalNetworkId   string
-	InternalDVS         string
-	DataStore           string
-	VmIpTagCategory     string
-	VmDomainTagCategory string
-	SubnetTagCategory   string
+	VsphereUser              string
+	VspherePassword          string
+	VsphereServer            string
+	TerraformProviderVersion string
+	DataCenterName           string
+	ResourcePool             string
+	ComputeCluster           string
+	ExternalNetwork          string
+	ExternalNetworkId        string
+	InternalDVS              string
+	DataStore                string
+	VmIpTagCategory          string
+	VmDomainTagCategory      string
+	SubnetTagCategory        string
 }
 
 type VSphereVMGroupParams struct {
@@ -191,11 +194,12 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 	return err
 }
 
-func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName string, vgp *VSphereGeneralParams, action string) error {
+func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName, domain string, vgp *VSphereGeneralParams, action string) error {
 	vcaddr, _, err := v.GetVCenterAddress()
 	if err != nil {
 		return err
 	}
+	vgp.TerraformProviderVersion = terraformProviderVersion
 	vgp.VsphereUser = v.GetVCenterUser()
 	vgp.VspherePassword = v.GetVCenterPassword()
 	vgp.VsphereServer = vcaddr
@@ -205,7 +209,7 @@ func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName st
 	vgp.ComputeCluster = v.GetComputeCluster()
 	vgp.DataStore = v.GetDataStore()
 	vgp.InternalDVS = v.GetInternalVSwitch()
-	vgp.ResourcePool = v.IdSanitize(getResourcePool(planName))
+	vgp.ResourcePool = v.IdSanitize(getResourcePool(planName, domain))
 	vgp.SubnetTagCategory = v.GetSubnetTagCategory(ctx)
 	vgp.VmIpTagCategory = v.GetVmIpTagCategory(ctx)
 	vgp.VmDomainTagCategory = v.GetVMDomainTagCategory(ctx)
@@ -353,8 +357,8 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				}
 			}
 		}
-		if vm.VMDomain != "" {
-			tagname := vm.Name + vmlayer.TagDelimiter + vm.VMDomain
+		if vmgp.VMDomain != "" {
+			tagname := vm.Name + vmlayer.TagDelimiter + vmgp.VMDomain
 			tagid := v.IdSanitize(tagname)
 			vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVMDomainTagCategory(ctx), Id: tagid, Name: tagname})
 		}
@@ -364,8 +368,8 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 	return nil
 }
 
-func getResourcePool(planName string) string {
-	return planName + "-pool"
+func getResourcePool(planName, domain string) string {
+	return planName + "-pool" + "-" + domain
 }
 
 var vcenterTemplate = `
@@ -375,6 +379,7 @@ var vcenterTemplate = `
 		vsphere_server = "{{.VsphereServer}}"
 		# If you have a self-signed cert
 		allow_unverified_ssl = true
+		version = "{{.TerraformProviderVersion}}"
 	}
   
   	data "vsphere_datacenter" "dc" {
@@ -476,6 +481,7 @@ var vmGroupTemplate = `
 		wait_for_guest_net_timeout = -1
 		num_cpus = {{.Vcpus}}
 		memory   = {{.Ram}}
+		memory_reservation = {{.Ram}}
 		guest_id = "ubuntu64Guest"
 
   		{{- range .Ports}}
@@ -519,7 +525,7 @@ var vmGroupTemplate = `
 			customize{
 				linux_options {
 					host_name = "{{.HostName}}"
-					domain = "{{.DomainName}}"
+					domain = "{{.DNSDomain}}"
 				}
 				timeout = 2
 				{{- range .FixedIPs}}
@@ -575,6 +581,13 @@ func (v *VSpherePlatform) doTerraformImport(ctx context.Context, resourceID, res
 func (v *VSpherePlatform) ImportTerraformVirtualMachine(ctx context.Context, vmName string, vmPath string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTerraformVirtualMachine", "vmName", vmName, "vmPath", vmPath)
 	vmID := "vsphere_virtual_machine." + v.IdSanitize(vmName)
+	// remove existing VM from the state
+	_, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", "state", "rm", vmID)
+	if err != nil {
+		// remove only returns an error on a syntax or other issue, if the resource does not exist there is no error
+		log.SpanLog(ctx, log.DebugLevelInfra, "error in deleting existing vm in terraform state", "err", err)
+		return fmt.Errorf("Import VM failed due to failure in removing existing state = %v", err)
+	}
 	return v.doTerraformImport(ctx, vmID, vmPath)
 }
 
@@ -664,7 +677,7 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 	}
 
 	var vgp VSphereGeneralParams
-	err = v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
+	err = v.populateGeneralParams(ctx, planName, "", &vgp, terraformCreate)
 	if err != nil {
 		return err
 	}
@@ -705,7 +718,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 	planName := v.NameSanitize(vmGroupOrchestrationParams.GroupName)
 	var vvgp VSphereVMGroupParams
 	var vgp VSphereGeneralParams
-	err := v.populateGeneralParams(ctx, planName, &vgp, action)
+	err := v.populateGeneralParams(ctx, planName, vmGroupOrchestrationParams.VMDomain, &vgp, action)
 	if err != nil {
 		return err
 	}
