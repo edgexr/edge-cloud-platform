@@ -206,6 +206,13 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		return err
 	}
 
+	if dedicatedRootLB {
+		// Delete FQDN of dedicated RootLB
+		if err = v.VMProperties.CommonPf.DeleteDNSRecords(ctx, rootLBName); err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "fqdn", rootLBName, "err", err)
+		}
+	}
+
 	// Delete Chef configs
 	clientName := ""
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
