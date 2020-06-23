@@ -38,6 +38,7 @@ docker_container "shepherd" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['shepherd']['env']
+  volumes ['/tmp:/tmp']
   command cmd
 end
 
@@ -69,5 +70,7 @@ docker_container "cloudletPrometheus" do
   if node['cloudletPrometheus'].key?("volume")
     volumes node['cloudletPrometheus']['volume']
   end
+  user "nobody"
+  working_dir "/prometheus"
   command cmd
 end
