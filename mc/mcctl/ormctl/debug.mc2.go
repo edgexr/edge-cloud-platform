@@ -117,14 +117,15 @@ var ShowDebugLevelsOptionalArgs = []string{
 	"args",
 	"timeout",
 }
-var RunDebugRequiredArgs = []string{}
+var RunDebugRequiredArgs = []string{
+	"cmd",
+}
 var RunDebugOptionalArgs = []string{
 	"name",
 	"type",
 	"organization",
 	"cloudlet",
 	"region",
-	"cmd",
 	"pretty",
 	"args",
 	"timeout",
