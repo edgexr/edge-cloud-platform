@@ -68,6 +68,19 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []string {
 	return nodes
 }
 
+// GetCloudletImageToUse decides what image to use based on
+// 1) if MEX_OS_IMAGE is specified in properties and not default, use that
+// 2) Use image specified on startup based on cloudlet config
+func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
+	imgFromProps := v.VMProperties.GetCloudletOSImage()
+	if imgFromProps != DefaultOSImageName {
+		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
+		return imgFromProps, nil
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "CloudletVMImagePath", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, "version", v.VMProperties.CommonPf.PlatformConfig.VMImageVersion)
+	return v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+}
+
 // setupPlatformVM:
 //   * Downloads Cloudlet VM base image (if not-present)
 //   * Brings up Platform VM (using vm provider stack)
@@ -77,7 +90,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, vaultConfig *vault.Con
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupPlatformVM", "cloudlet", cloudlet)
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-	_, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, updateCallback)
+	_, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		return err
 	}

@@ -93,8 +93,8 @@ func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "verify if cloudlet base image exists")
-	imgName, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get cloudlet base image")
+	imgName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
@@ -270,7 +270,7 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	timeout -= time.Minute
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "verify if cloudlet base image exists")
-	imgName, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+	imgName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
@@ -581,7 +581,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 
 func (v *VMPlatform) syncClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "syncClusterInst", "clusterInst", clusterInst)
-	imgName, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+	imgName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
 		return err
