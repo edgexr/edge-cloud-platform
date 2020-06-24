@@ -188,6 +188,10 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
+	if cloudlet.InfraConfig.ExternalNetworkName != "" {
+		v.VMProperties.SetCloudletExternalNetwork(cloudlet.InfraConfig.ExternalNetworkName)
+	}
+
 	// For real setups, ansible will always specify the correct
 	// cloudlet container and vm image paths to the controller.
 	// But for local testing convenience, we default to the hard-coded
@@ -590,7 +594,7 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	pfImageName := v.VMProperties.GetCloudletOSImage()
 	if pfImageName == DefaultOSImageName {
 		// GetCloudletOSImage is the default so use the value from the controller
-		imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion)
+		imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
 		pfImageName, err = cloudcommon.GetFileName(imgPath)
 		if err != nil {
 			return nil, err
@@ -732,7 +736,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
-	imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion)
+	imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
 
 	return &edgeproto.CloudletManifest{
 		Manifest:  manifest,

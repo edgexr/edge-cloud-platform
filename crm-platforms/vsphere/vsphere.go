@@ -89,7 +89,7 @@ func (v *VSpherePlatform) IdSanitize(name string) string {
 }
 
 func (v *VSpherePlatform) DeleteResources(ctx context.Context, resourceGroupName string) error {
-	return terraform.DeleteTerraformPlan(ctx, resourceGroupName)
+	return terraform.DeleteTerraformPlan(ctx, v.getTerraformDir(ctx), resourceGroupName)
 }
 
 func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {

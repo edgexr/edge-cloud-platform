@@ -110,7 +110,7 @@ func GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, cloudletType
 	return fmt.Sprintf("/secret/data/%s/cloudlet/%s/%s/%s/%s", region, cloudletType, key.Organization, physicalName, filename)
 }
 
-func GetCloudletVMImagePath(imgPath, imgVersion string) string {
+func GetCloudletVMImagePath(imgPath, imgVersion string, imgSuffix string) string {
 	vmRegistryPath := DefaultCloudletVMImagePath
 	if imgPath != "" {
 		vmRegistryPath = imgPath
@@ -118,7 +118,7 @@ func GetCloudletVMImagePath(imgPath, imgVersion string) string {
 	if !strings.HasSuffix(vmRegistryPath, "/") {
 		vmRegistryPath = vmRegistryPath + "/"
 	}
-	return vmRegistryPath + GetCloudletVMImageName(imgVersion) + ".qcow2"
+	return vmRegistryPath + GetCloudletVMImageName(imgVersion) + imgSuffix
 }
 
 // GetCloudletSharedRootLBFlavor gets the flavor from defaults

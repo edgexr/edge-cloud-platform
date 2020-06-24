@@ -496,6 +496,7 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 	var sd *vmlayer.ServerDetail
 	dcName := v.GetDatacenterName(ctx)
 	vmPath := "/" + dcName + "/vm/" + vmname
+	var err error
 	start := time.Now()
 	for {
 		out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-dc", dcName, "-json", vmPath)
@@ -520,19 +521,23 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 		}
 
 		sd = v.getServerDetailFromGovcVm(ctx, &vms.VirtualMachines[0])
-		if len(vms.VirtualMachines[0].Guest.Net) > 0 || sd.Status == vmlayer.ServerShutoff || vms.VirtualMachines[0].Guest.ToolsStatus == "toolsNotInstalled" {
+		if len(vms.VirtualMachines[0].Guest.Net) > 0 || sd.Status == vmlayer.ServerShutoff {
+			break
+		}
+		if vms.VirtualMachines[0].Guest.ToolsStatus == "toolsNotInstalled" && len(sd.Addresses) > 0 {
+			// indicates we got an IP from tags
 			break
 		}
 		elapsed := time.Since(start)
 		if elapsed >= (maxGuestWait) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "max guest wait time expired")
+			err = fmt.Errorf("max guest wait time expired for VM: %s", vms.VirtualMachines[0].Name)
 			break
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "VM powered on but guest net is not ready, sleep 5 seconds and retry", "elaspsed", elapsed)
 		time.Sleep(5 * time.Second)
 	}
-
-	return sd, nil
+	return sd, err
 }
 
 func getVmNamesForDomain(ctx context.Context, domainMatch vmlayer.VMDomain, tags []GovcTag) (map[string]string, error) {
@@ -645,28 +650,67 @@ func (v *VSpherePlatform) GetConsoleUrl(ctx context.Context, serverName string) 
 	return urlObj.String() + "&" + "sessioncookie=" + cookie64, nil
 }
 
+func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFolder string, imageFile string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateTemplateFromImage", "imageFile", imageFile)
+	ds := v.GetDataStore()
+	dcName := v.GetDatacenterName(ctx)
+	templateName := imageFile
+	folder := v.GetTemplateFolder()
+	extNet := v.vmProperties.GetCloudletExternalNetwork()
+	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
+
+	// create the VM which will become our template
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-g", "ubuntu64Guest", "-pool", pool, "-ds", ds, "-dc", dcName, "-folder", folder, "-disk", imageFolder+"/"+imageFile+".vmdk", "-net", extNet, templateName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
+		return fmt.Errorf("Failed to create template VM: %v", err)
+	}
+
+	// try to get server detail which will ensure vmtools is running which needs to be set in the template's data
+	_, err = v.GetServerDetail(ctx, folder+"/"+templateName)
+	if err != nil {
+		return err
+	}
+	// shut off the VM
+	err = v.SetPowerState(ctx, folder+"/"+templateName, vmlayer.ActionStop)
+	if err != nil {
+		return err
+	}
+	// mark the VM as a template
+	out, err = v.TimedGovcCommand(ctx, "govc", "vm.markastemplate", "-dc", dcName, templateName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to mark VM as template", "out", string(out), "err", err)
+		return fmt.Errorf("Failed to mark VM as template: %v", err)
+	}
+	return nil
+}
+
 func (v *VSpherePlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile)
 	ds := v.GetDataStore()
+	dcName := v.GetDatacenterName(ctx)
 
 	// first delete anything that may be there for this image
 	v.DeleteImage(ctx, folder, imageFile)
 
 	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
-	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, imageFile, folder)
+	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, "-dc", dcName, imageFile, folder)
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage fail", "out", string(out), "err", err)
+		return fmt.Errorf("Import Image Fail: %v", err)
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage OK", "out", string(out))
 	}
-	return err
+	return nil
 }
 
 func (v *VSpherePlatform) DeleteImage(ctx context.Context, folder, image string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage", "image", image)
 	ds := v.GetDataStore()
-	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, folder)
+	dcName := v.GetDatacenterName(ctx)
+
+	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, "-dc", dcName, folder)
 	if err != nil {
 		if strings.Contains(string(out), "not found") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage -- dir does not exist", "out", string(out), "err", err)

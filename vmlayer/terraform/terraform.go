@@ -18,8 +18,6 @@ import (
 )
 
 var terraformLock sync.Mutex
-
-var TerraformDir = "terraformdir"
 var terraformRetryDelay = 10 * time.Second
 
 type TerraformResources struct {
@@ -57,14 +55,14 @@ func TimedTerraformCommand(ctx context.Context, dir string, name string, a ...st
 	return string(out), nil
 }
 
-func DeleteTerraformPlan(ctx context.Context, planName string) error {
+func DeleteTerraformPlan(ctx context.Context, terraformDir, planName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting Terraform Plan", "planName", planName)
-	filename := TerraformDir + "/" + planName + ".tf"
+	filename := terraformDir + "/" + planName + ".tf"
 	if err := infracommon.DeleteFile(filename); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "delete terraform file failed", "filename", filename)
 		//do the apply anyway minus the file
 	}
-	_, err := TimedTerraformCommand(ctx, TerraformDir, "terraform", "apply", "--auto-approve")
+	_, err := TimedTerraformCommand(ctx, terraformDir, "terraform", "apply", "--auto-approve")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "terraform apply for delete failed", "planName", planName, "err", err)
 		return fmt.Errorf("terraform apply for delete failed: %v", err)
@@ -100,7 +98,7 @@ func WithRetries(val int) TerraformOp {
 	}
 }
 
-func CreateTerraformPlanFromTemplate(ctx context.Context, templateData interface{}, planName string, templateString string, updateCallback edgeproto.CacheUpdateCallback, opts ...TerraformOp) (string, error) {
+func CreateTerraformPlanFromTemplate(ctx context.Context, terraformDir string, templateData interface{}, planName string, templateString string, updateCallback edgeproto.CacheUpdateCallback, opts ...TerraformOp) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateTerraformPlanFromTemplate", "planName", planName)
 	var topts TerraformOpts
 	updateCallback(edgeproto.UpdateTask, "Creating Terraform Plan for "+planName)
@@ -127,7 +125,7 @@ func CreateTerraformPlanFromTemplate(ctx context.Context, templateData interface
 	var unescapedBuf bytes.Buffer
 	unescapedBuf.WriteString(unescaped)
 
-	filename := TerraformDir + "/" + planName + ".tf"
+	filename := terraformDir + "/" + planName + ".tf"
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating terraform file", "filename", filename)
 	err = infracommon.WriteTemplateFile(filename, &unescapedBuf)
 	if err != nil {
@@ -135,7 +133,7 @@ func CreateTerraformPlanFromTemplate(ctx context.Context, templateData interface
 	}
 	if topts.doInit {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Doing terraform init", "planName", planName)
-		_, err = TimedTerraformCommand(ctx, TerraformDir, "terraform", "init")
+		_, err = TimedTerraformCommand(ctx, terraformDir, "terraform", "init")
 		if err != nil {
 			return "", err
 		}
@@ -144,7 +142,7 @@ func CreateTerraformPlanFromTemplate(ctx context.Context, templateData interface
 	return filename, nil
 }
 
-func RunTerraformApply(ctx context.Context, opts ...TerraformOp) error {
+func RunTerraformApply(ctx context.Context, terraformDir string, opts ...TerraformOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Running terraform apply")
 	var topts TerraformOpts
 	var err error
@@ -156,7 +154,7 @@ func RunTerraformApply(ctx context.Context, opts ...TerraformOp) error {
 
 	for i := 0; i <= topts.numRetries; i++ {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Doing terraform apply", "attempt", i, "max", topts.numRetries)
-		_, err = TimedTerraformCommand(ctx, TerraformDir, "terraform", "apply", "--auto-approve")
+		_, err = TimedTerraformCommand(ctx, terraformDir, "terraform", "apply", "--auto-approve")
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Apply failed")
 			if i < topts.numRetries {
@@ -170,7 +168,7 @@ func RunTerraformApply(ctx context.Context, opts ...TerraformOp) error {
 	return err
 }
 
-func ApplyTerraformPlan(ctx context.Context, fileName string, updateCallback edgeproto.CacheUpdateCallback, opts ...TerraformOp) error {
+func ApplyTerraformPlan(ctx context.Context, terraformDir string, fileName string, updateCallback edgeproto.CacheUpdateCallback, opts ...TerraformOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ApplyTerraformPlan", "fileName", fileName)
 	updateCallback(edgeproto.UpdateTask, "Applying Terraform Plan for "+fileName)
 	var topts TerraformOpts
@@ -181,7 +179,7 @@ func ApplyTerraformPlan(ctx context.Context, fileName string, updateCallback edg
 	}
 	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "Doing terraform apply", "fileName", fileName)
-	err = RunTerraformApply(ctx, opts...)
+	err = RunTerraformApply(ctx, terraformDir, opts...)
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Apply failed", "fileName", fileName)
@@ -190,7 +188,7 @@ func ApplyTerraformPlan(ctx context.Context, fileName string, updateCallback edg
 				log.SpanLog(ctx, log.DebugLevelInfra, "delete terraform file failed", "fileName", fileName)
 			}
 			// no re-apply without the current plan to remove
-			err2 := RunTerraformApply(ctx)
+			err2 := RunTerraformApply(ctx, terraformDir)
 			if err2 != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "terraform apply after delete failed", "fileName", fileName, "err", err)
 			}
