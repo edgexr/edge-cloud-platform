@@ -390,9 +390,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	if az == "" {
 		az = v.VMProperties.GetCloudletComputeAvailabilityZone()
 	}
-	imgPath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
-	imgVersion := v.VMProperties.CommonPf.PlatformConfig.VMImageVersion
-	imageName, err := v.VMProvider.AddCloudletImageIfNotPresent(ctx, imgPath, imgVersion, updateCallback)
+	imageName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		return nil, err
 	}
