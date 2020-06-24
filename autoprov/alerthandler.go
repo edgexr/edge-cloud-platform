@@ -34,6 +34,7 @@ func alertChanged(ctx context.Context, old *edgeproto.Alert, new *edgeproto.Aler
 	alert := alertCopy(new)
 	go func() {
 		cspan := log.StartSpan(log.DebugLevelApi, "auto scale", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
+		log.SetTags(cspan, alert.GetKey().GetTags())
 		cctx := log.ContextWithSpan(context.Background(), cspan)
 		defer cspan.Finish()
 		err := handler(cctx, name, alert)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -51,9 +50,7 @@ func (p *AppInstWorker) Stop(ctx context.Context) {
 
 func (p *AppInstWorker) sendMetrics() {
 	span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-	span.SetTag("operator", p.appInstKey.ClusterInstKey.CloudletKey.Organization)
-	span.SetTag("cloudlet", p.appInstKey.ClusterInstKey.CloudletKey.Name)
-	span.SetTag("cluster", cloudcommon.DefaultVMCluster)
+	log.SetTags(span, p.appInstKey.GetTags())
 	ctx := log.ContextWithSpan(context.Background(), span)
 	defer span.Finish()
 	key := shepherd_common.MetricAppInstKey{

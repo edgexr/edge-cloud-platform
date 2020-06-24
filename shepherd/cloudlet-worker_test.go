@@ -46,13 +46,13 @@ var failAlerts = `{
 		{
 		  "labels": {
 			"alertname": "AppInstDown",
-			"` + cloudcommon.AlertLabelApp + `": "` + shepherd_test.TestApp.Key.Name + `",
-			"` + cloudcommon.AlertLabelAppOrg + `": "` + shepherd_test.TestApp.Key.Organization + `",
-			"` + cloudcommon.AlertLabelAppVer + `": "` + shepherd_test.TestApp.Key.Version + `",
-			"` + cloudcommon.AlertLabelCloudlet + `": "` + shepherd_test.TestCloudletKey.Name + `",
-			"` + cloudcommon.AlertLabelCloudletOrg + `": "` + shepherd_test.TestCloudletKey.Organization + `",
-			"` + cloudcommon.AlertLabelCluster + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + cloudcommon.AlertLabelClusterOrg + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
+			"` + edgeproto.AppKeyTagName + `": "` + shepherd_test.TestApp.Key.Name + `",
+			"` + edgeproto.AppKeyTagOrganization + `": "` + shepherd_test.TestApp.Key.Organization + `",
+			"` + edgeproto.AppKeyTagVersion + `": "` + shepherd_test.TestApp.Key.Version + `",
+			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
+			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
+			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)) + `",
 			"instance": "host.docker.internal:9091",
 			"job": "envoy_targets"
@@ -64,13 +64,13 @@ var failAlerts = `{
 		{
 		  "labels": {
 			"alertname": "AppInstDown",
-			"` + cloudcommon.AlertLabelApp + `": "` + shepherd_test.TestApp.Key.Name + `",
-			"` + cloudcommon.AlertLabelAppOrg + `": "` + shepherd_test.TestApp.Key.Organization + `",
-			"` + cloudcommon.AlertLabelAppVer + `": "` + shepherd_test.TestApp.Key.Version + `",
-			"` + cloudcommon.AlertLabelCloudlet + `": "` + shepherd_test.TestCloudletKey.Name + `",
-			"` + cloudcommon.AlertLabelCloudletOrg + `": "` + shepherd_test.TestCloudletKey.Organization + `",
-			"` + cloudcommon.AlertLabelCluster + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + cloudcommon.AlertLabelClusterOrg + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
+			"` + edgeproto.AppKeyTagName + `": "` + shepherd_test.TestApp.Key.Name + `",
+			"` + edgeproto.AppKeyTagOrganization + `": "` + shepherd_test.TestApp.Key.Organization + `",
+			"` + edgeproto.AppKeyTagVersion + `": "` + shepherd_test.TestApp.Key.Version + `",
+			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
+			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
+			"` + edgeproto.ClusterInstKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL)) + `",
 			"envoy_cluster_name": "backend7777",
 			"instance": "host.docker.internal:9091",
@@ -142,13 +142,13 @@ func TestCCloudletAlerts(t *testing.T) {
 	// check each alert and make sure it has correct data
 	for _, alert := range AlertCache.Objs {
 		assert.Equal(t, cloudcommon.AlertAppInstDown, alert.Obj.Labels["alertname"])
-		assert.Equal(t, shepherd_test.TestApp.Key.Name, alert.Obj.Labels[cloudcommon.AlertLabelApp])
-		assert.Equal(t, shepherd_test.TestApp.Key.Organization, alert.Obj.Labels[cloudcommon.AlertLabelAppOrg])
-		assert.Equal(t, shepherd_test.TestApp.Key.Version, alert.Obj.Labels[cloudcommon.AlertLabelAppVer])
-		assert.Equal(t, shepherd_test.TestCloudletKey.Name, alert.Obj.Labels[cloudcommon.AlertLabelCloudlet])
-		assert.Equal(t, shepherd_test.TestCloudletKey.Organization, alert.Obj.Labels[cloudcommon.AlertLabelCloudletOrg])
-		assert.Equal(t, shepherd_test.TestClusterKey.Name, alert.Obj.Labels[cloudcommon.AlertLabelCluster])
-		assert.Equal(t, shepherd_test.TestClusterInstKey.Organization, alert.Obj.Labels[cloudcommon.AlertLabelClusterOrg])
+		assert.Equal(t, shepherd_test.TestApp.Key.Name, alert.Obj.Labels[edgeproto.AppKeyTagName])
+		assert.Equal(t, shepherd_test.TestApp.Key.Organization, alert.Obj.Labels[edgeproto.AppKeyTagOrganization])
+		assert.Equal(t, shepherd_test.TestApp.Key.Version, alert.Obj.Labels[edgeproto.AppKeyTagVersion])
+		assert.Equal(t, shepherd_test.TestCloudletKey.Name, alert.Obj.Labels[edgeproto.CloudletKeyTagName])
+		assert.Equal(t, shepherd_test.TestCloudletKey.Organization, alert.Obj.Labels[edgeproto.CloudletKeyTagOrganization])
+		assert.Equal(t, shepherd_test.TestClusterKey.Name, alert.Obj.Labels[edgeproto.ClusterKeyTagName])
+		assert.Equal(t, shepherd_test.TestClusterInstKey.Organization, alert.Obj.Labels[edgeproto.ClusterInstKeyTagOrganization])
 		// make sure the alert status is not OK, or UNKNOWN
 		assert.NotEqual(t, strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_OK)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])
 		assert.NotEqual(t, strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_UNKNOWN)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])
