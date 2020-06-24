@@ -25,8 +25,7 @@ func CloudletScraper() {
 		select {
 		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			span := log.StartSpan(log.DebugLevelSampled, "send-cloudlet-metric")
-			span.SetTag("operator", cloudletKey.Organization)
-			span.SetTag("cloudlet", cloudletKey.Name)
+			log.SetTags(span, cloudletKey.GetTags())
 			ctx := log.ContextWithSpan(context.Background(), span)
 			cloudletStats, err := myPlatform.GetPlatformStats(ctx)
 			if err != nil {
@@ -49,8 +48,7 @@ func CloudletPrometheusScraper() {
 		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			//TODO  - cloudletEnvoyStats, err := getEnvoyStats
 			aspan := log.StartSpan(log.DebugLevelMetrics, "send-cloudlet-alerts")
-			aspan.SetTag("operator", cloudletKey.Organization)
-			aspan.SetTag("cloudlet", cloudletKey.Name)
+			log.SetTags(aspan, cloudletKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			// platform client is a local ssh
 			alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, &pc.LocalClient{})

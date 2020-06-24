@@ -17,7 +17,7 @@ var testDialOpt grpc.DialOption
 
 func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcommon.Action, reason, policyName string) error {
 	span := log.StartSpan(log.DebugLevelApi, "auto-prov deploy "+action.String(), opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-	span.SetTag("AppInst", inst.Key)
+	log.SetTags(span, inst.Key.GetTags())
 	span.SetTag("reason", reason)
 	defer span.Finish()
 	ctx = log.ContextWithSpan(context.Background(), span)

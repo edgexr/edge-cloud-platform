@@ -91,18 +91,14 @@ func (p *ClusterWorker) RunNotify() {
 		select {
 		case <-time.After(p.interval):
 			span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-			span.SetTag("operator", p.clusterInstKey.CloudletKey.Organization)
-			span.SetTag("cloudlet", p.clusterInstKey.CloudletKey.Name)
-			span.SetTag("cluster", p.clusterInstKey.ClusterKey.Name)
+			log.SetTags(span, p.clusterInstKey.GetTags())
 			ctx := log.ContextWithSpan(context.Background(), span)
 			clusterStats := p.clusterStat.GetClusterStats(ctx)
 			appStatsMap := p.clusterStat.GetAppStats(ctx)
 
 			// create another span for alerts that is always logged
 			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check")
-			aspan.SetTag("operator", p.clusterInstKey.CloudletKey.Organization)
-			aspan.SetTag("cloudlet", p.clusterInstKey.CloudletKey.Name)
-			aspan.SetTag("cluster", p.clusterInstKey.ClusterKey.Name)
+			log.SetTags(aspan, p.clusterInstKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
 
 			for key, stat := range appStatsMap {

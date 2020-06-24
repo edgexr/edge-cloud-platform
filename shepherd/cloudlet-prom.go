@@ -29,13 +29,13 @@ var promTargetT = `
 {
 	"targets": ["{{.MetricsProxyAddr}}"],
 	"labels": {
-		"` + cloudcommon.AlertLabelApp + `": "{{.Key.AppKey.Name}}",
-		"` + cloudcommon.AlertLabelAppVer + `": "{{.Key.AppKey.Version}}",
-		"` + cloudcommon.AlertLabelAppOrg + `": "{{.Key.AppKey.Organization}}",
-		"` + cloudcommon.AlertLabelCluster + `": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
-		"` + cloudcommon.AlertLabelClusterOrg + `": "{{.Key.ClusterInstKey.Organization}}",
-		"` + cloudcommon.AlertLabelCloudlet + `": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
-		"` + cloudcommon.AlertLabelCloudletOrg + `": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
+		"` + edgeproto.AppKeyTagName + `": "{{.Key.AppKey.Name}}",
+		"` + edgeproto.AppKeyTagVersion + `": "{{.Key.AppKey.Version}}",
+		"` + edgeproto.AppKeyTagOrganization + `": "{{.Key.AppKey.Organization}}",
+		"` + edgeproto.ClusterKeyTagName + `": "{{.Key.ClusterInstKey.ClusterKey.Name}}",
+		"` + edgeproto.ClusterInstKeyTagOrganization + `": "{{.Key.ClusterInstKey.Organization}}",
+		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.ClusterInstKey.CloudletKey.Name}}",
+		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.ClusterInstKey.CloudletKey.Organization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
@@ -57,7 +57,7 @@ var promAutoProvAlertT = `groups:
 - name: ` + cloudcommon.AlertAutoProvDown + `
   rules:
   - alert: ScaleDown
-    expr: envoy_cluster_upstream_cx_active{` + cloudcommon.AlertLabelApp + `="{{.AppKey.Name}}",` + cloudcommon.AlertLabelAppVer + `="{{.AppKey.Version}}",` + cloudcommon.AlertLabelAppOrg + `="{{.AppKey.Organization}}"} == 0
+    expr: envoy_cluster_upstream_cx_active{` + edgeproto.AppKeyTagName + `="{{.AppKey.Name}}",` + edgeproto.AppKeyTagVersion + `="{{.AppKey.Version}}",` + edgeproto.AppKeyTagOrganization + `="{{.AppKey.Organization}}"} == 0
     for: 5m
 `
 

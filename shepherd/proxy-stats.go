@@ -176,8 +176,7 @@ func ProxyScraper() {
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
 				span := log.StartSpan(log.DebugLevelSampled, "send-metric")
-				span.SetTag("operator", cloudletKey.Organization)
-				span.SetTag("cloudlet", cloudletKey.Name)
+				log.SetTags(span, cloudletKey.GetTags())
 				span.SetTag("cluster", v.Cluster)
 				ctx := log.ContextWithSpan(context.Background(), span)
 

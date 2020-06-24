@@ -72,10 +72,10 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 
 	// alert labels for ClusterInst
 	keys := make(map[string]string)
-	keys[cloudcommon.AlertLabelClusterOrg] = cinst.Key.Organization
-	keys[cloudcommon.AlertLabelCloudletOrg] = cinst.Key.CloudletKey.Organization
-	keys[cloudcommon.AlertLabelCloudlet] = cinst.Key.CloudletKey.Name
-	keys[cloudcommon.AlertLabelCluster] = cinst.Key.ClusterKey.Name
+	keys[edgeproto.ClusterInstKeyTagOrganization] = cinst.Key.Organization
+	keys[edgeproto.CloudletKeyTagOrganization] = cinst.Key.CloudletKey.Organization
+	keys[edgeproto.CloudletKeyTagName] = cinst.Key.CloudletKey.Name
+	keys[edgeproto.ClusterKeyTagName] = cinst.Key.ClusterKey.Name
 
 	// scale up alert
 	scaleup := edgeproto.Alert{}
