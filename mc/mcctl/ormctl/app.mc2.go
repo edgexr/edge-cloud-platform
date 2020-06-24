@@ -47,8 +47,8 @@ var DeleteAppCmd = &cli.Command{
 
 var UpdateAppCmd = &cli.Command{
 	Use:          "UpdateApp",
-	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
-	OptionalArgs: strings.Join(AppOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(UpdateAppRequiredArgs, " "),
+	OptionalArgs: strings.Join(UpdateAppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
 	Comments:     addRegionComment(AppComments),
@@ -125,6 +125,37 @@ var AppApiCmds = []*cli.Command{
 	RemoveAppAutoProvPolicyCmd,
 }
 
+var UpdateAppRequiredArgs = []string{
+	"app-org",
+	"appname",
+	"appvers",
+}
+var UpdateAppOptionalArgs = []string{
+	"imagepath",
+	"imagetype",
+	"accessports",
+	"defaultflavor",
+	"authpublickey",
+	"command",
+	"annotations",
+	"deploymentmanifest",
+	"androidpackagename",
+	"delopt",
+	"configs:#.kind",
+	"configs:#.config",
+	"scalewithcluster",
+	"internalports",
+	"revision",
+	"officialfqdn",
+	"md5sum",
+	"defaultsharedvolumesize",
+	"autoprovpolicy",
+	"accesstype",
+	"defaultprivacypolicy",
+	"autoprovpolicies",
+	"templatedelimiter",
+	"skiphcports",
+}
 var AppKeyRequiredArgs = []string{}
 var AppKeyOptionalArgs = []string{
 	"organization",
