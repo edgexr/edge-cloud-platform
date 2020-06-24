@@ -45,7 +45,7 @@ func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.
 func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("DeletePrepare", ",")
+	noconfig := strings.Split("DeletePrepare,Deployment,DeploymentGenerator", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
