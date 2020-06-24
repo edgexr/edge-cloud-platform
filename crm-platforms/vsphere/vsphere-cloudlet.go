@@ -6,8 +6,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -19,16 +21,68 @@ func (o *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *
 	return fmt.Errorf("SaveCloudletAccessVars not implemented for vsphere")
 }
 
+func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
+	return "-vsphere.qcow2"
+}
+
+//CreateImageFromUrl downloads image from URL and then imports to the datastore
+func (v *VSpherePlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
+
+	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.VaultConfig, imageName, imageUrl, md5Sum)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		// Stale file might be present if download fails/succeeds, deleting it
+		if delerr := infracommon.DeleteFile(filePath); delerr != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "filePath", filePath)
+		}
+	}()
+
+	vmdkFile, err := v.ConvertQcowToVmdk(ctx, filePath, vmlayer.MINIMUM_DISK_SIZE)
+	if err != nil {
+		return err
+	}
+	return v.ImportImage(ctx, imageName, vmdkFile)
+}
+
 func (v *VSpherePlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
 	// we don't currently have the ability to download and setup the template, but we will verify it is there
-	//imgPath := v.GetTemplateFolder() + "/" + v.vmProperties.GetCloudletOSImage()
-	img := v.vmProperties.GetCloudletOSImage()
-	imgPath := v.GetTemplateFolder() + "/" + img
-	_, err := v.GetServerDetail(ctx, imgPath)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddCloudletImageIfNotPresent", "imgPathPrefix", imgPathPrefix, "imgVersion", imgVersion)
+
+	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion, v.GetCloudletImageSuffix(ctx))
+	// Fetch platform base image name
+	pfImageName, err := cloudcommon.GetFileName(imgPath)
 	if err != nil {
-		return "", fmt.Errorf("Vsphere base image template not present: %s", imgPath)
+		return "", err
 	}
-	return img, nil
+	// see if a template already exists based on this image
+	templatePath := v.GetTemplateFolder() + "/" + pfImageName
+	_, err = v.GetServerDetail(ctx, templatePath)
+
+	if err != nil {
+		if !strings.Contains(err.Error(), vmlayer.ServerDoesNotExistError) {
+			return "", err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "template not present", "pfImageName", pfImageName, "err", err)
+
+		// Validate if pfImageName is same as we expected
+		_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.VaultConfig, imgPath)
+		if err != nil {
+			return "", err
+		}
+		// Download platform image and create a vsphere template from it
+		updateCallback(edgeproto.UpdateTask, "Downloading platform base image: "+pfImageName)
+		err = v.CreateImageFromUrl(ctx, pfImageName, imgPath, md5Sum)
+		if err != nil {
+			return "", fmt.Errorf("Error downloading platform base image %s: %v", pfImageName, err)
+		}
+		err = v.CreateTemplateFromImage(ctx, pfImageName, pfImageName)
+		if err != nil {
+			return "", fmt.Errorf("Error in creating baseimage template: %v", err)
+		}
+	}
+	return imgPath, nil
 }
 
 func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*edgeproto.FlavorInfo, error) {
@@ -153,7 +207,7 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 			return err
 		}
 	}
-	return terraform.RunTerraformApply(ctx, terraform.WithRetries(NumTerraformRetries))
+	return terraform.RunTerraformApply(ctx, v.getTerraformDir(ctx), terraform.WithRetries(NumTerraformRetries))
 }
 
 func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {

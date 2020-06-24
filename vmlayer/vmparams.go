@@ -380,6 +380,7 @@ type VMOrchestrationParams struct {
 	Name                    string
 	Role                    VMRole
 	ImageName               string
+	TemplateId              string
 	ImageFolder             string
 	HostName                string
 	DNSDomain               string

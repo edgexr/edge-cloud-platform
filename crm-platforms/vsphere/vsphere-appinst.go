@@ -75,6 +75,7 @@ func (v *VSpherePlatform) ConvertQcowToVmdk(ctx context.Context, sourceFile stri
 			log.SpanLog(ctx, log.DebugLevelInfra, "qemu-img resize failed", "out", string(out), "err", err)
 			convertChan <- fmt.Sprintf("qemu-img resize failed: %s %v", out, err)
 		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "doing qemu-img convert", "destFile", destFile)
 		out, err = sh.Command("qemu-img", "convert", "-O", "vmdk", "-o", "subformat=streamOptimized", sourceFile, destFile).CombinedOutput()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "qemu-img convert failed", "out", string(out), "err", err)

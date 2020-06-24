@@ -92,7 +92,7 @@ func (v *VSpherePlatform) ImportTagCategories(ctx context.Context) error {
 }
 
 func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, subnetName, portName string) error {
-	fileName := terraform.TerraformDir + "/" + serverName + ".tf"
+	fileName := v.getTerraformDir(ctx) + "/" + serverName + ".tf"
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "serverName", "serverName", "subnetName", subnetName, "portName", portName, "fileName", fileName)
 
 	input, err := ioutil.ReadFile(fileName)
@@ -131,7 +131,7 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer doing apply after removing interfaces and tags", "serverName", serverName, "portName", portName)
 
-	out, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", "apply", "--auto-approve")
+	out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "apply", "--auto-approve")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Terraform apply failed for detach port", "out", out, "fileName", fileName)
 	}
@@ -139,7 +139,7 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 }
 
 func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
-	fileName := terraform.TerraformDir + "/" + serverName + ".tf"
+	fileName := v.getTerraformDir(ctx) + "/" + serverName + ".tf"
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "fileName", fileName, "ipaddr", ipaddr, "action", action)
 	tagName := serverName + vmlayer.TagDelimiter + subnetName + vmlayer.TagDelimiter + ipaddr
 	tagId := v.IdSanitize(tagName)
@@ -184,7 +184,7 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 	}
 	if action == vmlayer.ActionCreate {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer doing apply after adding interfaces and tags", "serverName", serverName, "portName", portName)
-		out, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", "apply", "--auto-approve")
+		out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "apply", "--auto-approve")
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Terraform apply failed for attach port", "out", out, "fileName", fileName)
 		}
@@ -282,6 +282,9 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				flavormatch = true
 				break
 			}
+		}
+		if vm.ImageName != "" {
+			vmgp.VMs[vmidx].TemplateId = v.IdSanitize(vm.ImageName) + "-tmplt-" + vm.Id
 		}
 		if !flavormatch {
 			return fmt.Errorf("No match in flavor cache for flavor name: %s", vm.FlavorName)
@@ -467,7 +470,7 @@ var vmGroupTemplate = `
 
 	{{- range .VMs}}
 	{{- if .ImageName}}
-	data "vsphere_virtual_machine" "{{.ImageName}}-tmplt-{{.Id}}" {
+	data "vsphere_virtual_machine" "{{.TemplateId}}" {
 		name          = "{{.ImageName}}"
 		datacenter_id = "${data.vsphere_datacenter.dc.id}"
 	}
@@ -521,7 +524,7 @@ var vmGroupTemplate = `
 			"guestinfo.metadata.encoding" = "base64"
 		}
 		clone {
-			template_uuid = "${data.vsphere_virtual_machine.{{.ImageName}}-tmplt-{{.Id}}.id}"
+			template_uuid = "${data.vsphere_virtual_machine.{{.TemplateId}}.id}"
 			customize{
 				linux_options {
 					host_name = "{{.HostName}}"
@@ -558,10 +561,14 @@ func vmsphereMetaDataFormatter(instring string) string {
 	return base64.StdEncoding.EncodeToString([]byte(withMeta))
 }
 
+func (v *VSpherePlatform) getTerraformDir(ctx context.Context) string {
+	return "terraform-" + v.GetDatacenterName(ctx)
+}
+
 func (v *VSpherePlatform) doTerraformImport(ctx context.Context, resourceID, resourceVal string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "doTerraformImport", "resourceID", resourceID, "resourceVal", resourceVal)
 	notfoundReg := regexp.MustCompile("Error: .* not found")
-	out, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", "import", "--allow-missing-config", resourceID, resourceVal)
+	out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "import", "--allow-missing-config", resourceID, resourceVal)
 	if err != nil {
 		if strings.Contains(out, "Resource already managed by Terraform") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "resource already in terraform state")
@@ -582,7 +589,7 @@ func (v *VSpherePlatform) ImportTerraformVirtualMachine(ctx context.Context, vmN
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTerraformVirtualMachine", "vmName", vmName, "vmPath", vmPath)
 	vmID := "vsphere_virtual_machine." + v.IdSanitize(vmName)
 	// remove existing VM from the state
-	_, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", "state", "rm", vmID)
+	_, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "state", "rm", vmID)
 	if err != nil {
 		// remove only returns an error on a syntax or other issue, if the resource does not exist there is no error
 		log.SpanLog(ctx, log.DebugLevelInfra, "error in deleting existing vm in terraform state", "err", err)
@@ -625,7 +632,7 @@ func (v *VSpherePlatform) ImportTerraformTag(ctx context.Context, tagname, catna
 func (v *VSpherePlatform) ImportTerraformPlan(ctx context.Context, planName string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTerraformPlan", "planName", planName)
 
-	fileName := terraform.TerraformDir + "/" + planName + ".tf"
+	fileName := v.getTerraformDir(ctx) + "/" + planName + ".tf"
 	notfoundReg := regexp.MustCompile("Error: .* not found")
 	input, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -638,7 +645,7 @@ func (v *VSpherePlatform) ImportTerraformPlan(ctx context.Context, planName stri
 			importCmd := strings.ReplaceAll(line, "## import", "import")
 			log.SpanLog(ctx, log.DebugLevelInfra, "Found import", "importCmd", importCmd)
 			args := strings.Split(importCmd, " ")
-			out, err := terraform.TimedTerraformCommand(ctx, terraform.TerraformDir, "terraform", args...)
+			out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", args...)
 			if err != nil {
 				if strings.Contains(out, "Resource already managed by Terraform") {
 					log.SpanLog(ctx, log.DebugLevelInfra, "resource already in terraform state")
@@ -659,21 +666,22 @@ func (v *VSpherePlatform) ImportTerraformPlan(ctx context.Context, planName stri
 func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "TerraformSetupVsphere")
 
+	terraformDir := v.getTerraformDir(ctx)
 	planName := v.NameSanitize(v.GetDatacenterName(ctx))
-	_, staterr := os.Stat(terraform.TerraformDir)
+	_, staterr := os.Stat(terraformDir)
 	if staterr == nil {
 		timestamp := time.Now().Format("2006-01-02T150405")
-		backdir := terraform.TerraformDir + "-" + timestamp
+		backdir := v.getTerraformDir(ctx) + "-" + timestamp
 		log.SpanLog(ctx, log.DebugLevelInfra, "backing up terraformdir", "backdir", backdir)
 
-		err := os.Rename(terraform.TerraformDir, backdir)
+		err := os.Rename(v.getTerraformDir(ctx), backdir)
 		if err != nil {
-			return fmt.Errorf("unable to backup terraformDir: %s %s - %v", terraform.TerraformDir, timestamp, err)
+			return fmt.Errorf("unable to backup terraformDir: %s %s - %v", terraformDir, timestamp, err)
 		}
 	}
-	err := os.Mkdir(terraform.TerraformDir, 0755)
+	err := os.Mkdir(terraformDir, 0755)
 	if err != nil {
-		return fmt.Errorf("unable to create terraformDir: %s - %v", terraform.TerraformDir, err)
+		return fmt.Errorf("unable to create terraformDir: %s - %v", terraformDir, err)
 	}
 
 	var vgp VSphereGeneralParams
@@ -683,6 +691,7 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 	}
 	terraformFile, err := terraform.CreateTerraformPlanFromTemplate(
 		ctx,
+		v.getTerraformDir(ctx),
 		vgp,
 		planName,
 		vcenterTemplate, updateCallback,
@@ -699,7 +708,7 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "created terraform file", "terraformFile", terraformFile)
-	err = terraform.ApplyTerraformPlan(ctx, terraformFile, updateCallback)
+	err = terraform.ApplyTerraformPlan(ctx, v.getTerraformDir(ctx), terraformFile, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Apply failed for setup vsphere", "terraformFile", terraformFile)
 		return err
@@ -734,6 +743,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 
 	terraformFile, err := terraform.CreateTerraformPlanFromTemplate(
 		ctx,
+		v.getTerraformDir(ctx),
 		vvgp,
 		planName,
 		vmGroupTemplate,
@@ -747,6 +757,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 	}
 	return terraform.ApplyTerraformPlan(
 		ctx,
+		v.getTerraformDir(ctx),
 		terraformFile,
 		updateCallback,
 		terraform.WithCleanupOnFailure(v.vmProperties.CommonPf.GetCleanupOnFailure(ctx)),
@@ -770,7 +781,7 @@ func (v *VSpherePlatform) UpdateVMs(ctx context.Context, vmGroupOrchestrationPar
 }
 
 func (v *VSpherePlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
-	return terraform.DeleteTerraformPlan(ctx, vmGroupName)
+	return terraform.DeleteTerraformPlan(ctx, v.getTerraformDir(ctx), vmGroupName)
 }
 
 func (v *VSpherePlatform) SyncVMs(ctx context.Context, vmGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {

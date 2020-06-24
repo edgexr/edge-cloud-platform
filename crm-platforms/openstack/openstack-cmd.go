@@ -1057,8 +1057,12 @@ func (s *OpenstackPlatform) OSGetMetricsRangeForId(ctx context.Context, resId st
 	return measurements, nil
 }
 
+func (o *OpenstackPlatform) GetCloudletImageSuffix(ctx context.Context) string {
+	return ".qcow2"
+}
+
 func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
-	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion)
+	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion, s.GetCloudletImageSuffix(ctx))
 
 	// Fetch platform base image name
 	pfImageName, err := cloudcommon.GetFileName(imgPath)
