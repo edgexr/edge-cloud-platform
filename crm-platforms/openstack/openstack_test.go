@@ -1,7 +1,6 @@
 package openstack
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
