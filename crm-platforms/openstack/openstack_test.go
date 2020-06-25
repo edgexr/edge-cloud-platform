@@ -1,11 +1,13 @@
 package openstack
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +21,7 @@ var OSFlavors = []OSFlavorDetail{
 		Name:        "m4.large-gpu",
 		RAM:         8192,
 		Ephemeral:   0,
-		Properties:  "hw:numa_nodes='1', pci_passthrough:alias='t4gpu:1'",
+		Properties:  "hw:mem_page_size='large', hw:numa_nodes='1', pci_passthrough:alias='t4gpu:1'",
 		VCPUs:       4,
 		Swap:        "",
 		Public:      true,
@@ -51,10 +53,73 @@ var OSFlavors = []OSFlavorDetail{
 		RXTX_Factor: "1.0",
 		ID:          "1d9a7925-291a-4af3-b676-d4b5d6a97c9b",
 	},
+
+	OSFlavorDetail{
+		Name:      "m1.medium-gpu",
+		RAM:       8192,
+		Ephemeral: 0,
+		//		Properties:  "vmware:vgpu='1'",
+		Properties:  "pci_passthrough:alias='vmware-vpu:1'",
+		VCPUs:       2,
+		Swap:        "",
+		Public:      true,
+		Disk:        40,
+		RXTX_Factor: "1.0",
+		ID:          "081e9cb0-b078-49f1-b1a6-daf79f4fbe30",
+	},
+	OSFlavorDetail{
+		Name:        "m1.large",
+		RAM:         8192,
+		Ephemeral:   0,
+		Properties:  "",
+		VCPUs:       4,
+		Swap:        "",
+		Public:      true,
+		Disk:        80,
+		RXTX_Factor: "1.0",
+		ID:          "3c2b6f87-ec8c-42e9-86b2-e9b32ebfae04",
+	},
+	OSFlavorDetail{
+		Name:        "m1.xxlarge24-64-160",
+		RAM:         65535,
+		Ephemeral:   0,
+		Properties:  "",
+		VCPUs:       24,
+		Swap:        "",
+		Public:      true,
+		Disk:        160,
+		RXTX_Factor: "1.0",
+		ID:          "50a563c5-bbb4-4ceb-846a-cf52ff694b21",
+	},
+	OSFlavorDetail{
+		Name:        "m1.tiny",
+		RAM:         512,
+		Ephemeral:   0,
+		Properties:  "",
+		VCPUs:       1,
+		Swap:        "",
+		Public:      true,
+		Disk:        1,
+		RXTX_Factor: "1.0",
+		ID:          "7207db65-7721-418c-af06-64c61151083f",
+	},
+	OSFlavorDetail{
+		Name:        "m1.medium",
+		RAM:         4096,
+		Ephemeral:   0,
+		Properties:  "",
+		VCPUs:       2,
+		Swap:        "",
+		Public:      true,
+		Disk:        40,
+		RXTX_Factor: "1.0",
+		ID:          "94557fcc-d217-4270-8511-79bce1d6c0c9",
+	},
 }
 
 func TestParseFlavorProps(t *testing.T) {
 
+	testprop1_map["hw"] = "mem_page_size=large"
 	testprop1_map["hw"] = "numa_nodes=1"
 	testprop1_map["pci_passthrough"] = "alias=t4gpu:1"
 	// maps are unordered, this could be a problem.
@@ -69,6 +134,24 @@ func TestParseFlavorProps(t *testing.T) {
 	propmap = ParseFlavorProperties(OSFlavors[2])
 	require.Equal(t, testprop3_map, propmap)
 
+	var finfo []*edgeproto.FlavorInfo
+	//	var props map[string]string
+	for _, f := range OSFlavors {
+		var props map[string]string
+		if f.Properties != "" {
+			props = ParseFlavorProperties(f)
+		}
+
+		finfo = append(
+			finfo,
+			&edgeproto.FlavorInfo{
+				Name:    f.Name,
+				Vcpus:   uint64(f.VCPUs),
+				Ram:     uint64(f.RAM),
+				Disk:    uint64(f.Disk),
+				PropMap: props},
+		)
+	}
 }
 
 func TestHeatNodePrefix(t *testing.T) {
