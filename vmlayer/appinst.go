@@ -645,6 +645,17 @@ func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgepro
 		}
 		return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeDocker:
+		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			nodeIp, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+			if err != nil {
+				return nil, err
+			}
+			// docker command will run on the docker vm
+			client, err = client.AddHop(nodeIp.ExternalAddr, 22)
+			if err != nil {
+				return nil, err
+			}
+		}
 		return dockermgmt.GetAppInstRuntime(ctx, client, app, appInst)
 	case cloudcommon.DeploymentTypeVM:
 		fallthrough
