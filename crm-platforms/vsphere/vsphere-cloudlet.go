@@ -82,7 +82,7 @@ func (v *VSpherePlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgP
 			return "", fmt.Errorf("Error in creating baseimage template: %v", err)
 		}
 	}
-	return imgPath, nil
+	return pfImageName, nil
 }
 
 func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*edgeproto.FlavorInfo, error) {
