@@ -113,7 +113,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		// TODO: track udp ports as well (when we add udp to envoy)
 		for _, p := range appInst.MappedPorts {
 			if p.Proto == dme.LProto_L_PROTO_TCP {
-				scrapePoint.Ports = append(scrapePoint.Ports, p.PublicPort)
+				scrapePoint.Ports = append(scrapePoint.Ports, p.InternalPort)
 			}
 		}
 
