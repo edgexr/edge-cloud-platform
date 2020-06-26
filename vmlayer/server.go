@@ -47,8 +47,16 @@ func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subne
 	if err != nil {
 		return nil, err
 	}
-
-	return GetIPFromServerDetails(ctx, networkName, portName, sd)
+	sip, err := GetIPFromServerDetails(ctx, networkName, portName, sd)
+	if err != nil && subnetName != "" {
+		// Clusters create prior to R2 use a different port naming convention.  For backwards
+		// compatibility, let's try to find the server using the old port format.  This was the
+		// server name plus port.
+		oldFormatPortName := serverName + "-port"
+		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to find server IP, try again with old format port name", "oldFormatPortName", oldFormatPortName)
+		return GetIPFromServerDetails(ctx, networkName, oldFormatPortName, sd)
+	}
+	return sip, err
 }
 
 func GetIPFromServerDetails(ctx context.Context, networkName string, portName string, sd *ServerDetail) (*ServerIP, error) {
