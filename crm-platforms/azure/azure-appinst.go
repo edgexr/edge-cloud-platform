@@ -20,7 +20,7 @@ func (a *AzurePlatform) CreateAppInst(ctx context.Context, clusterInst *edgeprot
 	if err = a.SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := a.GetClusterPlatformClient(ctx, clusterInst)
+	client, err := a.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (a *AzurePlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeprot
 	if err = a.SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := a.GetClusterPlatformClient(ctx, clusterInst)
+	client, err := a.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (s *AzurePlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edge
 	if err := s.SetupKconf(ctx, clusterInst); err != nil {
 		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
 	}
-	client, err := s.GetClusterPlatformClient(ctx, clusterInst)
+	client, err := s.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (a *AzurePlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeprot
 	if err != nil {
 		return err
 	}
-	client, err := a.GetClusterPlatformClient(ctx, clusterInst)
+	client, err := a.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}

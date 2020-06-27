@@ -128,7 +128,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 		appWaitChan := make(chan string)
 
-		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
+		client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
 			return err
 		}
@@ -308,27 +308,22 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 	case cloudcommon.DeploymentTypeDocker:
 		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-		backendIP := cloudcommon.RemoteServerNone
-		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst)
+		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
 			return err
 		}
-		// docker commands can be run on either the rootlb or on the docker
-		// vm.  The default is to run on the rootlb client
-		dockerCommandTarget := rootLBClient
-		// if using a load balancer access, a separate VM is always used for
-		// docker vs the LB, and we always use host networking mode
+		clientType := cloudcommon.GetAppClientType(app)
+		appClient, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
+		if err != nil {
+			return err
+		}
+		backendIP := cloudcommon.RemoteServerNone
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 			sip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 			if err != nil {
 				return err
 			}
 			backendIP = sip.ExternalAddr
-			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP, 22)
-			if err != nil {
-				return err
-			}
 		}
 
 		rootLBIPaddr, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", rootLBName)
@@ -359,7 +354,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		start := time.Now()
 		for _, imagePath := range names.ImagePaths {
 			for {
-				err = infracommon.SeedDockerSecret(ctx, dockerCommandTarget, clusterInst, imagePath, v.VMProperties.CommonPf.VaultConfig)
+				err = infracommon.SeedDockerSecret(ctx, appClient, clusterInst, imagePath, v.VMProperties.CommonPf.VaultConfig)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
 					elapsed := time.Since(start)
@@ -376,7 +371,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
 
-		err = dockermgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst)
+		err = dockermgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, appClient, app, appInst)
 		if err != nil {
 			return err
 		}
@@ -423,7 +418,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 				return err
 			}
 		}
-		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
+		client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
 			return err
 		}
@@ -510,30 +505,20 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 	case cloudcommon.DeploymentTypeDocker:
 		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst)
+		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
 			return err
 		}
-		// docker commands can be run on either the rootlb or on the docker
-		// vm.  The default is to run on the rootlb client
-		dockerCommandTarget := rootLBClient
-
-		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-			backendIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
-			if err != nil {
-				if strings.Contains(err.Error(), ServerDoesNotExistError) {
-					log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
-					secGrp := v.GetServerSecurityGroupName(rootLBName)
-					v.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
-					return nil
-				}
-				return err
+		clientType := cloudcommon.GetAppClientType(app)
+		appClient, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
+		if err != nil {
+			if strings.Contains(err.Error(), ServerDoesNotExistError) {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
+				secGrp := v.GetServerSecurityGroupName(rootLBName)
+				v.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), secGrp, appInst.MappedPorts, app, rootLBName)
+				return nil
 			}
-			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(backendIP.ExternalAddr, 22)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 		_, err = v.VMProvider.GetServerDetail(ctx, rootLBName)
 		if err != nil {
@@ -543,20 +528,16 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 			}
 			return err
 		}
-		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
-		if err != nil {
-			return err
-		}
 		name := dockermgmt.GetContainerName(&app.Key)
 		if !app.InternalPorts {
 			secGrp := v.GetServerSecurityGroupName(rootLBName)
 			//  the proxy does not yet exist for docker, but it eventually will.  Secgrp rules should be deleted in either case
-			if err := v.DeleteProxySecurityGroupRules(ctx, client, name, secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
+			if err := v.DeleteProxySecurityGroupRules(ctx, rootLBClient, name, secGrp, appInst.MappedPorts, app, rootLBName); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", name, "rootlb", rootLBName, "error", err)
 			}
 		}
 
-		return dockermgmt.DeleteAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst)
+		return dockermgmt.DeleteAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, appClient, app, appInst)
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -580,44 +561,22 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		},
 	}
 	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+	clientType := cloudcommon.GetAppClientType(app)
+	client, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
+	if err != nil {
+		return err
+	}
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
-		if err != nil {
-			return err
-		}
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeDocker:
-		rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst)
-		if err != nil {
-			return err
-		}
-		// docker commands can be run on either the rootlb or on the docker
-		// vm.  The default is to run on the rootlb client
-		dockerCommandTarget := rootLBClient
-
-		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
-			masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
-			if err != nil {
-				return err
-			}
-			// docker command will run on the docker vm
-			dockerCommandTarget, err = rootLBClient.AddHop(masterIP.ExternalAddr, 22)
-			if err != nil {
-				return err
-			}
-		}
-		return dockermgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, dockerCommandTarget, app, appInst)
+		return dockermgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, client, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
-		client, err := v.GetClusterPlatformClient(ctx, clusterInst)
-		if err != nil {
-			return err
-		}
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
@@ -630,7 +589,8 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 }
 
 func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
-	client, err := v.GetClusterPlatformClient(ctx, clusterInst)
+	clientType := cloudcommon.GetAppClientType(app)
+	client, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
 	if err != nil {
 		return nil, err
 	}
@@ -645,17 +605,6 @@ func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgepro
 		}
 		return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeDocker:
-		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-			nodeIp, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
-			if err != nil {
-				return nil, err
-			}
-			// docker command will run on the docker vm
-			client, err = client.AddHop(nodeIp.ExternalAddr, 22)
-			if err != nil {
-				return nil, err
-			}
-		}
 		return dockermgmt.GetAppInstRuntime(ctx, client, app, appInst)
 	case cloudcommon.DeploymentTypeVM:
 		fallthrough
