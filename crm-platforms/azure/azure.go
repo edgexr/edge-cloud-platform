@@ -122,7 +122,7 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.
 	return nil
 }
 
-func (a *AzurePlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+func (a *AzurePlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }
 

@@ -23,7 +23,7 @@ func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *ed
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		return nil
 	}
-	client, err := e.generic.GetClusterPlatformClient(ctx, clusterInst)
+	client, err := e.generic.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
