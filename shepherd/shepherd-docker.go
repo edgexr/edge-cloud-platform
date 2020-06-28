@@ -43,8 +43,9 @@ type DockerStats struct {
 
 // Docker Cluster
 type DockerClusterStats struct {
-	key    edgeproto.ClusterInstKey
-	client ssh.Client
+	key           edgeproto.ClusterInstKey
+	client        ssh.Client
+	clusterClient ssh.Client
 	shepherd_common.ClusterMetrics
 }
 
@@ -71,14 +72,22 @@ func (c *DockerClusterStats) GetAppStats(ctx context.Context) map[shepherd_commo
 // Walk the appInst cache for a given clusterInst and match to the container_ids
 func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStats, error) {
 	containers := make(map[string]ContainerStats)
-	resp, err := c.client.Output(dockerStatsCmd)
+	respLB, err := c.client.Output(dockerStatsCmd)
 	if err != nil {
-		errstr := fmt.Sprintf("Failed to run <%s>", dockerStatsCmd)
+		errstr := fmt.Sprintf("Failed to run <%s> on LB VM", dockerStatsCmd)
+		log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
+		return nil, err
+	}
+	respVM, err := c.clusterClient.Output(dockerStatsCmd) // check the VM for LoadBalancer docker apps
+	if err != nil {
+		errstr := fmt.Sprintf("Failed to run <%s> on ClusterVM", dockerStatsCmd)
 		log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
 		return nil, err
 	}
 	dockerResp := &DockerStats{}
-	stats := strings.Split(resp, "\n")
+	stats := strings.Split(respLB, "\n")
+	statsVM := strings.Split(respVM, "\n")
+	stats = append(stats, statsVM...)
 	for _, stat := range stats {
 		if stat == "" {
 			// last string is an empty string
