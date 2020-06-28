@@ -38,7 +38,7 @@ func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.Clus
 	return "localhost", nil
 }
 
-func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
 	return &UTClient{pf: s}, nil
 }
 
