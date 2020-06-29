@@ -204,6 +204,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 		return err
 	}
 	v.VMProvider.SetVMProperties(&v.VMProperties)
+	v.VMProperties.sharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 	return nil
 }
 
@@ -240,8 +241,6 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "got flavor list", "flavorList", v.FlavorList)
-
-	v.VMProperties.sharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 
 	// create rootLB
 	crmRootLB, cerr := v.NewRootLB(ctx, v.VMProperties.sharedRootLBName)
