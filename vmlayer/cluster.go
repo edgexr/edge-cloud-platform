@@ -133,12 +133,13 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				continue
 			}
 			numNodes++
+			nodeName := GetClusterNodeName(ctx, clusterInst, num)
 			// heat will remove the higher-numbered nodes
 			if num > clusterInst.NumNodes {
 				toRemove = append(toRemove, n)
-				chefUpdateInfo[n] = ActionRemove
+				chefUpdateInfo[nodeName] = ActionRemove
 			} else {
-				chefUpdateInfo[n] = ActionNone
+				chefUpdateInfo[nodeName] = ActionNone
 			}
 		}
 		if len(toRemove) > 0 {
