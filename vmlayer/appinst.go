@@ -8,6 +8,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 
+	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
@@ -402,6 +403,10 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 }
 
 func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	chefClient := v.VMProperties.GetChefClient()
+	if chefClient == nil {
+		return fmt.Errorf("Chef client is not initialzied")
+	}
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
 		fallthrough
@@ -478,6 +483,13 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		err := v.VMProvider.DeleteVMs(ctx, objName)
 		if err != nil {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
+		}
+		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			clientName := v.GetChefClientName(objName + "-lb")
+			err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
+			}
 		}
 		imgName, err := cloudcommon.GetFileName(app.ImagePath)
 		if err != nil {
