@@ -106,7 +106,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func TestCCloudletAlerts(t *testing.T) {
+func TestCloudletAlerts(t *testing.T) {
 	ctx := setupLog()
 	defer log.FinishTracer()
 	fakePrometheusAlertServer := startAlertServer()
