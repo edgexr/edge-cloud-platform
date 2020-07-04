@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/assert"
@@ -33,8 +34,9 @@ type TestJsonTargets []struct {
 }
 
 func testUpdateAndWrite(ctx context.Context, inst *edgeproto.AppInst, t *testing.T) {
-	AppInstCache.Update(ctx, inst, 0)
-	writePrometheusTargetsFile()
+	if str := CollectProxyStats(ctx, inst); str != "" {
+		writePrometheusTargetsFile()
+	}
 	testWaitGroup.Done()
 }
 func TestCloudletPrometheusFuncs(t *testing.T) {
@@ -42,8 +44,19 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	defer log.FinishTracer()
 	// test targets file
 	*promTargetsFile = "/tmp/testTargets.json"
+	myPlatform = &shepherd_unittest.Platform{}
+	InitProxyScraper()
 	edgeproto.InitAppInstCache(&AppInstCache)
-	testTargetAppInstances, targetKeys := genAppInstances(testInstCount)
+	edgeproto.InitAppCache(&AppCache)
+	edgeproto.InitClusterInstCache(&ClusterInstCache)
+	genApps(ctx, testInstCount)
+	assert.Equal(t, testInstCount, len(AppCache.Objs))
+	genClusters(ctx, testInstCount)
+	assert.Equal(t, testInstCount, len(ClusterInstCache.Objs))
+	testTargetAppInstances, targetKeys := genAppInstances(ctx, testInstCount)
+	assert.Equal(t, testInstCount, len(testTargetAppInstances))
+	assert.Equal(t, testInstCount, len(targetKeys))
+	assert.Equal(t, testInstCount, len(AppInstCache.Objs))
 	testWaitGroup.Add(testInstCount)
 	for ii := range testTargetAppInstances {
 		go testUpdateAndWrite(ctx, &testTargetAppInstances[ii], t)
@@ -73,11 +86,46 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+// generate Apps to populate cache
+func genApps(ctx context.Context, cnt int) {
+	for ii := 1; ii < cnt+1; ii++ {
+		app := edgeproto.App{
+			Key: edgeproto.AppKey{
+				Name:         fmt.Sprintf("App-%d", ii),
+				Organization: fmt.Sprintf("AppOrg-%d", ii),
+			},
+			AccessPorts: fmt.Sprintf("tcp:%d", ii),
+			AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		}
+		AppCache.Update(ctx, &app, 0)
+	}
+}
+
+// generate ClusterInsts to populate cache
+func genClusters(ctx context.Context, cnt int) {
+	for ii := 1; ii < cnt+1; ii++ {
+		cluster := edgeproto.ClusterInst{
+			Key: edgeproto.ClusterInstKey{
+				ClusterKey: edgeproto.ClusterKey{
+					Name: fmt.Sprintf("Cluster-%d", ii),
+				},
+				CloudletKey: edgeproto.CloudletKey{
+					Organization: fmt.Sprintf("Cloudletorg-%d", ii),
+					Name:         fmt.Sprintf("Cloudlet-%d", ii),
+				},
+				Organization: fmt.Sprintf("Clusterorg-%d", ii),
+			},
+		}
+		ClusterInstCache.Update(ctx, &cluster, 0)
+	}
+}
+
 // generate appInstances and keys for later verification
-func genAppInstances(cnt int) ([]edgeproto.AppInst, map[string]struct{}) {
+func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[string]struct{}) {
 	list := []edgeproto.AppInst{}
 	keys := map[string]struct{}{}
-	for ii := 0; ii < cnt; ii++ {
+	for ii := 1; ii < cnt+1; ii++ {
+		ports, _ := edgeproto.ParseAppPorts(fmt.Sprintf("tcp:%d", ii))
 		inst := edgeproto.AppInst{
 			Key: edgeproto.AppInstKey{
 				AppKey: edgeproto.AppKey{
@@ -95,9 +143,12 @@ func genAppInstances(cnt int) ([]edgeproto.AppInst, map[string]struct{}) {
 					Organization: fmt.Sprintf("Clusterorg-%d", ii),
 				},
 			},
+			MappedPorts: ports,
+			State:       edgeproto.TrackedState_READY,
 		}
 		list = append(list, inst)
 		keys[inst.Key.AppKey.Name] = struct{}{}
+		AppInstCache.Update(ctx, &inst, 0)
 	}
 	return list, keys
 }
