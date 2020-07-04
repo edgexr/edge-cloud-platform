@@ -116,6 +116,10 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 				scrapePoint.Ports = append(scrapePoint.Ports, p.InternalPort)
 			}
 		}
+		// Don't need to scrape anything if no ports are trackable
+		if len(scrapePoint.Ports) == 0 {
+			return ""
+		}
 
 		clusterInst := edgeproto.ClusterInst{}
 		found := ClusterInstCache.Get(&appInst.Key.ClusterInstKey, &clusterInst)
@@ -136,15 +140,19 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
 			return ""
 		}
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Creating Proxy Stats "+appInst.Key.AppKey.Name, "scrape point", scrapePoint)
 		ProxyMutex.Lock()
 		ProxyMap[ProxyMapKey] = scrapePoint
 		ProxyMutex.Unlock()
 		return ProxyMapKey
 	}
-	// if the app is anything other than ready, stop tracking it
+	// if the app is anything other than ready, stop tracking it if it exists
 	ProxyMutex.Lock()
+	defer ProxyMutex.Unlock()
+	if _, found := ProxyMap[ProxyMapKey]; !found {
+		return ""
+	}
 	delete(ProxyMap, ProxyMapKey)
-	ProxyMutex.Unlock()
 	return ProxyMapKey
 }
 

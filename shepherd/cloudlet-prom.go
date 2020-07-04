@@ -25,7 +25,7 @@ const HealthCheckRulesPrefix = "healthcheck"
 var CloudletPrometheusAddr = "0.0.0.0:" + intprocess.CloudletPrometheusPort
 
 var promTargetTemplate, promAutoProvAlertTemplate *template.Template
-var targetsLock *sync.Mutex
+var targetsLock sync.Mutex
 
 var promTargetT = `
 {
@@ -72,10 +72,9 @@ type targetData struct {
 func init() {
 	promTargetTemplate = template.Must(template.New("prometheustarget").Parse(promTargetT))
 	promAutoProvAlertTemplate = template.Must(template.New("autoprovalert").Parse(promAutoProvAlertT))
-	targetsLock = &sync.Mutex{}
 }
 
-func getAppInstPrometheusTargetString(appInst *edgeproto.AppInst) (string, error) {
+func getAppInstPrometheusTargetString(appInstKey *edgeproto.AppInstKey) (string, error) {
 	host := *metricsAddr
 	switch *platformName {
 	case "PLATFORM_TYPE_EDGEBOX":
@@ -85,8 +84,8 @@ func getAppInstPrometheusTargetString(appInst *edgeproto.AppInst) (string, error
 	}
 	target := targetData{
 		MetricsProxyAddr: host,
-		Key:              appInst.GetKeyVal(),
-		EnvoyMetricsPath: "/metrics/" + getProxyKey(&appInst.Key),
+		Key:              *appInstKey,
+		EnvoyMetricsPath: "/metrics/" + getProxyKey(appInstKey),
 	}
 	buf := bytes.Buffer{}
 	if err := promTargetTemplate.Execute(&buf, target); err != nil {
@@ -102,17 +101,16 @@ func writePrometheusTargetsFile() {
 	targetsLock.Lock()
 	defer targetsLock.Unlock()
 	var targets = "["
-	AppInstCache.Show(&edgeproto.AppInst{}, func(obj *edgeproto.AppInst) error {
+	proxyScrapePoints := copyMapValues()
+	for _, val := range proxyScrapePoints {
 		if targets != "[" {
 			targets += ","
 		}
-		promTargetJson, err := getAppInstPrometheusTargetString(obj)
+		promTargetJson, err := getAppInstPrometheusTargetString(&val.Key)
 		if err == nil {
 			targets += promTargetJson
 		}
-		// just skip the targets that we are unable to fill
-		return nil
-	})
+	}
 	targets += "]"
 	ioutil.WriteFile(*promTargetsFile, []byte(targets), 0644)
 }
