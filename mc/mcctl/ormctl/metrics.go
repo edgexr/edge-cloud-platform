@@ -115,6 +115,6 @@ var MetricComments = map[string]string{
 	"cluster-org":  "Organization or Company Name that a Cluster is used by",
 	"selector":     "Comma separated list of metrics to view",
 	"last":         "Display the last X metrics",
-	"starttime":    "Time to start displaying stats from",
-	"endtime":      "Time up to which to display stats",
+	"starttime":    "Time to start displaying stats from in RFC3339 format (ex. 2002-12-31T15:00:00Z)",
+	"endtime":      "Time up to which to display stats in RFC3339 format (ex. 2002-12-31T10:00:00-05:00)",
 }
