@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"text/template"
-
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
