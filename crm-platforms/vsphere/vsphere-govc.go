@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -450,11 +451,18 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 	1) the VM is powered off
 	2) the VM has not yet reported the IPs to VC after startup
 	*/
-	for _, net := range govcVm.Guest.Net {
+	netlist, err := v.GetNetworkListForGovcVm(ctx, sd.Name)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to get network list for VM", "name", govcVm.Name, "err", err)
+	}
+	for i, net := range govcVm.Guest.Net {
 		var sip vmlayer.ServerIP
-		sip.Network = net.Network
+		// sip.Network = net.Network -- prior to vSphere 7 this worked, TODO: check in future if this is fixed
 		sip.MacAddress = net.MacAddress
 		sip.PortName = vmlayer.GetPortName(govcVm.Name, net.Network)
+		if i < len(netlist) {
+			sip.Network = netlist[i]
+		}
 		if net.Network == "" {
 			continue
 		}
@@ -488,7 +496,33 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 		}
 	}
 	return &sd
+}
 
+// a vSphere7/Govc interaction problem in which vm.info does not return port group names, but
+// only UUIDs for the vswitch which is not one to one with a portgroup.  The non-json output
+func (v *VSpherePlatform) GetNetworkListForGovcVm(ctx context.Context, vmname string) ([]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkListForGovcVm", "name", vmname)
+
+	dcName := v.GetDatacenterName(ctx)
+	vmPath := "/" + dcName + "/vm/" + vmname
+
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-r", "-dc", dcName, vmPath)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get network summary for vm: %s - %v", vmname, err)
+	}
+	networkPattern := "\\s*Network:\\s+(.*)"
+	nreg := regexp.MustCompile(networkPattern)
+	lines := strings.Split(string(out), "\n")
+	// Example format for what we are looking for
+	// Network:              DPGAdminDEV, mex-k8s-subnet-dev-cluster2-mobiledge
+	for _, line := range lines {
+		if nreg.MatchString(line) {
+			matches := nreg.FindStringSubmatch(line)
+			networks := strings.TrimSpace(matches[1])
+			return strings.Split(networks, ","), nil
+		}
+	}
+	return nil, fmt.Errorf("no networks found for vm: %s", vmname)
 }
 
 func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*vmlayer.ServerDetail, error) {

@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
@@ -687,13 +686,16 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 	planName := v.NameSanitize(v.GetDatacenterName(ctx))
 	_, staterr := os.Stat(terraformDir)
 	if staterr == nil {
-		timestamp := time.Now().Format("2006-01-02T150405")
-		backdir := v.getTerraformDir(ctx) + "-" + timestamp
+		backdir := v.getTerraformDir(ctx) + "." + "bak"
 		log.SpanLog(ctx, log.DebugLevelInfra, "backing up terraformdir", "backdir", backdir)
-
+		// remove old backup dir
+		rmerr := os.RemoveAll(backdir)
+		if rmerr != nil {
+			return fmt.Errorf("unable to remove backup dir: %s - %v", backdir, rmerr)
+		}
 		err := os.Rename(v.getTerraformDir(ctx), backdir)
 		if err != nil {
-			return fmt.Errorf("unable to backup terraformDir: %s %s - %v", terraformDir, timestamp, err)
+			return fmt.Errorf("unable to backup terraformDir: %s %s - %v", terraformDir, backdir, err)
 		}
 	}
 	err := os.Mkdir(terraformDir, 0755)
