@@ -207,7 +207,7 @@ func (v *VSpherePlatform) GetDistributedPortGroups(ctx context.Context) ([]Distr
 	var pgrps []DistributedPortGroup
 	dcName := v.GetDatacenterName(ctx)
 	networkSearchPath := fmt.Sprintf("/%s/network", dcName)
-	out, err := v.TimedGovcCommand(ctx, "govc", "ls", "-json", networkSearchPath)
+	out, err := v.TimedGovcCommand(ctx, "govc", "ls", "-dc", dcName, "-json", networkSearchPath)
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +567,7 @@ func (v *VSpherePlatform) GetVMs(ctx context.Context, vmNameMatch string, domain
 	}
 
 	vmPath := "/" + dcName + "/vm/"
-	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-json", vmPath+vmNameMatch)
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-dc", dcName, "-json", vmPath+vmNameMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -610,11 +610,11 @@ func (v *VSpherePlatform) SetPowerState(ctx context.Context, serverName, serverA
 
 	switch serverAction {
 	case vmlayer.ActionStop:
-		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-off", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-off", vmPath)
 	case vmlayer.ActionStart:
-		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-on", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-on", vmPath)
 	case vmlayer.ActionReboot:
-		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-reset", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-reset", vmPath)
 	default:
 		return fmt.Errorf("unsupported server action: %s", serverAction)
 	}
@@ -625,7 +625,7 @@ func (v *VSpherePlatform) GetConsoleUrl(ctx context.Context, serverName string) 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetConsoleUrl", "serverName", serverName)
 	dcName := v.GetDatacenterName(ctx)
 	vmPath := "/" + dcName + "/vm/" + serverName
-	out, err := v.TimedGovcCommand(ctx, "govc", "vm.console", "-h5", vmPath)
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.console", "-dc", dcName, "-h5", vmPath)
 
 	consoleUrl := strings.TrimSpace(string(out))
 	urlObj, err := url.Parse(consoleUrl)

@@ -33,7 +33,6 @@ type ProxyDnsSecOpts struct {
 }
 
 type vmAppOrchValues struct {
-	objName            string
 	lbName             string
 	externalServerName string
 	vmgp               *VMGroupOrchestrationParams
@@ -108,7 +107,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx, objName, vms, action, updateCallback, WithNewSubnet(orchVals.newSubnetName),
 		WithPrivacyPolicy(privacyPolicy),
 		WithAccessPorts(app.AccessPorts),
-		WithNewSecurityGroup(v.GetServerSecurityGroupName(orchVals.objName)),
+		WithNewSecurityGroup(v.GetServerSecurityGroupName(orchVals.externalServerName)),
 	)
 	if err != nil {
 		return &orchVals, err

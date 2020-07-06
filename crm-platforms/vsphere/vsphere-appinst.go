@@ -30,6 +30,7 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 	}
 	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.VaultConfig, app.ImagePath)
 
+	updateCallback(edgeproto.UpdateTask, "Downloading VM Image")
 	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.VaultConfig, imageName, app.ImagePath, md5Sum)
 	if err != nil {
 		return err
@@ -38,6 +39,7 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 
 	vmdkFile := filePath
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
+		updateCallback(edgeproto.UpdateTask, "Converting Image to VMDK")
 		vmdkFile, err = v.ConvertQcowToVmdk(ctx, filePath, f.Disk)
 		if err != nil {
 			return err

@@ -549,7 +549,11 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("cannot copy resource-tracker to rootLb %v", err)
 	}
-	err = v.AddRouteToServer(ctx, client, rootLBName, InternalNetworkRoute)
+	route, err := v.GetInternalNetworkRoute(ctx)
+	if err != nil {
+		return err
+	}
+	err = v.AddRouteToServer(ctx, client, rootLBName, route)
 	if err != nil {
 		return fmt.Errorf("failed to AddRouteToServer %v", err)
 	}
