@@ -53,7 +53,7 @@ func (g *GCPPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.
 	// set up dns
 	getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
 		action := infracommon.DnsSvcAction{}
-		externalIP, err := infracommon.GetSvcExternalIP(ctx, client, names, svc.ObjectMeta.Name)
+		externalIP,_,err := infracommon.GetSvcExternalIpOrHost(ctx, client, names, svc.ObjectMeta.Name)
 		if err != nil {
 			return nil, err
 		}

@@ -86,19 +86,20 @@ func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst 
 	return nil
 }
 
-func GetSvcExternalIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, name string) (string, error) {
+func GetSvcExternalIpOrHost(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, name string) (string, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get service external IP", "name", name)
 	externalIP := ""
+	dnsName := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
 		cmd := fmt.Sprintf("%s kubectl get svc -o json", kubeNames.KconfEnv)
 		out, err := client.Output(cmd)
 		if err != nil {
-			return "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
+			return "", "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)
 		}
 		svcs, err := GetServices(ctx, client, kubeNames)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "getting externalIP, examine list of services", "name", name, "svcs", svcs)
 		for _, svc := range svcs {
@@ -109,19 +110,24 @@ func GetSvcExternalIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt
 			}
 			for _, ingress := range svc.Status.LoadBalancer.Ingress {
 				log.SpanLog(ctx, log.DebugLevelInfra, "found ingress ip", "ingress.IP", ingress.IP, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
+				if ingress.Hostname != "" {
+					dnsName = ingress.Hostname
+					log.SpanLog(ctx, log.DebugLevelInfra, "got externa dnsName for app", "dnsName", dnsName)
+					return externalIP, dnsName, nil
+				}
 				if ingress.IP != "" {
 					externalIP = ingress.IP
 					log.SpanLog(ctx, log.DebugLevelInfra, "got externaIP for app", "externalIP", externalIP)
-					return externalIP, nil
+					return externalIP, dnsName, nil
 				}
 			}
 		}
 		time.Sleep(3 * time.Second)
 	}
 	if externalIP == "" {
-		return "", fmt.Errorf("timed out trying to get externalIP")
+		return "", "", fmt.Errorf("timed out trying to get externalIP")
 	}
-	return externalIP, nil
+	return externalIP, dnsName, nil
 }
 
 func GetServices(ctx context.Context, client ssh.Client, names *k8smgmt.KubeNames) ([]v1.Service, error) {

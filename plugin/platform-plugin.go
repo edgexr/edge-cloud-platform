@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/azure"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
@@ -37,6 +38,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &edgebox.EdgeboxPlatform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		outPlatform = &fakeinfra.Platform{}
+	case "PLATFORM_TYPE_AWS":
+		outPlatform = &aws.AWSPlatform{}
 	default:
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}

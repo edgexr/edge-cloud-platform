@@ -20,6 +20,8 @@ type DnsSvcAction struct {
 	// if non-empty string, DNS entry will be created against this IP
 	// for the service. The DNS name is derived from App parameters.
 	ExternalIP string
+	// AWS uses hostname for service
+	Hostname string
 	// True to patch the kubernetes service with the Patch IP.
 	PatchKube bool
 	// IP to patch the kubernetes service with. If empty, will use
@@ -80,7 +82,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 		if err != nil {
 			return err
 		}
-		if action.ExternalIP == "" {
+		if action.Hostname == "" && action.ExternalIP == "" {
 			continue
 		}
 		if action.PatchKube {
@@ -99,7 +101,12 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			if overrideDns != "" {
 				fqdn = overrideDns
 			}
-			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false); err != nil {
+			dnsRecType := "A"
+			if action.Hostname != "" {
+				dnsRecType = "CNAME"
+				mappedAddr = action.Hostname
+			}
+			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, dnsRecType, mappedAddr, 1, false); err != nil {
 				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
