@@ -97,7 +97,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, vaultConfig *vault.Con
 
 	updateCallback(edgeproto.UpdateTask, "Deploying Platform VM")
 
-	vms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor)
+	vms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -512,7 +512,7 @@ func (v *VMPlatform) GetChefCloudletAttributes(ctx context.Context, cloudlet *ed
 	return chefAttributes, nil
 }
 
-func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.Config, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor) ([]*VMRequestSpec, error) {
+func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.Config, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletVMsSpec", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "pfFlavor", pfFlavor)
 	err := v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
 	if err != nil {
@@ -603,16 +603,11 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-
-	pfImageName := v.VMProperties.GetCloudletOSImage()
-	if pfImageName == DefaultOSImageName {
-		// GetCloudletOSImage is the default so use the value from the controller
-		imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
-		pfImageName, err = cloudcommon.GetFileName(imgPath)
-		if err != nil {
-			return nil, err
-		}
+	pfImageName, err := v.GetCloudletImageToUse(ctx, updateCallback)
+	if err != nil {
+		return nil, err
 	}
+
 	// Setup Chef parameters
 	chefAttributes, err := v.GetChefCloudletAttributes(ctx, cloudlet, pfConfig)
 	if err != nil {
@@ -664,7 +659,7 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 					VMTypeClusterMaster,
 					nodeName,
 					flavorName,
-					v.VMProperties.GetCloudletOSImage(),
+					pfImageName,
 					true, //connect external
 					WithSubnetConnection(subnetName),
 					WithChefParams(chefParams),
@@ -677,7 +672,7 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 					VMTypeClusterNode,
 					nodeName,
 					flavorName,
-					v.VMProperties.GetCloudletOSImage(),
+					pfImageName,
 					true, //connect external
 					WithSubnetConnection(subnetName),
 					WithChefParams(chefParams),
@@ -705,7 +700,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 		return nil, err
 	}
 
-	platvms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor)
+	platvms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return nil, err
 	}

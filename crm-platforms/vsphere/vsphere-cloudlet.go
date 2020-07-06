@@ -176,10 +176,13 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	dcName := v.GetDatacenterName(ctx)
 	for _, c := range tags {
-		err = v.ImportTerraformTag(ctx, c.Name, c.Category)
-		if err != nil {
-			return err
+		if strings.HasPrefix(c.Category, dcName) {
+			err = v.ImportTerraformTag(ctx, c.Name, c.Category)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

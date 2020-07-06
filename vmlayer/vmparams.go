@@ -360,11 +360,13 @@ func GetSecGrpParams(name string, opts ...SecgrpParamsOp) (*SecurityGroupOrchest
 }
 
 type VolumeOrchestrationParams struct {
-	Name             string
-	ImageName        string
-	Size             uint64
-	AvailabilityZone string
-	DeviceName       string
+	Name               string
+	ImageName          string
+	Size               uint64
+	AvailabilityZone   string
+	DeviceName         string
+	AttachExternalDisk bool
+	UnitNumber         uint64
 }
 type VolumeOrchestrationParamsOp func(vmp *VolumeOrchestrationParams) error
 
@@ -401,6 +403,7 @@ type VMOrchestrationParams struct {
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	ExternalGateway         string
 	CustomizeGuest          bool
+	AttachExternalDisk      bool
 	ChefParams              *chefmgmt.VMChefParams
 }
 
@@ -788,9 +791,13 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					Name:       vm.Name + "-shared-volume",
 					Size:       vm.SharedVolumeSize,
 					DeviceName: "vdb",
+					UnitNumber: 1,
 				}
 				newVM.Volumes = append(newVM.Volumes, sharedVolume)
 				newVM.SharedVolume = true
+			}
+			if newVM.Role == RoleVMApplication {
+				newVM.AttachExternalDisk = true
 			}
 			for _, p := range newPorts {
 				if !p.SkipAttachVM {

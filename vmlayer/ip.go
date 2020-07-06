@@ -13,8 +13,6 @@ import (
 // NetworkTypeVLAN is an OpenStack provider network type
 const NetworkTypeVLAN string = "vlan"
 
-var InternalNetworkRoute = "10.101.0.0/16"
-
 // ServerIP is an IP address for a given network on a port.  In the case of floating IPs, there are both
 // internal and external addresses which are associated via NAT.   In the non floating case, the external and internal are the same
 type ServerIP struct {
@@ -181,4 +179,16 @@ func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, se
 		}
 	}
 	return nil
+}
+
+func (v *VMPlatform) GetInternalNetworkRoute(ctx context.Context) (string, error) {
+	netSpec, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
+	if err != nil {
+		return "", err
+	}
+	// cidr in netspec is format like 10.101.x.0/24, where X is the delimter octet.
+	// Only the 3rd octet is supported for delimiter so the route is always /16
+	netaddr := strings.ToUpper(netSpec.NetworkAddress)
+	netaddr = strings.Replace(netaddr, "X", "0", 1)
+	return netaddr + "/16", nil
 }
