@@ -165,7 +165,10 @@ func RunTerraformApply(ctx context.Context, terraformDir string, opts ...Terrafo
 			break
 		}
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("Terraform apply failed: %s", err)
+	}
+	return nil
 }
 
 func ApplyTerraformPlan(ctx context.Context, terraformDir string, fileName string, updateCallback edgeproto.CacheUpdateCallback, opts ...TerraformOp) error {

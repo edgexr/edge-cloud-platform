@@ -370,11 +370,11 @@ func (v *VSpherePlatform) GetTagCategories(ctx context.Context) ([]GovcTagCatego
 	return returnedcats, err
 }
 
-func (v *VSpherePlatform) GetIpFromTagsForVM(ctx context.Context, vmName, netname string) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM", "vmName", vmName, "netname", netname)
+func (v *VSpherePlatform) GetIpsFromTagsForVM(ctx context.Context, vmName string, sd *vmlayer.ServerDetail) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIpsFromTagsForVM", "vmName", vmName)
 	tags, err := v.getTagsForCategory(ctx, v.GetVmIpTagCategory(ctx))
 	if err != nil {
-		return "", err
+		return err
 	}
 	for _, t := range tags {
 		// vmtags are format vm__network__cidr
@@ -386,11 +386,32 @@ func (v *VSpherePlatform) GetIpFromTagsForVM(ctx context.Context, vmName, netnam
 		vm := ts[0]
 		net := ts[1]
 		ip := ts[2]
-		if vm == vmName && net == netname {
-			return ip, nil
+		if vm != vmName {
+			continue
+		}
+
+		// see if there is an existing port in the server details and update it
+		found := false
+		for i, s := range sd.Addresses {
+			if s.Network == net {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Updated address via tag", "vm", vm, "net", net, "ip", ip)
+				sd.Addresses[i].ExternalAddr = ip
+				sd.Addresses[i].InternalAddr = ip
+				found = true
+			}
+		}
+		if !found {
+			sip := vmlayer.ServerIP{
+				InternalAddr: ip,
+				ExternalAddr: ip,
+				Network:      net,
+				PortName:     vmlayer.GetPortName(vmName, net),
+			}
+			sd.Addresses = append(sd.Addresses, sip)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Added address via tag", "vm", vm, "net", net, "ip", ip)
 		}
 	}
-	return "", fmt.Errorf("no ip found from tags for %s", vmName)
+	return nil
 }
 
 func (v *VSpherePlatform) GetExternalIPForServer(ctx context.Context, server string) (string, error) {
@@ -451,50 +472,27 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 	1) the VM is powered off
 	2) the VM has not yet reported the IPs to VC after startup
 	*/
-	netlist, err := v.GetNetworkListForGovcVm(ctx, sd.Name)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to get network list for VM", "name", govcVm.Name, "err", err)
-	}
-	for i, net := range govcVm.Guest.Net {
+	for _, net := range govcVm.Guest.Net {
 		var sip vmlayer.ServerIP
-		// sip.Network = net.Network -- prior to vSphere 7 this worked, TODO: check in future if this is fixed
+		sip.Network = net.Network
 		sip.MacAddress = net.MacAddress
 		sip.PortName = vmlayer.GetPortName(govcVm.Name, net.Network)
-		if i < len(netlist) {
-			sip.Network = netlist[i]
-		}
 		if net.Network == "" {
 			continue
 		}
 		if len(net.IpAddress) > 0 {
 			sip.ExternalAddr = net.IpAddress[0]
 			sip.InternalAddr = net.IpAddress[0]
-		} else {
-			ip, err := v.GetIpFromTagsForVM(ctx, sd.Name, sip.Network)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "net", sip.Network, "err", err)
-			} else {
-				sip.ExternalAddr = ip
-				sip.InternalAddr = ip
-			}
 		}
 		sd.Addresses = append(sd.Addresses, sip)
 	}
 	// if there is not guest net info, populate what is available from tags for the external network
 	// this can happen for VMs which do not have vmtools installed
-	if len(govcVm.Guest.Net) == 0 {
-		var sip vmlayer.ServerIP
-		sip.Network = v.vmProperties.GetCloudletExternalNetwork()
-		sip.PortName = vmlayer.GetPortName(govcVm.Name, sip.Network)
-		ip, err := v.GetIpFromTagsForVM(ctx, sd.Name, sip.Network)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetIpFromTagsForVM failed", "net", sip.Network, "err", err)
-		} else {
-			sip.ExternalAddr = ip
-			sip.InternalAddr = ip
-			sd.Addresses = append(sd.Addresses, sip)
-		}
+	err := v.GetIpsFromTagsForVM(ctx, sd.Name, &sd)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetIpsFromTagsForVM failed", "err", err)
 	}
+
 	return &sd
 }
 
