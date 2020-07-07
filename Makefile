@@ -124,6 +124,12 @@ edgebox-start:
 edgebox-stop:
 	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp
 
+edgebox-docker-start:
+	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_edgebox_docker.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop
+
+edgebox-docker-stop:
+	e2e-tests -testfile ./e2e-tests/testfiles/delete_edgebox_docker_stop_cleanup.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+
 build-edgebox:
 	mkdir edgebox_bin
 	mkdir edgebox_bin/ansible
