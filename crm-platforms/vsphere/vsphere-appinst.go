@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 
 func (v *VSpherePlatform) ConvertQcowToVmdk(ctx context.Context, sourceFile string, size uint64) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConvertQcowToVmdk", "sourceFile", sourceFile, "size", size)
-	destFile := strings.ReplaceAll(sourceFile, ".qcow2", "")
+	destFile := strings.TrimSuffix(sourceFile, filepath.Ext(sourceFile))
 	destFile = destFile + ".vmdk"
 
 	convertChan := make(chan string, 1)

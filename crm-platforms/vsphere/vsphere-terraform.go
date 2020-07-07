@@ -44,6 +44,7 @@ type VSphereGeneralParams struct {
 	VmIpTagCategory          string
 	VmDomainTagCategory      string
 	SubnetTagCategory        string
+	SessionPath              string
 }
 
 type VSphereVMGroupParams struct {
@@ -212,6 +213,7 @@ func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName, d
 	vgp.SubnetTagCategory = v.GetSubnetTagCategory(ctx)
 	vgp.VmIpTagCategory = v.GetVmIpTagCategory(ctx)
 	vgp.VmDomainTagCategory = v.GetVMDomainTagCategory(ctx)
+	vgp.SessionPath = "sessions"
 	return nil
 }
 
@@ -395,6 +397,9 @@ var vcenterTemplate = `
 		# If you have a self-signed cert
 		allow_unverified_ssl = true
 		version = "{{.TerraformProviderVersion}}"
+		persist_session = true
+		rest_session_path = "{{.SessionPath}}"
+		vim_session_path = "{{.SessionPath}}"
 	}
   
   	data "vsphere_datacenter" "dc" {
