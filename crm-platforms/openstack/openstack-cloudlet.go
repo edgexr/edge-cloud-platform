@@ -82,7 +82,7 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 	return nil
 }
 
-func (o *OpenstackPlatform) ImportDataFromInfra(ctx context.Context) error {
+func (o *OpenstackPlatform) ImportDataFromInfra(ctx context.Context, domain vmlayer.VMDomain) error {
 	// nothing to do
 	return nil
 }

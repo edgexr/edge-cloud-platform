@@ -26,7 +26,7 @@ type VMProvider interface {
 	SetVMProperties(vmProperties *VMProperties)
 	SetCaches(ctx context.Context, caches *platform.Caches)
 	InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error
-	ImportDataFromInfra(ctx context.Context) error
+	ImportDataFromInfra(ctx context.Context, domain VMDomain) error
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)
 	GetNetworkList(ctx context.Context) ([]string, error)
 	AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error)
@@ -296,6 +296,6 @@ func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.C
 	if err != nil {
 		return err
 	}
-	return v.VMProvider.ImportDataFromInfra(ctx)
+	return v.VMProvider.ImportDataFromInfra(ctx, VMDomainCompute)
 
 }
