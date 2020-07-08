@@ -67,7 +67,12 @@ func TestHeatTemplate(t *testing.T) {
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
 
+	ckey := edgeproto.CloudletKey{
+		Organization: "MobiledgeX",
+		Name:         "unit-test",
+	}
 	pc := pf.PlatformConfig{}
+	pc.CloudletKey = &ckey
 
 	op := OpenstackPlatform{TestMode: true}
 	var vmp = vmlayer.VMPlatform{
