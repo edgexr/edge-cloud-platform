@@ -309,13 +309,18 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if pfConfig.ChefServerPath == "" {
 		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
-
 	pc := pf.PlatformConfig{
-		CloudletKey:    &cloudlet.Key,
-		Region:         pfConfig.Region,
-		AppDNSRoot:     pfConfig.AppDnsRoot,
-		ChefServerPath: pfConfig.ChefServerPath,
-		DeploymentTag:  pfConfig.DeploymentTag,
+		CloudletKey:         &cloudlet.Key,
+		PhysicalName:        cloudlet.PhysicalName,
+		VaultAddr:           pfConfig.VaultAddr,
+		Region:              pfConfig.Region,
+		TestMode:            pfConfig.TestMode,
+		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
+		VMImageVersion:      cloudlet.VmImageVersion,
+		EnvVars:             pfConfig.EnvVar,
+		AppDNSRoot:          pfConfig.AppDnsRoot,
+		ChefServerPath:      pfConfig.ChefServerPath,
+		DeploymentTag:       pfConfig.DeploymentTag,
 	}
 
 	err = v.InitProps(ctx, &pc, vaultConfig)
@@ -330,6 +335,10 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	rootLBName := v.GetRootLBName(&cloudlet.Key)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
+		err = v.VMProvider.ImportDataFromInfra(ctx, VMDomainAny)
+		if err != nil {
+			return fmt.Errorf("ImportDataFromInfra error: %v", err)
+		}
 		nodes := v.GetPlatformNodes(cloudlet)
 		for _, nodeName := range nodes {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", nodeName))
@@ -338,7 +347,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 				return fmt.Errorf("DeleteCloudlet error: %v", err)
 			}
 		}
-
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
 		err = v.VMProvider.DeleteVMs(ctx, rootLBName)
 		if err != nil {

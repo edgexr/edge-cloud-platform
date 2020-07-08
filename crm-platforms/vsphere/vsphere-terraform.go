@@ -683,6 +683,12 @@ func (v *VSpherePlatform) ImportTerraformPlan(ctx context.Context, planName stri
 	return nil
 }
 
+func (v *VSpherePlatform) IsTerraformInitialized(ctx context.Context) bool {
+	terraformDir := v.getTerraformDir(ctx)
+	_, err := os.Stat(terraformDir)
+	return err == nil
+}
+
 // TerraformSetupVsphere creates the basic plan for the cloudlet.  It does not apply it
 func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "TerraformSetupVsphere")

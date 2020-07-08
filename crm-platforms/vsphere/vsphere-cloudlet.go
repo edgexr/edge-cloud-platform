@@ -153,9 +153,16 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 	return flavors, nil
 }
 
-func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra")
+func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context, domain vmlayer.VMDomain) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra", "domain", domain)
 
+	if !v.IsTerraformInitialized(ctx) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Terraform not initialized, perform setup")
+		err := v.TerraformSetupVsphere(ctx, edgeproto.DummyUpdateCallback)
+		if err != nil {
+			return fmt.Errorf("Terraform setup Failed: %v", err)
+		}
+	}
 	// first import existing resources
 	pools, err := v.GetResourcePools(ctx)
 	if err != nil {
@@ -163,29 +170,34 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import Resource Pools")
 	for _, p := range pools.ResourcePools {
-		if strings.HasSuffix(p.Name, string(vmlayer.VMDomainCompute)) {
-			err = v.ImportTerraformResourcePool(ctx, p.Name, p.Path)
-			if err != nil {
-				return err
-			}
+		if domain != vmlayer.VMDomainAny && !strings.HasSuffix(p.Name, string(domain)) {
+			continue
+		}
+		err = v.ImportTerraformResourcePool(ctx, p.Name, p.Path)
+		if err != nil {
+			return err
 		}
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import Tags")
-	tags, err := v.GetTags(ctx)
-	if err != nil {
-		return err
-	}
-	dcName := v.GetDatacenterName(ctx)
-	for _, c := range tags {
-		if strings.HasPrefix(c.Category, dcName) {
+
+	var categories []string
+	categories = append(categories, v.GetVmIpTagCategory(ctx))
+	categories = append(categories, v.GetSubnetTagCategory(ctx))
+	categories = append(categories, v.GetVMDomainTagCategory(ctx))
+	for _, cat := range categories {
+		tags, err := v.getTagsForCategory(ctx, cat)
+		if err != nil {
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "getTagsForCategory returns", "category", cat, "tags", tags, "err", err)
+		for _, c := range tags {
 			err = v.ImportTerraformTag(ctx, c.Name, c.Category)
 			if err != nil {
 				return err
 			}
 		}
 	}
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import Distributed Port Groups")
 	pgrps, err := v.GetDistributedPortGroups(ctx)
 	if err != nil {
@@ -200,7 +212,7 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import VMs")
 	// filter on compute VMs so we don't delete anything else
-	vms, err := v.GetVMs(ctx, VMMatchAny, vmlayer.VMDomainCompute)
+	vms, err := v.GetVMs(ctx, VMMatchAny, domain)
 	if err != nil {
 		return err
 	}

@@ -343,6 +343,14 @@ func (v *VSpherePlatform) getTagsForCategory(ctx context.Context, category strin
 		err = fmt.Errorf("cannot unmarshal govc subnet tags, %v", err)
 		return nil, err
 	}
+	// due to an intermittent govc bug (or maybe a vsphere bug), sometimes the category id in the tag is a UUID instead
+	// of a name so we will update it here before returning to get consistent results
+	for i, t := range tags {
+		if t.Category != category {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Updating category for tag", "orig category", t.Category, "category", category)
+			tags[i].Category = category
+		}
+	}
 	return tags, nil
 }
 
@@ -642,11 +650,11 @@ func (v *VSpherePlatform) SetPowerState(ctx context.Context, serverName, serverA
 
 	switch serverAction {
 	case vmlayer.ActionStop:
-		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-off", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-dc", dcName, "-off", vmPath)
 	case vmlayer.ActionStart:
-		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-on", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-dc", dcName, "-on", vmPath)
 	case vmlayer.ActionReboot:
-		_, err = v.TimedGovcCommand(ctx, "govc", "-dc", dcName, "vm.power", "-reset", vmPath)
+		_, err = v.TimedGovcCommand(ctx, "govc", "vm.power", "-dc", dcName, "-reset", vmPath)
 	default:
 		return fmt.Errorf("unsupported server action: %s", serverAction)
 	}
