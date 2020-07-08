@@ -63,6 +63,7 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 					serverIP.InternalAddr = strings.TrimSpace(addrs[0])
 					serverIP.ExternalAddr = strings.TrimSpace(addrs[1])
 					serverIP.ExternalAddrIsFloating = true
+					serverDetail.Addresses = append(serverDetail.Addresses, serverIP)
 				} else {
 					return fmt.Errorf("GetServerExternalIPFromAddr: Unable to parse '%s'", addr)
 				}
