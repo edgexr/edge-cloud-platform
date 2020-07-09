@@ -217,6 +217,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		v.Type)
 
 	updateCallback(edgeproto.UpdateTask, "Initializing VM platform type: "+v.Type)
+	v.VMProperties.Domain = VMDomainCompute
 
 	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
 	if err != nil {
@@ -297,5 +298,4 @@ func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.C
 		return err
 	}
 	return v.VMProvider.ImportDataFromInfra(ctx, VMDomainCompute)
-
 }

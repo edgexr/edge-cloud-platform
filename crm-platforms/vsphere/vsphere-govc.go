@@ -302,19 +302,15 @@ func (v *VSpherePlatform) GetUsedSubnetCIDRs(ctx context.Context) (map[string]st
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetUsedSubnetCIDRs")
 
 	cidrUsed := make(map[string]string)
-	tags, err := v.getTagsForCategory(ctx, v.GetSubnetTagCategory(ctx))
+	tags, err := v.getTagsForCategory(ctx, v.GetSubnetTagCategory(ctx), vmlayer.VMDomainAny)
 	if err != nil {
 		return nil, err
 	}
 	for _, t := range tags {
-		// tags are format subnet__cidr
-		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
-		if len(ts) != 2 {
-			log.SpanLog(ctx, log.DebugLevelInfra, "incorrect subnet tag format", "tag", t)
-			return nil, fmt.Errorf("incorrect subnet tag format %s", t)
+		sn, cidr, _, err := v.ParseSubnetTag(ctx, t.Name)
+		if err != nil {
+			return nil, err
 		}
-		sn := ts[0]
-		cidr := ts[1]
 		cidrUsed[cidr] = sn
 	}
 
@@ -333,10 +329,11 @@ func (v *VSpherePlatform) GetTags(ctx context.Context) ([]GovcTag, error) {
 	return tags, nil
 }
 
-func (v *VSpherePlatform) getTagsForCategory(ctx context.Context, category string) ([]GovcTag, error) {
+func (v *VSpherePlatform) getTagsForCategory(ctx context.Context, category string, domainMatch vmlayer.VMDomain) ([]GovcTag, error) {
 	out, err := v.TimedGovcCommand(ctx, "govc", "tags.ls", "-c", category, "-json")
 
 	var tags []GovcTag
+	var matchedTags []GovcTag
 	err = json.Unmarshal(out, &tags)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "getTagsForCategory unmarshal fail", "out", string(out), "err", err)
@@ -345,13 +342,20 @@ func (v *VSpherePlatform) getTagsForCategory(ctx context.Context, category strin
 	}
 	// due to an intermittent govc bug (or maybe a vsphere bug), sometimes the category id in the tag is a UUID instead
 	// of a name so we will update it here before returning to get consistent results
-	for i, t := range tags {
-		if t.Category != category {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Updating category for tag", "orig category", t.Category, "category", category)
-			tags[i].Category = category
+	for _, t := range tags {
+		domain, err := v.GetDomainFromTag(ctx, t.Name)
+		if err != nil {
+			return nil, err
+		}
+		if domainMatch == vmlayer.VMDomainAny || domain == string(domainMatch) {
+			if t.Category != category {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Updating category for tag", "orig category", t.Category, "category", category)
+				t.Category = category
+			}
+			matchedTags = append(matchedTags, t)
 		}
 	}
-	return tags, nil
+	return matchedTags, nil
 }
 
 func (v *VSpherePlatform) GetTagCategories(ctx context.Context) ([]GovcTagCategory, error) {
@@ -380,20 +384,15 @@ func (v *VSpherePlatform) GetTagCategories(ctx context.Context) ([]GovcTagCatego
 
 func (v *VSpherePlatform) GetIpsFromTagsForVM(ctx context.Context, vmName string, sd *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetIpsFromTagsForVM", "vmName", vmName)
-	tags, err := v.getTagsForCategory(ctx, v.GetVmIpTagCategory(ctx))
+	tags, err := v.getTagsForCategory(ctx, v.GetVmIpTagCategory(ctx), vmlayer.VMDomainAny)
 	if err != nil {
 		return err
 	}
 	for _, t := range tags {
-		// vmtags are format vm__network__cidr
-		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
-		if len(ts) != 3 {
-			log.SpanLog(ctx, log.DebugLevelInfra, "incorrect tag format", "tag", t)
-			continue
+		vm, net, ip, _, err := v.ParseVMIpTag(ctx, t.Name)
+		if err != nil {
+			return err
 		}
-		vm := ts[0]
-		net := ts[1]
-		ip := ts[2]
 		if vm != vmName {
 			continue
 		}
@@ -442,7 +441,7 @@ func (v *VSpherePlatform) GetUsedExternalIPs(ctx context.Context) (map[string]st
 	ipsUsed := make(map[string]string)
 	extNetId := v.IdSanitize(v.vmProperties.GetCloudletExternalNetwork())
 
-	tags, err := v.getTagsForCategory(ctx, v.GetVmIpTagCategory(ctx))
+	tags, err := v.getTagsForCategory(ctx, v.GetVmIpTagCategory(ctx), vmlayer.VMDomainAny)
 	if err != nil {
 		return nil, err
 	}
@@ -450,13 +449,13 @@ func (v *VSpherePlatform) GetUsedExternalIPs(ctx context.Context) (map[string]st
 
 	for _, t := range tags {
 		// tags are format vm__network__ip
-		ts := strings.Split(t.Name, vmlayer.TagDelimiter)
-		if len(ts) != 3 {
-			return nil, fmt.Errorf("notice: incorrect tag format for tag: %s", t)
+		vm, net, ip, _, err := v.ParseVMIpTag(ctx, t.Name)
+		if err != nil {
+			return nil, err
 		}
-		if ts[1] == extNetId {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Found external ip", "server", ts[0], "ip", ts[2])
-			ipsUsed[ts[2]] = ts[0]
+		if net == extNetId {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Found external ip", "vm", vm, "ip", ip)
+			ipsUsed[ip] = vm
 		}
 	}
 	return ipsUsed, nil
@@ -580,18 +579,14 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 	return sd, err
 }
 
-func getVmNamesForDomain(ctx context.Context, domainMatch vmlayer.VMDomain, tags []GovcTag) (map[string]string, error) {
+func (v *VSpherePlatform) getVmNamesFromTags(ctx context.Context, tags []GovcTag) (map[string]string, error) {
 	names := make(map[string]string)
 	for _, tag := range tags {
-		ts := strings.Split(tag.Name, vmlayer.TagDelimiter)
-		if len(ts) != 2 {
-			return nil, fmt.Errorf("Incorrect VM Domain tag format %s", ts)
+		vmname, _, err := v.ParseVMDomainTag(ctx, tag.Name)
+		if err != nil {
+			return nil, err
 		}
-		vmname := ts[0]
-		domain := ts[1]
-		if domainMatch == vmlayer.VMDomainAny || domain == string(domainMatch) {
-			names[vmname] = vmname
-		}
+		names[vmname] = vmname
 	}
 	return names, nil
 }
@@ -601,7 +596,7 @@ func (v *VSpherePlatform) GetVMs(ctx context.Context, vmNameMatch string, domain
 	var vms GovcVMs
 	dcName := v.GetDatacenterName(ctx)
 
-	vmtags, err := v.getTagsForCategory(ctx, v.GetVMDomainTagCategory(ctx))
+	vmtags, err := v.getTagsForCategory(ctx, v.GetVMDomainTagCategory(ctx), domainMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -624,14 +619,14 @@ func (v *VSpherePlatform) GetVMs(ctx context.Context, vmNameMatch string, domain
 		// no tag filtering
 		return &vms, nil
 	}
-	namematch, err := getVmNamesForDomain(ctx, domainMatch, vmtags)
+	vmnames, err := v.getVmNamesFromTags(ctx, vmtags)
 	if err != nil {
 		return nil, err
 	}
 	// filter the list
 	var matchedVms GovcVMs
 	for _, vm := range vms.VirtualMachines {
-		_, ok := namematch[vm.Name]
+		_, ok := vmnames[vm.Name]
 		if ok {
 			log.SpanLog(ctx, log.DebugLevelInfra, "VM Matched tag", "vmName", vm.Name, "tagMatch", domainMatch)
 			matchedVms.VirtualMachines = append(matchedVms.VirtualMachines, vm)

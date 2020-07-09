@@ -19,6 +19,7 @@ type VMProperties struct {
 	CommonPf         infracommon.CommonPlatform
 	sharedRootLBName string
 	sharedRootLB     *MEXRootLB
+	Domain           VMDomain
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must

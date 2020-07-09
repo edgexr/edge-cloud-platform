@@ -64,7 +64,7 @@ func (v *VSpherePlatform) NameSanitize(name string) string {
 	r := strings.NewReplacer(
 		" ", "",
 		"&", "",
-		",", "",
+		",", "_",
 		"/", "_",
 		"!", "")
 	str := r.Replace(name)
@@ -85,6 +85,7 @@ func (v *VSpherePlatform) NameSanitize(name string) string {
 func (v *VSpherePlatform) IdSanitize(name string) string {
 	str := v.NameSanitize(name)
 	str = strings.ReplaceAll(str, ".", "-")
+	str = strings.ReplaceAll(str, "=", "-")
 	return str
 }
 
