@@ -168,7 +168,7 @@ resources:
     {{.Name}}:
         type: OS::Neutron::FloatingIPAssociation
         properties:
-            floatingip_id: {{.FloatingIpId.Name}}
+            floatingip_id: {{.FloatingIpId}}
             {{- if .Port.Preexisting}}
             port_id: {{.Port.Name}} }
             {{- else}}
@@ -381,9 +381,9 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	}
 
 	// populate the floating ips
-
 	for i, f := range VMGroupOrchestrationParams.FloatingIPs {
-		if f.FloatingIpId.Name == vmlayer.NextAvailableResource {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Floating ip specified", "fip", f)
+		if f.FloatingIpId == vmlayer.NextAvailableResource {
 			var fipid string
 			var err error
 			if action == heatTest {
@@ -394,7 +394,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 					return err
 				}
 			}
-			VMGroupOrchestrationParams.FloatingIPs[i].FloatingIpId.Name = fipid
+			VMGroupOrchestrationParams.FloatingIPs[i].FloatingIpId = fipid
 		}
 	}
 
