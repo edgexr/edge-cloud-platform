@@ -27,6 +27,13 @@ var terraformTest string = "TEST"
 
 const DoesNotExistError string = "does not exist"
 
+const TagFieldDomain = "domain"
+const TagFieldIp = "ip"
+const TagFieldSubnetName = "subnetname"
+const TagFieldCidr = "cidr"
+const TagFieldVmName = "vmname"
+const TagFieldNetName = "netname"
+
 var vmOrchestrateLock sync.Mutex
 
 type VSphereGeneralParams struct {
@@ -71,6 +78,108 @@ func (v *VSpherePlatform) GetSubnetTagCategory(ctx context.Context) string {
 
 func (v *VSpherePlatform) GetVMDomainTagCategory(ctx context.Context) string {
 	return v.GetDatacenterName(ctx) + "-vmdomain"
+}
+
+func getTagFieldMap(tag string) (map[string]string, error) {
+	fieldMap := make(map[string]string)
+	ts := strings.Split(tag, ",")
+	for _, field := range ts {
+		fs := strings.Split(field, "=")
+		if len(fs) != 2 {
+			return nil, fmt.Errorf("incorrectly formatted tag: %s", tag)
+		}
+		fieldMap[fs[0]] = fs[1]
+	}
+	return fieldMap, nil
+}
+
+// GetDomainFromTag get the domain from the tag which is always the last field
+func (v *VSpherePlatform) GetDomainFromTag(ctx context.Context, tag string) (string, error) {
+	fm, err := getTagFieldMap(tag)
+	if err != nil {
+		return "", err
+	}
+	domain, ok := fm[TagFieldDomain]
+	if !ok {
+		return "", fmt.Errorf("No domain found for tag")
+	}
+	return domain, nil
+
+}
+
+func (v *VSpherePlatform) GetVmIpTag(ctx context.Context, vmName, network, ipaddr string) string {
+	return TagFieldVmName + "=" + vmName + "," + TagFieldNetName + "=" + network + "," + TagFieldIp + "=" + ipaddr + "," + TagFieldDomain + "=" + string(v.vmProperties.Domain)
+}
+
+// ParseVMIpTag returns vmname, network, ipaddr, domain
+func (v *VSpherePlatform) ParseVMIpTag(ctx context.Context, tag string) (string, string, string, string, error) {
+	fm, err := getTagFieldMap(tag)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	vmname, ok := fm[TagFieldVmName]
+	if !ok {
+		return "", "", "", "", fmt.Errorf("No vmname in vmip tag")
+	}
+	network, ok := fm[TagFieldNetName]
+	if !ok {
+		return "", "", "", "", fmt.Errorf("No netname in vmip tag")
+	}
+	ip, ok := fm[TagFieldIp]
+	if !ok {
+		return "", "", "", "", fmt.Errorf("No ip in vmip tag")
+	}
+	domain, ok := fm[TagFieldDomain]
+	if !ok {
+		return "", "", "", "", fmt.Errorf("No domain in vmip tag")
+	}
+	return vmname, network, ip, domain, nil
+}
+
+func (v *VSpherePlatform) GetSubnetTag(ctx context.Context, subnetName, cidr string) string {
+	return TagFieldSubnetName + "=" + subnetName + "," + TagFieldCidr + "=" + cidr + "," + TagFieldDomain + "=" + string(v.vmProperties.Domain)
+}
+
+// ParseSubnetTag returns subnetName, cidr, domain
+func (v *VSpherePlatform) ParseSubnetTag(ctx context.Context, tag string) (string, string, string, error) {
+	fm, err := getTagFieldMap(tag)
+	if err != nil {
+		return "", "", "", err
+	}
+	subnetName, ok := fm[TagFieldSubnetName]
+	if !ok {
+		return "", "", "", fmt.Errorf("No subnetname in subnet tag")
+	}
+	cidr, ok := fm[TagFieldCidr]
+	if !ok {
+		return "", "", "", fmt.Errorf("No cidr in subnet tag")
+	}
+	domain, ok := fm[TagFieldDomain]
+	if !ok {
+		return "", "", "", fmt.Errorf("No domain in subnet tag")
+	}
+	return subnetName, cidr, domain, nil
+}
+
+func (v *VSpherePlatform) GetVmDomainTag(ctx context.Context, vmName string) string {
+	return TagFieldVmName + "=" + vmName + "," + TagFieldDomain + "=" + string(v.vmProperties.Domain)
+}
+
+// ParseVMDomainTag returns vmname, domain
+func (v *VSpherePlatform) ParseVMDomainTag(ctx context.Context, tag string) (string, string, error) {
+	fm, err := getTagFieldMap(tag)
+	if err != nil {
+		return "", "", err
+	}
+	vmName, ok := fm[TagFieldVmName]
+	if !ok {
+		return "", "", fmt.Errorf("No subnetname in vmdomain tag")
+	}
+	domain, ok := fm[TagFieldDomain]
+	if !ok {
+		return "", "", fmt.Errorf("No domain in vmdomain tag")
+	}
+	return vmName, domain, nil
 }
 
 func (v *VSpherePlatform) ImportTagCategories(ctx context.Context) error {
@@ -141,7 +250,7 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
 	fileName := v.getTerraformDir(ctx) + "/" + serverName + ".tf"
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "fileName", fileName, "ipaddr", ipaddr, "action", action)
-	tagName := serverName + vmlayer.TagDelimiter + subnetName + vmlayer.TagDelimiter + ipaddr
+	tagName := v.GetVmIpTag(ctx, serverName, subnetName, ipaddr)
 	tagId := v.IdSanitize(tagName)
 
 	interfaceContents := fmt.Sprintf(`
@@ -194,7 +303,7 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 	return err
 }
 
-func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName, domain string, vgp *VSphereGeneralParams, action string) error {
+func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName string, vgp *VSphereGeneralParams, action string) error {
 	vcaddr, _, err := v.GetVCenterAddress()
 	if err != nil {
 		return err
@@ -209,7 +318,7 @@ func (v *VSpherePlatform) populateGeneralParams(ctx context.Context, planName, d
 	vgp.ComputeCluster = v.GetComputeCluster()
 	vgp.DataStore = v.GetDataStore()
 	vgp.InternalDVS = v.GetInternalVSwitch()
-	vgp.ResourcePool = v.IdSanitize(getResourcePool(planName, domain))
+	vgp.ResourcePool = v.IdSanitize(getResourcePool(planName, string(v.vmProperties.Domain)))
 	vgp.SubnetTagCategory = v.GetSubnetTagCategory(ctx)
 	vgp.VmIpTagCategory = v.GetVmIpTagCategory(ctx)
 	vgp.VmDomainTagCategory = v.GetVMDomainTagCategory(ctx)
@@ -252,8 +361,7 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				vmgp.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 1)
 				vmgp.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet)
 				masterIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 10)
-
-				tagname := s.Name + vmlayer.TagDelimiter + subnet
+				tagname := v.GetSubnetTag(ctx, s.Name, subnet)
 				tagid := v.IdSanitize(tagname)
 				vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetSubnetTagCategory(ctx), Id: tagid, Name: tagname})
 				break
@@ -343,7 +451,7 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 					Address: eip,
 				}
 				vmgp.VMs[vmidx].FixedIPs = append(vmgp.VMs[vmidx].FixedIPs, fip)
-				tagname := vm.Name + vmlayer.TagDelimiter + portref.NetworkId + vmlayer.TagDelimiter + eip
+				tagname := v.GetVmIpTag(ctx, vm.Name, portref.NetworkId, eip)
 				tagid := v.IdSanitize(tagname)
 				vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
 				vmgp.VMs[vmidx].ExternalGateway, _ = v.GetExternalGateway(ctx, "")
@@ -362,7 +470,7 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 						if vmgp.VMs[vmidx].ExternalGateway == "" {
 							vmgp.VMs[vmidx].ExternalGateway = s.GatewayIP
 						}
-						tagname := vm.Name + vmlayer.TagDelimiter + s.Id + vmlayer.TagDelimiter + vmgp.VMs[vmidx].FixedIPs[fipidx].Address
+						tagname := v.GetVmIpTag(ctx, vm.Name, s.Id, vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
 						tagid := v.IdSanitize(tagname)
 						vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
 						log.SpanLog(ctx, log.DebugLevelInfra, "updating address for VM", "vmname", vmgp.VMs[vmidx].Name, "address", vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
@@ -374,11 +482,9 @@ func (v *VSpherePlatform) populateVMOrchParams(ctx context.Context, vmgp *vmlaye
 				}
 			}
 		}
-		if vmgp.VMDomain != "" {
-			tagname := vm.Name + vmlayer.TagDelimiter + vmgp.VMDomain
-			tagid := v.IdSanitize(tagname)
-			vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVMDomainTagCategory(ctx), Id: tagid, Name: tagname})
-		}
+		tagname := v.GetVmDomainTag(ctx, vm.Name)
+		tagid := v.IdSanitize(tagname)
+		vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVMDomainTagCategory(ctx), Id: tagid, Name: tagname})
 
 	} //for vm
 
@@ -715,7 +821,7 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 	}
 
 	var vgp VSphereGeneralParams
-	err = v.populateGeneralParams(ctx, planName, "", &vgp, terraformCreate)
+	err = v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
 	if err != nil {
 		return err
 	}
@@ -757,7 +863,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 	planName := v.NameSanitize(vmGroupOrchestrationParams.GroupName)
 	var vvgp VSphereVMGroupParams
 	var vgp VSphereGeneralParams
-	err := v.populateGeneralParams(ctx, planName, vmGroupOrchestrationParams.VMDomain, &vgp, action)
+	err := v.populateGeneralParams(ctx, planName, &vgp, action)
 	if err != nil {
 		return err
 	}

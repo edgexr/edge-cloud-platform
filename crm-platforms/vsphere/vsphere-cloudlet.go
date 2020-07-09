@@ -186,13 +186,13 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context, domain vmlaye
 	categories = append(categories, v.GetSubnetTagCategory(ctx))
 	categories = append(categories, v.GetVMDomainTagCategory(ctx))
 	for _, cat := range categories {
-		tags, err := v.getTagsForCategory(ctx, cat)
+		tags, err := v.getTagsForCategory(ctx, cat, domain)
 		if err != nil {
 			return err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "getTagsForCategory returns", "category", cat, "tags", tags, "err", err)
-		for _, c := range tags {
-			err = v.ImportTerraformTag(ctx, c.Name, c.Category)
+		for _, t := range tags {
+			err = v.ImportTerraformTag(ctx, t.Name, t.Category)
 			if err != nil {
 				return err
 			}
@@ -243,7 +243,7 @@ func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, 
 
 	planName := v.NameSanitize(VMGroupOrchestrationParams.GroupName)
 	var vgp VSphereGeneralParams
-	err := v.populateGeneralParams(ctx, planName, "", &vgp, terraformCreate)
+	err := v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
 	if err != nil {
 		return "", err
 	}

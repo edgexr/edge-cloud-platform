@@ -58,8 +58,6 @@ var RoleVMApplication VMRole = "vmapp"
 var RoleVMPlatform VMRole = "platform"
 var RoleMatchAny VMRole = "any" // not a real role, used for matching
 
-const TagDelimiter = "__"
-
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free
 var NextAvailableResource = "NextAvailable"
@@ -251,12 +249,6 @@ func WithInitOrchestrator(init bool) VMGroupReqOp {
 		return nil
 	}
 }
-func WithDomain(domain VMDomain) VMGroupReqOp {
-	return func(s *VMGroupRequestSpec) error {
-		s.Domain = string(domain)
-		return nil
-	}
-}
 func WithChefUpdateInfo(updateInfo map[string]string) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.ChefUpdateInfo = updateInfo
@@ -445,7 +437,6 @@ type VMGroupOrchestrationParams struct {
 	SkipInfraSpecificCheck bool
 	SkipSubnetGateway      bool
 	InitOrchestrator       bool
-	VMDomain               string
 	ChefUpdateInfo         map[string]string
 }
 
@@ -520,10 +511,6 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 	if spec.SkipInfraSpecificCheck {
 		vmgp.SkipInfraSpecificCheck = true
-	}
-	vmgp.VMDomain = spec.Domain
-	if vmgp.VMDomain == "" {
-		vmgp.VMDomain = string(VMDomainCompute)
 	}
 	if spec.ChefUpdateInfo != nil {
 		vmgp.ChefUpdateInfo = spec.ChefUpdateInfo
