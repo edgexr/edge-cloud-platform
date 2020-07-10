@@ -72,16 +72,16 @@ func DeleteTerraformPlan(ctx context.Context, terraformDir, planName string) err
 }
 
 type TerraformOpts struct {
-	cleanupOnFailure bool
-	numRetries       int
-	doInit           bool
+	skipCleanupOnFailure bool
+	numRetries           int
+	doInit               bool
 }
 
 type TerraformOp func(to *TerraformOpts) error
 
-func WithCleanupOnFailure(val bool) TerraformOp {
+func WithSkipCleanupOnFailure(val bool) TerraformOp {
 	return func(t *TerraformOpts) error {
-		t.cleanupOnFailure = val
+		t.skipCleanupOnFailure = val
 		return nil
 	}
 }
@@ -186,11 +186,11 @@ func ApplyTerraformPlan(ctx context.Context, terraformDir string, fileName strin
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Apply failed", "fileName", fileName)
-		if topts.cleanupOnFailure {
+		if !topts.skipCleanupOnFailure {
 			if delerr := infracommon.DeleteFile(fileName); delerr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "delete terraform file failed", "fileName", fileName)
 			}
-			// no re-apply without the current plan to remove
+			// re-apply without the current plan to remove
 			err2 := RunTerraformApply(ctx, terraformDir)
 			if err2 != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "terraform apply after delete failed", "fileName", fileName, "err", err)

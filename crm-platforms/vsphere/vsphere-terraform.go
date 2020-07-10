@@ -896,7 +896,7 @@ func (v *VSpherePlatform) orchestrateVMs(ctx context.Context, vmGroupOrchestrati
 		v.getTerraformDir(ctx),
 		terraformFile,
 		updateCallback,
-		terraform.WithCleanupOnFailure(v.vmProperties.CommonPf.GetCleanupOnFailure(ctx)),
+		terraform.WithSkipCleanupOnFailure(vvgp.SkipCleanupOnFailure),
 		terraform.WithRetries(NumTerraformRetries))
 }
 
