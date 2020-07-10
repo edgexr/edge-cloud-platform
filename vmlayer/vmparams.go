@@ -197,6 +197,7 @@ type VMGroupRequestSpec struct {
 	InitOrchestrator       bool
 	Domain                 string
 	ChefUpdateInfo         map[string]string
+	SkipCleanupOnFailure   bool
 }
 
 type VMGroupReqOp func(vmp *VMGroupRequestSpec) error
@@ -252,6 +253,12 @@ func WithInitOrchestrator(init bool) VMGroupReqOp {
 func WithChefUpdateInfo(updateInfo map[string]string) VMGroupReqOp {
 	return func(s *VMGroupRequestSpec) error {
 		s.ChefUpdateInfo = updateInfo
+		return nil
+	}
+}
+func WithSkipCleanupOnFailure(skip bool) VMGroupReqOp {
+	return func(s *VMGroupRequestSpec) error {
+		s.SkipCleanupOnFailure = skip
 		return nil
 	}
 }
@@ -438,6 +445,7 @@ type VMGroupOrchestrationParams struct {
 	SkipSubnetGateway      bool
 	InitOrchestrator       bool
 	ChefUpdateInfo         map[string]string
+	SkipCleanupOnFailure   bool
 }
 
 func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, vmtype VMType, serverName, flavorName string, imageName string, connectExternal bool, opts ...VMReqOp) (*VMRequestSpec, error) {
@@ -478,7 +486,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Context, spec *VMGroupRequestSpec) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMGroupOrchestrationParams", "spec", spec)
 
-	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName, InitOrchestrator: spec.InitOrchestrator}
+	vmgp := VMGroupOrchestrationParams{GroupName: spec.GroupName, InitOrchestrator: spec.InitOrchestrator, SkipCleanupOnFailure: spec.SkipCleanupOnFailure}
 	internalNetName := v.VMProperties.GetCloudletMexNetwork()
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
