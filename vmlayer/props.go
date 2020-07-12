@@ -16,10 +16,11 @@ import (
 )
 
 type VMProperties struct {
-	CommonPf         infracommon.CommonPlatform
-	sharedRootLBName string
-	sharedRootLB     *MEXRootLB
-	Domain           VMDomain
+	CommonPf           infracommon.CommonPlatform
+	sharedRootLBName   string
+	sharedRootLB       *MEXRootLB
+	Domain             VMDomain
+	PlatformSecgrpName string
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must
