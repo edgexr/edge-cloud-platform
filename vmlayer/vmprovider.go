@@ -205,6 +205,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	}
 	v.VMProvider.SetVMProperties(&v.VMProperties)
 	v.VMProperties.sharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
+	v.VMProperties.PlatformSecgrpName = v.GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))
 	return nil
 }
 
@@ -233,6 +234,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars); err != nil {
 		return err
 	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "doing init provider")
 	if err := v.VMProvider.InitProvider(ctx, caches, updateCallback); err != nil {
 		return err

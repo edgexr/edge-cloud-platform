@@ -191,8 +191,7 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
 			}
 		}
 	}
-
-	return nil
+	return o.PrepareCloudletSecurityGroup(ctx)
 }
 
 //GetCloudletSubnets returns subnets inside MEX Network
