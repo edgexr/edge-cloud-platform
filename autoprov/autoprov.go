@@ -83,10 +83,9 @@ func start() error {
 	cacheData.init()
 	autoProvAggr = NewAutoProvAggr(settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec, &cacheData)
 	minMaxChecker = newMinMaxChecker(&cacheData)
-	cacheData.alertCache.SetUpdatedCb(alertChanged)
+	cacheData.alertCache.AddUpdatedCb(alertChanged)
 
 	autoProvAggr.Start()
-	minMaxChecker.Start()
 
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(addrs, dialOpts)
@@ -99,9 +98,6 @@ func start() error {
 }
 
 func stop() {
-	if minMaxChecker != nil {
-		minMaxChecker.Stop()
-	}
 	if autoProvAggr != nil {
 		autoProvAggr.Stop()
 	}

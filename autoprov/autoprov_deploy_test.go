@@ -38,15 +38,15 @@ func TestDeploy(t *testing.T) {
 	inst2.Key.AppKey.Name = "foo2"
 	go goAppInstApi(ctx, &inst2, cloudcommon.Create, "test", "")
 
-	err := dc.waitForAppInsts(2)
+	err := dc.waitForAppInsts(ctx, 2)
 	require.Nil(t, err)
 
 	go goAppInstApi(ctx, &inst2, cloudcommon.Delete, "test", "")
-	err = dc.waitForAppInsts(1)
+	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
 
 	go goAppInstApi(ctx, &inst, cloudcommon.Delete, "test", "")
-	err = dc.waitForAppInsts(0)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 }
 
@@ -89,14 +89,15 @@ func (s *DummyController) getBufDialer() func(context.Context, string) (net.Conn
 	}
 }
 
-func (s *DummyController) waitForAppInsts(count int) error {
+func (s *DummyController) waitForAppInsts(ctx context.Context, count int) error {
 	for i := 0; i < 50; i++ {
 		if s.appInstCache.GetCount() == count {
+			log.SpanLog(ctx, log.DebugLevelInfo, "waitForAppInsts: count matched", "count", count)
 			return nil
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	log.DebugLog(log.DebugLevelInfo, "Timed out waiting for cache")
+	log.SpanLog(ctx, log.DebugLevelInfo, "Timed out waiting for cache")
 	return fmt.Errorf("Timed out waiting for %d AppInsts, have %d instead", count, s.appInstCache.GetCount())
 }
 

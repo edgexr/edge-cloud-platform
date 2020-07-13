@@ -61,9 +61,9 @@ func NewAutoProvAggr(intervalSec, offsetSec float64, caches *CacheData) *AutoPro
 	s.offsetSec = offsetSec
 	s.caches = caches
 	// set callbacks to respond to changes
-	caches.appCache.SetUpdatedKeyCb(s.UpdateApp)
-	caches.appCache.SetDeletedKeyCb(s.DeleteApp)
-	caches.autoProvPolicyCache.SetUpdatedKeyCb(s.UpdatePolicy)
+	caches.appCache.AddUpdatedKeyCb(s.UpdateApp)
+	caches.appCache.AddDeletedKeyCb(s.DeleteApp)
+	caches.autoProvPolicyCache.AddUpdatedKeyCb(s.UpdatePolicy)
 	return &s
 }
 
