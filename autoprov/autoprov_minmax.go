@@ -10,225 +10,99 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/opentracing/opentracing-go"
+	"github.com/mobiledgex/edge-cloud/util/tasks"
 )
 
 // MinMaxChecker maintains the minimum and maximum number of
 // AppInsts if specified in the policy.
 type MinMaxChecker struct {
-	caches            *CacheData
-	needsCheck        map[edgeproto.AppKey]struct{}
-	failoverRequested map[edgeproto.CloudletKey]*edgeproto.AutoProvInfo
-	mux               sync.Mutex
-	waitGroup         sync.WaitGroup
-	signal            chan bool
-	stop              chan struct{}
+	caches           *CacheData
+	needsCheck       map[edgeproto.AppKey]struct{}
+	failoverRequests map[edgeproto.CloudletKey]*failoverReq
+	mux              sync.Mutex
 	// maintain reverse relationships to be able to look up
 	// which Apps are affected by cloudlet state changes.
-	cloudletPolicies map[edgeproto.CloudletKey]map[edgeproto.PolicyKey]struct{}
-	policyApps       map[edgeproto.PolicyKey]map[edgeproto.AppKey]struct{}
+	policiesByCloudlet edgeproto.AutoProvPolicyByCloudletKey
+	appsByPolicy       edgeproto.AppByAutoProvPolicy
+	workers            tasks.KeyWorkers
 }
 
 func newMinMaxChecker(caches *CacheData) *MinMaxChecker {
 	s := MinMaxChecker{}
 	s.caches = caches
-	s.signal = make(chan bool, 1)
-	s.needsCheck = make(map[edgeproto.AppKey]struct{})
-	s.failoverRequested = make(map[edgeproto.CloudletKey]*edgeproto.AutoProvInfo)
-	s.cloudletPolicies = make(map[edgeproto.CloudletKey]map[edgeproto.PolicyKey]struct{})
-	s.policyApps = make(map[edgeproto.PolicyKey]map[edgeproto.AppKey]struct{})
+	s.failoverRequests = make(map[edgeproto.CloudletKey]*failoverReq)
+	s.workers.Init("autoprov-minmax", s.CheckApp)
+	s.policiesByCloudlet.Init()
+	s.appsByPolicy.Init()
 	// set callbacks to respond to changes
-	caches.appCache.SetUpdatedCb(s.UpdatedApp)
-	caches.appInstCache.SetUpdatedCb(s.UpdatedAppInst)
-	caches.appInstCache.SetDeletedKeyCb(s.DeletedAppInst)
-	caches.autoProvPolicyCache.SetUpdatedCb(s.UpdatedPolicy)
-	caches.cloudletCache.SetUpdatedCb(s.UpdatedCloudlet)
-	caches.cloudletInfoCache.SetUpdatedCb(s.UpdatedCloudletInfo)
-	caches.appInstRefsCache.SetUpdatedCb(s.UpdatedAppInstRefs)
+	caches.appCache.AddUpdatedCb(s.UpdatedApp)
+	caches.appCache.AddDeletedCb(s.DeletedApp)
+	caches.appInstCache.AddUpdatedCb(s.UpdatedAppInst)
+	caches.appInstCache.AddDeletedKeyCb(s.DeletedAppInst)
+	caches.autoProvPolicyCache.AddUpdatedCb(s.UpdatedPolicy)
+	caches.autoProvPolicyCache.AddDeletedCb(s.DeletedPolicy)
+	caches.cloudletCache.AddUpdatedCb(s.UpdatedCloudlet)
+	caches.cloudletInfoCache.AddUpdatedCb(s.UpdatedCloudletInfo)
+	caches.appInstRefsCache.AddUpdatedCb(s.UpdatedAppInstRefs)
 	return &s
 }
 
-func (s *MinMaxChecker) Start() {
+// Maintenace request for a cloudlet
+type failoverReq struct {
+	info         edgeproto.AutoProvInfo
+	appsToCheck  map[edgeproto.AppKey]struct{}
+	mux          sync.Mutex
+	waitApiCalls sync.WaitGroup
+}
+
+func (s *failoverReq) addCompleted(msg string) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.stop != nil {
-		// already started
-		return
-	}
-	s.stop = make(chan struct{})
-	s.waitGroup.Add(1)
-	go s.Run()
+
+	s.info.Completed = append(s.info.Completed, msg)
 }
 
-func (s *MinMaxChecker) Stop() {
+func (s *failoverReq) addError(err string) {
 	s.mux.Lock()
-	if s.stop == nil {
-		// already stopped
-		s.mux.Unlock()
-		return
-	}
-	close(s.stop)
-	s.mux.Unlock()
-	s.waitGroup.Wait()
-	s.mux.Lock()
-	s.stop = nil
-	s.mux.Unlock()
+	defer s.mux.Unlock()
+
+	s.info.Errors = append(s.info.Errors, err)
 }
 
-func (s *MinMaxChecker) Run() {
-	done := false
-
-	// check all apps initially
+// Returns true if all apps have been processed
+func (s *failoverReq) appDone(ctx context.Context, key edgeproto.AppKey) bool {
 	s.mux.Lock()
-	s.caches.appCache.Mux.Lock()
-	for k, _ := range s.caches.appCache.Objs {
-		s.needsCheck[k] = struct{}{}
-	}
-	s.caches.appCache.Mux.Unlock()
-	s.mux.Unlock()
-	// trigger initial run
-	s.wakeup()
+	defer s.mux.Unlock()
 
-	for !done {
-		select {
-		case <-s.signal:
-			span := log.StartSpan(log.DebugLevelMetrics, "autoprov-refs-checker")
-			ctx := log.ContextWithSpan(context.Background(), span)
-			s.runIter(ctx)
-			span.Finish()
-		case <-s.stop:
-			done = true
-		}
+	if _, found := s.appsToCheck[key]; !found {
+		// avoid spawning another go thread if already finished
+		return false
 	}
-	s.waitGroup.Done()
-
-}
-
-func (s *MinMaxChecker) runIter(ctx context.Context) {
-	s.mux.Lock()
-	checks := s.needsCheck
-	s.needsCheck = make(map[edgeproto.AppKey]struct{})
-	failoverRequested := s.failoverRequested
-	s.failoverRequested = make(map[edgeproto.CloudletKey]*edgeproto.AutoProvInfo)
-	s.mux.Unlock()
-
-	wg := sync.WaitGroup{}
-	for k, _ := range checks {
-		newAppChecker(s.caches, &k, failoverRequested, &wg).check(ctx)
-	}
-	if len(failoverRequested) > 0 {
-		go func() {
-			span := log.StartSpan(log.DebugLevelMetrics, "auto-prov failover requested callback", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-			defer span.Finish()
-			ctx = log.ContextWithSpan(context.Background(), span)
-			// Wait until all API calls are done
-			wg.Wait()
-			// notify Controller because it's waiting on us
-			for key, failover := range failoverRequested {
-				failover.Key = key
-				if len(failover.Errors) == 0 {
-					failover.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
-				} else {
-					failover.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_ERROR
-				}
-				s.caches.autoProvInfoCache.Update(ctx, failover, 0)
-			}
-		}()
-	}
-}
-
-func (s *MinMaxChecker) wakeup() {
-	select {
-	case s.signal <- true:
-	default:
-	}
+	delete(s.appsToCheck, key)
+	return len(s.appsToCheck) == 0
 }
 
 func (s *MinMaxChecker) UpdatedPolicy(ctx context.Context, old *edgeproto.AutoProvPolicy, new *edgeproto.AutoProvPolicy) {
-	oldCloudlets := getCloudlets(old)
-	newCloudlets := getCloudlets(new)
-	for key, _ := range newCloudlets {
-		if _, found := oldCloudlets[key]; found {
-			delete(oldCloudlets, key)
-			delete(newCloudlets, key)
-		}
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	// update reverse lookup cache
-	for key, _ := range oldCloudlets {
-		// removed cloudlet
-		policies, found := s.cloudletPolicies[key]
-		if found {
-			delete(policies, new.Key)
-		}
-	}
-	for key, _ := range newCloudlets {
-		// added cloudlet
-		policies, found := s.cloudletPolicies[key]
-		if !found {
-			policies = make(map[edgeproto.PolicyKey]struct{})
-			s.cloudletPolicies[key] = policies
-		}
-		policies[new.Key] = struct{}{}
-	}
-
+	s.policiesByCloudlet.Updated(old, new)
 	// check all Apps that use policy
-	apps := s.policyApps[new.Key]
-	if len(apps) > 0 {
-		for appKey, _ := range apps {
-			s.needsCheck[appKey] = struct{}{}
-		}
-		s.wakeup()
+	for _, appKey := range s.appsByPolicy.Find(new.Key) {
+		s.workers.NeedsWork(ctx, appKey)
 	}
 }
 
+func (s *MinMaxChecker) DeletedPolicy(ctx context.Context, old *edgeproto.AutoProvPolicy) {
+	s.policiesByCloudlet.Deleted(old)
+}
+
 func (s *MinMaxChecker) UpdatedApp(ctx context.Context, old *edgeproto.App, new *edgeproto.App) {
-	// only need to check App if a policy was added or removed
-	oldPolicies := getPolicies(old)
-	newPolicies := getPolicies(new)
-	for name, _ := range newPolicies {
-		if _, found := oldPolicies[name]; found {
-			delete(oldPolicies, name)
-			delete(newPolicies, name)
-		}
+	changed := s.appsByPolicy.Updated(old, new)
+	if len(changed) > 0 {
+		s.workers.NeedsWork(ctx, new.Key)
 	}
+}
 
-	// reverse lookup caches
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	for name, _ := range oldPolicies {
-		// removed policy
-		policyKey := edgeproto.PolicyKey{
-			Name:         name,
-			Organization: new.Key.Organization,
-		}
-		apps, found := s.policyApps[policyKey]
-		if found {
-			delete(apps, new.Key)
-		}
-	}
-	for name, _ := range newPolicies {
-		// added policy
-		policyKey := edgeproto.PolicyKey{
-			Name:         name,
-			Organization: new.Key.Organization,
-		}
-		apps, found := s.policyApps[policyKey]
-		if !found {
-			apps = make(map[edgeproto.AppKey]struct{})
-			s.policyApps[policyKey] = apps
-		}
-		apps[new.Key] = struct{}{}
-	}
-
-	if len(oldPolicies) > 0 || len(newPolicies) > 0 {
-		s.needsCheck[new.Key] = struct{}{}
-		s.wakeup()
-	}
+func (s *MinMaxChecker) DeletedApp(ctx context.Context, old *edgeproto.App) {
+	s.appsByPolicy.Deleted(old)
 }
 
 func (s *MinMaxChecker) UpdatedCloudletInfo(ctx context.Context, old *edgeproto.CloudletInfo, new *edgeproto.CloudletInfo) {
@@ -240,26 +114,22 @@ func (s *MinMaxChecker) UpdatedCloudletInfo(ctx context.Context, old *edgeproto.
 		return
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet info online change", "new", new)
-	s.cloudletNeedsCheck(new.Key)
+	appsToCheck := s.cloudletNeedsCheck(new.Key)
+	for appKey, _ := range appsToCheck {
+		s.workers.NeedsWork(ctx, appKey)
+	}
 }
 
-func (s *MinMaxChecker) cloudletNeedsCheck(key edgeproto.CloudletKey) {
-	policies, found := s.cloudletPolicies[key]
-	if !found {
-		// no policies using cloudlet
-		return
-	}
-	for policyKey, _ := range policies {
-		apps, found := s.policyApps[policyKey]
-		if !found {
-			// no apps using policy
-			continue
-		}
-		for appKey, _ := range apps {
-			s.needsCheck[appKey] = struct{}{}
-			s.wakeup()
+func (s *MinMaxChecker) cloudletNeedsCheck(key edgeproto.CloudletKey) map[edgeproto.AppKey]struct{} {
+	appsToCheck := make(map[edgeproto.AppKey]struct{})
+	policies := s.policiesByCloudlet.Find(key)
+	for _, policyKey := range policies {
+		apps := s.appsByPolicy.Find(policyKey)
+		for _, appKey := range apps {
+			appsToCheck[appKey] = struct{}{}
 		}
 	}
+	return appsToCheck
 }
 
 func (s *MinMaxChecker) UpdatedCloudlet(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet) {
@@ -274,8 +144,20 @@ func (s *MinMaxChecker) UpdatedCloudlet(ctx context.Context, old *edgeproto.Clou
 		return
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet online change", "new", new)
-	s.failoverRequested[new.Key] = &edgeproto.AutoProvInfo{}
-	s.cloudletNeedsCheck(new.Key)
+	appsToCheck := s.cloudletNeedsCheck(new.Key)
+	req, found := s.failoverRequests[new.Key]
+	if !found {
+		req = &failoverReq{}
+		req.info.Key = new.Key
+		req.appsToCheck = make(map[edgeproto.AppKey]struct{})
+		s.failoverRequests[new.Key] = req
+	}
+	req.mux.Lock()
+	for appKey, _ := range appsToCheck {
+		req.appsToCheck[appKey] = struct{}{}
+		s.workers.NeedsWork(ctx, appKey)
+	}
+	req.mux.Unlock()
 }
 
 func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
@@ -304,8 +186,7 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 			return
 		}
 	}
-	s.needsCheck[new.Key.AppKey] = struct{}{}
-	s.wakeup()
+	s.workers.NeedsWork(ctx, new.Key.AppKey)
 }
 
 func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppInstKey) {
@@ -315,8 +196,7 @@ func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppIn
 	if !s.isAutoProvApp(&key.AppKey) {
 		return
 	}
-	s.needsCheck[key.AppKey] = struct{}{}
-	s.wakeup()
+	s.workers.NeedsWork(ctx, key.AppKey)
 }
 
 func (s *MinMaxChecker) UpdatedAppInstRefs(ctx context.Context, old *edgeproto.AppInstRefs, new *edgeproto.AppInstRefs) {
@@ -326,8 +206,7 @@ func (s *MinMaxChecker) UpdatedAppInstRefs(ctx context.Context, old *edgeproto.A
 	if !s.isAutoProvApp(&new.Key) {
 		return
 	}
-	s.needsCheck[new.Key] = struct{}{}
-	s.wakeup()
+	s.workers.NeedsWork(ctx, new.Key)
 }
 
 func (s *MinMaxChecker) isAutoProvApp(key *edgeproto.AppKey) bool {
@@ -341,48 +220,69 @@ func (s *MinMaxChecker) isAutoProvApp(key *edgeproto.AppKey) bool {
 	return false
 }
 
-func getPolicies(app *edgeproto.App) map[string]struct{} {
-	policies := make(map[string]struct{})
-	if app != nil {
-		if app.AutoProvPolicy != "" {
-			policies[app.AutoProvPolicy] = struct{}{}
-		}
-		for _, name := range app.AutoProvPolicies {
-			policies[name] = struct{}{}
-		}
+func (s *MinMaxChecker) CheckApp(ctx context.Context, k interface{}) {
+	key, ok := k.(edgeproto.AppKey)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unexpected failure, key not AppKey", "key", key)
+		return
 	}
-	return policies
-}
+	log.SetContextTags(ctx, key.GetTags())
+	log.SpanLog(ctx, log.DebugLevelMetrics, "CheckApp", "App", key)
 
-func getCloudlets(policy *edgeproto.AutoProvPolicy) map[edgeproto.CloudletKey]struct{} {
-	cloudlets := make(map[edgeproto.CloudletKey]struct{})
-	if policy == nil {
-		return cloudlets
+	// get failover requests to that need to check the App.
+	failoverReqs := []*failoverReq{}
+	s.mux.Lock()
+	for _, req := range s.failoverRequests {
+		if _, found := req.appsToCheck[key]; found {
+			failoverReqs = append(failoverReqs, req)
+		}
 	}
-	for _, apCloudlet := range policy.Cloudlets {
-		cloudlets[apCloudlet.Key] = struct{}{}
+	s.mux.Unlock()
+
+	ac := newAppChecker(s.caches, key, failoverReqs)
+	ac.Check(ctx)
+
+	for _, req := range failoverReqs {
+		finished := req.appDone(ctx, key)
+		if !finished {
+			continue
+		}
+		s.mux.Lock()
+		delete(s.failoverRequests, req.info.Key)
+		s.mux.Unlock()
+		// wait for any App API calls to finish, then send back result
+		go func(ctx context.Context, r *failoverReq) {
+			span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "failover request done")
+			defer span.Finish()
+			log.SetTags(span, r.info.Key.GetTags())
+
+			r.waitApiCalls.Wait()
+			if len(r.info.Errors) == 0 {
+				r.info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
+			} else {
+				r.info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_ERROR
+			}
+			s.caches.autoProvInfoCache.Update(ctx, &r.info, 0)
+		}(ctx, req)
 	}
-	return cloudlets
 }
 
 // AppChecker maintains the min and max number of AppInsts for
 // the specified App, based on the policies on the App.
 type AppChecker struct {
-	appKey            *edgeproto.AppKey
-	caches            *CacheData
-	app               edgeproto.App
-	cloudletInsts     map[edgeproto.CloudletKey]map[edgeproto.AppInstKey]struct{}
-	policyCloudlets   map[edgeproto.CloudletKey]struct{}
-	failoverRequested map[edgeproto.CloudletKey]*edgeproto.AutoProvInfo
-	wg                *sync.WaitGroup
+	appKey          edgeproto.AppKey
+	caches          *CacheData
+	cloudletInsts   map[edgeproto.CloudletKey]map[edgeproto.AppInstKey]struct{}
+	policyCloudlets map[edgeproto.CloudletKey]struct{}
+	failoverReqs    []*failoverReq
+	apiCallWait     sync.WaitGroup
 }
 
-func newAppChecker(caches *CacheData, key *edgeproto.AppKey, failoverRequested map[edgeproto.CloudletKey]*edgeproto.AutoProvInfo, wg *sync.WaitGroup) *AppChecker {
+func newAppChecker(caches *CacheData, key edgeproto.AppKey, failoverReqs []*failoverReq) *AppChecker {
 	checker := AppChecker{
-		appKey:            key,
-		caches:            caches,
-		failoverRequested: failoverRequested,
-		wg:                wg,
+		appKey:       key,
+		caches:       caches,
+		failoverReqs: failoverReqs,
 	}
 	// AppInsts organized by Cloudlet
 	checker.cloudletInsts = make(map[edgeproto.CloudletKey]map[edgeproto.AppInstKey]struct{})
@@ -393,21 +293,20 @@ func newAppChecker(caches *CacheData, key *edgeproto.AppKey, failoverRequested m
 	return &checker
 }
 
-func (s *AppChecker) check(ctx context.Context) {
-	log.SpanLog(ctx, log.DebugLevelMetrics, "checkApp", "app", s.appKey)
+func (s *AppChecker) Check(ctx context.Context) {
 	// Check for various policy violations which we must correct.
 	// 1. Num Active AppInsts below a policy min.
 	// 2. Total AppInsts above a policy max.
 	// 3. Orphaned AutoProvisioned AppInsts (cloudlet no longer part
 	// of policy, or policy no longer on App)
-
-	if !s.caches.appCache.Get(s.appKey, &s.app) {
+	app := edgeproto.App{}
+	if !s.caches.appCache.Get(&s.appKey, &app) {
 		// may have been deleted
 		return
 	}
 
 	refs := edgeproto.AppInstRefs{}
-	if !s.caches.appInstRefsCache.Get(s.appKey, &refs) {
+	if !s.caches.appInstRefsCache.Get(&s.appKey, &refs) {
 		// Refs should always exist for app. If refs does not
 		// exist, that means we aren't fully updated via notify.
 		// Wait until we get the refs (will trigger another check).
@@ -428,9 +327,9 @@ func (s *AppChecker) check(ctx context.Context) {
 	}
 
 	prevPolicyCloudlets := make(map[edgeproto.CloudletKey]struct{})
-	policies := getPolicies(&s.app)
+	policies := app.GetAutoProvPolicies()
 	for pname, _ := range policies {
-		s.checkPolicy(ctx, pname, prevPolicyCloudlets)
+		s.checkPolicy(ctx, &app, pname, prevPolicyCloudlets)
 	}
 
 	// delete any AppInsts that are orphaned
@@ -451,12 +350,12 @@ func (s *AppChecker) check(ctx context.Context) {
 	}
 }
 
-func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCloudlets map[edgeproto.CloudletKey]struct{}) {
+func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname string, prevPolicyCloudlets map[edgeproto.CloudletKey]struct{}) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "checkPolicy", "app", s.appKey, "policy", pname)
 	policy := edgeproto.AutoProvPolicy{}
 	policyKey := edgeproto.PolicyKey{
 		Name:         pname,
-		Organization: s.app.Key.Organization,
+		Organization: app.Key.Organization,
 	}
 	if !s.caches.autoProvPolicyCache.Get(&policyKey, &policy) {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "checkApp policy not found", "policy", policyKey)
@@ -468,7 +367,6 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 	potentialCreate := []edgeproto.AppInstKey{}
 	onlineCount := 0
 	totalCount := 0
-	failovers := []*edgeproto.AutoProvInfo{}
 	// check AppInsts on the policy's cloudlets
 	for _, apCloudlet := range policy.Cloudlets {
 		s.policyCloudlets[apCloudlet.Key] = struct{}{}
@@ -479,10 +377,10 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 				continue
 			}
 			// see if free reservable ClusterInst exists
-			freeClustKey := s.caches.frClusterInsts.GetForCloudlet(&apCloudlet.Key, s.app.Deployment)
+			freeClustKey := s.caches.frClusterInsts.GetForCloudlet(&apCloudlet.Key, app.Deployment)
 			if freeClustKey != nil {
 				appInstKey := edgeproto.AppInstKey{
-					AppKey:         *s.appKey,
+					AppKey:         s.appKey,
 					ClusterInstKey: *freeClustKey,
 				}
 				potentialCreate = append(potentialCreate, appInstKey)
@@ -495,9 +393,6 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 				}
 				if s.isAutoProvInst(&appInstKey) {
 					potentialDelete = append(potentialDelete, appInstKey)
-				}
-				if f, found := s.failoverRequested[appInstKey.ClusterInstKey.CloudletKey]; found {
-					failovers = append(failovers, f)
 				}
 			}
 		}
@@ -524,32 +419,32 @@ func (s *AppChecker) checkPolicy(ctx context.Context, pname string, prevPolicyCl
 	if len(createKeys) < int(policy.MinActiveInstances)-onlineCount {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Not enough potential Cloudlets to meet min constraint", "App", s.appKey, "policy", pname, "min", policy.MinActiveInstances)
 		str := fmt.Sprintf("Not enough potential cloudlets to deploy to for App %s to meet policy %s min constraint %d", s.appKey.GetKeyString(), pname, policy.MinActiveInstances)
-		for _, f := range failovers {
-			f.Errors = append(f.Errors, str)
+		for _, req := range s.failoverReqs {
+			req.addError(str)
 		}
 	}
 	for _, key := range createKeys {
 		inst := edgeproto.AppInst{
 			Key: key,
 		}
-		if len(failovers) > 0 {
-			s.wg.Add(1)
+		for _, req := range s.failoverReqs {
+			req.waitApiCalls.Add(1)
 		}
 		go func() {
 			err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
 			if err == nil {
 				str := fmt.Sprintf("Created AppInst %s to meet policy %s min constraint %d", inst.Key.GetKeyString(), pname, policy.MinActiveInstances)
-				for _, f := range failovers {
-					f.Completed = append(f.Completed, str)
+				for _, req := range s.failoverReqs {
+					req.addCompleted(str)
 				}
 			} else if !strings.Contains(err.Error(), "Create to satisfy min already met, ignoring") {
 				str := fmt.Sprintf("Failed to create AppInst %s to meet policy %s min constraint %d: %s", inst.Key.GetKeyString(), pname, policy.MinActiveInstances, err)
-				for _, f := range failovers {
-					f.Errors = append(f.Errors, str)
+				for _, req := range s.failoverReqs {
+					req.addError(str)
 				}
 			}
-			if len(failovers) > 0 {
-				s.wg.Done()
+			for _, req := range s.failoverReqs {
+				req.waitApiCalls.Done()
 			}
 		}()
 	}
@@ -582,7 +477,7 @@ func (s *AppChecker) chooseCreate(ctx context.Context, potential []edgeproto.App
 	autoProvAggr.mux.Lock()
 	defer autoProvAggr.mux.Unlock()
 
-	appStats, found := autoProvAggr.allStats[*s.appKey]
+	appStats, found := autoProvAggr.allStats[s.appKey]
 	if !found {
 		return potential[:count]
 	}

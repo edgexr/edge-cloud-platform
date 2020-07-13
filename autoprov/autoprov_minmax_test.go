@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -63,7 +62,7 @@ func TestChoose(t *testing.T) {
 	}
 
 	// checker
-	appChecker := newAppChecker(&cacheData, &app.Key, nil, &sync.WaitGroup{})
+	appChecker := newAppChecker(&cacheData, app.Key, nil)
 
 	// chooseCreate tests
 
@@ -139,6 +138,10 @@ func TestAppChecker(t *testing.T) {
 	testDialOpt = grpc.WithInsecure()
 
 	minmax := newMinMaxChecker(&cacheData)
+	// run iterations manually, otherwise the cache update loop causes
+	// checkApp to be run multiple times, and without the Controller code
+	// to block invalid creates/deletes, we end up with incorrect states.
+	minmax.workers.Pause()
 
 	// object data
 	pt1Max := uint32(4)
@@ -175,9 +178,9 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = 3
 	pt2.policy.MaxInstances = 5
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	countMin := int(pt1.policy.MinActiveInstances + pt2.policy.MinActiveInstances)
-	err = dc.waitForAppInsts(countMin)
+	err = dc.waitForAppInsts(ctx, countMin)
 	require.Nil(t, err)
 
 	// set min equal to max
@@ -188,8 +191,8 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MaxInstances = pt2Max
 	pt2.updatePolicy(ctx)
 	// check that deployed min = max
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1Max + pt2Max))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1Max+pt2Max))
 	require.Nil(t, err)
 
 	// reduce max to see that AppInsts are removed
@@ -199,9 +202,9 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = 3
 	pt2.policy.MaxInstances = 5
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	count := int(pt1.policy.MaxInstances + pt2.policy.MaxInstances)
-	err = dc.waitForAppInsts(count)
+	err = dc.waitForAppInsts(ctx, count)
 	require.Nil(t, err)
 
 	// bounds check - set min above available cloudlets count
@@ -211,9 +214,9 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = pt2Max + 2
 	pt2.policy.MaxInstances = pt2Max + 2
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	count = pt1.count() + pt2.count()
-	err = dc.waitForAppInsts(count)
+	err = dc.waitForAppInsts(ctx, count)
 	require.Nil(t, err)
 
 	// set min/max to 0 to clean up everything
@@ -223,8 +226,8 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = 0
 	pt2.policy.MaxInstances = 0
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// Check it works the same with MaxInstances=0
@@ -234,9 +237,9 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = 3
 	pt2.policy.MaxInstances = 0
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	countMin = int(pt1.policy.MinActiveInstances + pt2.policy.MinActiveInstances)
-	err = dc.waitForAppInsts(countMin)
+	err = dc.waitForAppInsts(ctx, countMin)
 	require.Nil(t, err)
 
 	// set min/max to 0 to clean up everything
@@ -246,16 +249,16 @@ func TestAppChecker(t *testing.T) {
 	pt2.policy.MinActiveInstances = 0
 	pt2.policy.MaxInstances = 0
 	pt2.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// go back to reasonable settings (only using one policy from now)
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 3
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// simulate AppInst health check failure,
@@ -263,8 +266,8 @@ func TestAppChecker(t *testing.T) {
 	insts := pt1.getAppInsts(&app.Key)
 	insts[0].HealthCheck = edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL
 	dc.updateAppInst(ctx, &insts[0])
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances) + 1)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
 	require.Nil(t, err)
 
 	// simulate another AppInst health check failure,
@@ -273,8 +276,8 @@ func TestAppChecker(t *testing.T) {
 	require.Equal(t, pt1.policy.MaxInstances, pt1.policy.MinActiveInstances+1)
 	insts[1].HealthCheck = edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL
 	dc.updateAppInst(ctx, &insts[1])
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances) + 1)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
 	require.Nil(t, err)
 
 	// delete both bad instances, this will get us down to 1
@@ -282,27 +285,27 @@ func TestAppChecker(t *testing.T) {
 	dc.deleteAppInst(ctx, &insts[0])
 	dc.deleteAppInst(ctx, &insts[1])
 	// verify count before checker
-	err = dc.waitForAppInsts(1)
+	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
 	// run checker
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// reset back to 0
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// set to reasonable settings
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 3
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// simulate cloudlet offline, same as AppInst, will trigger
@@ -310,8 +313,8 @@ func TestAppChecker(t *testing.T) {
 	cloudletInfo0 := pt1.cloudletInfos[0]
 	cloudletInfo0.State = edgeproto.CloudletState_CLOUDLET_STATE_OFFLINE
 	cacheData.cloudletInfoCache.Update(ctx, &cloudletInfo0, 0)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances) + 1)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
 	require.Nil(t, err)
 
 	// simulate second cloudlet offline, same as AppInst,
@@ -321,28 +324,30 @@ func TestAppChecker(t *testing.T) {
 	cloudletInfo1 := pt1.cloudletInfos[1]
 	cloudletInfo1.State = edgeproto.CloudletState_CLOUDLET_STATE_OFFLINE
 	cacheData.cloudletInfoCache.Update(ctx, &cloudletInfo1, 0)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances) + 1)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
 	require.Nil(t, err)
 
 	// reset cloudlets back online
 	cloudletInfo0.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
 	cloudletInfo1.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
+	cacheData.cloudletInfoCache.Update(ctx, &cloudletInfo0, 0)
+	cacheData.cloudletInfoCache.Update(ctx, &cloudletInfo1, 0)
 
 	// reset back to 0
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// set to reasonable settings
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 4
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// Cloudlet maintenance tests - set up callback to detect
@@ -359,8 +364,8 @@ func TestAppChecker(t *testing.T) {
 	cloudlet0.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_REQUESTED
 	cacheData.cloudletCache.Update(ctx, &cloudlet0, 0)
 
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances) + 1)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances)+1)
 	require.Nil(t, err)
 	select {
 	case failover := <-failovers:
@@ -379,7 +384,7 @@ func TestAppChecker(t *testing.T) {
 	cloudlet1 := pt1.cloudlets[1]
 	cloudlet1.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_REQUESTED
 	cacheData.cloudletCache.Update(ctx, &cloudlet1, 0)
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	select {
 	case failover := <-failovers:
 		require.Equal(t, cloudlet1.Key, failover.Key)
@@ -397,7 +402,7 @@ func TestAppChecker(t *testing.T) {
 	cloudlet2.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_REQUESTED
 	cacheData.cloudletCache.Update(ctx, &cloudlet2, 0)
 
-	minmax.runIter(ctx)
+	minmax.CheckApp(ctx, app.Key)
 	select {
 	case failover := <-failovers:
 		require.Equal(t, cloudlet2.Key, failover.Key)
@@ -412,13 +417,16 @@ func TestAppChecker(t *testing.T) {
 	cloudlet0.MaintenanceState = edgeproto.MaintenanceState_NORMAL_OPERATION
 	cloudlet1.MaintenanceState = edgeproto.MaintenanceState_NORMAL_OPERATION
 	cloudlet2.MaintenanceState = edgeproto.MaintenanceState_NORMAL_OPERATION
+	cacheData.cloudletCache.Update(ctx, &cloudlet0, 0)
+	cacheData.cloudletCache.Update(ctx, &cloudlet1, 0)
+	cacheData.cloudletCache.Update(ctx, &cloudlet2, 0)
 
 	// reset back to 0
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// create a manually create AppInst
@@ -431,15 +439,15 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 3
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// delete manually created AppInst - will then create another
 	// to meet min
 	dc.deleteAppInst(ctx, &insts[0])
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(int(pt1.policy.MinActiveInstances))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
 
 	// remove cloudlets from policy - will delete all
@@ -447,8 +455,8 @@ func TestAppChecker(t *testing.T) {
 	// cloudlets not specified by any policy.
 	pt1.policy.Cloudlets = nil
 	pt1.updatePolicy(ctx)
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(0)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// create App with MobiledgeX org, no policies
@@ -468,8 +476,8 @@ func TestAppChecker(t *testing.T) {
 		inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
 		dc.updateAppInst(ctx, &inst)
 	}
-	minmax.runIter(ctx)
-	err = dc.waitForAppInsts(len(insts))
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, len(insts))
 	require.Nil(t, err)
 	// clean up
 	for _, inst := range insts {
@@ -522,6 +530,7 @@ func (s *policyTest) updateClusterInsts(ctx context.Context) {
 }
 
 func (s *policyTest) updatePolicy(ctx context.Context) {
+	log.SpanLog(ctx, log.DebugLevelNotify, "policyTest update policy", "policy", s.policy.Key.Name)
 	policy := s.policy
 	s.caches.autoProvPolicyCache.Update(ctx, &policy, 0)
 }
