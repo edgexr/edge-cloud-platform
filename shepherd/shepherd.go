@@ -271,7 +271,7 @@ func main() {
 	edgeproto.InitCloudletCache(&CloudletCache)
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient := notify.NewClient(addrs, tls.GetGrpcDialOption(clientTlsConfig))
+	notifyClient := notify.NewClient(nodeMgr.Name(), addrs, tls.GetGrpcDialOption(clientTlsConfig))
 	notifyClient.SetFilterByCloudletKey()
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)

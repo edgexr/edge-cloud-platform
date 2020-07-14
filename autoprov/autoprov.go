@@ -88,7 +88,7 @@ func start() error {
 	autoProvAggr.Start()
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient = notify.NewClient(addrs, dialOpts)
+	notifyClient = notify.NewClient(nodeMgr.Name(), addrs, dialOpts)
 	notifyClient.RegisterRecv(notify.GlobalSettingsRecv(&settings, settingsUpdated))
 	cacheData.initNotifyClient(notifyClient)
 	nodeMgr.RegisterClient(notifyClient)
