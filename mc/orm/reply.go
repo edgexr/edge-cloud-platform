@@ -69,6 +69,11 @@ func setReply(c echo.Context, err error, data interface{}) error {
 		return ws.WriteJSON(wsPayload)
 	}
 	if err != nil {
+		// If error is HTTPError, pull out the message to prevent redundant status code info
+		if e, ok := err.(*echo.HTTPError); ok {
+			err = fmt.Errorf("%v", e.Message)
+			code = e.Code
+		}
 		return c.JSON(code, MsgErr(err))
 	}
 	return c.JSON(code, data)
