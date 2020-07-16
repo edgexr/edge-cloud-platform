@@ -40,6 +40,7 @@ var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
 var deploymentTag = flag.String("deploymentTag", "", "Tag to indicate type of deployment setup. Ex: production, staging, etc")
+var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
@@ -320,13 +321,14 @@ func main() {
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
 
 	pc := pf.PlatformConfig{
-		CloudletKey:   &cloudletKey,
-		VaultAddr:     nodeMgr.VaultAddr,
-		Region:        *region,
-		EnvVars:       cloudlet.EnvVar,
-		DeploymentTag: *deploymentTag,
-		PhysicalName:  *physicalName,
-		AppDNSRoot:    *appDNSRoot,
+		CloudletKey:    &cloudletKey,
+		VaultAddr:      nodeMgr.VaultAddr,
+		Region:         *region,
+		EnvVars:        cloudlet.EnvVar,
+		DeploymentTag:  *deploymentTag,
+		PhysicalName:   *physicalName,
+		AppDNSRoot:     *appDNSRoot,
+		ChefServerPath: *chefServerPath,
 	}
 
 	err = myPlatform.Init(ctx, &pc)

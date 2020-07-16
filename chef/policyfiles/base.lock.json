@@ -1,5 +1,5 @@
 {
-  "revision_id": "486d3b4bf0dd7d2b32ff7b369132d30b60588490bca08ed129bd3b36006474c5",
+  "revision_id": "867be322b7f43daa651ee76cc61dc0d822d50d7b5feb7a83e72cb14fb9b43922",
   "name": "base",
   "run_list": [
     "recipe[runstatus_handler::default]"
@@ -10,8 +10,8 @@
   "cookbook_locks": {
     "runstatus_handler": {
       "version": "1.0.0",
-      "identifier": "9753ebd571a62add318f1eb5b018dd4ed3d3cf0a",
-      "dotted_decimal_identifier": "42594993846724138.62260460618362904.243330631061258",
+      "identifier": "779bf5d49799fcf3e2e455abc0232abd5a792470",
+      "dotted_decimal_identifier": "33667002364566012.68647889658429475.46992755074160",
       "cache_key": "runstatus_handler-1.0.0",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {

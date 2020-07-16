@@ -1,0 +1,27 @@
+##
+##
+
+tests:
+
+- name: delete user2 created apps
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user2_chef.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+
+- name: delete user1 operator data
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user1_chef.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: delete users
+  actions: [mcapi-deleteusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: delete admin data
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_admin_data_chef.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: stop and cleanup
+  actions: [stop,cleanup]

@@ -1,0 +1,16 @@
+nodes:
+- key:
+    type: controller
+    region: local
+- key:
+    type: crm
+    cloudletkey:
+      organization: mexdev
+      name: chef-test-1
+    region: local
+- key:
+    type: shepherd
+    cloudletkey:
+      organization: mexdev
+      name: chef-test-1
+    region: local

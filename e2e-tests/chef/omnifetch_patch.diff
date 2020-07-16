@@ -1,0 +1,10 @@
+--- a/metadata_based_installer.rb
++++ b/metadata_based_installer.rb
+@@ -15,6 +15,7 @@ module CookbookOmnifetch
+         files
+         templates
+         root_files
++        all_files
+       }.freeze
+ 
+       def initialize(metadata)

@@ -176,6 +176,15 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
+	// edge-cloud image already contains the certs
+	if pfConfig.TlsCertFile != "" {
+		crtFile, err := GetDockerCrtFile(pfConfig.TlsCertFile)
+		if err != nil {
+			return err
+		}
+		pfConfig.TlsCertFile = crtFile
+	}
+
 	if pfConfig.ChefServerPath == "" {
 		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
@@ -213,7 +222,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		pfConfig.ContainerRegistryPath = infracommon.DefaultContainerRegistryPath
 	}
 
-	chefAttributes, err := v.GetChefCloudletAttributes(ctx, cloudlet, pfConfig)
+	chefAttributes, err := v.GetChefPlatformAttributes(ctx, cloudlet, pfConfig)
 	if err != nil {
 		return err
 	}
@@ -418,8 +427,8 @@ func GetChefCloudletTags(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platf
 	}
 }
 
-func (v *VMPlatform) GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (map[string]interface{}, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefCloudletAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
+func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (map[string]interface{}, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefCloudletAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key)
 
 	chefAttributes := make(map[string]interface{})
 
@@ -428,6 +437,9 @@ func (v *VMPlatform) GetChefCloudletAttributes(ctx context.Context, cloudlet *ed
 	}
 	chefAttributes["edgeCloudImage"] = pfConfig.ContainerRegistryPath
 	chefAttributes["edgeCloudVersion"] = cloudlet.ContainerVersion
+	if cloudlet.OverridePolicyContainerVersion {
+		chefAttributes["edgeCloudVersionOverride"] = cloudlet.ContainerVersion
+	}
 	chefAttributes["notifyAddrs"] = pfConfig.NotifyCtrlAddrs
 
 	chefAttributes["tags"] = GetChefCloudletTags(cloudlet, pfConfig, VMTypePlatform)
@@ -489,6 +501,16 @@ func (v *VMPlatform) GetChefCloudletAttributes(ctx context.Context, cloudlet *ed
 		}
 		chefAttributes[serviceType] = serviceObj
 	}
+	return chefAttributes, nil
+}
+
+func (v *VMPlatform) GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (map[string]interface{}, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefPlatformAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
+
+	chefAttributes, err := GetChefCloudletAttributes(ctx, cloudlet, pfConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	apiAddr, err := v.VMProvider.GetApiEndpointAddr(ctx)
 	if err != nil {
@@ -521,6 +543,15 @@ func (v *VMPlatform) GetChefCloudletAttributes(ctx context.Context, cloudlet *ed
 	return chefAttributes, nil
 }
 
+func GetDockerCrtFile(crtFilePath string) (string, error) {
+	_, crtFile := filepath.Split(crtFilePath)
+	ext := filepath.Ext(crtFile)
+	if ext == "" {
+		return "", fmt.Errorf("invalid tls cert file name: %s", crtFile)
+	}
+	return "/root/tls/" + crtFile, nil
+}
+
 func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.Config, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletVMsSpec", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "pfFlavor", pfFlavor)
 	err := v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
@@ -529,13 +560,13 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	}
 	// edge-cloud image already contains the certs
 	if pfConfig.TlsCertFile != "" {
-		_, crtFile := filepath.Split(pfConfig.TlsCertFile)
-		ext := filepath.Ext(crtFile)
-		if ext == "" {
-			return nil, fmt.Errorf("invalid tls cert file name: %s", crtFile)
+		crtFile, err := GetDockerCrtFile(pfConfig.TlsCertFile)
+		if err != nil {
+			return nil, err
 		}
-		pfConfig.TlsCertFile = "/root/tls/" + crtFile
+		pfConfig.TlsCertFile = crtFile
 	}
+
 	// TODO there's a lot of overlap between platform.PlatformConfig and edgeproto.PlatformConfig
 	pc := pf.PlatformConfig{
 		CloudletKey:         &cloudlet.Key,
@@ -618,7 +649,7 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	}
 
 	// Setup Chef parameters
-	chefAttributes, err := v.GetChefCloudletAttributes(ctx, cloudlet, pfConfig)
+	chefAttributes, err := v.GetChefPlatformAttributes(ctx, cloudlet, pfConfig)
 	if err != nil {
 		return nil, err
 	}

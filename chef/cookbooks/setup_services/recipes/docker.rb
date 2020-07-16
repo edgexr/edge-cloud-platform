@@ -1,3 +1,13 @@
+edgeCloudVersion = node['edgeCloudVersion']
+if node.attribute?("edgeCloudVersionOverride")
+  unless node['edgeCloudVersionOverride'].empty?
+    Chef::Log.info("Override edgeCloudVersion from #{node['edgeCloudVersion']} to #{node['edgeCloudVersionOverride']}")
+    edgeCloudVersion = node['edgeCloudVersionOverride']
+  end
+end
+
+Chef::Log.info("Using edgeCloudVersion: #{edgeCloudVersion}")
+
 docker_registry "#{node['edgeCloudImage']}" do
   regsecrets = data_bag_item('mexsecrets', 'docker_registry')
   Chef::Log.info("Login to registry: #{node['edgeCloudImage']} as user #{regsecrets['mex_docker_username']}")
@@ -6,9 +16,9 @@ docker_registry "#{node['edgeCloudImage']}" do
 end
 
 docker_image "#{node['edgeCloudImage']}" do
-  Chef::Log.info("Pull edge cloud image #{node['edgeCloudImage']}:#{node['edgeCloudVersion']}")
+  Chef::Log.info("Pull edge cloud image #{node['edgeCloudImage']}:#{edgeCloudVersion}")
   action :pull
-  tag "#{node['edgeCloudVersion']}"
+  tag "#{edgeCloudVersion}"
 end
 
 docker_image "#{node['prometheusImage']}" do
@@ -21,11 +31,12 @@ cmd = crmserver_cmd
 docker_container "crmserver" do
   Chef::Log.info("Start crmserver container, cmd: #{cmd}")
   repo "#{node['edgeCloudImage']}"
-  tag "#{node['edgeCloudVersion']}"
+  tag "#{edgeCloudVersion}"
   action :run
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['crmserver']['env']
+  volumes ['/tmp:/tmp']
   command cmd
 end
 
@@ -33,7 +44,7 @@ cmd = shepherd_cmd
 docker_container "shepherd" do
   Chef::Log.info("Start shepherd container, cmd: #{cmd}")
   repo "#{node['edgeCloudImage']}"
-  tag "#{node['edgeCloudVersion']}"
+  tag "#{edgeCloudVersion}"
   action :run
   network_mode 'host'
   restart_policy 'unless-stopped'
@@ -44,8 +55,6 @@ end
 
 cookbook_file '/tmp/prometheus.yml' do
   source 'prometheus.yml'
-  owner 'root'
-  group 'root'
   mode '0644'
   action :create
 end

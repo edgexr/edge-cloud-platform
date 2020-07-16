@@ -71,3 +71,9 @@ mgmt/vault/root-ca/index.txt*
 mgmt/vault/root-ca/serial
 mgmt/vault/root-ca/intermediate/index.txt*
 mgmt/vault/root-ca/intermediate/serial
+
+ansible/mex_inventory
+ansible/playbooks/setup.yml
+
+e2e-tests/chef/chef_guid
+e2e-tests/chef/syntaxcache

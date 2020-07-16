@@ -1,0 +1,72 @@
+nodename: "chef-test-1"
+configfile: "{{chefdir}}/client.rb"
+runlist:
+  - "recipe[runstatus_handler::default]"
+  - "recipe[setup_infra::default]"
+  - "recipe[preflight_crm_checks::default]"
+  - "recipe[setup_services::local]"
+jsonattrs: |
+  {
+    "cloudletPrometheus": {
+      "args": {
+        "config.file": "/etc/prometheus/prometheus.yml",
+        "web.enable-lifecycle": "",
+        "web.listen-address": ":9092"
+      },
+      "label": [
+        "cloudletorg:mexdev",
+        "cloudlet:chef-test-1"
+      ],
+      "publish": "9092:9092",
+      "volume": [
+        "/tmp/prometheus.yml:/etc/prometheus/prometheus.yml",
+        "/tmp:/tmp"
+      ]
+    },
+    "crmserver": {
+      "args": {
+        "appDNSRoot": "mobiledgex.net",
+        "chefServerPath": "http://127.0.0.1:8889/organizations/mobiledgex",
+        "cloudletKey": "{\"organization\":\"mexdev\",\"name\":\"chef-test-1\"}",
+        "d": "api,infra,notify,info",
+        "deploymentTag": "local",
+        "notifyAddrs": "127.0.0.1:37001",
+        "notifySrvAddr": "127.0.0.1:51099",
+        "platform": "PLATFORM_TYPE_FAKEINFRA",
+        "region": "local",
+        "tls": "{{tlsoutdir}}/mex-server.crt",
+        "vaultAddr": "http://127.0.0.1:8000"
+      },
+      "env": [
+        "VAULT_ROLE_ID=9adf36c4-2371-683b-ebd7-ee633742772e",
+        "VAULT_SECRET_ID=removed"
+      ]
+    },
+    "notifyAddrs": "127.0.0.1:37001",
+    "prometheusImage": "prom/prometheus",
+    "prometheusVersion": "latest",
+    "shepherd": {
+      "args": {
+        "appDNSRoot": "mobiledgex.net",
+        "cloudletKey": "{\"organization\":\"mexdev\",\"name\":\"chef-test-1\"}",
+        "d": "api,infra,notify,metrics",
+        "deploymentTag": "local",
+        "notifyAddrs": "127.0.0.1:51099",
+        "platform": "PLATFORM_TYPE_FAKEINFRA",
+        "region": "local",
+        "tls": "{{tlsoutdir}}/mex-server.crt",
+        "vaultAddr": "http://127.0.0.1:8000"
+      },
+      "env": [
+        "VAULT_ROLE_ID=9adf36c4-2371-683b-ebd7-ee633742772e",
+        "VAULT_SECRET_ID=removed"
+      ]
+    },
+    "tags": [
+      "deploytag/local",
+      "region/local",
+      "cloudlet/chef-test-1",
+      "cloudletorg/mexdev",
+      "vmtype/platform"
+    ]
+  }

@@ -1,0 +1,56 @@
+##
+##
+
+tests:
+
+- name: start 
+  actions: [start]
+
+- name: admin setup config so users can be created
+  actions: [mcapi-configupdate,mcapi-configshow]
+  apifile: '{{datadir2}}/mcconfig.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcconfig.yml'
+    filetype: mcconfig
+
+- name: admin create controllers, flavors
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_admin_data_chef.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: create users
+  actions: [mcapi-createusers]
+  apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml'
+
+- name: user1 creates operator/cloudlets without starting cloudlet services
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_chef.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: start chef-client to start services
+  actions: [runchefclient,sleep=2,mcapi-show]
+  apifile: '{{chefdir}}/chefclient1.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_chef_data_show.yml'
+    filetype: mcdata
+
+- name: Verify services using shownodes
+  actions: [mcapi-nodeshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_chef_shownode.yml'
+    filetype: appdata
+
+- name: user2 creates apps
+  actions: [mcapi-create,mcapi-show]
+  apifile: '{{datadir2}}/mc_user2_chef.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_chef_data_show.yml'
+    filetype: mcdata
