@@ -1,4 +1,5 @@
 datadir: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/data
 datadir2: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/data
 edge-cloud-testfiles: $GOPATH/src/github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/testfiles
+chefdir: $GOPATH/src/github.com/mobiledgex/edge-cloud-infra/e2e-tests/chef
 default-program: test-mex-infra

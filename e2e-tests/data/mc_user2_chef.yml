@@ -1,0 +1,89 @@
+orgs:
+- name: DevOrg
+  type: developer
+  address: 123 Maple Street, Gainesville, FL 32604
+  phone: 123-123-1234
+  adminusername: user2
+
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: AppCluster
+        cloudletkey:
+          organization: mexdev
+          name: chef-test-1
+        organization: DevOrg
+      flavor:
+        name: x1.medium
+      liveness: LivenessStatic
+      nummasters: 1
+      numnodes: 3
+    apps:
+    - key:
+        organization: DevOrg
+        name: DevOrg SDK Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
+      imagetype: ImageTypeDocker
+      accessports: tcp:7777
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: AppCluster
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.sdkdemo
+      permitsplatformapps: true
+    - key:
+        organization: DevOrg
+        name: Face Detection Demo
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
+      imagetype: ImageTypeDocker
+      accessports: tcp:8008
+      skiphcports: tcp:8008
+      defaultflavor:
+        name: x1.small
+      cluster:
+        name: AppCluster
+      deployment: kubernetes
+      androidpackagename: com.mobiledgex.facedemo
+      permitsplatformapps: true
+      configs:
+      - kind: envVarsYaml
+        config: |
+          - name: SOME_ENV1
+            value: value1
+          - name: CrmValue
+            value: [[ .Deployment.ClusterIp ]]
+          - name: SOME_ENV2
+            valueFrom:
+              configMapKeyRef:
+                key: CloudletName
+                name: mexcluster-info
+                optional: true
+    appinstances:
+    - key:
+        appkey:
+          organization: DevOrg
+          name: DevOrg SDK Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            organization: mexdev
+            name: chef-test-1
+    - key:
+        appkey:
+          organization: DevOrg
+          name: Face Detection Demo
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: AppCluster
+          cloudletkey:
+            organization: mexdev
+            name: chef-test-1

@@ -1,0 +1,64 @@
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+orgs:
+- name: mexdev
+  type: operator
+  address: mexdev headquarters
+  phone: 123-123-1234
+roles:
+- org: mexdev
+  username: user1
+  role: OperatorManager
+regiondata:
+- region: local
+  appdata:
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    cloudlets:
+    - key:
+        organization: mexdev
+        name: chef-test-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: PlatformTypeFakeinfra
+      notifysrvaddr: 127.0.0.1:51001
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: chef-test-1
+      deployment: docker
+    cloudletinfos:
+    - key:
+        organization: mexdev
+        name: chef-test-1
+      state: CloudletStateReady
+      controller: Ashishs-MacBook-Pro-2.local@192.168.0.102:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.small
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info

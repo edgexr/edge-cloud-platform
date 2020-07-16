@@ -45,6 +45,7 @@ type Shepherd struct {
 	Region         string
 	AppDNSRoot     string
 	DeploymentTag  string
+	ChefServerPath string
 }
 type AutoProv struct {
 	process.Common `yaml:",inline"`
@@ -68,6 +69,12 @@ type PromE2e struct {
 type Exporter struct {
 	process.Common `yaml:",inline"`
 	DataFile       string
+	Port           int
+	cmd            *exec.Cmd
+}
+
+type ChefServer struct {
+	process.Common `yaml:",inline"`
 	Port           int
 	cmd            *exec.Cmd
 }

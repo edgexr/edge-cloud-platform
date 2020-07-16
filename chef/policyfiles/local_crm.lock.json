@@ -1,12 +1,20 @@
 {
-  "revision_id": "70ae3a9349767105cbbaaaa84d339f6ca177ea07ef3b32e316c16c412e0d82fe",
-  "name": "docker_crm",
+  "revision_id": "75cad55b8b23f3edeb96ac59b458179648aab0343ba0532407fcef52847c1430",
+  "name": "local_crm",
   "run_list": [
     "recipe[runstatus_handler::default]",
     "recipe[setup_infra::default]",
     "recipe[preflight_crm_checks::default]",
     "recipe[setup_services::docker]"
   ],
+  "named_run_lists": {
+    "local": [
+      "recipe[runstatus_handler::default]",
+      "recipe[setup_infra::default]",
+      "recipe[preflight_crm_checks::default]",
+      "recipe[setup_services::local]"
+    ]
+  },
   "included_policy_locks": [
 
   ],
@@ -16,9 +24,9 @@
       "identifier": "6008032447fab3b9506abaab9d3ad808ea988d01",
       "dotted_decimal_identifier": "27030407350844083.52161290020035898.237532807204097",
       "cache_key": "docker-6.0.3",
-      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
       "source_options": {
-        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
         "version": "6.0.3"
       }
     },
@@ -27,9 +35,9 @@
       "identifier": "2e3458d2ab0f35f4885fdc601925deee7ad54912",
       "dotted_decimal_identifier": "13005405024882485.68829839617956133.245115844380946",
       "cache_key": "preflight_crm_checks-1.0.0",
-      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
       "source_options": {
-        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
         "version": "1.0.0"
       }
     },
@@ -38,9 +46,9 @@
       "identifier": "779bf5d49799fcf3e2e455abc0232abd5a792470",
       "dotted_decimal_identifier": "33667002364566012.68647889658429475.46992755074160",
       "cache_key": "runstatus_handler-1.0.0",
-      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
       "source_options": {
-        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
         "version": "1.0.0"
       }
     },
@@ -49,9 +57,9 @@
       "identifier": "7ea0f6481eab8d2fd7a2193fb3fc9ddf807788a4",
       "dotted_decimal_identifier": "35642826697911181.13466415113679868.173583258585252",
       "cache_key": "setup_infra-1.0.0",
-      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
       "source_options": {
-        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
         "version": "1.0.0"
       }
     },
@@ -60,9 +68,9 @@
       "identifier": "24f1efd3eba232baae856849813e407c8a03f875",
       "dotted_decimal_identifier": "10399111516496434.52546233671713086.70903635638389",
       "cache_key": "setup_services-1.0.9",
-      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "origin": "http://127.0.0.1:8889/organizations/mobiledgex",
       "source_options": {
-        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "chef_server": "http://127.0.0.1:8889/organizations/mobiledgex",
         "version": "1.0.9"
       }
     }

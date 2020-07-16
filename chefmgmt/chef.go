@@ -81,9 +81,6 @@ func GetChefAuthKeys(ctx context.Context, vaultConfig *vault.Config) (*ChefAuthK
 	if auth.ApiKey == "" {
 		return nil, fmt.Errorf("Unable to find chef API key")
 	}
-	if auth.ValidationKey == "" {
-		return nil, fmt.Errorf("Unable to find chef validation key")
-	}
 	return auth, nil
 }
 
@@ -219,6 +216,15 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMCh
 	if chefParams == nil {
 		return "", fmt.Errorf("unable to get chef params")
 	}
+
+	localMode := false
+	if client.BaseURL != nil {
+		if strings.Contains(client.BaseURL.Host, "127.0.0.1") {
+			// chef server running locally
+			localMode = true
+		}
+	}
+
 	clientName := chefParams.NodeName
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef client create", "client name", clientName, "params", *chefParams)
 	clientObj := chef.ApiNewClient{
@@ -242,8 +248,11 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMCh
 		ChefType:         "node",
 		JsonClass:        "Chef::Node",
 		NormalAttributes: chefParams.Attributes,
-		PolicyName:       chefParams.PolicyName,
-		PolicyGroup:      chefParams.PolicyGroup,
+	}
+	// In local mode, don't use policyfile, this gives us flexibility in our testing
+	if !localMode {
+		nodeObj.PolicyName = chefParams.PolicyName
+		nodeObj.PolicyGroup = chefParams.PolicyGroup
 	}
 	_, err = client.Nodes.Post(nodeObj)
 	if err != nil {

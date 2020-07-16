@@ -12,7 +12,7 @@ class Chef
           if !node[service]["args"][x].empty?
             if joincmd
               args[-1] = args[-1] + "=#{node[service]['args'][x]}"
-	    else
+            else
               args += ["'" + "#{node[service]['args'][x]}" + "'"]
             end
           end
@@ -43,8 +43,8 @@ class Chef
         "commercialCerts" => false,
         "useVaultCAs" => false,
         "useVaultCerts" => false,
-	"chefServerPath" => true,
-	"deploymentTag" => true
+        "chefServerPath" => true,
+        "deploymentTag" => true
       }
       cmd = extract_cmd("crmserver", argsmap, false, false) 
       cmd
@@ -66,7 +66,8 @@ class Chef
         "d" => true,
         "useVaultCAs" => false,
         "useVaultCerts" => false,
-	"deploymentTag" => true
+        "chefServerPath" => true,
+        "deploymentTag" => true
       }
       cmd = extract_cmd("shepherd", argsmap, false, false)
       cmd
@@ -78,8 +79,8 @@ class Chef
       #   Value = arg type (false means flag type)
       argsmap = {
         "config.file" => true,
-	"web.listen-address" => true,
-	"web.enable-lifecycle" => false,
+        "web.listen-address" => true,
+        "web.enable-lifecycle" => false,
       }
       cmd = extract_cmd("cloudletPrometheus", argsmap, true, true)
       cmd
