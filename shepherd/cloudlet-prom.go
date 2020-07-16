@@ -187,7 +187,8 @@ func getPrometheusFileName(name string) string {
 func startPrometheusMetricsProxy(ctx context.Context) error {
 	// This works for edgebox and openstack cloudlets for now
 	if *platformName == "PLATFORM_TYPE_EDGEBOX" ||
-		*platformName == "PLATFORM_TYPE_OPENSTACK" {
+		*platformName == "PLATFORM_TYPE_OPENSTACK" ||
+		*platformName == "PLATFORM_TYPE_VSPHERE" {
 		// Init prometheus targets and alert templates
 		healthCeckFile := getPrometheusFileName(HealthCheckRulesPrefix)
 		err := writeCloudletPrometheusAlerts(ctx, healthCeckFile, []byte(promHealthCheckAlerts))
