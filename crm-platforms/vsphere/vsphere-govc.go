@@ -18,6 +18,7 @@ import (
 var maxGuestWait = time.Minute * 2
 
 const VMMatchAny = "*"
+const PortGrpMatchAny = "*"
 
 type MetricsCollectionRequestType struct {
 	CollectNetworkStats bool
@@ -31,9 +32,15 @@ type GovcVMNet struct {
 	Network    string
 }
 
+type DPGNetwork struct {
+	Type  string
+	Value string
+}
+
 type DistributedPortGroup struct {
-	Name string
-	Path string
+	Name    string
+	Network DPGNetwork
+	Path    string
 }
 
 type GovcNetwork struct {
@@ -76,9 +83,21 @@ type GovcVMGuest struct {
 	Net         []GovcVMNet
 }
 
+type GovcDeviceBackingPort struct {
+	PortgroupKey string
+}
+type GovcDeviceBacking struct {
+	Port GovcDeviceBackingPort
+}
+type GovcVMHardwareDevice struct {
+	Backing    GovcDeviceBacking
+	MacAddress string
+}
+
 type GovcVMHardware struct {
 	MemoryMB uint64
 	NumCPU   uint64
+	Device   []GovcVMHardwareDevice
 }
 
 type GovcVMConfig struct {
@@ -202,10 +221,10 @@ func (v *VSpherePlatform) TimedGovcCommand(ctx context.Context, name string, a .
 	return out, nil
 }
 
-func (v *VSpherePlatform) GetDistributedPortGroups(ctx context.Context) ([]DistributedPortGroup, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetDistributedPortGroups")
+func (v *VSpherePlatform) GetDistributedPortGroups(ctx context.Context, portgrpNameMatch string) (map[string]DistributedPortGroup, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDistributedPortGroups", "portgrpNameMatch", portgrpNameMatch)
 
-	var pgrps []DistributedPortGroup
+	var pgrps = make(map[string]DistributedPortGroup)
 	dcName := v.GetDatacenterName(ctx)
 	networkSearchPath := fmt.Sprintf("/%s/network", dcName)
 	out, err := v.TimedGovcCommand(ctx, "govc", "ls", "-dc", dcName, "-json", networkSearchPath)
@@ -220,12 +239,11 @@ func (v *VSpherePlatform) GetDistributedPortGroups(ctx context.Context) ([]Distr
 	}
 	for _, element := range objs.Elements {
 		if element.Object.Summary.Network.Type == "DistributedVirtualPortgroup" {
-
-			if strings.Contains(element.Object.Summary.Name, "subnet") {
+			if portgrpNameMatch == PortGrpMatchAny || strings.Contains(element.Object.Summary.Name, portgrpNameMatch) {
 				var pgrp DistributedPortGroup
 				pgrp.Name = element.Object.Summary.Name
 				pgrp.Path = networkSearchPath + "/" + pgrp.Name
-				pgrps = append(pgrps, pgrp)
+				pgrps[element.Object.Summary.Network.Value] = pgrp
 			}
 		}
 	}
@@ -461,9 +479,13 @@ func (v *VSpherePlatform) GetUsedExternalIPs(ctx context.Context) (map[string]st
 	return ipsUsed, nil
 }
 
-func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm *GovcVM) *vmlayer.ServerDetail {
+func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm *GovcVM) (*vmlayer.ServerDetail, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getServerDetailFromGovcVm", "name", govcVm.Name, "guest state", govcVm.Guest.GuestState)
 
+	pgrps, err := v.GetDistributedPortGroups(ctx, PortGrpMatchAny)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get distributed port groups: %v", err)
+	}
 	var sd vmlayer.ServerDetail
 	sd.Name = govcVm.Name
 	switch govcVm.Runtime.PowerState {
@@ -475,37 +497,43 @@ func (v *VSpherePlatform) getServerDetailFromGovcVm(ctx context.Context, govcVm 
 		log.SpanLog(ctx, log.DebugLevelInfra, "unexpected power state", "state", govcVm.Runtime.PowerState)
 		sd.Status = "unknown"
 	}
-	/*  The below code works but not in the following cases:
-	1) the VM is powered off
-	2) the VM has not yet reported the IPs to VC after startup
-	*/
-	for _, net := range govcVm.Guest.Net {
-		var sip vmlayer.ServerIP
-		sip.Network = net.Network
-		sip.MacAddress = net.MacAddress
-		sip.PortName = vmlayer.GetPortName(govcVm.Name, net.Network)
-		if net.Network == "" {
-			continue
-		}
-		if len(net.IpAddress) > 0 {
-			sip.ExternalAddr = net.IpAddress[0]
-			sip.InternalAddr = net.IpAddress[0]
-		}
-		sd.Addresses = append(sd.Addresses, sip)
-	}
-	// if there is not guest net info, populate what is available from tags for the external network
-	// this can happen for VMs which do not have vmtools installed
-	err := v.GetIpsFromTagsForVM(ctx, sd.Name, &sd)
+	err = v.GetIpsFromTagsForVM(ctx, sd.Name, &sd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetIpsFromTagsForVM failed", "err", err)
 	}
 
-	return &sd
+	for i, sip := range sd.Addresses {
+		macFound := ""
+		log.SpanLog(ctx, log.DebugLevelInfra, "Looking for mac for server ip", "sip", sip)
+		for _, dev := range govcVm.Config.Hardware.Device {
+			if dev.MacAddress != "" {
+				pgrpId := dev.Backing.Port.PortgroupKey
+				pgrp, ok := pgrps[pgrpId]
+				if !ok {
+					return nil, fmt.Errorf("Port group id not found: %s for VM %s", pgrpId, govcVm.Name)
+				}
+				if sip.Network == pgrp.Name {
+					if macFound != "" {
+						log.SpanLog(ctx, log.DebugLevelInfra, "MAC already on different network", "macFound", macFound, "dev.MacAddress", dev.MacAddress)
+						return nil, fmt.Errorf("multiple MACs found for network: %s", pgrp.Name)
+					}
+					macFound = dev.MacAddress
+					sd.Addresses[i].MacAddress = dev.MacAddress
+					log.SpanLog(ctx, log.DebugLevelInfra, "Setting MAC for address", "MacAddress", dev.MacAddress, "sip", sip.ExternalAddr)
+
+				}
+			}
+		}
+		if macFound == "" {
+			// this can happen if port is allocated for the server but not attached
+			log.SpanLog(ctx, log.DebugLevelInfra, "Could not find port group to locate MAC for server address on net", "net", sip.Network)
+		}
+	}
+	return &sd, nil
 }
 
-// a vSphere7/Govc interaction problem in which vm.info does not return port group names, but
-// only UUIDs for the vswitch which is not one to one with a portgroup.  The non-json output
-func (v *VSpherePlatform) GetNetworkListForGovcVm(ctx context.Context, vmname string) ([]string, error) {
+// GetNetworkListForVm get a sorted list of attached network names for the VM
+func (v *VSpherePlatform) GetNetworkListForVm(ctx context.Context, vmname string) ([]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkListForGovcVm", "name", vmname)
 
 	dcName := v.GetDatacenterName(ctx)
@@ -523,7 +551,7 @@ func (v *VSpherePlatform) GetNetworkListForGovcVm(ctx context.Context, vmname st
 	for _, line := range lines {
 		if nreg.MatchString(line) {
 			matches := nreg.FindStringSubmatch(line)
-			networks := strings.TrimSpace(matches[1])
+			networks := strings.ReplaceAll(matches[1], " ", "")
 			return strings.Split(networks, ","), nil
 		}
 	}
@@ -532,51 +560,32 @@ func (v *VSpherePlatform) GetNetworkListForGovcVm(ctx context.Context, vmname st
 
 func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*vmlayer.ServerDetail, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail", "vmname", vmname)
-	var sd *vmlayer.ServerDetail
 	dcName := v.GetDatacenterName(ctx)
 	vmPath := "/" + dcName + "/vm/" + vmname
 	var err error
-	start := time.Now()
-	for {
-		out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-dc", dcName, "-json", vmPath)
-		if err != nil {
-			return nil, err
-		}
-		var vms GovcVMs
-		err = json.Unmarshal(out, &vms)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetVSphereServer unmarshal fail", "vmname", vmname, "out", string(out), "err", err)
-			err = fmt.Errorf("cannot unmarshal, %v", err)
-			return nil, err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail num vms found", "numVMs", len(vms.VirtualMachines))
-		if len(vms.VirtualMachines) == 0 {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", vmname)
-			return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError)
-		}
-		if len(vms.VirtualMachines) > 1 {
-			log.SpanLog(ctx, log.DebugLevelInfra, "unexpected number of VM found", "vmname", vmname, "vms", vms, "out", string(out), "err", err)
-			return nil, fmt.Errorf("unexpected number of VM found: %d", len(vms.VirtualMachines))
-		}
 
-		sd = v.getServerDetailFromGovcVm(ctx, &vms.VirtualMachines[0])
-		if len(vms.VirtualMachines[0].Guest.Net) > 0 || sd.Status == vmlayer.ServerShutoff {
-			break
-		}
-		if vms.VirtualMachines[0].Guest.ToolsStatus == "toolsNotInstalled" && len(sd.Addresses) > 0 {
-			// indicates we got an IP from tags
-			break
-		}
-		elapsed := time.Since(start)
-		if elapsed >= (maxGuestWait) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "max guest wait time expired")
-			err = fmt.Errorf("max guest wait time expired for VM: %s", vms.VirtualMachines[0].Name)
-			break
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "VM powered on but guest net is not ready, sleep 5 seconds and retry", "elaspsed", elapsed)
-		time.Sleep(5 * time.Second)
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.info", "-dc", dcName, "-json", vmPath)
+	if err != nil {
+		return nil, err
 	}
-	return sd, err
+	var vms GovcVMs
+	err = json.Unmarshal(out, &vms)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVSphereServer unmarshal fail", "vmname", vmname, "out", string(out), "err", err)
+		err = fmt.Errorf("cannot unmarshal, %v", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail num vms found", "numVMs", len(vms.VirtualMachines))
+	if len(vms.VirtualMachines) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", vmname)
+		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError)
+	}
+	if len(vms.VirtualMachines) > 1 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "unexpected number of VM found", "vmname", vmname, "vms", vms, "out", string(out), "err", err)
+		return nil, fmt.Errorf("unexpected number of VM found: %d", len(vms.VirtualMachines))
+	}
+
+	return v.getServerDetailFromGovcVm(ctx, &vms.VirtualMachines[0])
 }
 
 func (v *VSpherePlatform) getVmNamesFromTags(ctx context.Context, tags []GovcTag) (map[string]string, error) {

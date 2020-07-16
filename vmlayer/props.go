@@ -17,7 +17,7 @@ import (
 
 type VMProperties struct {
 	CommonPf           infracommon.CommonPlatform
-	sharedRootLBName   string
+	SharedRootLBName   string
 	sharedRootLB       *MEXRootLB
 	Domain             VMDomain
 	PlatformSecgrpName string
@@ -211,7 +211,7 @@ func (vp *VMProperties) GetSubnetDNS() string {
 }
 
 func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	lbName := vp.sharedRootLBName
+	lbName := vp.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		lbName = cloudcommon.GetDedicatedLBFQDN(vp.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, vp.CommonPf.PlatformConfig.AppDNSRoot)
 	}

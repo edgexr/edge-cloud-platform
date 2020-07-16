@@ -60,11 +60,23 @@ func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subne
 }
 
 func GetIPFromServerDetails(ctx context.Context, networkName string, portName string, sd *ServerDetail) (*ServerIP, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "networkName", networkName, "portName", portName, "serverDetail", sd)
-	for _, s := range sd.Addresses {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails", "server", sd.Name, "networkName", networkName, "portName", portName, "serverDetail", sd)
+	var sipPtr *ServerIP
+	found := false
+	for i, s := range sd.Addresses {
 		if (networkName != "" && s.Network == networkName) || (portName != "" && s.PortName == portName) {
-			return &s, nil
+			if found {
+				// this indicates we passed in multiple parameters that found an IP.  For example, an external network name plus an internal port name
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error: GetIPFromServerDetails found multiple matches", "networkName", networkName, "portName", portName, "serverDetail", sd)
+				return nil, fmt.Errorf("Multiple IP addresses found for server: %s network: %s portName: %s", sd.Name, networkName, portName)
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerDetails found match", "serverAddress", s)
+			found = true
+			sipPtr = &sd.Addresses[i]
 		}
+	}
+	if found {
+		return sipPtr, nil
 	}
 	return nil, fmt.Errorf("unable to find IP for server: %s on network: %s port: %s", sd.Name, networkName, portName)
 }

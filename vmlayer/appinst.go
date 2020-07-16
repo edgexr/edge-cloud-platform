@@ -700,6 +700,6 @@ func (v *VMPlatform) SyncAppInsts(ctx context.Context, caches *platform.Caches, 
 		}
 
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts done")
+	log.SpanLog(ctx, log.DebugLevelInfra, "SyncAppInsts done")
 	return nil
 }
