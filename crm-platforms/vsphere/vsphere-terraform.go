@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -33,6 +34,9 @@ const TagFieldSubnetName = "subnetname"
 const TagFieldCidr = "cidr"
 const TagFieldVmName = "vmname"
 const TagFieldNetName = "netname"
+
+// for use when a port has to be detached but we don't want to reorder nics
+const UnusedPortgroup = "UNUSED_PORTGROUP"
 
 var vmOrchestrateLock sync.Mutex
 
@@ -61,7 +65,6 @@ type VSphereVMGroupParams struct {
 
 const COMMENT_BEGIN = "BEGIN"
 const COMMENT_END = "END"
-const COMMENT_INTERFACE = "INTERFACE"
 const COMMENT_TAGS = "TAGS"
 
 func getCommentLabel(beginOrEnd, objectType, object string) string {
@@ -204,13 +207,16 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 	fileName := v.getTerraformDir(ctx) + "/" + serverName + ".tf"
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "serverName", "serverName", "subnetName", subnetName, "portName", portName, "fileName", fileName)
 
+	// backup file
+	backupFile := fileName + ".bak"
+	if err := infracommon.CopyFile(fileName, backupFile); err != nil {
+		return fmt.Errorf("can't backup file %s, %v", fileName, err)
+	}
+	defer os.Remove(backupFile)
 	input, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
-
-	beginIf := getCommentLabel(COMMENT_BEGIN, COMMENT_INTERFACE, subnetName+"__"+serverName)
-	endIf := getCommentLabel(COMMENT_END, COMMENT_INTERFACE, subnetName+"__"+serverName)
 
 	beginTag := getCommentLabel(COMMENT_BEGIN, COMMENT_TAGS, subnetName+"__"+serverName)
 	endTag := getCommentLabel(COMMENT_END, COMMENT_TAGS, subnetName+"__"+serverName)
@@ -218,19 +224,23 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 	// remove the lines between the delimters above
 	lines := strings.Split(string(input), "\n")
 	var newlines []string
-	skipLine := false
+	skipSection := false
+	currentNetId := fmt.Sprintf("network_id = vsphere_distributed_port_group.%s.id", subnetName)
+	unusedNetId := fmt.Sprintf("network_id = vsphere_distributed_port_group.%s.id", UnusedPortgroup)
+
 	for i, line := range lines {
-		if strings.Contains(line, beginIf) || strings.Contains(line, beginTag) {
+		line = strings.ReplaceAll(line, currentNetId, unusedNetId)
+		if strings.Contains(line, beginTag) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "skipping lines starting from", "linenum", i, "fileName", fileName)
-			skipLine = true
+			skipSection = true
 		}
-		if !skipLine {
+
+		if !skipSection {
 			newlines = append(newlines, line)
 		}
-		if strings.Contains(line, endIf) || strings.Contains(line, endTag) {
-			skipLine = false
+		if strings.Contains(line, endTag) {
+			skipSection = false
 			log.SpanLog(ctx, log.DebugLevelInfra, "resuming lines starting from", "linenum", i, "fileName", fileName)
-
 		}
 	}
 	output := strings.Join(newlines, "\n")
@@ -243,26 +253,34 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 	out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "apply", "--auto-approve")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Terraform apply failed for detach port", "out", out, "fileName", fileName)
+		// revert backup file
+		revertErr := infracommon.CopyFile(backupFile, fileName)
+		if revertErr != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "error in reverting backup file", "err", err, "backupFile", backupFile)
+		}
 	}
 	return err
 }
 
 func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
 	fileName := v.getTerraformDir(ctx) + "/" + serverName + ".tf"
-	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "fileName", fileName, "ipaddr", ipaddr, "action", action)
-	tagName := v.GetVmIpTag(ctx, serverName, subnetName, ipaddr)
-	tagId := v.IdSanitize(tagName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer", "serverName", serverName, "subnetName", subnetName, "fileName", fileName, "ipaddr", ipaddr, "action", action)
+	// backup file
+	backupFile := fileName + ".bak"
+	if err := infracommon.CopyFile(fileName, backupFile); err != nil {
+		return fmt.Errorf("can't backup file %s, %v", fileName, err)
+	}
+	defer os.Remove(backupFile)
 
-	interfaceContents := fmt.Sprintf(`
-		`+getCommentLabel(COMMENT_BEGIN, COMMENT_INTERFACE, subnetName+"__"+serverName)+`
-		network_interface {
-			network_id = vsphere_distributed_port_group.%s.id
-		}
-		`+getCommentLabel(COMMENT_END, COMMENT_INTERFACE, subnetName+"__"+serverName)+`
-		`, subnetName)
+	newNetId := fmt.Sprintf("network_id = vsphere_distributed_port_group.%s.id", subnetName)
+	unusedNetId := fmt.Sprintf("network_id = vsphere_distributed_port_group.%s.id", UnusedPortgroup)
 
-	tagContents := fmt.Sprintf(`
-	`+getCommentLabel(COMMENT_BEGIN, COMMENT_TAGS, subnetName+"__"+serverName)+`
+	tagContents := ""
+	if ipaddr != "" {
+		tagName := v.GetVmIpTag(ctx, serverName, subnetName, ipaddr)
+		tagId := v.IdSanitize(tagName)
+
+		tagContents = fmt.Sprintf("	"+getCommentLabel(COMMENT_BEGIN, COMMENT_TAGS, subnetName+"__"+serverName)+`
 	## import vsphere_tag.%s {"category_name":"%s","tag_name":"%s"}
 	resource "vsphere_tag" "%s" {
 		name = "%s"
@@ -270,6 +288,7 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 	}
 	`+getCommentLabel(COMMENT_END, COMMENT_TAGS, subnetName+"__"+serverName)+`
 		`, tagId, v.GetVmIpTagCategory(ctx), tagName, tagId, tagName, v.GetVmIpTagCategory(ctx))
+	}
 
 	input, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -278,16 +297,34 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 
 	lines := strings.Split(string(input), "\n")
 	var newlines []string
+	replacedUnusedIf := false
+	newInterface := fmt.Sprintf("		"+`network_interface {
+			%s
+		}`, newNetId)
+
 	for _, line := range lines {
+		// find an unused entry to fill, unless we are doing a sync action
+		// in which case we can be adding unused entries.
+		if !replacedUnusedIf && action != vmlayer.ActionSync {
+			if strings.Contains(line, unusedNetId) {
+				line = strings.ReplaceAll(line, unusedNetId, newNetId)
+				replacedUnusedIf = true
+			}
+		}
 		if strings.Contains(line, "## END NETWORK INTERFACES for "+serverName) {
-			newlines = append(newlines, interfaceContents)
+			if !replacedUnusedIf {
+				newlines = append(newlines, newInterface)
+			}
 		}
 		newlines = append(newlines, line)
 	}
-	newlines = append(newlines, tagContents)
-	output := strings.Join(newlines, "\n")
-	err = ioutil.WriteFile(fileName, []byte(output), 0644)
 
+	if tagContents != "" {
+		newlines = append(newlines, tagContents)
+	}
+	output := strings.Join(newlines, "\n")
+
+	err = ioutil.WriteFile(fileName, []byte(output), 0644)
 	if err != nil {
 		return err
 	}
@@ -296,6 +333,12 @@ func (v *VSpherePlatform) AttachPortToServer(ctx context.Context, serverName, su
 		out, err := terraform.TimedTerraformCommand(ctx, v.getTerraformDir(ctx), "terraform", "apply", "--auto-approve")
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Terraform apply failed for attach port", "out", out, "fileName", fileName)
+			// revert backup file
+			revertErr := infracommon.CopyFile(backupFile, fileName)
+			if revertErr != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "error in reverting backup file", "err", err, "backupFile", backupFile)
+			}
+			return err
 		}
 	} else if action == vmlayer.ActionSync {
 		return nil
@@ -563,6 +606,11 @@ var vcenterTemplate = `
 		associable_types = [
 		  "VirtualMachine",
 		]
+	}
+	resource "vsphere_distributed_port_group" "UNUSED_PORTGROUP" {
+		name                            = "UNUSED_PORTGROUP"
+		distributed_virtual_switch_uuid = "${data.vsphere_distributed_virtual_switch.{{$.InternalDVS}}.id}"
+		vlan_id                         = 999
 	}
 	`
 
@@ -839,6 +887,12 @@ func (v *VSpherePlatform) TerraformSetupVsphere(ctx context.Context, updateCallb
 
 	// this
 	err = v.ImportTagCategories(ctx)
+	if err != nil {
+		return err
+	}
+
+	unusedPgPath := "/" + v.GetDatacenterName(ctx) + "/network/" + UnusedPortgroup
+	err = v.ImportTerraformDistributedPortGrp(ctx, UnusedPortgroup, unusedPgPath)
 	if err != nil {
 		return err
 	}

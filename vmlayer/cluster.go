@@ -196,7 +196,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get ips from server, proceed with VM deletion", "err", err)
 		} else {
-			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, true, clusterSnName, GetPortName(rootLBName, clusterSnName), ip.InternalAddr)
+			err = v.DetachAndDisableRootLBInterface(ctx, client, rootLBName, clusterSnName, GetPortName(rootLBName, clusterSnName), ip.InternalAddr)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to detach rootLB interface, proceed with VM deletion", "err", err)
 			}
@@ -550,7 +550,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		// via shared rootlb
 		if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 			// If no router in use, create ports on the existing shared rootLB
-			rootlb, err := v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.sharedRootLBName, newSubnetName)
+			rootlb, err := v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
 			if err != nil {
 				return vms, newSubnetName, newSecgrpName, err
 			}
@@ -592,6 +592,7 @@ func (v *VMPlatform) syncClusterInst(ctx context.Context, clusterInst *edgeproto
 
 func (v *VMPlatform) SyncClusterInsts(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts")
+
 	clusterKeys := make(map[edgeproto.ClusterInstKey]struct{})
 	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
 		clusterKeys[*k] = struct{}{}
@@ -656,7 +657,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			newSecgrpName = v.GetServerSecurityGroupName(rootlb.Name)
 		} else if v.VMProperties.GetCloudletExternalRouter() == NoExternalRouter {
 			// If no router in use, create ports on the existing shared rootLB
-			rootlb, err = v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.sharedRootLBName, newSubnetName)
+			rootlb, err = v.GetVMSpecForRootLBPorts(ctx, v.VMProperties.SharedRootLBName, newSubnetName)
 			if err != nil {
 				return nil, err
 			}

@@ -199,7 +199,7 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context, domain vmlaye
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Import Distributed Port Groups")
-	pgrps, err := v.GetDistributedPortGroups(ctx)
+	pgrps, err := v.GetDistributedPortGroups(ctx, "subnet")
 	if err != nil {
 		return err
 	}
@@ -221,6 +221,34 @@ func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context, domain vmlaye
 		if err != nil {
 			return err
 		}
+	}
+	// add the attached cluster networks to the rootLB
+	networks, err := v.GetNetworkListForVm(ctx, v.vmProperties.SharedRootLBName)
+	if err != nil {
+		return nil
+	}
+	sd, err := v.GetServerDetail(ctx, v.vmProperties.SharedRootLBName)
+	if err != nil {
+		return nil
+	}
+	for _, n := range networks {
+		if n == v.vmProperties.GetCloudletExternalNetwork() {
+			continue
+		}
+		ipaddr := ""
+		portname := ""
+		for _, sa := range sd.Addresses {
+			if sa.Network == n {
+				ipaddr = sa.ExternalAddr
+				portname = sa.PortName
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Syncing rootlb port", "network", n, "ipaddr", ipaddr)
+		err = v.AttachPortToServer(ctx, v.vmProperties.SharedRootLBName, n, portname, ipaddr, vmlayer.ActionSync)
+		if err != nil {
+			return err
+		}
+
 	}
 	return terraform.RunTerraformApply(ctx, v.getTerraformDir(ctx), terraform.WithRetries(NumTerraformRetries))
 }

@@ -138,7 +138,7 @@ func (v *VMPlatform) GetType() string {
 }
 
 func (v *VMPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	rootLBName := v.VMProperties.sharedRootLBName
+	rootLBName := v.VMProperties.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	}
@@ -180,7 +180,7 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 		},
 		edgeproto.CloudletMgmtNode{
 			Type: "sharedrootlb",
-			Name: v.VMProperties.sharedRootLBName,
+			Name: v.VMProperties.SharedRootLBName,
 		},
 	}
 	for _, clusterInst := range clusterInsts {
@@ -204,7 +204,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 		return err
 	}
 	v.VMProvider.SetVMProperties(&v.VMProperties)
-	v.VMProperties.sharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
+	v.VMProperties.SharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 	v.VMProperties.PlatformSecgrpName = v.GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))
 	return nil
 }
@@ -246,7 +246,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	log.SpanLog(ctx, log.DebugLevelInfra, "got flavor list", "flavorList", v.FlavorList)
 
 	// create rootLB
-	crmRootLB, cerr := v.NewRootLB(ctx, v.VMProperties.sharedRootLBName)
+	crmRootLB, cerr := v.NewRootLB(ctx, v.VMProperties.SharedRootLBName)
 	if cerr != nil {
 		return cerr
 	}
@@ -254,7 +254,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return fmt.Errorf("rootLB is not initialized")
 	}
 	v.VMProperties.sharedRootLB = crmRootLB
-	log.SpanLog(ctx, log.DebugLevelInfra, "created shared rootLB", "name", v.VMProperties.sharedRootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "created shared rootLB", "name", v.VMProperties.SharedRootLBName)
 
 	tags := GetChefRootLBTags(platformConfig)
 	err = v.CreateRootLB(ctx, crmRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionCreate, tags, updateCallback)
@@ -263,14 +263,14 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = v.SetupRootLB(ctx, v.VMProperties.sharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, updateCallback)
+	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, updateCallback)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, SetupRootLB")
 
 	// set up L7 load balancer
-	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.sharedRootLBName})
+	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName})
 	if err != nil {
 		return err
 	}
