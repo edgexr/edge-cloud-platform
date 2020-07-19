@@ -223,9 +223,12 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
+	pt1.deleteAppInsts(ctx, dc, &app.Key)
 	pt2.policy.MinActiveInstances = 0
 	pt2.policy.MaxInstances = 0
 	pt2.updatePolicy(ctx)
+	pt2.deleteAppInsts(ctx, dc, &app.Key)
+
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -246,9 +249,11 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
+	pt1.deleteAppInsts(ctx, dc, &app.Key)
 	pt2.policy.MinActiveInstances = 0
 	pt2.policy.MaxInstances = 0
 	pt2.updatePolicy(ctx)
+	pt2.deleteAppInsts(ctx, dc, &app.Key)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -296,6 +301,7 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
+	pt1.deleteAppInsts(ctx, dc, &app.Key)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -338,6 +344,7 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
+	pt1.deleteAppInsts(ctx, dc, &app.Key)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -425,6 +432,7 @@ func TestAppChecker(t *testing.T) {
 	pt1.policy.MinActiveInstances = 0
 	pt1.policy.MaxInstances = 0
 	pt1.updatePolicy(ctx)
+	pt1.deleteAppInsts(ctx, dc, &app.Key)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -548,4 +556,10 @@ func (s *policyTest) getAppInsts(key *edgeproto.AppKey) []edgeproto.AppInst {
 		insts = append(insts, inst)
 	}
 	return insts
+}
+
+func (s *policyTest) deleteAppInsts(ctx context.Context, dc *DummyController, key *edgeproto.AppKey) {
+	for _, inst := range s.getAppInsts(key) {
+		dc.deleteAppInst(ctx, &inst)
+	}
 }

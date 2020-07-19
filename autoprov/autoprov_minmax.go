@@ -401,17 +401,18 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 
 	// Check max first. If we meet or exceed max,
 	// we cannot deploy to try to meet min.
-	deleteKeys := s.chooseDelete(ctx, potentialDelete, totalCount-int(policy.MaxInstances))
-	for _, key := range deleteKeys {
-		inst := edgeproto.AppInst{
-			Key: key,
+	if policy.MaxInstances > 0 {
+		deleteKeys := s.chooseDelete(ctx, potentialDelete, totalCount-int(policy.MaxInstances))
+		for _, key := range deleteKeys {
+			inst := edgeproto.AppInst{
+				Key: key,
+			}
+			go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonMinMax, pname)
 		}
-		go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonMinMax, pname)
-	}
-
-	if totalCount >= int(policy.MaxInstances) && policy.MaxInstances != 0 {
-		// don't bother with min because we're already at max
-		return
+		if totalCount >= int(policy.MaxInstances) {
+			// don't bother with min because we're already at max
+			return
+		}
 	}
 
 	// Check min

@@ -23,7 +23,7 @@
   starttime: "2020-03-18T14:06:20.216288-07:00"
   duration: 671µs
   request: '{"Region":"locala","Settings":{}}'
-  response: '{"message"="Forbidden"}'
+  response: '{"message":"Forbidden"}'
   traceid: 33f2e0e8baa458b5
 - operationname: /api/v1/auth/ctrl/ShowSettings
   username: user2
@@ -32,7 +32,7 @@
   starttime: "2020-01-16T16:24:05.019808-08:00"
   duration: 578µs
   request: '{"Region":"local","Settings":{}}'
-  response: '{"message"="Forbidden"}'
+  response: '{"message":"Forbidden"}'
   traceid: 6d8e25359c7c2d2d
 - operationname: /api/v1/login
   username: user2
