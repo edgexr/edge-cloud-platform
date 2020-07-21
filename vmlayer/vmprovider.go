@@ -65,6 +65,7 @@ type VMPlatform struct {
 	VMProvider   VMProvider
 	VMProperties VMProperties
 	FlavorList   []*edgeproto.FlavorInfo
+	Caches       *platform.Caches
 }
 
 // VMMetrics contains stats and timestamp
@@ -131,6 +132,10 @@ const (
 
 type StringSanitizer func(value string) string
 
+type ResTagTables map[string]*edgeproto.ResTagTable
+
+var pCaches *platform.Caches
+
 // VMPlatform embeds Platform and VMProvider
 
 func (v *VMPlatform) GetType() string {
@@ -194,6 +199,29 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 	return mgmt_nodes, nil
 }
 
+func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeproto.CloudletKey) ResTagTables {
+
+	if v.Caches == nil {
+		return nil
+	}
+	var tbls = make(ResTagTables)
+	cl := edgeproto.Cloudlet{}
+	if !v.Caches.CloudletCache.Get(ckey, &cl) {
+		return nil
+	}
+	for res, resKey := range cl.ResTagMap {
+		var tbl edgeproto.ResTagTable
+		if v.Caches.ResTagTableCache == nil {
+			return nil
+		}
+		if !v.Caches.ResTagTableCache.Get(resKey, &tbl) {
+			continue
+		}
+		tbls[res] = &tbl
+	}
+	return tbls
+}
+
 func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) error {
 	providerProps := v.VMProvider.GetProviderSpecificProps()
 	for k, v := range VMProviderProps {
@@ -218,8 +246,8 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		v.Type)
 
 	updateCallback(edgeproto.UpdateTask, "Initializing VM platform type: "+v.Type)
+	v.Caches = caches
 	v.VMProperties.Domain = VMDomainCompute
-
 	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
 	if err != nil {
 		return err
