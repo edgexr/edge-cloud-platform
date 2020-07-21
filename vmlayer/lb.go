@@ -403,7 +403,13 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	if err != nil {
 		return nil, fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
 	}
-	vmspec, err := vmspec.GetVMSpec(v.FlavorList, rootlbFlavor)
+
+	cli := edgeproto.CloudletInfo{}
+	cli.Key = *v.VMProperties.CommonPf.PlatformConfig.CloudletKey
+	cli.Flavors = v.FlavorList
+	restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
+	vmspec, err := vmspec.GetVMSpec(ctx, rootlbFlavor, cli, restbls)
+
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", v.FlavorList, "rootlbFlavor", rootlbFlavor, "err", err)
 		return nil, fmt.Errorf("unable to find VM spec for RootLB: %v", err)

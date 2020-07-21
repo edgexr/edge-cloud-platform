@@ -619,7 +619,12 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 			return nil, err
 		}
 		if cloudlet.InfraConfig.FlavorName == "" {
-			vmspec, err := vmspec.GetVMSpec(flavorList, *pfFlavor)
+			cli := edgeproto.CloudletInfo{}
+			cli.Flavors = flavorList
+			cli.Key = cloudlet.Key
+			restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
+			vmspec, err := vmspec.GetVMSpec(ctx, *pfFlavor, cli, restbls)
+
 			if err != nil {
 				return nil, fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
 			}
