@@ -1,0 +1,18 @@
+- labels:
+    alertname: AutoProvUndeploy
+    app: autoprovappd
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: ReservableD
+    clusterorg: MobiledgeX
+    envoy_cluster_name: ReservableD
+    instance: host.docker.internal:9091
+    job: envoy_targets
+  state: pending
+  activeat:
+    seconds: 1594945144
+    nanos: 494892341
+  notifyid: 2
+  controller: Jon-Mex@127.0.0.1:55001

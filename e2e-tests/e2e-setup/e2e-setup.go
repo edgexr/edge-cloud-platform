@@ -9,9 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
-	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -398,6 +396,10 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 		if err != nil {
 			errors = append(errors, err.Error())
 		}
+		err = intprocess.StopFakeEnvoyExporters(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
 		err = setupmex.Cleanup(ctx)
 		if err != nil {
 			errors = append(errors, err.Error())
@@ -405,13 +407,6 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 	case "fetchlogs":
 		if !FetchRemoteLogs(outputDir) {
 			errors = append(errors, "fetch failed")
-		}
-	case "sleep":
-		t, err := strconv.ParseUint(actionParam, 10, 32)
-		if err == nil {
-			time.Sleep(time.Second * time.Duration(t))
-		} else {
-			errors = append(errors, "Error in parsing sleeptime")
 		}
 	case "runchefclient":
 		err := RunChefClient(spec.ApiFile, vars)

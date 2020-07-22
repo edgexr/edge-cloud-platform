@@ -20,7 +20,7 @@ func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeprot
 		return err
 	}
 
-	return fakeinfra.CloudletPrometheusStartup(ctx, cloudlet, pfConfig, updateCallback)
+	return fakeinfra.CloudletPrometheusStartup(ctx, cloudlet, pfConfig, caches, updateCallback)
 }
 
 func (e *EdgeboxPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -30,7 +30,7 @@ func (e *EdgeboxPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeprot
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Stopping Cloudlet Monitoring")
-	intprocess.StartCloudletPrometheus(ctx, cloudlet)
+	intprocess.StartCloudletPrometheus(ctx, cloudlet, edgeproto.GetDefaultSettings())
 	updateCallback(edgeproto.UpdateTask, "Stopping Shepherd")
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }

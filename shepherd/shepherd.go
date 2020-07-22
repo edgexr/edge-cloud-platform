@@ -12,6 +12,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
@@ -25,6 +26,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/mobiledgex/edge-cloud/tls"
+	"github.com/mobiledgex/edge-cloud/util/tasks"
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
@@ -57,21 +59,26 @@ var CloudletInfoCache edgeproto.CloudletInfoCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
 var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
+var SettingsCache edgeproto.SettingsCache
 var settings edgeproto.Settings
+var AppInstByAutoProvPolicy edgeproto.AppInstLookupByPolicyKey
+var targetFileWorkers tasks.KeyWorkers
+var appInstAlertWorkers tasks.KeyWorkers
 
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
 var nodeMgr node.NodeMgr
 
 var sigChan chan os.Signal
+var notifyClient *notify.Client
+var cloudletWaitDelay = time.Second
+
+var targetsFileWorkerKey = "write-targets"
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
-	// LB metrics are not supported in fake mode
-	if myPlatform.GetType() != "fake" {
-		if target := CollectProxyStats(ctx, new); target != "" {
-			go writePrometheusTargetsFile()
-			go writePrometheusAlertRuleForAppInst(ctx, new)
-		}
+	if target := CollectProxyStats(ctx, new); target != "" {
+		targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
+		appInstAlertWorkers.NeedsWork(ctx, new.Key)
 	}
 	var port int32
 	var exists bool
@@ -150,6 +157,13 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	}
 }
 
+// It's possible that we may miss the transition from AppInst READY to another
+// state before it gets deleted, so we need to handle delete as well.
+func appInstDeletedCb(ctx context.Context, old *edgeproto.AppInst) {
+	old.State = edgeproto.TrackedState_NOT_PRESENT
+	appInstCb(ctx, old, old)
+}
+
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
 	workerMapMutex.Lock()
@@ -183,6 +197,45 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 			delete(workerMap, mapKey)
 			stats.Stop(ctx)
 		}
+	}
+}
+
+func autoProvPolicyCb(ctx context.Context, old *edgeproto.AutoProvPolicy, new *edgeproto.AutoProvPolicy) {
+	// we only care if undeploy policy changed.
+	if old != nil && old.UndeployClientCount == new.UndeployClientCount && old.UndeployIntervalCount == new.UndeployIntervalCount {
+		return
+	}
+	instKeys := AppInstByAutoProvPolicy.Find(new.Key)
+	for _, key := range instKeys {
+		appInstAlertWorkers.NeedsWork(ctx, key)
+	}
+}
+
+func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Settings) {
+	old := settings
+	settings = *new
+	if old.ShepherdMetricsCollectionInterval !=
+		new.ShepherdMetricsCollectionInterval ||
+		old.ShepherdAlertEvaluationInterval !=
+			new.ShepherdAlertEvaluationInterval {
+		// re-write Cloudlet Prometheus config and reload
+		err := intprocess.WriteCloudletPromConfig(ctx, new)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to write cloudlet prometheus config", "err", err)
+		} else {
+			reloadCloudletProm(ctx)
+		}
+	}
+	if old.AutoDeployIntervalSec != new.AutoDeployIntervalSec {
+		// re-write undeploy rules since they all depend on AutoDeployIntervalSec
+		s := &AppInstByAutoProvPolicy
+		s.Mux.Lock()
+		for _, insts := range s.PolicyKeys {
+			for appInstKey, _ := range insts {
+				appInstAlertWorkers.NeedsWork(ctx, appInstKey)
+			}
+		}
+		s.Mux.Unlock()
 	}
 }
 
@@ -221,9 +274,20 @@ func getPlatform() (platform.Platform, error) {
 func main() {
 	nodeMgr.InitFlags()
 	flag.Parse()
+	start()
+	defer stop()
+
+	sigChan = make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+
+	// wait until process in killed/interrupted
+	sig := <-sigChan
+	fmt.Println(sig)
+}
+
+func start() {
 	log.SetDebugLevelStrs(*debugLevels)
 	log.InitTracer(nodeMgr.TlsCertFile)
-	defer log.FinishTracer()
 
 	var span opentracing.Span
 	if *parentSpan != "" {
@@ -231,6 +295,7 @@ func main() {
 	} else {
 		span = log.StartSpan(log.DebugLevelInfo, "main")
 	}
+	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
 	settings = *edgeproto.GetDefaultSettings()
 
@@ -238,7 +303,6 @@ func main() {
 
 	err := nodeMgr.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey), node.WithRegion(*region))
 	if err != nil {
-		span.Finish()
 		log.FatalLog(err.Error())
 	}
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
@@ -246,39 +310,45 @@ func main() {
 		node.CertIssuerRegionalCloudlet,
 		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
 	if err != nil {
-		span.Finish()
 		log.FatalLog("Failed to get internal pki tls config", "err", err)
 	}
 
 	myPlatform, err = getPlatform()
 	if err != nil {
-		span.Finish()
 		log.FatalLog("Failed to get platform", "platformName", platformName, "err", err)
 	}
 
+	targetFileWorkers.Init("cloudlet-prom-targets", writePrometheusTargetsFile)
+	appInstAlertWorkers.Init("alert-file-writer", writePrometheusAlertRuleForAppInst)
+
 	if err = startPrometheusMetricsProxy(ctx); err != nil {
-		span.Finish()
 		log.FatalLog("Failed to start prometheus metrics proxy", "err", err)
 	}
 
 	// register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.SetUpdatedCb(appInstCb)
+	AppInstCache.SetDeletedCb(appInstDeletedCb)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
 	ClusterInstCache.SetUpdatedCb(clusterInstCb)
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitAutoProvPolicyCache(&AutoProvPoliciesCache)
+	AutoProvPoliciesCache.SetUpdatedCb(autoProvPolicyCb)
+	edgeproto.InitSettingsCache(&SettingsCache)
+	AppInstByAutoProvPolicy.Init()
 	// also register to receive cloudlet details
 	edgeproto.InitCloudletCache(&CloudletCache)
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient := notify.NewClient(nodeMgr.Name(), addrs, tls.GetGrpcDialOption(clientTlsConfig))
+	notifyClient = notify.NewClient(nodeMgr.Name(), addrs, tls.GetGrpcDialOption(clientTlsConfig))
 	notifyClient.SetFilterByCloudletKey()
+	notifyClient.RegisterRecvSettingsCache(&SettingsCache)
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
+	SettingsCache.SetUpdatedCb(settingsCb)
 	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)
@@ -289,9 +359,9 @@ func main() {
 	notifyClient.RegisterSendCloudletInfoCache(&CloudletInfoCache)
 
 	nodeMgr.RegisterClient(notifyClient)
+	notifyClient.RegisterSendAllRecv(&sendAllRecv{})
 
 	notifyClient.Start()
-	defer notifyClient.Stop()
 
 	cloudletInfo := edgeproto.CloudletInfo{
 		Key: cloudletKey,
@@ -312,10 +382,9 @@ func main() {
 			found = true
 			break
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(cloudletWaitDelay)
 	}
 	if !found {
-		span.Finish()
 		log.FatalLog("failed to fetch cloudlet cache from controller")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
@@ -333,15 +402,14 @@ func main() {
 
 	err = myPlatform.Init(ctx, &pc)
 	if err != nil {
-		span.Finish()
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	workerMap = make(map[string]*ClusterWorker)
 	workerMapMutex = &sync.Mutex{}
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	// LB metrics are not supported in fake mode
+	InitProxyScraper()
 	if myPlatform.GetType() != "fake" {
-		InitProxyScraper()
 		StartProxyScraper()
 	}
 	InitPlatformMetrics()
@@ -350,13 +418,20 @@ func main() {
 	cloudletInfo.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
 	CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
 
-	sigChan = make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Ready")
-	span.Finish()
+}
 
-	// wait until process in killed/interrupted
-	sig := <-sigChan
-	fmt.Println(sig)
+func stop() {
+	if notifyClient != nil {
+		notifyClient.Stop()
+	}
+	log.FinishTracer()
+}
+
+type sendAllRecv struct{}
+
+func (s *sendAllRecv) RecvAllStart() {}
+
+func (s *sendAllRecv) RecvAllEnd(ctx context.Context) {
+	targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
 }

@@ -46,8 +46,7 @@ func pruneCloudletForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]str
 	for key, _ := range keys {
 		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
 		if alertName, found := alertFromKey.Labels["alertname"]; !found ||
-			(alertName != cloudcommon.AlertAppInstDown &&
-				alertName != cloudcommon.AlertAutoProvDown) {
+			!cloudcommon.IsMonitoredAlert(alertName) {
 			delete(keys, key)
 		}
 	}

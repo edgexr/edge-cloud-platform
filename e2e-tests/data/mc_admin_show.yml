@@ -74,6 +74,7 @@ regiondata:
   appdata:
     settings:
       shepherdmetricscollectioninterval: 1s
+      shepherdalertevaluationinterval: 1s
       shepherdhealthcheckretries: 3
       shepherdhealthcheckinterval: 5s
       autodeployintervalsec: 1

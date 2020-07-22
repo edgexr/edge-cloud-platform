@@ -134,6 +134,23 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		}
 		y1 = a1
 		y2 = a2
+	} else if fileType == "mcalerts" {
+		// sort alerts
+		var a1 []edgeproto.Alert
+		var a2 []edgeproto.Alert
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		copts = []cmp.Option{
+			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
+			cmpopts.SortSlices(func(a edgeproto.Alert, b edgeproto.Alert) bool {
+				return a.GetKey().GetKeyString() < b.GetKey().GetKeyString()
+			}),
+		}
+		copts = append(copts, edgeproto.IgnoreAlertFields("nocmp"))
+		y1 = a1
+		y2 = a2
 	} else if fileType == "mcaudit" {
 		var a1 []ormapi.AuditResponse
 		var a2 []ormapi.AuditResponse
