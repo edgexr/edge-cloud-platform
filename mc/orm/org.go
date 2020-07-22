@@ -340,6 +340,11 @@ func orgExists(ctx context.Context, orgName string) (*ormapi.Organization, error
 	if res.Error != nil {
 		return nil, res.Error
 	}
+	// SQL lookup by org name is case-insensitive.
+	// Make sure org name matches (case-sensitive).
+	if org.Name != orgName {
+		return nil, fmt.Errorf("lookup %s but found %s", orgName, org.Name)
+	}
 	return &org, nil
 }
 

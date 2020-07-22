@@ -175,6 +175,12 @@ func TestServer(t *testing.T) {
 	require.NotNil(t, err, "create duplicate org (case-insensitive)")
 	require.Equal(t, http.StatusBadRequest, status, "create dup org")
 
+	// EC-31717: Test org exists func. Should be case sensitive, so looking
+	// for "devy" should fail (does not exist), and not hit a false
+	//  positive for org "DevY", which does exist.
+	err = checkRequiresOrg(ctx, "devy", false)
+	require.NotNil(t, err, "devy should not exist")
+
 	// create new admin user
 	admin := ormapi.User{
 		Name:     "Admin",
