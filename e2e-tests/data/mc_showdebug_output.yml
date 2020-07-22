@@ -139,10 +139,3 @@ requests:
         name: dmuus-cloud-1
       region: local
     output: api,notify,infra,metrics
-  - node:
-      type: shepherd
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-3
-      region: locala
-    output: api,notify,infra,metrics

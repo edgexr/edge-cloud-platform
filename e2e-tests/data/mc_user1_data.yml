@@ -80,7 +80,7 @@ regiondata:
         longitude: -92
       ipsupport: IpSupportDynamic
       numdynamicips: 254
-      platformtype: PlatformTypeFakeinfra
+      platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51017
     - key:
         organization: dmuus

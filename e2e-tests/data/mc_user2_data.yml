@@ -151,6 +151,8 @@ regiondata:
         organization: AcmeAppCo
       deployclientcount: 3
       deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
       cloudlets:
       - key:
           organization: dmuus
@@ -288,6 +290,8 @@ regiondata:
         organization: AcmeAppCo
       deployclientcount: 3
       deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
       cloudlets:
       - key:
           organization: dmuus

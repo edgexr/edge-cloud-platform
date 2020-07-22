@@ -5,36 +5,51 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
+	"github.com/prometheus/common/model"
 )
 
 const (
 	PrometheusContainer    = "cloudletPrometheus"
 	PrometheusImagePath    = "prom/prometheus"
-	PrometheusImageVersion = "latest"
+	PrometheusImageVersion = "v2.19.2"
 	PrometheusRulesPrefix  = "rulefile_"
 	CloudletPrometheusPort = "9092"
 )
 
 var prometheusConfig = `global:
-  evaluation_interval: 15s
+  evaluation_interval: {{.EvalInterval}}
 rule_files:
 - "/tmp/` + PrometheusRulesPrefix + `*"
 scrape_configs:
 - job_name: envoy_targets
-  scrape_interval: 5s
+  scrape_interval: {{.ScrapeInterval}}
   file_sd_configs:
   - files:
     - '/tmp/prom_targets.json'
 `
+
+type prometheusConfigArgs struct {
+	EvalInterval   string
+	ScrapeInterval string
+}
+
+var prometheusConfigTemplate *template.Template
+var prometheusConfigMux sync.Mutex
+
+func init() {
+	prometheusConfigTemplate = template.Must(template.New("prometheusconfig").Parse(prometheusConfig))
+}
 
 func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (*Shepherd, []process.StartOp, error) {
 	opts := []process.StartOp{}
@@ -155,10 +170,13 @@ func StopShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet) erro
 	return nil
 }
 
-// Prometheus config is common for all the types of deployement
-func GetCloudletPrometheusConfig() string {
-	return prometheusConfig
+func StopFakeEnvoyExporters(ctx context.Context) error {
+	c := make(chan string)
+	go process.KillProcessesByName("fake_envoy_exporter", time.Second, "", c)
+	log.SpanLog(ctx, log.DebugLevelInfra, "stopped fake_envoy_exporter", "msg", <-c)
+	return nil
 }
+
 func GetCloudletPrometheusConfigHostFilePath() string {
 	return "/tmp/prometheus.yml"
 }
@@ -171,6 +189,7 @@ func GetCloudletPrometheusCmdArgs() []string {
 		"--web.listen-address",
 		":" + CloudletPrometheusPort,
 		"--web.enable-lifecycle",
+		"--log.level=debug", // Debug
 	}
 }
 
@@ -191,18 +210,11 @@ func GetCloudletPrometheusDockerArgs(cloudlet *edgeproto.Cloudlet, cfgFile strin
 }
 
 // Starts prometheus container and connects it to the default ports
-func StartCloudletPrometheus(ctx context.Context, cloudlet *edgeproto.Cloudlet) error {
+func StartCloudletPrometheus(ctx context.Context, cloudlet *edgeproto.Cloudlet, settings *edgeproto.Settings) error {
+	if err := WriteCloudletPromConfig(ctx, settings); err != nil {
+		return err
+	}
 	cfgFile := GetCloudletPrometheusConfigHostFilePath()
-	f, err := os.Create(cfgFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.WriteString(GetCloudletPrometheusConfig())
-	if err != nil {
-		return err
-	}
-
 	args := GetCloudletPrometheusDockerArgs(cloudlet, cfgFile)
 	cmdOpts := GetCloudletPrometheusCmdArgs()
 
@@ -213,7 +225,39 @@ func StartCloudletPrometheus(ctx context.Context, cloudlet *edgeproto.Cloudlet) 
 	args = append(args, []string{"--name", PrometheusContainer, promImage}...)
 	args = append(args, cmdOpts...)
 
-	_, err = process.StartLocal(PrometheusContainer, "docker", args, nil, "/tmp/cloudlet_prometheus.log")
+	_, err := process.StartLocal(PrometheusContainer, "docker", args, nil, "/tmp/cloudlet_prometheus.log")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func WriteCloudletPromConfig(ctx context.Context, settings *edgeproto.Settings) error {
+	scrape := model.Duration(settings.ShepherdMetricsCollectionInterval)
+	eval := model.Duration(settings.ShepherdAlertEvaluationInterval)
+
+	args := prometheusConfigArgs{
+		ScrapeInterval: scrape.String(),
+		EvalInterval:   eval.String(),
+	}
+	buf := bytes.Buffer{}
+	if err := prometheusConfigTemplate.Execute(&buf, &args); err != nil {
+		return err
+	}
+
+	// Protect against concurrent changes to the config.
+	// Shepherd may update the config due to changes in settings,
+	// while crm/chef may start/restart it.
+	prometheusConfigMux.Lock()
+	defer prometheusConfigMux.Unlock()
+
+	cfgFile := GetCloudletPrometheusConfigHostFilePath()
+	f, err := os.Create(cfgFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(buf.Bytes())
 	if err != nil {
 		return err
 	}

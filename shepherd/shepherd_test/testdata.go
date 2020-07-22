@@ -12,6 +12,9 @@ var (
 		Organization: "testoperator",
 		Name:         "testcloudlet",
 	}
+	TestCloudlet = edgeproto.Cloudlet{
+		Key: TestCloudletKey,
+	}
 	TestClusterKey     = edgeproto.ClusterKey{Name: "testcluster"}
 	TestClusterInstKey = edgeproto.ClusterInstKey{
 		ClusterKey:   TestClusterKey,
@@ -22,6 +25,19 @@ var (
 		Key:        TestClusterInstKey,
 		Deployment: cloudcommon.DeploymentTypeDocker,
 	}
+	TestAutoProvPolicyKey = edgeproto.PolicyKey{
+		Name: "autoprov",
+	}
+	TestAutoProvPolicy = edgeproto.AutoProvPolicy{
+		Key:                   TestAutoProvPolicyKey,
+		UndeployClientCount:   3,
+		UndeployIntervalCount: 3,
+		Cloudlets: []*edgeproto.AutoProvCloudlet{
+			&edgeproto.AutoProvCloudlet{
+				Key: TestCloudletKey,
+			},
+		},
+	}
 	TestAppKey = edgeproto.AppKey{
 		Name: "App",
 	}
@@ -29,6 +45,9 @@ var (
 		Key:         TestAppKey,
 		AccessPorts: "tcp:1234",
 		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		AutoProvPolicies: []string{
+			TestAutoProvPolicyKey.Name,
+		},
 	}
 	TestAppInstKey = edgeproto.AppInstKey{
 		AppKey:         TestAppKey,
@@ -38,6 +57,7 @@ var (
 		Key:         TestAppInstKey,
 		State:       edgeproto.TrackedState_READY,
 		HealthCheck: edgeproto.HealthCheck_HEALTH_CHECK_OK,
+		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,
 		MappedPorts: []dme.AppPort{
 			dme.AppPort{
 				Proto:      dme.LProto_L_PROTO_TCP,

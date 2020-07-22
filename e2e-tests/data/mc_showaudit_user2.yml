@@ -69,7 +69,7 @@
   status: 200
   starttime: "2019-12-18T13:42:42.48365-08:00"
   duration: 18.759ms
-  request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}]}}'
+  request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
   traceid: 7af113ec2d0b698c
 - operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy

@@ -65,6 +65,9 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "nodeshow" {
 		return runMcShowNode(uri, curUserFile, outputDir, vars)
+	} else if api == "showalerts" {
+		*retry = true
+		return showMcAlerts(uri, apiFile, curUserFile, outputDir, vars)
 	} else if strings.HasPrefix(api, "debug") {
 		return runMcDebug(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	}
@@ -885,5 +888,30 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		}
 	}
 	util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+	return rc
+}
+
+func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars map[string]string) bool {
+	if apiFile == "" {
+		log.Println("Error: Cannot run MC audit APIs without API file")
+		return false
+	}
+	log.Printf("Running MC showalert APIs for %s\n", apiFile)
+
+	token, rc := loginCurUser(uri, curUserFile, vars)
+	if !rc {
+		return false
+	}
+	filter := ormapi.RegionAlert{}
+	err := util.ReadYamlFile(apiFile, &filter, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error in unmarshal for file %s, %v\n", apiFile, err)
+		os.Exit(1)
+	}
+
+	alerts, status, err := mcClient.ShowAlert(uri, token, &filter)
+	checkMcErr("ShowAlert", status, err, &rc)
+
+	util.PrintToYamlFile("show-commands.yml", outputDir, alerts, true)
 	return rc
 }

@@ -22,7 +22,7 @@ import (
 )
 
 var ProxyMap map[string]ProxyScrapePoint
-var ProxyMutex *sync.Mutex
+var ProxyMutex sync.Mutex
 
 // stat names in envoy
 var envoyClusterName = "cluster.backend"
@@ -49,7 +49,6 @@ type ProxyScrapePoint struct {
 
 func InitProxyScraper() {
 	ProxyMap = make(map[string]ProxyScrapePoint)
-	ProxyMutex = &sync.Mutex{}
 }
 
 func StartProxyScraper() {
@@ -59,13 +58,12 @@ func StartProxyScraper() {
 	go ProxyScraper()
 }
 
-func getProxyKey(appInstKey *edgeproto.AppInstKey) string {
-	return appInstKey.AppKey.Name + "-" + appInstKey.ClusterInstKey.ClusterKey.Name + "-" +
-		appInstKey.AppKey.Organization + "-" + appInstKey.AppKey.Version
-}
-
 // Figure out envoy proxy container name
 func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "getProxyContainerName", "type", myPlatform.GetType())
+	if myPlatform.GetType() == "fake" {
+		return "fakeEnvoy", nil
+	}
 	container := proxy.GetEnvoyContainerName(scrapePoint.App)
 	request := fmt.Sprintf("docker exec %s echo hello", container)
 	resp, err := scrapePoint.Client.Output(request)
@@ -95,12 +93,11 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", appInst.Key.AppKey.Name)
 		return ""
-	} else if app.InternalPorts {
-		return ""
-	} else if app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+	}
+	if !shepherd_common.ShouldRunEnvoy(&app, appInst) {
 		return ""
 	}
-	ProxyMapKey := getProxyKey(appInst.GetKey())
+	ProxyMapKey := shepherd_common.GetProxyKey(appInst.GetKey())
 	// add/remove from the list of proxy endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
 		scrapePoint := ProxyScrapePoint{

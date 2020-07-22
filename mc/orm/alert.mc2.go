@@ -46,6 +46,7 @@ It has these top-level messages:
 	AppInstRuntime
 	AppInstInfo
 	AppInstMetrics
+	AppInstLookup
 	AppInstClientKey
 	AppInstClient
 	AutoProvPolicy
@@ -237,6 +238,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// The following values should be added to `Settings.fields` field array to specify which fields will be updated.
 	// ```
 	// ShepherdMetricsCollectionInterval: 2
+	// ShepherdAlertEvaluationInterval: 20
 	// ShepherdHealthCheckRetries: 3
 	// ShepherdHealthCheckInterval: 4
 	// AutoDeployIntervalSec: 5
@@ -1029,6 +1031,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// CloudletsLocTimestampNanos: 5.2.8.2
 	// MinActiveInstances: 6
 	// MaxInstances: 7
+	// UndeployClientCount: 8
+	// UndeployIntervalCount: 9
 	// ```
 	// Security:
 	//   Bearer:

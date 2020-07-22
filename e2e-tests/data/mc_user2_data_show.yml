@@ -441,6 +441,8 @@ regiondata:
         organization: AcmeAppCo
       deployclientcount: 3
       deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
       cloudlets:
       - key:
           organization: dmuus
@@ -504,7 +506,7 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51017
       flavor:
         name: DefaultPlatformFlavor
@@ -530,6 +532,8 @@ regiondata:
         name: autoprov1
       deployclientcount: 3
       deployintervalcount: 3
+      undeployclientcount: 1
+      undeployintervalcount: 3
       cloudlets:
       - key:
           organization: dmuus

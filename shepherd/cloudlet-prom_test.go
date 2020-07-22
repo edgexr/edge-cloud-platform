@@ -35,13 +35,13 @@ type TestJsonTargets []struct {
 
 func testUpdateAndWrite(ctx context.Context, inst *edgeproto.AppInst, t *testing.T) {
 	if str := CollectProxyStats(ctx, inst); str != "" {
-		writePrometheusTargetsFile()
+		targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
 	}
-	testWaitGroup.Done()
 }
 func TestCloudletPrometheusFuncs(t *testing.T) {
 	ctx := setupLog()
 	defer log.FinishTracer()
+	targetFileWorkers.Init("targets", writePrometheusTargetsFile)
 	// test targets file
 	*promTargetsFile = "/tmp/testTargets.json"
 	myPlatform = &shepherd_unittest.Platform{}
@@ -57,12 +57,11 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	assert.Equal(t, testInstCount, len(testTargetAppInstances))
 	assert.Equal(t, testInstCount, len(targetKeys))
 	assert.Equal(t, testInstCount, len(AppInstCache.Objs))
-	testWaitGroup.Add(testInstCount)
 	for ii := range testTargetAppInstances {
-		go testUpdateAndWrite(ctx, &testTargetAppInstances[ii], t)
+		testUpdateAndWrite(ctx, &testTargetAppInstances[ii], t)
 	}
 	// Wait for all to complete
-	testWaitGroup.Wait()
+	targetFileWorkers.WaitIdle()
 	// verify they all are here
 	content, err := ioutil.ReadFile(*promTargetsFile)
 	assert.Nil(t, err)
