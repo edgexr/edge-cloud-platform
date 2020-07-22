@@ -270,7 +270,14 @@ func ParseFlavorProperties(f OSFlavorDetail) map[string]string {
 	props = make(map[string]string)
 	for _, m := range ms {
 		// ex: pci_passthrough:alias='t4gpu:1’
-		val := strings.Split(m, ":")
+		var val []string
+		if strings.Contains(m, ":") {
+			val = strings.Split(m, ":")
+		} else if strings.Contains(m, "=") {
+			// handle vio (wwt) flavor syntax
+			val = strings.Split(m, "=")
+		}
+
 		if len(val) > 1 {
 			val[0] = strings.TrimSpace(val[0])
 			var s []string

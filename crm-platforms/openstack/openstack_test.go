@@ -114,6 +114,19 @@ var OSFlavors = []OSFlavorDetail{
 		RXTX_Factor: "1.0",
 		ID:          "94557fcc-d217-4270-8511-79bce1d6c0c9",
 	},
+	// Test auto created flavor in VIO unqiue syntax
+	OSFlavorDetail{
+		Name:        "vmware.medium-gpu",
+		RAM:         4096,
+		Ephemeral:   0,
+		Properties:  "vmware:vgpu='1'",
+		VCPUs:       2,
+		Swap:        "",
+		Public:      true,
+		Disk:        40,
+		RXTX_Factor: "1.0",
+		ID:          "94557fcc-d217-4270-8511-79bce1d6c0c9",
+	},
 }
 
 func TestParseFlavorProps(t *testing.T) {
