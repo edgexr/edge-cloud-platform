@@ -166,7 +166,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		return err
 	}
 	//todo: calculate timeouts instead of hardcoded value
-	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, time.Minute*15, vmgp, ActionUpdate)
+	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, time.Minute*15, vmgp, privacyPolicy, ActionUpdate)
 }
 
 //DeleteCluster deletes kubernetes cluster
@@ -309,10 +309,10 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		return fmt.Errorf("Cluster VM create Failed: %v", err)
 	}
 
-	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, timeout, vmgp, ActionCreate)
+	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, timeout, vmgp, privacyPolicy, ActionCreate)
 }
 
-func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, start time.Time, timeout time.Duration, vmgp *VMGroupOrchestrationParams, action ActionType) (reterr error) {
+func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, start time.Time, timeout time.Duration, vmgp *VMGroupOrchestrationParams, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType) (reterr error) {
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return fmt.Errorf("can't get rootLB client, %v", err)
@@ -358,7 +358,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			}
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Root LB")
-		err := v.SetupRootLB(ctx, rootLBName, &clusterInst.Key.CloudletKey, updateCallback)
+		err := v.SetupRootLB(ctx, rootLBName, &clusterInst.Key.CloudletKey, privacyPolicy, updateCallback)
 		if err != nil {
 			return err
 		}
@@ -592,12 +592,10 @@ func (v *VMPlatform) syncClusterInst(ctx context.Context, clusterInst *edgeproto
 
 func (v *VMPlatform) SyncClusterInsts(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts")
-
 	clusterKeys := make(map[edgeproto.ClusterInstKey]struct{})
 	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
 		clusterKeys[*k] = struct{}{}
 	})
-
 	for k := range clusterKeys {
 		log.SpanLog(ctx, log.DebugLevelInfra, "SyncClusterInsts found cluster", "key", k)
 		var clus edgeproto.ClusterInst

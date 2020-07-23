@@ -9,6 +9,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 type OpenstackPlatform struct {
@@ -79,4 +80,9 @@ func (o *OpenstackPlatform) GetResourceID(ctx context.Context, resourceType vmla
 		// TODO other types as needed
 	}
 	return "", fmt.Errorf("GetResourceID not implemented for resource type: %s ", resourceType)
+}
+
+func (o *OpenstackPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, privacyPolicy *edgeproto.PrivacyPolicy) error {
+	// nothing to do
+	return nil
 }

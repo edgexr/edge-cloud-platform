@@ -266,6 +266,7 @@ func WithSkipCleanupOnFailure(skip bool) VMGroupReqOp {
 type SubnetOrchestrationParams struct {
 	Id           string
 	Name         string
+	NetworkName  string
 	CIDR         string
 	NodeIPPrefix string
 	GatewayIP    string
@@ -580,6 +581,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			CIDR:        NextAvailableResource,
 			DHCPEnabled: "no",
 			DNSServers:  subnetDns,
+			NetworkName: v.VMProperties.GetCloudletMexNetwork(),
 		}
 		if spec.SkipSubnetGateway {
 			newSubnet.SkipGateway = true
@@ -753,10 +755,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		}
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
-			hostName := util.DNSSanitize(strings.Split(vm.Name, ".")[0])
-			if len(hostName) > 32 {
-				hostName = hostName[:32]
-			}
+			hostName := util.HostnameSanitize(strings.Split(vm.Name, ".")[0])
 			newVM := VMOrchestrationParams{
 				Name:                    v.VMProvider.NameSanitize(vm.Name),
 				Id:                      v.VMProvider.IdSanitize(vm.Name),
