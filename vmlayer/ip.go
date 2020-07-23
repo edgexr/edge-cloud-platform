@@ -181,8 +181,8 @@ func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, se
 	return nil
 }
 
-func (v *VMPlatform) GetInternalNetworkRoute(ctx context.Context) (string, error) {
-	netSpec, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
+func (v *VMProperties) GetInternalNetworkRoute(ctx context.Context) (string, error) {
+	netSpec, err := ParseNetSpec(ctx, v.GetCloudletNetworkScheme())
 	if err != nil {
 		return "", err
 	}

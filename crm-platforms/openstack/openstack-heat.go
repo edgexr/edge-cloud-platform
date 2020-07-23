@@ -29,7 +29,7 @@ resources:
         type: OS::Neutron::Subnet
         properties:
             cidr: {{.CIDR}}
-            network: mex-k8s-net-1
+            network: {{.NetworkName}}
             gateway_ip: {{.GatewayIP}}
             enable_dhcp: {{.DHCPEnabled}}
             dns_nameservers:

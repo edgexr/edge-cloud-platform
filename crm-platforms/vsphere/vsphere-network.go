@@ -76,6 +76,21 @@ func (v *VSpherePlatform) GetFreeExternalIP(ctx context.Context) (string, error)
 	return "", fmt.Errorf("No available IPs")
 }
 
+func (v *VSpherePlatform) GetExternalIpNetworkCidr(ctx context.Context) (string, error) {
+	gw, err := v.GetExternalGateway(ctx, v.vmProperties.GetCloudletExternalNetwork())
+	if err != nil {
+		return "", err
+	}
+
+	mask := v.GetExternalNetmask()
+	netString := gw + "/" + mask
+	_, netCidr, err := net.ParseCIDR(netString)
+	if err != nil {
+		return "", err
+	}
+	return netCidr.String(), nil
+}
+
 // GetExternalIPCounts returns Total, Used
 func (v *VSpherePlatform) GetExternalIPCounts(ctx context.Context) (uint64, uint64, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalIPCounts")

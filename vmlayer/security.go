@@ -53,7 +53,7 @@ func (v *VMPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, clien
 	}()
 	go func() {
 		if ops.AddSecurityRules {
-			err := v.VMProvider.WhitelistSecurityRules(ctx, v.GetServerSecurityGroupName(rootLBName), rootLBName, GetAllowedClientCIDR(), appInst.MappedPorts)
+			err := v.VMProvider.WhitelistSecurityRules(ctx, client, v.GetServerSecurityGroupName(rootLBName), rootLBName, GetAppWhitelistRulesLabel(app), GetAllowedClientCIDR(), appInst.MappedPorts)
 			if err == nil {
 				secchan <- ""
 			} else {
