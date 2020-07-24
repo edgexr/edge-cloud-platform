@@ -202,16 +202,19 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeproto.CloudletKey) ResTagTables {
 
 	if v.Caches == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "nil caches")
 		return nil
 	}
 	var tbls = make(ResTagTables)
 	cl := edgeproto.Cloudlet{}
 	if !v.Caches.CloudletCache.Get(ckey, &cl) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Not found in cache", "cloudlet", ckey.Name)
 		return nil
 	}
 	for res, resKey := range cl.ResTagMap {
 		var tbl edgeproto.ResTagTable
 		if v.Caches.ResTagTableCache == nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Caches.ResTagTableCache nil")
 			return nil
 		}
 		if !v.Caches.ResTagTableCache.Get(resKey, &tbl) {
