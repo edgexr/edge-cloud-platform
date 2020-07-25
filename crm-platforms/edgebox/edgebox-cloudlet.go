@@ -54,3 +54,7 @@ func (e *EdgeboxPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edg
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return e.generic.GetCloudletManifest(ctx, cloudlet, pfConfig, flavor)
 }
+
+func (e *EdgeboxPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return e.generic.VerifyVMs(ctx, vms)
+}

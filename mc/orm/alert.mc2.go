@@ -33,6 +33,7 @@ It is generated from these files:
 	result.proto
 	settings.proto
 	version.proto
+	vmpool.proto
 
 It has these top-level messages:
 	Alert
@@ -112,6 +113,13 @@ It has these top-level messages:
 	ResTagTable
 	Result
 	Settings
+	VMNetInfo
+	VM
+	VMPoolKey
+	VMPool
+	VMPoolMember
+	VMSpec
+	VMPoolInfo
 */
 package orm
 
@@ -256,6 +264,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ChefClientInterval: 17
 	// InfluxDbMetricsRetention: 18
 	// CloudletMaintenanceTimeout: 19
+	// UpdateVmPoolTimeout: 21
 	// ```
 	// Security:
 	//   Bearer:
@@ -579,6 +588,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ChefClientKeyValue: 29.2
 	// MaintenanceState: 30
 	// OverridePolicyContainerVersion: 31
+	// VmPool: 32
 	// ```
 	// Security:
 	//   Bearer:
@@ -750,6 +760,96 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
+	// swagger:route POST /auth/ctrl/CreateVMPool VMPool CreateVMPool
+	// Create VMPool.
+	//  Creates VM pool which will have VMs defined.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateVMPool", CreateVMPool)
+	// swagger:route POST /auth/ctrl/DeleteVMPool VMPool DeleteVMPool
+	// Delete VMPool.
+	//  Deletes VM pool given that none of VMs part of this pool is used.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteVMPool", DeleteVMPool)
+	// swagger:route POST /auth/ctrl/UpdateVMPool VMPool UpdateVMPool
+	// Update VMPool.
+	//  Updates a VM pools VMs.
+	// The following values should be added to `VMPool.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyOrganization: 2.1
+	// KeyName: 2.2
+	// Vms: 3
+	// VmsName: 3.1
+	// VmsNetInfo: 3.2
+	// VmsNetInfoExternalIp: 3.2.1
+	// VmsNetInfoInternalIp: 3.2.2
+	// VmsGroupName: 3.3
+	// VmsState: 3.4
+	// VmsUpdatedAt: 3.5
+	// VmsUpdatedAtSeconds: 3.5.1
+	// VmsUpdatedAtNanos: 3.5.2
+	// VmsInternalName: 3.6
+	// State: 4
+	// Errors: 5
+	// Status: 6
+	// StatusTaskNumber: 6.1
+	// StatusMaxTasks: 6.2
+	// StatusTaskName: 6.3
+	// StatusStepName: 6.4
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateVMPool", UpdateVMPool)
+	// swagger:route POST /auth/ctrl/ShowVMPool VMPool ShowVMPool
+	// Show VMPools.
+	//  Lists all the VMs part of the VM pool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowVMPool", ShowVMPool)
+	// swagger:route POST /auth/ctrl/AddVMPoolMember VMPoolMember AddVMPoolMember
+	// Add VMPoolMember.
+	//  Adds a VM to existing VM Pool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/AddVMPoolMember", AddVMPoolMember)
+	// swagger:route POST /auth/ctrl/RemoveVMPoolMember VMPoolMember RemoveVMPoolMember
+	// Remove VMPoolMember.
+	//  Removes a VM from existing VM Pool.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RemoveVMPoolMember", RemoveVMPoolMember)
 	// swagger:route POST /auth/ctrl/CreateAutoScalePolicy AutoScalePolicy CreateAutoScalePolicy
 	// Create an Auto Scale Policy.
 	// Security:

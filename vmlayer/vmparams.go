@@ -58,6 +58,11 @@ var RoleVMApplication VMRole = "vmapp"
 var RoleVMPlatform VMRole = "platform"
 var RoleMatchAny VMRole = "any" // not a real role, used for matching
 
+type NetType int
+
+var NetTypeExternal NetType = 0
+var NetTypeInternal NetType = 1
+
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free
 var NextAvailableResource = "NextAvailable"
@@ -79,6 +84,7 @@ type PortResourceReference struct {
 	NetworkId   string
 	SubnetId    string
 	Preexisting bool
+	NetworkType NetType
 }
 
 func GetPortName(vmname, netname string) string {
@@ -89,8 +95,8 @@ func NewResourceReference(name string, id string, preexisting bool) ResourceRefe
 	return ResourceReference{Name: name, Id: id, Preexisting: preexisting}
 }
 
-func NewPortResourceReference(name string, id string, netid, subnetid string, preexisting bool) PortResourceReference {
-	return PortResourceReference{Name: name, Id: id, NetworkId: netid, SubnetId: subnetid, Preexisting: preexisting}
+func NewPortResourceReference(name string, id string, netid, subnetid string, preexisting bool, netType NetType) PortResourceReference {
+	return PortResourceReference{Name: name, Id: id, NetworkId: netid, SubnetId: subnetid, Preexisting: preexisting, NetworkType: netType}
 }
 
 // VMRequestSpec has the infromation which the caller needs to provide when creating a VM.
@@ -289,6 +295,7 @@ type PortOrchestrationParams struct {
 	SubnetId       string
 	NetworkName    string
 	NetworkId      string
+	NetworkType    NetType
 	VnicType       string
 	SkipAttachVM   bool
 	FixedIPs       []FixedIPOrchestrationParams
@@ -727,6 +734,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					NetworkName: vmgp.Netspec.FloatingIPNet,
 					NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
 					VnicType:    vmgp.Netspec.VnicType,
+					NetworkType: NetTypeExternal,
 				}
 				fip := FloatingIPOrchestrationParams{
 					Name:         externalPortName + "-fip",
@@ -742,6 +750,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					NetworkName: externalNetName,
 					NetworkId:   v.VMProvider.IdSanitize(externalNetName),
 					VnicType:    vmgp.Netspec.VnicType,
+					NetworkType: NetTypeExternal,
 				}
 			}
 			externalport.SecurityGroups = []ResourceReference{
@@ -796,7 +805,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			}
 			for _, p := range newPorts {
 				if !p.SkipAttachVM {
-					newVM.Ports = append(newVM.Ports, NewPortResourceReference(p.Name, p.Id, p.NetworkId, p.SubnetId, false))
+					newVM.Ports = append(newVM.Ports, NewPortResourceReference(p.Name, p.Id, p.NetworkId, p.SubnetId, false, p.NetworkType))
 					newVM.FixedIPs = append(newVM.FixedIPs, p.FixedIPs...)
 				}
 			}

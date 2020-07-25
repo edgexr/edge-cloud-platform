@@ -37,3 +37,7 @@ func (s *AzurePlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgep
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return nil, nil
 }
+
+func (s *AzurePlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}

@@ -42,3 +42,7 @@ func (a *AWSPlatform) SyncControllerCache(ctx context.Context, caches *platform.
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "cloudletState", cloudletState)
 	return nil
 }
+
+func (s *AWSPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}

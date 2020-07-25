@@ -516,21 +516,23 @@ func (v *VMPlatform) GetChefPlatformAttributes(ctx context.Context, cloudlet *ed
 	if err != nil {
 		return nil, err
 	}
-	urlObj, err := util.ImagePathParse(apiAddr)
-	if err != nil {
-		return nil, err
+	if apiAddr != "" {
+		urlObj, err := util.ImagePathParse(apiAddr)
+		if err != nil {
+			return nil, err
+		}
+		hostname := strings.Split(urlObj.Host, ":")
+		if len(hostname) != 2 {
+			return nil, fmt.Errorf("invalid api endpoint addr: %s", apiAddr)
+		}
+		// API Endpoint address might have hostname in it, hence resolve the addr
+		endpointIp, err := infracommon.LookupDNS(hostname[0])
+		if err != nil {
+			return nil, err
+		}
+		chefAttributes["infraApiAddr"] = endpointIp
+		chefAttributes["infraApiPort"] = hostname[1]
 	}
-	hostname := strings.Split(urlObj.Host, ":")
-	if len(hostname) != 2 {
-		return nil, fmt.Errorf("invalid api endpoint addr: %s", apiAddr)
-	}
-	// API Endpoint address might have hostname in it, hence resolve the addr
-	endpointIp, err := infracommon.LookupDNS(hostname[0])
-	if err != nil {
-		return nil, err
-	}
-	chefAttributes["infraApiAddr"] = endpointIp
-	chefAttributes["infraApiPort"] = hostname[1]
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 		// Fetch gateway IP of external network
 		gatewayAddr, err := v.VMProvider.GetExternalGateway(ctx, v.VMProperties.GetCloudletExternalNetwork())
@@ -795,4 +797,8 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 		Manifest:  manifest,
 		ImagePath: imgPath,
 	}, nil
+}
+
+func (v *VMPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return v.VMProvider.VerifyVMs(ctx, vms)
 }

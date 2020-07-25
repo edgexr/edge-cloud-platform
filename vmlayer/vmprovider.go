@@ -57,6 +57,7 @@ type VMProvider interface {
 	DeleteVMs(ctx context.Context, vmGroupName string) error
 	GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*VMMetrics, error)
 	GetPlatformResourceInfo(ctx context.Context) (*PlatformResources, error)
+	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -128,6 +129,7 @@ const (
 const (
 	VMProviderOpenstack string = "openstack"
 	VMProviderVSphere   string = "vsphere"
+	VMProviderVMPool    string = "vmpool"
 )
 
 type StringSanitizer func(value string) string
@@ -226,11 +228,15 @@ func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeprot
 }
 
 func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) error {
-	providerProps := v.VMProvider.GetProviderSpecificProps()
+	props := make(map[string]*infracommon.PropertyInfo)
 	for k, v := range VMProviderProps {
-		providerProps[k] = v
+		props[k] = v
 	}
-	err := v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, providerProps, vaultConfig)
+	providerProps := v.VMProvider.GetProviderSpecificProps()
+	for k, v := range providerProps {
+		props[k] = v
+	}
+	err := v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, vaultConfig)
 	if err != nil {
 		return err
 	}

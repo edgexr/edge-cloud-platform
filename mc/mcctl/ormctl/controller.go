@@ -50,5 +50,6 @@ func GetRegionCommand() *cobra.Command {
 	cmds = append(cmds, CloudletRefsApiCmds...)
 	cmds = append(cmds, ClusterRefsApiCmds...)
 	cmds = append(cmds, AppInstRefsApiCmds...)
+	cmds = append(cmds, VMPoolApiCmds...)
 	return cli.GenGroup("region", "manage region data", cmds)
 }
