@@ -37,3 +37,7 @@ func (g *GCPPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return nil, nil
 }
+
+func (g *GCPPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}

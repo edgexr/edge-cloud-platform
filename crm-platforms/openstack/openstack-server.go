@@ -339,3 +339,7 @@ func (s *OpenstackPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlay
 	}
 	return &platformRes, nil
 }
+
+func (s *OpenstackPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}

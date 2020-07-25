@@ -286,3 +286,7 @@ func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, 
 	}
 	return buf.String(), nil
 }
+
+func (s *VSpherePlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}

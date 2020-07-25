@@ -60,13 +60,13 @@ func (v *VMPlatform) CopySSHCredential(ctx context.Context, serverName, networkN
 }
 
 //GetSSHClientFromIPAddr returns ssh client handle for the given IP.
-func (v *VMPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...SSHClientOp) (ssh.Client, error) {
+func (vp *VMProperties) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...SSHClientOp) (ssh.Client, error) {
 	opts := SSHOptions{Timeout: infracommon.DefaultConnectTimeout, User: infracommon.SSHUser}
 	opts.Apply(ops)
 	var client ssh.Client
 	var err error
 	auth := ssh.Auth{Keys: []string{infracommon.PrivateSSHKey()}}
-	gwhost, gwport := v.VMProperties.GetCloudletCRMGatewayIPAndPort()
+	gwhost, gwport := vp.GetCloudletCRMGatewayIPAndPort()
 	if gwhost != "" {
 		// start the client to GW and add the addr as next hop
 		client, err = ssh.NewNativeClient(opts.User, infracommon.ClientVersion, gwhost, gwport, &auth, opts.Timeout, nil)
@@ -114,7 +114,7 @@ func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, netw
 		}
 		externalAddr = serverIp.ExternalAddr
 	}
-	return v.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
+	return v.VMProperties.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
 }
 
 func (v *VMPlatform) SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Client, error) {

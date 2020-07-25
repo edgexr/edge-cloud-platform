@@ -28,6 +28,7 @@ import (
 // is spun up, or afterwards.
 type InternalPortAttachPolicy string
 
+const AttachPortNotSupported InternalPortAttachPolicy = "AttachPortNotSupported"
 const AttachPortDuringCreate InternalPortAttachPolicy = "AttachPortDuringCreate"
 const AttachPortAfterCreate InternalPortAttachPolicy = "AttachPortAfterCreate"
 
