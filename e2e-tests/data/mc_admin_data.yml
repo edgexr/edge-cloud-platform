@@ -54,6 +54,7 @@ regiondata:
       maxtrackeddmeclients: 100
       chefclientinterval: 10m
       cloudletmaintenancetimeout: 2s
+      updatevmpooltimeout: 20m0s
     flavors:
     - key:
         name: x1.tiny
@@ -136,6 +137,7 @@ regiondata:
       maxtrackeddmeclients: 100
       chefclientinterval: 10m
       cloudletmaintenancetimeout: 2s
+      updatevmpooltimeout: 20m0s
     flavors:
     - key:
         name: x1.tiny
