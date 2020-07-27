@@ -3,7 +3,6 @@ package vmpool
 import (
 	"context"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -59,6 +58,7 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 			return nil, fmt.Errorf("failed to get flavor info for %s: %s - %v", vm.Name, out, err)
 		}
 		flavorMap[out] = vm.Name
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList, found resource", "vm", vm.Name, "resource info", out)
 	}
 
 	count := 1
@@ -68,19 +68,18 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 			return nil, fmt.Errorf("invalid flavor info for %s: %s", vmName, fID)
 		}
 
-		memKb, err := strconv.Atoi(parts[0])
-		if err != nil {
+		memMb, err := strconv.Atoi(parts[0])
+		if err != nil || memMb <= 0 {
 			return nil, fmt.Errorf("invalid memory info %s for %s: %v", parts[0], vmName, err)
 		}
-		memMb := math.Ceil((float64(memKb) / (1024 * 1024))) * 1024
 
 		vcpus, err := strconv.Atoi(parts[1])
-		if err != nil {
+		if err != nil || vcpus <= 0 {
 			return nil, fmt.Errorf("invalid vcpu info %s for %s: %v", parts[1], vmName, err)
 		}
 
 		diskGb, err := strconv.Atoi(parts[2])
-		if err != nil {
+		if err != nil || diskGb <= 0 {
 			return nil, fmt.Errorf("invalid disk info %s for %s: %v", parts[2], vmName, err)
 		}
 

@@ -808,6 +808,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// StatusMaxTasks: 6.2
 	// StatusTaskName: 6.3
 	// StatusStepName: 6.4
+	// CrmOverride: 7
 	// ```
 	// Security:
 	//   Bearer:

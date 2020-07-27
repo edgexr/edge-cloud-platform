@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
@@ -259,6 +260,15 @@ func getPlatform() (platform.Platform, error) {
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       vmlayer.VMProviderVSphere,
 			VMProvider: &vsphereProvider,
+		}
+		plat = &shepherd_vmprovider.ShepherdPlatform{
+			VMPlatform: &vmPlatform,
+		}
+	case "PLATFORM_TYPE_VM_POOL":
+		vmpoolProvider := vmpool.VMPoolPlatform{}
+		vmPlatform := vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderVMPool,
+			VMProvider: &vmpoolProvider,
 		}
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,

@@ -54,7 +54,7 @@ func (o *VMPoolPlatform) GetServerDetail(ctx context.Context, serverName string)
 		}
 		return &sd, nil
 	}
-	return &sd, fmt.Errorf("No server with a name or ID: %s exists", serverName)
+	return &sd, fmt.Errorf("%s: %s", vmlayer.ServerDoesNotExistError, serverName)
 }
 
 // Assumes VM pool lock is held
@@ -195,7 +195,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, rootLBVMName str
 			// Start chef service
 			cmd = fmt.Sprintf("sudo bash /etc/mobiledgex/setup-chef.sh -s %s -n %s", chefParams.ServerPath, chefParams.NodeName)
 			if out, err := client.Output(cmd); err != nil {
-				return fmt.Errorf("can't cleanup vm: %s, %v", out, err)
+				return fmt.Errorf("failed to setup chef: %s, %v", out, err)
 			}
 		}
 
