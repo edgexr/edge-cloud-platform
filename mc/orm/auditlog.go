@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	jaeger_json "github.com/jaegertracing/jaeger/model/json"
 	"github.com/labstack/echo"
@@ -177,6 +179,11 @@ func ShowAuditSelf(c echo.Context) error {
 		return bindErr(c, err)
 	}
 
+	params := make(map[string]string)
+	if err := addAuditParams(&query, params); err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+
 	tags := make(map[string]string)
 	tags["level"] = "audit"
 	tags["email"] = claims.Email
@@ -184,7 +191,7 @@ func ShowAuditSelf(c echo.Context) error {
 		tags["org"] = query.Org
 	}
 
-	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, tags, query.Limit, nil)
+	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, params, tags, nil)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
@@ -203,20 +210,31 @@ func ShowAuditOrg(c echo.Context) error {
 		return bindErr(c, err)
 	}
 
-	if err := authorized(ctx, claims.Username, query.Org, ResourceUsers, ActionView, withShowAudit()); err != nil {
-		if query.Org == "" {
-			return fmt.Errorf("Organization not specified or no permissions")
-		}
+	filter := &AuditOrgsFilter{}
+	// get all orgs user can view
+	filter.allowedOrgs, err = enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceUsers, ActionView)
+	if err != nil {
 		return err
 	}
-	admin, orgnames, err := getUserOrgnames(claims.Username)
-	if err != nil {
-		// leave orgnames blank so it will be filtered, continue anyway
-		log.SpanLog(ctx, log.DebugLevelApi, "get user orgnames failed", "err", err)
+	if _, found := filter.allowedOrgs[""]; found {
+		// admin
+		filter.admin = true
+		delete(filter.allowedOrgs, "")
 	}
-	filter := &AllDataFilter{
-		admin:    admin,
-		orgnames: orgnames,
+	if query.Org != "" && !filter.admin {
+		// make sure user has access to org
+		if _, found := filter.allowedOrgs[query.Org]; !found {
+			return echo.ErrForbidden
+		}
+	}
+	if !filter.admin && len(filter.allowedOrgs) == 0 {
+		// no access to any org, don't bother querying Jaeger
+		return echo.ErrForbidden
+	}
+
+	params := make(map[string]string)
+	if err := addAuditParams(&query, params); err != nil {
+		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 
 	tags := make(map[string]string)
@@ -228,16 +246,62 @@ func ShowAuditOrg(c echo.Context) error {
 		tags["username"] = query.Username
 	}
 
-	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, tags, query.Limit, filter)
+	resps, err := sendJaegerQuery(serverConfig.JaegerAddr, params, tags, filter)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 	return c.JSON(http.StatusOK, resps)
 }
 
-type AllDataFilter struct {
-	admin    bool
-	orgnames map[string]struct{}
+func addAuditParams(query *ormapi.AuditQuery, params map[string]string) error {
+	// set limit
+	if query.Limit == 0 {
+		// reasonable default
+		query.Limit = 100
+	}
+	params["limit"] = strconv.Itoa(query.Limit)
+
+	// set service
+	params["service"] = log.SpanServiceName
+
+	// resolve time args
+	now := time.Now()
+	if !query.StartTime.IsZero() {
+		if query.StartAge != 0 {
+			return fmt.Errorf("may only specify one of start time or start age")
+		}
+	} else {
+		// derive start time from start age
+		if query.StartAge == 0 {
+			// default 2d
+			query.StartAge = 2 * 24 * time.Hour
+		}
+		query.StartTime = now.Add(-1 * query.StartAge)
+	}
+	if !query.EndTime.IsZero() {
+		if query.EndAge != 0 {
+			return fmt.Errorf("may only specify one of end time or end age")
+		}
+	} else {
+		// derive end time from end age
+		// default end age of 0 will result in end time of now.
+		query.EndTime = now.Add(-1 * query.EndAge)
+	}
+	if !query.StartTime.Before(query.EndTime) {
+		return fmt.Errorf("start time must be before (older than) end time")
+	}
+	var startusec, endusec ormapi.TimeMicroseconds
+	startusec.FromTime(query.StartTime)
+	endusec.FromTime(query.EndTime)
+	params["start"] = strconv.FormatUint(uint64(startusec), 10)
+	params["end"] = strconv.FormatUint(uint64(endusec), 10)
+	params["lookback"] = "custom"
+	return nil
+}
+
+type AuditOrgsFilter struct {
+	admin       bool
+	allowedOrgs map[string]struct{}
 }
 
 // see https://github.com/jaegertracing/jaeger/blob/master/cmd/query/app/http_handler.go
@@ -252,8 +316,8 @@ type jaegerQueryError struct {
 	TraceID jaeger_json.TraceID
 }
 
-func sendJaegerQuery(addr string, tags map[string]string, limit int, filter *AllDataFilter) ([]*ormapi.AuditResponse, error) {
-	req, err := jaegerQueryRequest(addr, tags, limit)
+func sendJaegerQuery(addr string, params, tags map[string]string, filter *AuditOrgsFilter) ([]*ormapi.AuditResponse, error) {
+	req, err := jaegerQueryRequest(addr, params, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +346,7 @@ func sendJaegerQuery(addr string, tags map[string]string, limit int, filter *All
 	return getAuditResponses(&respData, filter), nil
 }
 
-func jaegerQueryRequest(addr string, tags map[string]string, limit int) (*http.Request, error) {
+func jaegerQueryRequest(addr string, params, tags map[string]string) (*http.Request, error) {
 	if !strings.HasPrefix(addr, "http://") {
 		if serverConfig.TlsCertFile == "" {
 			addr = "http://" + addr
@@ -296,21 +360,18 @@ func jaegerQueryRequest(addr string, tags map[string]string, limit int) (*http.R
 		return nil, err
 	}
 	q := req.URL.Query()
-	q.Add("service", log.SpanServiceName)
+	for k, v := range params {
+		q.Add(k, v)
+	}
 	for k, v := range tags {
 		q.Add("tag", fmt.Sprintf("%s:%s", k, v))
 	}
-	if limit == 0 {
-		// reasonable default
-		limit = 100
-	}
-	q.Add("limit", fmt.Sprintf("%d", limit))
 
 	req.URL.RawQuery = q.Encode()
 	return req, nil
 }
 
-func getAuditResponses(resp *jaegerQueryResponse, filter *AllDataFilter) []*ormapi.AuditResponse {
+func getAuditResponses(resp *jaegerQueryResponse, filter *AuditOrgsFilter) []*ormapi.AuditResponse {
 	resps := make([]*ormapi.AuditResponse, 0)
 	for _, trace := range resp.Data {
 		resp := &ormapi.AuditResponse{}
@@ -324,29 +385,34 @@ func getAuditResponses(resp *jaegerQueryResponse, filter *AllDataFilter) []*orma
 				break
 			}
 		}
-		if isAudit {
-			if filter != nil && !filter.admin && strings.Contains(resp.OperationName, "/auth/data/") {
-				// The "data" apis allow multiple organizations
-				// to be modified via one API call.
-				// If so, multiple org tags will exist on the
-				// span, and any one of those could match.
-				// Make sure the caller actually has permission
-				// to see all the affected orgs. If not,
-				// for security, blank out the request data.
-				allowed := true
-				for _, orgname := range orgs {
-					if _, ok := filter.orgnames[orgname]; !ok {
-						allowed = false
-						break
-					}
-				}
-				if !allowed {
-					resp.Request = "insufficient permissions"
+		if !isAudit {
+			continue
+		}
+		if filter != nil && !filter.admin {
+			// The "data" apis allow multiple organizations
+			// to be modified via one API call.
+			// If so, multiple org tags will exist on the
+			// span, and any one of those could match.
+			// Make sure the caller actually has permission
+			// to see all the affected orgs. If not,
+			// for security, blank out the request data.
+			matchedOrgs := 0
+			for _, orgname := range orgs {
+				if _, ok := filter.allowedOrgs[orgname]; ok {
+					matchedOrgs++
 				}
 			}
-			resp.TraceID = string(trace.TraceID)
-			resps = append(resps, resp)
+			if matchedOrgs == 0 {
+				// no perms at all
+				continue
+			}
+			if matchedOrgs < len(orgs) {
+				// only partial perms, clear request for security
+				resp.Request = "insufficient permissions"
+			}
 		}
+		resp.TraceID = string(trace.TraceID)
+		resps = append(resps, resp)
 	}
 	sort.Slice(resps, func(i, j int) bool {
 		return resps[i].StartTime > resps[j].StartTime

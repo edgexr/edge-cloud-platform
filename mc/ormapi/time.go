@@ -40,8 +40,7 @@ func (s *TimeMicroseconds) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	if err != nil {
 		return err
 	}
-	*s = TimeMicroseconds(tt.Second() * int(Microsecond))
-	*s = *s + TimeMicroseconds((tt.Nanosecond()%int(Nanosecond))/1000)
+	s.FromTime(tt)
 	return nil
 }
 
@@ -54,6 +53,11 @@ func (s TimeMicroseconds) MarshalYAML() (interface{}, error) {
 		return nil, err
 	}
 	return string(byt), nil
+}
+
+func (s *TimeMicroseconds) FromTime(tt time.Time) {
+	*s = TimeMicroseconds(tt.Unix() * int64(Microsecond))
+	*s = *s + TimeMicroseconds(tt.Nanosecond()/1000)
 }
 
 func (s *DurationMicroseconds) UnmarshalYAML(unmarshal func(interface{}) error) error {
