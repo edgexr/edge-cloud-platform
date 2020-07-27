@@ -277,32 +277,6 @@ func ShowOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Organization,
 	return orgs, nil
 }
 
-// getUserOrgnames gets a map of all the org names the user belongs to.
-// If this is an admin, return boolean will be true.
-func getUserOrgnames(username string) (bool, map[string]struct{}, error) {
-	orgnames := make(map[string]struct{})
-	admin := false
-
-	groupings, err := enforcer.GetGroupingPolicy()
-	if err != nil {
-		return false, nil, err
-	}
-	for _, grp := range groupings {
-		if len(grp) < 2 {
-			continue
-		}
-		if grp[0] == username {
-			admin = true
-			continue
-		}
-		orguser := strings.Split(grp[0], "::")
-		if len(orguser) > 1 && orguser[1] == username {
-			orgnames[orguser[0]] = struct{}{}
-		}
-	}
-	return admin, orgnames, nil
-}
-
 func GetAllOrgs(ctx context.Context) (map[string]*ormapi.Organization, error) {
 	orgsT := make(map[string]*ormapi.Organization)
 	orgs := []ormapi.Organization{}

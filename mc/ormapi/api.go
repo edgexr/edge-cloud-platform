@@ -121,9 +121,13 @@ type CreateUser struct {
 }
 
 type AuditQuery struct {
-	Username string `json:"username"`
-	Org      string `form:"org" json:"org"`
-	Limit    int    `json:"limit"`
+	Username  string        `json:"username"`
+	Org       string        `form:"org" json:"org"`
+	Limit     int           `json:"limit"`
+	StartTime time.Time     `json:"starttime"`
+	EndTime   time.Time     `json:"endtime"`
+	StartAge  time.Duration `json:"startage"`
+	EndAge    time.Duration `json:"endage"`
 }
 
 type AuditResponse struct {
