@@ -131,11 +131,13 @@ var AddVMPoolMemberRequiredArgs = []string{
 	"vmpool-org",
 	"vmpool",
 	"vm.name",
-}
-var AddVMPoolMemberOptionalArgs = []string{
 	"vm.netinfo.externalip",
 	"vm.netinfo.internalip",
-	"vm.internalname",
+}
+var AddVMPoolMemberOptionalArgs = []string{
+	"vm.updatedat.seconds",
+	"vm.updatedat.nanos",
+	"crmoverride",
 }
 var RemoveVMPoolMemberRequiredArgs = []string{
 	"vmpool-org",
@@ -145,7 +147,9 @@ var RemoveVMPoolMemberRequiredArgs = []string{
 var RemoveVMPoolMemberOptionalArgs = []string{
 	"vm.netinfo.externalip",
 	"vm.netinfo.internalip",
-	"vm.internalname",
+	"vm.updatedat.seconds",
+	"vm.updatedat.nanos",
+	"crmoverride",
 }
 var VMNetInfoRequiredArgs = []string{}
 var VMNetInfoOptionalArgs = []string{
@@ -215,6 +219,7 @@ var VMPoolOptionalArgs = []string{
 	"vms:#.name",
 	"vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip",
+	"crmoverride",
 }
 var VMPoolAliasArgs = []string{
 	"fields=vmpool.fields",
@@ -234,6 +239,7 @@ var VMPoolAliasArgs = []string{
 	"status.maxtasks=vmpool.status.maxtasks",
 	"status.taskname=vmpool.status.taskname",
 	"status.stepname=vmpool.status.stepname",
+	"crmoverride=vmpool.crmoverride",
 }
 var VMPoolComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
@@ -249,6 +255,7 @@ var VMPoolComments = map[string]string{
 	"vms:#.internalname":       "VM Internal Name",
 	"state":                    "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
 	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
+	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
 var VMPoolSpecialArgs = map[string]string{
 	"vmpool.errors": "StringArray",
@@ -262,7 +269,9 @@ var VMPoolMemberOptionalArgs = []string{
 	"vm.name",
 	"vm.netinfo.externalip",
 	"vm.netinfo.internalip",
-	"vm.internalname",
+	"vm.updatedat.seconds",
+	"vm.updatedat.nanos",
+	"crmoverride",
 }
 var VMPoolMemberAliasArgs = []string{
 	"vmpool-org=vmpoolmember.key.organization",
@@ -275,6 +284,7 @@ var VMPoolMemberAliasArgs = []string{
 	"vm.updatedat.seconds=vmpoolmember.vm.updatedat.seconds",
 	"vm.updatedat.nanos=vmpoolmember.vm.updatedat.nanos",
 	"vm.internalname=vmpoolmember.vm.internalname",
+	"crmoverride=vmpoolmember.crmoverride",
 }
 var VMPoolMemberComments = map[string]string{
 	"vmpool-org":            "Organization of the vmpool",
@@ -287,6 +297,7 @@ var VMPoolMemberComments = map[string]string{
 	"vm.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
 	"vm.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 	"vm.internalname":       "VM Internal Name",
+	"crmoverride":           "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
 var VMPoolMemberSpecialArgs = map[string]string{}
 var VMSpecRequiredArgs = []string{}

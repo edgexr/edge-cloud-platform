@@ -166,6 +166,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 	// save caches needed for flavors
+	v.Caches = caches
 	v.VMProvider.SetCaches(ctx, caches)
 
 	// Source OpenRC file to access openstack API endpoint
@@ -297,7 +298,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	return nil
 }
 
-func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
 
 	updateCallback(edgeproto.UpdateTask, "Deleting cloudlet")
@@ -306,6 +307,10 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if err != nil {
 		return err
 	}
+
+	// save caches
+	v.Caches = caches
+	v.VMProvider.SetCaches(ctx, caches)
 
 	// Source OpenRC file to access openstack API endpoint
 	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
@@ -532,15 +537,15 @@ func (v *VMPlatform) GetChefPlatformAttributes(ctx context.Context, cloudlet *ed
 		}
 		chefAttributes["infraApiAddr"] = endpointIp
 		chefAttributes["infraApiPort"] = hostname[1]
-	}
-	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
-		// Fetch gateway IP of external network
-		gatewayAddr, err := v.VMProvider.GetExternalGateway(ctx, v.VMProperties.GetCloudletExternalNetwork())
-		if err != nil {
-			return nil, fmt.Errorf("unable to fetch gateway IP for external network: %s, %v",
-				v.VMProperties.GetCloudletExternalNetwork(), err)
+		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
+			// Fetch gateway IP of external network
+			gatewayAddr, err := v.VMProvider.GetExternalGateway(ctx, v.VMProperties.GetCloudletExternalNetwork())
+			if err != nil {
+				return nil, fmt.Errorf("unable to fetch gateway IP for external network: %s, %v",
+					v.VMProperties.GetCloudletExternalNetwork(), err)
+			}
+			chefAttributes["infraApiGw"] = gatewayAddr
 		}
-		chefAttributes["infraApiGw"] = gatewayAddr
 	}
 	return chefAttributes, nil
 }

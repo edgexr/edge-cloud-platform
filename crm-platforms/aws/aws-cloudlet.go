@@ -13,7 +13,7 @@ func (a *AWSPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cl
 	return nil
 }
 
-func (a *AWSPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AWSPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete cloudlet for AWS")
 	return nil
 }
