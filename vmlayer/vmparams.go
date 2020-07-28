@@ -60,8 +60,8 @@ var RoleMatchAny VMRole = "any" // not a real role, used for matching
 
 type NetType int
 
-var NetTypeExternal NetType = 0
-var NetTypeInternal NetType = 1
+var NetTypeInternal NetType = 0
+var NetTypeExternal NetType = 1
 
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free

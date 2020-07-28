@@ -501,6 +501,7 @@ func (s *VMPoolPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.
 }
 
 func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "VerifyVMs", "vms", vms)
 	if len(vms) == 0 {
 		// nothing to verify
 		return nil
