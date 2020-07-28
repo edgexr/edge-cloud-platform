@@ -28,7 +28,7 @@ type VMProperties struct {
 var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
-var MEXInfraVersion = "3.1.4"
+var MEXInfraVersion = "3.1.5"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
 
