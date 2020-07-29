@@ -53,12 +53,20 @@ func TestCollectProxyStats(t *testing.T) {
 
 		// For each appInst in testutil.AppInstData the reslt might differ
 		switch ii {
-		case 0, 1, 2, 3, 4, 6, 7:
+		case 0, 1, 3, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
 			target := CollectProxyStats(ctx, &obj)
 			assert.NotEmpty(t, target)
+			// CollectProxyStats should return empty when running on the same
+			// object that we already have
+			target = CollectProxyStats(ctx, &obj)
+			assert.Empty(t, target)
+		case 2:
+			// Same app, but different cloudlets - map entry is the same
+			target := CollectProxyStats(ctx, &obj)
+			assert.Empty(t, target)
 		case 5:
 			// udp load-balancer
 			// dedicated helm access

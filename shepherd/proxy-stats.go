@@ -100,6 +100,14 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	ProxyMapKey := shepherd_common.GetProxyKey(appInst.GetKey())
 	// add/remove from the list of proxy endpoints to hit
 	if appInst.State == edgeproto.TrackedState_READY {
+		// if we already have this in the map, don't create a new one
+		ProxyMutex.Lock()
+		if _, found := ProxyMap[ProxyMapKey]; found {
+			ProxyMutex.Unlock()
+			return ""
+		}
+		ProxyMutex.Unlock()
+
 		scrapePoint := ProxyScrapePoint{
 			Key:        appInst.Key,
 			App:        k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
@@ -135,9 +143,19 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, scrapePoint)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
+			scrapePoint.Client.StopPersistentConn()
 			return ""
 		}
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Creating Proxy Stats "+appInst.Key.AppKey.Name, "scrape point", scrapePoint)
+		// If this was created between last check and now
+		ProxyMutex.Lock()
+		if _, found := ProxyMap[ProxyMapKey]; found {
+			ProxyMutex.Unlock()
+			scrapePoint.Client.StopPersistentConn()
+			return ""
+		}
+		ProxyMutex.Unlock()
+
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Creating Proxy Stats", "app inst", appInst.Key, "scrape point key", ProxyMapKey, "container", scrapePoint.ProxyContainer)
 		ProxyMutex.Lock()
 		ProxyMap[ProxyMapKey] = scrapePoint
 		ProxyMutex.Unlock()
@@ -146,9 +164,13 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	// if the app is anything other than ready, stop tracking it if it exists
 	ProxyMutex.Lock()
 	defer ProxyMutex.Unlock()
-	if _, found := ProxyMap[ProxyMapKey]; !found {
+	scrapePoint, found := ProxyMap[ProxyMapKey]
+	if !found {
 		return ""
 	}
+
+	// Close the ssh session
+	scrapePoint.Client.StopPersistentConn()
 	delete(ProxyMap, ProxyMapKey)
 	return ProxyMapKey
 }
