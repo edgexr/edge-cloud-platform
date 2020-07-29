@@ -118,6 +118,21 @@ func (o *VMPoolPlatform) markVMsForAction(ctx context.Context, action string, gr
 	return vms, nil
 }
 
+func setupHostname(ctx context.Context, client ssh.Client, hostname string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Setting up hostname", "hostname", hostname)
+	cmd := fmt.Sprintf("sudo hostnamectl set-hostname %s", hostname)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to execute hostnamectl: %s, %v", out, err)
+	}
+	cmd = fmt.Sprintf(`sudo sed -i "s/127.0.0.1 \+.\+/127.0.0.1 %s/" /etc/hosts`, hostname)
+	out, err = client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to update /etc/hosts file: %s, %v", out, err)
+	}
+	return nil
+}
+
 func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, rootLBVMName string, markedVMs map[string]edgeproto.VM, orchVMs []vmlayer.VMOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	// Verify & get RootLB SSH Client
 	rootLBVMIP := ""
@@ -180,6 +195,11 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, rootLBVMName str
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("can't cleanup vm: %s, %v", out, err)
+		}
+		// Setup Hostname - Required for UpdateClusterInst
+		err = setupHostname(ctx, client, vm.InternalName)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup hostname", "vm", vm.Name, "hostname", vm.InternalName, "err", err)
 		}
 
 		// Setup Chef
@@ -246,6 +266,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, rootLBVMName str
 			if err != nil {
 				return err
 			}
+
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes worker node", "masterAddr", masterAddr, "nodename", vm.InternalName)
 			cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-node.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
 			out, err := client.Output(cmd)
@@ -344,6 +365,11 @@ func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[st
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("can't cleanup vm: %s, %v", out, err)
+		}
+		// Reset Hostname
+		err = setupHostname(ctx, client, vm.Name)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup hostname", "vm", vm.Name, "err", err)
 		}
 	}
 	return nil
@@ -517,7 +543,7 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 		}
 	}
 	if accessIP == "" {
-		return fmt.Errorf("atleast one VM should have access to external network")
+		return fmt.Errorf("At least one VM should have access to external network")
 	}
 	accessClient, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
 	if err != nil {

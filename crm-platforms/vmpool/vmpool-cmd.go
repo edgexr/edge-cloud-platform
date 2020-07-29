@@ -29,7 +29,7 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 		}
 	}
 	if accessIP == "" {
-		return nil, fmt.Errorf("atleast one VM should have access to external network")
+		return nil, fmt.Errorf("At least one VM should have access to external network")
 	}
 	accessClient, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
 	if err != nil {
