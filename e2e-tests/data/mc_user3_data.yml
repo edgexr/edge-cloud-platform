@@ -8,7 +8,7 @@ regiondata:
         cloudletkey:
           organization: enterprise
           name: enterprise-1
-        organization: enterprise
+        organization: user3org
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -19,10 +19,10 @@ regiondata:
       numnodes: 1
     apps:
     - key:
-        organization: enterprise
+        organization: user3org
         name: ep1
         version: "1.0"
-      imagepath: registry.mobiledgex.net/enterprise/ep1:1.0
+      imagepath: registry.mobiledgex.net/user3org/ep1:1.0
       imagetype: ImageTypeDocker
       deployment: "kubernetes"
       defaultflavor:
@@ -33,7 +33,7 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          organization: enterprise
+          organization: user3org
           name: ep1
           version: "1.0"
         clusterinstkey:
@@ -42,7 +42,7 @@ regiondata:
           cloudletkey:
             organization: enterprise
             name: enterprise-1
-          organization: enterprise
+          organization: user3org
       cloudletloc:
         latitude: 31
         longitude: -91

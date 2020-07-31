@@ -14,6 +14,21 @@ orgs:
   address: mountain view
   phone: 123-123-1234
   adminusername: user1
+- name: enterprise
+  type: operator
+  address: enterprise headquarters
+  phone: 123-123-1234
+  adminusername: user1
+
+orgcloudletpools:
+- org: user3org
+  region: local
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
+- org: user3org
+  region: locala
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
 
 regiondata:
 - region: local
@@ -65,9 +80,50 @@ regiondata:
       numdynamicips: 254
       platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51005
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51006
+      flavor:
+        name: x1.small
+      physicalname: enterprise-1
+      containerversion: 2019-10-24
+      state: Ready
     operatorcodes:
     - code: 31026
       organization: dmuus
+    cloudletpools:
+    - key:
+        name: enterprise-pool
+        organization: enterprise
+      cloudlets:
+      - enterprise-1
+    cloudletinfos:
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      state: CloudletStateReady
+      notifyid: 0
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.small
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      containerversion: "2019-10-24"
+
 - region: locala
   appdata:
     cloudlets:
@@ -93,6 +149,46 @@ regiondata:
       numdynamicips: 254
       platformtype: PlatformTypeFake
       notifysrvaddr: 127.0.0.1:51018
+    - key:
+        organization: enterprise
+        name: enterprise-2
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51016
+      flavor:
+        name: x1.small
+      physicalname: enterprise-2
+      containerversion: 2019-10-24
+      state: Ready
     operatorcodes:
     - code: 31026
       organization: dmuus
+    cloudletpools:
+    - key:
+        name: enterprise-pool
+        organization: enterprise
+      cloudlets:
+      - enterprise-2
+    cloudletinfos:
+    - key:
+        organization: enterprise
+        name: enterprise-2
+      state: CloudletStateReady
+      notifyid: 0
+      controller: MCHU-MAC.local@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.small
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      containerversion: "2019-10-24"

@@ -10,12 +10,12 @@ import (
 func GetOrgCloudletPoolCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
-		RequiredArgs: "org region cloudletpool",
+		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/orgcloudletpool/create"),
 	}, &cli.Command{
 		Use:          "delete",
-		RequiredArgs: "org region cloudletpool",
+		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/orgcloudletpool/delete"),
 	}, &cli.Command{

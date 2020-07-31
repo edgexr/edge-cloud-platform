@@ -196,10 +196,10 @@ func ShowPrivacyPolicy(c echo.Context) error {
 }
 
 func ShowPrivacyPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy, cb func(res *edgeproto.PrivacyPolicy)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

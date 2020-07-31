@@ -196,10 +196,10 @@ func ShowApp(c echo.Context) error {
 }
 
 func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, cb func(res *edgeproto.App)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceApps, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceApps, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

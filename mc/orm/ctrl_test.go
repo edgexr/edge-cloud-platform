@@ -219,8 +219,6 @@ func TestController(t *testing.T) {
 	goodPermTestClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org2, tc3, dcnt)
 	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
 	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
-	goodPermTestCloudletPoolMember(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
-	goodPermTestCloudletPoolMember(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
 
 	// test non-existent org check
 	// (no check by admin because it returns a different error code)
@@ -367,75 +365,67 @@ func TestController(t *testing.T) {
 	testRemoveUserRole(t, mcClient, uri, tokenOper, org3, "OperatorContributor", oper3.Name, Success)
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3)
 
-	// non-admins cannot modify cloudlet pools or org cloudlet pools
-	badPermTestCloudletPool(t, mcClient, uri, tokenDev, ctrl.Region, org1)
-	badPermTestCloudletPool(t, mcClient, uri, tokenDev2, ctrl.Region, org2)
-	badPermTestCloudletPool(t, mcClient, uri, tokenOper, ctrl.Region, org3)
-	badPermTestCloudletPool(t, mcClient, uri, tokenOper2, ctrl.Region, org4)
-	badPermTestCloudletPoolMember(t, mcClient, uri, tokenDev, ctrl.Region, org1)
-	badPermTestCloudletPoolMember(t, mcClient, uri, tokenDev2, ctrl.Region, org2)
-	badPermTestCloudletPoolMember(t, mcClient, uri, tokenOper, ctrl.Region, org3)
-	badPermTestCloudletPoolMember(t, mcClient, uri, tokenOper2, ctrl.Region, org4)
-
-	// create cloudlet pool
+	// operator create cloudlet pool for org3
 	pool := ormapi.RegionCloudletPool{
 		Region: ctrl.Region,
 		CloudletPool: edgeproto.CloudletPool{
 			Key: edgeproto.CloudletPoolKey{
-				Name: "pool1",
+				Name:         "pool1",
+				Organization: org3,
 			},
 		},
 	}
-	_, status, err = mcClient.CreateCloudletPool(uri, token, &pool)
+	_, status, err = mcClient.CreateCloudletPool(uri, tokenOper, &pool)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
-	poollist, status, err := mcClient.ShowCloudletPool(uri, token, &pool)
+	poollist, status, err := mcClient.ShowCloudletPool(uri, tokenOper, &pool)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(poollist))
 
-	// org cloudlet pool
-	op1 := ormapi.OrgCloudletPool{
-		Org:          org1,
-		Region:       ctrl.Region,
-		CloudletPool: pool.CloudletPool.Key.Name,
-	}
-	// make sure non-admins cannot use pool APIs (requires org1 and pool1 exist)
-	badPermTestOrgCloudletPool(t, mcClient, uri, tokenDev, &op1)
-	badPermTestOrgCloudletPool(t, mcClient, uri, tokenDev2, &op1)
-	badPermTestOrgCloudletPool(t, mcClient, uri, tokenOper, &op1)
-	badPermTestOrgCloudletPool(t, mcClient, uri, tokenOper2, &op1)
-
-	// admin add pool to org1
-	status, err = mcClient.CreateOrgCloudletPool(uri, token, &op1)
+	// admin can see pool
+	poollist, status, err = mcClient.ShowCloudletPool(uri, token, &pool)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(poollist))
 
-	// org1 should not be able to see any cloudlets since it's restricted
-	// to pool1, and no cloudlets have been assigned to pool1.
-	// (but can still see their own org's cloudlets)
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, dcnt)
-	// show cloudlet will behave the same as showorgcloudlet since only one pool
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", dcnt)
+	// other operator or developer can't see pool
+	poollist, status, err = mcClient.ShowCloudletPool(uri, tokenOper2, &pool)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(poollist))
+	poollist, status, err = mcClient.ShowCloudletPool(uri, tokenDev, &pool)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(poollist))
 
-	// org1 cannot create against tc3 anymore
-	badPermCreateClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
-	badPermCreateAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
+	// associate cloudletpool with org, allows org1 to see cloudlets in pool
+	op1 := ormapi.OrgCloudletPool{
+		Org:             org1,
+		Region:          ctrl.Region,
+		CloudletPool:    pool.CloudletPool.Key.Name,
+		CloudletPoolOrg: pool.CloudletPool.Key.Organization, // org3
+	}
+	status, err = mcClient.CreateOrgCloudletPool(uri, tokenOper, &op1)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 
 	// add tc3 to pool1, so it's accessible for org1
 	member := ormapi.RegionCloudletPoolMember{
 		Region:             ctrl.Region,
 		CloudletPoolMember: edgeproto.CloudletPoolMember{},
 	}
-	member.CloudletPoolMember.PoolKey = pool.CloudletPool.Key
-	member.CloudletPoolMember.CloudletKey = *tc3
-	_, status, err = mcClient.CreateCloudletPoolMember(uri, token, &member)
+	member.CloudletPoolMember.Key = pool.CloudletPool.Key
+	member.CloudletPoolMember.CloudletName = tc3.Name
+	_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
-	// tc3 should now be visible
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, dcnt+1)
+	log.SetDebugLevel(log.DebugLevelApi)
+
+	// tc3 should now be visible along with all other cloudlets
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, ccount)
 	// tc3 should not be visible by other orgs
 	// (note count here is without tc3, except for org3 to which it belongs)
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, org2, count)
@@ -449,9 +439,8 @@ func TestController(t *testing.T) {
 	badPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 	badPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 
-	// show cloudlet for org1 will only show those in pool1, and those
-	// owned by org1.
-	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", dcnt+1)
+	// show cloudlet for org1 will only show those in pool1 plus public cloudlets
+	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", ccount)
 	// show cloudlet will not show tc3 since it's now part of a pool
 	// (except for operator who owns tc3).
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", count)
@@ -464,11 +453,11 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 
 	// delete org cloudlet pools
-	status, err = mcClient.DeleteOrgCloudletPool(uri, token, &op1)
+	status, err = mcClient.DeleteOrgCloudletPool(uri, tokenOper, &op1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// delete cloudlet pool
-	_, status, err = mcClient.DeleteCloudletPool(uri, token, &pool)
+	_, status, err = mcClient.DeleteCloudletPool(uri, tokenOper, &pool)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
@@ -489,7 +478,7 @@ func TestController(t *testing.T) {
 	sds := StreamDummyServer{}
 	sds.next = make(chan int, 1)
 	edgeproto.RegisterClusterInstApiServer(dc2, &sds)
-	edgeproto.RegisterCloudletPoolMemberApiServer(dc2, &sds)
+	edgeproto.RegisterCloudletPoolApiServer(dc2, &sds)
 	go func() {
 		dc2.Serve(lis2)
 	}()
@@ -800,14 +789,26 @@ func (s *StreamDummyServer) ShowClusterInst(in *edgeproto.ClusterInst, server ed
 	return nil
 }
 
-func (s *StreamDummyServer) CreateCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+func (s *StreamDummyServer) CreateCloudletPool(ctx context.Context, in *edgeproto.CloudletPool) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }
 
-func (s *StreamDummyServer) DeleteCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+func (s *StreamDummyServer) DeleteCloudletPool(ctx context.Context, in *edgeproto.CloudletPool) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }
 
-func (s *StreamDummyServer) ShowCloudletPoolMember(in *edgeproto.CloudletPoolMember, cb edgeproto.CloudletPoolMemberApi_ShowCloudletPoolMemberServer) error {
+func (s *StreamDummyServer) UpdateCloudletPool(ctx context.Context, in *edgeproto.CloudletPool) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
+func (s *StreamDummyServer) AddCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
+func (s *StreamDummyServer) RemoveCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
+func (s *StreamDummyServer) ShowCloudletPool(in *edgeproto.CloudletPool, cb edgeproto.CloudletPoolApi_ShowCloudletPoolServer) error {
 	return nil
 }

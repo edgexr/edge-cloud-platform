@@ -148,10 +148,10 @@ func ShowOperatorCode(c echo.Context) error {
 }
 
 func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode, cb func(res *edgeproto.OperatorCode)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

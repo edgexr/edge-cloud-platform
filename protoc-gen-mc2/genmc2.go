@@ -650,10 +650,10 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 		}
 	}
 {{- else if and .Show (not .CustomAuthz)}}
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, {{.Resource}}, {{.Action}})
 		if err == echo.ErrForbidden {
 			return {{.ReturnErrArg}}nil
 		}

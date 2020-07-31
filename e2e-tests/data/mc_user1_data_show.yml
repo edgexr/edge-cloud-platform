@@ -21,6 +21,11 @@ orgs:
   address: mountain view
   phone: 123-123-1234
   adminusername: user1
+- name: enterprise
+  type: operator
+  address: enterprise headquarters
+  phone: 123-123-1234
+  adminusername: user1
 roles:
 - org: dmuus
   username: user1
@@ -31,6 +36,19 @@ roles:
 - org: gcp
   username: user1
   role: OperatorManager
+- org: enterprise
+  username: user1
+  role: OperatorManager
+orgcloudletpools:
+- org: user3org
+  region: local
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
+- org: user3org
+  region: locala
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
+
 regiondata:
 - region: local
   appdata:
@@ -86,6 +104,21 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: gcp-cloud-5
       containerversion: 2019-10-24
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51006
+      flavor:
+        name: x1.small
+      physicalname: enterprise-1
+      containerversion: 2019-10-24
+      state: Ready
     flavors:
     - key:
         name: x1.small
@@ -175,9 +208,33 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+    - key:
+        organization: enterprise
+        name: enterprise-1
+      state: CloudletStateReady
+      notifyid: 6
+      controller: Jon-Mex@127.0.0.1:55001
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.small
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      containerversion: "2019-10-24"
     operatorcodes:
     - code: 31026
       organization: dmuus
+    cloudletpools:
+    - key:
+        organization: enterprise
+        name: enterprise-pool
+      cloudlets:
+      - enterprise-1
 - region: locala
   appdata:
     flavors:
@@ -229,6 +286,21 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-4
       containerversion: "2019-10-24"
+    - key:
+        organization: enterprise
+        name: enterprise-2
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      notifysrvaddr: 127.0.0.1:51016
+      flavor:
+        name: x1.small
+      physicalname: enterprise-2
+      containerversion: 2019-10-24
+      state: Ready
     cloudletinfos:
     - key:
         organization: dmuus
@@ -266,3 +338,27 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+    - key:
+        organization: enterprise
+        name: enterprise-2
+      state: CloudletStateReady
+      notifyid: 3
+      controller: Jon-Mex@127.0.0.1:55011
+      osmaxram: 500
+      osmaxvcores: 50
+      osmaxvolgb: 5000
+      flavors:
+      - name: x1.small
+        vcpus: 10
+        ram: 101024
+        disk: 500
+      status:
+        tasknumber: 3
+        taskname: Gathering Cloudlet Info
+      containerversion: "2019-10-24"
+    cloudletpools:
+    - key:
+        organization: enterprise
+        name: enterprise-pool
+      cloudlets:
+      - enterprise-2

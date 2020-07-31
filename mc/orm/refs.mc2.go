@@ -53,10 +53,10 @@ func ShowCloudletRefs(c echo.Context) error {
 }
 
 func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs, cb func(res *edgeproto.CloudletRefs)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}
@@ -136,10 +136,10 @@ func ShowClusterRefs(c echo.Context) error {
 }
 
 func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs, cb func(res *edgeproto.ClusterRefs)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}
@@ -221,10 +221,10 @@ func ShowAppInstRefs(c echo.Context) error {
 }
 
 func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs, cb func(res *edgeproto.AppInstRefs)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceAppInsts, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceAppInsts, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

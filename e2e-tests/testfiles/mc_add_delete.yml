@@ -37,7 +37,7 @@ tests:
   actions: [mcapi-createusers]
   apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user3.yml'
 
-- name: admin creates controllers, flavors, sets up enterprise; verify it is there
+- name: admin creates controllers, flavors; verify it is there
   actions: [mcapi-create, mcapi-show]
   apifile: '{{datadir2}}/mc_admin_data.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'

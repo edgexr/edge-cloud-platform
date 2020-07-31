@@ -7,7 +7,7 @@ type AuthzShow struct {
 	allowAll    bool
 }
 
-func newShowAuthz(ctx context.Context, username, resource, action string) (*AuthzShow, error) {
+func newShowAuthz(ctx context.Context, region, username, resource, action string) (*AuthzShow, error) {
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func newShowAuthz(ctx context.Context, username, resource, action string) (*Auth
 	return &authz, nil
 }
 
-func (s *AuthzShow) Ok(ctx context.Context, org string) bool {
+func (s *AuthzShow) Ok(org string) bool {
 	if s.allowAll {
 		return true
 	}

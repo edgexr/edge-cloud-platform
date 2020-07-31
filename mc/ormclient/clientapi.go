@@ -60,8 +60,6 @@ type Api interface {
 	AppApiClient
 	AppInstApiClient
 	CloudletPoolApiClient
-	CloudletPoolMemberApiClient
-	CloudletPoolShowApiClient
 	AutoScalePolicyApiClient
 	ResTagTableApiClient
 	AutoProvPolicyApiClient

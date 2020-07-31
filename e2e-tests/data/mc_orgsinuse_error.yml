@@ -7,7 +7,7 @@ errors:
   err: 'Organization AcmeAppCo in use or check failed: region local: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst; region locala: in use by some App, AppInst, AutoProvPolicy, AutoScalePolicy, ClusterInst'
 - desc: DeleteOrg[2]
   status: 400
-  err: 'Organization enterprise in use or check failed: region local: in use by some App, AppInst, Cloudlet, ClusterInst; region locala: in use by some Cloudlet'
+  err: 'Organization enterprise in use or check failed: region local: in use by some AppInst, Cloudlet, CloudletPool, ClusterInst; region locala: in use by some Cloudlet, CloudletPool'
 - desc: DeleteOrg[3]
   status: 400
   err: 'Organization MobiledgeX in use or check failed: region local: in use by some App, AppInst, ClusterInst; region locala: in use by some App, AppInst'
