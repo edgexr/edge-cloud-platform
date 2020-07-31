@@ -126,7 +126,7 @@ func setupHostname(ctx context.Context, client ssh.Client, hostname string) erro
 	if err != nil {
 		return fmt.Errorf("failed to execute hostnamectl: %s, %v", out, err)
 	}
-	cmd = fmt.Sprintf(`sudo sed -i "s/127.0.0.1 \+.\+/127.0.0.1 %s/" /etc/hosts`, hostname)
+	cmd = fmt.Sprintf(`sudo sed -i "/localhost/! s/127.0.0.1 \+.\+/127.0.0.1 %s/" /etc/hosts`, hostname)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to update /etc/hosts file: %s, %v", out, err)
