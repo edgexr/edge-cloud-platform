@@ -48,6 +48,7 @@ var OperatorResources = []string{
 	ResourceCloudlets,
 	ResourceCloudletAnalytics,
 	ResourceResTagTable,
+	ResourceCloudletPools,
 }
 
 // built-in roles
@@ -472,7 +473,7 @@ func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error
 	if err != nil {
 		return nil, dbErr(err)
 	}
-	authz, err := newShowAuthz(ctx, username, ResourceUsers, ActionView)
+	authz, err := newShowAuthz(ctx, "", username, ResourceUsers, ActionView)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +483,7 @@ func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error
 		if role == nil {
 			continue
 		}
-		if !authz.Ok(ctx, role.Org) {
+		if !authz.Ok(role.Org) {
 			continue
 		}
 		roles = append(roles, *role)

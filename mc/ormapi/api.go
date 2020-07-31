@@ -78,9 +78,10 @@ type Config struct {
 }
 
 type OrgCloudletPool struct {
-	Org          string `gorm:"type:citext REFERENCES organizations(name)"`
-	Region       string `gorm:"type:text REFERENCES controllers(region)"`
-	CloudletPool string `gorm:"not null"`
+	Org             string `gorm:"type:citext REFERENCES organizations(name)"`
+	Region          string `gorm:"type:text REFERENCES controllers(region)"`
+	CloudletPool    string `gorm:"not null"`
+	CloudletPoolOrg string `gorm:"type:citext REFERENCES organizations(name)"`
 }
 
 // Structs used for API calls

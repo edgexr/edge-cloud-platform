@@ -11,26 +11,21 @@ controllers:
   influxdb: "http://127.0.0.1:8087"
 
 orgs:
-- name: enterprise
-  type: developer
-  address: enterprise headquarters
-  phone: 123-123-1234
-  adminusername: mexadmin
 - name: MobiledgeX
   type: developer
   address: mobiledgex
   phone: 123-123-1234
   adminusername: mexadmin
+- name: user3org
+  type: developer
+  address: enterprise headquarters
+  phone: 123-123-1234
+  adminusername: mexadin
 
 roles:
-- username: user3
-  org: enterprise
+- org: user3org
   role: DeveloperManager
-
-orgcloudletpools:
-- org: enterprise
-  region: local
-  cloudletpool: enterprise-pool
+  username: user3
 
 regiondata:
 - region: local
@@ -71,50 +66,6 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
-    cloudletinfos:
-    - key:
-        organization: enterprise
-        name: enterprise-1
-      state: CloudletStateReady
-      notifyid: 0
-      controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
-      containerversion: "2019-10-24"
-    cloudlets:
-    - key:
-        organization: enterprise
-        name: enterprise-1
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: IpSupportDynamic
-      numdynamicips: 254
-      platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51006
-      flavor:
-        name: x1.small
-      physicalname: enterprise-1
-      containerversion: 2019-10-24
-      state: Ready
-    cloudletpools:
-    - key:
-        name: enterprise-pool
-    cloudletpoolmembers:
-    - poolkey:
-        name: enterprise-pool
-      cloudletkey:
-        organization: enterprise
-        name: enterprise-1
 
 - region: locala
   appdata:
@@ -154,47 +105,3 @@ regiondata:
       ram: 4096
       vcpus: 4
       disk: 4
-    cloudletinfos:
-    - key:
-        organization: enterprise
-        name: enterprise-2
-      state: CloudletStateReady
-      notifyid: 0
-      controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
-      osmaxvcores: 50
-      osmaxvolgb: 5000
-      flavors:
-      - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
-      status:
-        tasknumber: 3
-        taskname: Gathering Cloudlet Info
-      containerversion: "2019-10-24"
-    cloudlets:
-    - key:
-        organization: enterprise
-        name: enterprise-2
-      location:
-        latitude: 31
-        longitude: -91
-      ipsupport: IpSupportDynamic
-      numdynamicips: 254
-      platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51016
-      flavor:
-        name: x1.small
-      physicalname: enterprise-2
-      containerversion: 2019-10-24
-      state: Ready
-    cloudletpools:
-    - key:
-        name: enterprise-pool
-    cloudletpoolmembers:
-    - poolkey:
-        name: enterprise-pool
-      cloudletkey:
-        organization: enterprise
-        name: enterprise-2

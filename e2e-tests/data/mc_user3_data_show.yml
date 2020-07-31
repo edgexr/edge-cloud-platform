@@ -6,16 +6,16 @@ controllers:
   address: 127.0.0.1:55011
   influxdb: http://127.0.0.1:8087
 orgs:
-- name: enterprise
+- name: user3org
   type: developer
   address: enterprise headquarters
   phone: 123-123-1234
   adminusername: mexadmin
 roles:
-- org: enterprise
+- org: user3org
   username: mexadmin
   role: DeveloperManager
-- org: enterprise
+- org: user3org
   username: user3
   role: DeveloperManager
 regiondata:
@@ -36,6 +36,69 @@ regiondata:
         name: x1.small
       physicalname: enterprise-1
       containerversion: 2019-10-24
+    - key:
+        organization: azure
+        name: azure-cloud-4
+      location:
+        latitude: 32
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51004
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: azure-cloud-4
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
+        longitude: -95
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51005
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: gcp-cloud-5
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: PlatformTypeFakeinfra
+      notifysrvaddr: 127.0.0.1:51001
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-1
+      envvar:
+        foo: bar
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-2
+      location:
+        latitude: 35
+        longitude: -95
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51002
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-2
+      containerversion: "2019-10-24"
+      deployment: docker
     flavors:
     - key:
         name: x1.tiny
@@ -59,7 +122,7 @@ regiondata:
         cloudletkey:
           organization: enterprise
           name: enterprise-1
-        organization: enterprise
+        organization: user3org
       flavor:
         name: x1.small
       liveness: LivenessStatic
@@ -72,10 +135,10 @@ regiondata:
       numnodes: 1
     apps:
     - key:
-        organization: enterprise
+        organization: user3org
         name: ep1
         version: "1.0"
-      imagepath: registry.mobiledgex.net/enterprise/ep1:1.0
+      imagepath: registry.mobiledgex.net/user3org/ep1:1.0
       imagetype: ImageTypeDocker
       accessports: tcp:80,http:443,udp:10002
       accesstype: AccessTypeLoadBalancer
@@ -151,7 +214,7 @@ regiondata:
     appinstances:
     - key:
         appkey:
-          organization: enterprise
+          organization: user3org
           name: ep1
           version: "1.0"
         clusterinstkey:
@@ -160,7 +223,7 @@ regiondata:
           cloudletkey:
             organization: enterprise
             name: enterprise-1
-          organization: enterprise
+          organization: user3org
       cloudletloc:
         latitude: 31
         longitude: -91
@@ -188,11 +251,11 @@ regiondata:
         nanos: 528573000
     appinstrefs:
     - key:
-        organization: enterprise
+        organization: user3org
         name: ep1
         version: "1.0"
       insts:
-        ? '{"app_key":{"organization":"enterprise","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"enterprise"}}'
+        ? '{"app_key":{"organization":"user3org","name":"ep1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"enterprise","name":"enterprise-1"},"organization":"user3org"}}'
         : 1
 - region: locala
   appdata:

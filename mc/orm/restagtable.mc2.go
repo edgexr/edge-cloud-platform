@@ -196,10 +196,10 @@ func ShowResTagTable(c echo.Context) error {
 }
 
 func ShowResTagTableStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable, cb func(res *edgeproto.ResTagTable)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceResTagTable, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceResTagTable, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

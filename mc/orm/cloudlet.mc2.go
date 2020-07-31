@@ -647,10 +647,10 @@ func ShowCloudletInfo(c echo.Context) error {
 }
 
 func ShowCloudletInfoStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo, cb func(res *edgeproto.CloudletInfo)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceCloudletAnalytics, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudletAnalytics, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

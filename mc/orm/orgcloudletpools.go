@@ -54,17 +54,21 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		return fmt.Errorf("Region not specified")
 	}
 	if op.CloudletPool == "" {
-		return fmt.Errorf("CloudletPool not specified")
+		return fmt.Errorf("CloudletPool name not specified")
 	}
-	if err := authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage, withRequiresOrg(op.Org)); err != nil {
+	if op.CloudletPoolOrg == "" {
+		return fmt.Errorf("CloudletPool organization not specified")
+	}
+
+	if err := authorized(ctx, claims.Username, op.CloudletPoolOrg, ResourceCloudletPools, ActionManage, withRequiresOrg(op.CloudletPoolOrg)); err != nil {
 		return err
 	}
-	found, err := hasCloudletPool(ctx, op.Region, op.CloudletPool)
+	found, err := hasCloudletPool(ctx, op.Region, op.CloudletPool, op.CloudletPoolOrg)
 	if err != nil {
 		return err
 	}
 	if !found {
-		return fmt.Errorf("Specified CloudletPool %s for region %s not found", op.CloudletPool, op.Region)
+		return fmt.Errorf("Specified CloudletPool %s org %s for region %s not found", op.CloudletPool, op.CloudletPoolOrg, op.Region)
 	}
 	// create org cloudletpool
 	db := loggedDB(ctx)
@@ -76,15 +80,18 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_region_fkey\"") {
 			return fmt.Errorf("Specified Region %s does not exist", op.Region)
 		}
+		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_cloudletpoolorg_fkey\"") {
+			return fmt.Errorf("Specified CloudletPoolOrg %s does not exist", op.CloudletPoolOrg)
+		}
 		if strings.Contains(err.Error(), "duplicate key value violates unique") {
-			return fmt.Errorf("OrgCloudletPool org %s, region %s, pool %s already exists", op.Org, op.Region, op.CloudletPool)
+			return fmt.Errorf("OrgCloudletPool org %s, region %s, pool %s poolorg %s already exists", op.Org, op.Region, op.CloudletPool, op.CloudletPoolOrg)
 		}
 		return dbErr(err)
 	}
 	return nil
 }
 
-func hasCloudletPool(ctx context.Context, region, pool string) (bool, error) {
+func hasCloudletPool(ctx context.Context, region, pool, org string) (bool, error) {
 	conn, err := connectController(ctx, region)
 	if err != nil {
 		return false, err
@@ -93,7 +100,8 @@ func hasCloudletPool(ctx context.Context, region, pool string) (bool, error) {
 
 	obj := edgeproto.CloudletPool{
 		Key: edgeproto.CloudletPoolKey{
-			Name: pool,
+			Name:         pool,
+			Organization: org,
 		},
 	}
 
@@ -147,17 +155,23 @@ func DeleteOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 		return fmt.Errorf("CloudletPool not specified")
 	}
 
-	if err := authorized(ctx, claims.Username, op.Org, ResourceCloudletPools, ActionManage); err != nil {
+	if err := authorized(ctx, claims.Username, op.CloudletPoolOrg, ResourceCloudletPools, ActionManage); err != nil {
+		// check for empty org here to allow admins to delete old
+		// orgcloudletpools that do not have CloudletPoolOrg.
+		if err == echo.ErrForbidden && op.CloudletPoolOrg == "" {
+			return fmt.Errorf("CloudletPool organization not specified")
+		}
 		return err
 	}
 	db := loggedDB(ctx)
 	// can't use db.Delete as we're not using primary key
 	// see http://jinzhu.me/gorm/crud.html#delete
 	args := []interface{}{
-		"org = ? and region = ? and cloudlet_pool = ?",
+		"org = ? and region = ? and cloudlet_pool = ? and cloudlet_pool_org = ?",
 		op.Org,
 		op.Region,
 		op.CloudletPool,
+		op.CloudletPoolOrg,
 	}
 	err := db.Delete(op, args...).Error
 	if err != nil {
@@ -184,14 +198,14 @@ func ShowOrgCloudletPoolObj(ctx context.Context, username string) ([]ormapi.OrgC
 	if err != nil {
 		return nil, dbErr(err)
 	}
-	authz, err := newShowAuthz(ctx, username, ResourceCloudletPools, ActionView)
+	authz, err := newShowAuthz(ctx, "", username, ResourceCloudletPools, ActionView)
 	if err != nil {
 		return nil, err
 	}
 
 	retops := []ormapi.OrgCloudletPool{}
 	for _, op := range ops {
-		if !authz.Ok(ctx, op.Org) {
+		if !authz.Ok(op.CloudletPoolOrg) {
 			continue
 		}
 		retops = append(retops, op)
@@ -212,6 +226,7 @@ func ShowOrgCloudlet(c echo.Context) error {
 		return err
 	}
 
+	log.SpanLog(ctx, log.DebugLevelApi, "ShowOrgCloudlet", "oc", oc)
 	if oc.Org == "" {
 		return setReply(c, fmt.Errorf("Organization must be specified"), nil)
 	}

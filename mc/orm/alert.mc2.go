@@ -700,6 +700,23 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/DeleteCloudletPool", DeleteCloudletPool)
+	// swagger:route POST /auth/ctrl/UpdateCloudletPool CloudletPool UpdateCloudletPool
+	// Update a CloudletPool.
+	// The following values should be added to `CloudletPool.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyOrganization: 2.1
+	// KeyName: 2.2
+	// Cloudlets: 3
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateCloudletPool", UpdateCloudletPool)
 	// swagger:route POST /auth/ctrl/ShowCloudletPool CloudletPool ShowCloudletPool
 	// Show CloudletPools.
 	// Security:
@@ -710,7 +727,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudletPool", ShowCloudletPool)
-	// swagger:route POST /auth/ctrl/CreateCloudletPoolMember CloudletPoolMember CreateCloudletPoolMember
+	// swagger:route POST /auth/ctrl/AddCloudletPoolMember CloudletPoolMember AddCloudletPoolMember
 	// Add a Cloudlet to a CloudletPool.
 	// Security:
 	//   Bearer:
@@ -719,8 +736,8 @@ func addControllerApis(method string, group *echo.Group) {
 	//   400: badRequest
 	//   403: forbidden
 	//   404: notFound
-	group.Match([]string{method}, "/ctrl/CreateCloudletPoolMember", CreateCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/DeleteCloudletPoolMember CloudletPoolMember DeleteCloudletPoolMember
+	group.Match([]string{method}, "/ctrl/AddCloudletPoolMember", AddCloudletPoolMember)
+	// swagger:route POST /auth/ctrl/RemoveCloudletPoolMember CloudletPoolMember RemoveCloudletPoolMember
 	// Remove a Cloudlet from a CloudletPool.
 	// Security:
 	//   Bearer:
@@ -729,37 +746,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   400: badRequest
 	//   403: forbidden
 	//   404: notFound
-	group.Match([]string{method}, "/ctrl/DeleteCloudletPoolMember", DeleteCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/ShowCloudletPoolMember CloudletPoolMember ShowCloudletPoolMember
-	// Show the Cloudlet to CloudletPool relationships.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletPoolMember", ShowCloudletPoolMember)
-	// swagger:route POST /auth/ctrl/ShowPoolsForCloudlet CloudletKey ShowPoolsForCloudlet
-	// Show CloudletPools that have Cloudlet as a member.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowPoolsForCloudlet", ShowPoolsForCloudlet)
-	// swagger:route POST /auth/ctrl/ShowCloudletsForPool CloudletPoolKey ShowCloudletsForPool
-	// Show Cloudlets that belong to the Pool.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
-	group.Match([]string{method}, "/ctrl/ShowCloudletsForPool", ShowCloudletsForPool)
+	group.Match([]string{method}, "/ctrl/RemoveCloudletPoolMember", RemoveCloudletPoolMember)
 	// swagger:route POST /auth/ctrl/CreateVMPool VMPool CreateVMPool
 	// Create VMPool.
 	//  Creates VM pool which will have VMs defined.

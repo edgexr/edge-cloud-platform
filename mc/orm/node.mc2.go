@@ -51,10 +51,10 @@ func ShowNode(c echo.Context) error {
 }
 
 func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node, cb func(res *edgeproto.Node)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceConfig, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceConfig, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

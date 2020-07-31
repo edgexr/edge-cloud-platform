@@ -196,10 +196,10 @@ func ShowAutoScalePolicy(c echo.Context) error {
 }
 
 func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy, cb func(res *edgeproto.AutoScalePolicy)) error {
-	var authz *ShowAuthz
+	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = NewShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
 		if err == echo.ErrForbidden {
 			return nil
 		}

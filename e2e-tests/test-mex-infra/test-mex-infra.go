@@ -77,12 +77,15 @@ func main() {
 	ranTest := false
 	for {
 		tryErrs := []string{}
-		for _, a := range spec.Actions {
+		for ii, a := range spec.Actions {
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
 			tryErrs = e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)
 			ranTest = true
-			if actionretry {
+			if ii == 0 && actionretry {
+				// only allow the action to retry for the first
+				// action. This avoids rerunning creates when
+				// followed by shows.
 				retry.ActionEnable()
 			}
 		}

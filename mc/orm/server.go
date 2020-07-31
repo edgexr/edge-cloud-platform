@@ -184,7 +184,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		if config.InitLocal || os.IsNotExist(err) {
 			sql.InitDataDir()
 		}
-		err = sql.StartLocal("", process.WithCleanStartup())
+		err = sql.StartLocal("")
 		if err != nil {
 			return nil, fmt.Errorf("local sql start failed, %s",
 				err.Error())

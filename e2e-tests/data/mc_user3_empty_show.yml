@@ -6,22 +6,85 @@ controllers:
   address: 127.0.0.1:55011
   influxdb: http://127.0.0.1:8087
 orgs:
-- name: enterprise
+- name: user3org
   type: developer
   address: enterprise headquarters
   phone: 123-123-1234
   adminusername: mexadmin
 roles:
-- org: enterprise
+- org: user3org
   username: mexadmin
   role: DeveloperManager
-- org: enterprise
+- org: user3org
   username: user3
   role: DeveloperManager
 regiondata:
 - region: local
   appdata:
     cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: PlatformTypeFakeinfra
+      notifysrvaddr: 127.0.0.1:51001
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-1
+      envvar:
+        foo: bar
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-2
+      location:
+        latitude: 35
+        longitude: -95
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51002
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: dmuus-cloud-2
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: azure
+        name: azure-cloud-4
+      location:
+        latitude: 32
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51004
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: azure-cloud-4
+      containerversion: "2019-10-24"
+      deployment: docker
+    - key:
+        organization: gcp
+        name: gcp-cloud-5
+      location:
+        latitude: 36
+        longitude: -95
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      notifysrvaddr: 127.0.0.1:51005
+      flavor:
+        name: DefaultPlatformFlavor
+      physicalname: gcp-cloud-5
+      containerversion: "2019-10-24"
+      deployment: docker
     - key:
         organization: enterprise
         name: enterprise-1
