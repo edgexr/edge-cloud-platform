@@ -16,6 +16,8 @@ type Platform interface {
 	GetType() string
 	// Init is called once during shepherd startup.
 	Init(ctx context.Context, pc *platform.PlatformConfig) error
+	// Set VMPool in cache
+	SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool)
 	// Gets the IP for a cluster
 	GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error)
 	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)

@@ -28,7 +28,6 @@ func TestShepherdUpdate(t *testing.T) {
 	require.Nil(t, err)
 	*cloudletKeyStr = string(ckey)
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
-	cloudletWaitDelay = 20 * time.Millisecond
 
 	crm := notify.NewDummyHandler()
 	crmServer := &notify.ServerMgr{}
