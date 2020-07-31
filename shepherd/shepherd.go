@@ -55,6 +55,8 @@ var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
 var AppCache edgeproto.AppCache
+var VMPoolCache edgeproto.VMPoolCache
+var VMPoolInfoCache edgeproto.VMPoolInfoCache
 var CloudletCache edgeproto.CloudletCache
 var CloudletInfoCache edgeproto.CloudletInfoCache
 var MetricSender *notify.MetricSend
@@ -72,9 +74,11 @@ var nodeMgr node.NodeMgr
 
 var sigChan chan os.Signal
 var notifyClient *notify.Client
-var cloudletWaitDelay = time.Second
+var cloudletWait = make(chan bool, 1)
 
 var targetsFileWorkerKey = "write-targets"
+
+var CRMTimeout = 1 * time.Minute
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	if target := CollectProxyStats(ctx, new); target != "" {
@@ -240,6 +244,26 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 	}
 }
 
+func vmPoolInfoCb(ctx context.Context, old *edgeproto.VMPoolInfo, new *edgeproto.VMPoolInfo) {
+	vmPool := edgeproto.VMPool{}
+	vmPool.Key = new.Key
+	vmPool.Vms = []edgeproto.VM{}
+	for _, infoVM := range new.Vms {
+		vmPool.Vms = append(vmPool.Vms, infoVM)
+	}
+	vmPool.State = new.State
+	vmPool.Errors = new.Errors
+	myPlatform.SetVMPool(ctx, &vmPool)
+}
+
+func cloudletCb(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet) {
+	select {
+	case cloudletWait <- true:
+		// Got cloudlet object
+	default:
+	}
+}
+
 func getPlatform() (platform.Platform, error) {
 	var plat platform.Platform
 	var err error
@@ -347,18 +371,24 @@ func start() {
 	edgeproto.InitSettingsCache(&SettingsCache)
 	AppInstByAutoProvPolicy.Init()
 	// also register to receive cloudlet details
+	edgeproto.InitVMPoolCache(&VMPoolCache)
+	edgeproto.InitVMPoolInfoCache(&VMPoolInfoCache)
 	edgeproto.InitCloudletCache(&CloudletCache)
 
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(nodeMgr.Name(), addrs, tls.GetGrpcDialOption(clientTlsConfig))
 	notifyClient.SetFilterByCloudletKey()
 	notifyClient.RegisterRecvSettingsCache(&SettingsCache)
+	notifyClient.RegisterRecvVMPoolCache(&VMPoolCache)
+	notifyClient.RegisterRecvVMPoolInfoCache(&VMPoolInfoCache)
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
 	SettingsCache.SetUpdatedCb(settingsCb)
+	VMPoolInfoCache.SetUpdatedCb(vmPoolInfoCb)
+	CloudletCache.SetUpdatedCb(cloudletCb)
 	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)
@@ -383,21 +413,32 @@ func start() {
 
 	var cloudlet edgeproto.Cloudlet
 
-	// Fetch cloudlet cache from controller
+	// Fetch cloudlet cache from controller->crm->shepherd
 	// This also ensures that cloudlet is up before we start collecting metrics
-	found := false
 	log.SpanLog(ctx, log.DebugLevelInfo, "wait for cloudlet cache", "key", cloudletKey)
-	for i := 0; i < 50; i++ {
-		if CloudletCache.Get(&cloudletKey, &cloudlet) {
-			found = true
-			break
+	select {
+	case <-cloudletWait:
+		if !CloudletCache.Get(&cloudletKey, &cloudlet) {
+			log.FatalLog("failed to fetch cloudlet cache from controller")
 		}
-		time.Sleep(cloudletWaitDelay)
-	}
-	if !found {
-		log.FatalLog("failed to fetch cloudlet cache from controller")
+	case <-time.After(CRMTimeout):
+		log.FatalLog("Timed out waiting for cloudlet cache from controller")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
+
+	if cloudlet.PlatformType == edgeproto.PlatformType_PLATFORM_TYPE_VM_POOL {
+		if cloudlet.VmPool == "" {
+			log.FatalLog("Cloudlet is missing VM pool name")
+		}
+		vmPoolKey := edgeproto.VMPoolKey{
+			Name:         cloudlet.VmPool,
+			Organization: cloudlet.Key.Organization,
+		}
+		var vmPool edgeproto.VMPool
+		if !VMPoolCache.Get(&vmPoolKey, &vmPool) {
+			log.FatalLog("failed to fetch vm pool cache from controller")
+		}
+	}
 
 	pc := pf.PlatformConfig{
 		CloudletKey:    &cloudletKey,

@@ -23,6 +23,9 @@ func (s *Platform) Init(ctx context.Context, pfConfig *platform.PlatformConfig) 
 	return nil
 }
 
+func (s *Platform) SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool) {
+}
+
 func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
 	return "localhost", nil
 }

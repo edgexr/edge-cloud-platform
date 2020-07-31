@@ -226,6 +226,11 @@ func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMCh
 	}
 
 	clientName := chefParams.NodeName
+	err := ChefClientDelete(ctx, client, clientName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "delete any stale chef clients", "err", err)
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "chef client create", "client name", clientName, "params", *chefParams)
 	clientObj := chef.ApiNewClient{
 		Name:      clientName,

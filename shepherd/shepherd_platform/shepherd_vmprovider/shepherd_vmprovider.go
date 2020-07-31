@@ -2,6 +2,7 @@ package shepherd_vmprovider
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -17,6 +18,8 @@ import (
 
 // Default Ceilometer granularity is 300 secs(5 mins)
 var VmScrapeInterval = time.Minute * 5
+
+var caches *platform.Caches
 
 type ShepherdPlatform struct {
 	rootLbName      string
@@ -62,6 +65,21 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	log.SpanLog(ctx, log.DebugLevelInfra, "init openstack", "rootLB", s.rootLbName,
 		"physicalName", pc.PhysicalName, "vaultAddr", pc.VaultAddr)
 	return nil
+}
+
+func (s *ShepherdPlatform) SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "set vmpool", "vmpool", vmPool)
+	if s.VMPlatform != nil {
+		if caches == nil {
+			var vmPoolMux sync.Mutex
+			caches = &platform.Caches{}
+			caches.VMPoolMux = &vmPoolMux
+		}
+		caches.VMPoolMux.Lock()
+		defer caches.VMPoolMux.Unlock()
+		caches.VMPool = vmPool
+		s.VMPlatform.VMProvider.SetCaches(ctx, caches)
+	}
 }
 
 func (s *ShepherdPlatform) GetMetricsCollectInterval() time.Duration {
