@@ -93,7 +93,7 @@ func (o *VMPoolPlatform) SaveVMStateInVMPool(ctx context.Context, vms map[string
 
 func (o *VMPoolPlatform) markVMsForAction(ctx context.Context, action string, groupName string, vmSpecs []edgeproto.VMSpec) (map[string]edgeproto.VM, error) {
 	if o.caches == nil || o.caches.VMPool == nil {
-		return nil, fmt.Errorf("caches is nil")
+		return nil, fmt.Errorf("missing VM pool")
 	}
 
 	o.caches.VMPoolMux.Lock()
@@ -135,9 +135,9 @@ func setupHostname(ctx context.Context, client ssh.Client, hostname string) erro
 }
 
 func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[string]edgeproto.VM, orchVMs []vmlayer.VMOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
-	accessIP, err := o.GetVMSharedRootLBIP(ctx)
+	accessClient, err := o.GetAccessClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get shared rootlb ip: %v", err)
+		return err
 	}
 
 	vmRoles := make(map[string]vmlayer.VMRole)
@@ -147,11 +147,6 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		vmChefParams[vm.Name] = vm.ChefParams
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "chefParams", vmChefParams)
-
-	accessClient, err := o.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
-	if err != nil {
-		return fmt.Errorf("can't get rootlb ssh client for %s %v", accessIP, err)
-	}
 
 	// Setup Cluster Nodes
 	masterAddr := ""
@@ -328,33 +323,51 @@ func (o *VMPoolPlatform) CreateVMs(ctx context.Context, vmGroupOrchestrationPara
 	return err
 }
 
-func (o *VMPoolPlatform) GetVMSharedRootLBIP(ctx context.Context) (string, error) {
+func (o *VMPoolPlatform) GetAccessClient(ctx context.Context) (ssh.Client, error) {
 	if o.caches == nil || o.caches.VMPool == nil {
-		return "", fmt.Errorf("caches is nil")
+		return nil, fmt.Errorf("missing VM pool")
 	}
 
 	o.caches.VMPoolMux.Lock()
 	defer o.caches.VMPoolMux.Unlock()
 
+	// This will be used to access nodes which are only reachable
+	// over internal network, and via external network
+
+	sharedRootLBIP := ""
+	accessIP := ""
 	for _, vm := range o.caches.VMPool.Vms {
 		if vm.InternalName == o.VMProperties.SharedRootLBName {
-			return vm.NetInfo.ExternalIp, nil
+			sharedRootLBIP = vm.NetInfo.ExternalIp
+		}
+		if vm.NetInfo.ExternalIp != "" {
+			accessIP = vm.NetInfo.ExternalIp
 		}
 	}
-	return "", fmt.Errorf("unable to get shared rootlb ip")
+
+	if sharedRootLBIP != "" {
+		// prefer shared rootLB's IP
+		accessIP = sharedRootLBIP
+	}
+
+	if accessIP == "" {
+		return nil, fmt.Errorf("unable to find any VM with external IP")
+	}
+
+	accessClient, err := o.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
+	if err != nil {
+		return nil, fmt.Errorf("can't get ssh client for %s %v", accessIP, err)
+	}
+	return accessClient, nil
 }
 
 func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[string]edgeproto.VM) error {
-
 	// Cleanup VMs if possible
-	var rootLBClient ssh.Client
-	rootLBVMIP, err := o.GetVMSharedRootLBIP(ctx)
-	if err == nil {
-		rootLBClient, err = o.VMProperties.GetSSHClientFromIPAddr(ctx, rootLBVMIP)
-	}
+	var accessClient ssh.Client
+	accessClient, err := o.GetAccessClient(ctx)
 	if err != nil {
 		// skip, as cleanup happens as part of creation as well
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs, can't get rootlb ssh client for %s %v", rootLBVMIP, err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs, failed to get access client", "err", err)
 		return nil
 	}
 	for _, vm := range markedVMs {
@@ -362,11 +375,11 @@ func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[st
 		if vm.NetInfo.ExternalIp != "" {
 			client, err = o.VMProperties.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
 		} else if vm.NetInfo.InternalIp != "" {
-			client, err = rootLBClient.AddHop(vm.NetInfo.InternalIp, 22)
+			client, err = accessClient.AddHop(vm.NetInfo.InternalIp, 22)
 		}
 		if err != nil {
 			// skip, as cleanup happens as part of creation as well
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs, can't get ssh client for %s, %v", vm.Name, err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs, can't get ssh client", "vm", vm.Name, "err", err)
 			continue
 		}
 		// Run cleanup script
