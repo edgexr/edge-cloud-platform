@@ -3,12 +3,15 @@ package vmpool
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -16,6 +19,8 @@ const (
 	ActionNone     string = "none"
 	ActionAllocate string = "allocate"
 	ActionRelease  string = "release"
+
+	CreateVMTimeout = 20 * time.Minute
 )
 
 func (o *VMPoolPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
@@ -119,8 +124,10 @@ func (o *VMPoolPlatform) markVMsForAction(ctx context.Context, action string, gr
 	return vms, nil
 }
 
-func setupHostname(ctx context.Context, client ssh.Client, hostname string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Setting up hostname", "hostname", hostname)
+func setupHostname(ctx context.Context, client ssh.Client, name string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Setting up hostname", "name", name)
+	// sanitize hostname
+	hostname := util.HostnameSanitize(strings.Split(name, ".")[0])
 	cmd := fmt.Sprintf("sudo hostnamectl set-hostname %s", hostname)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -215,14 +222,16 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		if role == vmlayer.RoleMaster {
 			wg.Add(1)
 			go func(client ssh.Client, nodeName string, wg *sync.WaitGroup) {
-				defer wg.Done()
 				updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes master node"))
 				log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes master node")
 				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-master.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
 				out, err := client.Output(cmd)
 				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s master", "masterAddr", masterAddr, "nodename", nodeName, "err", err)
 					wgError <- fmt.Errorf("can't setup k8s master on vm %s with masteraddr %s, %s, %v", nodeName, masterAddr, out, err)
+					return
 				}
+				wg.Done()
 			}(client, vm.InternalName, &wg)
 		}
 	}
@@ -256,13 +265,15 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 
 			wg.Add(1)
 			go func(client ssh.Client, nodeName string, wg *sync.WaitGroup) {
-				defer wg.Done()
 				log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes worker node", "masterAddr", masterAddr, "nodename", nodeName)
 				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-node.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
 				out, err := client.Output(cmd)
 				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s node", "masterAddr", masterAddr, "nodename", nodeName, "err", err)
 					wgError <- fmt.Errorf("can't setup k8s node on vm %s with masteraddr %s, %s, %v", nodeName, masterAddr, out, err)
+					return
 				}
+				wg.Done()
 			}(client, vm.InternalName, &wg)
 		}
 	}
@@ -279,6 +290,8 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 	case err := <-wgError:
 		close(wgError)
 		return err
+	case <-time.After(CreateVMTimeout):
+		return fmt.Errorf("Timed out setting up VMs")
 	}
 
 	return nil
