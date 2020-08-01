@@ -30,7 +30,7 @@ func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, app *ed
 	imageDetail, err := o.GetImageDetail(ctx, imageName)
 	createImage := false
 	if err != nil {
-		if strings.Contains(err.Error(), "Could not find resource") {
+		if strings.Contains(err.Error(), ResourceNotFound) {
 			// Add image to Glance
 			log.SpanLog(ctx, log.DebugLevelInfra, "image is not present in glance, add image")
 			createImage = true
