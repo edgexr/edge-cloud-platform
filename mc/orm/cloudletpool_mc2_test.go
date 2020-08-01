@@ -25,93 +25,93 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, region, org)
+func badPermCreateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermCreateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, region, org)
+func goodPermCreateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteCloudletPool(mcClient, uri, token, region, org)
+func badPermDeleteCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermDeleteCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDeleteCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteCloudletPool(mcClient, uri, token, region, org)
+func goodPermDeleteCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermDeleteCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdateCloudletPool(mcClient, uri, token, region, org)
+func badPermUpdateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermUpdateCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermUpdateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdateCloudletPool(mcClient, uri, token, region, org)
+func goodPermUpdateCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermUpdateCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowCloudletPool(mcClient, uri, token, region, org)
+func badPermShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermShowCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowCloudletPool(mcClient, uri, token, region, org)
+func goodPermShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	_, status, err := testutil.TestPermShowCloudletPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermAddCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermAddCloudletPoolMember(mcClient, uri, token, region, org)
+func badPermAddCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPoolMember)) {
+	_, status, err := testutil.TestPermAddCloudletPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermAddCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermAddCloudletPoolMember(mcClient, uri, token, region, org)
+func goodPermAddCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPoolMember)) {
+	_, status, err := testutil.TestPermAddCloudletPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermRemoveCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRemoveCloudletPoolMember(mcClient, uri, token, region, org)
+func badPermRemoveCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPoolMember)) {
+	_, status, err := testutil.TestPermRemoveCloudletPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermRemoveCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRemoveCloudletPoolMember(mcClient, uri, token, region, org)
+func goodPermRemoveCloudletPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPoolMember)) {
+	_, status, err := testutil.TestPermRemoveCloudletPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	badPermCreateCloudletPool(t, mcClient, uri, token, region, org)
-	badPermDeleteCloudletPool(t, mcClient, uri, token, region, org)
+func badPermTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) {
+	badPermCreateCloudletPool(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteCloudletPool(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 func badPermTestShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -124,16 +124,16 @@ func badPermTestShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, 
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
+func goodPermTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.CloudletPool)) {
 	goodPermCreateCloudletPool(t, mcClient, uri, token, region, org)
 	goodPermDeleteCloudletPool(t, mcClient, uri, token, region, org)
 
 	// make sure region check works
-	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, "bad region", org)
+	_, status, err := testutil.TestPermCreateCloudletPool(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteCloudletPool(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermDeleteCloudletPool(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -158,12 +158,12 @@ func goodPermTestShowCloudletPool(t *testing.T, mcClient *ormclient.Client, uri,
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int) {
-	badPermTestCloudletPool(t, mcClient, uri, token1, region, org2)
+func permTestCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.CloudletPool)) {
+	badPermTestCloudletPool(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowCloudletPool(t, mcClient, uri, token1, region, org2)
-	badPermTestCloudletPool(t, mcClient, uri, token2, region, org1)
+	badPermTestCloudletPool(t, mcClient, uri, token2, region, org1, modFuncs...)
 	badPermTestShowCloudletPool(t, mcClient, uri, token2, region, org1)
 
-	goodPermTestCloudletPool(t, mcClient, uri, token1, region, org1, showcount)
-	goodPermTestCloudletPool(t, mcClient, uri, token2, region, org2, showcount)
+	goodPermTestCloudletPool(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestCloudletPool(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

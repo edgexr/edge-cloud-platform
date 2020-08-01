@@ -20,16 +20,19 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowCloudletRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletRefs) ([]edgeproto.CloudletRefs, int, error) {
+func TestShowCloudletRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletRefs, modFuncs ...func(*edgeproto.CloudletRefs)) ([]edgeproto.CloudletRefs, int, error) {
 	dat := &ormapi.RegionCloudletRefs{}
 	dat.Region = region
 	dat.CloudletRefs = *in
+	for _, fn := range modFuncs {
+		fn(&dat.CloudletRefs)
+	}
 	return mcClient.ShowCloudletRefs(uri, token, dat)
 }
-func TestPermShowCloudletRefs(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.CloudletRefs, int, error) {
+func TestPermShowCloudletRefs(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) ([]edgeproto.CloudletRefs, int, error) {
 	in := &edgeproto.CloudletRefs{}
 	in.Key.Organization = org
-	return TestShowCloudletRefs(mcClient, uri, token, region, in)
+	return TestShowCloudletRefs(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowCloudletRefs(ctx context.Context, in *edgeproto.CloudletRefs) ([]edgeproto.CloudletRefs, error) {
@@ -44,15 +47,18 @@ func (s *TestClient) ShowCloudletRefs(ctx context.Context, in *edgeproto.Cloudle
 	return out, err
 }
 
-func TestShowClusterRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, int, error) {
+func TestShowClusterRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterRefs, modFuncs ...func(*edgeproto.ClusterRefs)) ([]edgeproto.ClusterRefs, int, error) {
 	dat := &ormapi.RegionClusterRefs{}
 	dat.Region = region
 	dat.ClusterRefs = *in
+	for _, fn := range modFuncs {
+		fn(&dat.ClusterRefs)
+	}
 	return mcClient.ShowClusterRefs(uri, token, dat)
 }
-func TestPermShowClusterRefs(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.ClusterRefs, int, error) {
+func TestPermShowClusterRefs(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) ([]edgeproto.ClusterRefs, int, error) {
 	in := &edgeproto.ClusterRefs{}
-	return TestShowClusterRefs(mcClient, uri, token, region, in)
+	return TestShowClusterRefs(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowClusterRefs(ctx context.Context, in *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, error) {
@@ -67,16 +73,19 @@ func (s *TestClient) ShowClusterRefs(ctx context.Context, in *edgeproto.ClusterR
 	return out, err
 }
 
-func TestShowAppInstRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
+func TestShowAppInstRefs(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstRefs, modFuncs ...func(*edgeproto.AppInstRefs)) ([]edgeproto.AppInstRefs, int, error) {
 	dat := &ormapi.RegionAppInstRefs{}
 	dat.Region = region
 	dat.AppInstRefs = *in
+	for _, fn := range modFuncs {
+		fn(&dat.AppInstRefs)
+	}
 	return mcClient.ShowAppInstRefs(uri, token, dat)
 }
-func TestPermShowAppInstRefs(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.AppInstRefs, int, error) {
+func TestPermShowAppInstRefs(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) ([]edgeproto.AppInstRefs, int, error) {
 	in := &edgeproto.AppInstRefs{}
 	in.Key.Organization = org
-	return TestShowAppInstRefs(mcClient, uri, token, region, in)
+	return TestShowAppInstRefs(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error) {

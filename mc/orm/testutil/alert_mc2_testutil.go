@@ -142,15 +142,18 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowAlert(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Alert) ([]edgeproto.Alert, int, error) {
+func TestShowAlert(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Alert, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
 	dat := &ormapi.RegionAlert{}
 	dat.Region = region
 	dat.Alert = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Alert)
+	}
 	return mcClient.ShowAlert(uri, token, dat)
 }
-func TestPermShowAlert(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Alert, int, error) {
+func TestPermShowAlert(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
 	in := &edgeproto.Alert{}
-	return TestShowAlert(mcClient, uri, token, region, in)
+	return TestShowAlert(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowAlert(ctx context.Context, in *edgeproto.Alert) ([]edgeproto.Alert, error) {

@@ -21,61 +21,73 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst) ([]edgeproto.Result, int, error) {
+func TestCreateClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionClusterInst{}
 	dat.Region = region
 	dat.ClusterInst = *in
+	for _, fn := range modFuncs {
+		fn(&dat.ClusterInst)
+	}
 	return mcClient.CreateClusterInst(uri, token, dat)
 }
-func TestPermCreateClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) ([]edgeproto.Result, int, error) {
+func TestPermCreateClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.ClusterInst{}
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
 	}
 	in.Key.Organization = org
-	return TestCreateClusterInst(mcClient, uri, token, region, in)
+	return TestCreateClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst) ([]edgeproto.Result, int, error) {
+func TestDeleteClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionClusterInst{}
 	dat.Region = region
 	dat.ClusterInst = *in
+	for _, fn := range modFuncs {
+		fn(&dat.ClusterInst)
+	}
 	return mcClient.DeleteClusterInst(uri, token, dat)
 }
-func TestPermDeleteClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) ([]edgeproto.Result, int, error) {
+func TestPermDeleteClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.ClusterInst{}
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
 	}
 	in.Key.Organization = org
-	return TestDeleteClusterInst(mcClient, uri, token, region, in)
+	return TestDeleteClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestUpdateClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst) ([]edgeproto.Result, int, error) {
+func TestUpdateClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionClusterInst{}
 	dat.Region = region
 	dat.ClusterInst = *in
+	for _, fn := range modFuncs {
+		fn(&dat.ClusterInst)
+	}
 	return mcClient.UpdateClusterInst(uri, token, dat)
 }
-func TestPermUpdateClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) ([]edgeproto.Result, int, error) {
+func TestPermUpdateClusterInst(mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.ClusterInst{}
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
 	}
 	in.Key.Organization = org
-	return TestUpdateClusterInst(mcClient, uri, token, region, in)
+	return TestUpdateClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst) ([]edgeproto.ClusterInst, int, error) {
+func TestShowClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInst, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.ClusterInst, int, error) {
 	dat := &ormapi.RegionClusterInst{}
 	dat.Region = region
 	dat.ClusterInst = *in
+	for _, fn := range modFuncs {
+		fn(&dat.ClusterInst)
+	}
 	return mcClient.ShowClusterInst(uri, token, dat)
 }
-func TestPermShowClusterInst(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.ClusterInst, int, error) {
+func TestPermShowClusterInst(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) ([]edgeproto.ClusterInst, int, error) {
 	in := &edgeproto.ClusterInst{}
 	in.Key.Organization = org
-	return TestShowClusterInst(mcClient, uri, token, region, in)
+	return TestShowClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) CreateClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error) {

@@ -25,14 +25,14 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowNode(mcClient, uri, token, region, org)
+func badPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Node)) {
+	_, status, err := testutil.TestPermShowNode(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowNode(mcClient, uri, token, region, org)
+func goodPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Node)) {
+	_, status, err := testutil.TestPermShowNode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
