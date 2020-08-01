@@ -16,6 +16,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+const ResourceNotFound string = "Could not find resource"
+
 func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
 	parmstr := strings.Join(a, " ")
 	start := time.Now()
@@ -710,7 +712,7 @@ func (s *OpenstackPlatform) DeleteImage(ctx context.Context, folder, imageName s
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting image", "name", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "delete", imageName)
 	if err != nil {
-		if strings.Contains(string(out), "Could not find resource") {
+		if strings.Contains(string(out), ResourceNotFound) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "image not found", "name", imageName)
 			return nil
 		} else {
@@ -1000,6 +1002,9 @@ func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, im
 		return "", fmt.Errorf("image %s is not active", pfImageName)
 	}
 	if err != nil {
+		if !strings.Contains(err.Error(), ResourceNotFound) {
+			return "", err
+		}
 		// Validate if pfImageName is same as we expected
 		_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.VMProperties.CommonPf.VaultConfig, imgPath)
 		if err != nil {
