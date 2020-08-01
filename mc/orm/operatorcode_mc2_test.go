@@ -24,51 +24,51 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org)
+func badPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org)
+func goodPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org)
+func badPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org)
+func goodPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org)
+func badPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org)
+func goodPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, status, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	badPermCreateOperatorCode(t, mcClient, uri, token, region, org)
-	badPermDeleteOperatorCode(t, mcClient, uri, token, region, org)
+func badPermTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
+	badPermCreateOperatorCode(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteOperatorCode(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 func badPermTestShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -81,16 +81,16 @@ func badPermTestShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, 
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
+func goodPermTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.OperatorCode)) {
 	goodPermCreateOperatorCode(t, mcClient, uri, token, region, org)
 	goodPermDeleteOperatorCode(t, mcClient, uri, token, region, org)
 
 	// make sure region check works
-	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, "bad region", org)
+	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteOperatorCode(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermDeleteOperatorCode(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -115,12 +115,12 @@ func goodPermTestShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri,
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int) {
-	badPermTestOperatorCode(t, mcClient, uri, token1, region, org2)
+func permTestOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.OperatorCode)) {
+	badPermTestOperatorCode(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowOperatorCode(t, mcClient, uri, token1, region, org2)
-	badPermTestOperatorCode(t, mcClient, uri, token2, region, org1)
+	badPermTestOperatorCode(t, mcClient, uri, token2, region, org1, modFuncs...)
 	badPermTestShowOperatorCode(t, mcClient, uri, token2, region, org1)
 
-	goodPermTestOperatorCode(t, mcClient, uri, token1, region, org1, showcount)
-	goodPermTestOperatorCode(t, mcClient, uri, token2, region, org2, showcount)
+	goodPermTestOperatorCode(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestOperatorCode(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

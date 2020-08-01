@@ -742,20 +742,23 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 
 var tmplMethodTestutil = `
 {{- if .Outstream}}
-func Test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) ([]edgeproto.{{.OutName}}, int, error) {
+func Test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}, modFuncs ...func(*edgeproto.{{.InName}})) ([]edgeproto.{{.OutName}}, int, error) {
 {{- else}}
-func Test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, int, error) {
+func Test{{.MethodName}}(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.{{.InName}}, modFuncs ...func(*edgeproto.{{.InName}})) (*edgeproto.{{.OutName}}, int, error) {
 {{- end}}
 	dat := &ormapi.Region{{.InName}}{}
 	dat.Region = region
 	dat.{{.InName}} = *in
+	for _, fn := range modFuncs {
+		fn(&dat.{{.InName}})
+	}
 	return mcClient.{{.MethodName}}(uri, token, dat)
 }
 
 {{- if .Outstream}}
-func TestPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) ([]edgeproto.{{.OutName}}, int, error) {
+func TestPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) ([]edgeproto.{{.OutName}}, int, error) {
 {{- else}}
-func TestPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) (*edgeproto.{{.OutName}}, int, error) {
+func TestPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) (*edgeproto.{{.OutName}}, int, error) {
 {{- end}}
 	in := &edgeproto.{{.InName}}{}
 {{- if .TargetCloudlet}}
@@ -766,7 +769,7 @@ func TestPerm{{.MethodName}}(mcClient *ormclient.Client, uri, token, region, org
 {{- if and (ne .OrgField "") (not .SkipEnforce)}}
 	in.{{.OrgField}} = org
 {{- end}}
-	return Test{{.MethodName}}(mcClient, uri, token, region, in)
+	return Test{{.MethodName}}(mcClient, uri, token, region, in, modFuncs...)
 }
 `
 
@@ -774,14 +777,14 @@ var tmplMethodTest = `
 
 var _ = edgeproto.GetFields
 
-func badPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
-	_, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}})
+func badPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) {
+	_, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
-	_, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}})
+func goodPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) {
+	_, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
@@ -1018,12 +1021,12 @@ type msgArgs struct {
 var tmplMessageTest = `
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}) {
-	badPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
+func badPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.Message}})) {
+	badPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 {{- if .HasUpdate}}
-	badPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
+	badPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 {{- end}}
-	badPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
+	badPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 }
 
 func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -1036,7 +1039,7 @@ func badPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, 
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, showcount int) {
+func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
 	goodPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 {{- if .HasUpdate}}
 	goodPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
@@ -1044,17 +1047,17 @@ func goodPermTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, tok
 	goodPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
 
 	// make sure region check works
-	_, status, err := testutil.TestPerm{{.Create}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
+	_, status, err := testutil.TestPerm{{.Create}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 {{- if .HasUpdate}}
-	_, status, err = testutil.TestPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
+	_, status, err = testutil.TestPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
 {{- end}}
-	_, status, err = testutil.TestPerm{{.Delete}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}})
+	_, status, err = testutil.TestPerm{{.Delete}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -1079,14 +1082,14 @@ func goodPermTestShow{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri,
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string{{.TargetCloudletParam}}, showcount int) {
-	badPermTest{{.Message}}(t, mcClient, uri, token1, region, org2{{.TargetCloudletArg}})
+func permTest{{.Message}}(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
+	badPermTest{{.Message}}(t, mcClient, uri, token1, region, org2{{.TargetCloudletArg}}, modFuncs...)
 	badPermTestShow{{.Message}}(t, mcClient, uri, token1, region, org2)
-	badPermTest{{.Message}}(t, mcClient, uri, token2, region, org1{{.TargetCloudletArg}})
+	badPermTest{{.Message}}(t, mcClient, uri, token2, region, org1{{.TargetCloudletArg}}, modFuncs...)
 	badPermTestShow{{.Message}}(t, mcClient, uri, token2, region, org1)
 
-	goodPermTest{{.Message}}(t, mcClient, uri, token1, region, org1{{.TargetCloudletArg}}, showcount)
-	goodPermTest{{.Message}}(t, mcClient, uri, token2, region, org2{{.TargetCloudletArg}}, showcount)
+	goodPermTest{{.Message}}(t, mcClient, uri, token1, region, org1{{.TargetCloudletArg}}, showcount, modFuncs...)
+	goodPermTest{{.Message}}(t, mcClient, uri, token2, region, org2{{.TargetCloudletArg}}, showcount, modFuncs...)
 }
 `
 

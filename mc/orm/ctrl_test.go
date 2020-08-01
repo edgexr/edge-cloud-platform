@@ -219,6 +219,8 @@ func TestController(t *testing.T) {
 	goodPermTestClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org2, tc3, dcnt)
 	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
 	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
+	goodPermTestAutoProvPolicy(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
+	goodPermTestAutoProvPolicy(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
 
 	// test non-existent org check
 	// (no check by admin because it returns a different error code)
@@ -319,6 +321,8 @@ func TestController(t *testing.T) {
 	// test operators can modify their own objs but not each other's
 	badPermTestCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, org4)
 	badPermTestCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, org3)
+	permTestCloudletPool(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
+	permTestVMPool(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
 
 	// test developers can modify their own objs but not each other's
 	// tests also that developers can create AppInsts/ClusterInsts on tc3.
@@ -328,6 +332,12 @@ func TestController(t *testing.T) {
 		org1, org2, tc3, dcnt)
 	permTestClusterInst(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
 		org1, org2, tc3, dcnt)
+	permTestAutoProvPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
+		org1, org2, dcnt)
+	permTestAutoScalePolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
+		org1, org2, dcnt)
+	permTestPrivacyPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
+		org1, org2, dcnt)
 	// test users with different roles
 	goodPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
 	goodPermTestAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, tc3, dcnt)
@@ -424,6 +434,15 @@ func TestController(t *testing.T) {
 
 	log.SetDebugLevel(log.DebugLevelApi)
 
+	autoProvTc3 := func(in *edgeproto.AutoProvPolicy) {
+		in.Cloudlets = append(in.Cloudlets, &edgeproto.AutoProvCloudlet{
+			Key: *tc3,
+		})
+	}
+	autoProvAddTc3 := func(in *edgeproto.AutoProvPolicyCloudlet) {
+		in.CloudletKey = *tc3
+	}
+
 	// tc3 should now be visible along with all other cloudlets
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, ccount)
 	// tc3 should not be visible by other orgs
@@ -435,9 +454,13 @@ func TestController(t *testing.T) {
 	// tc3 should now be usable for org1
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
 	goodPermTestAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
+	goodPermTestAutoProvPolicy(t, mcClient, uri, tokenDev, ctrl.Region, org1, dcnt, autoProvTc3)
+	goodPermAddAutoProvPolicyCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, autoProvAddTc3)
 	// tc3 should be unusable for other org2
 	badPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 	badPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	badPermTestAutoProvPolicy400(t, mcClient, uri, tokenDev2, ctrl.Region, org2, autoProvTc3)
+	badPermAddAutoProvPolicyCloudlet400(t, mcClient, uri, tokenDev2, ctrl.Region, org2, autoProvAddTc3)
 
 	// show cloudlet for org1 will only show those in pool1 plus public cloudlets
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", ccount)
@@ -754,6 +777,25 @@ func badPermTestNonExistent(t *testing.T, mcClient *ormclient.Client, uri, token
 	badPermCreatePrivacyPolicy(t, mcClient, uri, token, region, neOrg)
 	badPermCreateCloudletPool(t, mcClient, uri, token, region, neOrg)
 	badPermCreateResTagTable(t, mcClient, uri, token, region, neOrg)
+}
+
+func badPermTestAutoProvPolicy400(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+	// check for "No permissions" instead of Forbidden(403)
+	_, status, err := ormtestutil.TestPermCreateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+	_, status, err = ormtestutil.TestPermUpdateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+}
+
+func badPermAddAutoProvPolicyCloudlet400(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
+	// check for "No permissions" instead of Forbidden(403)
+	_, status, err := ormtestutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
 }
 
 type StreamDummyServer struct {

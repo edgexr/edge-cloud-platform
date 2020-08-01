@@ -25,66 +25,66 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, region, org)
+func badPermCreatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermCreatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, region, org)
+func goodPermCreatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDeletePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, region, org)
+func badPermDeletePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDeletePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, region, org)
+func goodPermDeletePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermUpdatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, region, org)
+func badPermUpdatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermUpdatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, region, org)
+func goodPermUpdatePrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowPrivacyPolicy(mcClient, uri, token, region, org)
+func badPermShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermShowPrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowPrivacyPolicy(mcClient, uri, token, region, org)
+func goodPermShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	_, status, err := testutil.TestPermShowPrivacyPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	badPermCreatePrivacyPolicy(t, mcClient, uri, token, region, org)
-	badPermUpdatePrivacyPolicy(t, mcClient, uri, token, region, org)
-	badPermDeletePrivacyPolicy(t, mcClient, uri, token, region, org)
+func badPermTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	badPermCreatePrivacyPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdatePrivacyPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeletePrivacyPolicy(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 func badPermTestShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -97,21 +97,21 @@ func badPermTestShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri,
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
+func goodPermTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
 	goodPermCreatePrivacyPolicy(t, mcClient, uri, token, region, org)
 	goodPermUpdatePrivacyPolicy(t, mcClient, uri, token, region, org)
 	goodPermDeletePrivacyPolicy(t, mcClient, uri, token, region, org)
 
 	// make sure region check works
-	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, "bad region", org)
+	_, status, err := testutil.TestPermCreatePrivacyPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermUpdatePrivacyPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermDeletePrivacyPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -136,12 +136,12 @@ func goodPermTestShowPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int) {
-	badPermTestPrivacyPolicy(t, mcClient, uri, token1, region, org2)
+func permTestPrivacyPolicy(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.PrivacyPolicy)) {
+	badPermTestPrivacyPolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowPrivacyPolicy(t, mcClient, uri, token1, region, org2)
-	badPermTestPrivacyPolicy(t, mcClient, uri, token2, region, org1)
+	badPermTestPrivacyPolicy(t, mcClient, uri, token2, region, org1, modFuncs...)
 	badPermTestShowPrivacyPolicy(t, mcClient, uri, token2, region, org1)
 
-	goodPermTestPrivacyPolicy(t, mcClient, uri, token1, region, org1, showcount)
-	goodPermTestPrivacyPolicy(t, mcClient, uri, token2, region, org2, showcount)
+	goodPermTestPrivacyPolicy(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestPrivacyPolicy(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

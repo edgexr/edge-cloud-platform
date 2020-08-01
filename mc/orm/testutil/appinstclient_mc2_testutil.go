@@ -22,16 +22,19 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowAppInstClient(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstClientKey) ([]edgeproto.AppInstClient, int, error) {
+func TestShowAppInstClient(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstClientKey, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
 	dat := &ormapi.RegionAppInstClientKey{}
 	dat.Region = region
 	dat.AppInstClientKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.AppInstClientKey)
+	}
 	return mcClient.ShowAppInstClient(uri, token, dat)
 }
-func TestPermShowAppInstClient(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.AppInstClient, int, error) {
+func TestPermShowAppInstClient(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
 	in := &edgeproto.AppInstClientKey{}
 	in.Key.AppKey.Organization = org
-	return TestShowAppInstClient(mcClient, uri, token, region, in)
+	return TestShowAppInstClient(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowAppInstClient(ctx context.Context, in *edgeproto.AppInstClientKey) ([]edgeproto.AppInstClient, error) {

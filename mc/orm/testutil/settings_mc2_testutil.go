@@ -21,37 +21,46 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestUpdateSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings) (*edgeproto.Result, int, error) {
+func TestUpdateSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Settings)
+	}
 	return mcClient.UpdateSettings(uri, token, dat)
 }
-func TestPermUpdateSettings(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermUpdateSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Settings{}
-	return TestUpdateSettings(mcClient, uri, token, region, in)
+	return TestUpdateSettings(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestResetSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings) (*edgeproto.Result, int, error) {
+func TestResetSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Settings)
+	}
 	return mcClient.ResetSettings(uri, token, dat)
 }
-func TestPermResetSettings(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermResetSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Settings{}
-	return TestResetSettings(mcClient, uri, token, region, in)
+	return TestResetSettings(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings) (*edgeproto.Settings, int, error) {
+func TestShowSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Settings)
+	}
 	return mcClient.ShowSettings(uri, token, dat)
 }
-func TestPermShowSettings(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Settings, int, error) {
+func TestPermShowSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
 	in := &edgeproto.Settings{}
-	return TestShowSettings(mcClient, uri, token, region, in)
+	return TestShowSettings(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) UpdateSettings(ctx context.Context, in *edgeproto.Settings) (*edgeproto.Result, error) {

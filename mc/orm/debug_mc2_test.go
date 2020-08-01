@@ -25,56 +25,56 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org)
+func badPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org)
+func goodPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org)
+func badPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org)
+func goodPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org)
+func badPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org)
+func goodPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org)
+func badPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org)
+func goodPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }

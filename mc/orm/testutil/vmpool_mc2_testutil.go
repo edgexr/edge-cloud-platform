@@ -23,76 +23,94 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool) (*edgeproto.Result, int, error) {
+func TestCreateVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionVMPool{}
 	dat.Region = region
 	dat.VMPool = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPool)
+	}
 	return mcClient.CreateVMPool(uri, token, dat)
 }
-func TestPermCreateVMPool(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermCreateVMPool(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPool{}
 	in.Key.Organization = org
-	return TestCreateVMPool(mcClient, uri, token, region, in)
+	return TestCreateVMPool(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool) (*edgeproto.Result, int, error) {
+func TestDeleteVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionVMPool{}
 	dat.Region = region
 	dat.VMPool = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPool)
+	}
 	return mcClient.DeleteVMPool(uri, token, dat)
 }
-func TestPermDeleteVMPool(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermDeleteVMPool(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPool{}
 	in.Key.Organization = org
-	return TestDeleteVMPool(mcClient, uri, token, region, in)
+	return TestDeleteVMPool(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestUpdateVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool) (*edgeproto.Result, int, error) {
+func TestUpdateVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionVMPool{}
 	dat.Region = region
 	dat.VMPool = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPool)
+	}
 	return mcClient.UpdateVMPool(uri, token, dat)
 }
-func TestPermUpdateVMPool(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermUpdateVMPool(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPool{}
 	in.Key.Organization = org
-	return TestUpdateVMPool(mcClient, uri, token, region, in)
+	return TestUpdateVMPool(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool) ([]edgeproto.VMPool, int, error) {
+func TestShowVMPool(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPool, modFuncs ...func(*edgeproto.VMPool)) ([]edgeproto.VMPool, int, error) {
 	dat := &ormapi.RegionVMPool{}
 	dat.Region = region
 	dat.VMPool = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPool)
+	}
 	return mcClient.ShowVMPool(uri, token, dat)
 }
-func TestPermShowVMPool(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.VMPool, int, error) {
+func TestPermShowVMPool(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) ([]edgeproto.VMPool, int, error) {
 	in := &edgeproto.VMPool{}
 	in.Key.Organization = org
-	return TestShowVMPool(mcClient, uri, token, region, in)
+	return TestShowVMPool(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestAddVMPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPoolMember) (*edgeproto.Result, int, error) {
+func TestAddVMPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPoolMember, modFuncs ...func(*edgeproto.VMPoolMember)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionVMPoolMember{}
 	dat.Region = region
 	dat.VMPoolMember = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPoolMember)
+	}
 	return mcClient.AddVMPoolMember(uri, token, dat)
 }
-func TestPermAddVMPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermAddVMPoolMember(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPoolMember{}
 	in.Key.Organization = org
-	return TestAddVMPoolMember(mcClient, uri, token, region, in)
+	return TestAddVMPoolMember(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRemoveVMPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPoolMember) (*edgeproto.Result, int, error) {
+func TestRemoveVMPoolMember(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.VMPoolMember, modFuncs ...func(*edgeproto.VMPoolMember)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionVMPoolMember{}
 	dat.Region = region
 	dat.VMPoolMember = *in
+	for _, fn := range modFuncs {
+		fn(&dat.VMPoolMember)
+	}
 	return mcClient.RemoveVMPoolMember(uri, token, dat)
 }
-func TestPermRemoveVMPoolMember(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermRemoveVMPoolMember(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPoolMember{}
 	in.Key.Organization = org
-	return TestRemoveVMPoolMember(mcClient, uri, token, region, in)
+	return TestRemoveVMPoolMember(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) CreateVMPool(ctx context.Context, in *edgeproto.VMPool) (*edgeproto.Result, error) {

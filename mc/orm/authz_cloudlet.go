@@ -191,6 +191,43 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	return nil
 }
 
+func authzCreateAutoProvPolicy(ctx context.Context, region, username string, obj *edgeproto.AutoProvPolicy, resource, action string) error {
+	authzCloudlet := AuthzCloudlet{}
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization))
+	if err != nil {
+		return err
+	}
+	for _, apCloudlet := range obj.Cloudlets {
+		cloudlet := edgeproto.Cloudlet{
+			Key: apCloudlet.Key,
+		}
+		if !authzCloudlet.Ok(&cloudlet) {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
+		}
+	}
+	return nil
+}
+
+func authzUpdateAutoProvPolicy(ctx context.Context, region, username string, obj *edgeproto.AutoProvPolicy, resource, action string) error {
+	// handled the same as create
+	return authzCreateAutoProvPolicy(ctx, region, username, obj, resource, action)
+}
+
+func authzAddAutoProvPolicyCloudlet(ctx context.Context, region, username string, obj *edgeproto.AutoProvPolicyCloudlet, resource, action string) error {
+	authzCloudlet := AuthzCloudlet{}
+	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization))
+	if err != nil {
+		return err
+	}
+	cloudlet := edgeproto.Cloudlet{
+		Key: obj.CloudletKey,
+	}
+	if !authzCloudlet.Ok(&cloudlet) {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
+	}
+	return nil
+}
+
 func newShowCloudletAuthz(ctx context.Context, region, username, resource, action string) (ShowCloudletAuthz, error) {
 	authzCloudlet := AuthzCloudlet{}
 	err := authzCloudlet.populate(ctx, region, username, "", resource, action)

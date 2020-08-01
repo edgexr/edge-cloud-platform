@@ -22,48 +22,60 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestInjectDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device) (*edgeproto.Result, int, error) {
+func TestInjectDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device, modFuncs ...func(*edgeproto.Device)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionDevice{}
 	dat.Region = region
 	dat.Device = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Device)
+	}
 	return mcClient.InjectDevice(uri, token, dat)
 }
-func TestPermInjectDevice(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermInjectDevice(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Device{}
-	return TestInjectDevice(mcClient, uri, token, region, in)
+	return TestInjectDevice(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device) ([]edgeproto.Device, int, error) {
+func TestShowDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device, modFuncs ...func(*edgeproto.Device)) ([]edgeproto.Device, int, error) {
 	dat := &ormapi.RegionDevice{}
 	dat.Region = region
 	dat.Device = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Device)
+	}
 	return mcClient.ShowDevice(uri, token, dat)
 }
-func TestPermShowDevice(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Device, int, error) {
+func TestPermShowDevice(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) ([]edgeproto.Device, int, error) {
 	in := &edgeproto.Device{}
-	return TestShowDevice(mcClient, uri, token, region, in)
+	return TestShowDevice(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestEvictDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device) (*edgeproto.Result, int, error) {
+func TestEvictDevice(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Device, modFuncs ...func(*edgeproto.Device)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionDevice{}
 	dat.Region = region
 	dat.Device = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Device)
+	}
 	return mcClient.EvictDevice(uri, token, dat)
 }
-func TestPermEvictDevice(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermEvictDevice(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Device{}
-	return TestEvictDevice(mcClient, uri, token, region, in)
+	return TestEvictDevice(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowDeviceReport(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DeviceReport) ([]edgeproto.Device, int, error) {
+func TestShowDeviceReport(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DeviceReport, modFuncs ...func(*edgeproto.DeviceReport)) ([]edgeproto.Device, int, error) {
 	dat := &ormapi.RegionDeviceReport{}
 	dat.Region = region
 	dat.DeviceReport = *in
+	for _, fn := range modFuncs {
+		fn(&dat.DeviceReport)
+	}
 	return mcClient.ShowDeviceReport(uri, token, dat)
 }
-func TestPermShowDeviceReport(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Device, int, error) {
+func TestPermShowDeviceReport(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DeviceReport)) ([]edgeproto.Device, int, error) {
 	in := &edgeproto.DeviceReport{}
-	return TestShowDeviceReport(mcClient, uri, token, region, in)
+	return TestShowDeviceReport(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) InjectDevice(ctx context.Context, in *edgeproto.Device) (*edgeproto.Result, error) {

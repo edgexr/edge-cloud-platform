@@ -21,15 +21,18 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowNode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Node) ([]edgeproto.Node, int, error) {
+func TestShowNode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Node, modFuncs ...func(*edgeproto.Node)) ([]edgeproto.Node, int, error) {
 	dat := &ormapi.RegionNode{}
 	dat.Region = region
 	dat.Node = *in
+	for _, fn := range modFuncs {
+		fn(&dat.Node)
+	}
 	return mcClient.ShowNode(uri, token, dat)
 }
-func TestPermShowNode(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.Node, int, error) {
+func TestPermShowNode(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Node)) ([]edgeproto.Node, int, error) {
 	in := &edgeproto.Node{}
-	return TestShowNode(mcClient, uri, token, region, in)
+	return TestShowNode(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) ShowNode(ctx context.Context, in *edgeproto.Node) ([]edgeproto.Node, error) {

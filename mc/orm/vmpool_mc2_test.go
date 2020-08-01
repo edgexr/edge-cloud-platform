@@ -27,94 +27,94 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, region, org)
+func badPermCreateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermCreateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, region, org)
+func goodPermCreateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteVMPool(mcClient, uri, token, region, org)
+func badPermDeleteVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermDeleteVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDeleteVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermDeleteVMPool(mcClient, uri, token, region, org)
+func goodPermDeleteVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermDeleteVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdateVMPool(mcClient, uri, token, region, org)
+func badPermUpdateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermUpdateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermUpdateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermUpdateVMPool(mcClient, uri, token, region, org)
+func goodPermUpdateVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermUpdateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowVMPool(mcClient, uri, token, region, org)
+func badPermShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermShowVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowVMPool(mcClient, uri, token, region, org)
+func goodPermShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	_, status, err := testutil.TestPermShowVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermAddVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermAddVMPoolMember(mcClient, uri, token, region, org)
+func badPermAddVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
+	_, status, err := testutil.TestPermAddVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermAddVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermAddVMPoolMember(mcClient, uri, token, region, org)
+func goodPermAddVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
+	_, status, err := testutil.TestPermAddVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermRemoveVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRemoveVMPoolMember(mcClient, uri, token, region, org)
+func badPermRemoveVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
+	_, status, err := testutil.TestPermRemoveVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermRemoveVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermRemoveVMPoolMember(mcClient, uri, token, region, org)
+func goodPermRemoveVMPoolMember(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
+	_, status, err := testutil.TestPermRemoveVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	badPermCreateVMPool(t, mcClient, uri, token, region, org)
-	badPermUpdateVMPool(t, mcClient, uri, token, region, org)
-	badPermDeleteVMPool(t, mcClient, uri, token, region, org)
+func badPermTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
+	badPermCreateVMPool(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateVMPool(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteVMPool(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
 func badPermTestShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -127,21 +127,21 @@ func badPermTestShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token,
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
+func goodPermTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.VMPool)) {
 	goodPermCreateVMPool(t, mcClient, uri, token, region, org)
 	goodPermUpdateVMPool(t, mcClient, uri, token, region, org)
 	goodPermDeleteVMPool(t, mcClient, uri, token, region, org)
 
 	// make sure region check works
-	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, "bad region", org)
+	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateVMPool(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermUpdateVMPool(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteVMPool(mcClient, uri, token, "bad region", org)
+	_, status, err = testutil.TestPermDeleteVMPool(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -166,12 +166,12 @@ func goodPermTestShowVMPool(t *testing.T, mcClient *ormclient.Client, uri, token
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int) {
-	badPermTestVMPool(t, mcClient, uri, token1, region, org2)
+func permTestVMPool(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.VMPool)) {
+	badPermTestVMPool(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowVMPool(t, mcClient, uri, token1, region, org2)
-	badPermTestVMPool(t, mcClient, uri, token2, region, org1)
+	badPermTestVMPool(t, mcClient, uri, token2, region, org1, modFuncs...)
 	badPermTestShowVMPool(t, mcClient, uri, token2, region, org1)
 
-	goodPermTestVMPool(t, mcClient, uri, token1, region, org1, showcount)
-	goodPermTestVMPool(t, mcClient, uri, token2, region, org2, showcount)
+	goodPermTestVMPool(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestVMPool(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

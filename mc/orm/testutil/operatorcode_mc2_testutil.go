@@ -20,40 +20,49 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (*edgeproto.Result, int, error) {
+func TestCreateOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode, modFuncs ...func(*edgeproto.OperatorCode)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
 	dat.Region = region
 	dat.OperatorCode = *in
+	for _, fn := range modFuncs {
+		fn(&dat.OperatorCode)
+	}
 	return mcClient.CreateOperatorCode(uri, token, dat)
 }
-func TestPermCreateOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermCreateOperatorCode(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
 	in.Organization = org
-	return TestCreateOperatorCode(mcClient, uri, token, region, in)
+	return TestCreateOperatorCode(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) (*edgeproto.Result, int, error) {
+func TestDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode, modFuncs ...func(*edgeproto.OperatorCode)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
 	dat.Region = region
 	dat.OperatorCode = *in
+	for _, fn := range modFuncs {
+		fn(&dat.OperatorCode)
+	}
 	return mcClient.DeleteOperatorCode(uri, token, dat)
 }
-func TestPermDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) (*edgeproto.Result, int, error) {
+func TestPermDeleteOperatorCode(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.OperatorCode{}
 	in.Organization = org
-	return TestDeleteOperatorCode(mcClient, uri, token, region, in)
+	return TestDeleteOperatorCode(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode) ([]edgeproto.OperatorCode, int, error) {
+func TestShowOperatorCode(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.OperatorCode, modFuncs ...func(*edgeproto.OperatorCode)) ([]edgeproto.OperatorCode, int, error) {
 	dat := &ormapi.RegionOperatorCode{}
 	dat.Region = region
 	dat.OperatorCode = *in
+	for _, fn := range modFuncs {
+		fn(&dat.OperatorCode)
+	}
 	return mcClient.ShowOperatorCode(uri, token, dat)
 }
-func TestPermShowOperatorCode(mcClient *ormclient.Client, uri, token, region, org string) ([]edgeproto.OperatorCode, int, error) {
+func TestPermShowOperatorCode(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) ([]edgeproto.OperatorCode, int, error) {
 	in := &edgeproto.OperatorCode{}
 	in.Organization = org
-	return TestShowOperatorCode(mcClient, uri, token, region, in)
+	return TestShowOperatorCode(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func (s *TestClient) CreateOperatorCode(ctx context.Context, in *edgeproto.OperatorCode) (*edgeproto.Result, error) {

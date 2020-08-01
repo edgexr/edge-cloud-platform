@@ -27,80 +27,80 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func badPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func goodPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func badPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func goodPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func badPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func goodPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func badPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet)
+func goodPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 var _ = edgeproto.GetFields
 
-func badPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org)
+func badPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func goodPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org)
+func goodPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInst)) {
+	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey) {
-	badPermCreateAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
-	badPermUpdateAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
-	badPermDeleteAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
+func badPermTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	badPermCreateAppInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	badPermUpdateAppInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	badPermDeleteAppInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 }
 
 func badPermTestShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
@@ -113,21 +113,21 @@ func badPermTestShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, showcount int) {
+func goodPermTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.AppInst)) {
 	goodPermCreateAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
 	goodPermUpdateAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
 	goodPermDeleteAppInst(t, mcClient, uri, token, region, org, targetCloudlet)
 
 	// make sure region check works
-	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, "bad region", org, targetCloudlet)
+	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateAppInst(mcClient, uri, token, "bad region", org, targetCloudlet)
+	_, status, err = testutil.TestPermUpdateAppInst(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteAppInst(mcClient, uri, token, "bad region", org, targetCloudlet)
+	_, status, err = testutil.TestPermDeleteAppInst(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "\"bad region\" not found")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -152,12 +152,12 @@ func goodPermTestShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, toke
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, targetCloudlet *edgeproto.CloudletKey, showcount int) {
-	badPermTestAppInst(t, mcClient, uri, token1, region, org2, targetCloudlet)
+func permTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.AppInst)) {
+	badPermTestAppInst(t, mcClient, uri, token1, region, org2, targetCloudlet, modFuncs...)
 	badPermTestShowAppInst(t, mcClient, uri, token1, region, org2)
-	badPermTestAppInst(t, mcClient, uri, token2, region, org1, targetCloudlet)
+	badPermTestAppInst(t, mcClient, uri, token2, region, org1, targetCloudlet, modFuncs...)
 	badPermTestShowAppInst(t, mcClient, uri, token2, region, org1)
 
-	goodPermTestAppInst(t, mcClient, uri, token1, region, org1, targetCloudlet, showcount)
-	goodPermTestAppInst(t, mcClient, uri, token2, region, org2, targetCloudlet, showcount)
+	goodPermTestAppInst(t, mcClient, uri, token1, region, org1, targetCloudlet, showcount, modFuncs...)
+	goodPermTestAppInst(t, mcClient, uri, token2, region, org2, targetCloudlet, showcount, modFuncs...)
 }
