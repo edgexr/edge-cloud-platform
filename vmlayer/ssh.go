@@ -16,6 +16,8 @@ import (
 	"github.com/tmc/scp"
 )
 
+const SSHReachableDefaultTimeout = 2 * time.Minute
+
 type SSHOptions struct {
 	Timeout time.Duration
 	User    string
@@ -174,7 +176,7 @@ func WaitServerSSHReachable(ctx context.Context, client ssh.Client, server strin
 				if elapsed > timeout {
 					return fmt.Errorf("timed out connecting to VM %s", server)
 				}
-				log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 10 seconds before retry", "elapsed", elapsed)
+				log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 10 seconds before retry", "elapsed", elapsed, "timeout", timeout)
 				time.Sleep(10 * time.Second)
 			} else {
 				return fmt.Errorf("WaitServerSSHReachable fail: server :%s is unreachable: %v, %s", server, err, out)

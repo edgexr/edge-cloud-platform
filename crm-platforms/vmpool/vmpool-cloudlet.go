@@ -13,11 +13,6 @@ func (o *VMPoolPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *e
 	return nil
 }
 
-func (o *VMPoolPlatform) ImportDataFromInfra(ctx context.Context, domain vmlayer.VMDomain) error {
-	// nothing to do
-	return nil
-}
-
 func (o *VMPoolPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr not supported")
 	return "", nil

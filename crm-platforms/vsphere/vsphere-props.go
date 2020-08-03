@@ -69,8 +69,8 @@ func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, key *edgeproto.Clo
 		v.vcenterVars[envData.Name] = envData.Value
 	}
 
-	// vcenter vars are used for both govc and terraform.  They are stored in the vault in a
-	// generic format which is not specific to either but need to be populated as govc specific env vars
+	// vcenter vars are used for govc.  They are stored in the vault in a
+	// generic format which is not specific to govc
 	host, _, err := v.GetVCenterAddress()
 	if err != nil {
 		return err

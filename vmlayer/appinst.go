@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/access"
@@ -667,43 +665,4 @@ func DownloadVMImage(ctx context.Context, vaultConfig *vault.Config, imageName, 
 		}
 	}
 	return filePath, nil
-}
-
-func (v *VMPlatform) syncAppInst(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	_, err := v.PerformOrchestrationForVMApp(ctx, app, appInst, nil, ActionSync, updateCallback)
-	return err
-}
-
-func (v *VMPlatform) SyncAppInsts(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncAppInsts")
-	appInstKeys := make(map[edgeproto.AppInstKey]struct{})
-	caches.AppInstCache.GetAllKeys(ctx, func(k *edgeproto.AppInstKey, modRev int64) {
-		appInstKeys[*k] = struct{}{}
-	})
-
-	for k := range appInstKeys {
-		log.SpanLog(ctx, log.DebugLevelInfra, "SyncAppInsts found appinst", "key", k)
-		var appinst edgeproto.AppInst
-		var app edgeproto.App
-		if !caches.AppCache.Get(&k.AppKey, &app) {
-			return fmt.Errorf("Failed to get app from cache: %s", k.AppKey.String())
-		}
-		if app.Deployment != cloudcommon.DeploymentTypeVM {
-			// only vm apps need sync
-			continue
-		}
-		if !caches.AppInstCache.Get(&k, &appinst) {
-			return fmt.Errorf("Failed to get appinst from cache: %s", k.String())
-		}
-
-		err := v.syncAppInst(ctx, &app, &appinst, updateCallback)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "syncAppInst failed", "err", err)
-			appinst.State = edgeproto.TrackedState_CREATE_ERROR
-			caches.AppInstCache.Update(ctx, &appinst, 0)
-		}
-
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncAppInsts done")
-	return nil
 }

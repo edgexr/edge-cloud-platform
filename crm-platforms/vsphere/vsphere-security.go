@@ -5,8 +5,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud/log"
 
-	"time"
-
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -17,7 +15,7 @@ func (v *VSpherePlatform) WhitelistSecurityRules(ctx context.Context, client ssh
 	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
 
 	// this can be called during LB init so we need to ensure we can reach the server before trying iptables commands
-	vmlayer.WaitServerSSHReachable(ctx, client, serverName, time.Minute*1)
+	vmlayer.WaitServerSSHReachable(ctx, client, serverName, vmlayer.SSHReachableDefaultTimeout)
 
 	return vmlayer.AddIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }

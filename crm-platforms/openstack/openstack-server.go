@@ -128,12 +128,6 @@ func (o *OpenstackPlatform) UpdateVMs(ctx context.Context, VMGroupOrchestrationP
 	return o.HeatUpdateVMs(ctx, VMGroupOrchestrationParams, updateCallback)
 }
 
-func (o *OpenstackPlatform) SyncVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncVMs")
-	// nothing to do right now for openstack
-	return nil
-
-}
 func (o *OpenstackPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 	return o.deleteHeatStack(ctx, vmGroupName)
 }

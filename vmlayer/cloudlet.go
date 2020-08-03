@@ -165,9 +165,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if err != nil {
 		return err
 	}
-	// save caches needed for flavors
-	v.Caches = caches
-	v.VMProvider.SetCaches(ctx, caches)
 
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
@@ -221,6 +218,13 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// ones if not specified.
 	if pfConfig.ContainerRegistryPath == "" {
 		pfConfig.ContainerRegistryPath = infracommon.DefaultContainerRegistryPath
+	}
+
+	// save caches needed for flavors
+	v.Caches = caches
+	err = v.VMProvider.InitProvider(ctx, caches, ProviderInitCreateCloudlet, updateCallback)
+	if err != nil {
+		return err
 	}
 
 	chefAttributes, err := v.GetChefPlatformAttributes(ctx, cloudlet, pfConfig)
@@ -308,10 +312,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
-	// save caches
-	v.Caches = caches
-	v.VMProvider.SetCaches(ctx, caches)
-
 	// Source OpenRC file to access openstack API endpoint
 	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
 	if err != nil {
@@ -343,6 +343,9 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
+	v.Caches = caches
+	v.VMProvider.InitProvider(ctx, caches, ProviderInitDeleteCloudlet, updateCallback)
+
 	chefClient := v.VMProperties.GetChefClient()
 	if chefClient == nil {
 		return fmt.Errorf("Chef client is not initialzied")
@@ -350,10 +353,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	rootLBName := v.GetRootLBName(&cloudlet.Key)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
-		err = v.VMProvider.ImportDataFromInfra(ctx, VMDomainAny)
-		if err != nil {
-			return fmt.Errorf("ImportDataFromInfra error: %v", err)
-		}
 		nodes := v.GetPlatformNodes(cloudlet)
 		for _, nodeName := range nodes {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting PlatformVM %s", nodeName))
