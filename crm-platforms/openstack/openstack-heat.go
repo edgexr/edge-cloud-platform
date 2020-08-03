@@ -320,7 +320,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			}
 		}
 
-		//find an available subnet or the current subnet for update and delete
+		// find an available subnet or the current subnet for update and delete
 		for i, s := range VMGroupOrchestrationParams.Subnets {
 			if s.CIDR != vmlayer.NextAvailableResource {
 				// no need to compute the CIDR

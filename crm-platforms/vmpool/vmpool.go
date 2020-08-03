@@ -32,17 +32,29 @@ func (o *VMPoolPlatform) GetCloudletKey() *edgeproto.CloudletKey {
 	return o.VMProperties.CommonPf.PlatformConfig.CloudletKey
 }
 
-func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VM Pool")
-
-	o.SetCaches(ctx, caches)
-	updateCallback(edgeproto.UpdateTask, "Verifying VMs")
-	return o.VerifyVMs(ctx, caches.VMPool.Vms)
+func (o *VMPoolPlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
+	o.caches = caches
 }
 
-func (o *VMPoolPlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetCaches")
-	o.caches = caches
+func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VM Pool", "stage", stage)
+	o.SetCaches(ctx, caches)
+	updateCallback(edgeproto.UpdateTask, "Verifying VMs")
+
+	switch stage {
+
+	case vmlayer.ProviderInitCreateCloudlet:
+		// A VerifyVMs error fails CreateCloudlet
+		return o.VerifyVMs(ctx, caches.VMPool.Vms)
+	case vmlayer.ProviderInitPlatformStart:
+		err := o.VerifyVMs(ctx, caches.VMPool.Vms)
+		if err != nil {
+			// do not fail CRM startup, but alerts should be generated for any failed VMs
+			// EDGECLOUD-3366 -- TODO
+			log.SpanLog(ctx, log.DebugLevelInfra, "Error in VerifyVMs", "err", err)
+		}
+	}
+	return nil
 }
 
 func (o *VMPoolPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

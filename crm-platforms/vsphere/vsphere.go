@@ -9,7 +9,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -36,13 +35,15 @@ func (v *VSpherePlatform) SetCaches(ctx context.Context, caches *platform.Caches
 	v.caches = caches
 }
 
-func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VSphere")
+func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VSphere", "stage", stage)
 	v.SetCaches(ctx, caches)
-	err := v.TerraformSetupVsphere(ctx, updateCallback)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "TerraformSetupVsphere failed", "err", err)
-		return fmt.Errorf("TerraformSetupVsphere failed - %v", err)
+	if stage != vmlayer.ProviderInitDeleteCloudlet {
+		err := v.CreateTemplateFolder(ctx)
+		if err != nil {
+			return err
+		}
+		return v.CreateTagCategories(ctx)
 	}
 	return nil
 }
@@ -51,7 +52,6 @@ func (v *VSpherePlatform) GatherCloudletInfo(ctx context.Context, info *edgeprot
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo ")
 	var err error
 	info.Flavors, err = v.GetFlavorList(ctx)
-	info.State = edgeproto.CloudletState_CLOUDLET_STATE_NEED_SYNC
 	return err
 }
 
@@ -87,10 +87,6 @@ func (v *VSpherePlatform) IdSanitize(name string) string {
 	str = strings.ReplaceAll(str, ".", "-")
 	str = strings.ReplaceAll(str, "=", "-")
 	return str
-}
-
-func (v *VSpherePlatform) DeleteResources(ctx context.Context, resourceGroupName string) error {
-	return terraform.DeleteTerraformPlan(ctx, v.getTerraformDir(ctx), resourceGroupName)
 }
 
 func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {

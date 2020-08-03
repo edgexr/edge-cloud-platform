@@ -82,11 +82,6 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 	return nil
 }
 
-func (o *OpenstackPlatform) ImportDataFromInfra(ctx context.Context, domain vmlayer.VMDomain) error {
-	// nothing to do
-	return nil
-}
-
 func (o *OpenstackPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 	osAuthUrl := o.openRCVars["OS_AUTH_URL"]
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "authUrl", osAuthUrl)

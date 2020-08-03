@@ -192,3 +192,14 @@ func (v *VMProperties) GetInternalNetworkRoute(ctx context.Context) (string, err
 	netaddr = strings.Replace(netaddr, "X", "0", 1)
 	return netaddr + "/16", nil
 }
+
+// MaskLenToMask converts the number of bits in a mask
+// to a dot notation mask
+func MaskLenToMask(maskLen string) (string, error) {
+	cidr := "255.255.255.255/" + maskLen
+	_, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", err
+	}
+	return ipnet.IP.String(), nil
+}

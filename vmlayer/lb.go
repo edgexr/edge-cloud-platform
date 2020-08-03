@@ -85,12 +85,18 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if err != nil {
 		return err
 	}
+	if internalIP.MacAddress == "" {
+		return fmt.Errorf("No MAC address for internal interface: %s", internalPortName)
+	}
 	externalIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetails)
 	if err != nil {
 		return err
 	}
+	if externalIP.MacAddress == "" {
+		return fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
+	}
 
-	err = WaitServerSSHReachable(ctx, client, externalIP.ExternalAddr, time.Minute*1)
+	err = WaitServerSSHReachable(ctx, client, externalIP.ExternalAddr, SSHReachableDefaultTimeout)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "server not reachable", "err", err)
 		return err
@@ -599,11 +605,4 @@ func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
 		"cloudletorg/" + platformConfig.CloudletKey.Organization,
 		"vmtype/" + string(VMTypeRootLB),
 	}
-}
-
-func (v *VMPlatform) SyncSharedRootLB(ctx context.Context, caches *platform.Caches) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncSharedRootLB")
-
-	tags := GetChefRootLBTags(v.VMProperties.CommonPf.PlatformConfig)
-	return v.CreateRootLB(ctx, v.VMProperties.sharedRootLB, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, ActionSync, tags, edgeproto.DummyUpdateCallback)
 }

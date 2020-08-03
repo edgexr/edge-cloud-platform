@@ -16,7 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-var qcowConvertTimeout = 5 * time.Minute
+var qcowConvertTimeout = 10 * time.Minute
 
 func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "flavor", flavor)

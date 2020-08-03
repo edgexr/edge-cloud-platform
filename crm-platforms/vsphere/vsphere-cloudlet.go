@@ -8,7 +8,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer/terraform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -153,106 +152,6 @@ func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavo
 	return flavors, nil
 }
 
-func (v *VSpherePlatform) ImportDataFromInfra(ctx context.Context, domain vmlayer.VMDomain) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra", "domain", domain)
-
-	if !v.IsTerraformInitialized(ctx) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Terraform not initialized, perform setup")
-		err := v.TerraformSetupVsphere(ctx, edgeproto.DummyUpdateCallback)
-		if err != nil {
-			return fmt.Errorf("Terraform setup Failed: %v", err)
-		}
-	}
-	// first import existing resources
-	pools, err := v.GetResourcePools(ctx)
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Import Resource Pools")
-	for _, p := range pools.ResourcePools {
-		if domain != vmlayer.VMDomainAny && !strings.HasSuffix(p.Name, string(domain)) {
-			continue
-		}
-		err = v.ImportTerraformResourcePool(ctx, p.Name, p.Path)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "Import Tags")
-
-	var categories []string
-	categories = append(categories, v.GetVmIpTagCategory(ctx))
-	categories = append(categories, v.GetSubnetTagCategory(ctx))
-	categories = append(categories, v.GetVMDomainTagCategory(ctx))
-	for _, cat := range categories {
-		tags, err := v.getTagsForCategory(ctx, cat, domain)
-		if err != nil {
-			return err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "getTagsForCategory returns", "category", cat, "tags", tags, "err", err)
-		for _, t := range tags {
-			err = v.ImportTerraformTag(ctx, t.Name, t.Category)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Import Distributed Port Groups")
-	pgrps, err := v.GetDistributedPortGroups(ctx, "subnet")
-	if err != nil {
-		return err
-	}
-	for _, p := range pgrps {
-		err = v.ImportTerraformDistributedPortGrp(ctx, p.Name, p.Path)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "Import VMs")
-	// filter on compute VMs so we don't delete anything else
-	vms, err := v.GetVMs(ctx, VMMatchAny, domain)
-	if err != nil {
-		return err
-	}
-	for _, vm := range vms.VirtualMachines {
-		err = v.ImportTerraformVirtualMachine(ctx, vm.Name, vm.Path)
-		if err != nil {
-			return err
-		}
-	}
-	// add the attached cluster networks to the rootLB
-	networks, err := v.GetNetworkListForVm(ctx, v.vmProperties.SharedRootLBName)
-	if err != nil {
-		return nil
-	}
-	sd, err := v.GetServerDetail(ctx, v.vmProperties.SharedRootLBName)
-	if err != nil {
-		return nil
-	}
-	for _, n := range networks {
-		if n == v.vmProperties.GetCloudletExternalNetwork() {
-			continue
-		}
-		ipaddr := ""
-		portname := ""
-		for _, sa := range sd.Addresses {
-			if sa.Network == n {
-				ipaddr = sa.ExternalAddr
-				portname = sa.PortName
-			}
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Syncing rootlb port", "network", n, "ipaddr", ipaddr)
-		err = v.AttachPortToServer(ctx, v.vmProperties.SharedRootLBName, n, portname, ipaddr, vmlayer.ActionSync)
-		if err != nil {
-			return err
-		}
-
-	}
-	return terraform.RunTerraformApply(ctx, v.getTerraformDir(ctx), terraform.WithRetries(NumTerraformRetries))
-}
-
 func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 	vcaddr := v.vcenterVars["VCENTER_ADDR"]
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "vcaddr", vcaddr)
@@ -262,29 +161,19 @@ func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error
 	return vcaddr, nil
 }
 
+// GetCloudletManifest follows the standard practice for vSphere to use OVF for this purpose.  We store the OVF
+// in artifactory along with with the vmdk formatted disk.  No customization is needed per cloudlet as the OVF
+// import tool will prompt for datastore and portgroup.
 func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name, "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
-	// because we look for free IPs when defining the orchestration parms which are not reserved
-	// until the plan is created, we need to lock this whole function
-	vmOrchestrateLock.Lock()
-	defer vmOrchestrateLock.Unlock()
-
-	planName := v.NameSanitize(VMGroupOrchestrationParams.GroupName)
-	var vgp VSphereGeneralParams
-	err := v.populateGeneralParams(ctx, planName, &vgp, terraformCreate)
-	if err != nil {
-		return "", err
-	}
-	err = v.populateVMOrchParams(ctx, VMGroupOrchestrationParams, &vgp, terraformCreate)
-	if err != nil {
-		return "", err
-	}
-
-	buf, err := vmlayer.ExecTemplate(name, vmGroupTemplate, VMGroupOrchestrationParams)
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	ovfLocation := vmlayer.DefaultCloudletVMImagePath + "/vsphere-ovf-" + vmlayer.MEXInfraVersion
+	instructions := `
+1) Download OVF template from: ` + ovfLocation + `
+2) Import the OVF into vCenter: VMs and Templates -> Deploy OVF Template -> Select downloaded files
+3) Select cluster and datastore
+4) Update port group when prompted 
+`
+	return instructions, nil
 }
 
 func (s *VSpherePlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
