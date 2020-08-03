@@ -157,9 +157,6 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 
 	// Setup Cluster Nodes
 	masterAddr := ""
-	wgError := make(chan error)
-	wgDone := make(chan bool)
-	var wg sync.WaitGroup
 	for _, vm := range markedVMs {
 		role, ok := vmRoles[vm.InternalName]
 		if !ok {
@@ -220,19 +217,14 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 
 		// bringup k8s master nodes first, then k8s worker nodes
 		if role == vmlayer.RoleMaster {
-			wg.Add(1)
-			go func(client ssh.Client, nodeName string, wg *sync.WaitGroup) {
-				updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes master node"))
-				log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes master node")
-				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-master.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
-				out, err := client.Output(cmd)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s master", "masterAddr", masterAddr, "nodename", nodeName, "err", err)
-					wgError <- fmt.Errorf("can't setup k8s master on vm %s with masteraddr %s, %s, %v", nodeName, masterAddr, out, err)
-					return
-				}
-				wg.Done()
-			}(client, vm.InternalName, &wg)
+			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes master node"))
+			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes master node", "masterAddr", masterAddr)
+			cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-master.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
+			out, err := client.Output(cmd)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s master", "masterAddr", masterAddr, "nodename", vm.InternalName, "out", out, "err", err)
+				return fmt.Errorf("can't setup k8s master on vm %s with masteraddr %s", vm.InternalName, masterAddr)
+			}
 		}
 	}
 	if masterAddr == "" {
@@ -252,6 +244,10 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		}
 	}
 	if masterAddr != "" {
+		wgError := make(chan error)
+		wgDone := make(chan bool)
+		var wg sync.WaitGroup
+
 		// bring other nodes once master node is up (if deployment is k8s)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes worker nodes"))
 		for _, vm := range markedVMs {
@@ -269,29 +265,29 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-node.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
 				out, err := client.Output(cmd)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s node", "masterAddr", masterAddr, "nodename", nodeName, "err", err)
-					wgError <- fmt.Errorf("can't setup k8s node on vm %s with masteraddr %s, %s, %v", nodeName, masterAddr, out, err)
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s node", "masterAddr", masterAddr, "nodename", nodeName, "out", out, "err", err)
+					wgError <- fmt.Errorf("can't setup k8s node on vm %s with masteraddr %s", nodeName, masterAddr)
 					return
 				}
 				wg.Done()
 			}(client, vm.InternalName, &wg)
 		}
-	}
 
-	go func() {
-		wg.Wait()
-		close(wgDone)
-	}()
+		go func() {
+			wg.Wait()
+			close(wgDone)
+		}()
 
-	// Wait until either WaitGroup is done or an error is received through the channel
-	select {
-	case <-wgDone:
-		break
-	case err := <-wgError:
-		close(wgError)
-		return err
-	case <-time.After(CreateVMTimeout):
-		return fmt.Errorf("Timed out setting up VMs")
+		// Wait until either WaitGroup is done or an error is received through the channel
+		select {
+		case <-wgDone:
+			break
+		case err := <-wgError:
+			close(wgError)
+			return err
+		case <-time.After(CreateVMTimeout):
+			return fmt.Errorf("Timed out setting up VMs")
+		}
 	}
 
 	return nil
