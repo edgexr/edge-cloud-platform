@@ -87,16 +87,7 @@ func (s *ShepherdPlatform) GetMetricsCollectInterval() time.Duration {
 }
 
 func (s *ShepherdPlatform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
-	sd, err := s.VMPlatform.VMProvider.GetServerDetail(ctx, vmlayer.GetClusterMasterName(ctx, clusterInst))
-	if err != nil {
-		return "", err
-	}
-	subnetName := vmlayer.GetClusterSubnetName(ctx, clusterInst)
-	sip, err := vmlayer.GetIPFromServerDetails(ctx, subnetName, "", sd)
-	if err != nil {
-		return "", err
-	}
-	return sip.ExternalAddr, nil
+	return s.VMPlatform.GetClusterAccessIP(ctx, clusterInst)
 }
 
 func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {

@@ -191,7 +191,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	}
 	if !dedicatedRootLB {
 		clusterSnName := GetClusterSubnetName(ctx, clusterInst)
-		ip, err := v.GetIPFromServerName(ctx, clusterSnName, clusterSnName, rootLBName)
+		ip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), clusterSnName, rootLBName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get ips from server, proceed with VM deletion", "err", err)
 		} else {
@@ -389,23 +389,34 @@ func (v *VMPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgepro
 	return v.deleteCluster(ctx, lbName, clusterInst)
 }
 
+func (v *VMPlatform) GetClusterAccessIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {
+	mip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+	if err != nil {
+		return "", err
+	}
+	if mip.ExternalAddr == "" {
+		return "", fmt.Errorf("unable to find master IP")
+	}
+	return mip.ExternalAddr, nil
+}
+
 func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	start := time.Now()
 	masterName := ""
 	masterIP := ""
 	var currReadyCount uint32
+	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
 
 	for {
 		if masterIP == "" {
-			mip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+			masterIP, err = v.GetClusterAccessIP(ctx, clusterInst)
 			if err == nil {
-				masterIP = mip.ExternalAddr
 				updateCallback(edgeproto.UpdateStep, "Checking Master for Available Nodes")
 			}
 		}
 		if masterIP == "" {
-			log.SpanLog(ctx, log.DebugLevelInfra, "master IP not available yet")
+			log.SpanLog(ctx, log.DebugLevelInfra, "master IP not available yet", "err", err)
 		} else {
 			ready, readyCount, err := v.isClusterReady(ctx, clusterInst, masterName, masterIP, rootLBName, updateCallback)
 			if readyCount != currReadyCount {
