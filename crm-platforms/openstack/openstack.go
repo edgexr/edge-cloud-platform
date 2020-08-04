@@ -27,8 +27,8 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 }
 
 func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
-	o.initDebug(o.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 	if stage == vmlayer.ProviderInitPlatformStart {
+		o.initDebug(o.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 		return o.PrepNetwork(ctx)
 	}
 	return nil
