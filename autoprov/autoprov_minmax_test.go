@@ -487,9 +487,32 @@ func TestAppChecker(t *testing.T) {
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, len(insts))
 	require.Nil(t, err)
+
 	// clean up
 	for _, inst := range insts {
 		dc.deleteAppInst(ctx, &inst)
+	}
+
+	// Bug3265 - make sure Cloudlet maintenance triggers failover reply
+	// even if no Cloudlet not part of any AutoProv policy.
+	log.SpanLog(ctx, log.DebugLevelMetrics, "test bug3265")
+	pt1.cloudlets = nil
+	pt2.cloudlets = nil
+	pt1.updatePolicy(ctx)
+	pt2.updatePolicy(ctx)
+	for len(failovers) > 0 {
+		<-failovers // drain the failovers chan
+	}
+	cloudlet0.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_REQUESTED
+	cacheData.cloudletCache.Update(ctx, &cloudlet0, 0)
+	select {
+	case failover := <-failovers:
+		require.Equal(t, cloudlet0.Key, failover.Key)
+		require.Equal(t, edgeproto.MaintenanceState_FAILOVER_DONE, failover.MaintenanceState)
+		require.Equal(t, 0, len(failover.Errors))
+		require.Equal(t, 0, len(failover.Completed))
+	case <-time.After(2 * time.Second):
+		require.Fail(t, "timeout waiting for AutoProvInfo")
 	}
 }
 

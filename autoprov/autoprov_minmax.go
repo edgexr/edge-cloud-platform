@@ -145,6 +145,17 @@ func (s *MinMaxChecker) UpdatedCloudlet(ctx context.Context, old *edgeproto.Clou
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet online change", "new", new)
 	appsToCheck := s.cloudletNeedsCheck(new.Key)
+	if len(appsToCheck) == 0 {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet online change no apps to check")
+		if new.MaintenanceState == edgeproto.MaintenanceState_FAILOVER_REQUESTED {
+			// no apps to trigger reply so send reply now
+			info := edgeproto.AutoProvInfo{}
+			info.Key = new.Key
+			info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
+			s.caches.autoProvInfoCache.Update(ctx, &info, 0)
+		}
+		return
+	}
 	req, found := s.failoverRequests[new.Key]
 	if !found {
 		req = &failoverReq{}
