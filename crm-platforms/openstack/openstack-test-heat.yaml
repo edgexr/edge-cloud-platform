@@ -113,7 +113,7 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          ***REMOVED***
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -162,7 +162,7 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          ***REMOVED***
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -201,7 +201,7 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          ***REMOVED***
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -240,7 +240,7 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          ***REMOVED***
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable

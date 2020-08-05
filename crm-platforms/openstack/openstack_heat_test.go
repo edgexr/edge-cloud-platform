@@ -2,6 +2,9 @@ package openstack
 
 import (
 	"context"
+	yaml "github.com/mobiledgex/yaml/v2"
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
@@ -89,7 +92,7 @@ func TestHeatTemplate(t *testing.T) {
 		vm.ChefParams = &chefmgmt.VMChefParams{
 			NodeName:   vm.Name,
 			ServerPath: "cheftestserver.mobiledgex.net/organizations/mobiledgex",
-			ClientKey:  "testKey",
+			ClientKey:  "***REMOVED***",
 		}
 	}
 
@@ -118,4 +121,19 @@ func TestHeatTemplate(t *testing.T) {
 
 	require.Equal(t, compareResult, true)
 
+	stackTemplateData, err := ioutil.ReadFile(generatedFile)
+	require.Nil(t, err)
+
+	stackTemplate := &OSHeatStackTemplate{}
+	err = yaml.Unmarshal(stackTemplateData, stackTemplate)
+	require.Nil(t, err)
+
+	keys, err := GetChefKeysFromOSResource(ctx, stackTemplate)
+	require.Nil(t, err)
+	require.Equal(t, 4, len(keys))
+
+	for _, key := range keys {
+		require.True(t, strings.HasPrefix(key, "-----BEGIN RSA PRIVATE KEY-----"))
+		require.True(t, strings.HasSuffix(key, "-----END RSA PRIVATE KEY-----"))
+	}
 }
