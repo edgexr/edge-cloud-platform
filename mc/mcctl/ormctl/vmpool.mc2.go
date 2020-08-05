@@ -25,8 +25,8 @@ var _ = math.Inf
 
 var CreateVMPoolCmd = &cli.Command{
 	Use:          "CreateVMPool",
-	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
-	OptionalArgs: strings.Join(VMPoolOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(CreateVMPoolRequiredArgs, " "),
+	OptionalArgs: strings.Join(CreateVMPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
 	SpecialArgs:  &VMPoolSpecialArgs,
 	Comments:     addRegionComment(VMPoolComments),
@@ -127,6 +127,16 @@ var VMPoolApiCmds = []*cli.Command{
 	RemoveVMPoolMemberCmd,
 }
 
+var CreateVMPoolRequiredArgs = []string{
+	"vmpool-org",
+	"vmpool",
+}
+var CreateVMPoolOptionalArgs = []string{
+	"vms:#.name",
+	"vms:#.netinfo.externalip",
+	"vms:#.netinfo.internalip",
+	"crmoverride",
+}
 var AddVMPoolMemberRequiredArgs = []string{
 	"vmpool-org",
 	"vmpool",
@@ -135,8 +145,6 @@ var AddVMPoolMemberRequiredArgs = []string{
 }
 var AddVMPoolMemberOptionalArgs = []string{
 	"vm.netinfo.externalip",
-	"vm.updatedat.seconds",
-	"vm.updatedat.nanos",
 	"crmoverride",
 }
 var RemoveVMPoolMemberRequiredArgs = []string{
@@ -145,10 +153,6 @@ var RemoveVMPoolMemberRequiredArgs = []string{
 	"vm.name",
 }
 var RemoveVMPoolMemberOptionalArgs = []string{
-	"vm.netinfo.externalip",
-	"vm.netinfo.internalip",
-	"vm.updatedat.seconds",
-	"vm.updatedat.nanos",
 	"crmoverride",
 }
 var VMNetInfoRequiredArgs = []string{}
@@ -191,7 +195,7 @@ var VMComments = map[string]string{
 	"netinfo.externalip": "External IP",
 	"netinfo.internalip": "Internal IP",
 	"groupname":          "VM Group Name",
-	"state":              "VM State, one of VmFree, VmInProgress, VmInUse, VmAdd, VmRemove, VmUpdate",
+	"state":              "VM State, one of VmForceFree",
 	"updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
 	"updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 	"internalname":       "VM Internal Name",
@@ -219,6 +223,7 @@ var VMPoolOptionalArgs = []string{
 	"vms:#.name",
 	"vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip",
+	"vms:#.state",
 	"crmoverride",
 }
 var VMPoolAliasArgs = []string{
@@ -249,7 +254,7 @@ var VMPoolComments = map[string]string{
 	"vms:#.netinfo.externalip": "External IP",
 	"vms:#.netinfo.internalip": "Internal IP",
 	"vms:#.groupname":          "VM Group Name",
-	"vms:#.state":              "VM State, one of VmFree, VmInProgress, VmInUse, VmAdd, VmRemove, VmUpdate",
+	"vms:#.state":              "VM State, one of VmForceFree",
 	"vms:#.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
 	"vms:#.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 	"vms:#.internalname":       "VM Internal Name",
@@ -269,8 +274,6 @@ var VMPoolMemberOptionalArgs = []string{
 	"vm.name",
 	"vm.netinfo.externalip",
 	"vm.netinfo.internalip",
-	"vm.updatedat.seconds",
-	"vm.updatedat.nanos",
 	"crmoverride",
 }
 var VMPoolMemberAliasArgs = []string{
@@ -293,7 +296,7 @@ var VMPoolMemberComments = map[string]string{
 	"vm.netinfo.externalip": "External IP",
 	"vm.netinfo.internalip": "Internal IP",
 	"vm.groupname":          "VM Group Name",
-	"vm.state":              "VM State, one of VmFree, VmInProgress, VmInUse, VmAdd, VmRemove, VmUpdate",
+	"vm.state":              "VM State, one of VmForceFree",
 	"vm.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
 	"vm.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 	"vm.internalname":       "VM Internal Name",
@@ -367,7 +370,7 @@ var VMPoolInfoComments = map[string]string{
 	"vms:#.netinfo.externalip": "External IP",
 	"vms:#.netinfo.internalip": "Internal IP",
 	"vms:#.groupname":          "VM Group Name",
-	"vms:#.state":              "VM State, one of VmFree, VmInProgress, VmInUse, VmAdd, VmRemove, VmUpdate",
+	"vms:#.state":              "VM State, one of VmForceFree",
 	"vms:#.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
 	"vms:#.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 	"vms:#.internalname":       "VM Internal Name",
