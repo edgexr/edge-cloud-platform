@@ -113,7 +113,9 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -162,7 +164,9 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -201,7 +205,9 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
@@ -240,7 +246,9 @@ resources:
                   validation_name: mobiledgex-validator
                   validation_key: /etc/chef/client.pem
                   validation_cert: |
-                          testKey
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
                 bootcmd:
                  - echo MOBILEDGEX CLOUD CONFIG START
                  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable

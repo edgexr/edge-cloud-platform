@@ -11,6 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	yaml "github.com/mobiledgex/yaml/v2"
 )
 
 var heatStackLock sync.Mutex
@@ -295,6 +296,51 @@ func (o *OpenstackPlatform) HeatDeleteStack(ctx context.Context, stackName strin
 	return o.waitForStack(ctx, stackName, heatDelete, edgeproto.DummyUpdateCallback)
 }
 
+func GetChefKeysFromOSResource(ctx context.Context, stackTemplate *OSHeatStackTemplate) (map[string]string, error) {
+	chefClientKeys := make(map[string]string)
+	for _, resource := range stackTemplate.Resources {
+		if resource.Type != "OS::Nova::Server" {
+			continue
+		}
+		userData, ok := resource.Properties["user_data"]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "missing user data", "resource", resource)
+			continue
+		}
+		userDataStr, ok := userData.(string)
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "missing user data", "resource", resource)
+			continue
+		}
+		out := strings.Replace(userDataStr, `\n`, "\n", -1)
+
+		uObj := make(map[string]interface{})
+		err := yaml.Unmarshal([]byte(out), &uObj)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal userdata %v, %v", userData, err)
+		}
+		cObj, ok := uObj["chef"]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "skip, missing chef", "userdata", userData)
+			continue
+		}
+		if chefObj, ok := cObj.(map[string]interface{}); ok {
+			nodeName, ok := chefObj["node_name"].(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid chef node name: %v", chefObj["node_name"])
+			}
+			cert, ok := chefObj["validation_cert"].(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid chef validation cert: %v", chefObj["validation_cert"])
+			}
+			chefClientKeys[nodeName] = strings.TrimSpace(cert)
+		} else {
+			return nil, fmt.Errorf("invalid chef config: %v", cObj)
+		}
+	}
+	return chefClientKeys, nil
+}
+
 // populateParams fills in some details which cannot be done outside of heat
 func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams", "VMGroupOrchestrationParams", VMGroupOrchestrationParams.GroupName, "action", action)
@@ -370,9 +416,32 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		}
 	}
 
+	// Get chef keys for existing VMs
+	chefClientKeys := make(map[string]string)
+	if action == heatUpdate {
+		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
+		if err != nil {
+			return fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
+		}
+		chefClientKeys, err = GetChefKeysFromOSResource(ctx, stackTemplate)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to fetch chef keys", "err", err)
+		}
+	}
+
 	// populate the user data
 	for i, v := range VMGroupOrchestrationParams.VMs {
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
+		// Copy client keys from existing template in case of update
+		if v.ChefParams != nil && action == heatUpdate {
+			if v.ChefParams.ClientKey == "" {
+				key, ok := chefClientKeys[v.ChefParams.NodeName]
+				if !ok || key == "" {
+					return fmt.Errorf("missing chef client key for %s", v.ChefParams.NodeName)
+				}
+				v.ChefParams.ClientKey = key
+			}
+		}
 		userdata, err := vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, v.ChefParams, reindent16)
 		if err != nil {
 			return err

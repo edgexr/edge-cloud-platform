@@ -826,6 +826,21 @@ func (s *OpenstackPlatform) getHeatStackDetail(ctx context.Context, stackName st
 	return stackDetail, nil
 }
 
+// getHeatStackTemplateDetail gets details of the provided stack template
+func (s *OpenstackPlatform) getHeatStackTemplateDetail(ctx context.Context, stackName string) (*OSHeatStackTemplate, error) {
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "template", "show", "-f", "json", stackName)
+	if err != nil {
+		err = fmt.Errorf("can't get stack template details for %s, %s, %v", stackName, out, err)
+		return nil, err
+	}
+	stackTemplateDetail := &OSHeatStackTemplate{}
+	err = json.Unmarshal(out, stackTemplateDetail)
+	if err != nil {
+		return nil, fmt.Errorf("can't unmarshal stack template detail, %v", err)
+	}
+	return stackTemplateDetail, nil
+}
+
 // Get resource limits
 func (s *OpenstackPlatform) OSGetLimits(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (Openstack) - Resources info & Supported flavors")

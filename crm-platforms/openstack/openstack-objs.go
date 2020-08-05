@@ -253,6 +253,15 @@ type OSHeatStackDetail struct {
 	StackStatus       string            `json:"stack_status"`
 }
 
+type OSStackResource struct {
+	Type       string                 `json:"type" yaml:"type"`
+	Properties map[string]interface{} `json:"properties" yaml:"properties"`
+}
+
+type OSHeatStackTemplate struct {
+	Resources map[string]OSStackResource `json:"resources" yaml:"resources"`
+}
+
 type OSConsoleUrl struct {
 	Url string `json:"url"`
 }
