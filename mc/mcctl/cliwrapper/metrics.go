@@ -23,3 +23,10 @@ func (s *Client) ShowCloudletMetrics(uri, token string, query *ormapi.RegionClou
 	st, err := s.runObjs(uri, token, args, query, &metrics)
 	return &metrics, st, err
 }
+
+func (s *Client) ShowClientMetrics(uri, token string, query *ormapi.RegionClientMetrics) (*ormapi.AllMetrics, int, error) {
+	args := []string{"metrics", "client"}
+	metrics := ormapi.AllMetrics{}
+	st, err := s.runObjs(uri, token, args, query, &metrics)
+	return &metrics, st, err
+}
