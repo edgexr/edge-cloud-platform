@@ -654,9 +654,12 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-	pfImageName, err := v.GetCloudletImageToUse(ctx, updateCallback)
-	if err != nil {
-		return nil, err
+	pfImageName := v.VMProperties.GetCloudletOSImage()
+	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
+		pfImageName, err = v.GetCloudletImageToUse(ctx, updateCallback)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Setup Chef parameters

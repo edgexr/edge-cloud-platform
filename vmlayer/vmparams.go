@@ -500,10 +500,15 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
 
+	var err error
+
 	// DNS is applied either at the subnet or VM level
 	vmDns := ""
 	subnetDns := []string{}
-	cloudletSecGrpID, err := v.VMProvider.GetResourceID(ctx, ResourceTypeSecurityGroup, v.VMProperties.GetCloudletSecurityGroupName())
+	cloudletSecGrpID := v.VMProperties.GetCloudletSecurityGroupName()
+	if !spec.SkipDefaultSecGrp {
+		cloudletSecGrpID, err = v.VMProvider.GetResourceID(ctx, ResourceTypeSecurityGroup, v.VMProperties.GetCloudletSecurityGroupName())
+	}
 	internalSecgrpID := ""
 	internalSecgrpPreexisting := false
 
