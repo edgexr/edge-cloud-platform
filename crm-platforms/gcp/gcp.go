@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
-	ssh "github.com/mobiledgex/golang-ssh"
 )
 
+const GcpMaxClusterNameLen int = 40
+
 type GCPPlatform struct {
-	commonPf infracommon.CommonPlatform
+	commonPf *infracommon.CommonPlatform
 }
 
 type GCPQuotas struct {
@@ -36,25 +36,9 @@ type GCPFlavor struct {
 	Name                         string
 }
 
-func (g *GCPPlatform) GetType() string {
-	return "gcp"
-}
-
-func (g *GCPPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-
-	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
-	if err != nil {
-		return err
-	}
-	if err := g.commonPf.InitInfraCommon(ctx, platformConfig, gcpProps, vaultConfig); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetLimits (GCP)")
-	err := g.GCPLogin(ctx)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo")
+	err := g.Login(ctx)
 	if err != nil {
 		return err
 	}
@@ -64,6 +48,7 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	flatten := "quotas[]"
 	format := "json(quotas.metric,quotas.limit)"
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "list regions", "filter", filter)
 	out, err := sh.Command("gcloud", "compute", "regions", "list",
 		"--project", g.GetGcpProject(), "--filter", filter, "--flatten", flatten,
 		"--format", format, sh.Dir("/tmp")).CombinedOutput()
@@ -73,8 +58,12 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	}
 	err = json.Unmarshal(out, &quotas)
 	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %s, %v", out, err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "list regions unmarshal fail", "out", string(out), "err", err)
+		err = fmt.Errorf("cannot unmarshal list regions output")
 		return err
+	}
+	if len(quotas) == 0 {
+		return fmt.Errorf("No quotas found for zone: %s -- check that zone is valid", g.GetGcpZone())
 	}
 	for _, q := range quotas {
 		if q.Quotas.Metric == "CPUS" {
@@ -89,9 +78,9 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	}
 
 	var machinetypes []GCPFlavor
-	filter = fmt.Sprintf("zone=(%s) AND name:(standard)", g.GetGcpZone())
+	filter = fmt.Sprintf("zone:(%s) AND name:(standard)", g.GetGcpZone())
 	format = "json(name,guestCpus,memoryMb,maximumPersistentDisksSizeGb)"
-
+	log.SpanLog(ctx, log.DebugLevelInfra, "list compute machine-types", "filter", filter, "format", format)
 	out, err = sh.Command("gcloud", "compute", "machine-types", "list",
 		"--project", g.GetGcpProject(), "--filter", filter,
 		"--format", format, sh.Dir("/tmp")).CombinedOutput()
@@ -101,13 +90,15 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	}
 	err = json.Unmarshal(out, &machinetypes)
 	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %s, %v", out, err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "compute machines-type list unmarshal fail", "out", string(out), "err", err)
+		err = fmt.Errorf("compute machines-type list output")
 		return err
 	}
 	for _, m := range machinetypes {
 		disk, err := strconv.Atoi(m.MaximumPersistentDisksSizeGb)
 		if err != nil {
-			err = fmt.Errorf("failed to parse gcp output, %s", err.Error())
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to parse machine types", "out", string(out), "err", err)
+			err = fmt.Errorf("failed to parse gcp machine types output")
 			return err
 		}
 		info.Flavors = append(
@@ -123,14 +114,32 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	return nil
 }
 
-func (g *GCPPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	return &pc.LocalClient{}, nil
+// GCPLogin logs into google cloud
+func (g *GCPPlatform) Login(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "doing GcpLogin", "vault url", g.GetGcpAuthKeyUrl())
+	filename := "/tmp/auth_key.json"
+	err := infracommon.GetVaultDataToFile(g.commonPf.VaultConfig, g.GetGcpAuthKeyUrl(), filename)
+	if err != nil {
+		return fmt.Errorf("unable to write auth file %s: %s", filename, err.Error())
+	}
+	defer os.Remove(filename)
+	out, err := sh.Command("gcloud", "auth", "activate-service-account", "--key-file", filename).CombinedOutput()
+	log.SpanLog(ctx, log.DebugLevelInfra, "gcp login", "out", string(out), "err", err)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GCP login OK")
+	return nil
 }
 
-func (g *GCPPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
-	return &pc.LocalClient{}, nil
+func (g *GCPPlatform) NameSanitize(clusterName string) string {
+	clusterName = strings.NewReplacer(".", "").Replace(clusterName)
+	if len(clusterName) > GcpMaxClusterNameLen {
+		clusterName = clusterName[:GcpMaxClusterNameLen]
+	}
+	return clusterName
 }
 
-func (g *GCPPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
-	return []edgeproto.CloudletMgmtNode{}, nil
+func (g *GCPPlatform) SetCommonPlatform(cpf *infracommon.CommonPlatform) {
+	g.commonPf = cpf
 }

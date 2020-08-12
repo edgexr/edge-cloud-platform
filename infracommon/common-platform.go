@@ -188,3 +188,21 @@ func (c *CommonPlatform) GetMappedExternalIP(ip string) string {
 	}
 	return ip
 }
+
+// GetPlatformConfig builds a platform.PlatformConfig from a cloudlet and an edgeproto.PlatformConfig
+func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) *pf.PlatformConfig {
+	platCfg := pf.PlatformConfig{
+		CloudletKey:         &cloudlet.Key,
+		PhysicalName:        cloudlet.PhysicalName,
+		VaultAddr:           pfConfig.VaultAddr,
+		Region:              pfConfig.Region,
+		TestMode:            pfConfig.TestMode,
+		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
+		VMImageVersion:      cloudlet.VmImageVersion,
+		EnvVars:             pfConfig.EnvVar,
+		AppDNSRoot:          pfConfig.AppDnsRoot,
+		ChefServerPath:      pfConfig.ChefServerPath,
+		DeploymentTag:       pfConfig.DeploymentTag,
+	}
+	return &platCfg
+}

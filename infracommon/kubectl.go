@@ -17,7 +17,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
 	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
@@ -45,7 +45,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, clusterI
 		"--docker-server=%s --docker-username=%s --docker-password=%s "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
 		secretName, dockerServer, auth.Username, auth.Password,
-		k8smgmt.GetKconfName(clusterInst))
+		kconf)
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName)
 	out, err = client.Output(cmd)
 	if err != nil {
@@ -86,6 +86,8 @@ func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst 
 	return nil
 }
 
+// GetSvcExternalIpOrHost returns ipaddr, hostname.  Either the IP or the DNS will be blank depending
+// on whether the service has an IP address or a name.
 func GetSvcExternalIpOrHost(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, name string) (string, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get service external IP", "name", name)
 	externalIP := ""
@@ -112,12 +114,12 @@ func GetSvcExternalIpOrHost(ctx context.Context, client ssh.Client, kubeNames *k
 				log.SpanLog(ctx, log.DebugLevelInfra, "found ingress ip", "ingress.IP", ingress.IP, "svc.ObjectMeta.Name", svc.ObjectMeta.Name)
 				if ingress.Hostname != "" {
 					dnsName = ingress.Hostname
-					log.SpanLog(ctx, log.DebugLevelInfra, "got externa dnsName for app", "dnsName", dnsName)
+					log.SpanLog(ctx, log.DebugLevelInfra, "got external dnsName for app", "dnsName", dnsName)
 					return externalIP, dnsName, nil
 				}
 				if ingress.IP != "" {
 					externalIP = ingress.IP
-					log.SpanLog(ctx, log.DebugLevelInfra, "got externaIP for app", "externalIP", externalIP)
+					log.SpanLog(ctx, log.DebugLevelInfra, "got external IP for app", "externalIP", externalIP)
 					return externalIP, dnsName, nil
 				}
 			}

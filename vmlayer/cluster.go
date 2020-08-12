@@ -47,12 +47,8 @@ type ClusterFlavor struct {
 	Topology       string
 }
 
-func GetClusterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
-}
-
 func GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return MexSubnetPrefix + GetClusterName(ctx, clusterInst)
+	return MexSubnetPrefix + k8smgmt.GetClusterName(clusterInst)
 }
 
 func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
@@ -60,15 +56,15 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		namePrefix = ClusterTypeDockerVMLabel
 	}
-	return namePrefix + "-" + GetClusterName(ctx, clusterInst)
+	return namePrefix + "-" + k8smgmt.GetClusterName(clusterInst)
 }
 
 func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
-	return ClusterNodePrefix(nodeNum) + "-" + GetClusterName(ctx, clusterInst)
+	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetClusterName(clusterInst)
 }
 
 func (v *VMPlatform) GetDockerNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return ClusterTypeDockerVMLabel + "-" + GetClusterName(ctx, clusterInst)
+	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetClusterName(clusterInst)
 }
 
 func ClusterNodePrefix(num uint32) string {
@@ -177,7 +173,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		return fmt.Errorf("Chef client is not initialzied")
 	}
 
-	name := GetClusterName(ctx, clusterInst)
+	name := k8smgmt.GetClusterName(clusterInst)
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -594,7 +590,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 
 	var vms []*VMRequestSpec
 	var err error
-	vmgroupName := GetClusterName(ctx, clusterInst)
+	vmgroupName := k8smgmt.GetClusterName(clusterInst)
 	var newSubnetName string
 	var newSecgrpName string
 

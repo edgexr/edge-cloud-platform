@@ -188,22 +188,8 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	}
 
 	v.VMProperties.Domain = VMDomainPlatform
-	// TODO there's a lot of overlap between platform.PlatformConfig and edgeproto.PlatformConfig
-	pc := pf.PlatformConfig{
-		CloudletKey:         &cloudlet.Key,
-		PhysicalName:        cloudlet.PhysicalName,
-		VaultAddr:           pfConfig.VaultAddr,
-		Region:              pfConfig.Region,
-		TestMode:            pfConfig.TestMode,
-		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
-		VMImageVersion:      cloudlet.VmImageVersion,
-		EnvVars:             pfConfig.EnvVar,
-		AppDNSRoot:          pfConfig.AppDnsRoot,
-		ChefServerPath:      pfConfig.ChefServerPath,
-		DeploymentTag:       pfConfig.DeploymentTag,
-	}
-
-	err = v.InitProps(ctx, &pc, vaultConfig)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
+	err = v.InitProps(ctx, pc, vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -324,21 +310,8 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
 	v.VMProperties.Domain = VMDomainPlatform
-	pc := pf.PlatformConfig{
-		CloudletKey:         &cloudlet.Key,
-		PhysicalName:        cloudlet.PhysicalName,
-		VaultAddr:           pfConfig.VaultAddr,
-		Region:              pfConfig.Region,
-		TestMode:            pfConfig.TestMode,
-		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
-		VMImageVersion:      cloudlet.VmImageVersion,
-		EnvVars:             pfConfig.EnvVar,
-		AppDNSRoot:          pfConfig.AppDnsRoot,
-		ChefServerPath:      pfConfig.ChefServerPath,
-		DeploymentTag:       pfConfig.DeploymentTag,
-	}
-
-	err = v.InitProps(ctx, &pc, vaultConfig)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
+	err = v.InitProps(ctx, pc, vaultConfig)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to init props", "cloudletName", cloudlet.Key.Name, "err", err)
@@ -575,21 +548,8 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 		pfConfig.TlsCertFile = crtFile
 	}
 
-	// TODO there's a lot of overlap between platform.PlatformConfig and edgeproto.PlatformConfig
-	pc := pf.PlatformConfig{
-		CloudletKey:         &cloudlet.Key,
-		PhysicalName:        cloudlet.PhysicalName,
-		VaultAddr:           pfConfig.VaultAddr,
-		Region:              pfConfig.Region,
-		TestMode:            pfConfig.TestMode,
-		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
-		VMImageVersion:      cloudlet.VmImageVersion,
-		EnvVars:             pfConfig.EnvVar,
-		ChefServerPath:      pfConfig.ChefServerPath,
-		DeploymentTag:       pfConfig.DeploymentTag,
-	}
-
-	err = v.InitProps(ctx, &pc, vaultConfig)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
+	err = v.InitProps(ctx, pc, vaultConfig)
 	if err != nil {
 		return nil, err
 	}
