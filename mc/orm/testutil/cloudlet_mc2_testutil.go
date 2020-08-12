@@ -96,6 +96,20 @@ func TestPermGetCloudletManifest(mcClient *ormclient.Client, uri, token, region,
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestGetCloudletProps(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
+	dat := &ormapi.RegionCloudletProps{}
+	dat.Region = region
+	dat.CloudletProps = *in
+	for _, fn := range modFuncs {
+		fn(&dat.CloudletProps)
+	}
+	return mcClient.GetCloudletProps(uri, token, dat)
+}
+func TestPermGetCloudletProps(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
+	in := &edgeproto.CloudletProps{}
+	return TestGetCloudletProps(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func TestAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResMap, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletResMap{}
 	dat.Region = region
@@ -195,6 +209,18 @@ func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Clou
 		Cloudlet: *in,
 	}
 	out, status, err := s.McClient.GetCloudletManifest(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
+	inR := &ormapi.RegionCloudletProps{
+		Region:        s.Region,
+		CloudletProps: *in,
+	}
+	out, status, err := s.McClient.GetCloudletProps(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

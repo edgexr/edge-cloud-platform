@@ -3,20 +3,21 @@ package vmpool
 import (
 	"context"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-var VMPoolProps = map[string]*infracommon.PropertyInfo{
+var VMPoolProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_ROUTER": {
+		Name:        "External Router Type",
+		Description: vmlayer.GetSupportedRouterTypes(),
 		// For VMPool, we don't mess with internal networking
 		Value: vmlayer.NoConfigExternalRouter,
 	},
 }
 
-func (o *VMPoolPlatform) GetProviderSpecificProps() map[string]*infracommon.PropertyInfo {
+func (o *VMPoolPlatform) GetProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
 	return VMPoolProps
 }
 

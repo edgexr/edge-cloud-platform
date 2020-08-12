@@ -1,19 +1,30 @@
 package gcp
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"context"
+
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-var gcpProps = map[string]*infracommon.PropertyInfo{
-	"MEX_GCP_PROJECT": &infracommon.PropertyInfo{
-		Value: "still-entity-201400",
+var gcpProps = map[string]*edgeproto.PropertyInfo{
+	"MEX_GCP_PROJECT": &edgeproto.PropertyInfo{
+		Name:        "GCP Project Name",
+		Description: "Name of the GCP project",
+		Value:       "still-entity-201400",
 	},
-	"MEX_GCP_ZONE": &infracommon.PropertyInfo{
-		Mandatory: true,
+	"MEX_GCP_ZONE": &edgeproto.PropertyInfo{
+		Name:        "GCP Zone Name",
+		Description: "Name of the GCP zone",
+		Mandatory:   true,
 	},
-	"MEX_GCP_SERVICE_ACCOUNT": &infracommon.PropertyInfo{},
-	"MEX_GCP_AUTH_KEY_PATH": &infracommon.PropertyInfo{
-		Value: "/secret/data/cloudlet/gcp/auth_key.json",
+	"MEX_GCP_SERVICE_ACCOUNT": &edgeproto.PropertyInfo{
+		Name:        "GCP Service Account Name",
+		Description: "Name of the GCP service account",
+	},
+	"MEX_GCP_AUTH_KEY_PATH": &edgeproto.PropertyInfo{
+		Name:        "GCP Auth Key Path",
+		Description: "Path of the GCP auth key",
+		Value:       "/secret/data/cloudlet/gcp/auth_key.json",
 	},
 }
 
@@ -36,4 +47,8 @@ func (a *GCPPlatform) GetGcpProject() string {
 		return val.Value
 	}
 	return ""
+}
+
+func (a *GCPPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	return &edgeproto.CloudletProps{Properties: gcpProps}, nil
 }

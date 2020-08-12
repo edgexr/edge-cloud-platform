@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -22,7 +21,7 @@ import (
 type VMProvider interface {
 	NameSanitize(string) string
 	IdSanitize(string) string
-	GetProviderSpecificProps() map[string]*infracommon.PropertyInfo
+	GetProviderSpecificProps() map[string]*edgeproto.PropertyInfo
 	SetVMProperties(vmProperties *VMProperties)
 	SetCaches(ctx context.Context, caches *platform.Caches)
 	InitProvider(ctx context.Context, caches *platform.Caches, stage ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error
@@ -234,7 +233,7 @@ func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeprot
 }
 
 func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) error {
-	props := make(map[string]*infracommon.PropertyInfo)
+	props := make(map[string]*edgeproto.PropertyInfo)
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}

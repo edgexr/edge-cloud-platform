@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/dind"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -24,9 +25,11 @@ type EdgeboxPlatform struct {
 	commonPf      infracommon.CommonPlatform
 }
 
-var edgeboxProps = map[string]*infracommon.PropertyInfo{
-	"MEX_EDGEBOX_NETWORK_SCHEME": &infracommon.PropertyInfo{
-		Value: cloudcommon.NetworkSchemePrivateIP,
+var edgeboxProps = map[string]*edgeproto.PropertyInfo{
+	"MEX_EDGEBOX_NETWORK_SCHEME": &edgeproto.PropertyInfo{
+		Name:        "EdgeBox Network Scheme",
+		Description: vmlayer.GetSupportedSchemesStr(),
+		Value:       cloudcommon.NetworkSchemePrivateIP,
 	},
 }
 
@@ -86,4 +89,8 @@ func (s *EdgeboxPlatform) GetNodePlatformClient(ctx context.Context, node *edgep
 
 func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts)
+}
+
+func (s *EdgeboxPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	return &edgeproto.CloudletProps{Properties: edgeboxProps}, nil
 }

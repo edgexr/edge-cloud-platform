@@ -13,34 +13,52 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-var VSphereProps = map[string]*infracommon.PropertyInfo{
+var VSphereProps = map[string]*edgeproto.PropertyInfo{
 
 	"MEX_COMPUTE_CLUSTER": {
-		Value: "compute-cluster",
+		Name:        "vSphere Compute Cluster Name",
+		Description: "vSphere Compute Cluster Name",
+		Value:       "compute-cluster",
 	},
 	"MEX_DATASTORE": {
-		Mandatory: true,
+		Name:        "vSphere Datastore Name",
+		Description: "vSphere Datastore Name",
+		Mandatory:   true,
 	},
 	"MEX_EXTERNAL_IP_RANGES": {
-		Mandatory: true,
+		Name:        "External IP Ranges",
+		Description: "Range of external IP addresses, Format: StartCIDR-EndCIDR",
+		Mandatory:   true,
 	},
 	"MEX_EXTERNAL_NETWORK_MASK": {
-		Mandatory: true,
+		Name:        "External Network Mask",
+		Description: "External Network Mask",
+		Mandatory:   true,
 	},
 	"MEX_EXTERNAL_NETWORK_GATEWAY": {
-		Mandatory: true,
+		Name:        "External Network Gateway",
+		Description: "External Network Gateway",
+		Mandatory:   true,
 	},
 	"MEX_INTERNAL_NETWORK_MASK": {
-		Value: "24",
+		Name:        "Internal Network Mask",
+		Description: "Internal Network Mask",
+		Value:       "24",
 	},
 	"MEX_EXTERNAL_VSWITCH": {
-		Value: "ExternalVSwitch",
+		Name:        "vSphere External vSwitch Name",
+		Description: "vSphere External vSwitch Name",
+		Value:       "ExternalVSwitch",
 	},
 	"MEX_INTERNAL_VSWITCH": {
-		Value: "InternalVSwitch",
+		Name:        "vSphere Internal vSwitch Name",
+		Description: "vSphere Internal vSwitch Name",
+		Value:       "InternalVSwitch",
 	},
 	"MEX_TEMPLATE_FOLDER": {
-		Value: "templates",
+		Name:        "vSphere Template Folder Name",
+		Description: "vSphere Template Folder Name",
+		Value:       "templates",
 	},
 }
 
@@ -92,7 +110,7 @@ func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, key *edge
 	return nil
 }
 
-func (v *VSpherePlatform) GetProviderSpecificProps() map[string]*infracommon.PropertyInfo {
+func (v *VSpherePlatform) GetProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
 	return VSphereProps
 }
 
