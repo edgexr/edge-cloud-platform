@@ -421,6 +421,12 @@ func TestController(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
+	// trying to delete cloudletpool should fail because it's in use by orgcloudletpool
+	_, status, err = mcClient.DeleteCloudletPool(uri, tokenOper, &pool)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Contains(t, err.Error(), "because it is in use by OrgCloudletPool")
+
 	// add tc3 to pool1, so it's accessible for org1
 	member := ormapi.RegionCloudletPoolMember{
 		Region:             ctrl.Region,

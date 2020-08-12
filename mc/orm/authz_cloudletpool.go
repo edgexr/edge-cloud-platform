@@ -9,7 +9,7 @@ import (
 )
 
 func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *edgeproto.CloudletPool, resource, action string) error {
-	if err := authorized(ctx, username, "", resource, action); err != nil {
+	if err := authorized(ctx, username, obj.Key.Organization, resource, action); err != nil {
 		return err
 	}
 
@@ -17,7 +17,7 @@ func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *
 	pools := make([]ormapi.OrgCloudletPool, 0)
 	db := loggedDB(ctx)
 	// explicitly list fields to avoid being ignored if 0 or emtpy string
-	res := db.Where(map[string]interface{}{"region": region, "cloudlet_pool": obj.Key.Name}).Find(&pools)
+	res := db.Where(map[string]interface{}{"region": region, "cloudlet_pool": obj.Key.Name, "cloudlet_pool_org": obj.Key.Organization}).Find(&pools)
 	if res.Error != nil {
 		return res.Error
 	}
