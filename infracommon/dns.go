@@ -116,7 +116,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 }
 
 func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
-
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
 	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
@@ -153,6 +153,7 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 }
 
 func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteDNSRecords", "fqdn", fqdn)
 	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
 		return fmt.Errorf("cannot init cloudflare api, %v", err)
 	}
@@ -161,7 +162,7 @@ func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) erro
 		return fmt.Errorf("error getting dns records for %s, %v", c.GetCloudletDNSZone(), derr)
 	}
 	for _, rec := range recs {
-		if rec.Type == "A" && rec.Name == fqdn {
+		if (rec.Type == "A" || rec.Type == "CNAME") && rec.Name == fqdn {
 			if err := cloudflare.DeleteDNSRecord(c.GetCloudletDNSZone(), rec.ID); err != nil {
 				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
 			}

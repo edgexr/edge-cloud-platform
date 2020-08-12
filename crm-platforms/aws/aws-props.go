@@ -2,9 +2,15 @@ package aws
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vault"
 )
+
+const awsVaultPath string = "/secret/data/cloudlet/aws/credentials"
 
 var AWSProps = map[string]*edgeproto.PropertyInfo{
 	"AWS_ACCESS_KEY_ID": &edgeproto.PropertyInfo{
@@ -20,12 +26,15 @@ var AWSProps = map[string]*edgeproto.PropertyInfo{
 		Mandatory:   true,
 	},
 
-	"AWS_DEFAULT_REGION": &edgeproto.PropertyInfo{
-		Name:        "AWS Default Region",
-		Description: "AWS Default Region",
-		Value:       "us-west-2",
+	"AWS_REGION": &edgeproto.PropertyInfo{
+		Name:        "AWS Region",
+		Description: "AWS Region",
 		Mandatory:   true,
 	},
+}
+
+func (a *AWSPlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
+	return AWSProps
 }
 
 func (a *AWSPlatform) GetAwsAccessKeyId() string {
@@ -42,13 +51,20 @@ func (a *AWSPlatform) GetAwsSecretAccessKey() string {
 	return ""
 }
 
-func (a *AWSPlatform) GetAwsDefaultRegion() string {
-	if val, ok := a.commonPf.Properties["AWS_DEFAULT_REGION"]; ok {
+func (a *AWSPlatform) GetAwsRegion() string {
+	if val, ok := a.commonPf.Properties["AWS_REGION"]; ok {
 		return val.Value
 	}
 	return ""
 }
 
-func (a *AWSPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
-	return &edgeproto.CloudletProps{Properties: AWSProps}, nil
+func (a *AWSPlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitApiAccessProperties")
+	err := infracommon.InternVaultEnv(ctx, vaultConfig, awsVaultPath)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data for API access", "err", err)
+		err = fmt.Errorf("cannot intern vault data from vault %s", err.Error())
+		return err
+	}
+	return nil
 }

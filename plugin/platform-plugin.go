@@ -11,6 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
+	"github.com/mobiledgex/edge-cloud-infra/managedk8s"
 	"github.com/mobiledgex/edge-cloud-infra/plugin/common"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -38,15 +39,27 @@ func GetPlatform(plat string) (platform.Platform, error) {
 			VMProvider: &vmpoolProvider,
 		}
 	case "PLATFORM_TYPE_AZURE":
-		outPlatform = &azure.AzurePlatform{}
+		azureProvider := &azure.AzurePlatform{}
+		outPlatform = &managedk8s.ManagedK8sPlatform{
+			Type:     managedk8s.ManagedK8sProviderAzure,
+			Provider: azureProvider,
+		}
 	case "PLATFORM_TYPE_GCP":
-		outPlatform = &gcp.GCPPlatform{}
+		gcpProvider := &gcp.GCPPlatform{}
+		outPlatform = &managedk8s.ManagedK8sPlatform{
+			Type:     managedk8s.ManagedK8sProviderGCP,
+			Provider: gcpProvider,
+		}
+	case "PLATFORM_TYPE_AWS":
+		awsProvider := &aws.AWSPlatform{}
+		outPlatform = &managedk8s.ManagedK8sPlatform{
+			Type:     managedk8s.ManagedK8sProviderAWS,
+			Provider: awsProvider,
+		}
 	case "PLATFORM_TYPE_EDGEBOX":
 		outPlatform = &edgebox.EdgeboxPlatform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		outPlatform = &fakeinfra.Platform{}
-	case "PLATFORM_TYPE_AWS":
-		outPlatform = &aws.AWSPlatform{}
 	default:
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}
