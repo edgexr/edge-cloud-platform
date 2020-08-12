@@ -340,7 +340,9 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	err = v.InitProps(ctx, &pc, vaultConfig)
 	if err != nil {
-		return err
+		// ignore this error, as no creation would've happened on infra, so nothing to delete
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to init props", "cloudletName", cloudlet.Key.Name, "err", err)
+		return nil
 	}
 
 	v.Caches = caches
