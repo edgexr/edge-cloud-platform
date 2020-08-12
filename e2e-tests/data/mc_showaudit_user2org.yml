@@ -1,5 +1,6 @@
 - operationname: /api/v1/auth/org/delete
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:42.173053-07:00"
@@ -10,6 +11,7 @@
   traceid: 3f80227e8749927a
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-12-18T13:44:44.543446-08:00"
@@ -17,8 +19,12 @@
   request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
   traceid: 1b1f287407047931
+  tags:
+    policy: autoprov1
+    policyorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteAutoScalePolicy
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-10-23T17:37:07.310346-07:00"
@@ -26,8 +32,12 @@
   request: '{"Region":"locala","AutoScalePolicy":{"key":{"organization":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
   response: '{}'
   traceid: 4e507c541c45009a
+  tags:
+    policy: scale1
+    policyorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:42.071157-07:00"
@@ -42,8 +52,14 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 14b6087cd25e2c9e
+  tags:
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteClusterInst
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:41.979993-07:00"
@@ -58,8 +74,14 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 260e5bb9a9413721
+  tags:
+    cloudlet: dmuus-cloud-3
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteApp
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-12-18T13:44:44.285586-08:00"
@@ -67,8 +89,13 @@
   request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policy":"autoprov1"}}'
   response: '{}'
   traceid: 38d6124bc329b12
+  tags:
+    app: autoprovapp
+    apporg: AcmeAppCo
+    appver: "1.0"
 - operationname: /api/v1/auth/ctrl/DeleteApp
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:41.93511-07:00"
@@ -78,8 +105,13 @@
     PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
   response: '{}'
   traceid: 55f441548b685db1
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
 - operationname: /api/v1/auth/ctrl/DeleteAppInst
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:41.888583-07:00"
@@ -90,8 +122,17 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 46fdae027aa84e31
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteAppInst
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2019-08-10T16:13:41.844651-07:00"
@@ -102,8 +143,17 @@
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 4242788f1d2a702f
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-3
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
   username: user2
+  org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
   starttime: "2020-03-18T14:19:48.41892-07:00"
@@ -111,3 +161,6 @@
   request: '{"Region":"local","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-1"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-2"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
   traceid: 1bf7b6b1f18e9fe3
+  tags:
+    policy: autoprov1
+    policyorg: AcmeAppCo

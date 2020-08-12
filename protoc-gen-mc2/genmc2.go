@@ -422,7 +422,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importEcho = true
 		g.importContext = true
 		g.importOrmapi = true
-		if args.OrgValid {
+		if args.OrgValid || !args.Show {
 			g.importLog = true
 		}
 		if args.Outstream {
@@ -635,6 +635,10 @@ type {{.MethodName}}Authz interface {
 func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
 {{- else}}
 func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
+{{- end}}
+{{- if (not .Show)}}
+	{{- /* don't set tags for show because create/etc may call shows, which end up adding unnecessary blank tags */}}
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 {{- end}}
 {{- if (not .SkipEnforce)}}
 {{- if and .Show .CustomAuthz}}

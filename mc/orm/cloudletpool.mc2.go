@@ -50,6 +50,7 @@ func CreateCloudletPool(c echo.Context) error {
 }
 
 func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudletPools, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -97,6 +98,7 @@ func DeleteCloudletPool(c echo.Context) error {
 }
 
 func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudletPools, ActionManage); err != nil {
@@ -144,6 +146,7 @@ func UpdateCloudletPool(c echo.Context) error {
 }
 
 func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudletPools, ActionManage); err != nil {
@@ -276,6 +279,7 @@ func AddCloudletPoolMember(c echo.Context) error {
 }
 
 func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudletPools, ActionManage); err != nil {
@@ -323,6 +327,7 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 }
 
 func RemoveCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudletPools, ActionManage); err != nil {

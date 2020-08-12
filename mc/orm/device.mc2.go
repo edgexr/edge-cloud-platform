@@ -7,6 +7,7 @@ import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
 import proto "github.com/gogo/protobuf/proto"
@@ -48,6 +49,7 @@ func InjectDevice(c echo.Context) error {
 }
 
 func InjectDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -176,6 +178,7 @@ func EvictDevice(c echo.Context) error {
 }
 
 func EvictDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {

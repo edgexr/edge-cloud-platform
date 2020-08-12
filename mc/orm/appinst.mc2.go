@@ -121,6 +121,7 @@ func CreateAppInst(c echo.Context) error {
 }
 
 func CreateAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authzCreateAppInst(ctx, rc.region, rc.username, obj,
 			ResourceAppInsts, ActionManage); err != nil {
@@ -209,6 +210,7 @@ func DeleteAppInst(c echo.Context) error {
 }
 
 func DeleteAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
@@ -297,6 +299,7 @@ func RefreshAppInst(c echo.Context) error {
 }
 
 func RefreshAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
@@ -385,6 +388,7 @@ func UpdateAppInst(c echo.Context) error {
 }
 
 func UpdateAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInst, cb func(res *edgeproto.Result)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {

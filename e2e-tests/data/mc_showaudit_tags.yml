@@ -1,0 +1,198 @@
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:53:00.422427-07:00"
+  duration: 36.45ms
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
+  response: '{}'
+  traceid: 3466675612cd4ef4
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:53:00.348343-07:00"
+  duration: 69.927ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 1a85b37a06450386
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:53:00.25542-07:00"
+  duration: 88.757ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 143959c31dceec96
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-3
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:59.704924-07:00"
+  duration: 40.489ms
+  request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
+  response: '{}'
+  traceid: 4ce4a3ff00daecc0
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:59.638718-07:00"
+  duration: 60.487ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 7a4fceccaf2c4405
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-2
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:59.574468-07:00"
+  duration: 59.382ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 66c2c901b490f8d5
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/CreateAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:12.091852-07:00"
+  duration: 130.162ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"Creating App Inst"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created AppInst successfully"}}
+  traceid: 5a1867e6b2661af7
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/CreateAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:11.979092-07:00"
+  duration: 108.102ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"Creating App Inst"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created AppInst successfully"}}
+  traceid: 56d9f200170e6e42
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-3
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/CreateApp
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:11.579378-07:00"
+  duration: 189.829ms
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,http:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
+  response: '{}'
+  traceid: 61c23a4b5a240fa0
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/CreateAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-08-07T10:52:10.989455-07:00"
+  duration: 102.414ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  response: |
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"Creating App Inst"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created AppInst successfully"}}
+  traceid: 2ed3d49e059672c9
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-2
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo

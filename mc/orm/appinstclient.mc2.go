@@ -55,6 +55,7 @@ func ShowAppInstClient(c echo.Context) error {
 }
 
 func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey, cb func(res *edgeproto.AppInstClient)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
 			ResourceAppAnalytics, ActionView); err != nil {

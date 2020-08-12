@@ -7,6 +7,7 @@ import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
 import proto "github.com/gogo/protobuf/proto"
@@ -47,6 +48,7 @@ func CreateFlavor(c echo.Context) error {
 }
 
 func CreateFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceFlavors, ActionManage); err != nil {
@@ -92,6 +94,7 @@ func DeleteFlavor(c echo.Context) error {
 }
 
 func DeleteFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceFlavors, ActionManage); err != nil {
@@ -137,6 +140,7 @@ func UpdateFlavor(c echo.Context) error {
 }
 
 func UpdateFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceFlavors, ActionManage); err != nil {
@@ -249,6 +253,7 @@ func AddFlavorRes(c echo.Context) error {
 }
 
 func AddFlavorResObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceFlavors, ActionManage); err != nil {
@@ -294,6 +299,7 @@ func RemoveFlavorRes(c echo.Context) error {
 }
 
 func RemoveFlavorResObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceFlavors, ActionManage); err != nil {

@@ -7,6 +7,7 @@ import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -51,6 +52,7 @@ func EnableDebugLevels(c echo.Context) error {
 }
 
 func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -124,6 +126,7 @@ func DisableDebugLevels(c echo.Context) error {
 }
 
 func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -197,6 +200,7 @@ func ShowDebugLevels(c echo.Context) error {
 }
 
 func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionView); err != nil {
@@ -270,6 +274,7 @@ func RunDebug(c echo.Context) error {
 }
 
 func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
