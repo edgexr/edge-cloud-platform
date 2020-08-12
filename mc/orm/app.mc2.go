@@ -50,6 +50,7 @@ func CreateApp(c echo.Context) error {
 }
 
 func CreateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authzCreateApp(ctx, rc.region, rc.username, obj,
 			ResourceApps, ActionManage); err != nil {
@@ -97,6 +98,7 @@ func DeleteApp(c echo.Context) error {
 }
 
 func DeleteAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceApps, ActionManage); err != nil {
@@ -144,6 +146,7 @@ func UpdateApp(c echo.Context) error {
 }
 
 func UpdateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authzUpdateApp(ctx, rc.region, rc.username, obj,
 			ResourceApps, ActionManage); err != nil {
@@ -276,6 +279,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 }
 
 func AddAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
 			ResourceApps, ActionManage); err != nil {
@@ -323,6 +327,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 }
 
 func RemoveAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
 			ResourceApps, ActionManage); err != nil {

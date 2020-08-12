@@ -122,18 +122,21 @@ type CreateUser struct {
 }
 
 type AuditQuery struct {
-	Username  string        `json:"username"`
-	Org       string        `form:"org" json:"org"`
-	Limit     int           `json:"limit"`
-	StartTime time.Time     `json:"starttime"`
-	EndTime   time.Time     `json:"endtime"`
-	StartAge  time.Duration `json:"startage"`
-	EndAge    time.Duration `json:"endage"`
+	Username  string            `json:"username"`
+	Org       string            `form:"org" json:"org"`
+	Limit     int               `json:"limit"`
+	StartTime time.Time         `json:"starttime"`
+	EndTime   time.Time         `json:"endtime"`
+	StartAge  time.Duration     `json:"startage"`
+	EndAge    time.Duration     `json:"endage"`
+	Operation string            `json:"operation"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type AuditResponse struct {
 	OperationName string               `json:"operationname"`
 	Username      string               `json:"username"`
+	Org           string               `json:"org"`
 	ClientIP      string               `json:"clientip"`
 	Status        int                  `json:"status"`
 	StartTime     TimeMicroseconds     `json:"starttime"`
@@ -142,6 +145,7 @@ type AuditResponse struct {
 	Response      string               `json:"response"`
 	Error         string               `json:"error"`
 	TraceID       string               `json:"traceid"`
+	Tags          map[string]string    `json:"tags"`
 }
 
 // Email request is used for password reset and to resend welcome

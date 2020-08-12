@@ -50,6 +50,7 @@ func CreatePrivacyPolicy(c echo.Context) error {
 }
 
 func CreatePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -97,6 +98,7 @@ func DeletePrivacyPolicy(c echo.Context) error {
 }
 
 func DeletePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage); err != nil {
@@ -144,6 +146,7 @@ func UpdatePrivacyPolicy(c echo.Context) error {
 }
 
 func UpdatePrivacyPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.PrivacyPolicy) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage); err != nil {

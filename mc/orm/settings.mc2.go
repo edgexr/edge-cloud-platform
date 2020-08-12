@@ -6,6 +6,7 @@ package orm
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import "google.golang.org/grpc/status"
 import proto "github.com/gogo/protobuf/proto"
@@ -46,6 +47,7 @@ func UpdateSettings(c echo.Context) error {
 }
 
 func UpdateSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -91,6 +93,7 @@ func ResetSettings(c echo.Context) error {
 }
 
 func ResetSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -136,6 +139,7 @@ func ShowSettings(c echo.Context) error {
 }
 
 func ShowSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Settings, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionView); err != nil {
