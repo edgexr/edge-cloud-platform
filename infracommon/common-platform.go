@@ -13,12 +13,13 @@ import (
 	"github.com/go-chef/chef"
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 type CommonPlatform struct {
-	Properties        map[string]*PropertyInfo
+	Properties        map[string]*edgeproto.PropertyInfo
 	PlatformConfig    *pf.PlatformConfig
 	VaultConfig       *vault.Config
 	MappedExternalIPs map[string]string
@@ -30,18 +31,18 @@ type CommonPlatform struct {
 // Package level test mode variable
 var testMode = false
 
-func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*PropertyInfo, vaultConfig *vault.Config) error {
+func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo, vaultConfig *vault.Config) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon", "cloudletKey", platformConfig.CloudletKey)
 
 	if vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
-	c.Properties = make(map[string]*PropertyInfo)
+	c.Properties = make(map[string]*edgeproto.PropertyInfo)
 	c.PlatformConfig = platformConfig
 	c.VaultConfig = vaultConfig
 
 	// set default properties
-	for k, v := range infraCommonProps {
+	for k, v := range InfraCommonProps {
 		p := *v
 		c.Properties[k] = &p
 	}
@@ -70,7 +71,8 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 			// quick fix for EDGECLOUD-2572.  Assume the mexenv.json item is secret if we have
 			// not defined it one way or another in code, of if the props that defines it is not
 			// run (e.g. an Azure property defined in mexenv.json when we are running openstack)
-			c.Properties[envData.Name] = &PropertyInfo{
+			c.Properties[envData.Name] = &edgeproto.PropertyInfo{
+				Name:   envData.Name,
 				Value:  envData.Value,
 				Secret: true,
 			}

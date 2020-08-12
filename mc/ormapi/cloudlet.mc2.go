@@ -61,6 +61,20 @@ type swaggerGetCloudletManifest struct {
 	Body RegionCloudlet
 }
 
+// Request summary for GetCloudletProps
+// swagger:parameters GetCloudletProps
+type swaggerGetCloudletProps struct {
+	// in: body
+	Body RegionCloudletProps
+}
+
+type RegionCloudletProps struct {
+	// required: true
+	// Region name
+	Region        string
+	CloudletProps edgeproto.CloudletProps
+}
+
 // Request summary for AddCloudletResMapping
 // swagger:parameters AddCloudletResMapping
 type swaggerAddCloudletResMapping struct {

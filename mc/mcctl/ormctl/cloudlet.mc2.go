@@ -111,6 +111,18 @@ var GetCloudletManifestCmd = &cli.Command{
 	Run:          runRest("/auth/ctrl/GetCloudletManifest"),
 }
 
+var GetCloudletPropsCmd = &cli.Command{
+	Use:          "GetCloudletProps",
+	RequiredArgs: "region " + strings.Join(GetCloudletPropsRequiredArgs, " "),
+	OptionalArgs: strings.Join(GetCloudletPropsOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletPropsAliasArgs, " "),
+	SpecialArgs:  &CloudletPropsSpecialArgs,
+	Comments:     addRegionComment(CloudletPropsComments),
+	ReqData:      &ormapi.RegionCloudletProps{},
+	ReplyData:    &edgeproto.CloudletProps{},
+	Run:          runRest("/auth/ctrl/GetCloudletProps"),
+}
+
 var AddCloudletResMappingCmd = &cli.Command{
 	Use:          "AddCloudletResMapping",
 	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
@@ -153,6 +165,7 @@ var CloudletApiCmds = []*cli.Command{
 	UpdateCloudletCmd,
 	ShowCloudletCmd,
 	GetCloudletManifestCmd,
+	GetCloudletPropsCmd,
 	AddCloudletResMappingCmd,
 	RemoveCloudletResMappingCmd,
 	FindFlavorMatchCmd,
@@ -220,6 +233,10 @@ var UpdateCloudletOptionalArgs = []string{
 	"accessvars",
 	"maintenancestate",
 }
+var GetCloudletPropsRequiredArgs = []string{
+	"platformtype",
+}
+var GetCloudletPropsOptionalArgs = []string{}
 
 var ShowCloudletInfoCmd = &cli.Command{
 	Use:          "ShowCloudletInfo",
@@ -610,6 +627,63 @@ var CloudletManifestComments = map[string]string{
 	"manifest":  "Manifest to bringup cloudlet VM and services",
 }
 var CloudletManifestSpecialArgs = map[string]string{}
+var PropertyInfoRequiredArgs = []string{}
+var PropertyInfoOptionalArgs = []string{
+	"name",
+	"description",
+	"value",
+	"secret",
+	"mandatory",
+	"internal",
+}
+var PropertyInfoAliasArgs = []string{
+	"name=propertyinfo.name",
+	"description=propertyinfo.description",
+	"value=propertyinfo.value",
+	"secret=propertyinfo.secret",
+	"mandatory=propertyinfo.mandatory",
+	"internal=propertyinfo.internal",
+}
+var PropertyInfoComments = map[string]string{
+	"name":        "Name of the property",
+	"description": "Description of the property",
+	"value":       "Default value of the property",
+	"secret":      "Is the property a secret value, will be hidden",
+	"mandatory":   "Is the property mandatory",
+	"internal":    "Is the property internal, not to be set by Operator",
+}
+var PropertyInfoSpecialArgs = map[string]string{}
+var CloudletPropsRequiredArgs = []string{}
+var CloudletPropsOptionalArgs = []string{
+	"platformtype",
+	"properties:#.key",
+	"properties:#.value.name",
+	"properties:#.value.description",
+	"properties:#.value.value",
+	"properties:#.value.secret",
+	"properties:#.value.mandatory",
+	"properties:#.value.internal",
+}
+var CloudletPropsAliasArgs = []string{
+	"platformtype=cloudletprops.platformtype",
+	"properties:#.key=cloudletprops.properties:#.key",
+	"properties:#.value.name=cloudletprops.properties:#.value.name",
+	"properties:#.value.description=cloudletprops.properties:#.value.description",
+	"properties:#.value.value=cloudletprops.properties:#.value.value",
+	"properties:#.value.secret=cloudletprops.properties:#.value.secret",
+	"properties:#.value.mandatory=cloudletprops.properties:#.value.mandatory",
+	"properties:#.value.internal=cloudletprops.properties:#.value.internal",
+}
+var CloudletPropsComments = map[string]string{
+	"platformtype":                   "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAws, PlatformTypeVmPool",
+	"properties:#.value.name":        "Name of the property",
+	"properties:#.value.description": "Description of the property",
+	"properties:#.value.value":       "Default value of the property",
+	"properties:#.value.secret":      "Is the property a secret value, will be hidden",
+	"properties:#.value.mandatory":   "Is the property mandatory",
+	"properties:#.value.internal":    "Is the property internal, not to be set by Operator",
+}
+var CloudletPropsSpecialArgs = map[string]string{}
 var FlavorInfoRequiredArgs = []string{}
 var FlavorInfoOptionalArgs = []string{
 	"name",

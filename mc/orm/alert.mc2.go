@@ -66,6 +66,8 @@ It has these top-level messages:
 	Cloudlet
 	FlavorMatch
 	CloudletManifest
+	PropertyInfo
+	CloudletProps
 	FlavorInfo
 	OSAZone
 	OSImage
@@ -621,6 +623,17 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/GetCloudletManifest", GetCloudletManifest)
+	// swagger:route POST /auth/ctrl/GetCloudletProps CloudletProps GetCloudletProps
+	// Get Cloudlet Properties.
+	//  Shows all the infra properties used to setup cloudlet
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetCloudletProps", GetCloudletProps)
 	// swagger:route POST /auth/ctrl/AddCloudletResMapping CloudletResMap AddCloudletResMapping
 	// Add Optional Resource tag table.
 	// Security:

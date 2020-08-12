@@ -1,19 +1,29 @@
 package azure
 
 import (
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"context"
+
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-var azureProps = map[string]*infracommon.PropertyInfo{
-	"MEX_AZURE_LOCATION": &infracommon.PropertyInfo{
-		Mandatory: true,
+var azureProps = map[string]*edgeproto.PropertyInfo{
+	"MEX_AZURE_LOCATION": &edgeproto.PropertyInfo{
+		Name:        "Azure Location",
+		Description: "Azure Location",
+		Mandatory:   true,
 	},
-	"MEX_AZURE_USER": &infracommon.PropertyInfo{
-		Mandatory: true,
+	"MEX_AZURE_USER": &edgeproto.PropertyInfo{
+		Name:        "Azure User",
+		Description: "Azure User",
+		Mandatory:   true,
+		Internal:    true,
 	},
-	"MEX_AZURE_PASS": &infracommon.PropertyInfo{
-		Secret:    true,
-		Mandatory: true,
+	"MEX_AZURE_PASS": &edgeproto.PropertyInfo{
+		Name:        "Azure Password",
+		Description: "Azure Password",
+		Secret:      true,
+		Mandatory:   true,
+		Internal:    true,
 	},
 }
 
@@ -36,4 +46,8 @@ func (a *AzurePlatform) GetAzurePass() string {
 		return val.Value
 	}
 	return ""
+}
+
+func (a *AzurePlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	return &edgeproto.CloudletProps{Properties: azureProps}, nil
 }

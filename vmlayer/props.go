@@ -51,51 +51,92 @@ var NoExternalRouter = "NONE"
 var DefaultCloudletVMImagePath = "https://artifactory.mobiledgex.net/artifactory/baseimages/"
 
 // properties common to all VM providers
-var VMProviderProps = map[string]*infracommon.PropertyInfo{
-	// Property: Default-Value
-
+var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_EXT_NETWORK": {
-		Value: "external-network-shared",
+		Name:        "Infra External Network Name",
+		Description: "Name of the external network to be used to reach developer apps",
+		Value:       "external-network-shared",
 	},
 	"MEX_NETWORK": {
-		Value: "mex-k8s-net-1",
+		Name:        "Infra Internal Network Name",
+		Description: "Name of the internal network which will be created to be used for cluster communication",
+		Value:       "mex-k8s-net-1",
 	},
 	// note OS_IMAGE refers to Operating System
 	"MEX_OS_IMAGE": {
-		Value: DefaultOSImageName,
+		Name:        "Cloudlet Image Name",
+		Description: "Name of the VM base image to be used for bring up Cloudlet VMs",
+		Value:       DefaultOSImageName,
 	},
 	"MEX_SECURITY_GROUP": {
-		Value: "default",
+		Name:        "Security Group Name",
+		Description: "Name of the security group to which cloudlet VMs will be part of",
+		Value:       "default",
 	},
 	"MEX_SHARED_ROOTLB_RAM": {
-		Value: "4096",
+		Name:        "Security Group Name",
+		Description: "Size of RAM (MB) required to bring up shared RootLB",
+		Value:       "4096",
 	},
 	"MEX_SHARED_ROOTLB_VCPUS": {
-		Value: "2",
+		Name:        "RootLB vCPUs",
+		Description: "Number of vCPUs required to bring up shared RootLB",
+		Value:       "2",
 	},
 	"MEX_SHARED_ROOTLB_DISK": {
-		Value: "40",
+		Name:        "RootLB Disk",
+		Description: "Size of disk (GB) required to bring up shared RootLB",
+		Value:       "40",
 	},
 	"MEX_NETWORK_SCHEME": {
-		Value: "cidr=10.101.X.0/24",
+		Name:        "Internal Network Scheme",
+		Description: GetSupportedSchemesStr(),
+		Value:       "cidr=10.101.X.0/24",
 	},
-	"MEX_COMPUTE_AVAILABILITY_ZONE": {},
-	"MEX_NETWORK_AVAILABILITY_ZONE": {},
-	"MEX_VOLUME_AVAILABILITY_ZONE":  {},
+	"MEX_COMPUTE_AVAILABILITY_ZONE": {
+		Name:        "Compute Availability Zone",
+		Description: "Compute Availability Zone",
+	},
+	"MEX_NETWORK_AVAILABILITY_ZONE": {
+		Name:        "Network Availability Zone",
+		Description: "Network Availability Zone",
+	},
+	"MEX_VOLUME_AVAILABILITY_ZONE": {
+		Name:        "Volume Availability Zone",
+		Description: "Volume Availability Zone",
+	},
 	"MEX_IMAGE_DISK_FORMAT": {
-		Value: ImageFormatQcow2,
+		Name:        "VM Image Disk Format",
+		Description: "Name of the disk format required to upload VM image to infra datastore",
+		Value:       ImageFormatQcow2,
 	},
 	"MEX_ROUTER": {
-		Value: NoExternalRouter,
+		Name:        "External Router Type",
+		Description: GetSupportedRouterTypes(),
+		Value:       NoExternalRouter,
 	},
-	"MEX_CRM_GATEWAY_ADDR": {},
-	"MEX_SUBNET_DNS":       {},
+	"MEX_CRM_GATEWAY_ADDR": {
+		Name:        "CRM Gateway Address",
+		Description: "Required if infra API endpoint is completely isolated from external network",
+	},
+	"MEX_SUBNET_DNS": {
+		Name:        "Subnet DNS",
+		Description: "Subnet DNS",
+	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
-		Value: "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
+		Name:        "Cloudlet Firewall Whitelist Egress",
+		Description: "Firewall rule to whitelist egress traffic",
+		Value:       "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS": {
-		Value: "remotecidr=0.0.0.0/0,protocol=udp,portrange=53",
+		Name:        "Cloudlet Firewall Whitelist Ingress",
+		Description: "Firewall rule to whitelist ingress traffic",
+		Value:       "remotecidr=0.0.0.0/0,protocol=udp,portrange=53",
 	},
+}
+
+func GetSupportedRouterTypes() string {
+	return fmt.Sprintf("Supported types: %s, %s", NoExternalRouter, NoConfigExternalRouter)
 }
 
 func GetVaultCloudletCommonPath(filePath string) string {

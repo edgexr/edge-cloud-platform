@@ -44,6 +44,25 @@ type NetSpecInfo struct {
 	RouterGatewayIP       string
 }
 
+var SupportedSchemes = map[string]string{
+	"name":             "Deprecated",
+	"cidr":             "XXX.XXX.XXX.XXX/XX",
+	"floatingipnet":    "Floating IP Network Name",
+	"floatingipsubnet": "Floating IP Subnet Name",
+	"floatingipextnet": "Floating IP External Network Name",
+	"vnictype":         "VNIC Type",
+	"routergateway":    "Router Gateway IP",
+	"networktype":      "Network Type: " + NetworkTypeVLAN,
+}
+
+func GetSupportedSchemesStr() string {
+	desc := []string{}
+	for k, v := range SupportedSchemes {
+		desc = append(desc, fmt.Sprintf("%s (%s)", k, v))
+	}
+	return fmt.Sprintf("Format: 'Name1=Value1,Name2=Value2,...';\nSupported Schemes: %s", strings.Join(desc, ", "))
+}
+
 //ParseNetSpec decodes netspec string
 //TODO: IPv6
 func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
@@ -60,6 +79,10 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 		}
 		k := strings.ToLower(kvs[0])
 		v := kvs[1]
+
+		if _, ok := SupportedSchemes[k]; !ok {
+			return nil, fmt.Errorf("unknown netspec item key: %s", k)
+		}
 
 		switch k {
 		case "name":

@@ -809,3 +809,21 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 func (v *VMPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return v.VMProvider.VerifyVMs(ctx, vms)
 }
+
+func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletProps")
+
+	props := edgeproto.CloudletProps{}
+	props.Properties = VMProviderProps
+
+	for k, v := range infracommon.InfraCommonProps {
+		props.Properties[k] = v
+	}
+
+	providerProps := v.VMProvider.GetProviderSpecificProps()
+	for k, v := range providerProps {
+		props.Properties[k] = v
+	}
+
+	return &props, nil
+}

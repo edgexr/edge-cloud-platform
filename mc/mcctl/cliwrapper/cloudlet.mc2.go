@@ -79,6 +79,17 @@ func (s *Client) GetCloudletManifest(uri, token string, in *ormapi.RegionCloudle
 	return &out, st, err
 }
 
+func (s *Client) GetCloudletProps(uri, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error) {
+	args := []string{"region", "GetCloudletProps"}
+	out := edgeproto.CloudletProps{}
+	noconfig := strings.Split("Properties", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}
+
 func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
 	args := []string{"region", "AddCloudletResMapping"}
 	out := edgeproto.Result{}

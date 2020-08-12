@@ -132,3 +132,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake AppInst deleted")
 	return nil
 }
+
+func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
+	return s.Platform.GetCloudletProps(ctx)
+}
