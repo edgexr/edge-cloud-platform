@@ -14,12 +14,12 @@ import (
 var cloudletMetrics shepherd_common.CloudletMetrics
 
 // Don't need to do much, just spin up a metrics collection thread
-func InitPlatformMetrics() {
-	go CloudletScraper()
-	go CloudletPrometheusScraper()
+func InitPlatformMetrics(done chan bool) {
+	go CloudletScraper(done)
+	go CloudletPrometheusScraper(done)
 }
 
-func CloudletScraper() {
+func CloudletScraper(done chan bool) {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
@@ -37,11 +37,14 @@ func CloudletScraper() {
 				}
 			}
 			span.Finish()
+		case <-done:
+			// process killed/interrupted, so quit
+			return
 		}
 	}
 }
 
-func CloudletPrometheusScraper() {
+func CloudletPrometheusScraper(done chan bool) {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
@@ -59,6 +62,10 @@ func CloudletPrometheusScraper() {
 			// key is nil, since we just check against the predefined set of rules
 			UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
 			aspan.Finish()
+		case <-done:
+			// process killed/interrupted, so quit
+			return
+
 		}
 	}
 }

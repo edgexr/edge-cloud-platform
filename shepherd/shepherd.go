@@ -75,6 +75,7 @@ var nodeMgr node.NodeMgr
 var sigChan chan os.Signal
 var notifyClient *notify.Client
 var cloudletWait = make(chan bool, 1)
+var stopCh = make(chan bool, 1)
 
 var targetsFileWorkerKey = "write-targets"
 
@@ -461,9 +462,9 @@ func start() {
 	// LB metrics are not supported in fake mode
 	InitProxyScraper()
 	if myPlatform.GetType() != "fake" {
-		StartProxyScraper()
+		StartProxyScraper(stopCh)
 	}
-	InitPlatformMetrics()
+	InitPlatformMetrics(stopCh)
 
 	// Send state READY to get AppInst/ClusterInst objs from crm
 	cloudletInfo.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
@@ -473,9 +474,25 @@ func start() {
 }
 
 func stop() {
+	span := log.StartSpan(log.DebugLevelInfo, "stop shepherd")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
 	if notifyClient != nil {
 		notifyClient.Stop()
 	}
+	// Stop all cluster workers
+	workerMapMutex.Lock()
+	defer workerMapMutex.Unlock()
+	for _, worker := range workerMap {
+		worker.Stop(ctx)
+	}
+	// Stop all vm workers
+	for _, worker := range vmAppWorkerMap {
+		worker.Stop(ctx)
+	}
+	// stop cloudlet workers
+	close(stopCh)
 	log.FinishTracer()
 }
 
