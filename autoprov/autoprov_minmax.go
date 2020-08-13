@@ -140,35 +140,48 @@ func (s *MinMaxChecker) UpdatedCloudlet(ctx context.Context, old *edgeproto.Clou
 		return
 	}
 	if cloudcommon.AutoProvCloudletOnline(old) == cloudcommon.AutoProvCloudletOnline(new) {
-		// no change
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet no online change", "new", new)
+		s.handleFailoverReq(ctx, new, nil)
 		return
 	}
-	log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet online change", "new", new)
+	log.SpanLog(ctx, log.DebugLevelNotify, "cloudlet online change", "new", new)
 	appsToCheck := s.cloudletNeedsCheck(new.Key)
-	if len(appsToCheck) == 0 {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet online change no apps to check")
-		if new.MaintenanceState == edgeproto.MaintenanceState_FAILOVER_REQUESTED {
-			// no apps to trigger reply so send reply now
-			info := edgeproto.AutoProvInfo{}
-			info.Key = new.Key
-			info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
-			s.caches.autoProvInfoCache.Update(ctx, &info, 0)
-		}
-		return
-	}
-	req, found := s.failoverRequests[new.Key]
-	if !found {
-		req = &failoverReq{}
-		req.info.Key = new.Key
-		req.appsToCheck = make(map[edgeproto.AppKey]struct{})
-		s.failoverRequests[new.Key] = req
-	}
-	req.mux.Lock()
+	s.handleFailoverReq(ctx, new, appsToCheck)
 	for appKey, _ := range appsToCheck {
-		req.appsToCheck[appKey] = struct{}{}
 		s.workers.NeedsWork(ctx, appKey)
 	}
-	req.mux.Unlock()
+}
+
+// Caller must hold MinMaxChecker.mux
+func (s *MinMaxChecker) handleFailoverReq(ctx context.Context, cloudlet *edgeproto.Cloudlet, appsToCheck map[edgeproto.AppKey]struct{}) {
+	if cloudlet.MaintenanceState != edgeproto.MaintenanceState_FAILOVER_REQUESTED {
+		// not a failover request
+		return
+	}
+	if appsToCheck == nil || len(appsToCheck) == 0 {
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet failover request but no apps to check", "key", cloudlet.Key)
+		// no apps to trigger reply so send reply now
+		info := edgeproto.AutoProvInfo{}
+		info.Key = cloudlet.Key
+		info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
+		s.caches.autoProvInfoCache.Update(ctx, &info, 0)
+		return
+	}
+	// put request in table, app checker will send response once all apps
+	// are processed.
+	req, found := s.failoverRequests[cloudlet.Key]
+	if !found {
+		req = &failoverReq{}
+		req.info.Key = cloudlet.Key
+		req.appsToCheck = appsToCheck
+		s.failoverRequests[cloudlet.Key] = req
+	} else {
+		req.mux.Lock()
+		for appKey, _ := range appsToCheck {
+			req.appsToCheck[appKey] = struct{}{}
+		}
+		req.mux.Unlock()
+	}
 }
 
 func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
@@ -254,13 +267,15 @@ func (s *MinMaxChecker) CheckApp(ctx context.Context, k interface{}) {
 	ac.Check(ctx)
 
 	for _, req := range failoverReqs {
+		s.mux.Lock()
 		finished := req.appDone(ctx, key)
 		if !finished {
+			s.mux.Unlock()
 			continue
 		}
-		s.mux.Lock()
 		delete(s.failoverRequests, req.info.Key)
 		s.mux.Unlock()
+
 		// wait for any App API calls to finish, then send back result
 		go func(ctx context.Context, r *failoverReq) {
 			span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "failover request done")
