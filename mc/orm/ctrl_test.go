@@ -606,10 +606,8 @@ func testCreateUser(t *testing.T, mcClient *ormclient.Client, uri, name string) 
 func testCreateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgType, orgName string) *ormapi.Organization {
 	// create org
 	org := ormapi.Organization{
-		Type:    orgType,
-		Name:    orgName,
-		Address: orgName,
-		Phone:   "123-123-1234",
+		Type: orgType,
+		Name: orgName,
 	}
 	status, err := mcClient.CreateOrg(uri, token, &org)
 	require.Nil(t, err, "create org ", orgName)

@@ -49,6 +49,9 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if err != nil {
 		return err
 	}
+	if orgCheck, _ := billingOrgExists(ctx, org.Name); orgCheck != nil {
+		return fmt.Errorf("A BillingOrganization with this name already exists")
+	}
 	// any user can create their own organization
 
 	role := ""
@@ -59,12 +62,6 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	} else {
 		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}
-	if org.Address == "" {
-		return fmt.Errorf("Address not specified")
-	}
-	if org.Phone == "" {
-		return fmt.Errorf("Phone number not specified")
-	}
 	if strings.ToLower(claims.Username) == strings.ToLower(org.Name) {
 		return fmt.Errorf("org name cannot be same as existing user name")
 	}
@@ -73,6 +70,9 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 			return fmt.Errorf("Not authorized to create reserved org %s", org.Name)
 		}
 	}
+	// set the billingOrg parent to none
+	org.Parent = ""
+
 	db := loggedDB(ctx)
 	err = db.Create(&org).Error
 	if err != nil {
@@ -126,15 +126,22 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 	if err := authorized(ctx, claims.Username, org.Name, ResourceUsers, ActionManage); err != nil {
 		return err
 	}
-	// mark org for delete in progress
-	db := loggedDB(ctx)
-	doMark := true
-	err := markOrgForDelete(db, org.Name, doMark)
+
+	// get org details
+	orgCheck, err := orgExists(ctx, org.Name)
 	if err != nil {
 		return err
 	}
 
-	// check for Controller objects belonging to org
+	// mark org for delete in progress
+	db := loggedDB(ctx)
+	doMark := true
+	err = markOrgForDelete(db, org.Name, doMark)
+	if err != nil {
+		return err
+	}
+
+	// check for Controller objects belonging to org or if it is part of a parent billing org
 	err = orgInUse(ctx, org.Name)
 	if err != nil {
 		undoerr := markOrgForDelete(db, org.Name, !doMark)
@@ -142,6 +149,18 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
 		}
 		return err
+	}
+
+	// check to see if this org had a billingOrg attached
+	selfOrg := false
+	if orgCheck.Parent == orgCheck.Name {
+		selfOrg = true
+	} else if orgCheck.Parent != "" {
+		undoerr := markOrgForDelete(db, org.Name, !doMark)
+		if undoerr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
+		}
+		return fmt.Errorf("Organization is still part of Parent BillingOrganization %s", orgCheck.Parent)
 	}
 
 	// delete org
@@ -156,6 +175,14 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		}
 		return dbErr(err)
 	}
+
+	if selfOrg {
+		err = DeleteBillingOrgObj(ctx, claims, &ormapi.BillingOrganization{Name: org.Name})
+		if err != nil {
+			return err
+		}
+	}
+
 	// delete all casbin groups associated with org
 	groups, err := enforcer.GetGroupingPolicy()
 	if err != nil {
@@ -173,6 +200,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 			}
 		}
 	}
+
 	gitlabDeleteGroup(ctx, org)
 	artifactoryDeleteGroupObjects(ctx, org.Name, "")
 	return nil

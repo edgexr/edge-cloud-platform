@@ -65,6 +65,16 @@
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
   traceid: 70aa9663b5c13c3
+- operationname: /api/v1/auth/billingorg/delete
+  username: user2
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2020-07-01T03:02:11.782055-07:00"
+  duration: 14.966ms
+  request: '{"Name":"AcmeAppCo","Type":"self","FirstName":"john","LastName":"acme","Email":"john@acme.com","Address":"123
+    Maple Street","City":"Gainesville","Country":"US","State":"FL","PostalCode":"32604","Phone":"123-123-1234","Currency":"USD","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+  response: '{"message":"Billing Organization deleted"}'
+  traceid: 397a58cc5045994e
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
   username: user2
   org: AcmeAppCo
@@ -91,25 +101,3 @@
   tags:
     policy: scale1
     policyorg: AcmeAppCo
-- operationname: /api/v1/auth/ctrl/DeleteClusterInst
-  username: user2
-  org: AcmeAppCo
-  clientip: 127.0.0.1
-  status: 200
-  starttime: "2019-08-11T09:36:02.782934-07:00"
-  duration: 114.968ms
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{}}}'
-  response: |
-    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted AppInst successfully"}}
-    {"data":{"message":"Deleting"}}
-    {"data":{"message":"NotPresent"}}
-    {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 35078d27e23052f5
-  tags:
-    cloudlet: dmuus-cloud-4
-    cloudletorg: dmuus
-    cluster: SmallCluster
-    clusterorg: AcmeAppCo

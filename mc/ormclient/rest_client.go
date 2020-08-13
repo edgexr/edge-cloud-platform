@@ -95,6 +95,32 @@ func (s *Client) ShowOrg(uri, token string) ([]ormapi.Organization, int, error) 
 	return orgs, status, err
 }
 
+func (s *Client) CreateBillingOrg(uri, token string, bOrg *ormapi.BillingOrganization) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/create", token, bOrg, nil)
+}
+
+func (s *Client) DeleteBillingOrg(uri, token string, bOrg *ormapi.BillingOrganization) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/delete", token, bOrg, nil)
+}
+
+func (s *Client) UpdateBillingOrg(uri, token string, jsonData string) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/update", token, jsonData, nil)
+}
+
+func (s *Client) ShowBillingOrg(uri, token string) ([]ormapi.BillingOrganization, int, error) {
+	bOrgs := []ormapi.BillingOrganization{}
+	status, err := s.PostJson(uri+"/auth/billingorg/show", token, nil, &bOrgs)
+	return bOrgs, status, err
+}
+
+func (s *Client) AddChildOrg(uri, token string, bOrg *ormapi.BillingOrganization) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/addchild", token, bOrg, nil)
+}
+
+func (s *Client) RemoveChildOrg(uri, token string, bOrg *ormapi.BillingOrganization) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/removechild", token, bOrg, nil)
+}
+
 func (s *Client) CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
 	return s.PostJson(uri+"/auth/orgcloudletpool/create", token, op, nil)
 }

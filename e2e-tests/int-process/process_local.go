@@ -62,6 +62,14 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 	if p.UseVaultCAs {
 		args = append(args, "--useVaultCAs")
 	}
+	if p.BillingPath != "" {
+		args = append(args, "--billingPath")
+		args = append(args, p.BillingPath)
+	}
+	if p.UsageCollectionInterval != "" {
+		args = append(args, "--usageCollectionInterval")
+		args = append(args, p.UsageCollectionInterval)
+	}
 	if p.UseVaultCerts {
 		args = append(args, "--useVaultCerts")
 	}

@@ -9,8 +9,8 @@ import (
 func GetOrgCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
-		RequiredArgs: "name address phone type",
-		OptionalArgs: "publicimages",
+		RequiredArgs: "name type",
+		OptionalArgs: "address phone publicimages",
 		ReqData:      &ormapi.Organization{},
 		Run:          runRest("/auth/org/create"),
 	}, &cli.Command{
