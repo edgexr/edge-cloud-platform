@@ -514,6 +514,17 @@ func TestAppChecker(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		require.Fail(t, "timeout waiting for AutoProvInfo")
 	}
+	// Also make sure reply is received even if state is already in maintenance
+	cacheData.cloudletCache.Update(ctx, &cloudlet0, 0)
+	select {
+	case failover := <-failovers:
+		require.Equal(t, cloudlet0.Key, failover.Key)
+		require.Equal(t, edgeproto.MaintenanceState_FAILOVER_DONE, failover.MaintenanceState)
+		require.Equal(t, 0, len(failover.Errors))
+		require.Equal(t, 0, len(failover.Completed))
+	case <-time.After(2 * time.Second):
+		require.Fail(t, "timeout waiting for AutoProvInfo")
+	}
 }
 
 type policyTest struct {
