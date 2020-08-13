@@ -287,7 +287,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
       imagetype: ImageTypeDocker
-      accessports: tcp:80,http:443,udp:10002
+      accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
       authpublickey: |
@@ -315,7 +315,7 @@ regiondata:
             protocol: TCP
             port: 80
             targetPort: 80
-          - name: http443
+          - name: tcp443
             protocol: TCP
             port: 443
             targetPort: 443
@@ -426,7 +426,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
       imagetype: ImageTypeDocker
-      accessports: tcp:80,http:443,udp:10002
+      accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
       deployment: kubernetes
@@ -444,7 +444,7 @@ regiondata:
             protocol: TCP
             port: 80
             targetPort: 80
-          - name: http443
+          - name: tcp443
             protocol: TCP
             port: 443
             targetPort: 443
@@ -689,7 +689,7 @@ regiondata:
         internalport: 80
         publicport: 80
         fqdnprefix: someapplication1-tcp.
-      - proto: LProtoHttp
+      - proto: LProtoTcp
         internalport: 443
         publicport: 443
         pathprefix: acmeappco/someapplication110/p443

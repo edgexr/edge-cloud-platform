@@ -57,6 +57,7 @@ var AppSelectors = []string{
 	"disk",
 	"network",
 	"connections",
+	"udp",
 }
 
 var ClusterSelectors = []string{
@@ -175,6 +176,18 @@ var ConnectionsFields = []string{
 	"\"P99.5\"",
 	"\"P99.9\"",
 	"\"P100\"",
+}
+
+var appUdpFields = []string{
+	"\"port\"",
+	"\"bytesSent\"",
+	"\"bytesRecvd\"",
+	"\"datagramsSent\"",
+	"\"datagramsRecvd\"",
+	"\"sentErrs\"",
+	"\"recvErrs\"",
+	"\"overflow\"",
+	"\"missed\"",
 }
 
 var UtilizationFields = []string{
@@ -487,7 +500,11 @@ func getFields(selector, measurementType string) string {
 		case "tcp":
 			fields = append(fields, TcpFields...)
 		case "udp":
-			fields = append(fields, UdpFields...)
+			if measurementType == "appinst" {
+				fields = append(fields, appUdpFields...)
+			} else {
+				fields = append(fields, UdpFields...)
+			}
 		case "utilization":
 			fields = append(fields, UtilizationFields...)
 		case "ipusage":

@@ -24,14 +24,28 @@ import (
 var ProxyMap map[string]ProxyScrapePoint
 var ProxyMutex sync.Mutex
 
-// stat names in envoy
-var envoyClusterName = "cluster.backend"
-var envoyActive = "upstream_cx_active"
-var envoyTotal = "upstream_cx_total"
-var envoyDropped = "upstream_cx_connect_fail" // this one might not be right/enough
-var envoyBytesSent = "upstream_cx_tx_bytes_total"
-var envoyBytesRecvd = "upstream_cx_rx_bytes_total"
-var envoySessionTime = "upstream_cx_length_ms"
+// TCP stat names in envoy
+var envoyTcpClusterName = "cluster.backend"
+var envoyTcpActive = "upstream_cx_active"
+var envoyTcpTotal = "upstream_cx_total"
+var envoyTcpDropped = "upstream_cx_connect_fail" // this one might not be right/enough
+var envoyTcpBytesSent = "upstream_cx_tx_bytes_total"
+var envoyTcpBytesRecvd = "upstream_cx_rx_bytes_total"
+var envoyTcpSessionTime = "upstream_cx_length_ms"
+
+// UDP stat names in envoy
+// So tx, and rx is from the point of view of envoy to the backend
+// but we want to give the POV of the backend to the client so we flip these.
+var envoyUdpClusterName = "cluster.udp_backend"
+var envoyUdpRecvBytes = "upstream_cx_tx_bytes_total"
+var envoyUdpSentBytes = "upstream_cx_rx_bytes_total"
+var envoyUdpOverflow = "upstream_cx_overflow"        // # number of datagrams dropped due to hitting the max connections limit
+var envoyUdpNoneHealthy = "upstream_cx_none_healthy" // # of datagrams dropped due to no healthy hosts
+var envoyUdpSessionAdditionalPrefix = "udp."
+var envoyUdpRecvDatagrams = "sess_tx_datagrams"
+var envoyUdpSentDatagrams = "sess_rx_datagrams"
+var envoyUdpRecvErrs = "sess_tx_errors"
+var envoyUdpSentErrs = "sess_rx_errors"
 
 var envoyUnseen = "No recorded values"
 var envoyHistogramBuckets = []string{"P0", "P25", "P50", "P75", "P90", "P95", "P99", "P99.5", "P99.9", "P100"}
@@ -42,7 +56,8 @@ type ProxyScrapePoint struct {
 	App               string
 	Cluster           string
 	ClusterOrg        string
-	Ports             []int32
+	TcpPorts          []int32
+	UdpPorts          []int32
 	Client            ssh.Client
 	ProxyContainer    string
 }
@@ -113,16 +128,20 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			App:        k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
 			Cluster:    appInst.Key.ClusterInstKey.ClusterKey.Name,
 			ClusterOrg: appInst.Key.ClusterInstKey.Organization,
-			Ports:      make([]int32, 0),
+			TcpPorts:   make([]int32, 0),
+			UdpPorts:   make([]int32, 0),
 		}
-		// TODO: track udp ports as well (when we add udp to envoy)
+
 		for _, p := range appInst.MappedPorts {
 			if p.Proto == dme.LProto_L_PROTO_TCP {
-				scrapePoint.Ports = append(scrapePoint.Ports, p.InternalPort)
+				scrapePoint.TcpPorts = append(scrapePoint.TcpPorts, p.InternalPort)
+			}
+			if p.Proto == dme.LProto_L_PROTO_UDP && !p.Nginx {
+				scrapePoint.UdpPorts = append(scrapePoint.UdpPorts, p.InternalPort)
 			}
 		}
 		// Don't need to scrape anything if no ports are trackable
-		if len(scrapePoint.Ports) == 0 {
+		if len(scrapePoint.TcpPorts) == 0 && len(scrapePoint.UdpPorts) == 0 {
 			return ""
 		}
 
@@ -212,7 +231,8 @@ func ProxyScraper(done chan bool) {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
 				} else {
 					// send to crm->controller->influx
-					influxData := MarshallProxyMetric(v, metrics)
+					influxData := MarshallTcpProxyMetric(v, metrics)
+					influxData = append(influxData, MarshallUdpProxyMetric(v, metrics)...)
 					for _, datapoint := range influxData {
 						MetricSender.Update(ctx, datapoint)
 					}
@@ -239,27 +259,31 @@ func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_c
 	}
 	metrics := &shepherd_common.ProxyMetrics{Nginx: false}
 	respMap := parseEnvoyResp(ctx, resp)
-	err = envoyConnections(ctx, respMap, scrapePoint.Ports, metrics)
+	err = envoyTcpConnections(ctx, respMap, scrapePoint.TcpPorts, metrics)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing response: %v", err)
+	}
+	err = envoyUdpConnections(ctx, respMap, scrapePoint.UdpPorts, metrics)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing response: %v", err)
 	}
 	return metrics, nil
 }
 
-func envoyConnections(ctx context.Context, respMap map[string]string, ports []int32, metrics *shepherd_common.ProxyMetrics) error {
+func envoyTcpConnections(ctx context.Context, respMap map[string]string, ports []int32, metrics *shepherd_common.ProxyMetrics) error {
 	var err error
 	var droppedVal uint64
-	metrics.EnvoyStats = make(map[int32]shepherd_common.ConnectionsMetric)
+	metrics.EnvoyTcpStats = make(map[int32]shepherd_common.TcpConnectionsMetric)
 	for _, port := range ports {
-		new := shepherd_common.ConnectionsMetric{}
+		new := shepherd_common.TcpConnectionsMetric{}
 		//active, accepts, handled conn, bytes sent/recvd
-		envoyCluster := envoyClusterName + strconv.Itoa(int(port)) + "."
-		activeSearch := envoyCluster + envoyActive
-		droppedSearch := envoyCluster + envoyDropped
-		totalSearch := envoyCluster + envoyTotal
-		bytesSentSearch := envoyCluster + envoyBytesSent
-		bytesRecvdSearch := envoyCluster + envoyBytesRecvd
-		sessionTimeSearch := envoyCluster + envoySessionTime
+		envoyCluster := envoyTcpClusterName + strconv.Itoa(int(port)) + "."
+		activeSearch := envoyCluster + envoyTcpActive
+		droppedSearch := envoyCluster + envoyTcpDropped
+		totalSearch := envoyCluster + envoyTcpTotal
+		bytesSentSearch := envoyCluster + envoyTcpBytesSent
+		bytesRecvdSearch := envoyCluster + envoyTcpBytesRecvd
+		sessionTimeSearch := envoyCluster + envoyTcpSessionTime
 		new.ActiveConn, err = getUIntStat(respMap, activeSearch)
 		if err != nil {
 			return fmt.Errorf("Error retrieving envoy active connections stats: %v", err)
@@ -290,7 +314,63 @@ func envoyConnections(ctx context.Context, respMap map[string]string, ports []in
 		}
 		new.SessionTime = sessionTimeHistogram
 		metrics.Ts, _ = types.TimestampProto(time.Now())
-		metrics.EnvoyStats[port] = new
+		metrics.EnvoyTcpStats[port] = new
+	}
+	return nil
+}
+
+func envoyUdpConnections(ctx context.Context, respMap map[string]string, ports []int32, metrics *shepherd_common.ProxyMetrics) error {
+	var err error
+	metrics.EnvoyUdpStats = make(map[int32]shepherd_common.UdpConnectionsMetric)
+	for _, port := range ports {
+		new := shepherd_common.UdpConnectionsMetric{}
+
+		envoyCluster := envoyUdpClusterName + strconv.Itoa(int(port)) + "."
+		recvBytesSearch := envoyCluster + envoyUdpRecvBytes
+		sentBytesSearch := envoyCluster + envoyUdpSentBytes
+		overflowSearch := envoyCluster + envoyUdpOverflow
+		missedSearch := envoyCluster + envoyUdpNoneHealthy
+
+		envoyCluster = envoyCluster + envoyUdpSessionAdditionalPrefix
+		recvDatagramsSearch := envoyCluster + envoyUdpRecvDatagrams
+		sentDatagramsSearch := envoyCluster + envoyUdpSentDatagrams
+		recvErrSearch := envoyCluster + envoyUdpRecvErrs
+		sentErrSearch := envoyCluster + envoyUdpSentErrs
+
+		new.RecvBytes, err = getUIntStat(respMap, recvBytesSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy recvBytes connections stats: %v", err)
+		}
+		new.SentBytes, err = getUIntStat(respMap, sentBytesSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy sentBytes connections stats: %v", err)
+		}
+		new.Overflow, err = getUIntStat(respMap, overflowSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy overflow connections stats: %v", err)
+		}
+		new.Missed, err = getUIntStat(respMap, missedSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy missed connections stats: %v", err)
+		}
+		new.RecvDatagrams, err = getUIntStat(respMap, recvDatagramsSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy recvDatagrams connections stats: %v", err)
+		}
+		new.SentDatagrams, err = getUIntStat(respMap, sentDatagramsSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy sentDatagrams connections stats: %v", err)
+		}
+		new.RecvErrs, err = getUIntStat(respMap, recvErrSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy recvErrs connections stats: %v", err)
+		}
+		new.SentErrs, err = getUIntStat(respMap, sentErrSearch)
+		if err != nil {
+			return fmt.Errorf("Error retrieving envoy sentErrs connections stats: %v", err)
+		}
+		metrics.Ts, _ = types.TimestampProto(time.Now())
+		metrics.EnvoyUdpStats[port] = new
 	}
 	return nil
 }
@@ -455,12 +535,12 @@ func parseNginxResp(resp string, metrics *shepherd_common.ProxyMetrics) error {
 	return nil
 }
 
-func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
+func MarshallTcpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
 	if data.Nginx {
 		return []*edgeproto.Metric{MarshallNginxMetric(scrapePoint, data)}
 	}
 	metricList := make([]*edgeproto.Metric, 0)
-	for _, port := range scrapePoint.Ports {
+	for _, port := range scrapePoint.TcpPorts {
 		metric := edgeproto.Metric{}
 		metric.Name = "appinst-connections"
 		metric.Timestamp = *data.Ts
@@ -473,16 +553,45 @@ func MarshallProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
 		metric.AddTag("port", strconv.Itoa(int(port)))
 
-		metric.AddIntVal("active", data.EnvoyStats[port].ActiveConn)
-		metric.AddIntVal("accepts", data.EnvoyStats[port].Accepts)
-		metric.AddIntVal("handled", data.EnvoyStats[port].HandledConn)
-		metric.AddIntVal("bytesSent", data.EnvoyStats[port].BytesSent)
-		metric.AddIntVal("bytesRecvd", data.EnvoyStats[port].BytesRecvd)
+		metric.AddIntVal("active", data.EnvoyTcpStats[port].ActiveConn)
+		metric.AddIntVal("accepts", data.EnvoyTcpStats[port].Accepts)
+		metric.AddIntVal("handled", data.EnvoyTcpStats[port].HandledConn)
+		metric.AddIntVal("bytesSent", data.EnvoyTcpStats[port].BytesSent)
+		metric.AddIntVal("bytesRecvd", data.EnvoyTcpStats[port].BytesRecvd)
 
 		//session time historgram
-		for k, v := range data.EnvoyStats[port].SessionTime {
+		for k, v := range data.EnvoyTcpStats[port].SessionTime {
 			metric.AddDoubleVal(k, v)
 		}
+		metricList = append(metricList, &metric)
+	}
+	return metricList
+}
+
+func MarshallUdpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.ProxyMetrics) []*edgeproto.Metric {
+	metricList := make([]*edgeproto.Metric, 0)
+	for _, port := range scrapePoint.UdpPorts {
+		metric := edgeproto.Metric{}
+		metric.Name = "appinst-udp"
+		metric.Timestamp = *data.Ts
+		metric.AddTag("cloudletorg", cloudletKey.Organization)
+		metric.AddTag("cloudlet", cloudletKey.Name)
+		metric.AddTag("cluster", scrapePoint.Cluster)
+		metric.AddTag("clusterorg", scrapePoint.ClusterOrg)
+		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
+		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
+		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
+		metric.AddTag("port", strconv.Itoa(int(port)))
+
+		metric.AddIntVal("bytesSent", data.EnvoyUdpStats[port].SentBytes)
+		metric.AddIntVal("bytesRecvd", data.EnvoyUdpStats[port].RecvBytes)
+		metric.AddIntVal("datagramsSent", data.EnvoyUdpStats[port].SentDatagrams)
+		metric.AddIntVal("datagramsRecvd", data.EnvoyUdpStats[port].RecvDatagrams)
+		metric.AddIntVal("sentErrs", data.EnvoyUdpStats[port].SentErrs)
+		metric.AddIntVal("recvErrs", data.EnvoyUdpStats[port].RecvErrs)
+		metric.AddIntVal("overflow", data.EnvoyUdpStats[port].Overflow)
+		metric.AddIntVal("missed", data.EnvoyUdpStats[port].Missed)
+
 		metricList = append(metricList, &metric)
 	}
 	return metricList

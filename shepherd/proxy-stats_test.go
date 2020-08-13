@@ -71,7 +71,7 @@ func TestCollectProxyStats(t *testing.T) {
 			// udp load-balancer
 			// dedicated helm access
 			target := CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			assert.NotEmpty(t, target)
 		case 8:
 			// dedicated, no ports
 			target := CollectProxyStats(ctx, &obj)
