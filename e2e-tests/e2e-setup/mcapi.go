@@ -397,6 +397,8 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	checkMcErr("ShowControllers", status, err, rc)
 	orgs, status, err := mcClient.ShowOrg(uri, token)
 	checkMcErr("ShowOrgs", status, err, rc)
+	bOrgs, status, err := mcClient.ShowBillingOrg(uri, token)
+	checkMcErr("ShowBillingOrgs", status, err, rc)
 	roles, status, err := mcClient.ShowUserRole(uri, token)
 	checkMcErr("ShowRoles", status, err, rc)
 	ocs, status, err := mcClient.ShowOrgCloudletPool(uri, token)
@@ -405,6 +407,7 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	showData := &ormapi.AllData{
 		Controllers:      ctrls,
 		Orgs:             orgs,
+		BillingOrgs:      bOrgs,
 		Roles:            roles,
 		OrgCloudletPools: ocs,
 	}
@@ -506,6 +509,10 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		st, err := mcClient.CreateOrg(uri, token, &org)
 		outMcErr(output, fmt.Sprintf("CreateOrg[%d]", ii), st, err)
 	}
+	for ii, bOrg := range data.BillingOrgs {
+		st, err := mcClient.CreateBillingOrg(uri, token, &bOrg)
+		outMcErr(output, fmt.Sprintf("CreateBillingOrg[%d]", ii), st, err)
+	}
 	for ii, role := range data.Roles {
 		st, err := mcClient.AddUserRole(uri, token, &role)
 		outMcErr(output, fmt.Sprintf("AddUserRole[%d]", ii), st, err)
@@ -530,6 +537,10 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		rdm := getRegionDataMap(dataMap, ii)
 		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "delete")
 		output.RegionData = append(output.RegionData, *rdout)
+	}
+	for ii, bOrg := range data.BillingOrgs {
+		st, err := mcClient.DeleteBillingOrg(uri, token, &bOrg)
+		outMcErr(output, fmt.Sprintf("DeleteBillingOrg[%d]", ii), st, err)
 	}
 	for ii, org := range data.Orgs {
 		st, err := mcClient.DeleteOrg(uri, token, &org)

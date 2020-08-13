@@ -18,6 +18,7 @@ func main() {
 	rootCmd.AddCommand(ormctl.GetUserCommand())
 	rootCmd.AddCommand(ormctl.GetRoleCommand())
 	rootCmd.AddCommand(ormctl.GetOrgCommand())
+	rootCmd.AddCommand(ormctl.GetBillingOrgCommand())
 	rootCmd.AddCommand(ormctl.GetControllerCommand())
 	rootCmd.AddCommand(ormctl.GetAllDataCommand())
 

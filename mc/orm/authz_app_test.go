@@ -14,10 +14,8 @@ import (
 
 func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, tokenAd string) {
 	org1 := ormapi.Organization{
-		Type:    "developer",
-		Name:    "org1",
-		Address: "org1",
-		Phone:   "123-123-1234",
+		Type: "developer",
+		Name: "org1",
 	}
 	status, err := mcClient.CreateOrg(uri, tokenAd, &org1)
 	require.Nil(t, err)
@@ -70,8 +68,6 @@ func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Clien
 	mobiledgexOrg := ormapi.Organization{
 		Type:         "developer",
 		Name:         "mobiledgex",
-		Address:      "mobiledgeX st",
-		Phone:        "123-123-1234",
 		PublicImages: true,
 	}
 	status, err = mcClient.CreateOrg(uri, tokenAd, &mobiledgexOrg)

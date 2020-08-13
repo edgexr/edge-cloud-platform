@@ -243,7 +243,7 @@ func init() {
 	operatorInfluxDBTemplate = template.Must(template.New("influxquery").Parse(operatorInfluDBT))
 }
 
-func connectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
+func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
 	addr, err := getInfluxDBAddrForRegion(ctx, region)
 	if err != nil {
 		return nil, err
@@ -370,7 +370,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 // doesn't implement it in a way could really be using it
 func influxStream(ctx context.Context, rc *InfluxDBContext, database, dbQuery string, cb func(Data interface{})) error {
 	if rc.conn == nil {
-		conn, err := connectInfluxDB(ctx, rc.region)
+		conn, err := ConnectInfluxDB(ctx, rc.region)
 		if err != nil {
 			return err
 		}

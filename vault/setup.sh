@@ -48,7 +48,12 @@ path "secret/data/registry/*" {
 path "pki-global/issue/*" {
   capabilities = [ "read", "update" ]
 }
+
+path "secret/data/accounts/zuora/sandbox" {
+  capabilities = [ "read" ]
+}
 EOF
+
 vault policy write mcorm /tmp/mcorm-pol.hcl
 rm /tmp/mcorm-pol.hcl
 vault write auth/approle/role/mcorm period="720h" policies="mcorm"

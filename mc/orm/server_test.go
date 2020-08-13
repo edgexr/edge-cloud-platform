@@ -81,11 +81,11 @@ func TestServer(t *testing.T) {
 	policies, status, err := showRolePerms(mcClient, uri, token)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
-	require.Equal(t, 141, len(policies), "number of role perms")
+	require.Equal(t, 150, len(policies), "number of role perms")
 	roles, status, err := showRoles(mcClient, uri, token)
 	require.Nil(t, err, "show roles err")
 	require.Equal(t, http.StatusOK, status, "show roles status")
-	require.Equal(t, 9, len(roles), "number of roles")
+	require.Equal(t, 10, len(roles), "number of roles")
 
 	// create new user1
 	user1 := ormapi.User{
@@ -101,10 +101,8 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "login as mister X")
 	// create an Organization
 	org1 := ormapi.Organization{
-		Type:    "developer",
-		Name:    "DevX",
-		Address: "123 X Way",
-		Phone:   "123-123-1234",
+		Type: "developer",
+		Name: "DevX",
 	}
 	orgX := org1
 	orgX.Name = user1.Name
@@ -156,20 +154,16 @@ func TestServer(t *testing.T) {
 
 	// create an Organization
 	org2 := ormapi.Organization{
-		Type:    "developer",
-		Name:    "DevY",
-		Address: "123 Y Way",
-		Phone:   "123-321-1234",
+		Type: "developer",
+		Name: "DevY",
 	}
 	status, err = mcClient.CreateOrg(uri, tokenMisterY, &org2)
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
 
 	org2ci := ormapi.Organization{
-		Type:    "developer",
-		Name:    "Devy",
-		Address: "123 Y Way",
-		Phone:   "123-321-1234",
+		Type: "developer",
+		Name: "Devy",
 	}
 	status, err = mcClient.CreateOrg(uri, tokenMisterY, &org2ci)
 	require.NotNil(t, err, "create duplicate org (case-insensitive)")
@@ -203,10 +197,8 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "login as admin")
 
 	orgMex := ormapi.Organization{
-		Type:    "developer",
-		Name:    cloudcommon.OrganizationMobiledgeX,
-		Address: "123",
-		Phone:   "123",
+		Type: "developer",
+		Name: cloudcommon.OrganizationMobiledgeX,
 	}
 	_, err = mcClient.CreateOrg(uri, tokenMisterX, &orgMex)
 	require.NotNil(t, err, "create reserved mobiledgex org")

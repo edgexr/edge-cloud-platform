@@ -5,6 +5,20 @@ orgs:
   phone: 123-123-1234
   adminusername: user2
 
+billingorgs:
+- name: DevOrg
+  type: self
+  firstname: john
+  lastname: acme
+  email: john@acme.com
+  address: 123 Maple Street
+  city: Gainesville
+  country: US
+  state: FL
+  postalcode: 32604
+  phone: 123-123-1234
+  currency: USD
+
 regiondata:
 - region: local
   appdata:

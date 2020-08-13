@@ -16,6 +16,7 @@ import (
 const ActionView = "view"
 const ActionManage = "manage"
 
+const ResourceBilling = "billing"
 const ResourceControllers = "controllers"
 const ResourceUsers = "users"
 const ResourceApps = "apps"
@@ -61,6 +62,7 @@ const RoleOperatorViewer = "OperatorViewer"
 const RoleAdminManager = "AdminManager"
 const RoleAdminContributor = "AdminContributor"
 const RoleAdminViewer = "AdminViewer"
+const RoleBillingManager = "BillingManager"
 
 var AdminRoleID int64
 
@@ -80,6 +82,16 @@ func InitRolePerms(ctx context.Context) error {
 	addPolicy(ctx, &err, RoleAdminManager, ResourceCloudletPools, ActionView)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceAlert, ActionManage)
 	addPolicy(ctx, &err, RoleAdminManager, ResourceAlert, ActionView)
+
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceBilling, ActionManage)
+	addPolicy(ctx, &err, RoleDeveloperManager, ResourceBilling, ActionView)
+	addPolicy(ctx, &err, RoleBillingManager, ResourceBilling, ActionManage)
+	addPolicy(ctx, &err, RoleBillingManager, ResourceBilling, ActionView)
+	addPolicy(ctx, &err, RoleBillingManager, ResourceUsers, ActionManage)
+	addPolicy(ctx, &err, RoleBillingManager, ResourceUsers, ActionView)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceBilling, ActionManage)
+	addPolicy(ctx, &err, RoleAdminManager, ResourceBilling, ActionView)
+	addPolicy(ctx, &err, RoleAdminContributor, ResourceBilling, ActionView)
 
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionManage)
 	addPolicy(ctx, &err, RoleDeveloperManager, ResourceUsers, ActionView)

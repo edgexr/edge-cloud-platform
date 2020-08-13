@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/billing/zuora"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
@@ -71,6 +72,8 @@ type ServerConfig struct {
 	NotifyAddrs      string
 	NotifySrvAddr    string
 	NodeMgr          *node.NodeMgr
+	Billing          bool
+	BillingPath      string
 }
 
 var DefaultDBUser = "mcuser"
@@ -160,6 +163,13 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", config.vaultConfig.Auth.Type())
 	server.initJWKDone = make(chan struct{}, 1)
 	InitVault(config.vaultConfig, server.initJWKDone)
+
+	if config.Billing {
+		err = zuora.InitZuora(config.vaultConfig, config.BillingPath)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to initialize zuora: %v", err)
+		}
+	}
 
 	if gitlabToken == "" {
 		log.InfoLog("Note: No gitlab_token env var found")
@@ -328,6 +338,74 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	//   403: forbidden
 	//   404: notFound
 	auth.POST("/org/delete", DeleteOrg)
+
+	// swagger:route POST /auth/billingorg/create BillingOrganization CreateBillingOrg
+	// Create BillingOrganization.
+	// Create a BillingOrganization to set up billing info.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/create", CreateBillingOrg)
+	// swagger:route POST /auth/billingorg/update BillingOrganization UpdateBillingOrg
+	// Update BillingOrganization.
+	// API to update an existing BillingOrganization.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/update", UpdateBillingOrg)
+	// swagger:route POST /auth/billingorg/addchild BillingOrganization AddChildOrg
+	// Add Child to BillingOrganization.
+	// Adds an Organization to an existing parent BillingOrganization.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/addchild", AddChildOrg)
+	// swagger:route POST /auth/billingorg/removechild BillingOrganization RemoveChildOrg
+	// Remove Child from BillingOrganization.
+	// Removes an Organization from an existing parent BillingOrganization.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/removechild", RemoveChildOrg)
+	// swagger:route POST /auth/billingorg/show BillingOrganization ShowBillingOrg
+	// Show BillingOrganizations.
+	// Displays existing BillingOrganizations in which you are authorized to access.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listBillingOrgs
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/show", ShowBillingOrg)
+	// swagger:route POST /auth/billingorg/delete BillingOrganization DeleteBillingOrg
+	// Delete BillingOrganization.
+	// Deletes an existing BillingOrganization.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/billingorg/delete", DeleteBillingOrg)
+
 	auth.POST("/controller/create", CreateController)
 	auth.POST("/controller/delete", DeleteController)
 	auth.POST("/controller/show", ShowController)

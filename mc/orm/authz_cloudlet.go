@@ -155,6 +155,9 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
 }
 
 func authzCreateClusterInst(ctx context.Context, region, username string, obj *edgeproto.ClusterInst, resource, action string) error {
+	if !isBillable(ctx, obj.Key.Organization) {
+		return echo.ErrForbidden
+	}
 	authzCloudlet := AuthzCloudlet{}
 	err := authzCloudlet.populate(ctx, region, username, obj.Key.Organization, resource, action, withRequiresOrg(obj.Key.Organization))
 	if err != nil {

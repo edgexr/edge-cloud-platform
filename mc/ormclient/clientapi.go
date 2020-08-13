@@ -22,6 +22,13 @@ type Api interface {
 	UpdateOrg(uri, token string, jsonData string) (int, error)
 	ShowOrg(uri, token string) ([]ormapi.Organization, int, error)
 
+	CreateBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+	DeleteBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+	UpdateBillingOrg(uri, token string, jsonData string) (int, error)
+	ShowBillingOrg(uri, token string) ([]ormapi.BillingOrganization, int, error)
+	AddChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+	RemoveChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+
 	AddUserRole(uri, token string, role *ormapi.Role) (int, error)
 	RemoveUserRole(uri, token string, role *ormapi.Role) (int, error)
 	ShowUserRole(uri, token string) ([]ormapi.Role, int, error)
