@@ -366,6 +366,7 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVM", "vmName", vm.Name, "poolName", poolName)
 
 	dcName := v.GetDatacenterName(ctx)
+	dsName := v.GetDataStore()
 	computeCluster := v.GetComputeCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", dcName, computeCluster)
 	poolPath := pathPrefix + poolName
@@ -398,6 +399,7 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 		}
 		out, err := v.TimedGovcCommand(ctx, "govc", "vm.clone",
 			"-dc", dcName,
+			"-ds", dsName,
 			"-on=false",
 			"-vm", vm.ImageName,
 			"-pool", poolPath,
