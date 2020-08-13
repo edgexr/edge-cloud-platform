@@ -128,6 +128,14 @@ func (g *GCPPlatform) Login(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	err = g.SetProject(ctx, g.GetGcpProject())
+	if err != nil {
+		return err
+	}
+	err = g.SetZone(ctx, g.GetGcpZone())
+	if err != nil {
+		return err
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GCP login OK")
 	return nil
 }
