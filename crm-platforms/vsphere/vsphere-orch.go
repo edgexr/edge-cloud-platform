@@ -796,14 +796,14 @@ func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFold
 		if err != nil {
 			return err
 		}
-		if vm.Guest.GuestState == "running" {
+		if vm.Guest.ToolsStatus == "toolsOk" {
 			break
 		}
 		elapsed := time.Since(start)
 		if elapsed > maxGuestWait {
 			return fmt.Errorf("timed out waiting for VM tools %s", templateName)
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Sleep and check guest tools again", "templateName", templateName, "GuestState", vm.Guest.GuestState)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Sleep and check guest tools again", "templateName", templateName, "ToolsStatus", vm.Guest.ToolsStatus)
 		time.Sleep(5 * time.Second)
 	}
 
