@@ -48,7 +48,7 @@ type ClusterFlavor struct {
 }
 
 func GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return MexSubnetPrefix + k8smgmt.GetClusterName(clusterInst)
+	return MexSubnetPrefix + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
@@ -56,15 +56,15 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		namePrefix = ClusterTypeDockerVMLabel
 	}
-	return namePrefix + "-" + k8smgmt.GetClusterName(clusterInst)
+	return namePrefix + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
-	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetClusterName(clusterInst)
+	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func (v *VMPlatform) GetDockerNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetClusterName(clusterInst)
+	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func ClusterNodePrefix(num uint32) string {
@@ -173,7 +173,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		return fmt.Errorf("Chef client is not initialzied")
 	}
 
-	name := k8smgmt.GetClusterName(clusterInst)
+	name := k8smgmt.GetCloudletClusterName(clusterInst)
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -590,7 +590,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 
 	var vms []*VMRequestSpec
 	var err error
-	vmgroupName := k8smgmt.GetClusterName(clusterInst)
+	vmgroupName := k8smgmt.GetCloudletClusterName(clusterInst)
 	var newSubnetName string
 	var newSecgrpName string
 
