@@ -503,6 +503,7 @@ func GetCloudletProps(c echo.Context) error {
 }
 
 func GetCloudletPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceCloudlets, ActionView); err != nil {
