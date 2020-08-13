@@ -51,11 +51,11 @@ func InitProxyScraper() {
 	ProxyMap = make(map[string]ProxyScrapePoint)
 }
 
-func StartProxyScraper() {
+func StartProxyScraper(done chan bool) {
 	if ProxyMap == nil {
 		return
 	}
-	go ProxyScraper()
+	go ProxyScraper(done)
 }
 
 // Figure out envoy proxy container name
@@ -195,7 +195,7 @@ func getProxyScrapePoint(key string) *ProxyScrapePoint {
 	return &scrapePoint
 }
 
-func ProxyScraper() {
+func ProxyScraper(done chan bool) {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
@@ -219,6 +219,9 @@ func ProxyScraper() {
 				}
 				span.Finish()
 			}
+		case <-done:
+			// process killed/interrupted, so quit
+			return
 		}
 	}
 }
