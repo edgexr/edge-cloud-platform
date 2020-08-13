@@ -43,10 +43,7 @@ type InterfaceActionsOp struct {
 	deleteIptables  bool
 }
 
-var RootLBPorts = []dme.AppPort{{
-	PublicPort: cloudcommon.RootLBL7Port,
-	Proto:      dme.LProto_L_PROTO_TCP,
-}}
+var RootLBPorts = []dme.AppPort{}
 
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
 func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac string, action *InterfaceActionsOp) error {

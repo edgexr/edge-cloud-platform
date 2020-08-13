@@ -311,7 +311,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, SetupRootLB")
 
-	// set up L7 load balancer
+	// deletes exisitng l7 proxies for backwards compatibility, since we got rid of http. can be removed later
 	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName})
 	if err != nil {
 		return err

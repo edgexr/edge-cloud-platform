@@ -159,7 +159,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
       imagetype: ImageTypeDocker
-      accessports: tcp:80,http:443,udp:10002
+      accessports: tcp:80,tcp:443,udp:10002
       accesstype: AccessTypeLoadBalancer
       defaultflavor:
         name: x1.small
@@ -190,7 +190,7 @@ regiondata:
             protocol: TCP
             port: 80
             targetPort: 80
-          - name: http443
+          - name: tcp443
             protocol: TCP
             port: 443
             targetPort: 443
@@ -422,10 +422,10 @@ regiondata:
         internalport: 80
         publicport: 80
         fqdnprefix: someapplication1-tcp.
-      - proto: LProtoHttp
+      - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        pathprefix: acmeappco/someapplication110/p443
+        fqdnprefix: someapplication1-tcp.
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
@@ -707,7 +707,7 @@ regiondata:
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
       imagetype: ImageTypeDocker
-      accessports: tcp:80,http:443,udp:10002
+      accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
       authpublickey: |
@@ -735,7 +735,7 @@ regiondata:
             protocol: TCP
             port: 80
             targetPort: 80
-          - name: http443
+          - name: tcp443
             protocol: TCP
             port: 443
             targetPort: 443
@@ -850,10 +850,10 @@ regiondata:
         internalport: 80
         publicport: 80
         fqdnprefix: someapplication1-tcp.
-      - proto: LProtoHttp
+      - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        pathprefix: acmeappco/someapplication110/p443
+        fqdnprefix: someapplication1-tcp.
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
