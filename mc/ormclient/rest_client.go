@@ -525,3 +525,17 @@ func (s *Client) ArtifactoryResync(uri, token string) (int, error) {
 func (s *Client) GitlabResync(uri, token string) (int, error) {
 	return s.PostJson(uri+"/auth/gitlab/resync", token, nil, nil)
 }
+
+func (s *Client) CreateAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error) {
+	return s.PostJson(uri+"/auth/alertreceiver/create", token, receiver, nil)
+}
+
+func (s *Client) DeleteAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error) {
+	return s.PostJson(uri+"/auth/alertreceiver/delete", token, receiver, nil)
+}
+
+func (s *Client) ShowAlertReceiver(uri, token string) ([]ormapi.AlertReceiver, int, error) {
+	receivers := []ormapi.AlertReceiver{}
+	status, err := s.PostJson(uri+"/auth/alertreceiver/show", token, nil, &receivers)
+	return receivers, status, err
+}

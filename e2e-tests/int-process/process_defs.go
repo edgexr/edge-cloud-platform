@@ -17,6 +17,7 @@ type MC struct {
 	ConsoleProxyAddr        string
 	UseVaultCAs             bool
 	UseVaultCerts           bool
+	AlertResolveTimeout     string
 	BillingPath             string
 	UsageCollectionInterval string
 	TLS                     process.TLSCerts
@@ -78,5 +79,19 @@ type Exporter struct {
 type ChefServer struct {
 	process.Common `yaml:",inline"`
 	Port           int
+	cmd            *exec.Cmd
+}
+
+type Alertmanager struct {
+	process.Common `yaml:",inline"`
+	ConfigFile     string
+	Port           int
+	cmd            *exec.Cmd
+}
+
+type Maildev struct {
+	process.Common `yaml:",inline"`
+	Uiport         int
+	Mailport       int
 	cmd            *exec.Cmd
 }

@@ -10,6 +10,7 @@
     envoy_cluster_name: ReservableD
     instance: host.docker.internal:9091
     job: envoy_targets
+    region: local
   state: pending
   activeat:
     seconds: 1594945144

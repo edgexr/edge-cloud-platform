@@ -59,6 +59,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--consoleproxyaddr")
 		args = append(args, p.ConsoleProxyAddr)
 	}
+	if p.AlertResolveTimeout != "" {
+		args = append(args, "--alertResolveTimeout")
+		args = append(args, p.AlertResolveTimeout)
+	}
 	if p.UseVaultCAs {
 		args = append(args, "--useVaultCAs")
 	}
@@ -640,3 +644,66 @@ func (p *ChefServer) StopLocal() {
 func (p *ChefServer) GetExeName() string { return "chef-zero" }
 
 func (p *ChefServer) LookupArgs() string { return fmt.Sprintf("--port %d --multi-org", p.Port) }
+
+func (p *Alertmanager) StartLocal(logfile string, opts ...process.StartOp) error {
+	configFile := "/tmp/alertmanager.yml"
+	if p.ConfigFile != "" {
+		// Copy file from data dir to /tmp since it's going to be written to
+		in, err := ioutil.ReadFile(p.ConfigFile)
+		if err != nil {
+			log.Printf("Failed to open alertmanager configuration file - %s\n", err.Error())
+			return err
+		}
+		err = ioutil.WriteFile(configFile, in, 0644)
+		if err != nil {
+			log.Printf("Failed to copy alertmanager configuration file - %s\n", err.Error())
+			return err
+		}
+	}
+	args := []string{
+		"run", "--rm", "-p", fmt.Sprintf("%d:%d", p.Port, p.Port),
+		"-v", configFile + ":/etc/prometheus/alertmanager.yml",
+		"--name", p.Name,
+		"prom/alertmanager:v0.21.0",
+		"--web.listen-address", fmt.Sprintf(":%d", p.Port),
+		"--config.file", "/etc/prometheus/alertmanager.yml",
+	}
+
+	var err error
+	log.Printf("Start Alertmanager: %v\n", args)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *Alertmanager) StopLocal() {
+	process.StopLocal(p.cmd)
+	cmd := exec.Command("docker", "kill", p.Name)
+	cmd.Run()
+}
+
+func (p *Alertmanager) GetExeName() string { return "docker" }
+
+func (p *Alertmanager) LookupArgs() string { return p.Name }
+
+func (p *Maildev) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{
+		"run", "--rm",
+		"-p", fmt.Sprintf("%d:%d", p.Uiport, 80),
+		"-p", fmt.Sprintf("%d:%d", p.Mailport, 25),
+		"--name", p.Name,
+		"maildev/maildev:1.1.0",
+	}
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *Maildev) StopLocal() {
+	process.StopLocal(p.cmd)
+	cmd := exec.Command("docker", "kill", p.Name)
+	cmd.Run()
+}
+
+func (p *Maildev) GetExeName() string { return "docker" }
+
+func (p *Maildev) LookupArgs() string { return p.Name }
