@@ -39,14 +39,15 @@ func (o *VMPoolPlatform) SetCaches(ctx context.Context, caches *platform.Caches)
 func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VM Pool", "stage", stage)
 	o.SetCaches(ctx, caches)
-	updateCallback(edgeproto.UpdateTask, "Verifying VMs")
 
 	switch stage {
 
-	case vmlayer.ProviderInitCreateCloudlet:
+	case vmlayer.ProviderInitCreateCloudletDirect:
 		// A VerifyVMs error fails CreateCloudlet
+		updateCallback(edgeproto.UpdateTask, "Verifying VMs")
 		return o.VerifyVMs(ctx, caches.VMPool.Vms)
 	case vmlayer.ProviderInitPlatformStart:
+		updateCallback(edgeproto.UpdateTask, "Verifying VMs")
 		err := o.VerifyVMs(ctx, caches.VMPool.Vms)
 		if err != nil {
 			// do not fail CRM startup, but alerts should be generated for any failed VMs
