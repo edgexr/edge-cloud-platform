@@ -60,6 +60,10 @@ type Api interface {
 	ShowAuditSelf(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 	ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]ormapi.AuditResponse, int, error)
 
+	CreateAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error)
+	DeleteAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error)
+	ShowAlertReceiver(uri, token string) ([]ormapi.AlertReceiver, int, error)
+
 	FlavorApiClient
 	CloudletApiClient
 	CloudletInfoApiClient

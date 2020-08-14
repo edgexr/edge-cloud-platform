@@ -64,16 +64,18 @@ type K8CopyFile struct {
 
 type DeploymentData struct {
 	util.DeploymentData `yaml:",inline"`
-	Cluster             ClusterInfo              `yaml:"cluster"`
-	K8sDeployment       []*K8sDeploymentStep     `yaml:"k8s-deployment"`
-	Mcs                 []*intprocess.MC         `yaml:"mcs"`
-	Sqls                []*intprocess.Sql        `yaml:"sqls"`
-	Shepherds           []*intprocess.Shepherd   `yaml:"shepherds"`
-	AutoProvs           []*intprocess.AutoProv   `yaml:"autoprovs"`
-	Cloudflare          CloudflareDNS            `yaml:"cloudflare"`
-	Prometheus          []*intprocess.PromE2e    `yaml:"prometheus"`
-	Exporters           []*intprocess.Exporter   `yaml:"exporter"`
-	ChefServers         []*intprocess.ChefServer `yaml:"chefserver"`
+	Cluster             ClusterInfo                `yaml:"cluster"`
+	K8sDeployment       []*K8sDeploymentStep       `yaml:"k8s-deployment"`
+	Mcs                 []*intprocess.MC           `yaml:"mcs"`
+	Sqls                []*intprocess.Sql          `yaml:"sqls"`
+	Shepherds           []*intprocess.Shepherd     `yaml:"shepherds"`
+	AutoProvs           []*intprocess.AutoProv     `yaml:"autoprovs"`
+	Cloudflare          CloudflareDNS              `yaml:"cloudflare"`
+	Prometheus          []*intprocess.PromE2e      `yaml:"prometheus"`
+	Exporters           []*intprocess.Exporter     `yaml:"exporter"`
+	ChefServers         []*intprocess.ChefServer   `yaml:"chefserver"`
+	Alertmanagers       []*intprocess.Alertmanager `yaml:"alertmanagers"`
+	Maildevs            []*intprocess.Maildev      `yaml:"maildevs"`
 }
 
 // a comparison and yaml friendly version of AllMetrics for e2e-tests
@@ -127,6 +129,9 @@ func GetAllProcesses() []process.Process {
 	for _, p := range Deployment.Sqls {
 		all = append(all, p)
 	}
+	for _, p := range Deployment.Alertmanagers {
+		all = append(all, p)
+	}
 	for _, p := range Deployment.Mcs {
 		all = append(all, p)
 	}
@@ -143,6 +148,9 @@ func GetAllProcesses() []process.Process {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.ChefServers {
+		all = append(all, p)
+	}
+	for _, p := range Deployment.Maildevs {
 		all = append(all, p)
 	}
 	return all
@@ -248,6 +256,12 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 			return false
 		}
 	}
+	for _, p := range Deployment.Alertmanagers {
+		opts := append(opts, process.WithCleanStartup())
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
 	for _, p := range Deployment.Mcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
 		opts = append(opts, process.WithDebug("api,metrics"))
@@ -282,6 +296,11 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.ChefServers {
+		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
+			return false
+		}
+	}
+	for _, p := range Deployment.Maildevs {
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
@@ -410,6 +429,11 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 		}
 	case "runchefclient":
 		err := RunChefClient(spec.ApiFile, vars)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "email":
+		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errors = append(errors, err.Error())
 		}

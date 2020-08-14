@@ -18,6 +18,16 @@ toksims:
 vaults:
 - name: vault
   hostname: "127.0.0.1"
+  vaultdatas:
+  - path: /secret/accounts/alertmanagersmtp
+    data:
+      email: mexadmin@mobiledgex.com
+      user: mexadmin@mobiledgex.com
+      token: mexadmin123
+      smtp: host.docker.internal
+      port: 1025
+# maildev does not support STARTTLS protocol, so disable encrtyption for local testing
+      tls: false
 
 influxs:
 - name: influx1
@@ -145,3 +155,15 @@ notifyroots:
   hostname: "127.0.0.1"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
+
+alertmanagers:
+- name: alertmanager
+  configfile: "{{datadir2}}/alertmanager.yml"
+  port: 9093
+  hostname: "127.0.0.1"
+
+maildevs:
+- name: maildev
+  hostname: "127.0.0.1"
+  uiport: 1080
+  mailport: 1025

@@ -18,11 +18,13 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/billing/zuora"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgecli "github.com/mobiledgex/edge-cloud/edgectl/cli"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
@@ -49,31 +51,35 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	ServAddr         string
-	SqlAddr          string
-	VaultAddr        string
-	ConsoleProxyAddr string
-	RunLocal         bool
-	InitLocal        bool
-	IgnoreEnv        bool
-	TlsCertFile      string
-	TlsKeyFile       string
-	LocalVault       bool
-	LDAPAddr         string
-	GitlabAddr       string
-	ArtifactoryAddr  string
-	ClientCert       string
-	PingInterval     time.Duration
-	SkipVerifyEmail  bool
-	JaegerAddr       string
-	vaultConfig      *vault.Config
-	SkipOriginCheck  bool
-	Hostname         string
-	NotifyAddrs      string
-	NotifySrvAddr    string
-	NodeMgr          *node.NodeMgr
-	Billing          bool
-	BillingPath      string
+	ServAddr              string
+	SqlAddr               string
+	VaultAddr             string
+	ConsoleProxyAddr      string
+	RunLocal              bool
+	InitLocal             bool
+	IgnoreEnv             bool
+	TlsCertFile           string
+	TlsKeyFile            string
+	LocalVault            bool
+	LDAPAddr              string
+	GitlabAddr            string
+	ArtifactoryAddr       string
+	ClientCert            string
+	PingInterval          time.Duration
+	SkipVerifyEmail       bool
+	JaegerAddr            string
+	vaultConfig           *vault.Config
+	SkipOriginCheck       bool
+	Hostname              string
+	NotifyAddrs           string
+	NotifySrvAddr         string
+	NodeMgr               *node.NodeMgr
+	Billing               bool
+	BillingPath           string
+	AlertCache            *edgeproto.AlertCache
+	AlertMgrAddr          string
+	AlertMgrConfigPath    string
+	AlertmgrResolveTimout time.Duration
 }
 
 var DefaultDBUser = "mcuser"
@@ -92,6 +98,7 @@ var gitlabClient *gitlab.Client
 var gitlabSync *AppStoreSync
 var artifactorySync *AppStoreSync
 var nodeMgr *node.NodeMgr
+var AlertManagerServer *alertmgr.AlertMgrServer
 
 func RunServer(config *ServerConfig) (*Server, error) {
 	server := Server{config: config}
@@ -218,6 +225,14 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	server.initDataDone = make(chan struct{}, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
+	if config.AlertMgrAddr != "" {
+		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, config.AlertMgrConfigPath,
+			config.vaultConfig, config.LocalVault, config.AlertCache, config.AlertmgrResolveTimout)
+		if err != nil {
+			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to start alertmanger seerver", "error", err)
+		}
+	}
 	go server.setupConsoleProxy(ctx)
 
 	e := echo.New()
@@ -437,6 +452,11 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/events/cluster", GetEventsCommon)
 	auth.POST("/events/cloudlet", GetEventsCommon)
 
+	// Alertmanager apis
+	auth.POST("/alertreceiver/create", CreateAlertReceiver)
+	auth.POST("/alertreceiver/delete", DeleteAlertReceiver)
+	auth.POST("/alertreceiver/show", ShowAlertReceiver)
+
 	// Use GET method for websockets as thats the method used
 	// in setting up TCP connection by most of the clients
 	// Also, authorization is handled as part of websocketUpgrade
@@ -462,6 +482,12 @@ func RunServer(config *ServerConfig) (*Server, error) {
 			[]node.MatchCA{node.AnyRegionalMatchCA()})
 		if err != nil {
 			return nil, err
+		}
+		edgeproto.InitAlertCache(config.AlertCache)
+		// sets the callback to be the alertMgr thread callback
+		server.notifyServer.RegisterRecvAlertCache(config.AlertCache)
+		if AlertManagerServer != nil {
+			config.AlertCache.SetUpdatedCb(AlertManagerServer.UpdateAlert)
 		}
 		server.notifyServer.Start(nodeMgr.Name(), config.NotifySrvAddr, tlsConfig)
 	}
@@ -513,10 +539,13 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	gitlabSync = GitlabNewSync()
 	artifactorySync = ArtifactoryNewSync()
 
-	// gitlab/artifactory sync requires data to be initialized
+	// gitlab/artifactory sync and alertmanager requires data to be initialized
 	<-server.initDataDone
 	gitlabSync.Start()
 	artifactorySync.Start()
+	if AlertManagerServer != nil {
+		AlertManagerServer.Start()
+	}
 
 	return &server, err
 }
@@ -555,6 +584,9 @@ func (s *Server) Stop() {
 	}
 	if s.notifyClient != nil {
 		s.notifyClient.Stop()
+	}
+	if AlertManagerServer != nil {
+		AlertManagerServer.Stop()
 	}
 }
 

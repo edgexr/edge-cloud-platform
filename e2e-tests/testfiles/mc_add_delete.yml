@@ -124,6 +124,8 @@ tests:
     yaml2: '{{datadir2}}/mc_events_show.yml'
     filetype: mcmetrics
 
+- includefile: alerttest.yml
+
   #going to need a second one for operator, or just use mexadmin instead of user2
 - name: check developer shepherd metrics in influx (separate calls)
   actions: [mcapi-showmetrics]

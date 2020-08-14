@@ -250,6 +250,7 @@ type WSStreamPayload struct {
 type AllData struct {
 	Controllers      []Controller          `json:"controllers,omitempty"`
 	BillingOrgs      []BillingOrganization `json:"billingorgs,omitempty"`
+	AlertReceivers   []AlertReceiver       `json:"alertreceivers,omitempty"`
 	Orgs             []Organization        `json:"orgs,omitempty"`
 	Roles            []Role                `json:"roles,omitempty"`
 	OrgCloudletPools []OrgCloudletPool     `json:"orgcloudletpools,omitempty"`
@@ -334,4 +335,21 @@ type RegionCloudletEvents struct {
 	StartTime time.Time `json:",omitempty"`
 	EndTime   time.Time `json:",omitempty"`
 	Last      int       `json:",omitempty"`
+}
+
+// Configurable part of AlertManager Receiver
+type AlertReceiver struct {
+	// Receiver Name
+	Name string
+	// Receiver type. Eg. email, slack, pagerduty
+	Type string
+	// Alert severify filter
+	Severity string
+	// User string, hidden from API
+	User string `json:"-"`
+	// TODO - add slack notification details(optional)
+	// Cloudlet spec for alerts
+	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
+	// AppInst spec for alerts
+	AppInst edgeproto.AppInstKey `json:",omitempty"`
 }

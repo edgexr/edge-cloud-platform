@@ -41,6 +41,10 @@ path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
 
+path "secret/data/accounts/alertmanagersmtp" {
+  capabilities = [ "read" ]
+}
+
 path "secret/data/registry/*" {
   capabilities = [ "read" ]
 }

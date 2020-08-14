@@ -1,0 +1,10 @@
+- text: "\nMobiledX Monitoring System: 1 alert for \n\n  [1] Firing\n\n\n"
+  headers:
+    subject: '[FIRING:1] AppInstDown Application: someapplication1 Version: 1.0'
+    to: mexadmin@mobiledgex.net
+    from: alerts@mobiledgex.com
+- text: "\nMobiledX Monitoring System: 1 alert for \n\n\n  [1] Resolved\n\n"
+  headers:
+    subject: '[RESOLVED] AppInstDown Application: someapplication1 Version: 1.0'
+    to: mexadmin@mobiledgex.net
+    from: alerts@mobiledgex.com

@@ -45,7 +45,7 @@ var failAlerts = `{
 	  "alerts": [
 		{
 		  "labels": {
-			"alertname": "AppInstDown",
+			"alertname": "` + cloudcommon.AlertAppInstDown + `",
 			"` + edgeproto.AppKeyTagName + `": "` + shepherd_test.TestApp.Key.Name + `",
 			"` + edgeproto.AppKeyTagOrganization + `": "` + shepherd_test.TestApp.Key.Organization + `",
 			"` + edgeproto.AppKeyTagVersion + `": "` + shepherd_test.TestApp.Key.Version + `",
@@ -63,7 +63,7 @@ var failAlerts = `{
 		},
 		{
 		  "labels": {
-			"alertname": "AppInstDown",
+			"alertname": "` + cloudcommon.AlertAppInstDown + `",
 			"` + edgeproto.AppKeyTagName + `": "` + shepherd_test.TestApp.Key.Name + `",
 			"` + edgeproto.AppKeyTagOrganization + `": "` + shepherd_test.TestApp.Key.Organization + `",
 			"` + edgeproto.AppKeyTagVersion + `": "` + shepherd_test.TestApp.Key.Version + `",

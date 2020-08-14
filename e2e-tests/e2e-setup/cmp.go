@@ -140,7 +140,15 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a2 []edgeproto.Alert
 
 		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		// If this is an empty file, treat it as an empty list
+		if a1 == nil {
+			a1 = []edgeproto.Alert{}
+		}
 		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		// If this is an empty file, treat it as an empty list
+		if a2 == nil {
+			a2 = []edgeproto.Alert{}
+		}
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
@@ -181,6 +189,30 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		y1 = a1
 		y2 = a2
 
+	} else if fileType == "emaildata" {
+		// sort email headers
+		var a1 []MailDevEmail
+		var a2 []MailDevEmail
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		// If this is an empty file, treat it as an empty list
+		if a1 == nil {
+			a1 = []MailDevEmail{}
+		}
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		// If this is an empty file, treat it as an empty list
+		if a2 == nil {
+			a2 = []MailDevEmail{}
+		}
+		sort.Slice(a1, func(i, j int) bool {
+			return a1[i].Headers.Subject < a1[j].Headers.Subject
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			return a2[i].Headers.Subject < a2[j].Headers.Subject
+		})
+
+		y1 = a1
+		y2 = a2
 	} else {
 		return util.CompareYamlFiles(firstYamlFile,
 			secondYamlFile, fileType)
