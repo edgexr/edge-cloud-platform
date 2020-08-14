@@ -132,9 +132,10 @@ const (
 type ProviderInitStage string
 
 const (
-	ProviderInitCreateCloudlet ProviderInitStage = "CreateCloudlet"
-	ProviderInitPlatformStart  ProviderInitStage = "PlatformStart"
-	ProviderInitDeleteCloudlet ProviderInitStage = "DeleteCloudlet"
+	ProviderInitCreateCloudletDirect     ProviderInitStage = "CreateCloudletDirect"
+	ProviderInitCreateCloudletRestricted ProviderInitStage = "CreateCloudletRestricted"
+	ProviderInitPlatformStart            ProviderInitStage = "PlatformStart"
+	ProviderInitDeleteCloudlet           ProviderInitStage = "DeleteCloudlet"
 )
 
 type StringSanitizer func(value string) string

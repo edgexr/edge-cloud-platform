@@ -208,7 +208,11 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	// save caches needed for flavors
 	v.Caches = caches
-	err = v.VMProvider.InitProvider(ctx, caches, ProviderInitCreateCloudlet, updateCallback)
+	stage := ProviderInitCreateCloudletDirect
+	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+		stage = ProviderInitCreateCloudletRestricted
+	}
+	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -612,7 +616,8 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 
 	}
 	if flavorName == "" {
-		return nil, fmt.Errorf("unable to fetch platform flavor")
+		// give some default flavor name, user can fix this later
+		flavorName = "<ADD_FLAVOR_HERE>"
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
