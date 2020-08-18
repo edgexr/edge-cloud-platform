@@ -259,7 +259,10 @@ func TestAlertMgrServer(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 	// any requests that don't have a registered URL will be fetched normally
-	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	httpmock.RegisterNoResponder(func(req *http.Request) (*http.Response, error) {
+		// return OK
+		return httpmock.NewJsonResponse(200, nil)
+	})
 
 	// // Run MC to test the actual MC apis
 	// // master controller
