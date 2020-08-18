@@ -253,6 +253,7 @@ func setAgentName() string {
 }
 
 func NewAlertMgrServer(alertMgrAddr string, configPath string, vaultConfig *vault.Config, localVault bool, alertCache *edgeproto.AlertCache, resolveTimeout time.Duration) (*AlertMgrServer, error) {
+	var err error
 	server := AlertMgrServer{
 		AlertMrgAddr:            alertMgrAddr,
 		AlertCache:              alertCache,
@@ -263,15 +264,20 @@ func NewAlertMgrServer(alertMgrAddr string, configPath string, vaultConfig *vaul
 		AlertResolutionTimout:   resolveTimeout,
 	}
 	span := log.StartSpan(log.DebugLevelApi|log.DebugLevelInfo, "AlertMgrServer")
+	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	// We might need to wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
-		_, err := server.alertMgrApi(ctx, "GET", "", "", nil)
+		_, err = server.alertMgrApi(ctx, "GET", "", "", nil)
 		if err == nil {
 			break
 		}
 		time.Sleep(1 * time.Second)
+	}
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to connect to alertmanager", "err", err)
+		return nil, err
 	}
 	if err := server.readConfigFile(ctx); err != nil {
 		return nil, err

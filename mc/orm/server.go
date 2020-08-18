@@ -230,7 +230,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 			config.vaultConfig, config.LocalVault, config.AlertCache, config.AlertmgrResolveTimout)
 		if err != nil {
 			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts
-			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to start alertmanger server", "error", err)
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to start alertmanager server", "error", err)
+			err = nil
 		}
 	}
 	go server.setupConsoleProxy(ctx)
