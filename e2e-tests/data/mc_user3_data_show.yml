@@ -264,6 +264,9 @@ regiondata:
       createdat:
         seconds: 1569534854
         nanos: 528573000
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     appinstrefs:
     - key:
         organization: user3org

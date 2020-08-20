@@ -415,6 +415,9 @@ regiondata:
         name: x1.small
       state: Ready
       powerstate: PowerOn
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     - key:
         appkey:
           organization: AcmeAppCo
@@ -449,6 +452,9 @@ regiondata:
         name: x1.small
       state: Ready
       powerstate: PowerOn
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
 
     autoprovpolicies:
     - key:
@@ -843,6 +849,9 @@ regiondata:
         nanos: 473764000
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     - key:
         appkey:
           organization: AcmeAppCo
@@ -881,6 +890,9 @@ regiondata:
         nanos: 585740000
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     appinstrefs:
     - key:
         organization: AcmeAppCo

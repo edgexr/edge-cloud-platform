@@ -32,6 +32,9 @@ regiondata:
         seconds: 1576628584
         nanos: 73154000
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     - key:
         appkey:
           organization: AcmeAppCo

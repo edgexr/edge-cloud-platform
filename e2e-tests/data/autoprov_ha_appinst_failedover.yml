@@ -32,6 +32,9 @@ regiondata:
         nanos: 376315000
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     - key:
         appkey:
           organization: AcmeAppCo
@@ -62,6 +65,9 @@ regiondata:
         nanos: 84689000
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
     - key:
         appkey:
           organization: AcmeAppCo
@@ -92,3 +98,6 @@ regiondata:
         nanos: 24456000
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0

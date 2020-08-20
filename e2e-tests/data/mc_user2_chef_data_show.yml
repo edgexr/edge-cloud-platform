@@ -214,6 +214,11 @@ regiondata:
       state: Ready
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+        - appOnClusterNode1
+        - appOnClusterNode2
     - key:
         appkey:
           organization: DevOrg
@@ -241,6 +246,11 @@ regiondata:
       state: Ready
       powerstate: PowerOn
       vmflavor: x1.small
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+        - appOnClusterNode1
+        - appOnClusterNode2
     appinstrefs:
     - key:
         organization: DevOrg
