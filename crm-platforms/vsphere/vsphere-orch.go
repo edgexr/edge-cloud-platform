@@ -54,11 +54,16 @@ func (v *VSpherePlatform) DeleteResourcesForGroup(ctx context.Context, groupName
 	if err != nil {
 		return err
 	}
+	// default the domain to the platform domain, override if we find
+	// a tag with a different domain. This can happen when the controller directly
+	// runs platform code with the domain set to "platform" and deletes the compute VMs
+	domain := string(v.vmProperties.Domain)
 	for _, vmtag := range vmtags {
-		vmname, _, err := v.ParseVMDomainTag(ctx, vmtag.Name)
+		vmname, vmdomain, err := v.ParseVMDomainTag(ctx, vmtag.Name)
 		if err != nil {
 			return err
 		}
+		domain = vmdomain
 		err = v.DeleteVM(ctx, vmname)
 		if err != nil {
 			return err
@@ -94,7 +99,7 @@ func (v *VSpherePlatform) DeleteResourcesForGroup(ctx context.Context, groupName
 	}
 
 	// delete resource pool
-	poolName := getResourcePoolName(groupName, string(v.vmProperties.Domain))
+	poolName := getResourcePoolName(groupName, domain)
 	return v.DeletePool(ctx, poolName)
 }
 
@@ -487,7 +492,12 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 		"-vm", vm.Name)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in change VM", "vmName", vm.Name, "out", string(out), "err", err)
-		return fmt.Errorf("Failed to set guestinfor for VM: %s - %v", vm.Name, err)
+		return fmt.Errorf("Failed to set guestinfo for for VM: %s - %v", vm.Name, err)
+	}
+	// in 1804 we need to ensure the interfaces are connected as the guest tools will not reliably do this
+	err = v.ConnectNetworksForVM(ctx, vm.Name)
+	if err != nil {
+		return err
 	}
 	return v.SetPowerState(ctx, vm.Name, vmlayer.ActionStart)
 }

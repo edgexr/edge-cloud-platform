@@ -77,7 +77,6 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *InterfaceActionsOp) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "configureInternalInterfaceAndExternalForwarding", "serverDetails", serverDetails, "internalPortName", internalPortName, "action", fmt.Sprintf("%+v", action))
-
 	internalIP, err := GetIPFromServerDetails(ctx, "", internalPortName, serverDetails)
 	if err != nil {
 		return err
@@ -125,12 +124,11 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		}
 		// keep going on delete
 	}
-	filename := "/etc/network/interfaces.d/" + internalPortName + ".cfg"
-	contents := fmt.Sprintf("auto %s\niface %s inet static\n   address %s/24", internalIfname, internalIfname, internalIP.InternalAddr)
-
+	netplanEnabled := ServerIsNetplanEnabled(ctx, client)
+	filename, fileMatch, contents := GetNetworkFileDetailsForIP(ctx, internalPortName, internalIfname, internalIP.InternalAddr, netplanEnabled)
 	if action.addInterface {
 		// cleanup any interfaces files that may be sitting around with our new interface, perhaps from some old failure
-		cmd := fmt.Sprintf("grep -l ' %s ' /etc/network/interfaces.d/*-port.cfg", internalIfname)
+		cmd := fmt.Sprintf("grep -l ' %s ' %s", fileMatch, internalIfname)
 		out, err = client.Output(cmd)
 		log.SpanLog(ctx, log.DebugLevelInfra, "cleanup old interface files with interface", "internalIfname", internalIfname, "out", out, "err", err)
 		if err == nil {
@@ -144,28 +142,13 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 				}
 			}
 		}
-
-		err = pc.WriteFile(client, filename, contents, "ifconfig", pc.SudoOn)
+		err = pc.WriteFile(client, filename, contents, "netconfig", pc.SudoOn)
 		// now create the file
 		if err != nil {
-			return fmt.Errorf("unable to write interface config file: %s -- %v", filename, err)
-		}
-
-		// in some OS the interfaces file may not refer to interfaces.d
-		ifFile := "/etc/network/interfaces"
-		cmd = fmt.Sprintf("grep -l interfaces.d %s", ifFile)
-		out, err = client.Output(cmd)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "adding source line to interfaces file")
-			cmd = fmt.Sprintf("echo '%s'|sudo tee -a %s", "source /etc/network/interfaces.d/*-port.cfg", ifFile)
-			out, err = client.Output(cmd)
-			if err != nil {
-				return fmt.Errorf("can't add source reference to interfaces file: %v", err)
-			}
+			return fmt.Errorf("unable to write network config file: %s -- %v", filename, err)
 		}
 
 		// now bring the new internal interface up.
-
 		var ipcmds []string
 		linkCmd := fmt.Sprintf("sudo ip link set dev %s up", internalIfname)
 		ipcmds = append(ipcmds, linkCmd)
@@ -189,9 +172,10 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 			if strings.Contains(out, "No such file") {
 				log.SpanLog(ctx, log.DebugLevelInfra, "file already gone", "filename", filename)
 			} else {
-				return fmt.Errorf("Unexpected error removing interface file %s, %s -- %v", filename, out, err)
+				return fmt.Errorf("Unexpected error removing network config file %s, %s -- %v", filename, out, err)
 			}
 		}
+
 		cmd = fmt.Sprintf("sudo ip addr flush %s", internalIfname)
 		log.SpanLog(ctx, log.DebugLevelInfra, "removing ip from interface", "internalIfname", internalIfname, "cmd", internalIfname)
 		out, err = client.Output(cmd)

@@ -139,6 +139,41 @@ func GetAllowedClientCIDR() string {
 	return "0.0.0.0/0"
 }
 
+// serverIsNetplanEnabled checks for the existence of netplan, in which case there are no ifcfg files.  The current
+// baseimage uses netplan, but CRM can still run on older rootLBs.
+func ServerIsNetplanEnabled(ctx context.Context, client ssh.Client) bool {
+	cmd := "netplan info"
+	_, err := client.Output(cmd)
+	return err == nil
+}
+
+func getNetplanContents(portName, ifName string, ipAddr string) string {
+	return fmt.Sprintf(`## config for %s
+network:
+    version: 2
+    ethernets:
+        %s:
+            dhcp4: no
+            dhcp6: no
+            addresses:
+             - %s
+`, portName, ifName, ipAddr)
+}
+
+// GetNetworkFileDetailsForIP returns interfaceFileName, fileMatchPattern, contents based on whether netplan is enabled
+func GetNetworkFileDetailsForIP(ctx context.Context, portName string, ifName string, ipAddr string, netPlanEnabled bool) (string, string, string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkFileDetailsForIP", "portName", portName, "ifName", ifName, "ipAddr", ipAddr, "netPlanEnabled", netPlanEnabled)
+	fileName := "/etc/network/interfaces.d/" + portName + ".cfg"
+	fileMatch := "/etc/network/interfaces.d/*-port.cfg"
+	contents := fmt.Sprintf("auto %s\niface %s inet static\n   address %s/24", ifName, ifName, ipAddr)
+	if netPlanEnabled {
+		fileName = "/etc/netplan/" + portName + ".yaml"
+		fileMatch = "/etc/netplan/*-port.yaml"
+		contents = getNetplanContents(portName, ifName, ipAddr+"/24")
+	}
+	return fileName, fileMatch, contents
+}
+
 func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, serverName string, cidr string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddRouteToServer", "serverName", serverName, "cidr", cidr)
 
@@ -171,10 +206,7 @@ func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, se
 
 	if gatewayIP != "" {
 		cmd := fmt.Sprintf("sudo ip route add %s via %s", netw.String(), gatewayIP)
-		if err != nil {
-			return err
-		}
-
+		log.SpanLog(ctx, log.DebugLevelInfra, "Add route to network", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
 			if strings.Contains(out, "RTNETLINK") && strings.Contains(out, " exists") {
@@ -184,21 +216,29 @@ func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, se
 			}
 		}
 
+		netplanEnabled := ServerIsNetplanEnabled(ctx, client)
 		// make the route persist by adding the following line if not already present via grep.
-		routeAddLine := fmt.Sprintf("up route add -net %s netmask %s gw %s", ip, maskStr, gatewayIP)
-		interfacesFile := GetCloudletNetworkIfaceFile()
-		cmd = fmt.Sprintf("grep -l '%s' %s", routeAddLine, interfacesFile)
+		routeAddText := fmt.Sprintf("up route add -net %s netmask %s gw %s", ip, maskStr, gatewayIP)
+		maskLen, _ := netw.Mask.Size()
+		if netplanEnabled {
+			routeAddText = fmt.Sprintf(`
+            routes:
+            - to: %s/%d
+              via: %s`, ip, maskLen, gatewayIP)
+		}
+		interfacesFile := GetCloudletNetworkIfaceFile(netplanEnabled)
+		cmd = fmt.Sprintf("grep -l '%s' %s", gatewayIP, interfacesFile)
 		out, err = client.Output(cmd)
 		if err != nil {
 			// grep failed so not there already
-			log.SpanLog(ctx, log.DebugLevelInfra, "adding route to interfaces file", "route", routeAddLine, "file", interfacesFile)
-			cmd = fmt.Sprintf("echo '%s'|sudo tee -a %s", routeAddLine, interfacesFile)
+			log.SpanLog(ctx, log.DebugLevelInfra, "adding route to interfaces file", "route", routeAddText, "file", interfacesFile)
+			cmd = fmt.Sprintf("echo '%s'|sudo tee -a %s", routeAddText, interfacesFile)
 			out, err = client.Output(cmd)
 			if err != nil {
 				return fmt.Errorf("can't add route to interfaces file: %v", err)
 			}
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "route already present in interfaces file")
+			log.SpanLog(ctx, log.DebugLevelInfra, "route already present in interfaces file", "file", interfacesFile)
 		}
 	}
 	return nil
