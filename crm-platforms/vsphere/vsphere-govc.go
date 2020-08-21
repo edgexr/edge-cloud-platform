@@ -113,6 +113,15 @@ type GovcVMLayout struct {
 	File []GovcVMFile
 }
 
+type GovcVMDevice struct {
+	Name string
+	Type string
+}
+
+type GovcVMDeviceList struct {
+	Devices []GovcVMDevice
+}
+
 type GovcVM struct {
 	Name     string
 	Runtime  GovcRuntime
@@ -521,6 +530,37 @@ func (v *VSpherePlatform) GetServerDetail(ctx context.Context, vmname string) (*
 		return nil, err
 	}
 	return v.getServerDetailFromGovcVm(ctx, govcVm)
+}
+
+func (v *VSpherePlatform) ConnectNetworksForVM(ctx context.Context, vmName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConnectNetworksForVM", "vmName", vmName)
+	dcName := v.GetDatacenterName(ctx)
+
+	var devices GovcVMDeviceList
+	// list devices
+	out, err := v.TimedGovcCommand(ctx, "govc", "device.ls", "-dc", dcName, "-vm", vmName, "-json")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Error in listing VM devices", "out", string(out), "err", err)
+		return fmt.Errorf("Error in listing VM devices: %s - %v", string(out), err)
+	}
+	err = json.Unmarshal(out, &devices)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "List devices unmarshal fail", "out", string(out), "err", err)
+		return fmt.Errorf("cannot unmarshal govc device list: %v", err)
+	}
+
+	for _, d := range devices.Devices {
+		if strings.HasPrefix(d.Name, "ethernet") {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Connect network interface", "vmName", vmName, "deviceName", d.Name)
+			// it is ok to connect a device already connected
+			out, err = v.TimedGovcCommand(ctx, "govc", "device.connect", "-dc", dcName, "-vm", vmName, d.Name)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error in connecting network interface", "vmName", vmName, "deviceName", d.Name, "out", string(out), "err", err)
+				return fmt.Errorf("Error in connecting network interface for VM: %s - %s, %v", vmName, string(out), err)
+			}
+		}
+	}
+	return nil
 }
 
 func (v *VSpherePlatform) GetVMs(ctx context.Context, vmNameMatch string, domainMatch vmlayer.VMDomain) (*GovcVMs, error) {
