@@ -384,7 +384,7 @@ func (v *VMPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edg
 	if err != nil {
 		return err
 	}
-	path := GetVaultCloudletAccessPath(&cloudlet.Key, v.Type, pfConfig.Region, cloudlet.PhysicalName, v.VMProvider.GetApiAccessFilename())
+	path := GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, v.Type, cloudlet.PhysicalName, v.VMProvider.GetApiAccessFilename())
 	err = infracommon.DeleteDataFromVault(vaultConfig, path)
 	if err != nil {
 		return fmt.Errorf("Failed to delete access vars from vault: %v", err)
