@@ -339,7 +339,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// Fetch image paths from zip file
 		if app.DeploymentManifest != "" && strings.HasSuffix(app.DeploymentManifest, ".zip") {
 			filename := util.DockerSanitize(app.Key.Name + app.Key.Organization + app.Key.Version)
-			zipfile := "/tmp/" + filename + ".zip"
+			zipfile := "/var/tmp/" + filename + ".zip"
 			zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, v.VMProperties.CommonPf.VaultConfig, app.DeploymentManifest, zipfile, cloudcommon.Download)
 			if err != nil {
 				return err
@@ -648,7 +648,7 @@ func DownloadVMImage(ctx context.Context, vaultConfig *vault.Config, imageName, 
 	if err != nil {
 		return "", err
 	}
-	filePath := "/tmp/" + fileExt
+	filePath := "/var/tmp/" + fileExt
 
 	err = cloudcommon.DownloadFile(ctx, vaultConfig, imageUrl, filePath, nil)
 	if err != nil {
