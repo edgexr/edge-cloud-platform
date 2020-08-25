@@ -135,10 +135,14 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 			return fmt.Errorf("unsupported server power action: %s", PowerState)
 		}
 
+		serverSubnet := v.VMProperties.GetCloudletExternalNetwork()
+		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			serverSubnet = serverName + "-subnet"
+		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-		oldServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetail)
+		oldServerIP, err := GetIPFromServerDetails(ctx, serverSubnet, "", serverDetail)
 		if err != nil || oldServerIP.ExternalAddr == "" {
-			return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, v.VMProperties.GetCloudletExternalNetwork(), err)
+			return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, serverSubnet, err)
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Performing action %s on %s", serverAction, serverName))
 		err = v.VMProvider.SetPowerState(ctx, serverName, serverAction)
@@ -153,9 +157,9 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 				return err
 			}
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Fetching external address of %s", serverName))
-			newServerIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetail)
+			newServerIP, err := GetIPFromServerDetails(ctx, serverSubnet, "", serverDetail)
 			if err != nil || newServerIP.ExternalAddr == "" {
-				return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, v.VMProperties.GetCloudletExternalNetwork(), err)
+				return fmt.Errorf("unable to fetch external ip for %s, addr %s, err %v", serverName, serverSubnet, err)
 			}
 			if oldServerIP.ExternalAddr != newServerIP.ExternalAddr {
 				// IP changed, update DNS entry
