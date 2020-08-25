@@ -152,7 +152,7 @@ func (v *VSpherePlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer
 
 	for _, hs := range hosts.HostSystems {
 		platformRes.MemMax = platformRes.MemMax + hs.Hardware.MemorySize
-		platformRes.VCpuMax = platformRes.VCpuMax + hs.Hardware.CpuInfo.NumCpuCores
+		platformRes.VCpuMax = platformRes.VCpuMax + hs.Hardware.CpuInfo.NumCpuThreads
 	}
 	// convert to MB
 	if platformRes.MemMax > 0 {
