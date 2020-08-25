@@ -123,6 +123,18 @@ variable "chef_zone" {
   default     = "us-central1-a"
 }
 
+variable "monitor_domain_name" {
+  default     = "monitor.mobiledgex.net"
+}
+
+variable "monitor_instance_name" {
+  default     = "monitor"
+}
+
+variable "monitor_zone" {
+  default     = "us-central1-a"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
