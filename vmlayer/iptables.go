@@ -154,7 +154,7 @@ func getIpTablesEntryForRule(ctx context.Context, direction string, label string
 		}
 	}
 	portStr := ""
-	if rule.PortRange != "" {
+	if rule.PortRange != "" && rule.PortRange != "0" {
 		portStr = "--" + string(rule.PortEndpoint) + " " + rule.PortRange
 	}
 	icmpType := ""

@@ -126,12 +126,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Egress",
 		Description: "Firewall rule to whitelist egress traffic",
-		Value:       "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
+		Value:       "protocol=tcp,portrange=443,remotecidr=0.0.0.0/0;protocol=udp,portrange=53,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Ingress",
 		Description: "Firewall rule to whitelist ingress traffic",
-		Value:       "remotecidr=0.0.0.0/0,protocol=udp,portrange=53",
 	},
 }
 
