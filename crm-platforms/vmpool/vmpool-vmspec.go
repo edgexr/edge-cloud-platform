@@ -7,29 +7,51 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/vmspec"
 	context "golang.org/x/net/context"
 )
+
+func getFlavorBasedVM(ctx context.Context, vmList []edgeproto.VM, vmSpec *edgeproto.VMSpec) ([]edgeproto.VM, string, error) {
+	// Find the closest matching vmspec
+	cli := edgeproto.CloudletInfo{}
+	cli.Flavors = []*edgeproto.FlavorInfo{}
+	for _, newVM := range vmList {
+		cli.Flavors = append(cli.Flavors, newVM.Flavor)
+	}
+	vmFlavorSpec, err := vmspec.GetVMSpec(ctx, vmSpec.Flavor, cli, nil)
+	if err != nil {
+		return vmList, "", err
+	}
+	for ii, newVM := range vmList {
+		if newVM.Flavor.Name != vmFlavorSpec.FlavorName {
+			continue
+		}
+		newList := append(vmList[:ii], vmList[ii+1:]...)
+		return newList, newVM.Name, nil
+	}
+	return vmList, "", fmt.Errorf("Unable to find a VM with matching flavor %s", vmSpec.Flavor.Key.Name)
+}
 
 func markVMsForAllocation(ctx context.Context, groupName string, vmPool *edgeproto.VMPool, vmSpecs []edgeproto.VMSpec) (map[string]edgeproto.VM, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "markVMsForAllocation", "group", groupName, "vmPool", vmPool, "vmSpecs", vmSpecs)
 
 	// Group available VMs
-	bothNetVms := []string{}
-	internalNetVms := []string{}
-	externalNetVms := []string{}
+	bothNetVms := []edgeproto.VM{}
+	internalNetVms := []edgeproto.VM{}
+	externalNetVms := []edgeproto.VM{}
 	for _, vm := range vmPool.Vms {
 		if vm.State != edgeproto.VMState_VM_FREE {
 			continue
 		}
 		if vm.NetInfo.ExternalIp != "" && vm.NetInfo.InternalIp != "" {
-			bothNetVms = append(bothNetVms, vm.Name)
+			bothNetVms = append(bothNetVms, vm)
 			continue
 		}
 		if vm.NetInfo.ExternalIp != "" {
-			externalNetVms = append(externalNetVms, vm.Name)
+			externalNetVms = append(externalNetVms, vm)
 		}
 		if vm.NetInfo.InternalIp != "" {
-			internalNetVms = append(internalNetVms, vm.Name)
+			internalNetVms = append(internalNetVms, vm)
 		}
 	}
 
@@ -41,23 +63,31 @@ func markVMsForAllocation(ctx context.Context, groupName string, vmPool *edgepro
 	// Allocate VMs from above groups
 	selectedVms := make(map[string]string)
 	for _, vmSpec := range vmSpecs {
+		var err error
+		foundVMName := ""
 		if vmSpec.ExternalNetwork && vmSpec.InternalNetwork {
 			if len(bothNetVms) == 0 {
 				return nil, fmt.Errorf("Unable to find a free VM with both external and internal network connectivity")
 			}
-			selectedVms[bothNetVms[0]] = vmSpec.InternalName
-			bothNetVms = bothNetVms[1:]
+			bothNetVms, foundVMName, err = getFlavorBasedVM(ctx, bothNetVms, &vmSpec)
+			if err != nil {
+				return nil, err
+			}
 		} else if vmSpec.ExternalNetwork {
 			if len(externalNetVms) == 0 {
 				// try from bothNetVms
 				if len(bothNetVms) == 0 {
 					return nil, fmt.Errorf("Unable to find a free VM with external network connectivity")
 				}
-				selectedVms[bothNetVms[0]] = vmSpec.InternalName
-				bothNetVms = bothNetVms[1:]
+				bothNetVms, foundVMName, err = getFlavorBasedVM(ctx, bothNetVms, &vmSpec)
+				if err != nil {
+					return nil, err
+				}
 			} else {
-				selectedVms[externalNetVms[0]] = vmSpec.InternalName
-				externalNetVms = externalNetVms[1:]
+				externalNetVms, foundVMName, err = getFlavorBasedVM(ctx, externalNetVms, &vmSpec)
+				if err != nil {
+					return nil, err
+				}
 			}
 		} else {
 			if len(internalNetVms) == 0 {
@@ -65,13 +95,21 @@ func markVMsForAllocation(ctx context.Context, groupName string, vmPool *edgepro
 				if len(bothNetVms) == 0 {
 					return nil, fmt.Errorf("Unable to find a free VM with internal network connectivity")
 				}
-				selectedVms[bothNetVms[0]] = vmSpec.InternalName
-				bothNetVms = bothNetVms[1:]
+				bothNetVms, foundVMName, err = getFlavorBasedVM(ctx, bothNetVms, &vmSpec)
+				if err != nil {
+					return nil, err
+				}
 			} else {
-				selectedVms[internalNetVms[0]] = vmSpec.InternalName
-				internalNetVms = internalNetVms[1:]
+				internalNetVms, foundVMName, err = getFlavorBasedVM(ctx, internalNetVms, &vmSpec)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
+		if foundVMName == "" {
+			return nil, fmt.Errorf("Unable to find a VM from the pool with required spec")
+		}
+		selectedVms[foundVMName] = vmSpec.InternalName
 	}
 
 	// Mark allocated VMs as IN_USE

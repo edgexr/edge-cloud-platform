@@ -802,6 +802,14 @@ func addControllerApis(method string, group *echo.Group) {
 	// VmsUpdatedAtSeconds: 3.5.1
 	// VmsUpdatedAtNanos: 3.5.2
 	// VmsInternalName: 3.6
+	// VmsFlavor: 3.7
+	// VmsFlavorName: 3.7.1
+	// VmsFlavorVcpus: 3.7.2
+	// VmsFlavorRam: 3.7.3
+	// VmsFlavorDisk: 3.7.4
+	// VmsFlavorPropMap: 3.7.5
+	// VmsFlavorPropMapKey: 3.7.5.1
+	// VmsFlavorPropMapValue: 3.7.5.2
 	// State: 4
 	// Errors: 5
 	// Status: 6

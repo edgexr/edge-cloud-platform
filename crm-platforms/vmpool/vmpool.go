@@ -18,6 +18,7 @@ type VMPoolPlatform struct {
 	VMProperties *vmlayer.VMProperties
 	TestMode     bool
 	caches       *platform.Caches
+	FlavorList   []*edgeproto.FlavorInfo
 }
 
 func (o *VMPoolPlatform) GetType() string {
