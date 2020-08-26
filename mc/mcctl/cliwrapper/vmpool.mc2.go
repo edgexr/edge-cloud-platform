@@ -24,7 +24,7 @@ var _ = math.Inf
 func (s *Client) CreateVMPool(uri, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateVMPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.State", ",")
+	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor,Vms:#.State", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -35,7 +35,7 @@ func (s *Client) CreateVMPool(uri, token string, in *ormapi.RegionVMPool) (*edge
 func (s *Client) DeleteVMPool(uri, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteVMPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status", ",")
+	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -46,7 +46,7 @@ func (s *Client) DeleteVMPool(uri, token string, in *ormapi.RegionVMPool) (*edge
 func (s *Client) UpdateVMPool(uri, token string, in *ormapi.RegionVMPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateVMPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status", ",")
+	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -57,7 +57,7 @@ func (s *Client) UpdateVMPool(uri, token string, in *ormapi.RegionVMPool) (*edge
 func (s *Client) ShowVMPool(uri, token string, in *ormapi.RegionVMPool) ([]edgeproto.VMPool, int, error) {
 	args := []string{"region", "ShowVMPool"}
 	outlist := []edgeproto.VMPool{}
-	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status", ",")
+	noconfig := strings.Split("Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
@@ -68,7 +68,7 @@ func (s *Client) ShowVMPool(uri, token string, in *ormapi.RegionVMPool) ([]edgep
 func (s *Client) AddVMPoolMember(uri, token string, in *ormapi.RegionVMPoolMember) (*edgeproto.Result, int, error) {
 	args := []string{"region", "AddVMPoolMember"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName", ",")
+	noconfig := strings.Split("Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName,Vm.Flavor", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -79,7 +79,7 @@ func (s *Client) AddVMPoolMember(uri, token string, in *ormapi.RegionVMPoolMembe
 func (s *Client) RemoveVMPoolMember(uri, token string, in *ormapi.RegionVMPoolMember) (*edgeproto.Result, int, error) {
 	args := []string{"region", "RemoveVMPoolMember"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName,Vm.NetInfo.ExternalIp,Vm.NetInfo.InternalIp", ",")
+	noconfig := strings.Split("Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName,Vm.Flavor,Vm.NetInfo.ExternalIp,Vm.NetInfo.InternalIp", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err

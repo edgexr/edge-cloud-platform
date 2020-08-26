@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -36,7 +38,13 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 		return nil, fmt.Errorf("can't get ssh client for %s, %v", accessIP, err)
 	}
 
-	flavorMap := make(map[string]string)
+	flavorMap := make(map[string]struct{})
+	updatedVMs := []edgeproto.VM{}
+
+	wgError := make(chan error)
+	wgDone := make(chan bool)
+	var mux sync.Mutex
+	var wg sync.WaitGroup
 	for _, vm := range s.caches.VMPool.Vms {
 		var client ssh.Client
 		if vm.NetInfo.ExternalIp != "" {
@@ -53,43 +61,92 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 		} else {
 			return nil, fmt.Errorf("VM %s is missing network info", vm.Name)
 		}
-		out, err := client.Output("sudo bash /etc/mobiledgex/get-flavor.sh")
-		if err != nil {
-			return nil, fmt.Errorf("failed to get flavor info for %s: %s - %v", vm.Name, out, err)
-		}
-		flavorMap[out] = vm.Name
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList, found resource", "vm", vm.Name, "resource info", out)
+		wg.Add(1)
+		go func(clientIn ssh.Client, vmIn edgeproto.VM, wg *sync.WaitGroup) {
+			out, err := clientIn.Output("sudo bash /etc/mobiledgex/get-flavor.sh")
+			if err != nil {
+				wgError <- fmt.Errorf("failed to get flavor info for %s: %s - %v", vmIn.Name, out, err)
+				return
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList, found resource", "vm", vmIn.Name, "resource info", out)
+
+			parts := strings.Split(out, ",")
+			if len(parts) != 3 {
+				wgError <- fmt.Errorf("invalid flavor info for %s: %s", vmIn.Name, out)
+				return
+			}
+
+			memMb, err := strconv.Atoi(parts[0])
+			if err != nil || memMb <= 0 {
+				wgError <- fmt.Errorf("invalid memory info %s for %s: %v", parts[0], vmIn.Name, err)
+				return
+			}
+
+			vcpus, err := strconv.Atoi(parts[1])
+			if err != nil || vcpus <= 0 {
+				wgError <- fmt.Errorf("invalid vcpu info %s for %s: %v", parts[1], vmIn.Name, err)
+				return
+			}
+
+			diskGb, err := strconv.Atoi(parts[2])
+			if err != nil || diskGb <= 0 {
+				wgError <- fmt.Errorf("invalid disk info %s for %s: %v", parts[2], vmIn.Name, err)
+				return
+			}
+
+			defer wg.Done()
+
+			flavorName := fmt.Sprintf("vcpu/%d-ram/%d-disk/%d", uint64(vcpus), uint64(memMb), uint64(diskGb))
+			vmIn.Flavor = &edgeproto.FlavorInfo{
+				Name:  vmIn.Name + "-flavor",
+				Vcpus: uint64(vcpus),
+				Ram:   uint64(memMb),
+				Disk:  uint64(diskGb),
+			}
+
+			mux.Lock()
+			updatedVMs = append(updatedVMs, vmIn)
+			if _, ok := flavorMap[flavorName]; ok {
+				mux.Unlock()
+				return
+			}
+			flavorMap[flavorName] = struct{}{}
+
+			var flavInfo edgeproto.FlavorInfo
+			flavInfo.Name = flavorName
+			flavInfo.Ram = uint64(memMb)
+			flavInfo.Vcpus = uint64(vcpus)
+			flavInfo.Disk = uint64(diskGb)
+			flavors = append(flavors, &flavInfo)
+			mux.Unlock()
+		}(client, vm, &wg)
 	}
 
-	count := 1
-	for fID, vmName := range flavorMap {
-		parts := strings.Split(fID, ",")
-		if len(parts) != 3 {
-			return nil, fmt.Errorf("invalid flavor info for %s: %s", vmName, fID)
-		}
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
 
-		memMb, err := strconv.Atoi(parts[0])
-		if err != nil || memMb <= 0 {
-			return nil, fmt.Errorf("invalid memory info %s for %s: %v", parts[0], vmName, err)
-		}
-
-		vcpus, err := strconv.Atoi(parts[1])
-		if err != nil || vcpus <= 0 {
-			return nil, fmt.Errorf("invalid vcpu info %s for %s: %v", parts[1], vmName, err)
-		}
-
-		diskGb, err := strconv.Atoi(parts[2])
-		if err != nil || diskGb <= 0 {
-			return nil, fmt.Errorf("invalid disk info %s for %s: %v", parts[2], vmName, err)
-		}
-
-		var flavInfo edgeproto.FlavorInfo
-		flavInfo.Name = fmt.Sprintf("flavor%d", count)
-		flavInfo.Ram = uint64(memMb)
-		flavInfo.Vcpus = uint64(vcpus)
-		flavInfo.Disk = uint64(diskGb)
-		flavors = append(flavors, &flavInfo)
+	// Wait until either WaitGroup is done or an error is received through the channel
+	select {
+	case <-wgDone:
+		break
+	case err := <-wgError:
+		close(wgError)
+		return nil, err
+	case <-time.After(AllVMAccessTimeout):
+		return nil, fmt.Errorf("Timed out fetching flavor list from VMs")
 	}
+
+	if len(updatedVMs) > 0 {
+		// Update VMs with updated flavor details
+		s.caches.VMPoolMux.Lock()
+		defer s.caches.VMPoolMux.Unlock()
+		s.caches.VMPool.Vms = updatedVMs
+		s.UpdateVMPoolInfo(ctx)
+	}
+
+	s.FlavorList = flavors
 
 	return flavors, nil
 }

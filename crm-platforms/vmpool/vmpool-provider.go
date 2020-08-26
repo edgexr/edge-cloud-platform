@@ -20,7 +20,8 @@ const (
 	ActionAllocate string = "allocate"
 	ActionRelease  string = "release"
 
-	CreateVMTimeout = 20 * time.Minute
+	CreateVMTimeout    = 20 * time.Minute
+	AllVMAccessTimeout = 30 * time.Minute
 )
 
 func (o *VMPoolPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
@@ -260,10 +261,10 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 			}
 
 			wg.Add(1)
-			go func(client ssh.Client, nodeName string, wg *sync.WaitGroup) {
+			go func(clientIn ssh.Client, nodeName string, wg *sync.WaitGroup) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs, setup kubernetes worker node", "masterAddr", masterAddr, "nodename", nodeName)
 				cmd := fmt.Sprintf("sudo sh -x /etc/mobiledgex/install-k8s-node.sh \"ens3\" \"%s\" \"%s\"", masterAddr, masterAddr)
-				out, err := client.Output(cmd)
+				out, err := clientIn.Output(cmd)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup k8s node", "masterAddr", masterAddr, "nodename", nodeName, "out", out, "err", err)
 					wgError <- fmt.Errorf("can't setup k8s node on vm %s with masteraddr %s", nodeName, masterAddr)
@@ -310,6 +311,25 @@ func (o *VMPoolPlatform) CreateVMs(ctx context.Context, vmGroupOrchestrationPara
 			}
 		}
 		vmSpec.InternalNetwork = true
+		found := false
+		for _, flavor := range o.FlavorList {
+			if flavor.Name == vm.FlavorName {
+				vmSpec.Flavor = edgeproto.Flavor{
+					Key: edgeproto.FlavorKey{
+						Name: vm.FlavorName,
+					},
+					Ram:       flavor.Ram,
+					Vcpus:     flavor.Vcpus,
+					Disk:      flavor.Disk,
+					OptResMap: flavor.PropMap,
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("Unable to find matching flavor %s from list %v", vm.FlavorName, o.FlavorList)
+		}
 		vmSpecs = append(vmSpecs, vmSpec)
 	}
 
@@ -458,6 +478,26 @@ func (o *VMPoolPlatform) updateVMsInternal(ctx context.Context, vmGroupOrchestra
 			}
 		}
 		vmSpec.InternalNetwork = true
+		found := false
+		for _, flavor := range o.FlavorList {
+			if flavor.Name == vm.FlavorName {
+				vmSpec.Flavor = edgeproto.Flavor{
+					Key: edgeproto.FlavorKey{
+						Name: vm.FlavorName,
+					},
+					Ram:       flavor.Ram,
+					Vcpus:     flavor.Vcpus,
+					Disk:      flavor.Disk,
+					OptResMap: flavor.PropMap,
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, ActionNone, fmt.Errorf("Unable to find matching flavor %s from list %v", vm.FlavorName, o.FlavorList)
+		}
+
 		if _, ok := existingVms[vm.Name]; ok {
 			existingVms[vm.Name] = true
 			continue
@@ -572,29 +612,56 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 		return fmt.Errorf("can't get ssh client for %s, %v", accessIP, err)
 	}
 
+	wgError := make(chan error)
+	wgDone := make(chan bool)
+	var wg sync.WaitGroup
 	for _, vm := range vms {
-		if vm.NetInfo.ExternalIp != "" {
-			client, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
-			if err != nil {
-				return fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vm.Name, vm.NetInfo.ExternalIp, err)
-			}
-			out, err := client.Output("echo test")
-			if err != nil {
-				return fmt.Errorf("failed to verify if vm %s is accessible over external network: %s - %v", vm.Name, out, err)
-			}
-		}
-
-		if vm.NetInfo.InternalIp != "" {
-			client, err := accessClient.AddHop(vm.NetInfo.InternalIp, 22)
-			if err != nil {
-				return err
+		wg.Add(1)
+		go func(accessClientIn ssh.Client, accessIPIn string, vmIn *edgeproto.VM, wg *sync.WaitGroup) {
+			if vmIn.NetInfo.ExternalIp != "" {
+				client, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, vmIn.NetInfo.ExternalIp)
+				if err != nil {
+					wgError <- fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vmIn.Name, vmIn.NetInfo.ExternalIp, err)
+					return
+				}
+				out, err := client.Output("echo test")
+				if err != nil {
+					wgError <- fmt.Errorf("failed to verify if vm %s is accessible over external network: %s - %v", vmIn.Name, out, err)
+					return
+				}
 			}
 
-			out, err := client.Output("echo test")
-			if err != nil {
-				return fmt.Errorf("failed to verify if vm %s is accessible over internal network from %s: %s - %v", vm.Name, accessIP, out, err)
+			if vmIn.NetInfo.InternalIp != "" {
+				client, err := accessClientIn.AddHop(vmIn.NetInfo.InternalIp, 22)
+				if err != nil {
+					wgError <- err
+					return
+				}
+
+				out, err := client.Output("echo test")
+				if err != nil {
+					wgError <- fmt.Errorf("failed to verify if vm %s is accessible over internal network from %s: %s - %v", vmIn.Name, accessIPIn, out, err)
+					return
+				}
 			}
-		}
+			wg.Done()
+		}(accessClient, accessIP, &vm, &wg)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received through the channel
+	select {
+	case <-wgDone:
+		break
+	case err := <-wgError:
+		close(wgError)
+		return err
+	case <-time.After(AllVMAccessTimeout):
+		return fmt.Errorf("Timed out verifying VMs")
 	}
 
 	return nil

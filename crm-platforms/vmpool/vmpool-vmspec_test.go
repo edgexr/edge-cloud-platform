@@ -60,21 +60,61 @@ func TestVMSpec(t *testing.T) {
 	group1 := "testvmpoolvms1"
 	group2 := "testvmpoolvms2"
 
+	smallFlavor := edgeproto.Flavor{
+		Key: edgeproto.FlavorKey{
+			Name: "x1.small",
+		},
+		Vcpus: uint64(2),
+		Ram:   uint64(2048),
+		Disk:  uint64(10),
+	}
+
+	mediumFlavor := edgeproto.Flavor{
+		Key: edgeproto.FlavorKey{
+			Name: "x1.medium",
+		},
+		Vcpus: uint64(2),
+		Ram:   uint64(4096),
+		Disk:  uint64(40),
+	}
+
+	largeFlavor := edgeproto.Flavor{
+		Key: edgeproto.FlavorKey{
+			Name: "x1.large",
+		},
+		Vcpus: uint64(4),
+		Ram:   uint64(8192),
+		Disk:  uint64(80),
+	}
+
 	// Request for 2 VMs
 	vmSpecs := []edgeproto.VMSpec{
 		edgeproto.VMSpec{
 			InternalName:    "vm1.testcluster",
 			ExternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 		edgeproto.VMSpec{
 			InternalName:    "vm2.testcluster",
 			InternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 	}
 	markedVMs, err := markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.Nil(t, err, "marked vms for allocation")
 	verifyMarkedVMs(t, &vmPool, group1, markedVMs)
 	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_PROGRESS, 2)
+
+	// Request for VM with large flavor, should fail
+	vmSpecs = []edgeproto.VMSpec{
+		edgeproto.VMSpec{
+			InternalName:    "vm3.testcluster",
+			ExternalNetwork: true,
+			Flavor:          largeFlavor,
+		},
+	}
+	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
+	require.NotNil(t, err, "mark vms for allocation should fail as no vm with same flavor exists")
 
 	// Release 1 VM from group1, should fail as it is IN_PROGRESS
 	vmSpecs = []edgeproto.VMSpec{
@@ -86,22 +126,41 @@ func TestVMSpec(t *testing.T) {
 	require.NotNil(t, err, "mark vms for release should fail")
 	setVMState(&vmPool, group1, markedVMs, edgeproto.VMState_VM_IN_USE)
 
+	// Request for VM with medium flavor, should pass
+	vmSpecs = []edgeproto.VMSpec{
+		edgeproto.VMSpec{
+			InternalName:    "vm5.testcluster",
+			InternalNetwork: true,
+			Flavor:          mediumFlavor,
+		},
+	}
+	markedVMs, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
+	require.Nil(t, err, "marked vm with medium flavor for allocation")
+	verifyMarkedVMs(t, &vmPool, group1, markedVMs)
+	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_PROGRESS, 1)
+	for medVMName, _ := range markedVMs {
+		require.Equal(t, medVMName, "vm5", "validated that vm5 which is of medium flavor is used")
+	}
+	setVMState(&vmPool, group1, markedVMs, edgeproto.VMState_VM_IN_USE)
+
 	// Request for additional 2 VMs, should fail as there
 	// are only 2 VMs with external network
 	vmSpecs = []edgeproto.VMSpec{
 		edgeproto.VMSpec{
 			InternalName:    "vm3.testcluster",
 			ExternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 		edgeproto.VMSpec{
 			InternalName:    "vm4.testcluster",
 			ExternalNetwork: true,
 			InternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 	}
 	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.NotNil(t, err, "allocation should fail")
-	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 2)
+	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 3)
 
 	// Request for 2 VMs for different group
 	vmSpecs = []edgeproto.VMSpec{
@@ -109,10 +168,12 @@ func TestVMSpec(t *testing.T) {
 			InternalName:    "vm1.testcluster",
 			ExternalNetwork: true,
 			InternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 		edgeproto.VMSpec{
 			InternalName:    "vm2.testcluster",
 			InternalNetwork: true,
+			Flavor:          smallFlavor,
 		},
 	}
 	markedVMs, err = markVMsForAllocation(ctx, group2, &vmPool, vmSpecs)
@@ -161,7 +222,7 @@ func TestVMSpec(t *testing.T) {
 	markedVMs, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.Nil(t, err, "marked vms for allocation")
 	verifyMarkedVMs(t, &vmPool, group1, markedVMs)
-	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 1)
+	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 2)
 	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_PROGRESS, 2)
 	setVMState(&vmPool, group1, markedVMs, edgeproto.VMState_VM_IN_USE)
 
@@ -178,7 +239,7 @@ func TestVMSpec(t *testing.T) {
 	markedVMs, err = markVMsForRelease(ctx, group1, &vmPool, vmSpecs)
 	require.Nil(t, err, "marked vms for release")
 	verifyMarkedVMs(t, &vmPool, group1, markedVMs)
-	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_PROGRESS, 3)
+	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_PROGRESS, 4)
 	setVMState(&vmPool, group1, markedVMs, edgeproto.VMState_VM_FREE)
 
 	// Verify all VMs are free
