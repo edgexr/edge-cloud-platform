@@ -91,10 +91,9 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if externalIP.MacAddress == "" {
 		return fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
 	}
-
-	err = WaitServerSSHReachable(ctx, client, externalIP.ExternalAddr, SSHReachableDefaultTimeout)
+	err = WaitServerReady(ctx, v.VMProvider, client, externalIP.ExternalAddr, MaxRootLBWait)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "server not reachable", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "server not ready", "err", err)
 		return err
 	}
 
@@ -460,9 +459,9 @@ func (v *VMPlatform) SetupRootLB(
 			return err
 		}
 	}
-	err = v.WaitForRootLB(ctx, rootLB)
+	err = WaitServerReady(ctx, v.VMProvider, client, rootLB.Name, MaxRootLBWait)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "timeout waiting for agent to run", "name", rootLB.Name)
+		log.SpanLog(ctx, log.DebugLevelInfra, "timeout waiting for rootLB", "name", rootLB.Name)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
 	ip, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", sd)
@@ -475,7 +474,6 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return err
 	}
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "Copy resource-tracker to rootLb", "rootLb", rootLBName)
 	err = CopyResourceTracker(client)
 	if err != nil {
@@ -501,48 +499,6 @@ func (v *VMPlatform) SetupRootLB(
 
 	// perform provider specific prep of the rootLB
 	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, v.GetServerSecurityGroupName(rootLBName), privacyPolicy)
-}
-
-//WaitForRootLB waits for the RootLB instance to be up and copies of SSH credentials for internal networks.
-//  Idempotent, but don't call all the time.
-func (v *VMPlatform) WaitForRootLB(ctx context.Context, rootLB *MEXRootLB) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "wait for rootlb", "name", rootLB.Name)
-	if rootLB == nil {
-		return fmt.Errorf("cannot wait for lb, rootLB is null")
-	}
-	extNet := v.VMProperties.GetCloudletExternalNetwork()
-	if extNet == "" {
-		return fmt.Errorf("waiting for lb, missing external network in manifest")
-	}
-	client, err := v.GetSSHClientForServer(ctx, rootLB.Name, v.VMProperties.GetCloudletExternalNetwork())
-	if err != nil {
-		return err
-	}
-	start := time.Now()
-	running := false
-	for {
-		log.SpanLog(ctx, log.DebugLevelInfra, "waiting for rootlb...", "rootLB", rootLB)
-		_, err := client.Output("sudo grep -i 'Finished mobiledgex init' /var/log/mobiledgex.log")
-		if err == nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "rootlb is running", "name", rootLB.Name)
-			running = true
-			break
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "error checking if rootLB is running", "err", err)
-		}
-		elapsed := time.Since(start)
-		if elapsed >= (MaxRootLBWait) {
-			break
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 10 seconds before retry", "elapsed", elapsed)
-		time.Sleep(10 * time.Second)
-	}
-	if !running {
-		return fmt.Errorf("timeout waiting for RootLB")
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "done waiting for rootlb", "name", rootLB.Name)
-
-	return nil
 }
 
 // This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics

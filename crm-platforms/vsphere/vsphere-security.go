@@ -13,10 +13,11 @@ import (
 
 func (v *VSpherePlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, serverName, label string, allowedCIDR string, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
-
 	// this can be called during LB init so we need to ensure we can reach the server before trying iptables commands
-	vmlayer.WaitServerSSHReachable(ctx, client, serverName, vmlayer.SSHReachableDefaultTimeout)
-
+	err := vmlayer.WaitServerReady(ctx, v, client, serverName, vmlayer.MaxRootLBWait)
+	if err != nil {
+		return err
+	}
 	return vmlayer.AddIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }
 
