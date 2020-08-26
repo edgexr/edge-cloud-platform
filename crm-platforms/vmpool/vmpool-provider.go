@@ -666,3 +666,8 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 
 	return nil
 }
+
+func (s *VMPoolPlatform) CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error {
+	// no special checks to be done
+	return nil
+}

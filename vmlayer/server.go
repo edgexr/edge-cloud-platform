@@ -3,10 +3,12 @@ package vmlayer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 type NetworkType string
@@ -175,5 +177,35 @@ func (v *VMPlatform) SetPowerState(ctx context.Context, app *edgeproto.App, appI
 	default:
 		return fmt.Errorf("unsupported deployment type %s", deployment)
 	}
+	return nil
+}
+
+// WaitServerReady waits up to the specified duration for the server to be reachable via SSH
+// and pass any additional checks from the provider
+func WaitServerReady(ctx context.Context, provider VMProvider, client ssh.Client, server string, timeout time.Duration) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "WaitServerReady", "server", server)
+	start := time.Now()
+	for {
+		out, err := client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
+		log.SpanLog(ctx, log.DebugLevelInfra, "grep Finished mobiledgex init result", "out", out, "err", err)
+		if err == nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Server has completed mobiledgex init", "server", server)
+			// perform any additional checks from the provider
+			err = provider.CheckServerReady(ctx, client, server)
+			log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady result", "err", err)
+			if err == nil {
+				break
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "server not ready", "err", err)
+		elapsed := time.Since(start)
+		if elapsed > timeout {
+			return fmt.Errorf("timed out waiting for VM %s", server)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 10 seconds before retry", "elapsed", elapsed, "timeout", timeout)
+		time.Sleep(10 * time.Second)
+
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "WaitServerReady OK", "server", server)
 	return nil
 }

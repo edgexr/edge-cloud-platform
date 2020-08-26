@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
@@ -335,5 +336,10 @@ func (s *OpenstackPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlay
 }
 
 func (s *OpenstackPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
+	return nil
+}
+
+func (s *OpenstackPlatform) CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error {
+	// no special checks to be done
 	return nil
 }

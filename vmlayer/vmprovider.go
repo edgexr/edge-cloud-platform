@@ -55,6 +55,7 @@ type VMProvider interface {
 	GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*VMMetrics, error)
 	GetPlatformResourceInfo(ctx context.Context) (*PlatformResources, error)
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
+	CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error
 }
 
 // VMPlatform contains the needed by all VM based platforms
