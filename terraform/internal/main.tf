@@ -71,6 +71,12 @@ module "jaeger_dns" {
   ip                            = "${module.jaeger.external_ip}"
 }
 
+module "esproxy_dns" {
+  source                        = "../modules/cloudflare_record"
+  hostname                      = "${var.esproxy_domain_name}"
+  ip                            = "${module.jaeger.external_ip}"
+}
+
 module "apt" {
   source                        = "../modules/vm_gcp"
 
