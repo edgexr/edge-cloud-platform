@@ -72,7 +72,7 @@ variable "jaeger_domain_name" {
 }
 
 variable "esproxy_domain_name" {
-  default     = "es.mobiledgex.net"
+  default     = "events.es.mobiledgex.net"
 }
 
 variable "infra_domain_name" {
