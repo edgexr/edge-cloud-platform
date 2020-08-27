@@ -78,7 +78,6 @@ type ServerConfig struct {
 	BillingPath           string
 	AlertCache            *edgeproto.AlertCache
 	AlertMgrAddr          string
-	AlertMgrConfigPath    string
 	AlertmgrResolveTimout time.Duration
 }
 
@@ -226,8 +225,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
-		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, config.AlertMgrConfigPath,
-			config.vaultConfig, config.LocalVault, config.AlertCache, config.AlertmgrResolveTimout)
+		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr,
+			config.AlertCache, config.AlertmgrResolveTimout)
 		if err != nil {
 			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to start alertmanager server", "error", err)

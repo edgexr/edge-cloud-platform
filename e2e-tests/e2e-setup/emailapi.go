@@ -82,11 +82,11 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 	case "check":
 		// get default
 		proc := GetMaildev("")
-		apiUrl := fmt.Sprintf("0.0.0.0:%d/email", proc.Uiport)
+		apiUrl := fmt.Sprintf("0.0.0.0:%d/email", proc.UiPort)
 		cmd := exec.Command("curl", "-s", "-S", apiUrl)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Printf("Error running show emails API on port %d, err: %v\n", proc.Uiport, err)
+			log.Printf("Error running show emails API on port %d, err: %v\n", proc.UiPort, err)
 			return err
 		}
 		// unmarshal and marshal back to get just the fields we want
@@ -107,7 +107,7 @@ func RunEmailAPI(api, apiFile, outputDir string) error {
 	case "deleteall":
 		// get default
 		proc := GetMaildev("")
-		apiUrl := fmt.Sprintf("0.0.0.0:%d/email/all", proc.Uiport)
+		apiUrl := fmt.Sprintf("0.0.0.0:%d/email/all", proc.UiPort)
 		cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
 		_, err := cmd.CombinedOutput()
 		if err != nil {

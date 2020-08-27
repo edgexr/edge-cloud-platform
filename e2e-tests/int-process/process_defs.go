@@ -20,6 +20,7 @@ type MC struct {
 	AlertResolveTimeout     string
 	BillingPath             string
 	UsageCollectionInterval string
+	AlertMgrApiAddr         string
 	TLS                     process.TLSCerts
 	cmd                     *exec.Cmd
 }
@@ -91,7 +92,15 @@ type Alertmanager struct {
 
 type Maildev struct {
 	process.Common `yaml:",inline"`
-	Uiport         int
-	Mailport       int
+	UiPort         int
+	MailPort       int
+	cmd            *exec.Cmd
+}
+
+type AlertmanagerSidecar struct {
+	process.Common `yaml:",inline"`
+	AlertmgrAddr   string
+	ConfigFile     string
+	HttpAddr       string
 	cmd            *exec.Cmd
 }

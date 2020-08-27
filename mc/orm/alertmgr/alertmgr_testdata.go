@@ -8,13 +8,14 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-var testSmtpInfo = smtpInfo{
-	Email: "alerts@localhost",
-	User:  "testuser",
-	Token: "12345",
-	Smtp:  "localhost",
-	Port:  "25",
-	Tls:   "false",
+var testInitInfo = AlertmgrInitInfo{
+	Email:          "alerts@localhost",
+	User:           "testuser",
+	Token:          "12345",
+	Smtp:           "localhost",
+	Port:           "25",
+	Tls:            "false",
+	ResolveTimeout: "2m",
 }
 
 var testRegions = []string{"testRegion1", "testRegion2"}

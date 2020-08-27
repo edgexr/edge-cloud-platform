@@ -77,6 +77,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 	if p.UseVaultCerts {
 		args = append(args, "--useVaultCerts")
 	}
+	if p.AlertMgrApiAddr != "" {
+		args = append(args, "--alertMgrApiAddr")
+		args = append(args, p.AlertMgrApiAddr)
+	}
 	args = append(args, "--hostname", p.Name)
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
@@ -688,8 +692,8 @@ func (p *Alertmanager) LookupArgs() string { return p.Name }
 func (p *Maildev) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{
 		"run", "--rm",
-		"-p", fmt.Sprintf("%d:%d", p.Uiport, 80),
-		"-p", fmt.Sprintf("%d:%d", p.Mailport, 25),
+		"-p", fmt.Sprintf("%d:%d", p.UiPort, 80),
+		"-p", fmt.Sprintf("%d:%d", p.MailPort, 25),
 		"--name", p.Name,
 		"maildev/maildev:1.1.0",
 	}
@@ -707,3 +711,33 @@ func (p *Maildev) StopLocal() {
 func (p *Maildev) GetExeName() string { return "docker" }
 
 func (p *Maildev) LookupArgs() string { return p.Name }
+
+func (p *AlertmanagerSidecar) StartLocal(logfile string, opts ...process.StartOp) error {
+	args := []string{"--httpAddr", p.HttpAddr}
+	if p.AlertmgrAddr != "" {
+		args = append(args, "--alertmgrAddr")
+		args = append(args, p.AlertmgrAddr)
+	}
+	if p.ConfigFile != "" {
+		args = append(args, "--configFile")
+		args = append(args, p.ConfigFile)
+	}
+	options := process.StartOptions{}
+	options.ApplyStartOptions(opts...)
+	if options.Debug != "" {
+		args = append(args, "-d")
+		args = append(args, options.Debug)
+	}
+
+	var err error
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	return err
+}
+
+func (p *AlertmanagerSidecar) StopLocal() {
+	process.StopLocal(p.cmd)
+}
+
+func (p *AlertmanagerSidecar) GetExeName() string { return "alertmgr-sidecar" }
+
+func (p *AlertmanagerSidecar) LookupArgs() string { return "" }
