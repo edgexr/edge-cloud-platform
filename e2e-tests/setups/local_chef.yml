@@ -1,16 +1,6 @@
 vaults:
 - name: vault
   hostname: "127.0.0.1"
-  vaultdatas:
-  - path: /secret/accounts/alertmanagersmtp
-    data:
-      email: mexadmin@mobiledgex.com
-      user: mexadmin@mobiledgex.com
-      token: mexadmin123
-      smtp: host.docker.internal
-      port: 1025
-# maildev does not support STARTTLS protocol, so disable encrtyption for local testing
-      tls: false
 
 chefserver:
 - name: chefserver
@@ -90,6 +80,23 @@ alertmanagers:
   configfile: "{{datadir2}}/alertmanager.yml"
   port: 9093
   hostname: "127.0.0.1"
+
+  alertmanagersidecars:
+- name: alertmgrsidecar
+  alertmgraddr: "http://127.0.0.1:9093"
+  # config is copied by the alertmanager startup from datadir to /tmp
+  configfile: "/tmp/alertmanager.yml"
+  httpaddr: "127.0.0.1:9094"
+  hostname: "127.0.0.1"
+  envvars:
+    ALERTMANAGER_SMTP_EMAIL: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_USER: mexadmin@mobiledgex.com
+    ALERTMANAGER_SMTP_TOKEN: mexadmin123
+    ALERTMANAGER_SMTP_SERVER: host.docker.internal
+    ALERTMANAGER_SMTP_SERVER_PORT: 1025
+    # maildev does not support STARTTLS protocol, so disable encryption for local testing
+    ALERTMANAGER_SMTP_SERVER_TLS: false
+    ALERTMANAGER_RESOLVE_TIMEOUT: "3m"
 
 maildevs:
 - name: maildev

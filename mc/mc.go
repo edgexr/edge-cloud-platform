@@ -33,8 +33,8 @@ var skipVerifyEmail = flag.Bool("skipVerifyEmail", false, "skip email verificati
 var skipOriginCheck = flag.Bool("skipOriginCheck", false, "skip origin check constraint, for testing only")
 var notifyAddrs = flag.String("notifyAddrs", "127.0.0.1:53001", "Parent notify listener addresses")
 var notifySrvAddr = flag.String("notifySrvAddr", "127.0.0.1:52001", "Notify listener address")
-var alertMgrAddr = flag.String("alertMgrAddr", "http://127.0.0.1:9093", "Global Alertmanager api address")
-var alertMgrConfig = flag.String("alertMgrConfigPath", "/tmp/alertmanager.yml", "Path to the configuration file for global alertmanager")
+var alertMgrAddr = flag.String("alertMgrApiAddr", "http://127.0.0.1:9094", "Global Alertmanager api address")
+
 var alertMgrResolveTimeout = flag.Duration("alertResolveTimeout", 3*time.Minute, "Alertmanager alert Resolution timeout")
 var hostname = flag.String("hostname", "", "Unique hostname")
 var billingPath = flag.String("billingPath", "", "Zuora account path in vault")
@@ -84,7 +84,6 @@ func main() {
 		BillingPath:           *billingPath,
 		AlertMgrAddr:          *alertMgrAddr,
 		AlertCache:            &alertCache,
-		AlertMgrConfigPath:    *alertMgrConfig,
 		AlertmgrResolveTimout: *alertMgrResolveTimeout,
 	}
 	server, err := orm.RunServer(&config)

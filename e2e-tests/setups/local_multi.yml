@@ -1,6 +1,7 @@
 vars:
   - locverurl: "http://127.0.0.1:8888/verifyLocation" 
-  - toksrvurl: "http://127.0.0.1:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc" 
+  - toksrvurl: "http://127.0.0.1:9999/its?followURL=https://dme.mobiledgex.net/verifyLoc"
+  - alertmgrresolvetimeout: 3s
 
 tlscerts:
 - commonname: localserver
@@ -25,16 +26,6 @@ vaults:
 - name: vault
   hostname: "127.0.0.1"
   regions: local,locala
-  vaultdatas:
-  - path: /secret/accounts/alertmanagersmtp
-    data:
-      email: alerts@mobiledgex.com
-      user: alerts@mobiledgex.com
-      token: test123
-      smtp: host.docker.internal
-      port: 1025
-# maildev does not support STARTTLS protocol, so disable encrtyption for local testing
-      tls: false
 
 influxs:
 - name: influx1
@@ -284,7 +275,8 @@ mcs:
   ldapaddr: "127.0.0.1:9389"
   notifysrvaddr: "127.0.0.1:52001"
   consoleproxyaddr: "127.0.0.1:6080"
-  alertresolvetimeout: 3s
+  alertresolvetimeout: "{{alertmgrresolvetimeout}}"
+  alertmgrapiaddr: "http://127.0.0.1:9094"
   billingpath: "fake"
 
 - name: mc2
@@ -299,7 +291,8 @@ mcs:
   ldapaddr: "127.0.0.1:9390"
   notifysrvaddr: "127.0.0.1:52002"
   consoleproxyaddr: "127.0.0.1:6081"
-  alertresolvetimeout: 3s
+  alertmgrapiaddr: "http://127.0.0.1:9094"
+  alertresolvetimeout: "{{alertmgrresolvetimeout}}"
 
 sqls:
 - name: sql1
@@ -391,6 +384,23 @@ alertmanagers:
   configfile: "{{datadir2}}/alertmanager.yml"
   port: 9093
   hostname: "127.0.0.1"
+
+alertmanagersidecars:
+- name: alertmgrsidecar
+  alertmgraddr: "http://127.0.0.1:9093"
+  # config is copied by the alertmanager startup from datadir to /tmp
+  configfile: "/tmp/alertmanager.yml"
+  httpaddr: "127.0.0.1:9094"
+  hostname: "127.0.0.1"
+  envvars:
+    ALERTMANAGER_SMTP_EMAIL: alerts@mobiledgex.com
+    ALERTMANAGER_SMTP_USER: alerts@mobiledgex.com
+    ALERTMANAGER_SMTP_TOKEN: test123
+    ALERTMANAGER_SMTP_SERVER: host.docker.internal
+    ALERTMANAGER_SMTP_SERVER_PORT: 1025
+    # maildev does not support STARTTLS protocol, so disable encryption for local testing
+    ALERTMANAGER_SMTP_SERVER_TLS: false
+    ALERTMANAGER_RESOLVE_TIMEOUT: "{{alertmgrresolvetimeout}}"
 
 maildevs:
 - name: maildev
