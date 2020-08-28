@@ -172,7 +172,7 @@ func GetCloudletVMImagePath(imgPath, imgVersion string, imgSuffix string) string
 // GetCloudletSharedRootLBFlavor gets the flavor from defaults
 // or environment variables
 func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) error {
-	ram := vp.CommonPf.Properties["MEX_SHARED_ROOTLB_RAM"].Value
+	ram, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_RAM")
 	var err error
 	if ram != "" {
 		flavor.Ram, err = strconv.ParseUint(ram, 10, 64)
@@ -182,7 +182,7 @@ func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) 
 	} else {
 		flavor.Ram = 4096
 	}
-	vcpus := vp.CommonPf.Properties["MEX_SHARED_ROOTLB_VCPUS"].Value
+	vcpus, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_VCPUS")
 	if vcpus != "" {
 		flavor.Vcpus, err = strconv.ParseUint(vcpus, 10, 64)
 		if err != nil {
@@ -191,7 +191,7 @@ func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) 
 	} else {
 		flavor.Vcpus = 2
 	}
-	disk := vp.CommonPf.Properties["MEX_SHARED_ROOTLB_DISK"].Value
+	disk, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_DISK")
 	if disk != "" {
 		flavor.Disk, err = strconv.ParseUint(disk, 10, 64)
 		if err != nil {
@@ -204,56 +204,68 @@ func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) 
 }
 
 func (vp *VMProperties) GetCloudletSecurityGroupName() string {
-	return vp.CommonPf.Properties["MEX_SECURITY_GROUP"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_SECURITY_GROUP")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletExternalNetwork() string {
-	return vp.CommonPf.Properties["MEX_EXT_NETWORK"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_EXT_NETWORK")
+	return value
 }
 
 func (vp *VMProperties) SetCloudletExternalNetwork(name string) {
-	vp.CommonPf.Properties["MEX_EXT_NETWORK"].Value = name
+	vp.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", name)
 }
 
 // GetCloudletNetwork returns default MEX network, internal and prepped
 func (vp *VMProperties) GetCloudletMexNetwork() string {
-	return vp.CommonPf.Properties["MEX_NETWORK"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_NETWORK")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletNetworkScheme() string {
-	return vp.CommonPf.Properties["MEX_NETWORK_SCHEME"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_NETWORK_SCHEME")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletVolumeAvailabilityZone() string {
-	return vp.CommonPf.Properties["MEX_VOLUME_AVAILABILITY_ZONE"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_VOLUME_AVAILABILITY_ZONE")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletComputeAvailabilityZone() string {
-	return vp.CommonPf.Properties["MEX_COMPUTE_AVAILABILITY_ZONE"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_COMPUTE_AVAILABILITY_ZONE")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletNetworkAvailabilityZone() string {
-	return vp.CommonPf.Properties["MEX_NETWORK_AVAILABILITY_ZONE"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_NETWORK_AVAILABILITY_ZONE")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletImageDiskFormat() string {
-	return vp.CommonPf.Properties["MEX_IMAGE_DISK_FORMAT"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_IMAGE_DISK_FORMAT")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletOSImage() string {
-	return vp.CommonPf.Properties["MEX_OS_IMAGE"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_OS_IMAGE")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletFlavorMatchPattern() string {
-	return vp.CommonPf.Properties["FLAVOR_MATCH_PATTERN"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("FLAVOR_MATCH_PATTERN")
+	return value
 }
 
 func (vp *VMProperties) GetCloudletExternalRouter() string {
-	return vp.CommonPf.Properties["MEX_ROUTER"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_ROUTER")
+	return value
 }
 
 func (vp *VMProperties) GetSubnetDNS() string {
-	return vp.CommonPf.Properties["MEX_SUBNET_DNS"].Value
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_SUBNET_DNS")
+	return value
 }
 
 func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
@@ -265,7 +277,7 @@ func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst
 }
 
 func (vp *VMProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
-	gw := vp.CommonPf.Properties["MEX_CRM_GATEWAY_ADDR"].Value
+	gw, _ := vp.CommonPf.Properties.GetValue("MEX_CRM_GATEWAY_ADDR")
 	if gw == "" {
 		return "", 0
 	}

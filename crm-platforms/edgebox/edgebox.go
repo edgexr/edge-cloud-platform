@@ -72,7 +72,8 @@ func (e *EdgeboxPlatform) Init(ctx context.Context, platformConfig *platform.Pla
 }
 
 func (e *EdgeboxPlatform) GetEdgeboxNetworkScheme() string {
-	return e.commonPf.Properties["MEX_EDGEBOX_NETWORK_SCHEME"].Value
+	val, _ := e.commonPf.Properties.GetValue("MEX_EDGEBOX_NETWORK_SCHEME")
+	return val
 }
 
 func (e *EdgeboxPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

@@ -38,24 +38,18 @@ func (a *AWSPlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.Proper
 }
 
 func (a *AWSPlatform) GetAwsAccessKeyId() string {
-	if val, ok := a.commonPf.Properties["AWS_ACCESS_KEY_ID"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("AWS_ACCESS_KEY_ID")
+	return val
 }
 
 func (a *AWSPlatform) GetAwsSecretAccessKey() string {
-	if val, ok := a.commonPf.Properties["AWS_SECRET_ACCESS_KEY"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("AWS_SECRET_ACCESS_KEY")
+	return val
 }
 
 func (a *AWSPlatform) GetAwsRegion() string {
-	if val, ok := a.commonPf.Properties["AWS_REGION"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("AWS_REGION")
+	return val
 }
 
 func (a *AWSPlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {

@@ -23,6 +23,11 @@ func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeprot
 	return fakeinfra.CloudletPrometheusStartup(ctx, cloudlet, pfConfig, caches, updateCallback)
 }
 
+func (e *EdgeboxPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "update cloudlet for edgebox")
+	return nil
+}
+
 func (e *EdgeboxPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete cloudlet for edgebox")
 	err := e.generic.DeleteCloudlet(ctx, cloudlet, pfConfig, caches, updateCallback)

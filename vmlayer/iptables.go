@@ -122,14 +122,14 @@ func (v *VMProperties) createCloudletFirewallRules(ctx context.Context, client s
 
 	var firewallRules FirewallRules
 	var err error
-	if val, ok := v.CommonPf.Properties["MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS"]; ok {
-		firewallRules.EgressRules, err = parseFirewallRules(ctx, val.Value)
+	if val, ok := v.CommonPf.Properties.GetValue("MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS"); ok {
+		firewallRules.EgressRules, err = parseFirewallRules(ctx, val)
 		if err != nil {
 			return err
 		}
 	}
-	if val, ok := v.CommonPf.Properties["MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS"]; ok {
-		firewallRules.IngressRules, err = parseFirewallRules(ctx, val.Value)
+	if val, ok := v.CommonPf.Properties.GetValue("MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS"); ok {
+		firewallRules.IngressRules, err = parseFirewallRules(ctx, val)
 		if err != nil {
 			return err
 		}

@@ -65,8 +65,6 @@ func (o *OpenstackPlatform) GetApiAccessFilename() string {
 }
 
 func (o *OpenstackPlatform) GetCloudletProjectName() string {
-	if val, ok := o.openRCVars["OS_PROJECT_NAME"]; ok {
-		return val
-	}
-	return ""
+	val, _ := o.openRCVars["OS_PROJECT_NAME"]
+	return val
 }
