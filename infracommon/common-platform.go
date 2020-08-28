@@ -19,7 +19,7 @@ import (
 )
 
 type CommonPlatform struct {
-	Properties        map[string]*edgeproto.PropertyInfo
+	Properties        InfraProperties
 	PlatformConfig    *pf.PlatformConfig
 	VaultConfig       *vault.Config
 	MappedExternalIPs map[string]string
@@ -37,20 +37,8 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 	if vaultConfig.Addr == "" {
 		return fmt.Errorf("vaultAddr is not specified")
 	}
-	c.Properties = make(map[string]*edgeproto.PropertyInfo)
 	c.PlatformConfig = platformConfig
 	c.VaultConfig = vaultConfig
-
-	// set default properties
-	for k, v := range InfraCommonProps {
-		p := *v
-		c.Properties[k] = &p
-	}
-	// append platform specific properties
-	for k, v := range platformSpecificProps {
-		p := *v
-		c.Properties[k] = &p
-	}
 
 	// fetch properties from vault
 	mexEnvPath := GetVaultCloudletCommonPath("mexenv.json")
@@ -64,25 +52,14 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		}
 		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, mexEnvPath, err)
 	}
-	for _, envData := range envData.Env {
-		if _, ok := c.Properties[envData.Name]; ok {
-			c.Properties[envData.Name].Value = envData.Value
-		} else {
-			// quick fix for EDGECLOUD-2572.  Assume the mexenv.json item is secret if we have
-			// not defined it one way or another in code, of if the props that defines it is not
-			// run (e.g. an Azure property defined in mexenv.json when we are running openstack)
-			c.Properties[envData.Name] = &edgeproto.PropertyInfo{
-				Name:   envData.Name,
-				Value:  envData.Value,
-				Secret: true,
-			}
-		}
-	}
+	c.Properties.Init()
+	c.Properties.SetProperties(platformSpecificProps)
+	c.Properties.SetPropsFromEnvData(envData.Env)
 	// fetch properties from user input
-	SetPropsFromVars(ctx, c.Properties, c.PlatformConfig.EnvVars)
+	c.Properties.SetPropsFromVars(ctx, c.PlatformConfig.EnvVars)
 
 	if !testMode {
-		for name, val := range c.Properties {
+		for name, val := range c.Properties.Properties {
 			if val.Mandatory && val.Value == "" {
 				log.SpanLog(ctx, log.DebugLevelInfra, "mandatory property not set", "name", name)
 				return fmt.Errorf("mandatory property not set: %s", name)
@@ -144,15 +121,18 @@ func (c *CommonPlatform) GetCloudletDNSZone() string {
 }
 
 func (c *CommonPlatform) GetCloudletRegistryFileServer() string {
-	return c.Properties["MEX_REGISTRY_FILE_SERVER"].Value
+	value, _ := c.Properties.GetValue("MEX_REGISTRY_FILE_SERVER")
+	return value
 }
 
 func (c *CommonPlatform) GetCloudletCFKey() string {
-	return c.Properties["MEX_CF_KEY"].Value
+	value, _ := c.Properties.GetValue("MEX_CF_KEY")
+	return value
 }
 
 func (c *CommonPlatform) GetCloudletCFUser() string {
-	return c.Properties["MEX_CF_USER"].Value
+	value, _ := c.Properties.GetValue("MEX_CF_USER")
+	return value
 }
 
 func SetTestMode(tMode bool) {
@@ -163,7 +143,7 @@ func SetTestMode(tMode bool) {
 // fromip1=toip1,fromip2=toip2 and populates mappedExternalIPs
 func (c *CommonPlatform) initMappedIPs() error {
 	c.MappedExternalIPs = make(map[string]string)
-	meip := c.Properties["MEX_EXTERNAL_IP_MAP"].Value
+	meip, _ := c.Properties.GetValue("MEX_EXTERNAL_IP_MAP")
 	if meip != "" {
 		ippair := strings.Split(meip, ",")
 		for _, i := range ippair {

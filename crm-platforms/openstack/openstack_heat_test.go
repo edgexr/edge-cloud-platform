@@ -85,7 +85,7 @@ func TestHeatTemplate(t *testing.T) {
 	err := vmp.InitProps(ctx, &pc, vaultConfig)
 	log.SpanLog(ctx, log.DebugLevelInfra, "init props done", "err", err)
 	require.Nil(t, err)
-	op.VMProperties.CommonPf.Properties["MEX_EXT_NETWORK"].Value = "external-network-shared"
+	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", "external-network-shared")
 
 	// Add chef params
 	for _, vm := range vms {

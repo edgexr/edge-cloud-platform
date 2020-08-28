@@ -43,24 +43,18 @@ func (g *GCPPlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.Proper
 }
 
 func (g *GCPPlatform) GetGcpAuthKeyUrl() string {
-	if val, ok := g.commonPf.Properties["MEX_GCP_AUTH_KEY_PATH"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_AUTH_KEY_PATH")
+	return val
 }
 
 func (g *GCPPlatform) GetGcpZone() string {
-	if val, ok := g.commonPf.Properties["MEX_GCP_ZONE"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_ZONE")
+	return val
 }
 
 func (g *GCPPlatform) GetGcpProject() string {
-	if val, ok := g.commonPf.Properties["MEX_GCP_PROJECT"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_PROJECT")
+	return val
 }
 
 func (g *GCPPlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {

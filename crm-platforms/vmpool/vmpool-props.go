@@ -2,6 +2,7 @@ package vmpool
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -29,9 +30,9 @@ func (o *VMPoolPlatform) GetApiAccessFilename() string {
 	return ""
 }
 
-func (s *VMPoolPlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
-	if val, ok := s.VMProperties.CommonPf.Properties["MEX_EXTERNAL_NETWORK_GATEWAY"]; ok {
-		return val.Value, nil
+func (o *VMPoolPlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
+	if val, ok := o.VMProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_NETWORK_GATEWAY"); ok {
+		return val, nil
 	}
-	return "", nil
+	return "", fmt.Errorf("Unable to find MEX_EXTERNAL_NETWORK_GATEWAY")
 }

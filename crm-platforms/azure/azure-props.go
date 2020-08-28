@@ -38,24 +38,18 @@ func (a *AzurePlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.Prop
 }
 
 func (a *AzurePlatform) GetAzureLocation() string {
-	if val, ok := a.commonPf.Properties["MEX_AZURE_LOCATION"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_LOCATION")
+	return val
 }
 
 func (a *AzurePlatform) GetAzureUser() string {
-	if val, ok := a.commonPf.Properties["MEX_AZURE_USER"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_USER")
+	return val
 }
 
 func (a *AzurePlatform) GetAzurePass() string {
-	if val, ok := a.commonPf.Properties["MEX_AZURE_PASS"]; ok {
-		return val.Value
-	}
-	return ""
+	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_PASS")
+	return val
 }
 
 func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {

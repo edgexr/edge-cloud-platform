@@ -24,15 +24,15 @@ func incrIP(ip net.IP) {
 func (v *VSpherePlatform) GetExternalIpRanges() ([]string, error) {
 	log.DebugLog(log.DebugLevelInfra, "GetExternalIpRanges")
 
-	extIPs, ok := v.vmProperties.CommonPf.Properties["MEX_EXTERNAL_IP_RANGES"]
-	if !ok || extIPs.Value == "" {
+	extIPs, ok := v.vmProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_IP_RANGES")
+	if !ok || extIPs == "" {
 		return nil, fmt.Errorf("MEX_EXTERNAL_IP_RANGES not defined")
 	}
 	var rc []string
-	if extIPs.Value == "" {
+	if extIPs == "" {
 		return rc, fmt.Errorf("No external IPs assigned")
 	}
-	ipRanges := strings.Split(extIPs.Value, ",")
+	ipRanges := strings.Split(extIPs, ",")
 	for _, ipRange := range ipRanges {
 		ranges := strings.Split(ipRange, "-")
 		if len(ranges) != 2 {
