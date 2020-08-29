@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -19,15 +20,17 @@ func (o *VMPoolPlatform) GetApiEndpointAddr(ctx context.Context) (string, error)
 	return "", nil
 }
 
-func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams) (string, error) {
+func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name)
-	if VMGroupOrchestrationParams == nil {
+	var manifest infracommon.CloudletManifest
+
+	if vmgp == nil {
 		return "", nil
 	}
-	if len(VMGroupOrchestrationParams.VMs) != 1 {
+	if len(vmgp.VMs) != 1 {
 		return "", fmt.Errorf("invalid number of VMs")
 	}
-	chefParams := VMGroupOrchestrationParams.VMs[0].ChefParams
+	chefParams := vmgp.VMs[0].ChefParams
 	if chefParams == nil {
 		return "", fmt.Errorf("missing chef params for %s", name)
 	}
@@ -35,7 +38,7 @@ func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, V
 		return "", fmt.Errorf("missing chef client key for %s", chefParams.NodeName)
 	}
 
-	manifest := fmt.Sprintf(`
+	scriptText := fmt.Sprintf(`
 #!/bin/bash
 
 cat > /home/ubuntu/client.pem << EOF
@@ -45,12 +48,7 @@ EOF
 sudo bash /etc/mobiledgex/setup-chef.sh -s "%s" -n "%s"
 `, chefParams.ClientKey, chefParams.ServerPath, chefParams.NodeName)
 
-	codeQuotes := "```"
-
-	instructions := `
-1) SSH into one of the VMs from the VMPool which has access to controller's notify port
-2) Save and execute the following script on the VM
-` + codeQuotes + manifest + codeQuotes
-
-	return instructions, nil
+	manifest.AddItem("SSH into one of the VMs from the VMPool which has access to controller's notify port", infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")
+	manifest.AddItem("Save and execute the following script on the VM", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)
+	return manifest.ToString()
 }

@@ -20,34 +20,59 @@ var VSphereProps = map[string]*edgeproto.PropertyInfo{
 		Description: "vSphere Compute Cluster Name",
 		Value:       "compute-cluster",
 	},
+	"MEX_MANAGEMENT_CLUSTER": {
+		Name:        "vSphere Management Cluster Name",
+		Description: "Optional vSphere Management Cluster Name for platform VMs; if not specified, platform VMs run on the same cluster as compute VMs",
+	},
 	"MEX_DATASTORE": {
 		Name:        "vSphere Datastore Name",
 		Description: "vSphere Datastore Name",
 		Mandatory:   true,
+	},
+	"MEX_MANAGEMENT_DATASTORE": {
+		Name:        "vSphere Management Datastore Name",
+		Description: "Optional vSphere Management Datastore Name for platform VMs; if not specified, platform VMs run on the same datastore as compute VMs",
 	},
 	"MEX_EXTERNAL_IP_RANGES": {
 		Name:        "External IP Ranges",
 		Description: "Range of external IP addresses, Format: StartCIDR-EndCIDR",
 		Mandatory:   true,
 	},
-	"MEX_EXTERNAL_NETWORK_MASK": {
-		Name:        "External Network Mask",
-		Description: "External Network Mask",
-		Mandatory:   true,
+	"MEX_MANAGEMENT_EXTERNAL_IP_RANGES": {
+		Name:        "Management External IP Ranges",
+		Description: "Optional Range of external IP addresses for management cluster; if not specified, platform VMs use same IP range as compute VMs.",
 	},
 	"MEX_EXTERNAL_NETWORK_GATEWAY": {
 		Name:        "External Network Gateway",
 		Description: "External Network Gateway",
 		Mandatory:   true,
 	},
+	"MEX_MANAGEMENT_EXTERNAL_NETWORK_GATEWAY": {
+		Name:        "Management External Network Gateway",
+		Description: "Optional External Network Gateway for management cluster; if not specified, platform VMs use same gateway as compute VMs",
+	},
+	"MEX_EXTERNAL_NETWORK_MASK": {
+		Name:        "External Network Mask",
+		Description: "External Network Mask",
+		Mandatory:   true,
+	},
+	"MEX_MANAGEMENT_EXTERNAL_NETWORK_MASK": {
+		Name:        "Management External Network Mask",
+		Description: "Optional External Network Mask for manangement cluster; if not specified, platform VMs use same netmask as compute VMs",
+	},
 	"MEX_INTERNAL_NETWORK_MASK": {
 		Name:        "Internal Network Mask",
-		Description: "Internal Network Mask",
+		Description: "Internal Network Mask in bits, e.g. 24",
 		Value:       "24",
 	},
 	"MEX_EXTERNAL_VSWITCH": {
 		Name:        "vSphere External vSwitch Name",
 		Description: "vSphere External vSwitch Name",
+		Value:       "ExternalVSwitch",
+	},
+	"MEX_MANAGEMENT_EXTERNAL_VSWITCH": {
+		Name:        "vSphere Management External vSwitch Name",
+		Description: "Optional vSphere External vSwitch Name for management cluster; if not specified, platform VMs use same external vSwitch as compute VMs",
 		Value:       "ExternalVSwitch",
 	},
 	"MEX_INTERNAL_VSWITCH": {
@@ -59,6 +84,12 @@ var VSphereProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "vSphere Template Folder Name",
 		Description: "vSphere Template Folder Name",
 		Value:       "templates",
+	},
+	// default VM version is 6.7 which is forward compatible to 7.0
+	"MEX_VM_VERSION": {
+		Name:        "vSphere VM Version",
+		Description: "vSphere VM Compatibility Version, e.g. 6.7 or 7.0",
+		Value:       "6.7",
 	},
 }
 
@@ -151,12 +182,26 @@ func (v *VSpherePlatform) GetVCenterInsecure() string {
 	return val
 }
 
-func (v *VSpherePlatform) GetComputeCluster() string {
+func (v *VSpherePlatform) GetHostCluster() string {
+	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
+		// check for optional management cluster
+		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_CLUSTER")
+		if val != "" {
+			return val
+		}
+	}
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_COMPUTE_CLUSTER")
 	return val
 }
 
 func (v *VSpherePlatform) GetDataStore() string {
+	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
+		// check for optional management datastore
+		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_DATASTORE")
+		if val != "" {
+			return val
+		}
+	}
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_DATASTORE")
 	return val
 }
@@ -167,14 +212,35 @@ func (v *VSpherePlatform) GetInternalVSwitch() string {
 }
 
 func (v *VSpherePlatform) GetExternalVSwitch() string {
+	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
+		// check for optional management vswitch
+		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_EXTERNAL_VSWITCH")
+		if val != "" {
+			return val
+		}
+	}
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_VSWITCH")
 	return val
 }
 func (v *VSpherePlatform) GetExternalNetmask() string {
+	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
+		// check for optional management netmask
+		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_EXTERNAL_NETWORK_MASK")
+		if val != "" {
+			return val
+		}
+	}
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_NETWORK_MASK")
 	return val
 }
 func (v *VSpherePlatform) GetExternalGateway(ctx context.Context, extNetName string) (string, error) {
+	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
+		// check for optional management gw
+		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_EXTERNAL_NETWORK_GATEWAY")
+		if val != "" {
+			return val, nil
+		}
+	}
 	val, ok := v.vmProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_NETWORK_GATEWAY")
 	if !ok {
 		return "", fmt.Errorf("Unable to find MEX_EXTERNAL_NETWORK_GATEWAY")
@@ -186,8 +252,11 @@ func (v *VSpherePlatform) GetInternalNetmask() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_INTERNAL_NETWORK_MASK")
 	return val
 }
-
 func (v *VSpherePlatform) GetTemplateFolder() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_TEMPLATE_FOLDER")
+	return val
+}
+func (v *VSpherePlatform) GetVMVersion() string {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VM_VERSION")
 	return val
 }
