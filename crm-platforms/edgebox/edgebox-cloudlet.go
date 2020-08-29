@@ -55,9 +55,9 @@ func (e *EdgeboxPlatform) SyncControllerCache(ctx context.Context, caches *pf.Ca
 	return nil
 }
 
-func (e *EdgeboxPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor) (*edgeproto.CloudletManifest, error) {
+func (e *EdgeboxPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
-	return e.generic.GetCloudletManifest(ctx, cloudlet, pfConfig, flavor)
+	return e.generic.GetCloudletManifest(ctx, cloudlet, pfConfig, flavor, caches)
 }
 
 func (e *EdgeboxPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {

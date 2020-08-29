@@ -129,7 +129,7 @@ func (v *VSpherePlatform) CreatePortGroup(ctx context.Context, dvs string, pgNam
 func (v *VSpherePlatform) DeletePool(ctx context.Context, poolName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeletePool", "poolName", poolName)
 	dcName := v.GetDatacenterName(ctx)
-	computeCluster := v.GetComputeCluster()
+	computeCluster := v.GetHostCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", dcName, computeCluster)
 	poolPath := pathPrefix + poolName
 	out, err := v.TimedGovcCommand(ctx, "govc", "pool.destroy", "-dc", dcName, poolPath)
@@ -145,7 +145,7 @@ func (v *VSpherePlatform) CreatePool(ctx context.Context, poolName string) error
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreatePool", "poolName", poolName)
 
 	dcName := v.GetDatacenterName(ctx)
-	computeCluster := v.GetComputeCluster()
+	computeCluster := v.GetHostCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", dcName, computeCluster)
 	poolPath := pathPrefix + poolName
 	out, err := v.TimedGovcCommand(ctx, "govc", "pool.create", "-dc", dcName, poolPath)
@@ -161,18 +161,25 @@ func (v *VSpherePlatform) CreatePool(ctx context.Context, poolName string) error
 }
 
 func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, action vmlayer.ActionType) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "populateOrchestrationParams")
+	log.SpanLog(ctx, log.DebugLevelInfra, "populateOrchestrationParams", "SkipInfraSpecificCheck", vmgp.SkipInfraSpecificCheck)
 
 	subnetToVlan := make(map[string]uint32)
 	masterIP := ""
-	flavors, err := v.GetFlavorList(ctx)
-	if err != nil {
-		return nil
+	var flavors []*edgeproto.FlavorInfo
+	var err error
+	if !vmgp.SkipInfraSpecificCheck {
+		flavors, err = v.GetFlavorList(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
-	usedCidrs, err := v.GetUsedSubnetCIDRs(ctx)
-	if err != nil {
-		return nil
+	var usedCidrs map[string]string
+	if !vmgp.SkipInfraSpecificCheck {
+		usedCidrs, err = v.GetUsedSubnetCIDRs(ctx)
+		if err != nil {
+			return nil
+		}
 	}
 	currentSubnetName := ""
 	if action != vmlayer.ActionCreate {
@@ -181,7 +188,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 
 	// find an available subnet or the current subnet for update and delete
 	for i, s := range vmgp.Subnets {
-		if s.CIDR != vmlayer.NextAvailableResource {
+		if s.CIDR != vmlayer.NextAvailableResource || vmgp.SkipInfraSpecificCheck {
 			// no need to compute the CIDR
 			continue
 		}
@@ -230,10 +237,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 				break
 			}
 		}
-		if vm.ImageName != "" {
-			vmgp.VMs[vmidx].TemplateId = v.IdSanitize(vm.ImageName) + "-tmplt-" + vm.Id
-		}
-		if !flavormatch {
+		if !flavormatch && !vmgp.SkipInfraSpecificCheck {
 			return fmt.Errorf("No match in flavor cache for flavor name: %s", vm.FlavorName)
 		}
 		if vm.AttachExternalDisk {
@@ -256,69 +260,72 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 		}
 
 		// populate external ips
-		for pi, portref := range vm.Ports {
-			log.SpanLog(ctx, log.DebugLevelInfra, "updating VM port", "portref", portref)
-			if portref.NetworkId == v.IdSanitize(v.vmProperties.GetCloudletExternalNetwork()) {
-				vmHasExternalIp = true
-				var eip string
-				if action == vmlayer.ActionUpdate {
-					eip, err = v.GetExternalIPForServer(ctx, vm.Name)
-					log.SpanLog(ctx, log.DebugLevelInfra, "using current ip for action", "eip", eip, "action", action, "server", vm.Name)
+		if !vmgp.SkipInfraSpecificCheck {
+			for pi, portref := range vm.Ports {
+				log.SpanLog(ctx, log.DebugLevelInfra, "updating VM port", "portref", portref)
+				if portref.NetworkId == v.IdSanitize(v.vmProperties.GetCloudletExternalNetwork()) {
+					vmHasExternalIp = true
+					var eip string
+					if action == vmlayer.ActionUpdate {
+						eip, err = v.GetExternalIPForServer(ctx, vm.Name)
+						log.SpanLog(ctx, log.DebugLevelInfra, "using current ip for action", "eip", eip, "action", action, "server", vm.Name)
+					} else {
+						eip, err = v.GetFreeExternalIP(ctx)
+					}
+					if err != nil {
+						return err
+					}
+
+					gw, err := v.GetExternalGateway(ctx, "")
+					if err != nil {
+						return err
+					}
+					fip := vmlayer.FixedIPOrchestrationParams{
+						Subnet:  vmlayer.NewResourceReference(portref.Name, portref.Id, false),
+						Mask:    v.GetExternalNetmask(),
+						Address: eip,
+						Gateway: gw,
+					}
+					vmgp.VMs[vmidx].FixedIPs = append(vmgp.VMs[vmidx].FixedIPs, fip)
+					tagname := v.GetVmIpTag(ctx, vmgp.GroupName, vm.Name, portref.NetworkId, eip)
+					tagid := v.IdSanitize(tagname)
+					vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
 				} else {
-					eip, err = v.GetFreeExternalIP(ctx)
+					vlan, ok := subnetToVlan[portref.SubnetId]
+					if !ok {
+						return fmt.Errorf("cannot find vlan for subnet: %s", portref.SubnetId)
+					}
+					vm.Ports[pi].PortGroup = getPortGroupNameForVlan(vlan)
 				}
-				if err != nil {
-					return err
-				}
-
-				gw, err := v.GetExternalGateway(ctx, "")
-				if err != nil {
-					return err
-				}
-				fip := vmlayer.FixedIPOrchestrationParams{
-					Subnet:  vmlayer.NewResourceReference(portref.Name, portref.Id, false),
-					Mask:    v.GetExternalNetmask(),
-					Address: eip,
-					Gateway: gw,
-				}
-				vmgp.VMs[vmidx].FixedIPs = append(vmgp.VMs[vmidx].FixedIPs, fip)
-				tagname := v.GetVmIpTag(ctx, vmgp.GroupName, vm.Name, portref.NetworkId, eip)
-				tagid := v.IdSanitize(tagname)
-				vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
-			} else {
-				vlan, ok := subnetToVlan[portref.SubnetId]
-				if !ok {
-					return fmt.Errorf("cannot find vlan for subnet: %s", portref.SubnetId)
-				}
-				vm.Ports[pi].PortGroup = getPortGroupNameForVlan(vlan)
 			}
-		}
 
-		// update fixedips from subnet found
-		for fipidx, fip := range vm.FixedIPs {
-			if fip.Address == vmlayer.NextAvailableResource {
-				found := false
-				for _, s := range vmgp.Subnets {
-					if s.Name == fip.Subnet.Name {
-						found = true
-						vmgp.VMs[vmidx].FixedIPs[fipidx].Address = fmt.Sprintf("%s.%d", s.NodeIPPrefix, fip.LastIPOctet)
-						vmgp.VMs[vmidx].FixedIPs[fipidx].Mask = v.GetInternalNetmask()
+			// update fixedips from subnet found
+			for fipidx, fip := range vm.FixedIPs {
+				if fip.Address == vmlayer.NextAvailableResource {
+					found := false
+					for _, s := range vmgp.Subnets {
+						if s.Name == fip.Subnet.Name {
+							found = true
+							vmgp.VMs[vmidx].FixedIPs[fipidx].Address = fmt.Sprintf("%s.%d", s.NodeIPPrefix, fip.LastIPOctet)
+							vmgp.VMs[vmidx].FixedIPs[fipidx].Mask = v.GetInternalNetmask()
 
-						if !vmHasExternalIp {
-							vm.FixedIPs[fipidx].Gateway = s.GatewayIP
+							if !vmHasExternalIp {
+								vm.FixedIPs[fipidx].Gateway = s.GatewayIP
+							}
+							tagname := v.GetVmIpTag(ctx, vmgp.GroupName, vm.Name, s.Id, vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
+							tagid := v.IdSanitize(tagname)
+							vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
+							log.SpanLog(ctx, log.DebugLevelInfra, "updating address for VM", "vmname", vmgp.VMs[vmidx].Name, "address", vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
+							break
 						}
-						tagname := v.GetVmIpTag(ctx, vmgp.GroupName, vm.Name, s.Id, vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
-						tagid := v.IdSanitize(tagname)
-						vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: tagname})
-						log.SpanLog(ctx, log.DebugLevelInfra, "updating address for VM", "vmname", vmgp.VMs[vmidx].Name, "address", vmgp.VMs[vmidx].FixedIPs[fipidx].Address)
-						break
+					}
+					if !found {
+						return fmt.Errorf("subnet for vm %s not found", vm.Name)
 					}
 				}
-				if !found {
-					return fmt.Errorf("subnet for vm %s not found", vm.Name)
-				}
 			}
 		}
+
 		// we need to put the fip with the GW in first, so re-sort the fixed ips accordingly
 		var sortedFips []vmlayer.FixedIPOrchestrationParams
 		for f, fip := range vmgp.VMs[vmidx].FixedIPs {
@@ -372,9 +379,10 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 
 	dcName := v.GetDatacenterName(ctx)
 	dsName := v.GetDataStore()
-	computeCluster := v.GetComputeCluster()
+	computeCluster := v.GetHostCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", dcName, computeCluster)
 	poolPath := pathPrefix + poolName
+	vmVersion := v.GetVMVersion()
 
 	if len(vm.Ports) == 0 {
 		return fmt.Errorf("No networks assigned to VM")
@@ -390,7 +398,7 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 			netname = vm.Ports[0].PortGroup
 		}
 		image := vm.Volumes[0].ImageName
-		out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-g", "ubuntu64Guest", "-pool", poolName, "-ds", ds, "-dc", dcName, "-disk", image, "-net", netname, vm.Name)
+		out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", "ubuntu64Guest", "-pool", poolName, "-ds", ds, "-dc", dcName, "-disk", image, "-net", netname, vm.Name)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
 			return fmt.Errorf("Failed to create template VM: %v", err)
@@ -789,10 +797,11 @@ func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFold
 	templateName := imageFile
 	folder := v.GetTemplateFolder()
 	extNet := v.vmProperties.GetCloudletExternalNetwork()
-	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
+	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetHostCluster())
+	vmVersion := v.GetVMVersion()
 
 	// create the VM which will become our template
-	out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-g", "ubuntu64Guest", "-pool", pool, "-ds", ds, "-dc", dcName, "-folder", folder, "-disk", imageFolder+"/"+imageFile+".vmdk", "-net", extNet, templateName)
+	out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", "ubuntu64Guest", "-pool", pool, "-ds", ds, "-dc", dcName, "-folder", folder, "-disk", imageFolder+"/"+imageFile+".vmdk", "-net", extNet, templateName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
 		return fmt.Errorf("Failed to create template VM: %v", err)
@@ -843,7 +852,7 @@ func (v *VSpherePlatform) ImportImage(ctx context.Context, folder, imageFile str
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage error", "err", err)
 	}
 
-	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetComputeCluster())
+	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetHostCluster())
 	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, "-dc", dcName, imageFile, folder)
 
 	if err != nil {

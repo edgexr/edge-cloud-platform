@@ -263,7 +263,7 @@ func (v *VSpherePlatform) GetResourcePools(ctx context.Context) (*GovcPools, err
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetResourcePools")
 
 	dcName := v.GetDatacenterName(ctx)
-	computeCluster := v.GetComputeCluster()
+	computeCluster := v.GetHostCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", dcName, computeCluster)
 	poolSearchPath := pathPrefix + "*"
 
@@ -288,7 +288,7 @@ func (v *VSpherePlatform) GetHosts(ctx context.Context) (*GovcHosts, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetHosts")
 
 	dcName := v.GetDatacenterName(ctx)
-	computeCluster := v.GetComputeCluster()
+	computeCluster := v.GetHostCluster()
 	pathPrefix := fmt.Sprintf("/%s/host/%s/", dcName, computeCluster)
 	poolSearchPath := pathPrefix + "*"
 

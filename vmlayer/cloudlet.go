@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -715,8 +716,9 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 	return vms, nil
 }
 
-func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor) (*edgeproto.CloudletManifest, error) {
+func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
+	v.VMProperties.Domain = VMDomainPlatform
 
 	if cloudlet.ChefClientKey == nil {
 		return nil, fmt.Errorf("unable to find chef client key")
@@ -726,6 +728,8 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
+
+	v.VMProvider.SetCaches(ctx, caches)
 
 	platvms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
 	if err != nil {
@@ -767,15 +771,13 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := v.VMProvider.GetCloudletManifest(ctx, platformVmName, gp)
+	imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
+	manifest, err := v.VMProvider.GetCloudletManifest(ctx, platformVmName, imgPath, gp)
 	if err != nil {
 		return nil, err
 	}
-	imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
-
 	return &edgeproto.CloudletManifest{
-		Manifest:  manifest,
-		ImagePath: imgPath,
+		Manifest: manifest,
 	}, nil
 }
 
