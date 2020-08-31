@@ -57,6 +57,7 @@ cookbook_file '/tmp/prometheus.yml' do
   source 'prometheus.yml'
   mode '0644'
   action :create
+  force_unlink true
 end
 
 cmd = cloudlet_prometheus_cmd
