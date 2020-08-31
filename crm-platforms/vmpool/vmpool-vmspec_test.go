@@ -115,6 +115,7 @@ func TestVMSpec(t *testing.T) {
 	}
 	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.NotNil(t, err, "mark vms for allocation should fail as no vm with same flavor exists")
+	require.Contains(t, err.Error(), "no suitable platform flavor found", "error message should match")
 
 	// Release 1 VM from group1, should fail as it is IN_PROGRESS
 	vmSpecs = []edgeproto.VMSpec{
@@ -124,6 +125,7 @@ func TestVMSpec(t *testing.T) {
 	}
 	_, err = markVMsForRelease(ctx, group1, &vmPool, vmSpecs)
 	require.NotNil(t, err, "mark vms for release should fail")
+	require.Contains(t, err.Error(), "Unable to release VM", "error message should match")
 	setVMState(&vmPool, group1, markedVMs, edgeproto.VMState_VM_IN_USE)
 
 	// Request for VM with medium flavor, should pass
@@ -160,6 +162,30 @@ func TestVMSpec(t *testing.T) {
 	}
 	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.NotNil(t, err, "allocation should fail")
+	require.Contains(t, err.Error(), "Unable to find a free VM", "error message should match")
+	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 3)
+
+	// Request for additional 3 VMs, should fail as there
+	// aren't enough VMs
+	vmSpecs = []edgeproto.VMSpec{
+		edgeproto.VMSpec{
+			InternalName: "vm3.testcluster",
+			Flavor:       smallFlavor,
+		},
+		edgeproto.VMSpec{
+			InternalName:    "vm4.testcluster",
+			InternalNetwork: true,
+			Flavor:          smallFlavor,
+		},
+		edgeproto.VMSpec{
+			InternalName:    "vm5.testcluster",
+			InternalNetwork: true,
+			Flavor:          smallFlavor,
+		},
+	}
+	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
+	require.NotNil(t, err, "allocation should fail")
+	require.Contains(t, err.Error(), "Failed to meet VM requirement", "error message should match")
 	verifyVMGroupStateCount(t, &vmPool, group1, edgeproto.VMState_VM_IN_USE, 3)
 
 	// Request for 2 VMs for different group

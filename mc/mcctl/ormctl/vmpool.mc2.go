@@ -134,11 +134,6 @@ var CreateVMPoolOptionalArgs = []string{
 	"vms:#.name",
 	"vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip",
-	"vms:#.flavor.name",
-	"vms:#.flavor.vcpus",
-	"vms:#.flavor.ram",
-	"vms:#.flavor.disk",
-	"vms:#.flavor.propmap",
 	"crmoverride",
 }
 var AddVMPoolMemberRequiredArgs = []string{
@@ -149,11 +144,6 @@ var AddVMPoolMemberRequiredArgs = []string{
 }
 var AddVMPoolMemberOptionalArgs = []string{
 	"vm.netinfo.externalip",
-	"vm.flavor.name",
-	"vm.flavor.vcpus",
-	"vm.flavor.ram",
-	"vm.flavor.disk",
-	"vm.flavor.propmap",
 	"crmoverride",
 }
 var RemoveVMPoolMemberRequiredArgs = []string{
@@ -162,11 +152,6 @@ var RemoveVMPoolMemberRequiredArgs = []string{
 	"vm.name",
 }
 var RemoveVMPoolMemberOptionalArgs = []string{
-	"vm.flavor.name",
-	"vm.flavor.vcpus",
-	"vm.flavor.ram",
-	"vm.flavor.disk",
-	"vm.flavor.propmap",
 	"crmoverride",
 }
 var VMNetInfoRequiredArgs = []string{}
@@ -255,11 +240,6 @@ var VMPoolOptionalArgs = []string{
 	"vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip",
 	"vms:#.state",
-	"vms:#.flavor.name",
-	"vms:#.flavor.vcpus",
-	"vms:#.flavor.ram",
-	"vms:#.flavor.disk",
-	"vms:#.flavor.propmap",
 	"crmoverride",
 }
 var VMPoolAliasArgs = []string{
@@ -321,11 +301,6 @@ var VMPoolMemberOptionalArgs = []string{
 	"vm.name",
 	"vm.netinfo.externalip",
 	"vm.netinfo.internalip",
-	"vm.flavor.name",
-	"vm.flavor.vcpus",
-	"vm.flavor.ram",
-	"vm.flavor.disk",
-	"vm.flavor.propmap",
 	"crmoverride",
 }
 var VMPoolMemberAliasArgs = []string{

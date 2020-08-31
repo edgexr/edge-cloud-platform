@@ -39,20 +39,28 @@ func markVMsForAllocation(ctx context.Context, groupName string, vmPool *edgepro
 	bothNetVms := []edgeproto.VM{}
 	internalNetVms := []edgeproto.VM{}
 	externalNetVms := []edgeproto.VM{}
+	freeVMCount := 0
 	for _, vm := range vmPool.Vms {
 		if vm.State != edgeproto.VMState_VM_FREE {
 			continue
 		}
+		freeVMCount++
 		if vm.NetInfo.ExternalIp != "" && vm.NetInfo.InternalIp != "" {
 			bothNetVms = append(bothNetVms, vm)
 			continue
 		}
 		if vm.NetInfo.ExternalIp != "" {
 			externalNetVms = append(externalNetVms, vm)
+			continue
 		}
 		if vm.NetInfo.InternalIp != "" {
 			internalNetVms = append(internalNetVms, vm)
+			continue
 		}
+	}
+
+	if freeVMCount < len(vmSpecs) {
+		return nil, fmt.Errorf("Failed to meet VM requirement, required VMs = %d, free VMs available = %d", len(vmSpecs), freeVMCount)
 	}
 
 	// Above grouping is done for following reason:
