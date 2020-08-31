@@ -14,7 +14,7 @@ named_run_list :local, 'recipe[runstatus_handler]', 'recipe[setup_infra]', 'reci
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.0.9'
+cookbook 'setup_services', '= 1.0.10'
 cookbook 'docker', '= 6.0.3'
 
 # override["local"]["edgeCloudVersion"] = "<new-version>"

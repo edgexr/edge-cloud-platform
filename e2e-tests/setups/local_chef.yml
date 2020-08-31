@@ -81,7 +81,7 @@ alertmanagers:
   port: 9093
   hostname: "127.0.0.1"
 
-  alertmanagersidecars:
+alertmanagersidecars:
 - name: alertmgrsidecar
   alertmgraddr: "http://127.0.0.1:9093"
   # config is copied by the alertmanager startup from datadir to /tmp
