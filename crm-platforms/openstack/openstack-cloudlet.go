@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -29,12 +30,25 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 	}
 	accessVars := make(map[string]string)
 	for _, v := range out {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			continue
+		}
 		out1 := strings.Split(v, "=")
 		if len(out1) != 2 {
 			return fmt.Errorf("Invalid separator for key-value pair: %v", out1)
 		}
 		key := strings.TrimSpace(out1[0])
 		value := strings.TrimSpace(out1[1])
+		origVal := value
+		value, err := strconv.Unquote(value)
+		if err != nil {
+			// Unquote didn't find quotes or had some other complaint so use the original value
+			value = origVal
+		}
+		if value == "" || key == "" {
+			continue
+		}
 		if !strings.HasPrefix(key, "OS_") {
 			return fmt.Errorf("Invalid accessvars: %s, must start with 'OS_' prefix", key)
 		}
