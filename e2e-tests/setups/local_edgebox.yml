@@ -107,7 +107,7 @@ mcs:
   hostname: "127.0.0.1"
   billingpath: "fake"
   testcollectioninterval: 3m
-  alertmgrapiaddr: "http://127.0.0.1:9094"
+  alertmgrapiaddr: "https://127.0.0.1:9094"
 
 sqls:
 - name: sql1
@@ -159,6 +159,10 @@ alertmanagersidecars:
   # config is copied by the alertmanager startup from datadir to /tmp
   configfile: "/tmp/alertmanager.yml"
   httpaddr: "127.0.0.1:9094"
+  tlscert: "{{tlsoutdir}}/mex-server.crt"
+  tlscertkey: "{{tlsoutdir}}/mex-server.key"
+  tlsclientcert: "{{tlsoutdir}}/mex-client.crt"
+  localtest: true
   hostname: "127.0.0.1"
   envvars:
     ALERTMANAGER_SMTP_EMAIL: mexadmin@mobiledgex.com

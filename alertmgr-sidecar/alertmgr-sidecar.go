@@ -14,6 +14,10 @@ var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v",
 var alertmanagerAddr = flag.String("alertmgrAddr", "0.0.0.0:9093", "Alertmanager address")
 var alertmanagerConfigFile = flag.String("configFile", "/var/tmp/alertmanager.yml", "Alertmanager config file")
 var httpAddr = flag.String("httpAddr", "0.0.0.0:9094", "Http API endpoint")
+var tlsCert = flag.String("tlsCert", "", "server tls cert file.")
+var tlsCertKey = flag.String("tlsCertKey", "", "server tls cert key file.")
+var clientCert = flag.String("tlsClientCert", "", "client tls cert file")
+var localTest = flag.Bool("localTest", false, "Local tests - self-signed certs")
 
 var SidecarServer *alertmgr.SidecarServer
 
@@ -59,7 +63,8 @@ func main() {
 		log.FatalLog("No default init info for alertmgr sidecar server is found", "err", err)
 	}
 
-	SidecarServer, err := alertmgr.NewSidecarServer(*alertmanagerAddr, *alertmanagerConfigFile, *httpAddr, config)
+	SidecarServer, err := alertmgr.NewSidecarServer(*alertmanagerAddr, *alertmanagerConfigFile,
+		*httpAddr, config, *clientCert, *tlsCert, *tlsCertKey, *localTest)
 	if err != nil {
 		log.FatalLog("Unable to init alertmgr sidecar", "err", err)
 	}
