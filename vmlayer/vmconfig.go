@@ -34,6 +34,8 @@ runcmd:
 var VmCloudConfigShareMount = `
  - chown nobody:nogroup /share
  - chmod 777 /share 
+ - systemctl enable nfs-kernel-server
+ - systemctl start nfs-kernel-server
  - echo "/share *(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
  - exportfs -a
  - echo "showing exported filesystems"
@@ -51,7 +53,7 @@ fs_setup:
    overwrite: true
    layout: true
 mounts:
- - [ "/dev/vdb1", "/share" ]`
+ - [ "/dev/vdb", "/share" ]`
 
 // VmConfigDataFormatter formats user or meta data to fit into orchestration templates
 type VmConfigDataFormatter func(instring string) string
