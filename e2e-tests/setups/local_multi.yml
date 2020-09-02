@@ -276,7 +276,7 @@ mcs:
   notifysrvaddr: "127.0.0.1:52001"
   consoleproxyaddr: "127.0.0.1:6080"
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
-  alertmgrapiaddr: "http://127.0.0.1:9094"
+  alertmgrapiaddr: "https://127.0.0.1:9094"
   billingpath: "fake"
 
 - name: mc2
@@ -291,7 +291,7 @@ mcs:
   ldapaddr: "127.0.0.1:9390"
   notifysrvaddr: "127.0.0.1:52002"
   consoleproxyaddr: "127.0.0.1:6081"
-  alertmgrapiaddr: "http://127.0.0.1:9094"
+  alertmgrapiaddr: "https://127.0.0.1:9094"
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
 
 sqls:
@@ -391,6 +391,10 @@ alertmanagersidecars:
   # config is copied by the alertmanager startup from datadir to /tmp
   configfile: "/tmp/alertmanager.yml"
   httpaddr: "127.0.0.1:9094"
+  tlscert: "{{tlsoutdir}}/mex-server.crt"
+  tlscertkey: "{{tlsoutdir}}/mex-server.key"
+  tlsclientcert: "{{tlsoutdir}}/mex-client.crt"
+  localtest: true
   hostname: "127.0.0.1"
   envvars:
     ALERTMANAGER_SMTP_EMAIL: alerts@mobiledgex.com

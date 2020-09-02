@@ -225,7 +225,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
-		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr,
+		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, config.TlsCertFile,
 			config.AlertCache, config.AlertmgrResolveTimout)
 		if err != nil {
 			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts

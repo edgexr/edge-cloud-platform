@@ -50,7 +50,7 @@ mcs:
 - name: mc1
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
-  vaultaddr: "http://127.0.0.1:8200"
+  vaultaddr: "https://127.0.0.1:8200"
   notifysrvaddr: "127.0.0.1:52001"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
@@ -87,6 +87,10 @@ alertmanagersidecars:
   # config is copied by the alertmanager startup from datadir to /tmp
   configfile: "/tmp/alertmanager.yml"
   httpaddr: "127.0.0.1:9094"
+  tlscert: "{{tlsoutdir}}/mex-server.crt"
+  tlscertkey: "{{tlsoutdir}}/mex-server.key"
+  tlsclientcert: "{{tlsoutdir}}/mex-client.crt"
+  localtest: true
   hostname: "127.0.0.1"
   envvars:
     ALERTMANAGER_SMTP_EMAIL: mexadmin@mobiledgex.com

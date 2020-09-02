@@ -309,7 +309,7 @@ func TestAlertMgrServer(t *testing.T) {
 	fakeAlertmanager.verifyReceiversCnt(t, 0)
 
 	// Start up a sidecar server on an available port
-	sidecarServer, err := NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &testInitInfo)
+	sidecarServer, err := NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &testInitInfo, "", "", "", false)
 	require.Nil(t, err)
 	err = sidecarServer.Run()
 	require.Nil(t, err)
@@ -319,12 +319,12 @@ func TestAlertMgrServer(t *testing.T) {
 	var testAlertCache edgeproto.AlertCache
 	edgeproto.InitAlertCache(&testAlertCache)
 	alertRefreshInterval = 100 * time.Millisecond
-	testAlertMgrServer, err := NewAlertMgrServer(sidecarServerAddr, &testAlertCache, 2*time.Minute)
+	testAlertMgrServer, err := NewAlertMgrServer(sidecarServerAddr, "", &testAlertCache, 2*time.Minute)
 	require.Nil(t, err)
 	require.NotNil(t, testAlertMgrServer)
 	require.Equal(t, 1, fakeAlertmanager.ConfigReloads)
 	// start another test alertMgrServer to test multiple inits
-	testAlertMgrServer2, err := NewAlertMgrServer(sidecarServerAddr, &testAlertCache, 2*time.Minute)
+	testAlertMgrServer2, err := NewAlertMgrServer(sidecarServerAddr, "", &testAlertCache, 2*time.Minute)
 	require.Nil(t, err)
 	require.NotNil(t, testAlertMgrServer2)
 	// config is already set up, don't need to reload

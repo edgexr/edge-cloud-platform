@@ -722,6 +722,22 @@ func (p *AlertmanagerSidecar) StartLocal(logfile string, opts ...process.StartOp
 		args = append(args, "--configFile")
 		args = append(args, p.ConfigFile)
 	}
+	if p.TlsCert != "" {
+		args = append(args, "--tlsCert")
+		args = append(args, p.TlsCert)
+	}
+	if p.TlsCertKey != "" {
+		args = append(args, "--tlsCertKey")
+		args = append(args, p.TlsCertKey)
+	}
+	if p.TlsClientCert != "" {
+		args = append(args, "--tlsClientCert")
+		args = append(args, p.TlsClientCert)
+	}
+	if p.LocalTest {
+		args = append(args, "-localTest")
+	}
+
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {
