@@ -91,6 +91,10 @@ variable "console_vnc_domain_name" {
   type        = "string"
 }
 
+variable "alertmanager_domain_name" {
+  default     = "alertmanager.mobiledgex.net"
+}
+
 variable "notifyroot_domain_name" {
   description = "Notifyroot service domain name"
   type        = "string"

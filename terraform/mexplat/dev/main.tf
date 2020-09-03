@@ -54,6 +54,7 @@ module "gitlab" {
     "environ"         = "${var.environ_tag}",
     "gitlab"          = "true",
     "vault"           = "true",
+    "owner"           = "ops",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -99,12 +100,13 @@ module "console" {
     "alt-https",
     "vault-ac",
     "notifyroot",
+    "alertmanager",
     "${module.fw_vault_gcp.target_tag}"
   ]
   labels              = {
     "environ"         = "${var.environ_tag}",
     "console"         = "true",
-    "vault"           = "true",
+    "owner"           = "ops",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -123,6 +125,7 @@ module "vault_b" {
   labels              = {
     "environ"         = "${var.environ_tag}",
     "vault"           = "true",
+    "owner"           = "ops",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -148,6 +151,12 @@ module "notifyroot_dns" {
 module "jaeger_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.jaeger_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "alertmanager_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.alertmanager_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 

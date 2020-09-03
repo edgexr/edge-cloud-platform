@@ -112,6 +112,10 @@ variable "jaeger_domain_name" {
   default     = "jaeger-dev.mobiledgex.net"
 }
 
+variable "alertmanager_domain_name" {
+  default     = "alertmanager-dev.mobiledgex.net"
+}
+
 variable "vault_a_domain_name" {
   default     = "vault-dev-a.mobiledgex.net"
 }

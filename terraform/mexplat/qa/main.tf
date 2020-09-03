@@ -52,6 +52,7 @@ module "gitlab" {
     "environ"         = "${var.environ_tag}",
     "gitlab"          = "true",
     "vault"           = "true",
+    "owner"           = "qa",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -70,6 +71,7 @@ module "vault_b" {
   labels              = {
     "environ"         = "${var.environ_tag}",
     "vault"           = "true",
+    "owner"           = "qa",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -106,7 +108,21 @@ module "console" {
   instance_size       = "custom-2-9216"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
-  tags                = [ "http-server", "https-server", "console-debug", "mc", "jaeger", "alt-https", "notifyroot" ]
+  tags                = [
+    "http-server",
+    "https-server",
+    "console-debug",
+    "mc",
+    "jaeger",
+    "alt-https",
+    "notifyroot",
+    "alertmanager",
+  ]
+  labels              = {
+    "environ"         = "${var.environ_tag}",
+    "console"         = "true",
+    "owner"           = "qa",
+  }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
@@ -131,6 +147,12 @@ module "notifyroot_dns" {
 module "jaeger_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.jaeger_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "alertmanager_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.alertmanager_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 
