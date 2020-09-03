@@ -122,6 +122,10 @@ variable "jaeger_domain_name" {
   default     = "jaeger-stage.mobiledgex.net"
 }
 
+variable "alertmanager_domain_name" {
+  default     = "alertmanager-stage.mobiledgex.net"
+}
+
 variable "vault_a_domain_name" {
   default     = "vault-stage-a.mobiledgex.net"
 }

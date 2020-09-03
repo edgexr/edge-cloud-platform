@@ -114,6 +114,10 @@ variable "jaeger_domain_name" {
   default     = "jaeger-qa.mobiledgex.net"
 }
 
+variable "alertmanager_domain_name" {
+  default     = "alertmanager-qa.mobiledgex.net"
+}
+
 variable "crm_vm_domain_name" {
   description = "CRM VM domain name"
   type        = "string"

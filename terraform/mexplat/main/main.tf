@@ -30,24 +30,6 @@ terraform {
   }
 }
 
-# Docker cache in West EU
-module "docker_replica_west_eu" {
-  source              = "../../modules/vm_gcp"
-
-  instance_name       = "docker-replica-west-eu"
-  zone                = "europe-west3-a"
-  instance_size       = "custom-1-2816"
-  boot_disk_size      = 10
-  tags                = [ "mexplat-${var.environ_tag}", "http-server", "https-server" ]
-  ssh_public_key_file = "${var.ssh_public_key_file}"
-}
-
-module "docker_replica_west_eu_dns" {
-  source                        = "../../modules/cloudflare_record"
-  hostname                      = "docker-eu.mobiledgex.net"
-  ip                            = "${module.docker_replica_west_eu.external_ip}"
-}
-
 # Vault VMs
 module "vault_a" {
   source              = "../../modules/vm_gcp"
@@ -63,6 +45,7 @@ module "vault_a" {
   labels              = {
     "environ"         = "${var.environ_tag}",
     "vault"           = "true",
+    "owner"           = "ops",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -87,6 +70,7 @@ module "vault_b" {
   labels              = {
     "environ"         = "${var.environ_tag}",
     "vault"           = "true",
+    "owner"           = "ops",
   }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
@@ -104,7 +88,19 @@ module "console" {
   instance_name       = "${var.console_instance_name}"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
-  tags                = [ "http-server", "https-server", "console-debug", "mc", "notifyroot" ]
+  tags                = [
+    "http-server",
+    "https-server",
+    "console-debug",
+    "mc",
+    "notifyroot",
+    "alertmanager",
+  ]
+  labels              = {
+    "environ"         = "${var.environ_tag}",
+    "console"         = "true",
+    "owner"           = "ops",
+  }
   ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
@@ -117,6 +113,12 @@ module "console_dns" {
 module "console_vnc_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.console_vnc_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "alertmanager_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.alertmanager_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 
