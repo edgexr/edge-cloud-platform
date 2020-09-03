@@ -39,6 +39,9 @@ func (v *VSpherePlatform) SetCaches(ctx context.Context, caches *platform.Caches
 func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VSphere", "stage", stage)
 	v.SetCaches(ctx, caches)
+	if stage == vmlayer.ProviderInitPlatformStart {
+		v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr)
+	}
 	if stage != vmlayer.ProviderInitDeleteCloudlet {
 		err := v.CreateTemplateFolder(ctx)
 		if err != nil {
