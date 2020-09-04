@@ -12,7 +12,6 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/influxsup"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -218,7 +217,7 @@ const (
 	CLIENT   = "dme"
 )
 
-var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+var devInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
@@ -231,7 +230,7 @@ var devInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
-var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+var operatorInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
@@ -239,8 +238,8 @@ var operatorInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 func init() {
-	devInfluxDBTemplate = template.Must(template.New("influxquery").Parse(devInfluDBT))
-	operatorInfluxDBTemplate = template.Must(template.New("influxquery").Parse(operatorInfluDBT))
+	devInfluxDBTemplate = template.Must(template.New("influxquery").Parse(devInfluxDBT))
+	operatorInfluxDBTemplate = template.Must(template.New("influxquery").Parse(operatorInfluxDBT))
 }
 
 func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
@@ -253,7 +252,7 @@ func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error
 		return nil, fmt.Errorf("get influxDB auth failed, %v", err)
 	}
 	if creds == nil {
-		// defeault to empty auth
+		// default to empty auth
 		creds = &cloudcommon.InfluxCreds{}
 	}
 	client, err := influxsup.GetClient(addr, creds.User, creds.Pass)
@@ -327,7 +326,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
 	arg := influxQueryArgs{
 		Selector:     getFields(obj.Selector, APPINST),
 		Measurement:  getMeasurementString(obj.Selector, APPINST),
-		AppInstName:  k8smgmt.NormalizeName(obj.AppInst.AppKey.Name),
+		AppInstName:  util.DNSSanitize(obj.AppInst.AppKey.Name),
 		AppVersion:   util.DNSSanitize(obj.AppInst.AppKey.Version),
 		OrgField:     "apporg",
 		ApiCallerOrg: obj.AppInst.AppKey.Organization,
@@ -366,7 +365,7 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 	return fillTimeAndGetCmd(&arg, operatorInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
 
-// TODO: This function should be a streaming fucntion, but currently client library for influxDB
+// TODO: This function should be a streaming function, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
 func influxStream(ctx context.Context, rc *InfluxDBContext, database, dbQuery string, cb func(Data interface{})) error {
 	if rc.conn == nil {
