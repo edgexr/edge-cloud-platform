@@ -262,7 +262,6 @@ func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error
 		return nil, err
 	}
 	return client, nil
-
 }
 
 func getInfluxDBAddrForRegion(ctx context.Context, region string) (string, error) {
