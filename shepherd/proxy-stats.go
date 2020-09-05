@@ -102,7 +102,7 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 }
 
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
-	// ignore apps not exposed to the outside world as they dont have a envoy/nginx proxy
+	// ignore apps not exposed to the outside world as they don't have a envoy/nginx proxy
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
 	if !found {

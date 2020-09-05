@@ -124,7 +124,8 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 	list := []edgeproto.AppInst{}
 	keys := map[string]struct{}{}
 	for ii := 1; ii < cnt+1; ii++ {
-		ports, _ := edgeproto.ParseAppPorts(fmt.Sprintf("tcp:%d", ii))
+		// Start with port 1000, since some of the lower ports are not allowed(example - 22)
+		ports, _ := edgeproto.ParseAppPorts(fmt.Sprintf("tcp:%d", 1000+ii))
 		inst := edgeproto.AppInst{
 			Key: edgeproto.AppInstKey{
 				AppKey: edgeproto.AppKey{

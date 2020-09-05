@@ -447,6 +447,8 @@ func alertMgrApi(ctx context.Context, addr, method, api, options string, payload
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create a new alerts request", "err", err, "url", apiUrl)
 		return nil, err
 	}
+	// Make sure that the connection is closed after we are done with it.
+	req.Close = true
 	req.Header.Set("User-Agent", getAgentName())
 	if method == http.MethodPost || method == http.MethodDelete {
 		req.Header.Set("Content-Type", "application/json")
