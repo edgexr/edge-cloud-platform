@@ -16,11 +16,12 @@ import (
 )
 
 type VMProperties struct {
-	CommonPf           infracommon.CommonPlatform
-	SharedRootLBName   string
-	sharedRootLB       *MEXRootLB
-	Domain             VMDomain
-	PlatformSecgrpName string
+	CommonPf              infracommon.CommonPlatform
+	SharedRootLBName      string
+	sharedRootLB          *MEXRootLB
+	Domain                VMDomain
+	PlatformSecgrpName    string
+	IptablesBasedFirewall bool
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must
