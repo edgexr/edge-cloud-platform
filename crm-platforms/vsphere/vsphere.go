@@ -29,6 +29,7 @@ func (v *VSpherePlatform) GetType() string {
 
 func (v *VSpherePlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
+	vmProperties.IptablesBasedFirewall = true
 }
 
 func (v *VSpherePlatform) SetCaches(ctx context.Context, caches *platform.Caches) {

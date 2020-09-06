@@ -192,7 +192,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		}
 		if action.createIptables || action.deleteIptables {
 			if externalIfname != "" {
-				err = setupForwardingIptables(ctx, client, externalIfname, internalIfname, action)
+				err = v.setupForwardingIptables(ctx, client, externalIfname, internalIfname, action)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "setupForwardingIptables failed", "err", err)
 				}

@@ -138,17 +138,18 @@ func (v *VMProperties) createCloudletFirewallRules(ctx context.Context, client s
 }
 
 // getIpTablesEntryForRule gets the iptables string for the rule
-func getIpTablesEntryForRule(ctx context.Context, direction string, label string, rule *FirewallRule) string {
-	log.SpanLog(ctx, log.DebugLevelInfra, "getIpTablesEntryForRule", "rule", rule)
-	dirStr := "INPUT"
+func getIpTablesEntriesForRule(ctx context.Context, direction string, label string, rule *FirewallRule) []string {
+	log.SpanLog(ctx, log.DebugLevelInfra, "getIpTablesEntriesForRule", "rule", rule)
 	cidrStr := ""
+	var chains []string
+	var rules []string
 	if direction == "egress" {
-		dirStr = "OUTPUT"
+		chains = append(chains, "OUTPUT", "FORWARD")
 		if rule.RemoteCidr != "0.0.0.0/0" {
 			cidrStr = "-d " + rule.RemoteCidr
 		}
 	} else {
-		dirStr = "INPUT"
+		chains = append(chains, "INPUT")
 		if rule.RemoteCidr != "0.0.0.0/0" {
 			cidrStr = "-s " + rule.RemoteCidr
 		}
@@ -175,11 +176,13 @@ func getIpTablesEntryForRule(ctx context.Context, direction string, label string
 	if rule.Conntrack != "" {
 		conntrackStr = "-m conntrack --ctstate " + rule.Conntrack
 	}
-	rulestr := fmt.Sprintf("%s %s %s %s %s %s %s -m comment --comment \"label %s\" -j ACCEPT", dirStr, ifstr, conntrackStr, cidrStr, protostr, icmpType, portStr, label)
-
-	// remove double spaces
-	rulestr = strings.Join(strings.Fields(rulestr), " ")
-	return rulestr
+	for _, chain := range chains {
+		rulestr := fmt.Sprintf("%s %s %s %s %s %s %s -m comment --comment \"label %s\" -j ACCEPT", chain, ifstr, conntrackStr, cidrStr, protostr, icmpType, portStr, label)
+		// remove double spaces
+		rulestr = strings.Join(strings.Fields(rulestr), " ")
+		rules = append(rules, rulestr)
+	}
+	return rules
 }
 
 // getCurrentIptableRulesForLabel retrieves the current rules matching the label
@@ -205,22 +208,34 @@ func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, labe
 // addIptablesRule adds a rule
 func addIptablesRule(ctx context.Context, client ssh.Client, direction string, label string, rule *FirewallRule, currentRules map[string]string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "addIptablesRule", "direction", direction, "label", label, "rule", rule)
-	entry := getIpTablesEntryForRule(ctx, direction, label, rule)
-	addCmd := "-A " + entry
-	_, exists := currentRules[addCmd]
-	action := InterfaceActionsOp{createIptables: true}
-	return doIptablesCommand(ctx, client, addCmd, exists, &action)
+	entries := getIpTablesEntriesForRule(ctx, direction, label, rule)
+	for _, entry := range entries {
+		addCmd := "-A " + entry
+		_, exists := currentRules[addCmd]
+		action := InterfaceActionsOp{createIptables: true}
+		err := doIptablesCommand(ctx, client, addCmd, exists, &action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // removeIptablesRule removes a rule
 func removeIptablesRule(ctx context.Context, client ssh.Client, direction string, label string, rule *FirewallRule, currentRules map[string]string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "removeIptablesRule", "direction", direction, "label", label, "rule", rule)
-	entry := getIpTablesEntryForRule(ctx, direction, label, rule)
-	addCmd := "-A " + entry
-	delCmd := "-D " + entry
-	_, exists := currentRules[addCmd]
-	action := InterfaceActionsOp{deleteIptables: true}
-	return doIptablesCommand(ctx, client, delCmd, exists, &action)
+	entries := getIpTablesEntriesForRule(ctx, direction, label, rule)
+	for _, entry := range entries {
+		addCmd := "-A " + entry
+		delCmd := "-D " + entry
+		_, exists := currentRules[addCmd]
+		action := InterfaceActionsOp{deleteIptables: true}
+		err := doIptablesCommand(ctx, client, delCmd, exists, &action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // addIptablesRules adds a set of rules
@@ -348,7 +363,7 @@ func persistIptablesRules(ctx context.Context, client ssh.Client) error {
 
 // setupForwardingIptables creates iptables rules to allow the cluster nodes to use the LB as a
 // router for internet access
-func setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfname, internalIfname string, action *InterfaceActionsOp) error {
+func (v *VMPlatform) setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfname, internalIfname string, action *InterfaceActionsOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "setupForwardingIptables", "externalIfname", externalIfname, "internalIfname", internalIfname, "action", fmt.Sprintf("%+v", action))
 	// get current iptables
 	cmd := fmt.Sprintf("sudo iptables-save|grep -e POSTROUTING -e FORWARD")
@@ -393,13 +408,16 @@ func setupForwardingIptables(ctx context.Context, client ssh.Client, externalIfn
 			return err
 		}
 	}
-	err = doIptablesCommand(ctx, client, forwardExternalRule, forwardExternalRuleExists, action)
-	if err != nil {
-		return err
-	}
-	err = doIptablesCommand(ctx, client, forwardInternalRule, forwardInternalRuleExists, action)
-	if err != nil {
-		return err
+	// only add forwarding-permits rules if iptables is not used for firewalls
+	if !v.VMProperties.IptablesBasedFirewall {
+		err = doIptablesCommand(ctx, client, forwardExternalRule, forwardExternalRuleExists, action)
+		if err != nil {
+			return err
+		}
+		err = doIptablesCommand(ctx, client, forwardInternalRule, forwardInternalRuleExists, action)
+		if err != nil {
+			return err
+		}
 	}
 	//now persist the rules
 	err = persistIptablesRules(ctx, client)
