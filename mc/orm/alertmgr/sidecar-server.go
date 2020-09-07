@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,8 +17,6 @@ import (
 	"sync"
 	"text/template"
 	"time"
-
-	mextls "github.com/mobiledgex/edge-cloud/tls"
 
 	"github.com/gorilla/mux"
 
@@ -114,9 +113,14 @@ func (s *SidecarServer) Run() error {
 		if s.serverCert != "" {
 			// if client cert is specified set up cert pool
 			if s.clientCA != "" {
-				caCertPool, err := mextls.GetClientCertPool(s.clientCA, "")
+				caCertPool := x509.NewCertPool()
+				cabs, err := ioutil.ReadFile(s.clientCA)
 				if err != nil {
-					log.FatalLog("Failed to read client cert", "err", err, "file", s.clientCA)
+					log.FatalLog("Could not read CA file", "err", err, "CA", s.clientCA)
+				}
+				ok := caCertPool.AppendCertsFromPEM(cabs)
+				if !ok {
+					log.FatalLog("Failed to append CA file", "cert", string(cabs))
 				}
 				tlsConfig := &tls.Config{
 					ClientCAs:  caCertPool,
