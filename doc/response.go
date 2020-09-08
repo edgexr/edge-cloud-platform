@@ -65,3 +65,10 @@ type swaggerListOrgs struct {
 	// in: body
 	Body []ormapi.Organization
 }
+
+// List of BillingOrgs
+// swagger:response listBillingOrgs
+type swaggerListBillingOrgs struct {
+	// in: body
+	Body []ormapi.BillingOrganization
+}
