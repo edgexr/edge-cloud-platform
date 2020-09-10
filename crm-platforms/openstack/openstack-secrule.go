@@ -140,26 +140,6 @@ func (o *OpenstackPlatform) AddSecurityRulesForRemoteGroup(ctx context.Context, 
 	return nil
 }
 
-func (o *OpenstackPlatform) AddSecurityRules(ctx context.Context, groupName string, ports []dme.AppPort, serverName string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddSecurityRules", "ports", ports)
-	allowedClientCIDR := vmlayer.GetAllowedClientCIDR()
-	for _, port := range ports {
-		//todo: distinguish already-exists errors from others
-		portString := fmt.Sprintf("%d", port.PublicPort)
-		if port.EndPort != 0 {
-			portString = fmt.Sprintf("%d:%d", port.PublicPort, port.EndPort)
-		}
-		proto, err := edgeproto.L4ProtoStr(port.Proto)
-		if err != nil {
-			return err
-		}
-		if err := o.AddSecurityRuleCIDR(ctx, allowedClientCIDR, proto, groupName, portString); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *OpenstackPlatform) AddSecurityRuleCIDR(ctx context.Context, cidr string, proto string, groupName string, port string) error {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "create", "--remote-ip", cidr, "--proto", proto, "--dst-port", port, "--ingress", groupName)
 	if err != nil {
@@ -214,6 +194,9 @@ func (o *OpenstackPlatform) WhitelistSecurityRules(ctx context.Context, client s
 
 	for _, p := range ports {
 		portStr := fmt.Sprintf("%d", p.PublicPort)
+		if p.EndPort != 0 {
+			portStr = fmt.Sprintf("%d:%d", p.PublicPort, p.EndPort)
+		}
 		proto, err := edgeproto.L4ProtoStr(p.Proto)
 		if err != nil {
 			return err
