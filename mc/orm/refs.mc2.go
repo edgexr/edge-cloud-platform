@@ -39,6 +39,8 @@ func ShowCloudletRefs(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletRefs.GetKey().GetTags())
 	span.SetTag("org", in.CloudletRefs.Key.Organization)
 
 	err = ShowCloudletRefsStream(ctx, rc, &in.CloudletRefs, func(res *edgeproto.CloudletRefs) {
@@ -123,6 +125,9 @@ func ShowClusterRefs(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterRefs.GetKey().GetTags())
 
 	err = ShowClusterRefsStream(ctx, rc, &in.ClusterRefs, func(res *edgeproto.ClusterRefs) {
 		payload := ormapi.StreamPayload{}
@@ -207,6 +212,8 @@ func ShowAppInstRefs(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInstRefs.GetKey().GetTags())
 	span.SetTag("org", in.AppInstRefs.Key.Organization)
 
 	err = ShowAppInstRefsStream(ctx, rc, &in.AppInstRefs, func(res *edgeproto.AppInstRefs) {

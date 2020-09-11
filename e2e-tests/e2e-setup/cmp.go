@@ -9,9 +9,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	dmeproto "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	ecutil "github.com/mobiledgex/edge-cloud/util"
 )
 
 // go-cmp Options
@@ -172,6 +174,42 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		}
 		y1 = a1
 		y2 = a2
+	} else if fileType == "mcevents" {
+		var a1 []EventSearch
+		var a2 []EventSearch
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		copts = []cmp.Option{
+			cmpopts.IgnoreFields(node.EventData{}, "Timestamp", "Error"),
+			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+		}
+		cmpFilterEventData(a1)
+		cmpFilterEventData(a2)
+
+		y1 = a1
+		y2 = a2
+	} else if fileType == "mceventterms" {
+		var a1 []EventTerms
+		var a2 []EventTerms
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		cmpFilterEventTerms(a1)
+		cmpFilterEventTerms(a2)
+
+		copts = []cmp.Option{
+			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+			cmpopts.IgnoreSliceElements(func(str string) bool {
+				// no websocket equivalent so leads to
+				// different results for EventTerms for cli vs api
+				return str == "/api/v1/auth/ctrl/AccessCloudlet"
+			}),
+		}
+		y1 = a1
+		y2 = a2
 	} else if fileType == "mcmetrics" {
 		var a1 []MetricsCompare
 		var a2 []MetricsCompare
@@ -237,4 +275,46 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 	}
 	log.Println("Comparison success")
 	return true
+}
+
+func cmpFilterEventData(data []EventSearch) {
+	for ii := 0; ii < len(data); ii++ {
+		for jj := 0; jj < len(data[ii].Results); jj++ {
+			event := &data[ii].Results[jj]
+			// Delete incomparable data from tags/data.
+			// Unfortunately request cannot be compared
+			// because the json generated from cli comes
+			// from a map, and from api comes from a struct,
+			// and end up being formatted differently.
+			delete(event.Mtags, "duration")
+			delete(event.Mtags, "traceid")
+			delete(event.Mtags, "spanid")
+			delete(event.Mtags, "hostname")
+			delete(event.Mtags, "lineno")
+			delete(event.Mtags, "request")
+			delete(event.Mtags, "response")
+		}
+	}
+}
+
+func cmpFilterEventTerms(data []EventTerms) {
+	for ii := 0; ii < len(data); ii++ {
+		changed := false
+		for jj := 0; jj < len(data[ii].Terms.Names); jj++ {
+			// cli runs /ws version of RunCommand which makes
+			// it impossible to get the same results from both
+			// api and cli EventTerms, so map ws one to normal one.
+			if data[ii].Terms.Names[jj] == "/ws/api/v1/auth/ctrl/RunCommand" {
+				data[ii].Terms.Names[jj] = "/api/v1/auth/ctrl/RunCommand"
+				changed = true
+			}
+			if data[ii].Terms.Names[jj] == "/ws/api/v1/auth/ctrl/ShowLogs" {
+				data[ii].Terms.Names[jj] = "/api/v1/auth/ctrl/ShowLogs"
+				changed = true
+			}
+		}
+		if changed {
+			sort.Strings(data[ii].Terms.Names)
+		}
+	}
 }

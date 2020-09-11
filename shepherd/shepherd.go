@@ -336,7 +336,7 @@ func start() {
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
 
-	err := nodeMgr.Init(ctx, "shepherd", node.WithCloudletKey(&cloudletKey), node.WithRegion(*region))
+	err := nodeMgr.Init(ctx, "shepherd", node.CertIssuerRegionalCloudlet, node.WithCloudletKey(&cloudletKey), node.WithRegion(*region))
 	if err != nil {
 		log.FatalLog(err.Error())
 	}

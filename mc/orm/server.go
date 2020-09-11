@@ -134,7 +134,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		superpass = DefaultSuperpass
 	}
 
-	err := nodeMgr.Init(ctx, "mc", node.WithName(config.Hostname))
+	err := nodeMgr.Init(ctx, "mc", node.CertIssuerGlobal, node.WithName(config.Hostname))
 	if err != nil {
 		return nil, err
 	}
@@ -454,6 +454,10 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/events/app", GetEventsCommon)
 	auth.POST("/events/cluster", GetEventsCommon)
 	auth.POST("/events/cloudlet", GetEventsCommon)
+	// new events/audit apis
+	auth.POST("/events/show", ShowEvents)
+	auth.POST("/events/find", FindEvents)
+	auth.POST("/events/terms", EventTerms)
 
 	// Alertmanager apis
 	auth.POST("/alertreceiver/create", CreateAlertReceiver)

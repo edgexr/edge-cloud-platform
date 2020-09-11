@@ -29,6 +29,7 @@ func connectController(ctx context.Context, region string) (*grpc.ClientConn, er
 }
 
 func connectNotifyRoot(ctx context.Context) (*grpc.ClientConn, error) {
+
 	if serverConfig.NotifyAddrs == "" {
 		return nil, fmt.Errorf("No parent notify address specified, cannot connect to notify root")
 	}

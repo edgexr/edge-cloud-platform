@@ -13,6 +13,7 @@ crms:
     clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   vaultaddr: "{{vault}}"
+  usevaultcas: true
   envvars:
     PLATFORM: PLATFORM_TYPE_EDGEBOX
     JAEGER_ENDPOINT: https://jaeger.mobiledgex.net:14268/api/traces

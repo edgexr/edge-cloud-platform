@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/opentracing/opentracing-go"
@@ -27,8 +29,20 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 		log.SpanLog(ctx, log.DebugLevelApi, "invalid action", "action", action.String())
 		return fmt.Errorf("invalid action")
 	}
+	eventStart := time.Now()
+	eventName := "AutoProv create AppInst"
+	if action == cloudcommon.Delete {
+		eventName = "AutoProv delete AppInst"
+	}
+
 	err := runAppInstApi(ctx, inst, action, reason, policyName)
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy result", "err", err)
+	if err == nil {
+		// Many calls fail because of checks done on the controller side.
+		// These are not real failures. Only log an event if api call
+		// was successful.
+		nodeMgr.TimedEvent(ctx, eventName, inst.Key.AppKey.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
+	}
 	return err
 }
 

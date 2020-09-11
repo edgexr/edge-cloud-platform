@@ -43,6 +43,8 @@ func StreamAppInst(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := streamAppInst.Get(in.AppInst.Key)
@@ -94,6 +96,8 @@ func CreateAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
@@ -183,6 +187,8 @@ func DeleteAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
@@ -272,6 +278,8 @@ func RefreshAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
@@ -361,6 +369,8 @@ func UpdateAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	streamer := NewStreamer()
@@ -450,6 +460,8 @@ func ShowAppInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
 
 	err = ShowAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.AppInst) {

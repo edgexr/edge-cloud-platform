@@ -37,6 +37,7 @@ func RunCommand(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := RunCommandObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
@@ -85,6 +86,7 @@ func RunConsole(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := RunConsoleObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
@@ -133,6 +135,7 @@ func ShowLogs(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
 	resp, err := ShowLogsObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
@@ -180,6 +183,8 @@ func AccessCloudlet(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := AccessCloudletObj(ctx, rc, &in.ExecRequest)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {

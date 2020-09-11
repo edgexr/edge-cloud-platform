@@ -1,0 +1,18 @@
+- limit: 5
+- limit: 5
+  types:
+  - event
+- limit: 5
+  types:
+  - audit
+- limit: 3
+  failed: true
+- limit: 3
+  orgs:
+  - AcmeAppCo
+- limit: 3
+  tags:
+    app: someapplication1
+- limit: 3
+  names:
+  - /api/v1/auth/ctrl/CreateApp

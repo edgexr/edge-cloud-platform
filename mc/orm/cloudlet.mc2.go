@@ -43,6 +43,8 @@ func StreamCloudlet(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := streamCloudlet.Get(in.Cloudlet.Key)
@@ -94,6 +96,8 @@ func CreateCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
@@ -183,6 +187,8 @@ func DeleteCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
@@ -272,6 +278,8 @@ func UpdateCloudlet(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
 	streamer := NewStreamer()
@@ -360,6 +368,9 @@ func ShowCloudlet(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 
 	err = ShowCloudletStream(ctx, rc, &in.Cloudlet, func(res *edgeproto.Cloudlet) {
 		payload := ormapi.StreamPayload{}
@@ -446,6 +457,8 @@ func GetCloudletManifest(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 	resp, err := GetCloudletManifestObj(ctx, rc, &in.Cloudlet)
 	if err != nil {
@@ -493,6 +506,8 @@ func GetCloudletProps(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := GetCloudletPropsObj(ctx, rc, &in.CloudletProps)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -540,6 +555,8 @@ func AddCloudletResMapping(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletResMap.GetKey().GetTags())
 	span.SetTag("org", in.CloudletResMap.Key.Organization)
 	resp, err := AddCloudletResMappingObj(ctx, rc, &in.CloudletResMap)
 	if err != nil {
@@ -588,6 +605,8 @@ func RemoveCloudletResMapping(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletResMap.GetKey().GetTags())
 	span.SetTag("org", in.CloudletResMap.Key.Organization)
 	resp, err := RemoveCloudletResMappingObj(ctx, rc, &in.CloudletResMap)
 	if err != nil {
@@ -636,6 +655,8 @@ func FindFlavorMatch(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.FlavorMatch.GetKey().GetTags())
 	span.SetTag("org", in.FlavorMatch.Key.Organization)
 	resp, err := FindFlavorMatchObj(ctx, rc, &in.FlavorMatch)
 	if err != nil {
@@ -686,6 +707,8 @@ func ShowCloudletInfo(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletInfo.GetKey().GetTags())
 	span.SetTag("org", in.CloudletInfo.Key.Organization)
 
 	err = ShowCloudletInfoStream(ctx, rc, &in.CloudletInfo, func(res *edgeproto.CloudletInfo) {
@@ -769,6 +792,8 @@ func InjectCloudletInfo(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletInfo.GetKey().GetTags())
 	span.SetTag("org", in.CloudletInfo.Key.Organization)
 	resp, err := InjectCloudletInfoObj(ctx, rc, &in.CloudletInfo)
 	if err != nil {
@@ -817,6 +842,8 @@ func EvictCloudletInfo(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletInfo.GetKey().GetTags())
 	span.SetTag("org", in.CloudletInfo.Key.Organization)
 	resp, err := EvictCloudletInfoObj(ctx, rc, &in.CloudletInfo)
 	if err != nil {

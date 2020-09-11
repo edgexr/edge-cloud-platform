@@ -38,6 +38,9 @@ func CreateFlavor(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 	resp, err := CreateFlavorObj(ctx, rc, &in.Flavor)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -84,6 +87,9 @@ func DeleteFlavor(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 	resp, err := DeleteFlavorObj(ctx, rc, &in.Flavor)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -130,6 +136,9 @@ func UpdateFlavor(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 	resp, err := UpdateFlavorObj(ctx, rc, &in.Flavor)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -178,6 +187,9 @@ func ShowFlavor(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 
 	err = ShowFlavorStream(ctx, rc, &in.Flavor, func(res *edgeproto.Flavor) {
 		payload := ormapi.StreamPayload{}
@@ -243,6 +255,9 @@ func AddFlavorRes(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 	resp, err := AddFlavorResObj(ctx, rc, &in.Flavor)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -289,6 +304,9 @@ func RemoveFlavorRes(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Flavor.GetKey().GetTags())
 	resp, err := RemoveFlavorResObj(ctx, rc, &in.Flavor)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {

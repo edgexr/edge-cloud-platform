@@ -41,6 +41,8 @@ func ShowAppInstClient(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInstClientKey.GetKey().GetTags())
 	span.SetTag("org", in.AppInstClientKey.Key.AppKey.Organization)
 
 	err = ShowAppInstClientStream(ctx, rc, &in.AppInstClientKey, func(res *edgeproto.AppInstClient) {

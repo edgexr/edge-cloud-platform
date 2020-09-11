@@ -69,7 +69,7 @@ func start() error {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", vaultConfig.Auth.Type())
 
-	err = nodeMgr.Init(ctx, "autoprov", node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
+	err = nodeMgr.Init(ctx, "autoprov", node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),

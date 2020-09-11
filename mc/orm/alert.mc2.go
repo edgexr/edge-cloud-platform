@@ -130,6 +130,7 @@ import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -162,6 +163,8 @@ func ShowAlert(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 
 	err = ShowAlertStream(ctx, rc, &in.Alert, func(res *edgeproto.Alert) {
 		payload := ormapi.StreamPayload{}
@@ -1303,10 +1306,10 @@ func addControllerApis(method string, group *echo.Group) {
 	// MappedPortsProto: 9.1
 	// MappedPortsInternalPort: 9.2
 	// MappedPortsPublicPort: 9.3
-	// MappedPortsFqdnPrefix: 9.4
-	// MappedPortsEndPort: 9.5
-	// MappedPortsTls: 9.6
-	// MappedPortsNginx: 9.7
+	// MappedPortsFqdnPrefix: 9.5
+	// MappedPortsEndPort: 9.6
+	// MappedPortsTls: 9.7
+	// MappedPortsNginx: 9.8
 	// Flavor: 12
 	// FlavorName: 12.1
 	// State: 14

@@ -2,6 +2,7 @@ package ormclient
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -46,6 +47,10 @@ type Api interface {
 	ShowAppEvents(uri, token string, query *ormapi.RegionAppInstEvents) (*ormapi.AllMetrics, int, error)
 	ShowClusterEvents(uri, token string, query *ormapi.RegionClusterInstEvents) (*ormapi.AllMetrics, int, error)
 	ShowCloudletEvents(uri, token string, query *ormapi.RegionCloudletEvents) (*ormapi.AllMetrics, int, error)
+
+	ShowEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error)
+	FindEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error)
+	EventTerms(uri, token string, query *node.EventSearch) (*node.EventTerms, int, error)
 
 	UpdateConfig(uri, token string, config map[string]interface{}) (int, error)
 	ResetConfig(uri, token string) (int, error)

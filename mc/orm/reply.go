@@ -9,6 +9,8 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
+var echoContextError = "mobiledgexError"
+
 type M map[string]interface{}
 
 func Msg(msg string) *ormapi.Result {
@@ -52,6 +54,8 @@ func setReply(c echo.Context, err error, data interface{}) error {
 		default:
 			code = http.StatusBadRequest
 		}
+		// set error on context so it can be easily retrieved for audit log
+		c.Set(echoContextError, err)
 	}
 	if ws := GetWs(c); ws != nil {
 		wsPayload := ormapi.WSStreamPayload{

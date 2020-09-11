@@ -42,6 +42,7 @@ func main() {
 	rootCmd.AddCommand(ormctl.GetOrgCloudletInfoCommand())
 	rootCmd.AddCommand(ormctl.GetOrgCloudletPoolCommand())
 	rootCmd.AddCommand(ormctl.GetMetricsCommand())
+	rootCmd.AddCommand(ormctl.GetBillingEventsCommand())
 	rootCmd.AddCommand(ormctl.GetEventsCommand())
 	rootCmd.AddCommand(ormctl.GetAlertReceiverCommand())
 

@@ -39,6 +39,8 @@ func CreateResTagTable(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := CreateResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
@@ -87,6 +89,8 @@ func DeleteResTagTable(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := DeleteResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
@@ -135,6 +139,8 @@ func UpdateResTagTable(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := UpdateResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
@@ -185,6 +191,8 @@ func ShowResTagTable(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 
 	err = ShowResTagTableStream(ctx, rc, &in.ResTagTable, func(res *edgeproto.ResTagTable) {
@@ -268,6 +276,8 @@ func AddResTag(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := AddResTagObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
@@ -316,6 +326,8 @@ func RemoveResTag(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 	resp, err := RemoveResTagObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
@@ -363,6 +375,8 @@ func GetResTagTable(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := GetResTagTableObj(ctx, rc, &in.ResTagTableKey)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {

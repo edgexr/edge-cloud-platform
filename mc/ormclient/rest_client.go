@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -235,6 +236,24 @@ func (s *Client) ShowAuditOrg(uri, token string, query *ormapi.AuditQuery) ([]or
 	resp := []ormapi.AuditResponse{}
 	status, err := s.PostJson(uri+"/auth/audit/showorg", token, query, &resp)
 	return resp, status, err
+}
+
+func (s *Client) ShowEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error) {
+	resp := []node.EventData{}
+	status, err := s.PostJson(uri+"/auth/events/show", token, query, &resp)
+	return resp, status, err
+}
+
+func (s *Client) FindEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error) {
+	resp := []node.EventData{}
+	status, err := s.PostJson(uri+"/auth/events/find", token, query, &resp)
+	return resp, status, err
+}
+
+func (s *Client) EventTerms(uri, token string, query *node.EventSearch) (*node.EventTerms, int, error) {
+	resp := node.EventTerms{}
+	status, err := s.PostJson(uri+"/auth/events/terms", token, query, &resp)
+	return &resp, status, err
 }
 
 func (s *Client) ShowAppMetrics(uri, token string, query *ormapi.RegionAppInstMetrics) (*ormapi.AllMetrics, int, error) {

@@ -1,0 +1,56 @@
+# Please note that some of the autoprov events like creating two AppInsts
+# for a new policy, or removing a cloudlet in a policy which results in
+# an orphaned delete and create at the same time, result in non-deterministic
+# orders of events. The filters below avoid queries that include both
+# events from a set of non-deterministic order of events.
+- limit: 3
+  match:
+    failed: true
+  notmatch:
+    names:
+    - "*/auth/ctrl/RunCommand"
+    - "*/auth/ctrl/ShowLogs"
+- limit: 3
+  match:
+    orgs:
+    - AcmeAppCo
+  notmatch:
+    names:
+    - AutoProv delete AppInst
+    tags:
+      reason: orphaned
+- limit: 3
+  match:
+    tags:
+      app: someapplication1
+- limit: 3
+  match:
+    names:
+    - /api/v1/auth/ctrl/CreateApp
+- limit: 3
+  match:
+    tags:
+      cloudlet: dmuus-cloud-1
+- limit: 3
+  match:
+    tags:
+      app: autoprovHA
+      cloudlet: dmuus-cloud-1
+- limit: 3
+  match:
+    tags:
+      app: someapplication1
+      cloudlet: "dmuus cloud"
+- limit: 3
+  match:
+    tags:
+      app: autoprovHA
+      reason: "orph*"
+- limit: 2
+  match:
+    names:
+    - "AutoProv create*"
+- limit: 3
+  match:
+    types:
+    - audit

@@ -40,6 +40,8 @@ func CreateVMPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 	resp, err := CreateVMPoolObj(ctx, rc, &in.VMPool)
 	if err != nil {
@@ -88,6 +90,8 @@ func DeleteVMPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 	resp, err := DeleteVMPoolObj(ctx, rc, &in.VMPool)
 	if err != nil {
@@ -136,6 +140,8 @@ func UpdateVMPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 	resp, err := UpdateVMPoolObj(ctx, rc, &in.VMPool)
 	if err != nil {
@@ -186,6 +192,8 @@ func ShowVMPool(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 
 	err = ShowVMPoolStream(ctx, rc, &in.VMPool, func(res *edgeproto.VMPool) {
@@ -269,6 +277,8 @@ func AddVMPoolMember(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.VMPoolMember.Key.Organization)
 	resp, err := AddVMPoolMemberObj(ctx, rc, &in.VMPoolMember)
 	if err != nil {
@@ -317,6 +327,8 @@ func RemoveVMPoolMember(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.VMPoolMember.Key.Organization)
 	resp, err := RemoveVMPoolMemberObj(ctx, rc, &in.VMPoolMember)
 	if err != nil {

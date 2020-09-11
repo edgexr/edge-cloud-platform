@@ -38,6 +38,7 @@ func CreateOperatorCode(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.OperatorCode.Organization)
 	resp, err := CreateOperatorCodeObj(ctx, rc, &in.OperatorCode)
 	if err != nil {
@@ -86,6 +87,7 @@ func DeleteOperatorCode(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.OperatorCode.Organization)
 	resp, err := DeleteOperatorCodeObj(ctx, rc, &in.OperatorCode)
 	if err != nil {
@@ -136,6 +138,7 @@ func ShowOperatorCode(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.OperatorCode.Organization)
 
 	err = ShowOperatorCodeStream(ctx, rc, &in.OperatorCode, func(res *edgeproto.OperatorCode) {
