@@ -738,6 +738,13 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
 
+	skipInfraSpecificCheck := false
+	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+		// It'll be end-users responsibility to make sure subnet range
+		// is not confliciting with existing subnets
+		skipInfraSpecificCheck = true
+	}
+
 	var gp *VMGroupOrchestrationParams
 	if cloudlet.Deployment == cloudcommon.DeploymentTypeDocker {
 		gp, err = v.GetVMGroupOrchestrationParamsFromVMSpec(
@@ -747,15 +754,10 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			WithNewSecurityGroup(v.GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
+			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
 		)
 	} else {
 		subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
-		skipInfraSpecificCheck := false
-		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-			// It'll be end-users responsibility to make sure subnet range
-			// is not confliciting with existing subnets
-			skipInfraSpecificCheck = true
-		}
 		gp, err = v.GetVMGroupOrchestrationParamsFromVMSpec(
 			ctx,
 			platformVmName,

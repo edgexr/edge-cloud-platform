@@ -137,6 +137,16 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	manifest.AddItem("Download the manifest template", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeYaml, templateText)
 
 	// heat create commands
-	manifest.AddItem("Execute the following command to use manifest to setup the cloudlet", infracommon.ManifestTypeCommand, infracommon.ManifestSubTypeNone, fmt.Sprintf("openstack stack create -t %s.yml %s-pf)", vmgp.GroupName, vmgp.GroupName))
+	stackName := vmgp.GroupName + "-pf"
+	stackCmd := fmt.Sprintf("openstack stack create -t %s.yml", vmgp.GroupName)
+	stackParams := []string{}
+	for _, fIP := range vmgp.FloatingIPs {
+		stackParams = append(stackParams, fmt.Sprintf("--parameter %s=<FLOATING_IP_ID>", fIP.ParamName))
+	}
+	if len(stackParams) > 0 {
+		stackCmd += fmt.Sprintf(" %s", strings.Join(stackParams, " "))
+	}
+	stackCmd += fmt.Sprintf(" %s", stackName)
+	manifest.AddItem("Execute the following command to use manifest to setup the cloudlet", infracommon.ManifestTypeCommand, infracommon.ManifestSubTypeNone, stackCmd)
 	return manifest.ToString()
 }

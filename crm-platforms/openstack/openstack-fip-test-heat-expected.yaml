@@ -1,0 +1,286 @@
+
+heat_template_version: 2016-10-14
+description: Create a group of VMs
+
+parameters:
+  floatingIpId1:
+    type: string
+    description: ID of the floating ip address
+  floatingIpId2:
+    type: string
+    description: ID of the floating ip address
+
+resources:
+    subnet-test:
+        type: OS::Neutron::Subnet
+        properties:
+            cidr: 10.101.0.0/24
+            network: mex-k8s-net-1
+            gateway_ip: 10.101.0.1
+            enable_dhcp: no
+            dns_nameservers:
+                 - 1.1.1.1
+                 - 1.0.0.1
+            name: 
+                subnet-test
+    rootlb-xyz-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: rootlb-xyz-subnet-test-port
+            network: mex-k8s-net-1
+            fixed_ips:
+                - subnet: { get_resource: subnet-test }
+                  ip_address:  10.101.0.1
+            port_security_enabled: false
+    rootlb-xyz-external-network-shared-port:
+        type: OS::Neutron::Port
+        properties:
+            name: rootlb-xyz-external-network-shared-port
+            network: public_internal
+            security_groups:
+                - { get_resource: testvmgroup-sg }
+                - default-testingID
+    master-xyz-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: master-xyz-subnet-test-port
+            network: mex-k8s-net-1
+            fixed_ips:
+                - subnet: { get_resource: subnet-test }
+                  ip_address:  10.101.0.10
+            port_security_enabled: false
+    master-xyz-external-network-shared-port:
+        type: OS::Neutron::Port
+        properties:
+            name: master-xyz-external-network-shared-port
+            network: public_internal
+            security_groups:
+                - { get_resource: testvmgroup-sg }
+                - default-testingID
+    node1-xyz-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: node1-xyz-subnet-test-port
+            network: mex-k8s-net-1
+            fixed_ips:
+                - subnet: { get_resource: subnet-test }
+                  ip_address:  10.101.0.101
+            port_security_enabled: false
+    node2-xyz-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: node2-xyz-subnet-test-port
+            network: mex-k8s-net-1
+            fixed_ips:
+                - subnet: { get_resource: subnet-test }
+                  ip_address:  10.101.0.102
+            port_security_enabled: false
+    testvmgroup-sg:
+        type: OS::Neutron::SecurityGroup
+        properties:
+                name: testvmgroup-sg
+                rules:
+                    - direction: egress
+                    - direction: ingress
+                      remote_ip_prefix: 0.0.0.0/0
+                      protocol: tcp
+                      port_range_min: 7777
+                      port_range_max: 7777
+                    - direction: ingress
+                      remote_ip_prefix: 0.0.0.0/0
+                      protocol: udp
+                      port_range_min: 8888
+                      port_range_max: 8888
+    rootlb-xyz-volume:
+        type: OS::Cinder::Volume
+        properties:
+            image: mobiledgex-v9.9.9
+            name: rootlb-xyz-volume
+            size: 100
+        
+    rootlb-xyz:
+        type: OS::Nova::Server
+        properties:
+            name: rootlb-xyz
+            networks:
+                - port: { get_resource: rootlb-xyz-external-network-shared-port }
+            availability_zone: nova1
+            block_device_mapping:
+                - device_name: vda
+                  volume_id: { get_resource: rootlb-xyz-volume }
+                  delete_on_termination: "false" 
+            flavor: m1.medium
+            config_drive: true
+            user_data_format: RAW
+            user_data: |
+                #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: rootlb-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
+                bootcmd:
+                 - echo MOBILEDGEX CLOUD CONFIG START
+                 - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+                 - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+                 - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+                ssh_authorized_keys:
+                 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrHlOJOJUqvd4nEOXQbdL8ODKzWaUxKVY94pF7J3diTxgZ1NTvS6omqOjRS3loiU7TOlQQU4cKnRRnmJW8QQQZSOMIGNrMMInGaEYsdm6+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd ubuntu@registry
+                chpasswd: { expire: False }
+                ssh_pwauth: False
+                timezone: UTC
+                runcmd:
+                 - echo MOBILEDGEX doing ifconfig
+                 - ifconfig -a
+            metadata:
+                skipk8s: yes
+                role: mex-agent-node
+                k8smaster: 10.101.0.10
+    master-xyz-volume:
+        type: OS::Cinder::Volume
+        properties:
+            image: mobiledgex-v9.9.9
+            name: master-xyz-volume
+            size: 100
+        
+    master-xyz:
+        type: OS::Nova::Server
+        properties:
+            name: master-xyz
+            networks:
+                - port: { get_resource: master-xyz-subnet-test-port }
+                - port: { get_resource: master-xyz-external-network-shared-port }
+            availability_zone: nova1
+            block_device_mapping:
+                - device_name: vda
+                  volume_id: { get_resource: master-xyz-volume }
+                  delete_on_termination: "false" 
+            flavor: m1.medium
+            config_drive: true
+            user_data_format: RAW
+            user_data: |
+                #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: master-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
+                bootcmd:
+                 - echo MOBILEDGEX CLOUD CONFIG START
+                 - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+                 - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+                 - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+                ssh_authorized_keys:
+                 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrHlOJOJUqvd4nEOXQbdL8ODKzWaUxKVY94pF7J3diTxgZ1NTvS6omqOjRS3loiU7TOlQQU4cKnRRnmJW8QQQZSOMIGNrMMInGaEYsdm6+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd ubuntu@registry
+                chpasswd: { expire: False }
+                ssh_pwauth: False
+                timezone: UTC
+                runcmd:
+                 - echo MOBILEDGEX doing ifconfig
+                 - ifconfig -a
+            metadata:
+                skipk8s: no
+                role: k8s-master
+                k8smaster: 10.101.0.10
+        
+    node1-xyz:
+        type: OS::Nova::Server
+        properties:
+            name: node1-xyz
+            networks:
+                - port: { get_resource: node1-xyz-subnet-test-port }
+            availability_zone: nova1
+            image: mobiledgex-v9.9.9 
+            flavor: m1.medium
+            config_drive: true
+            user_data_format: RAW
+            user_data: |
+                #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: node1-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
+                bootcmd:
+                 - echo MOBILEDGEX CLOUD CONFIG START
+                 - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+                 - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+                 - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+                ssh_authorized_keys:
+                 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrHlOJOJUqvd4nEOXQbdL8ODKzWaUxKVY94pF7J3diTxgZ1NTvS6omqOjRS3loiU7TOlQQU4cKnRRnmJW8QQQZSOMIGNrMMInGaEYsdm6+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd ubuntu@registry
+                chpasswd: { expire: False }
+                ssh_pwauth: False
+                timezone: UTC
+                runcmd:
+                 - echo MOBILEDGEX doing ifconfig
+                 - ifconfig -a
+            metadata:
+                skipk8s: no
+                role: k8s-node
+                k8smaster: 10.101.0.10
+        
+    node2-xyz:
+        type: OS::Nova::Server
+        properties:
+            name: node2-xyz
+            networks:
+                - port: { get_resource: node2-xyz-subnet-test-port }
+            availability_zone: nova1
+            image: mobiledgex-v9.9.9 
+            flavor: m1.medium
+            config_drive: true
+            user_data_format: RAW
+            user_data: |
+                #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: node2-xyz
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
+                bootcmd:
+                 - echo MOBILEDGEX CLOUD CONFIG START
+                 - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+                 - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+                 - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+                ssh_authorized_keys:
+                 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrHlOJOJUqvd4nEOXQbdL8ODKzWaUxKVY94pF7J3diTxgZ1NTvS6omqOjRS3loiU7TOlQQU4cKnRRnmJW8QQQZSOMIGNrMMInGaEYsdm6+tr1k4DDfoOrkGMj3X/I2zXZ3U+pDPearVFbczCByPU0dqs16TWikxDoCCxJRGeeUl7duzD9a65bI8Jl+zpfQV+I7OPa81P5/fw15lTzT4+F9MhhOUVJ4PFfD+d6/BLnlUfZ94nZlvSYnT+GoZ8xTAstM7+6pvvvHtaHoV4YqRf5CelbWAQ162XNa9/pW5v/RKDrt203/JEk3e70tzx9KAfSw2vuO1QepkCZAdM9rQoCd ubuntu@registry
+                chpasswd: { expire: False }
+                ssh_pwauth: False
+                timezone: UTC
+                runcmd:
+                 - echo MOBILEDGEX doing ifconfig
+                 - ifconfig -a
+            metadata:
+                skipk8s: no
+                role: k8s-node
+                k8smaster: 10.101.0.10
+    rootlb-xyz-external-network-shared-port-fip:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: floatingIpId1 }
+            port_id: { get_resource: rootlb-xyz-external-network-shared-port }
+    master-xyz-external-network-shared-port-fip:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: floatingIpId2 }
+            port_id: { get_resource: master-xyz-external-network-shared-port }

@@ -307,6 +307,7 @@ type PortOrchestrationParams struct {
 
 type FloatingIPOrchestrationParams struct {
 	Name         string
+	ParamName    string
 	Port         ResourceReference
 	FloatingIpId string
 }
@@ -601,7 +602,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 
 	var internalPortNextOctet uint32 = 101
-	for _, vm := range spec.VMs {
+	for ii, vm := range spec.VMs {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Defining VM", "vm", vm)
 		var role VMRole
 		var newPorts []PortOrchestrationParams
@@ -744,6 +745,11 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					Name:         externalPortName + "-fip",
 					FloatingIpId: NextAvailableResource,
 					Port:         NewResourceReference(externalport.Name, externalport.Id, false),
+				}
+				if len(spec.VMs) == 1 {
+					fip.ParamName = "floatingIpId"
+				} else {
+					fip.ParamName = fmt.Sprintf("floatingIpId%d", ii+1)
 				}
 				vmgp.FloatingIPs = append(vmgp.FloatingIPs, fip)
 
