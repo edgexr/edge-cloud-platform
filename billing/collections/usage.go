@@ -35,9 +35,9 @@ func CollectDailyUsage(ctx context.Context) {
 		retryInterval = time.Duration(retryPercentage * float64(usageInterval))
 	}
 	for {
-		span := log.StartSpan(log.DebugLevelInfo, "Usage collection thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 		select {
 		case <-time.After(timeTilNextCollection(ctx)):
+			span := log.StartSpan(log.DebugLevelInfo, "Usage collection thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 			controllers, err := orm.ShowControllerObj(ctx, nil)
 			if err != nil {
 				retryCount := 0
@@ -53,6 +53,7 @@ func CollectDailyUsage(ctx context.Context) {
 				if err != nil {
 					prevSuccessfulCheckpoint = prevSuccessfulCheckpoint + 1
 					log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get regions to query influx, waiting until next collection period", "err", err)
+					span.Finish()
 					continue
 				} else {
 					prevSuccessfulCheckpoint = 1
@@ -76,67 +77,73 @@ func CollectDailyUsage(ctx context.Context) {
 			clusterCmd := fmt.Sprintf(clusterInstUsageInfluxCmd, yesterday.Format(time.RFC3339), today.Format(time.RFC3339))
 			appCmd := fmt.Sprintf(appInstUsageInfluxCmd, yesterday.Format(time.RFC3339), today.Format(time.RFC3339))
 			for region, _ := range regions {
-				// connect to influx and query it
-				influx, err := orm.ConnectInfluxDB(ctx, region)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "Unable to connect to influx", "region", region, "err", err)
-					continue
-				}
-				query := influxdb.Query{
-					Command:  clusterCmd,
-					Database: cloudcommon.EventsDbName,
-				}
-				resp, err := influx.Query(query)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
-						"region", region, "query", query, "resp", resp, "err", err)
-					continue
-				}
-				if resp.Error() != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
-						"region", region, "query", query, "err", resp.Error())
-					continue
-				}
-				empty, err := checkInfluxQueryOutput(resp.Results, cloudcommon.ClusterInstUsage)
-				if empty {
-					// no usage records to upload
-					continue
-				}
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "Invalid influx output", "region", region, "err", err)
-					continue
-				}
-				// record cluster usages
-				RecordClusterUsages(ctx, resp)
-
-				// now do it for VM apps
-				query.Command = appCmd
-				resp, err = influx.Query(query)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
-						"region", region, "query", query, "resp", resp, "err", err)
-					continue
-				}
-				if resp.Error() != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
-						"region", region, "query", query, "err", resp.Error())
-					continue
-				}
-				empty, err = checkInfluxQueryOutput(resp.Results, cloudcommon.VMAppInstUsage)
-				if empty {
-					// no usage records to upload
-					continue
-				}
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfo, "Invalid influx output", "region", region, "err", err)
-					continue
-				}
-				// record cluster usages
-				RecordAppUsages(ctx, resp)
+				recordRegionUsage(ctx, region, clusterCmd, appCmd)
 			}
+			span.Finish()
 		}
-		span.Finish()
 	}
+}
+
+func recordRegionUsage(ctx context.Context, region, clusterCmd, appCmd string) {
+	// connect to influx and query it
+	influx, err := orm.ConnectInfluxDB(ctx, region)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to connect to influx", "region", region, "err", err)
+		return
+	}
+	defer influx.Close()
+
+	query := influxdb.Query{
+		Command:  clusterCmd,
+		Database: cloudcommon.EventsDbName,
+	}
+	resp, err := influx.Query(query)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
+			"region", region, "query", query, "resp", resp, "err", err)
+		return
+	}
+	if resp.Error() != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
+			"region", region, "query", query, "err", resp.Error())
+		return
+	}
+	empty, err := checkInfluxQueryOutput(resp.Results, cloudcommon.ClusterInstUsage)
+	if empty {
+		// no usage records to upload
+		return
+	}
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Invalid influx output", "region", region, "err", err)
+		return
+	}
+	// record cluster usages
+	RecordClusterUsages(ctx, resp)
+
+	// now do it for VM apps
+	query.Command = appCmd
+	resp, err = influx.Query(query)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
+			"region", region, "query", query, "resp", resp, "err", err)
+		return
+	}
+	if resp.Error() != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "InfluxDB query failed",
+			"region", region, "query", query, "err", resp.Error())
+		return
+	}
+	empty, err = checkInfluxQueryOutput(resp.Results, cloudcommon.VMAppInstUsage)
+	if empty {
+		// no usage records to upload
+		return
+	}
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Invalid influx output", "region", region, "err", err)
+		return
+	}
+	// record cluster usages
+	RecordAppUsages(ctx, resp)
 }
 
 func RecordClusterUsages(ctx context.Context, resp *client.Response) {
@@ -216,7 +223,7 @@ func timeTilNextCollection(ctx context.Context) time.Duration {
 		return usageInterval
 	}
 	// default is to collect once a day at the start of the day 12:30am
-	now := time.Now()
+	now := time.Now().UTC()
 	nextDay := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 30, 0, 0, time.UTC)
 	return nextDay.Sub(now)
 }

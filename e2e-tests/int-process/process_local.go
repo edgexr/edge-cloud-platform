@@ -88,7 +88,7 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "-d")
 		args = append(args, options.Debug)
 	}
-	var envs []string
+	envs := p.GetEnv()
 	if options.RolesFile != "" {
 		dat, err := ioutil.ReadFile(options.RolesFile)
 		if err != nil {
@@ -99,11 +99,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		if err != nil {
 			return err
 		}
-		envs = []string{
+		envs = append(envs,
 			fmt.Sprintf("VAULT_ROLE_ID=%s", roles.MCRoleID),
 			fmt.Sprintf("VAULT_SECRET_ID=%s", roles.MCSecretID),
-		}
-		log.Printf("MC envs: %v\n", envs)
+		)
 	}
 
 	var err error
@@ -118,7 +117,7 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 				online = true
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(250 * time.Millisecond)
 		}
 		if !online {
 			p.StopLocal()
@@ -172,7 +171,7 @@ func (p *Sql) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, strings.Join(options, " "))
 	}
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, "pg_ctl", args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, "pg_ctl", args, p.GetEnv(), logfile)
 	if err != nil {
 		return err
 	}
@@ -334,11 +333,7 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 func (p *Shepherd) StartLocal(logfile string, opts ...process.StartOp) error {
 	var err error
 	args := p.GetArgs(opts...)
-	envVars := []string{}
-	for k, v := range p.GetEnvVars() {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
-	}
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, envVars, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -405,7 +400,7 @@ func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, options.Debug)
 	}
 
-	var envs []string
+	envs := p.GetEnv()
 	if options.RolesFile != "" {
 		dat, err := ioutil.ReadFile(options.RolesFile)
 		if err != nil {
@@ -417,11 +412,10 @@ func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 			return err
 		}
 		rr := roles.GetRegionRoles(p.Region)
-		envs = []string{
+		envs = append(envs,
 			fmt.Sprintf("VAULT_ROLE_ID=%s", rr.AutoProvRoleID),
 			fmt.Sprintf("VAULT_SECRET_ID=%s", rr.AutoProvSecretID),
-		}
-		log.Printf("MC envs: %v\n", envs)
+		)
 	}
 
 	var err error
@@ -537,7 +531,7 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 			return nil, err
 		}
 		rr := VaultRegionRoles{}
-		p.GetAppRole("", "autoprov", &rr.AutoProvRoleID, &rr.AutoProvSecretID, &err)
+		p.GetAppRole(region, "autoprov", &rr.AutoProvRoleID, &rr.AutoProvSecretID, &err)
 		roles.RegionRoles[region] = &rr
 	}
 	options := process.StartOptions{}
@@ -570,7 +564,7 @@ func (p *PromE2e) StartLocal(logfile string, opts ...process.StartOp) error {
 	}
 
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -603,7 +597,7 @@ func (p *Exporter) StartLocal(logfile string, opts ...process.StartOp) error {
 	}
 
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -627,7 +621,7 @@ func (p *ChefServer) StartLocal(logfile string, opts ...process.StartOp) error {
 	args = append(args, "--multi-org")
 
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	if err != nil {
 		return err
 	}
@@ -675,7 +669,7 @@ func (p *Alertmanager) StartLocal(logfile string, opts ...process.StartOp) error
 
 	var err error
 	log.Printf("Start Alertmanager: %v\n", args)
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -698,7 +692,7 @@ func (p *Maildev) StartLocal(logfile string, opts ...process.StartOp) error {
 		"maildev/maildev:1.1.0",
 	}
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 
@@ -746,7 +740,7 @@ func (p *AlertmanagerSidecar) StartLocal(logfile string, opts ...process.StartOp
 	}
 
 	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, nil, logfile)
+	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
 	return err
 }
 

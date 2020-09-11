@@ -30,12 +30,14 @@ vaults:
 influxs:
 - name: influx1
   datadir: /var/tmp/edge-cloud-local-influx/influx1
-  httpaddr: "http://127.0.0.1:8086"
+  httpaddr: "127.0.0.1:8086"
+  bindaddr: "127.0.0.1:8088"
   hostname: "127.0.0.1"
 
 - name: influxa1
   datadir: /var/tmp/edge-cloud-local-influx/influx2
-  httpaddr: "http://127.0.0.1:8087"
+  httpaddr: "127.0.0.1:8087"
+  bindaddr: "127.0.0.1:8089"
   hostname: "127.0.0.1"
 
 etcds:
@@ -96,6 +98,7 @@ controllers:
   testmode: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
+  usevaultcas: true
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -114,6 +117,7 @@ controllers:
   testmode: true
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
+  usevaultcerts: true
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -133,6 +137,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
+  usevaultcerts: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -152,6 +157,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
+  usevaultcerts: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -160,7 +166,9 @@ clustersvcs:
 - name: cluster-svc1
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   ctrladdrs: "127.0.0.1:55001"
+  vaultaddr: "http://127.0.0.1:8200"
   pluginrequired: true
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -169,6 +177,8 @@ clustersvcs:
 - name: cluster-svc2
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   ctrladdrs: "127.0.0.1:55002"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -177,7 +187,10 @@ clustersvcs:
 - name: cluster-svca1
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
   ctrladdrs: "127.0.0.1:55011"
+  vaultaddr: "http://127.0.0.1:8200"
   pluginrequired: true
+  usevaultcerts: true
+  region: locala
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -186,6 +199,9 @@ clustersvcs:
 - name: cluster-svca2
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
   ctrladdrs: "127.0.0.1:55012"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
+  region: locala
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -201,6 +217,7 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -219,6 +236,7 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -238,6 +256,7 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-3"}'
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -257,6 +276,7 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-4"}'
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -271,6 +291,7 @@ mcs:
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -287,6 +308,7 @@ mcs:
   addr: "127.0.0.1:9901"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
@@ -327,6 +349,7 @@ autoprovs:
   ctrladdrs: "127.0.0.1:55001"
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8086"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -338,6 +361,7 @@ autoprovs:
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8087"
   region: locala
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     clientcert: "{{tlsoutdir}}/mex-client.crt"
@@ -357,6 +381,8 @@ exporter:
 notifyroots:
 - name: notifyroot
   hostname: "127.0.0.1"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
 	"google.golang.org/grpc"
@@ -24,7 +25,7 @@ func connectController(ctx context.Context, region string) (*grpc.ClientConn, er
 	if err != nil {
 		return nil, err
 	}
-	return connectGrpcAddr(addr)
+	return connectGrpcAddr(ctx, addr, []node.MatchCA{node.AnyRegionalMatchCA()})
 }
 
 func connectNotifyRoot(ctx context.Context) (*grpc.ClientConn, error) {
@@ -32,14 +33,18 @@ func connectNotifyRoot(ctx context.Context) (*grpc.ClientConn, error) {
 		return nil, fmt.Errorf("No parent notify address specified, cannot connect to notify root")
 	}
 	addrs := strings.Split(serverConfig.NotifyAddrs, ",")
-	return connectGrpcAddr(addrs[0])
+	return connectGrpcAddr(ctx, addrs[0], []node.MatchCA{node.GlobalMatchCA()})
 }
 
-func connectGrpcAddr(addr string) (*grpc.ClientConn, error) {
-	dialOption, err := tls.GetTLSClientDialOption(addr, serverConfig.ClientCert, false)
+func connectGrpcAddr(ctx context.Context, addr string, serverIssuers []node.MatchCA) (*grpc.ClientConn, error) {
+	tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
+		nodeMgr.CommonName(),
+		node.CertIssuerGlobal,
+		serverIssuers)
 	if err != nil {
 		return nil, err
 	}
+	dialOption := tls.GetGrpcDialOption(tlsConfig)
 	return grpc.Dial(addr, dialOption,
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc),

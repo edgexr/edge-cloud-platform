@@ -135,6 +135,9 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}
 
 	err := nodeMgr.Init(ctx, "mc", node.WithName(config.Hostname))
+	if err != nil {
+		return nil, err
+	}
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
