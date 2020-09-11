@@ -1,20 +1,35 @@
 nodes:
 - key:
     type: notifyroot
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: mc
+  internalpki: from-file,useVaultCAs,useVaultCerts
 - key:
     type: mc
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: controller
     region: local
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
 - key:
     type: controller
     region: local
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: controller
+    region: locala
+  containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: controller
+    region: locala
+  containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: dme
@@ -22,12 +37,28 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
+  internalpki: from-file,useVaultCAs,useVaultCerts
 - key:
     type: dme
     region: local
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: dme
+    region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-3
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: dme
+    region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-4
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: crm
@@ -36,6 +67,7 @@ nodes:
       organization: enterprise
       name: enterprise-1
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
 - key:
     type: crm
     region: local
@@ -43,6 +75,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-1
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
 - key:
     type: crm
     region: local
@@ -50,6 +83,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-2
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
 - key:
     type: crm
     region: local
@@ -57,6 +91,7 @@ nodes:
       organization: azure
       name: azure-cloud-4
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
 - key:
     type: crm
     region: local
@@ -64,6 +99,32 @@ nodes:
       organization: gcp
       name: gcp-cloud-5
   containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs
+
+- key:
+    type: crm
+    region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-3
+  containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: crm
+    region: locala
+    cloudletkey:
+      organization: dmuus
+      name: dmuus-cloud-4
+  containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: crm
+    region: locala
+    cloudletkey:
+      organization: enterprise
+      name: enterprise-2
+  containerversion: "2019-10-24"
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: shepherd
@@ -71,14 +132,30 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
+  internalpki: from-file,useVaultCAs
   
 - key:
     type: cluster-svc
     region: local
+  internalpki: from-file,useVaultCAs,useVaultCerts
 - key:
     type: cluster-svc
     region: local
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: cluster-svc
+    region: locala
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: cluster-svc
+    region: locala
+  internalpki: from-file,useVaultCAs,useVaultCerts
 
 - key:
     type: autoprov
     region: local
+  internalpki: from-file,useVaultCAs,useVaultCerts
+- key:
+    type: autoprov
+    region: locala
+  internalpki: from-file,useVaultCAs,useVaultCerts

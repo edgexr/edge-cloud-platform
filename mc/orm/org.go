@@ -15,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -416,7 +417,7 @@ func orgInUse(ctx context.Context, orgName string) error {
 }
 
 func orgInUseRegion(ctx context.Context, c ormapi.Controller, orgName string) error {
-	conn, err := connectGrpcAddr(c.Address)
+	conn, err := connectGrpcAddr(ctx, c.Address, []node.MatchCA{node.AnyRegionalMatchCA()})
 	if err != nil {
 		return err
 	}

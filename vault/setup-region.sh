@@ -22,15 +22,15 @@ path "secret/data/+/accounts/influxdb" {
   capabilities = [ "read" ]
 }
 
-path "pki-regional/issue/*" {
+path "pki-regional/issue/$REGION" {
   capabilities = [ "read", "update" ]
 }
 EOF
-vault policy write autoprov /tmp/autoprov-pol.hcl
+vault policy write $REGION.autoprov /tmp/autoprov-pol.hcl
 rm /tmp/autoprov-pol.hcl
-vault write auth/approle/role/autoprov period="720h" policies="autoprov"
+vault write auth/approle/role/$REGION.autoprov period="720h" policies="$REGION.autoprov"
 # get autoprov app roleID and generate secretID
-vault read auth/approle/role/autoprov/role-id
-vault write -f auth/approle/role/autoprov/secret-id
+vault read auth/approle/role/$REGION.autoprov/role-id
+vault write -f auth/approle/role/$REGION.autoprov/secret-id
 
 # Note: Shepherd uses CRM's Vault access creds.
