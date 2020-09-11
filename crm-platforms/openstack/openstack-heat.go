@@ -24,6 +24,16 @@ var VmGroupTemplate = `
 heat_template_version: 2016-10-14
 description: Create a group of VMs
 
+{{- if .SkipInfraSpecificCheck}}
+
+parameters:
+  {{- range .FloatingIPs}}
+  {{.ParamName}}:
+    type: string
+    description: ID of the floating ip address
+  {{- end}}
+{{- end}}
+
 resources:
     {{- range .Subnets}}
     {{.Name}}:
@@ -164,7 +174,20 @@ resources:
 {{.MetaData}}
             {{- end}}
     {{- end}}
-    
+
+    {{- if .SkipInfraSpecificCheck}}
+    {{- range .FloatingIPs}}
+    {{.Name}}:
+        type: OS::Neutron::FloatingIPAssociation
+        properties:
+            floatingip_id: { get_param: {{.ParamName}} }
+            {{- if .Port.Preexisting}}
+            port_id: {{.Port.Name}} }
+            {{- else}}
+            port_id: { get_resource: {{.Port.Name}} }
+            {{- end}}
+    {{- end}}
+    {{- else}}
     {{- range .FloatingIPs}}
     {{.Name}}:
         type: OS::Neutron::FloatingIPAssociation
@@ -175,6 +198,7 @@ resources:
             {{- else}}
             port_id: { get_resource: {{.Port.Name}} }
             {{- end}}
+    {{- end}}
     {{- end}}
 `
 
@@ -452,6 +476,10 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	// populate the floating ips
 	for i, f := range VMGroupOrchestrationParams.FloatingIPs {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Floating ip specified", "fip", f)
+		if VMGroupOrchestrationParams.SkipInfraSpecificCheck {
+			// skip, as fip id will be taken as part of stack params
+			break
+		}
 		if f.FloatingIpId == vmlayer.NextAvailableResource {
 			var fipid string
 			var err error
