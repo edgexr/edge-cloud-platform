@@ -1,57 +1,57 @@
 requests:
 - - node:
       type: notifyroot
-    output: api,notify
+    output: api,notify,events
   - node:
       type: mc
-    output: api,notify,metrics,info
+    output: api,notify,metrics,info,events
   - node:
       type: mc
-    output: api,notify,metrics,info
+    output: api,notify,metrics,info,events
   - node:
       type: controller
       region: local
-    output: etcd,api,notify,infra,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade,events
   - node:
       type: controller
       region: local
-    output: etcd,api,notify,infra,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade,events
   - node:
       type: controller
       region: locala
-    output: etcd,api,notify,infra,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade,events
   - node:
       type: controller
       region: locala
-    output: etcd,api,notify,infra,metrics,upgrade
+    output: etcd,api,notify,infra,metrics,upgrade,events
   - node:
       type: dme
       region: local
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-1
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
   - node:
       type: dme
       region: local
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-2
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
   - node:
       type: dme
       region: locala
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-3
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
   - node:
       type: dme
       region: locala
       cloudletkey:
         organization: dmuus
         name: dmuus-cloud-4
-    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled
+    output: etcd,notify,dmedb,dmereq,locapi,metrics,sampled,events
   - node:
       type: crm
       region: local
@@ -111,27 +111,27 @@ requests:
   - node:
       type: cluster-svc
       region: local
-    output: etcd,api,notify,infra,metrics
+    output: etcd,api,notify,infra,metrics,events
   - node:
       type: cluster-svc
       region: local
-    output: etcd,api,notify,infra,metrics
+    output: etcd,api,notify,infra,metrics,events
   - node:
       type: cluster-svc
       region: locala
-    output: etcd,api,notify,infra,metrics
+    output: etcd,api,notify,infra,metrics,events
   - node:
       type: cluster-svc
       region: locala
-    output: etcd,api,notify,infra,metrics
+    output: etcd,api,notify,infra,metrics,events
   - node:
       type: autoprov
       region: local
-    output: api,notify,metrics,sampled
+    output: api,notify,metrics,sampled,events
   - node:
       type: autoprov
       region: locala
-    output: api,notify,metrics,sampled
+    output: api,notify,metrics,sampled,events
   - node:
       type: shepherd
       cloudletkey:

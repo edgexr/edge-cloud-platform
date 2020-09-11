@@ -37,6 +37,10 @@ tests:
   actions: [mcapi-createusers]
   apifile: '{{datadir2}}/mc_user1.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user3.yml'
 
+- name: setup user tokens to avoid extra login audit logs
+  actions: [mcapi-auditsetup]
+  apifile: '{{datadir2}}/mc_admin.yml,{{datadir2}}/mc_user2.yml'
+
 - name: admin creates controllers, flavors; verify it is there
   actions: [mcapi-create, mcapi-show]
   apifile: '{{datadir2}}/mc_admin_data.yml'
@@ -112,6 +116,33 @@ tests:
 
 - includefile: autoprov.yml
   loops: 2
+
+- name: user2 check event terms
+  actions: [mcapi-eventsterms]
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  apifile: '{{datadir2}}/mc_eventsterms.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_eventsterms_exp.yml'
+    filetype: mceventterms
+
+- name: admin check event terms
+  actions: [mcapi-eventsterms]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifile: '{{datadir2}}/mc_eventsterms.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_eventsterms_exp.yml'
+    filetype: mceventterms
+
+- name: user2 check events
+  actions: [mcapi-eventsshow]
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  apifile: '{{datadir2}}/mc_user2_eventsshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user2_eventsshow_exp.yml'
+    filetype: mcevents
 
 - includefile: mc_debugtest.yml
 
@@ -203,3 +234,4 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mcconfig_default.yml'
     filetype: mcconfig
+

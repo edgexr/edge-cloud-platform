@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"google.golang.org/grpc"
@@ -58,6 +60,7 @@ func autoScale(ctx context.Context, name string, alert *edgeproto.Alert) error {
 	}
 	defer conn.Close()
 
+	eventStart := time.Now()
 	log.SpanLog(ctx, log.DebugLevelApi, "auto scaling clusterinst", "alert", alert, "ClusterInst", inst)
 	client := edgeproto.NewClusterInstApiClient(conn)
 	stream, err := client.UpdateClusterInst(ctx, &inst)
@@ -73,6 +76,10 @@ func autoScale(ctx context.Context, name string, alert *edgeproto.Alert) error {
 		if err != nil {
 			break
 		}
+	}
+	if err == nil {
+		// only log event if scaling succeeded
+		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "previous nodecount", nodecountStr, "new nodecount", strconv.Itoa(int(inst.NumNodes)))
 	}
 	return err
 }

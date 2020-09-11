@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
@@ -24,6 +25,8 @@ var AuditId uint64
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) (nexterr error) {
+		eventStart := time.Now()
+		logaudit := true
 		req := c.Request()
 		res := c.Response()
 
@@ -31,14 +34,19 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 
 		path := strings.Split(req.RequestURI, "/")
 		method := path[len(path)-1]
-		if strings.Contains(req.RequestURI, "show") ||
+		debugEvents := log.GetDebugLevel()&log.DebugLevelEvents != 0
+		if strings.Contains(req.RequestURI, "/auth/events/") && debugEvents {
+			// log events
+		} else if strings.Contains(req.RequestURI, "show") ||
 			edgeproto.IsShow(method) ||
 			strings.Contains(req.RequestURI, "/auth/user/current") ||
-			strings.Contains(req.RequestURI, "/metrics/") ||
+			strings.Contains(req.RequestURI, "/auth/metrics/") ||
 			strings.Contains(req.RequestURI, "/ctrl/Stream") ||
-			strings.Contains(req.RequestURI, "/auth/audit/") {
+			strings.Contains(req.RequestURI, "/auth/audit/") ||
+			strings.Contains(req.RequestURI, "/auth/events/") {
 			// don't log (fills up Audit logs)
 			lvl = log.SuppressLvl
+			logaudit = false
 		}
 
 		// All Tags on this span will be exposed to the end-user in
@@ -71,15 +79,17 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			// except for final "finish" log,
 			// but full logs will show up in jaeger.
 			log.Unsuppress(span)
+			logaudit = true
 		}
 
+		response := ""
 		if ws := GetWs(ec); ws != nil {
 			wsRequest, wsResponse := GetWsLogData(ec)
 			if len(wsRequest) > 0 {
 				reqBody = wsRequest
 			}
 			if len(wsResponse) > 0 {
-				span.SetTag("response", strings.Join(wsResponse, "\n"))
+				response = strings.Join(wsResponse, "\n")
 			}
 		}
 
@@ -137,11 +147,13 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 		span.SetTag("request", string(reqBody))
+		eventErr := nexterr
 		if nexterr != nil {
 			span.SetTag("error", nexterr)
 			he, ok := nexterr.(*echo.HTTPError)
 			if ok && he.Internal != nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.Internal)
+				eventErr = he.Internal
 			}
 		}
 		if len(resBody) > 0 {
@@ -156,13 +168,50 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 					}
 					if ss[1] != "" {
 						result := strings.Replace(string(resBody), ss[1], "", len(ss[1]))
-						span.SetTag("response", result)
+						response = result
 					}
 				}
-
 			} else {
-				span.SetTag("response", string(resBody))
+				response = string(resBody)
 			}
+		}
+		span.SetTag("response", response)
+		if logaudit {
+			// Create audit event from Span data.
+			eventTags := make(map[string]string)
+			eventTags["status"] = fmt.Sprintf("%d", res.Status)
+			eventOrg := ""
+			if eventErr == nil && res.Status != http.StatusOK {
+				// setReply and echo put the error into
+				// the response body and set the status when
+				// using c.JSON(), whose err return value
+				// is only for writing to the response.
+				contextErr := c.Get(echoContextError)
+				if contextErr != nil {
+					if cerr, ok := contextErr.(error); ok {
+						eventErr = cerr
+					}
+				}
+				if eventErr == nil {
+					eventErr = fmt.Errorf("%s", response)
+				}
+			}
+			for k, v := range log.GetTags(span) {
+				if k == "level" || k == "error" || k == "sampler.type" {
+					continue
+				}
+				// handle only string values
+				// (they should mostly all be string values)
+				str, ok := v.(string)
+				if !ok {
+					continue
+				}
+				if k == "org" {
+					eventOrg = str
+				}
+				eventTags[k] = str
+			}
+			nodeMgr.TimedEvent(ctx, req.RequestURI, eventOrg, node.AuditType, eventTags, eventErr, eventStart, time.Now())
 		}
 		return nexterr
 	}
@@ -267,30 +316,9 @@ func addAuditParams(query *ormapi.AuditQuery, params map[string]string) error {
 	}
 
 	// resolve time args
-	now := time.Now()
-	if !query.StartTime.IsZero() {
-		if query.StartAge != 0 {
-			return fmt.Errorf("may only specify one of start time or start age")
-		}
-	} else {
-		// derive start time from start age
-		if query.StartAge == 0 {
-			// default 2d
-			query.StartAge = 2 * 24 * time.Hour
-		}
-		query.StartTime = now.Add(-1 * query.StartAge)
-	}
-	if !query.EndTime.IsZero() {
-		if query.EndAge != 0 {
-			return fmt.Errorf("may only specify one of end time or end age")
-		}
-	} else {
-		// derive end time from end age
-		// default end age of 0 will result in end time of now.
-		query.EndTime = now.Add(-1 * query.EndAge)
-	}
-	if !query.StartTime.Before(query.EndTime) {
-		return fmt.Errorf("start time must be before (older than) end time")
+	err := query.TimeRange.Resolve(node.DefaultTimeDuration)
+	if err != nil {
+		return err
 	}
 	var startusec, endusec ormapi.TimeMicroseconds
 	startusec.FromTime(query.StartTime)

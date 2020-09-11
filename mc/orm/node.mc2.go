@@ -7,6 +7,7 @@ import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 import "github.com/labstack/echo"
 import "context"
 import "io"
+import "github.com/mobiledgex/edge-cloud/log"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -38,6 +39,9 @@ func ShowNode(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Node.GetKey().GetTags())
 
 	err = ShowNodeStream(ctx, rc, &in.Node, func(res *edgeproto.Node) {
 		payload := ormapi.StreamPayload{}

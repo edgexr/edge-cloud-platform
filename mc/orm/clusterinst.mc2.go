@@ -41,6 +41,8 @@ func StreamClusterInst(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := streamClusterInst.Get(in.ClusterInst.Key)
@@ -92,6 +94,8 @@ func CreateClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
@@ -181,6 +185,8 @@ func DeleteClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
@@ -270,6 +276,8 @@ func UpdateClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	streamer := NewStreamer()
@@ -359,6 +367,8 @@ func ShowClusterInst(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	err = ShowClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.ClusterInst) {

@@ -39,6 +39,8 @@ func CreateCloudletPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 	resp, err := CreateCloudletPoolObj(ctx, rc, &in.CloudletPool)
 	if err != nil {
@@ -87,6 +89,8 @@ func DeleteCloudletPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 	resp, err := DeleteCloudletPoolObj(ctx, rc, &in.CloudletPool)
 	if err != nil {
@@ -135,6 +139,8 @@ func UpdateCloudletPool(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 	resp, err := UpdateCloudletPoolObj(ctx, rc, &in.CloudletPool)
 	if err != nil {
@@ -185,6 +191,8 @@ func ShowCloudletPool(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 
 	err = ShowCloudletPoolStream(ctx, rc, &in.CloudletPool, func(res *edgeproto.CloudletPool) {
@@ -268,6 +276,8 @@ func AddCloudletPoolMember(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPoolMember.Key.Organization)
 	resp, err := AddCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)
 	if err != nil {
@@ -316,6 +326,8 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPoolMember.Key.Organization)
 	resp, err := RemoveCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)
 	if err != nil {

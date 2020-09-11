@@ -39,6 +39,8 @@ func CreatePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.PrivacyPolicy.GetKey().GetTags())
 	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := CreatePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
@@ -87,6 +89,8 @@ func DeletePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.PrivacyPolicy.GetKey().GetTags())
 	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := DeletePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
@@ -135,6 +139,8 @@ func UpdatePrivacyPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.PrivacyPolicy.GetKey().GetTags())
 	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 	resp, err := UpdatePrivacyPolicyObj(ctx, rc, &in.PrivacyPolicy)
 	if err != nil {
@@ -185,6 +191,8 @@ func ShowPrivacyPolicy(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.PrivacyPolicy.GetKey().GetTags())
 	span.SetTag("org", in.PrivacyPolicy.Key.Organization)
 
 	err = ShowPrivacyPolicyStream(ctx, rc, &in.PrivacyPolicy, func(res *edgeproto.PrivacyPolicy) {

@@ -41,6 +41,8 @@ func CreateAutoProvPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 	resp, err := CreateAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
 	if err != nil {
@@ -89,6 +91,8 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 	resp, err := DeleteAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
 	if err != nil {
@@ -137,6 +141,8 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 	resp, err := UpdateAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
 	if err != nil {
@@ -187,6 +193,8 @@ func ShowAutoProvPolicy(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 
 	err = ShowAutoProvPolicyStream(ctx, rc, &in.AutoProvPolicy, func(res *edgeproto.AutoProvPolicy) {
@@ -270,6 +278,8 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicyCloudlet.Key.Organization)
 	resp, err := AddAutoProvPolicyCloudletObj(ctx, rc, &in.AutoProvPolicyCloudlet)
 	if err != nil {
@@ -318,6 +328,8 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicyCloudlet.Key.Organization)
 	resp, err := RemoveAutoProvPolicyCloudletObj(ctx, rc, &in.AutoProvPolicyCloudlet)
 	if err != nil {

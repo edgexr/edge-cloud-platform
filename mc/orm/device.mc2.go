@@ -39,6 +39,9 @@ func InjectDevice(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Device.GetKey().GetTags())
 	resp, err := InjectDeviceObj(ctx, rc, &in.Device)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -87,6 +90,9 @@ func ShowDevice(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Device.GetKey().GetTags())
 
 	err = ShowDeviceStream(ctx, rc, &in.Device, func(res *edgeproto.Device) {
 		payload := ormapi.StreamPayload{}
@@ -168,6 +174,9 @@ func EvictDevice(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.Device.GetKey().GetTags())
 	resp, err := EvictDeviceObj(ctx, rc, &in.Device)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -216,6 +225,9 @@ func ShowDeviceReport(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.DeviceReport.GetKey().GetTags())
 
 	err = ShowDeviceReportStream(ctx, rc, &in.DeviceReport, func(res *edgeproto.Device) {
 		payload := ormapi.StreamPayload{}

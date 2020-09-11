@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
@@ -90,6 +91,16 @@ type MetricTargets struct {
 	AppInstKey     edgeproto.AppInstKey
 	ClusterInstKey edgeproto.ClusterInstKey
 	CloudletKey    edgeproto.CloudletKey
+}
+
+type EventSearch struct {
+	Search  node.EventSearch
+	Results []node.EventData
+}
+
+type EventTerms struct {
+	Search node.EventSearch
+	Terms  *node.EventTerms
 }
 
 // metrics that e2e currently tests for
@@ -273,21 +284,21 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	}
 	for _, p := range Deployment.Mcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,metrics"))
+		opts = append(opts, process.WithDebug("api,metrics,events"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.Shepherds {
 		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("metrics"))
+		opts = append(opts, process.WithDebug("metrics,events"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
 	}
 	for _, p := range Deployment.AutoProvs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,notify,metrics"))
+		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

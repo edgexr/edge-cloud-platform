@@ -39,6 +39,8 @@ func EnableDebugLevels(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 
 	err = EnableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
 		payload := ormapi.StreamPayload{}
@@ -113,6 +115,8 @@ func DisableDebugLevels(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 
 	err = DisableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
 		payload := ormapi.StreamPayload{}
@@ -187,6 +191,8 @@ func ShowDebugLevels(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 
 	err = ShowDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
 		payload := ormapi.StreamPayload{}
@@ -261,6 +267,8 @@ func RunDebug(c echo.Context) error {
 	}
 	defer CloseConn(c)
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 
 	err = RunDebugStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
 		payload := ormapi.StreamPayload{}

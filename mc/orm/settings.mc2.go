@@ -37,6 +37,8 @@ func UpdateSettings(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := UpdateSettingsObj(ctx, rc, &in.Settings)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -83,6 +85,8 @@ func ResetSettings(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := ResetSettingsObj(ctx, rc, &in.Settings)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -129,6 +133,8 @@ func ShowSettings(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	resp, err := ShowSettingsObj(ctx, rc, &in.Settings)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {

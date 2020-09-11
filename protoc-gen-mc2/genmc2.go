@@ -338,6 +338,9 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		StreamerCache:        GetMc2StreamerCache(method),
 		NotifyRoot:           GetMc2ApiNotifyroot(method),
 	}
+	if gensupport.GetMessageKey(in.DescriptorProto) != nil || gensupport.GetObjAndKey(in.DescriptorProto) {
+		args.HasKey = true
+	}
 	if apiVals[2] == "" {
 		args.Org = `""`
 		args.ShowOrg = `""`
@@ -422,9 +425,7 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		g.importEcho = true
 		g.importContext = true
 		g.importOrmapi = true
-		if args.OrgValid || !args.Show {
-			g.importLog = true
-		}
+		g.importLog = true
 		if args.Outstream {
 			g.importIO = true
 		} else {
@@ -469,6 +470,7 @@ type tmplArgs struct {
 	NotifyRoot           bool
 	ExecReq              bool
 	AuthOps              string
+	HasKey               bool
 }
 
 var tmplApi = `
@@ -512,8 +514,12 @@ func Stream{{.InName}}(c echo.Context) error {
 		return err
 	}
 	rc.region = in.Region
-{{- if .OrgValid}}
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+{{- if .HasKey}}
+	log.SetTags(span, in.{{.InName}}.GetKey().GetTags())
+{{- end}}
+{{- if .OrgValid}}
 	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
 {{- end}}
 
@@ -572,8 +578,12 @@ func {{.MethodName}}(c echo.Context) error {
 	}
 {{- end}}
 	rc.region = in.Region
-{{- if .OrgValid}}
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+{{- if .HasKey}}
+	log.SetTags(span, in.{{.InName}}.GetKey().GetTags())
+{{- end}}
+{{- if .OrgValid}}
 	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
 {{- end}}
 {{- if .Outstream}}

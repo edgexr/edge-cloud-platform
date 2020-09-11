@@ -15,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
@@ -57,6 +58,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if strings.HasPrefix(api, "config") {
 		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+	} else if strings.HasPrefix(api, "events") {
+		return runMcEvents(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if api == "runcommand" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
 	} else if api == "showlogs" {
@@ -746,6 +749,8 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 	return true
 }
 
+var eventsStartTimeFile = "events-starttime"
+
 func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
 	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
 
@@ -773,6 +778,16 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 					rc = false
 				}
 			}
+		}
+		// also set the current time for events and event terms queries
+		// so previous iterations of tests don't affect the search.
+		// need a tiny bit of time to not capture events from previous
+		// command
+		fname := getTokenFile(eventsStartTimeFile, outputDir)
+		err := ioutil.WriteFile(fname, []byte(time.Now().Format(time.RFC3339Nano)), 0644)
+		if err != nil {
+			log.Printf("Write events start time file %s failed, %v\n", fname, err)
+			rc = false
 		}
 		return rc
 	}
@@ -813,6 +828,100 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 
 func getTokenFile(username, outputDir string) string {
 	return outputDir + "/" + username + ".token"
+}
+
+func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+	log.Printf("Running %s MC events APIs for %s %v\n", api, apiFile, mods)
+
+	if apiFile == "" {
+		log.Println("Error: Cannot run MC audit APIs without API file")
+		return false
+	}
+
+	rc := true
+	// this uses the same "auditsetup" that audit uses
+	users := readUsersFiles(curUserFile, vars)
+	if len(users) == 0 {
+		log.Printf("no user to run MC audit api\n")
+		return false
+	}
+	fname := getTokenFile(users[0].Name, outputDir)
+	out, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("Read token file %s failed, %v\n", fname, err)
+		return false
+	}
+	token := string(out)
+
+	fname = getTokenFile(eventsStartTimeFile, outputDir)
+	out, err = ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("Read file %s failed, %v\n", fname, err)
+		return false
+	}
+	starttime, err := time.Parse(time.RFC3339Nano, string(out))
+	if err != nil {
+		log.Printf("parse events start time %s failed, %v\n", string(out), err)
+		return false
+	}
+
+	query := []node.EventSearch{}
+	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		if !util.IsYamlOk(err, "events") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
+			os.Exit(1)
+		}
+	}
+	switch api {
+	case "eventsshow":
+		var results []EventSearch
+		for _, q := range query {
+			if q.TimeRange.StartTime.IsZero() {
+				q.TimeRange.StartTime = starttime
+			}
+			resp, status, err := mcClient.ShowEvents(uri, token, &q)
+			checkMcErr("ShowEvents", status, err, &rc)
+			results = append(results, EventSearch{
+				Search:  q,
+				Results: resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	case "eventsfind":
+		var results []EventSearch
+		for _, q := range query {
+			if q.TimeRange.StartTime.IsZero() {
+				q.TimeRange.StartTime = starttime
+			}
+			resp, status, err := mcClient.FindEvents(uri, token, &q)
+			checkMcErr("FindEvents", status, err, &rc)
+			results = append(results, EventSearch{
+				Search:  q,
+				Results: resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	case "eventsterms":
+		var results []EventTerms
+		for _, q := range query {
+			if q.TimeRange.StartTime.IsZero() {
+				q.TimeRange.StartTime = starttime
+			}
+			resp, status, err := mcClient.EventTerms(uri, token, &q)
+			checkMcErr("EventTerms", status, err, &rc)
+			results = append(results, EventTerms{
+				Search: q,
+				Terms:  resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	default:
+		log.Printf("invalid mcapi action %s\n", api)
+		return false
+	}
+	*retry = true
+	return rc
 }
 
 func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {

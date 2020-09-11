@@ -39,6 +39,8 @@ func CreateAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := CreateAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
@@ -87,6 +89,8 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := DeleteAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
@@ -135,6 +139,8 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 	resp, err := UpdateAutoScalePolicyObj(ctx, rc, &in.AutoScalePolicy)
 	if err != nil {
@@ -185,6 +191,8 @@ func ShowAutoScalePolicy(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 
 	err = ShowAutoScalePolicyStream(ctx, rc, &in.AutoScalePolicy, func(res *edgeproto.AutoScalePolicy) {

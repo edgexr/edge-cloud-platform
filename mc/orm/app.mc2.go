@@ -39,6 +39,8 @@ func CreateApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
 	resp, err := CreateAppObj(ctx, rc, &in.App)
 	if err != nil {
@@ -87,6 +89,8 @@ func DeleteApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
 	resp, err := DeleteAppObj(ctx, rc, &in.App)
 	if err != nil {
@@ -135,6 +139,8 @@ func UpdateApp(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
 	resp, err := UpdateAppObj(ctx, rc, &in.App)
 	if err != nil {
@@ -185,6 +191,8 @@ func ShowApp(c echo.Context) error {
 	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
 
 	err = ShowAppStream(ctx, rc, &in.App, func(res *edgeproto.App) {
@@ -268,6 +276,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAutoProvPolicy.AppKey.Organization)
 	resp, err := AddAppAutoProvPolicyObj(ctx, rc, &in.AppAutoProvPolicy)
 	if err != nil {
@@ -316,6 +325,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAutoProvPolicy.AppKey.Organization)
 	resp, err := RemoveAppAutoProvPolicyObj(ctx, rc, &in.AppAutoProvPolicy)
 	if err != nil {
