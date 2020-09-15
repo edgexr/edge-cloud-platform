@@ -280,7 +280,7 @@ func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletK
 	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy App", "app", app.Key, "cloudlet", *cloudletKey)
 
 	// find free reservable ClusterInst
-	cinstKey := s.caches.frClusterInsts.GetForCloudlet(cloudletKey, app.Deployment)
+	cinstKey := s.caches.frClusterInsts.GetForCloudlet(cloudletKey, app.Deployment, cloudcommon.AppInstToClusterDeployment)
 	if cinstKey == nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "auto-prov no free ClusterInst")
 		return

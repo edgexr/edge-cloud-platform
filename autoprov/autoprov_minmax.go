@@ -403,7 +403,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 				continue
 			}
 			// see if free reservable ClusterInst exists
-			freeClustKey := s.caches.frClusterInsts.GetForCloudlet(&apCloudlet.Key, app.Deployment)
+			freeClustKey := s.caches.frClusterInsts.GetForCloudlet(&apCloudlet.Key, app.Deployment, cloudcommon.AppInstToClusterDeployment)
 			if freeClustKey != nil {
 				appInstKey := edgeproto.AppInstKey{
 					AppKey:         s.appKey,
