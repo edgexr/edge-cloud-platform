@@ -284,6 +284,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
 			}
+			proxy.NewDedicatedVmApp(ctx, objName, client)
 			// DNS entry is already added while setting up RootLB
 			return nil
 		}
@@ -492,6 +493,7 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
 			}
+			proxy.RemoveDedicatedVmApp(ctx, cloudcommon.GetAppFQN(&app.Key))
 			DeleteRootLB(lbName)
 		}
 		imgName, err := cloudcommon.GetFileName(app.ImagePath)
