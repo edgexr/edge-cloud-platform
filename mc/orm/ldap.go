@@ -35,7 +35,7 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 	if err != nil {
 		return ldap.LDAPResultInvalidDNSyntax, nil
 	}
-	if dn.ou == OUusers && dn.cn == "gitlab" && bindSimplePw == "gitlab" {
+	if dn.ou == OUusers && dn.cn == serverConfig.LDAPUsername && bindSimplePw == serverConfig.LDAPPassword {
 		return ldap.LDAPResultSuccess, nil
 	}
 	if dn.ou == OUusers {
@@ -52,6 +52,7 @@ func (s *ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDA
 		// don't log "user", as it contains password hash
 		log.SpanLog(ctx, log.DebugLevelApi, "pw check", "user", lookup)
 		if !user.EmailVerified || user.Locked {
+			time.Sleep(BadAuthDelay)
 			return ldap.LDAPResultInvalidCredentials, nil
 		}
 		matches, err := PasswordMatches(bindSimplePw, user.Passhash, user.Salt, user.Iter)
@@ -74,6 +75,11 @@ func (s *ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn 
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	res := ldap.ServerSearchResult{}
+	if boundDN == "" {
+		// disable anonymous search
+		res.ResultCode = ldap.LDAPResultInvalidCredentials
+		return res, nil
+	}
 	filter, err := ldap.CompileFilter(searchReq.Filter)
 	if err != nil {
 		return res, err

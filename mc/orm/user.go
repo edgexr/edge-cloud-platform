@@ -48,7 +48,7 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	return nil
 }
 
-var BadAuthDelay = time.Second
+var BadAuthDelay = 3 * time.Second
 
 func Login(c echo.Context) error {
 	ctx := GetContext(c)
