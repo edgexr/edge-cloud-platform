@@ -31,6 +31,8 @@ func TestLDAPServer(t *testing.T) {
 		LDAPAddr:        "127.0.0.1:9389",
 		SkipVerifyEmail: true,
 		vaultConfig:     vaultConfig,
+		LDAPUsername:    "gitlab",
+		LDAPPassword:    "gitlab",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
@@ -115,6 +117,25 @@ func TestLDAPServer(t *testing.T) {
 
 	// Expect Count: 2 (2 orgs, as worker2 belongs to 2 orgs: bigorg1,bigorg2)
 	ldapSearchCheck(t, l, "cn=orgman1,ou=users", "orgman1-password", "ou=orgs", "(&(objectClass=groupOfUniqueNames)(|(uniqueMember=cn=worker2,ou=users)(uniqueMember=worker2)))", 2)
+
+	// make sure anonymous search is disabled
+	l2, err := ldap.Dial("tcp", config.LDAPAddr)
+	require.Nil(t, err, "connected to ldap server")
+	defer l2.Close()
+	req := &ldap.SearchRequest{
+		BaseDN: "",
+		Filter: "(objectClass=*)",
+	}
+	sr, err = l2.Search(req)
+	require.Nil(t, err, "anonymous ldap search")
+	require.Equal(t, 0, len(sr.Entries))
+
+	// same request should work after binding
+	err = l2.Bind("cn=gitlab,ou=users", "gitlab")
+	require.Nil(t, err, "ldap bind")
+	sr, err = l2.Search(req)
+	require.Nil(t, err, "ldap search")
+	require.Equal(t, 7, len(sr.Entries))
 }
 
 func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, filter string, numEntries int) *ldap.SearchResult {

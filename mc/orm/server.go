@@ -62,6 +62,8 @@ type ServerConfig struct {
 	TlsKeyFile            string
 	LocalVault            bool
 	LDAPAddr              string
+	LDAPUsername          string
+	LDAPPassword          string
 	GitlabAddr            string
 	ArtifactoryAddr       string
 	ClientCert            string
@@ -132,6 +134,12 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}
 	if superpass == "" || config.IgnoreEnv {
 		superpass = DefaultSuperpass
+	}
+	if serverConfig.LDAPUsername == "" && !config.IgnoreEnv {
+		serverConfig.LDAPUsername = os.Getenv("LDAP_USERNAME")
+	}
+	if serverConfig.LDAPPassword == "" && !config.IgnoreEnv {
+		serverConfig.LDAPPassword = os.Getenv("LDAP_PASSWORD")
 	}
 
 	err := nodeMgr.Init(ctx, "mc", node.CertIssuerGlobal, node.WithName(config.Hostname))
