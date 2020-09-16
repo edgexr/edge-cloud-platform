@@ -182,6 +182,11 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 	if app != "" {
 		// Search ProxyMap for the names
 		target := getProxyScrapePoint(app)
+		if target.Client == nil {
+			// if client is not initialized trigger health-check failure
+			http.Error(w, "Client is not initialized", http.StatusInternalServerError)
+			return
+		}
 		if target.ProxyContainer == "nginx" {
 			return
 		}

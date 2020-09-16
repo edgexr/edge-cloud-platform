@@ -21,8 +21,9 @@ type Platform struct {
 	DockerAppMetrics     string
 	DockerClusterMetrics string
 	// Cloudlet-level test data
-	CloudletMetrics  string
-	VmAppInstMetrics string
+	CloudletMetrics    string
+	VmAppInstMetrics   string
+	FailPlatformClient bool
 	// TODO - add Prometheus/nginx strings here EDGECLOUD-1252
 }
 
@@ -42,6 +43,9 @@ func (s *Platform) GetClusterIP(ctx context.Context, clusterInst *edgeproto.Clus
 }
 
 func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
+	if s.FailPlatformClient {
+		return nil, fmt.Errorf("Test no client")
+	}
 	return &UTClient{pf: s}, nil
 }
 

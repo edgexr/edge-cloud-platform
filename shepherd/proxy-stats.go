@@ -101,6 +101,25 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 	return container, nil
 }
 
+// Init cluster client for a scrape point
+func initClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, scrapePoint *ProxyScrapePoint) error {
+	var err error
+	scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	if err != nil {
+		// If we cannot get a platform client no point in trying to get metrics
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
+		return err
+	}
+	// Now that we have a client - figure out what container name we should ping
+	scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, *scrapePoint)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
+		scrapePoint.Client.StopPersistentConn()
+		return err
+	}
+	return nil
+}
+
 func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	// ignore apps not exposed to the outside world as they don't have a envoy/nginx proxy
 	app := edgeproto.App{}
@@ -117,9 +136,14 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	if appInst.State == edgeproto.TrackedState_READY {
 		// if we already have this in the map, don't create a new one
 		ProxyMutex.Lock()
-		if _, found := ProxyMap[ProxyMapKey]; found {
-			ProxyMutex.Unlock()
-			return ""
+		if scrapePoint, found := ProxyMap[ProxyMapKey]; found {
+			// Re-create the scrape point if the client is not initialized
+			if scrapePoint.Client == nil {
+				delete(ProxyMap, ProxyMapKey)
+			} else {
+				ProxyMutex.Unlock()
+				return ""
+			}
 		}
 		ProxyMutex.Unlock()
 
@@ -151,31 +175,20 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for "+appInst.Key.AppKey.Name)
 			return ""
 		}
-		var err error
-		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, &clusterInst, cloudcommon.ClientTypeRootLB)
+		err := initClient(ctx, &clusterInst, &scrapePoint)
 		if err != nil {
-			// If we cannot get a platform client no point in trying to get metrics
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
-			return ""
-		}
-		// Now that we have a client - figure out what container name we should ping
-		scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, scrapePoint)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
-			scrapePoint.Client.StopPersistentConn()
-			return ""
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to init platform client - do it later", "cluster", clusterInst.Key, "error", err)
 		}
 		// If this was created between last check and now
 		ProxyMutex.Lock()
 		if _, found := ProxyMap[ProxyMapKey]; found {
 			ProxyMutex.Unlock()
-			scrapePoint.Client.StopPersistentConn()
+			if scrapePoint.Client != nil {
+				scrapePoint.Client.StopPersistentConn()
+			}
 			return ""
 		}
-		ProxyMutex.Unlock()
-
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Creating Proxy Stats", "app inst", appInst.Key, "scrape point key", ProxyMapKey, "container", scrapePoint.ProxyContainer)
-		ProxyMutex.Lock()
 		ProxyMap[ProxyMapKey] = scrapePoint
 		ProxyMutex.Unlock()
 		return ProxyMapKey
@@ -189,7 +202,9 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 	}
 
 	// Close the ssh session
-	scrapePoint.Client.StopPersistentConn()
+	if scrapePoint.Client != nil {
+		scrapePoint.Client.StopPersistentConn()
+	}
 	delete(ProxyMap, ProxyMapKey)
 	return ProxyMapKey
 }
@@ -247,9 +262,12 @@ func ProxyScraper(done chan bool) {
 }
 
 func QueryProxy(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
+	if scrapePoint.Client == nil {
+		return nil, fmt.Errorf("ScrapePoint client is not initialized")
+	}
 	// query envoy
 	if scrapePoint.ProxyContainer == "nginx" {
-		return QueryNginx(ctx, scrapePoint) //if envoy isnt there(for legacy apps) query nginx
+		return QueryNginx(ctx, scrapePoint) //if envoy isn't there(for legacy apps) query nginx
 	}
 	request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/stats", scrapePoint.ProxyContainer, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
@@ -462,7 +480,9 @@ func getHistogramIntStats(respMap map[string]string, statName string) (map[strin
 }
 
 func QueryNginx(ctx context.Context, scrapePoint *ProxyScrapePoint) (*shepherd_common.ProxyMetrics, error) {
-	// set up health check context
+	if scrapePoint.Client == nil {
+		return nil, fmt.Errorf("ScrapePoint client is not initialized")
+	}
 	// build the query
 	request := fmt.Sprintf("docker exec %s curl http://127.0.0.1:%d/nginx_metrics", scrapePoint.App, cloudcommon.ProxyMetricsPort)
 	resp, err := scrapePoint.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)

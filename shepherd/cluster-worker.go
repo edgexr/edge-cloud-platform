@@ -76,11 +76,13 @@ func (p *ClusterWorker) Start(ctx context.Context) {
 	p.stop = make(chan struct{})
 	p.waitGrp.Add(1)
 	go p.RunNotify()
-	log.SpanLog(ctx, log.DebugLevelMetrics, "Started ClusterWorker thread\n")
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Started ClusterWorker thread",
+		"cluster", p.clusterInstKey)
 }
 
 func (p *ClusterWorker) Stop(ctx context.Context) {
-	log.SpanLog(ctx, log.DebugLevelMetrics, "Stopping ClusterWorker thread\n")
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Stopping ClusterWorker thread",
+		"cluster", p.clusterInstKey)
 	close(p.stop)
 	// For dedicated clusters try to clean up ssh client cache
 	cluster := edgeproto.ClusterInst{}

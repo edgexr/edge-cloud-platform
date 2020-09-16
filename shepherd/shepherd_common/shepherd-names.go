@@ -19,7 +19,7 @@ func ShouldRunEnvoy(app *edgeproto.App, appInst *edgeproto.AppInst) bool {
 		return false
 	}
 	if app.InternalPorts || app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-		log.DebugLog(log.DebugLevelInfo, "ShouldRunEnvoy", "app", app.Key, "appCheck", false)
+		log.DebugLog(log.DebugLevelInfo, "ShouldRunEnvoy", "app", app, "appCheck", false)
 		return false
 	}
 	log.DebugLog(log.DebugLevelInfo, "ShouldRunEnvoy", "app", app.Key, "ok", true)
