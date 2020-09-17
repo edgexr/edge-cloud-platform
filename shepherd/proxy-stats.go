@@ -137,6 +137,8 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		// if we already have this in the map, don't create a new one
 		ProxyMutex.Lock()
 		if scrapePoint, found := ProxyMap[ProxyMapKey]; found {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Key already exists", "key", ProxyMapKey,
+				"scrape", scrapePoint.Key)
 			// Re-create the scrape point if the client is not initialized
 			if scrapePoint.Client == nil {
 				delete(ProxyMap, ProxyMapKey)
@@ -166,6 +168,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		}
 		// Don't need to scrape anything if no ports are trackable
 		if len(scrapePoint.TcpPorts) == 0 && len(scrapePoint.UdpPorts) == 0 {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "No ports to scrape", "key", appInst.Key)
 			return ""
 		}
 
@@ -181,8 +184,9 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		}
 		// If this was created between last check and now
 		ProxyMutex.Lock()
-		if _, found := ProxyMap[ProxyMapKey]; found {
+		if scrape, found := ProxyMap[ProxyMapKey]; found {
 			ProxyMutex.Unlock()
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Instance was created somewhere else", "key", ProxyMapKey, "scrape", scrape.Key)
 			if scrapePoint.Client != nil {
 				scrapePoint.Client.StopPersistentConn()
 			}
@@ -201,8 +205,9 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		return ""
 	}
 
-	// Close the ssh session
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Proxy ScrapePoint deleted", "key", ProxyMapKey, "app inst", scrapePoint.Key)
 	if scrapePoint.Client != nil {
+		// Close the ssh session
 		scrapePoint.Client.StopPersistentConn()
 	}
 	delete(ProxyMap, ProxyMapKey)

@@ -108,6 +108,8 @@ mcs:
   billingpath: "fake"
   testcollectioninterval: 3m
   alertmgrapiaddr: "https://127.0.0.1:9094"
+  envvars:
+    E2ETEST_TLS: true
 
 sqls:
 - name: sql1
@@ -162,7 +164,7 @@ alertmanagersidecars:
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
-    cacert: "{{tlsoutdir}}/mex-ca.crt"
+    cacert: "/tmp/vault_pki/global.cert.pem"
   localtest: true
   hostname: "127.0.0.1"
   envvars:

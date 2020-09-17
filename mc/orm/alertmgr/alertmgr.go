@@ -3,6 +3,7 @@ package alertmgr
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,8 +19,6 @@ import (
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-
-	mextls "github.com/mobiledgex/edge-cloud/tls"
 
 	//"github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
@@ -41,7 +40,7 @@ type AlertMgrServer struct {
 	AlertMrgAddr          string
 	AlertResolutionTimout time.Duration
 	AlertCache            *edgeproto.AlertCache
-	ClientCert            string
+	TlsConfig             *tls.Config
 	waitGrp               sync.WaitGroup
 	stop                  chan struct{}
 }
@@ -51,13 +50,14 @@ func getAgentName() string {
 	return "MasterControllerV1"
 }
 
-func NewAlertMgrServer(alertMgrAddr string, clientCert string, alertCache *edgeproto.AlertCache, resolveTimeout time.Duration) (*AlertMgrServer, error) {
+func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config,
+	alertCache *edgeproto.AlertCache, resolveTimeout time.Duration) (*AlertMgrServer, error) {
 	var err error
 	server := AlertMgrServer{
 		AlertMrgAddr:          alertMgrAddr,
 		AlertCache:            alertCache,
 		AlertResolutionTimout: resolveTimeout,
-		ClientCert:            clientCert,
+		TlsConfig:             tlsConfig,
 	}
 	span := log.StartSpan(log.DebugLevelApi|log.DebugLevelInfo, "AlertMgrServer")
 	defer span.Finish()
@@ -65,7 +65,7 @@ func NewAlertMgrServer(alertMgrAddr string, clientCert string, alertCache *edgep
 
 	// We might need to wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
-		_, err = alertMgrApi(ctx, server.AlertMrgAddr, "GET", "", "", nil, server.ClientCert)
+		_, err = alertMgrApi(ctx, server.AlertMrgAddr, "GET", "", "", nil, server.TlsConfig)
 		if err == nil {
 			break
 		}
@@ -175,7 +175,7 @@ func alertManagerAlertsToEdgeprotoAlerts(openAPIAlerts models.GettableAlerts) []
 
 // Show all alerts in the alertmgr
 func (s *AlertMgrServer) ShowAlerts(ctx context.Context, filter *edgeproto.Alert) ([]edgeproto.Alert, error) {
-	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", AlertApi, "", nil, s.ClientCert)
+	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", AlertApi, "", nil, s.TlsConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to GET Alerts", "err", err, "filter", filter)
 		return nil, err
@@ -198,7 +198,7 @@ func (s *AlertMgrServer) AddAlerts(ctx context.Context, alerts ...*edgeproto.Ale
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to marshal alerts", "err", err, "alerts", alerts)
 		return err
 	}
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", AlertApi, "", data, s.ClientCert)
+	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", AlertApi, "", data, s.TlsConfig)
 	log.SpanLog(ctx, log.DebugLevelInfo, "marshal alerts", "alerts", string(data), "err", err, "res", res)
 	return err
 }
@@ -306,7 +306,7 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to get marshal sidecar Receiver Config info", "err", err, "cfg", sidecarRec)
 		return err
 	}
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", mobiledgeXReceiverApi, "", data, s.ClientCert)
+	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", mobiledgeXReceiverApi, "", data, s.TlsConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create alertmanager receiver", "err", err, "res", res)
 		return err
@@ -322,7 +322,7 @@ func (s *AlertMgrServer) DeleteReceiver(ctx context.Context, receiver *ormapi.Al
 
 	// We create one entry per receiver, to make it simpler
 	receiverName := getAlertmgrReceiverName(receiver)
-	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "DELETE", mobiledgeXReceiverApi+"/"+receiverName, "", nil, s.ClientCert)
+	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "DELETE", mobiledgeXReceiverApi+"/"+receiverName, "", nil, s.TlsConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to delete alertmanager receiver", "err", err, "res", res)
 		return err
@@ -350,7 +350,7 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 		// Add Filter with a name
 		apiUrl = mobiledgeXReceiverApi + "/" + filter.Name
 	}
-	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", apiUrl, "", nil, s.ClientCert)
+	data, err := alertMgrApi(ctx, s.AlertMrgAddr, "GET", apiUrl, "", nil, s.TlsConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to GET Alert Receivers", "err", err)
 		return nil, err
@@ -412,7 +412,7 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 }
 
 // Common function to send an api call to alertmanager
-func alertMgrApi(ctx context.Context, addr, method, api, options string, payload []byte, tlsCert string) ([]byte, error) {
+func alertMgrApi(ctx context.Context, addr, method, api, options string, payload []byte, tlsConfig *tls.Config) ([]byte, error) {
 	var client *http.Client
 
 	apiUrl := addr + api
@@ -427,16 +427,15 @@ func alertMgrApi(ctx context.Context, addr, method, api, options string, payload
 	if urlObj.Scheme == "http" {
 		client = http.DefaultClient
 	} else if urlObj.Scheme == "https" {
-		tlsConfig, err := mextls.GetTLSClientConfig(urlObj.Hostname(), tlsCert, "", false)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Cannot set up tls client", "err", err, "addr", addr, "certFile", tlsCert)
-			return nil, err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfo, "Tls client config", "addr", addr, "certFile", tlsCert)
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-			},
+		if tlsConfig == nil {
+			client = http.DefaultClient
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Tls client config", "addr", addr, "tls certs", tlsConfig.Certificates)
+			client = &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: tlsConfig,
+				},
+			}
 		}
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unsupported schema", "err", err, "url", apiUrl)
@@ -456,7 +455,7 @@ func alertMgrApi(ctx context.Context, addr, method, api, options string, payload
 	resp, err := client.Do(req)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to send request to the alertmanager", "err", err,
-			"method", req.Method, "url", req.URL, "payload", payload, "certificate", tlsCert)
+			"method", req.Method, "url", req.URL, "payload", payload)
 		return nil, err
 	}
 	defer resp.Body.Close()
