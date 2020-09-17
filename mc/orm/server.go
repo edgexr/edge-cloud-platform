@@ -236,7 +236,18 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
-		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, config.TlsCertFile,
+		opts := []node.TlsOp{node.WithPublicCAPool()}
+		//For the e2e tests we should use our certs
+		if e2e := os.Getenv("E2ETEST_TLS"); e2e != "" {
+			// skip verifying cert if e2e-tests
+			opts = append(opts, node.WithTlsSkipVerify(true))
+		}
+		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
+			nodeMgr.CommonName(), node.CertIssuerGlobal, []node.MatchCA{}, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
+		}
+		AlertManagerServer, err = alertmgr.NewAlertMgrServer(config.AlertMgrAddr, tlsConfig,
 			config.AlertCache, config.AlertmgrResolveTimout)
 		if err != nil {
 			// TODO - this needs to be a fatal failure when we add alertmanager deployment to the ansible scripts

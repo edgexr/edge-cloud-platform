@@ -104,7 +104,7 @@ controllers:
   deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: ctrl2
   etcdaddrs: "http://127.0.0.1:30001,http://127.0.0.1:30002,http://127.0.0.1:30003"
@@ -126,7 +126,7 @@ controllers:
   deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: ctrla1
   etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
@@ -150,7 +150,7 @@ controllers:
   influxaddr: "http://127.0.0.1:8087"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: ctrla2
   etcdaddrs: "http://127.0.0.1:30031,http://127.0.0.1:30032,http://127.0.0.1:30033"
@@ -174,7 +174,7 @@ controllers:
   influxaddr: "http://127.0.0.1:8087"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 clustersvcs:
 - name: cluster-svc1
@@ -189,7 +189,7 @@ clustersvcs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: cluster-svc2
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
@@ -202,7 +202,7 @@ clustersvcs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: cluster-svca1
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
@@ -217,7 +217,7 @@ clustersvcs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: cluster-svca2
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
@@ -231,7 +231,7 @@ clustersvcs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 dmes:
 - name: dme1
@@ -253,7 +253,7 @@ dmes:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: dme2
   apiaddr: "0.0.0.0:50052"
@@ -274,7 +274,7 @@ dmes:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: dmea1
   apiaddr: "0.0.0.0:50061"
@@ -296,7 +296,7 @@ dmes:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: dmea2
   apiaddr: "0.0.0.0:50062"
@@ -318,7 +318,7 @@ dmes:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 mcs:
 - name: mc1
@@ -339,7 +339,7 @@ mcs:
   billingpath: "fake"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: mc2
   addr: "127.0.0.1:9901"
@@ -358,7 +358,7 @@ mcs:
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 sqls:
 - name: sql1
@@ -414,7 +414,7 @@ autoprovs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 - name: autoprova1
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
@@ -429,7 +429,7 @@ autoprovs:
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
-    ES_E2ETEST: true
+    E2ETEST_TLS: true
 
 prometheus:
 - name: prom-e2e
@@ -488,7 +488,7 @@ alertmanagersidecars:
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
-    cacert: "{{tlsoutdir}}/mex-ca.crt"
+    cacert: "/tmp/vault_pki/global.cert.pem"
   localtest: true
   hostname: "127.0.0.1"
   envvars:
