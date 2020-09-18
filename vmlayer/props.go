@@ -36,6 +36,7 @@ type VMProperties struct {
 	PlatformSecgrpName    string
 	IptablesBasedFirewall bool
 	sshKey                CloudletSSHKey
+	Upgrade               bool
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must

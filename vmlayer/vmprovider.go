@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
@@ -256,12 +257,13 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 }
 
 func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
-	nodeMgr.Debug.AddDebugFunc("crmupgradecmd",
+	nodeMgr.Debug.AddDebugFunc("crmrefreshsshkeys",
 		func(ctx context.Context, req *edgeproto.DebugRequest) string {
 			v.triggerRefreshCloudletSSHKeys()
 			return "triggered refresh"
 		})
-	nodeMgr.Debug.AddDebugFunc("crmrefreshsshkeys", v.crmUpgradeCmd)
+
+	nodeMgr.Debug.AddDebugFunc("crmupgradecmd", v.crmUpgradeCmd)
 }
 
 func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
@@ -312,12 +314,6 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 
 	// Set debug command to start crm upgrade
 	v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-	if platformConfig.Upgrade {
-		_, err = v.UpgradeFuncHandleSSHKeys(ctx, vaultConfig, caches)
-		if err != nil {
-			return err
-		}
-	}
 
 	v.FlavorList, err = v.VMProvider.GetFlavorList(ctx)
 	if err != nil {
@@ -341,6 +337,42 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}
+
+	if platformConfig.Upgrade {
+		v.VMProperties.Upgrade = true
+		// Pull private key from Vault
+		log.SpanLog(ctx, log.DebugLevelInfra, "Fetch private key from vault")
+		mexKey, err := infracommon.GetMEXKeyFromVault(vaultConfig)
+		if err != nil {
+			return err
+		}
+		v.VMProperties.sshKey.MEXPrivateKey = mexKey.PrivateKey
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade shared rootlb to use vault SSH")
+
+		// Upgrade Shared RootLB to use Vault SSH
+		// Set SSH client to use mex private key
+		v.VMProperties.sshKey.UseMEXPrivateKey = true
+		sharedRootLBClient, err := v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
+		if err != nil {
+			return err
+		}
+		upgradeScript := GetVaultCAScript(vaultConfig)
+		ExecuteUpgradeScript(ctx, v.VMProperties.SharedRootLBName, sharedRootLBClient, upgradeScript)
+		// Verify if shared rootlb is reachable using vault SSH
+		// Set SSH client to use vault signed Keys
+		v.VMProperties.sshKey.UseMEXPrivateKey = false
+		sharedRootLBClient, err = v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
+		if err != nil {
+			return err
+		}
+		_, err = sharedRootLBClient.Output("hostname")
+		if err != nil {
+			return fmt.Errorf("failed to access shared rootlb: %v", err)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "successfully upgraded shared rootlb to use Vault SSH")
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
 	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, updateCallback)
@@ -366,6 +398,14 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState edgeproto.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "cloudletState", cloudletState)
 	// no sync needed right now
+
+	if v.VMProperties.Upgrade {
+		_, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.VaultConfig, caches)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade CRM Config")
 	// upgrade k8s config on each rootLB
 	sharedRootLBClient, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName})

@@ -1,11 +1,12 @@
 {
-  "revision_id": "85804fcb6fcf8c2672aa2fc0000d067b7c88708e4994d1f6269017ea460616c3",
+  "revision_id": "94d21e6bc31ca462cf9d30583714047392c6cffda67bd7d8a4cd2652d457e754",
   "name": "docker_crm",
   "run_list": [
     "recipe[runstatus_handler::default]",
     "recipe[setup_infra::default]",
     "recipe[preflight_crm_checks::default]",
-    "recipe[setup_services::docker]"
+    "recipe[setup_services::docker]",
+    "recipe[setup_vault_ssh::default]"
   ],
   "included_policy_locks": [
 
@@ -65,6 +66,17 @@
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
         "version": "1.0.10"
       }
+    },
+    "setup_vault_ssh": {
+      "version": "1.0.0",
+      "identifier": "31ba7122bbbf012a7e770aae15832b5bd56ec951",
+      "dotted_decimal_identifier": "13997268935622401.11960998767236483.47673422825809",
+      "cache_key": "setup_vault_ssh-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
     }
   },
   "default_attributes": {
@@ -101,6 +113,10 @@
       [
         "setup_services",
         "= 1.0.10"
+      ],
+      [
+        "setup_vault_ssh",
+        "= 1.0.0"
       ]
     ],
     "dependencies": {
@@ -121,6 +137,9 @@
           "docker",
           ">= 0.0.0"
         ]
+      ],
+      "setup_vault_ssh (1.0.0)": [
+
       ]
     }
   }

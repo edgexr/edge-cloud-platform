@@ -123,13 +123,12 @@ func GetSignedKeyFromVault(config *vault.Config, data map[string]interface{}) (s
 	if !ok {
 		return "", fmt.Errorf("invalid signed key from vault: %v", signedKey)
 	}
-
 	return signedKeyStr, nil
 }
 
 type MEXKey struct {
-	PrivateKey string
-	PublicKey  string
+	PrivateKey string `mapstructure:"private_key"`
+	PublicKey  string `mapstructure:"public_key"`
 }
 
 func GetMEXKeyFromVault(vaultConfig *vault.Config) (*MEXKey, error) {
