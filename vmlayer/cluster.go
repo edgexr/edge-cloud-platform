@@ -207,6 +207,14 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		if err = v.VMProperties.CommonPf.DeleteDNSRecords(ctx, rootLBName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "fqdn", rootLBName, "err", err)
 		}
+	} else {
+		// cleanup manifest config dir
+		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes || clusterInst.Deployment == cloudcommon.DeploymentTypeHelm {
+			err = k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cleanup cluster config failed", "err", err)
+			}
+		}
 	}
 
 	// Delete Chef configs

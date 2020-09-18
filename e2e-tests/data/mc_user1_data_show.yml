@@ -154,6 +154,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -172,6 +173,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: azure
         name: azure-cloud-4
@@ -190,6 +192,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -208,6 +211,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: enterprise
         name: enterprise-1
@@ -226,6 +230,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -320,6 +325,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -338,6 +344,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     - key:
         organization: enterprise
         name: enterprise-2
@@ -356,6 +363,7 @@ regiondata:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
+      controllercachereceived: true
     cloudletpools:
     - key:
         organization: enterprise
