@@ -44,7 +44,7 @@ cluster.udp_backend8765.upstream_cx_overflow: 15
 cluster.udp_backend8765.upstream_cx_none_healthy: 16`
 
 func setupLog() context.Context {
-	log.InitTracer("")
+	log.InitTracer(nil)
 	ctx := log.StartTestSpan(context.Background())
 	return ctx
 }

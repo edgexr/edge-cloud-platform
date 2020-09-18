@@ -21,6 +21,8 @@ type MC struct {
 	BillingPath             string
 	UsageCollectionInterval string
 	AlertMgrApiAddr         string
+	ApiTlsCert              string
+	ApiTlsKey               string
 	TLS                     process.TLSCerts
 	cmd                     *exec.Cmd
 }

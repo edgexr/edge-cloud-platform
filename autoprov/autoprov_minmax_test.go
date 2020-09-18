@@ -17,7 +17,7 @@ import (
 // Test Choose order for create/delete
 func TestChoose(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelNotify | log.DebugLevelApi | log.DebugLevelMetrics)
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
@@ -122,8 +122,6 @@ func TestChoose(t *testing.T) {
 
 func TestAppChecker(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelNotify | log.DebugLevelApi | log.DebugLevelMetrics)
-	log.InitTracer("")
-	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
 	// init

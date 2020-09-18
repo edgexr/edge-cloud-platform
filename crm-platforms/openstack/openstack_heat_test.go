@@ -2,10 +2,11 @@ package openstack
 
 import (
 	"context"
-	yaml "github.com/mobiledgex/yaml/v2"
 	"io/ioutil"
 	"strings"
 	"testing"
+
+	yaml "github.com/mobiledgex/yaml/v2"
 
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
@@ -92,11 +93,11 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 }
 
 func TestHeatTemplate(t *testing.T) {
-	log.InitTracer("")
-	defer log.FinishTracer()
 	log.SetDebugLevel(log.DebugLevelInfra)
 	infracommon.SetTestMode(true)
 
+	log.InitTracer(nil)
+	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()

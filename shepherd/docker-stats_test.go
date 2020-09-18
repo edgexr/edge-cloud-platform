@@ -70,7 +70,7 @@ var testDockerClusterData = shepherd_common.ClusterMetrics{
 }
 
 func TestDockerStats(t *testing.T) {
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 

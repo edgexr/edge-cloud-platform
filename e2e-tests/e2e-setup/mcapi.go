@@ -134,7 +134,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 }
 
 func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
-	log.Printf("Applying MC users via APIs for %s\n", apiFile)
+	log.Printf("Applying MC config via APIs for %s\n", apiFile)
 
 	token, rc := loginCurUser(uri, curUserFile, vars)
 	if !rc {

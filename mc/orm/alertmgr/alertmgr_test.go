@@ -267,7 +267,7 @@ func (s *AlertmanagerMock) resetCounters() {
 }
 
 func TestAlertMgrServer(t *testing.T) {
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	// mock http to redirect requests

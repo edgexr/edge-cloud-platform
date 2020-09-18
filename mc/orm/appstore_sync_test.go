@@ -113,7 +113,7 @@ func TestAppStoreApi(t *testing.T) {
 	var status int
 
 	log.SetDebugLevel(log.DebugLevelApi)
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 
 	ctx := log.StartTestSpan(context.Background())

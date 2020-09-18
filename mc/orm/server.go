@@ -58,8 +58,8 @@ type ServerConfig struct {
 	RunLocal              bool
 	InitLocal             bool
 	IgnoreEnv             bool
-	TlsCertFile           string
-	TlsKeyFile            string
+	ApiTlsCertFile        string
+	ApiTlsKeyFile         string
 	LocalVault            bool
 	LDAPAddr              string
 	LDAPUsername          string
@@ -110,10 +110,6 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	}
 	nodeMgr = config.NodeMgr
 
-	span := log.StartSpan(log.DebugLevelInfo, "main")
-	defer span.Finish()
-	ctx := log.ContextWithSpan(context.Background(), span)
-
 	dbuser := os.Getenv("db_username")
 	dbpass := os.Getenv("db_password")
 	dbname := os.Getenv("db_name")
@@ -142,10 +138,11 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		serverConfig.LDAPPassword = os.Getenv("LDAP_PASSWORD")
 	}
 
-	err := nodeMgr.Init(ctx, "mc", node.CertIssuerGlobal, node.WithName(config.Hostname))
+	ctx, span, err := nodeMgr.Init("mc", node.CertIssuerGlobal, node.WithName(config.Hostname))
 	if err != nil {
 		return nil, err
 	}
+	defer span.Finish()
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
@@ -534,8 +531,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	go func() {
 		var err error
-		if config.TlsCertFile != "" {
-			err = e.StartTLS(config.ServAddr, config.TlsCertFile, config.TlsKeyFile)
+		if config.ApiTlsCertFile != "" {
+			err = e.StartTLS(config.ServAddr, config.ApiTlsCertFile, config.ApiTlsKeyFile)
 		} else {
 			err = e.Start(config.ServAddr)
 		}
@@ -551,8 +548,8 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	ldapServer.SearchFunc("", handler)
 	go func() {
 		var err error
-		if config.TlsCertFile != "" {
-			err = ldapServer.ListenAndServeTLS(config.LDAPAddr, config.TlsCertFile, config.TlsKeyFile)
+		if config.ApiTlsCertFile != "" {
+			err = ldapServer.ListenAndServeTLS(config.LDAPAddr, config.ApiTlsCertFile, config.ApiTlsKeyFile)
 		} else {
 			err = ldapServer.ListenAndServe(config.LDAPAddr)
 		}
@@ -614,6 +611,7 @@ func (s *Server) Stop() {
 	if AlertManagerServer != nil {
 		AlertManagerServer.Stop()
 	}
+	nodeMgr.Finish()
 }
 
 func ShowVersion(c echo.Context) error {
@@ -839,7 +837,7 @@ func (s *Server) setupConsoleProxy(ctx context.Context) {
 		} else {
 			token = tokenVals[0]
 		}
-		if s.config.TlsCertFile != "" {
+		if s.config.ApiTlsCertFile != "" {
 			req.URL.Scheme = "https"
 		} else {
 			req.URL.Scheme = "http"
@@ -888,8 +886,8 @@ func (s *Server) setupConsoleProxy(ctx context.Context) {
 		proxy.ServeHTTP(w, r)
 	})
 
-	if s.config.TlsCertFile != "" {
-		err = http.ListenAndServeTLS(s.config.ConsoleProxyAddr, s.config.TlsCertFile, s.config.TlsKeyFile, nil)
+	if s.config.ApiTlsCertFile != "" {
+		err = http.ListenAndServeTLS(s.config.ConsoleProxyAddr, s.config.ApiTlsCertFile, s.config.ApiTlsKeyFile, nil)
 	} else {
 		err = http.ListenAndServe(s.config.ConsoleProxyAddr, nil)
 	}

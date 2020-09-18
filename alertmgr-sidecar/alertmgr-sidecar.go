@@ -56,7 +56,7 @@ func getConfigInfo() (*alertmgr.AlertmgrInitInfo, error) {
 func main() {
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer("")
+	log.InitTracer(nil)
 
 	config, err := getConfigInfo()
 	if err != nil {
