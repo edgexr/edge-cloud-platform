@@ -503,16 +503,16 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	for i, v := range VMGroupOrchestrationParams.VMs {
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, reindent16)
 		// Copy client keys from existing template in case of update
-		if v.ChefParams != nil && action == heatUpdate {
-			if v.ChefParams.ClientKey == "" {
-				key, ok := chefClientKeys[v.ChefParams.NodeName]
+		if v.CloudConfigParams.ChefParams != nil && action == heatUpdate {
+			if v.CloudConfigParams.ChefParams.ClientKey == "" {
+				key, ok := chefClientKeys[v.CloudConfigParams.ChefParams.NodeName]
 				if !ok || key == "" {
-					return fmt.Errorf("missing chef client key for %s", v.ChefParams.NodeName)
+					return fmt.Errorf("missing chef client key for %s", v.CloudConfigParams.ChefParams.NodeName)
 				}
-				v.ChefParams.ClientKey = key
+				v.CloudConfigParams.ChefParams.ClientKey = key
 			}
 		}
-		userdata, err := vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, v.ChefParams, reindent16)
+		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		if err != nil {
 			return err
 		}

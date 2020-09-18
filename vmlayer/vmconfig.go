@@ -2,24 +2,27 @@ package vmlayer
 
 import (
 	"fmt"
-
-	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 )
 
 var VmCloudConfig = `#cloud-config
+{{- if .ChefParams}}
 chef:
-  server_url: {{.ServerPath}}
-  node_name: {{.NodeName}}
+  server_url: {{.ChefParams.ServerPath}}
+  node_name: {{.ChefParams.NodeName}}
   environment: ""
   validation_name: mobiledgex-validator
   validation_key: /etc/chef/client.pem
   validation_cert: |
-{{ Indent .ClientKey 10 }}
+{{ Indent .ChefParams.ClientKey 10 }}
+{{- end}}
 bootcmd:
  - echo MOBILEDGEX CLOUD CONFIG START
  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
  - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
  - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+{{- range .ExtraBootCommands}}
+ - {{.}}
+{{- end}}
 chpasswd: { expire: False }
 ssh_pwauth: False
 timezone: UTC
@@ -56,7 +59,7 @@ mounts:
 // VmConfigDataFormatter formats user or meta data to fit into orchestration templates
 type VmConfigDataFormatter func(instring string) string
 
-func GetVMUserData(sharedVolume bool, dnsServers, manifest, command string, chefParams *chefmgmt.VMChefParams, formatter VmConfigDataFormatter) (string, error) {
+func GetVMUserData(name string, sharedVolume bool, dnsServers, manifest, command string, cloudConfigParams *VMCloudConfigParams, formatter VmConfigDataFormatter) (string, error) {
 	var rc string
 	if manifest != "" {
 		return formatter(manifest), nil
@@ -68,13 +71,12 @@ runcmd:
 - ` + command
 	} else {
 		rc = VmCloudConfig
-		if chefParams != nil {
-			buf, err := ExecTemplate(chefParams.NodeName, VmCloudConfig, chefParams)
-			if err != nil {
-				return "", fmt.Errorf("failed to generate template from chef params %v, err %v", chefParams, err)
-			}
-			rc = buf.String()
+		buf, err := ExecTemplate(name, VmCloudConfig, cloudConfigParams)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate template from cloud config params %v, err %v", cloudConfigParams, err)
 		}
+		rc = buf.String()
+
 		if dnsServers != "" {
 			rc += fmt.Sprintf("\n - echo \"dns-nameservers %s\" >> /etc/network/interfaces.d/50-cloud-init.cfg", dnsServers)
 		}

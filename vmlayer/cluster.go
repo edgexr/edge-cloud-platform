@@ -585,6 +585,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		WithExternalVolume(clusterInst.ExternalVolumeSize),
 		WithSubnetConnection(newSubnetName),
 		WithChefParams(chefParams),
+		WithOptionalResource(clusterInst.OptRes),
 	)
 	if err != nil {
 		return vms, newSubnetName, newSecgrpName, err

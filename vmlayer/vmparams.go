@@ -8,6 +8,7 @@ package vmlayer
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -118,6 +119,7 @@ type VMRequestSpec struct {
 	CreatePortsOnly         bool
 	ConnectToSubnet         string
 	ChefParams              *chefmgmt.VMChefParams
+	OptionalResource        string
 }
 
 type VMReqOp func(vmp *VMRequestSpec) error
@@ -187,6 +189,12 @@ func WithImageFolder(folder string) VMReqOp {
 func WithChefParams(chefParams *chefmgmt.VMChefParams) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.ChefParams = chefParams
+		return nil
+	}
+}
+func WithOptionalResource(optRes string) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.OptionalResource = optRes
 		return nil
 	}
 }
@@ -387,6 +395,11 @@ type TagOrchestrationParams struct {
 	Category string
 }
 
+type VMCloudConfigParams struct {
+	ExtraBootCommands []string
+	ChefParams        *chefmgmt.VMChefParams
+}
+
 // VMOrchestrationParams contains all details  that are needed by the orchestator
 type VMOrchestrationParams struct {
 	Id                      string
@@ -412,7 +425,7 @@ type VMOrchestrationParams struct {
 	Ports                   []PortResourceReference      // depending on the orchestrator, IPs may be assigned to ports or
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	AttachExternalDisk      bool
-	ChefParams              *chefmgmt.VMChefParams
+	CloudConfigParams       VMCloudConfigParams
 }
 
 var (
@@ -775,6 +788,15 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
 			hostName := util.HostnameSanitize(strings.Split(vm.Name, ".")[0])
+			vccp := VMCloudConfigParams{}
+			if vm.ChefParams != nil {
+				vccp.ChefParams = vm.ChefParams
+			}
+			// gpu
+			if vm.OptionalResource == "gpu" {
+				gpuCmds := getGpuExtraCommands()
+				vccp.ExtraBootCommands = append(vccp.ExtraBootCommands, gpuCmds...)
+			}
 			newVM := VMOrchestrationParams{
 				Name:                    v.VMProvider.NameSanitize(vm.Name),
 				Id:                      v.VMProvider.IdSanitize(vm.Name),
@@ -788,7 +810,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				DeploymentManifest:      vm.DeploymentManifest,
 				Command:                 vm.Command,
 				ComputeAvailabilityZone: vm.ComputeAvailabilityZone,
-				ChefParams:              vm.ChefParams,
+				CloudConfigParams:       vccp,
 			}
 			if vm.ExternalVolumeSize > 0 {
 				externalVolume := VolumeOrchestrationParams{
@@ -905,4 +927,27 @@ func (v *VMPlatform) GetSubnetGatewayFromVMGroupParms(ctx context.Context, subne
 		}
 	}
 	return "", fmt.Errorf("Subnet: %s not found in vm group params", subnetName)
+}
+
+func getGpuExtraCommands() []string {
+	dockerDaemonJson :=
+		`{
+	"log-driver": "json-file",
+	"log-opts": {
+		"max-size": "50m",
+		"max-file": "20"
+	},
+	"runtimes": {
+		"nvidia": {
+			"path": "/usr/bin/nvidia-container-runtime",
+			"runtimeArgs": []
+		}
+	}
+}`
+	jsonB64 := b64.StdEncoding.EncodeToString([]byte(dockerDaemonJson))
+	var commands = []string{
+		"echo \"updating docker daemon.json\"",
+		"echo " + jsonB64 + "|base64 -d > /etc/docker/daemon.json",
+	}
+	return commands
 }
