@@ -42,6 +42,13 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	s.vaultConfig = vaultConfig
 	s.appDNSRoot = pc.AppDNSRoot
 
+	err = s.VMPlatform.InitCloudletSSHKeys(ctx, vaultConfig)
+	if err != nil {
+		return err
+	}
+
+	go s.VMPlatform.RefreshCloudletSSHKeys(vaultConfig)
+
 	if err = s.VMPlatform.InitProps(ctx, pc, vaultConfig); err != nil {
 		return err
 	}

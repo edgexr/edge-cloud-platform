@@ -47,7 +47,7 @@ require (
 	github.com/miekg/dns v1.1.15
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/mobiledgex/edge-cloud v1.0.1
-	github.com/mobiledgex/golang-ssh v0.0.9
+	github.com/mobiledgex/golang-ssh v0.0.10
 	github.com/mobiledgex/yaml/v2 v2.2.5
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
@@ -352,7 +352,7 @@ replace github.com/golang/glog => github.com/golang/glog v0.0.0-20160126235308-2
 
 replace github.com/jcelliott/lumber => github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25
 
-replace github.com/mobiledgex/golang-ssh => github.com/mobiledgex/golang-ssh v0.0.9
+replace github.com/mobiledgex/golang-ssh => github.com/mobiledgex/golang-ssh v0.0.10
 
 replace github.com/rogpeppe/fastuuid => github.com/rogpeppe/fastuuid v1.2.0
 

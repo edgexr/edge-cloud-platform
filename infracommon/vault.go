@@ -104,3 +104,44 @@ func DeleteDataFromVault(config *vault.Config, path string) error {
 	metadataPath := strings.Replace(path, "secret/data", "secret/metadata", -1)
 	return vault.DeleteKV(client, metadataPath)
 }
+
+func GetSignedKeyFromVault(config *vault.Config, data map[string]interface{}) (string, error) {
+	client, err := config.Login()
+	if err != nil {
+		return "", err
+	}
+	ssh := client.SSH()
+	secret, err := ssh.SignKey("machine", data)
+	if err != nil {
+		return "", err
+	}
+	signedKey, ok := secret.Data["signed_key"]
+	if !ok {
+		return "", fmt.Errorf("failed to get signed key from vault: %v", secret)
+	}
+	signedKeyStr, ok := signedKey.(string)
+	if !ok {
+		return "", fmt.Errorf("invalid signed key from vault: %v", signedKey)
+	}
+
+	return signedKeyStr, nil
+}
+
+type MEXKey struct {
+	PrivateKey string
+	PublicKey  string
+}
+
+func GetMEXKeyFromVault(vaultConfig *vault.Config) (*MEXKey, error) {
+	if vaultConfig.Addr == "" {
+		return &MEXKey{}, nil
+	}
+	vaultPath := "/secret/data/keys/id_rsa_mex"
+	log.DebugLog(log.DebugLevelApi, "get mex key", "vault-path", vaultPath)
+	key := &MEXKey{}
+	err := vault.GetData(vaultConfig, vaultPath, 0, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mex key for %s, %v", vaultPath, err)
+	}
+	return key, nil
+}

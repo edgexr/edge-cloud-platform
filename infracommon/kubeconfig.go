@@ -5,30 +5,34 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-func GetLocalKconfName(clusterInst *edgeproto.ClusterInst) string {
-	kconf := fmt.Sprintf("%s/%s", MEXDir(), k8smgmt.GetKconfName(clusterInst))
-	return kconf
-}
-
 //CopyKubeConfig copies over kubeconfig from the cluster
 func CopyKubeConfig(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, rootLBName, masterIP string) error {
 	kconfname := k8smgmt.GetKconfName(clusterInst)
 	log.SpanLog(ctx, log.DebugLevelInfra, "attempt to get kubeconfig from k8s master", "masterIP", masterIP, "dest", kconfname)
-	cmd := fmt.Sprintf("scp -o %s -o %s -i %s %s@%s:.kube/config %s", SSHOpts[0], SSHOpts[1], SSHPrivateKeyName, SSHUser, masterIP, kconfname)
-	out, err := rootLBClient.Output(cmd)
+	client, err := rootLBClient.AddHop(masterIP, 22)
 	if err != nil {
-		return fmt.Errorf("can't copy kubeconfig via cmd %s, %s, %v", cmd, out, err)
+		return err
 	}
-	cmd = fmt.Sprintf("cat %s", kconfname)
-	out, err = rootLBClient.Output(cmd)
+
+	// fetch kubeconfig from master node
+	cmd := "cat ~/.kube/config"
+	out, err := client.Output(cmd)
+	if err != nil || out == "" {
+		return fmt.Errorf("failed to get kubeconfig from master node %s, %s, %v", cmd, out, err)
+	}
+
+	// save it in rootLB
+	err = pc.WriteFile(rootLBClient, kconfname, out, "kconf file", pc.NoSudo)
 	if err != nil {
-		return fmt.Errorf("can't cat %s, %s, %v", kconfname, out, err)
+		return fmt.Errorf("can't write kubeconfig to %s, %v", kconfname, err)
 	}
+
 	//TODO generate per proxy password and record in vault
 	//port, serr := StartKubectlProxy(mf, rootLB, name, kconfname)
 	//if serr != nil {
