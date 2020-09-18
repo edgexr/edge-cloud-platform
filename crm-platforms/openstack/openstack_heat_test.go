@@ -90,6 +90,23 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 		require.True(t, strings.HasPrefix(key, "-----BEGIN RSA PRIVATE KEY-----"))
 		require.True(t, strings.HasSuffix(key, "-----END RSA PRIVATE KEY-----"))
 	}
+
+	genVMsUserData := make(map[string]string)
+	for _, v := range vmgp.VMs {
+		userdata, err := vmlayer.GetVMUserData(v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, v.ChefParams, reindent16)
+		require.Nil(t, err)
+		genVMsUserData[v.Name] = userdata
+	}
+
+	vmsUserData, err := GetUserDataFromOSResource(ctx, stackTemplate)
+	require.Nil(t, err)
+	require.Equal(t, 4, len(vmsUserData))
+	for vName, userData := range vmsUserData {
+		require.True(t, strings.HasPrefix(userData, "#cloud-config"))
+		genUserData, ok := genVMsUserData[vName]
+		require.True(t, ok)
+		require.True(t, IsUserDataSame(ctx, genUserData, userData), "userdata mismatch")
+	}
 }
 
 func TestHeatTemplate(t *testing.T) {

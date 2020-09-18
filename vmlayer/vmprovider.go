@@ -8,6 +8,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -253,6 +254,23 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	return nil
 }
 
+func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
+	nodeMgr.Debug.AddDebugFunc("crmupgradecmd",
+		func(ctx context.Context, req *edgeproto.DebugRequest) string {
+			v.triggerRefreshCloudletSSHKeys()
+			return "triggered refresh"
+		})
+	nodeMgr.Debug.AddDebugFunc("crmrefreshsshkeys", v.crmUpgradeCmd)
+}
+
+func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
+	results, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.VaultConfig, v.Caches)
+	if err != nil {
+		return fmt.Sprintf("failed to upgrade vms to vault ssh keys: %v", err)
+	}
+	return fmt.Sprintf("%v", results)
+}
+
 func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx,
 		log.DebugLevelInfra, "Init VMPlatform",
@@ -270,6 +288,13 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "vault auth", "type", vaultConfig.Auth.Type())
 
+	err = v.InitCloudletSSHKeys(ctx, vaultConfig)
+	if err != nil {
+		return err
+	}
+
+	go v.RefreshCloudletSSHKeys(vaultConfig)
+
 	if err := v.InitProps(ctx, platformConfig, vaultConfig); err != nil {
 		return err
 	}
@@ -283,6 +308,16 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if err := v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStart, updateCallback); err != nil {
 		return err
 	}
+
+	// Set debug command to start crm upgrade
+	v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+	if platformConfig.Upgrade {
+		_, err = v.UpgradeFuncHandleSSHKeys(ctx, vaultConfig, caches)
+		if err != nil {
+			return err
+		}
+	}
+
 	v.FlavorList, err = v.VMProvider.GetFlavorList(ctx)
 	if err != nil {
 		return err

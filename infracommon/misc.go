@@ -21,15 +21,6 @@ var ClientVersion = "SSH-2.0-mobiledgex-ssh-client-1.0"
 
 var SSHOpts = []string{"StrictHostKeyChecking=no", "UserKnownHostsFile=/dev/null", "LogLevel=ERROR"}
 var SSHUser = "ubuntu"
-var SSHPrivateKeyName = "id_rsa_mex"
-
-func PrivateSSHKey() string {
-	return MEXDir() + "/id_rsa_mex"
-}
-
-func MEXDir() string {
-	return os.Getenv("HOME") + "/.mobiledgex"
-}
 
 func DefaultKubeconfig() string {
 	return os.Getenv("HOME") + "/.kube/config"
