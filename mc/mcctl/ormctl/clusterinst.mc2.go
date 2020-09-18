@@ -116,6 +116,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"numnodes",
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
+	"optres",
 }
 var ClusterInstKeyRequiredArgs = []string{}
 var ClusterInstKeyOptionalArgs = []string{
@@ -157,6 +158,7 @@ var ClusterInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"privacypolicy",
 	"skipcrmcleanuponfailure",
+	"optres",
 }
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
@@ -190,6 +192,7 @@ var ClusterInstAliasArgs = []string{
 	"privacypolicy=clusterinst.privacypolicy",
 	"masternodeflavor=clusterinst.masternodeflavor",
 	"skipcrmcleanuponfailure=clusterinst.skipcrmcleanuponfailure",
+	"optres=clusterinst.optres",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                  "Fields are used for the Update API to specify which fields to apply",
@@ -219,6 +222,7 @@ var ClusterInstComments = map[string]string{
 	"privacypolicy":           "Optional privacy policy name",
 	"masternodeflavor":        "Generic flavor for k8s master VM when worker nodes > 0",
 	"skipcrmcleanuponfailure": "Prevents cleanup of resources on failure within CRM, used for diagnostic purposes",
+	"optres":                  "Optional Resources required by OS flavor if any",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"clusterinst.errors": "StringArray",

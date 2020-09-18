@@ -152,7 +152,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 	vmChefParams := make(map[string]*chefmgmt.VMChefParams)
 	for _, vm := range orchVMs {
 		vmRoles[vm.Name] = vm.Role
-		vmChefParams[vm.Name] = vm.ChefParams
+		vmChefParams[vm.Name] = vm.CloudConfigParams.ChefParams
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "chefParams", vmChefParams)
 

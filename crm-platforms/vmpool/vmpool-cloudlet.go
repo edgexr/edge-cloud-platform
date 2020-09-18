@@ -30,12 +30,12 @@ func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, c
 	if len(vmgp.VMs) != 1 {
 		return "", fmt.Errorf("invalid number of VMs")
 	}
-	chefParams := vmgp.VMs[0].ChefParams
-	if chefParams == nil {
+	cloudConfigParams := vmgp.VMs[0].CloudConfigParams
+	if cloudConfigParams.ChefParams == nil {
 		return "", fmt.Errorf("missing chef params for %s", name)
 	}
-	if chefParams.ClientKey == "" {
-		return "", fmt.Errorf("missing chef client key for %s", chefParams.NodeName)
+	if cloudConfigParams.ChefParams.ClientKey == "" {
+		return "", fmt.Errorf("missing chef client key for %s", cloudConfigParams.ChefParams.NodeName)
 	}
 
 	scriptText := fmt.Sprintf(`
@@ -46,7 +46,7 @@ cat > /home/ubuntu/client.pem << EOF
 EOF
 
 sudo bash /etc/mobiledgex/setup-chef.sh -s "%s" -n "%s"
-`, chefParams.ClientKey, chefParams.ServerPath, chefParams.NodeName)
+`, cloudConfigParams.ChefParams.ClientKey, cloudConfigParams.ChefParams.ServerPath, cloudConfigParams.ChefParams.NodeName)
 
 	manifest.AddItem("SSH into one of the VMs from the VMPool which has access to controller's notify port", infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")
 	manifest.AddItem("Save and execute the following script on the VM", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)

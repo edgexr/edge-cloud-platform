@@ -1078,6 +1078,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// PrivacyPolicy: 24
 	// MasterNodeFlavor: 25
 	// SkipCrmCleanupOnFailure: 26
+	// OptRes: 27
 	// ```
 	// Security:
 	//   Bearer:
