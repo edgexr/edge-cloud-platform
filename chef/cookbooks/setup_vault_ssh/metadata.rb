@@ -1,0 +1,6 @@
+name 'setup_vault_ssh'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Setup vault SSH CA cert'
+version '1.0.0'
+chef_version '>= 14.0'
