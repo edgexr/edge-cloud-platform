@@ -104,6 +104,8 @@ func (p *ClusterWorker) RunNotify() {
 			ctx := log.ContextWithSpan(context.Background(), span)
 			clusterStats := p.clusterStat.GetClusterStats(ctx)
 			appStatsMap := p.clusterStat.GetAppStats(ctx)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Collected cluster metrics",
+				"cluster", p.clusterInstKey, "cluster stats", clusterStats)
 
 			// create another span for alerts that is always logged
 			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check")
@@ -111,6 +113,8 @@ func (p *ClusterWorker) RunNotify() {
 			actx := log.ContextWithSpan(context.Background(), aspan)
 
 			for key, stat := range appStatsMap {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "App metrics",
+					"AppInst key", key, "stats", stat)
 				appMetrics := MarshalAppMetrics(&key, stat)
 				for _, metric := range appMetrics {
 					p.send(ctx, metric)

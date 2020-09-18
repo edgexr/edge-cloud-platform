@@ -197,8 +197,8 @@ func parseComputeUnitsDelim(ctx context.Context, dataStr string) ([]uint64, erro
 }
 
 // This is a helper function to get docker container statistics.
-// Currntly it runs "docker stats" on rootLB and gets coarse stats from the resource utilization
-// If a more detailed reource usage is needed /containers/(id)/stats API endpoint should be used
+// Currently it runs "docker stats" on rootLB and gets coarse stats from the resource utilization
+// If a more detailed resource usage is needed /containers/(id)/stats API endpoint should be used
 // To get to the API endpoint on a rootLB netcat can be used:
 //   $ echo -e "GET /containers/mobiledgexsdkdemo/stats?stream=0 HTTP/1.0\r\n" | nc -q -1 -U /var/run/docker.sock | grep "^{" | jq
 func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
@@ -209,7 +209,7 @@ func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[she
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to collect App stats for docker cluster", "err", err)
 		return nil
 	}
-
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Docker stats", "stats", stats)
 	appKey := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: p.key,
 	}
