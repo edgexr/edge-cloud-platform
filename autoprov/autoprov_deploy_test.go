@@ -56,6 +56,7 @@ type DummyController struct {
 	serv             *grpc.Server
 	lis              *bufconn.Listener
 	failCreate       bool
+	failDelete       bool
 }
 
 func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *edgeproto.AppInstRefsCache) *DummyController {
@@ -115,6 +116,9 @@ func (s *DummyController) UpdateAppInst(in *edgeproto.AppInst, server edgeproto.
 }
 
 func (s *DummyController) DeleteAppInst(in *edgeproto.AppInst, server edgeproto.AppInstApi_DeleteAppInstServer) error {
+	if s.failDelete {
+		return fmt.Errorf("Some error")
+	}
 	s.deleteAppInst(server.Context(), in)
 	return nil
 }

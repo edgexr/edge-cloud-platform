@@ -459,8 +459,50 @@ func TestAppChecker(t *testing.T) {
 	// remove cloudlets from policy - will delete all
 	// auto-provisioned AppInsts regardless of min because they are on
 	// cloudlets not specified by any policy.
+	cloudletsSave := pt1.policy.Cloudlets
 	pt1.policy.Cloudlets = nil
 	pt1.updatePolicy(ctx)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, 0)
+	require.Nil(t, err)
+
+	// set cloudlets back
+	pt1.policy.Cloudlets = cloudletsSave
+	pt1.updatePolicy(ctx)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
+	require.Nil(t, err)
+
+	// set cloudlets offline (and fail delete because controller will
+	// disallow changes to offline cloudlet).
+	// Should still be same number of AppInsts.
+	dc.failCreate = true
+	dc.failDelete = true
+	for _, cinfo := range pt1.cloudletInfos {
+		// cinfo is a copy
+		cinfo.State = edgeproto.CloudletState_CLOUDLET_STATE_OFFLINE
+		cacheData.cloudletInfoCache.Update(ctx, &cinfo, 0)
+	}
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
+	require.Nil(t, err)
+
+	// remove cloudlets (no change since controller still disallowing changes)
+	pt1.policy.Cloudlets = nil
+	pt1.updatePolicy(ctx)
+	minmax.CheckApp(ctx, app.Key)
+	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
+	require.Nil(t, err)
+
+	// bring cloudlets back online, should trigger delete of AppInsts
+	// since they are no longer part of policy.
+	dc.failCreate = false
+	dc.failDelete = false
+	for _, cinfo := range pt1.cloudletInfos {
+		// cinfo is a copy
+		cinfo.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
+		cacheData.cloudletInfoCache.Update(ctx, &cinfo, 0)
+	}
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)

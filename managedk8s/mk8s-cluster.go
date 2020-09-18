@@ -85,7 +85,15 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	return m.deleteClusterInstInternal(ctx, clusterName)
+	err := m.deleteClusterInstInternal(ctx, clusterName)
+	if err != nil {
+		return err
+	}
+	client, err := m.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	if err != nil {
+		return err
+	}
+	return k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
 }
 
 func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string) error {
