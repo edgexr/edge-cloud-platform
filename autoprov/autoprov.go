@@ -55,21 +55,14 @@ func main() {
 
 func start() error {
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer(nodeMgr.TlsCertFile)
 	settings = *edgeproto.GetDefaultSettings()
 
-	span := log.StartSpan(log.DebugLevelInfo, "main")
-	defer span.Finish()
-	ctx := log.ContextWithSpan(context.Background(), span)
-
-	var err error
-	vaultConfig, err = vault.BestConfig(nodeMgr.VaultAddr)
+	ctx, span, err := nodeMgr.Init("autoprov", node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", vaultConfig.Auth.Type())
-
-	err = nodeMgr.Init(ctx, "autoprov", node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
+	defer span.Finish()
+	vaultConfig = nodeMgr.VaultConfig
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),
@@ -104,7 +97,7 @@ func stop() {
 	if notifyClient != nil {
 		notifyClient.Stop()
 	}
-	log.FinishTracer()
+	nodeMgr.Finish()
 }
 
 func settingsUpdated(ctx context.Context, old *edgeproto.Settings, new *edgeproto.Settings) {

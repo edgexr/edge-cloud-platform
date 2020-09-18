@@ -27,7 +27,7 @@ var Fail = false
 
 func TestController(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	addr := "127.0.0.1:9999"

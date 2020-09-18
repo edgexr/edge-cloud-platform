@@ -157,7 +157,7 @@ func TestCloudletAlerts(t *testing.T) {
 
 func TestCloudletStats(t *testing.T) {
 	var err error
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 

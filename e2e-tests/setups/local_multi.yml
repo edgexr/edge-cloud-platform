@@ -90,15 +90,12 @@ controllers:
   httpaddr: "0.0.0.0:36001"
   notifyaddr: "127.0.0.1:37001"
   vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
-  usevaultcas: true
+  usevaultcerts: true
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -112,9 +109,6 @@ controllers:
   httpaddr: "0.0.0.0:36002"
   notifyaddr: "127.0.0.1:37002"
   vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -134,9 +128,6 @@ controllers:
   httpaddr: "0.0.0.0:36011"
   notifyaddr: "127.0.0.1:37011"
   vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -158,9 +149,6 @@ controllers:
   httpaddr: "0.0.0.0:36012"
   notifyaddr: "127.0.0.1:37012"
   vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   versiontag: "2019-10-24"
   testmode: true
@@ -183,9 +171,6 @@ clustersvcs:
   vaultaddr: "http://127.0.0.1:8200"
   pluginrequired: true
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -196,9 +181,6 @@ clustersvcs:
   ctrladdrs: "127.0.0.1:55002"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -211,9 +193,6 @@ clustersvcs:
   pluginrequired: true
   usevaultcerts: true
   region: locala
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -225,9 +204,6 @@ clustersvcs:
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
   region: locala
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -244,10 +220,6 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     LOCAPI_USER: mexserver
@@ -265,10 +237,6 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     LOCAPI_USER: mexserver
@@ -287,10 +255,6 @@ dmes:
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     LOCAPI_USER: mexserver
@@ -309,10 +273,6 @@ dmes:
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     LOCAPI_USER: mexserver
@@ -326,10 +286,6 @@ mcs:
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9389"
   notifysrvaddr: "127.0.0.1:52001"
@@ -337,6 +293,8 @@ mcs:
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
   alertmgrapiaddr: "https://127.0.0.1:9094"
   billingpath: "fake"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -346,16 +304,14 @@ mcs:
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9390"
   notifysrvaddr: "127.0.0.1:52002"
   consoleproxyaddr: "127.0.0.1:6081"
   alertmgrapiaddr: "https://127.0.0.1:9094"
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -366,18 +322,14 @@ sqls:
   httpaddr: "127.0.0.1:5432"
   username: mcuser
   dbname: mcdb
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
   hostname: "127.0.0.1"
 
 traefiks:
 - name: traefik-e2e
+  hostname: "127.0.0.1"
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
-    cacert: "{{tlsoutdir}}/mex-ca.crt"
-  hostname: "127.0.0.1"
 
 elasticsearchs:
 - name: elasticsearch-e2e
@@ -394,7 +346,6 @@ elasticsearchs:
   tls:
     servercert: "{{tlsoutdir}}/mex-server.crt"
     serverkey: "{{tlsoutdir}}/mex-server.key"
-    cacert: "{{tlsoutdir}}/mex-ca.crt"
   hostname: "127.0.0.1"
 
 jaegers:
@@ -408,9 +359,6 @@ autoprovs:
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8086"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -423,9 +371,6 @@ autoprovs:
   influxaddr: "http://127.0.0.1:8087"
   region: locala
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
@@ -447,31 +392,25 @@ notifyroots:
   hostname: "127.0.0.1"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
 
 edgeturns:
 - name: edgeturn
   region: local
   hostname: "127.0.0.1"
   testmode: true
-  usevaultcas: true
+  usevaultcerts: true
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8080"
   proxyaddr: "127.0.0.1:8443"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
 
 - name: edgeturna
   region: locala
   hostname: "127.0.0.1"
   testmode: true
-  usevaultcas: true
+  usevaultcerts: true
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8081"
   proxyaddr: "127.0.0.1:9443"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
 
 alertmanagers:
 - name: alertmanager

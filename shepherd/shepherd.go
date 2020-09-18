@@ -28,7 +28,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/mobiledgex/edge-cloud/tls"
 	"github.com/mobiledgex/edge-cloud/util/tasks"
-	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -323,24 +322,17 @@ func main() {
 
 func start() {
 	log.SetDebugLevelStrs(*debugLevels)
-	log.InitTracer(nodeMgr.TlsCertFile)
 
-	var span opentracing.Span
-	if *parentSpan != "" {
-		span = log.NewSpanFromString(log.DebugLevelInfo, *parentSpan, "main")
-	} else {
-		span = log.StartSpan(log.DebugLevelInfo, "main")
-	}
-	defer span.Finish()
-	ctx := log.ContextWithSpan(context.Background(), span)
 	settings = *edgeproto.GetDefaultSettings()
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
 
-	err := nodeMgr.Init(ctx, "shepherd", node.CertIssuerRegionalCloudlet, node.WithCloudletKey(&cloudletKey), node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init("shepherd", node.CertIssuerRegionalCloudlet, node.WithCloudletKey(&cloudletKey), node.WithRegion(*region), node.WithParentSpan(*parentSpan))
 	if err != nil {
 		log.FatalLog(err.Error())
 	}
+	defer span.Finish()
+
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),
 		node.CertIssuerRegionalCloudlet,
@@ -494,7 +486,7 @@ func stop() {
 	}
 	// stop cloudlet workers
 	close(stopCh)
-	log.FinishTracer()
+	nodeMgr.Finish()
 }
 
 type sendAllRecv struct{}

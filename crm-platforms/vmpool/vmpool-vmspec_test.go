@@ -51,7 +51,7 @@ func setVMState(vmPool *edgeproto.VMPool, groupName string, markedVMs map[string
 func TestVMSpec(t *testing.T) {
 	var err error
 	log.SetDebugLevel(log.DebugLevelApi | log.DebugLevelNotify | log.DebugLevelInfra)
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 

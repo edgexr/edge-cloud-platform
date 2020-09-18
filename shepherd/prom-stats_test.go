@@ -273,7 +273,7 @@ func testMetricSend(ctx context.Context, metric *edgeproto.Metric) bool {
 }
 
 func TestPromStats(t *testing.T) {
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	initAppInstTestData()

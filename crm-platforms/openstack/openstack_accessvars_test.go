@@ -12,9 +12,9 @@ import (
 )
 
 func TestAccessVars(t *testing.T) {
-	log.InitTracer("")
-	defer log.FinishTracer()
 	log.SetDebugLevel(log.DebugLevelInfra)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	ckey := edgeproto.CloudletKey{
 		Organization: "MobiledgeX",

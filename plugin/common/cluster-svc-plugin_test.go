@@ -14,7 +14,7 @@ import (
 // TestAutoScaleT primarily checks that AutoScale template parsing works, because
 // otherwise cluster-svc could crash during runtime if template has an issue.
 func TestAutoScaleT(t *testing.T) {
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 

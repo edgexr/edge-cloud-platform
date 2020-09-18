@@ -18,7 +18,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/tls"
 )
 
 var AuditId uint64
@@ -222,6 +221,7 @@ func ShowAuditSelf(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
@@ -240,7 +240,7 @@ func ShowAuditSelf(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 
-	resps, err := sendJaegerAuditQuery(serverConfig.JaegerAddr, params, tags, nil)
+	resps, err := sendJaegerAuditQuery(ctx, serverConfig.JaegerAddr, params, tags, nil)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
@@ -292,7 +292,7 @@ func ShowAuditOrg(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
 
-	resps, err := sendJaegerAuditQuery(serverConfig.JaegerAddr, params, tags, filter)
+	resps, err := sendJaegerAuditQuery(ctx, serverConfig.JaegerAddr, params, tags, filter)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, MsgErr(err))
 	}
@@ -359,8 +359,8 @@ type jaegerQueryError struct {
 	TraceID jaeger_json.TraceID
 }
 
-func sendJaegerAuditQuery(addr string, params, tags map[string]string, filter *AuditOrgsFilter) ([]*ormapi.AuditResponse, error) {
-	resp, err := sendJaegerQuery(addr, "/api/traces", params, tags)
+func sendJaegerAuditQuery(ctx context.Context, addr string, params, tags map[string]string, filter *AuditOrgsFilter) ([]*ormapi.AuditResponse, error) {
+	resp, err := sendJaegerQuery(ctx, addr, "/api/traces", params, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -378,13 +378,13 @@ func sendJaegerAuditQuery(addr string, params, tags map[string]string, filter *A
 	return getAuditResponses(&respData, filter), nil
 }
 
-func sendJaegerQuery(addr, path string, params, tags map[string]string) (*http.Response, error) {
-	tlsConfig, err := tls.GetTLSClientConfig(addr, serverConfig.TlsCertFile, "", false)
+func sendJaegerQuery(ctx context.Context, addr, path string, params, tags map[string]string) (*http.Response, error) {
+	tlsConfig, err := nodeMgr.GetPublicClientTlsConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !strings.HasPrefix(addr, "http") {
-		if serverConfig.TlsCertFile == "" {
+		if tlsConfig == nil {
 			addr = "http://" + addr
 		} else {
 			addr = "https://" + addr
@@ -520,10 +520,11 @@ func GetAuditOperations(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ctx := GetContext(c)
 
 	path := "/api/services/" + log.SpanServiceName + "/operations"
 	emptyMap := make(map[string]string)
-	resp, err := sendJaegerQuery(serverConfig.JaegerAddr, path, emptyMap, emptyMap)
+	resp, err := sendJaegerQuery(ctx, serverConfig.JaegerAddr, path, emptyMap, emptyMap)
 	if err != nil {
 		return err
 	}

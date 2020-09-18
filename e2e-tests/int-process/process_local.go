@@ -47,6 +47,12 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--clientCert")
 		args = append(args, p.TLS.ClientCert)
 	}
+	if p.ApiTlsCert != "" {
+		args = append(args, "--apiTlsCert", p.ApiTlsCert)
+	}
+	if p.ApiTlsKey != "" {
+		args = append(args, "--apiTlsKey", p.ApiTlsKey)
+	}
 	if p.LdapAddr != "" {
 		args = append(args, "--ldapAddr")
 		args = append(args, p.LdapAddr)
@@ -110,7 +116,7 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 	if err == nil {
 		// wait until server is online
 		online := false
-		for ii := 0; ii < 40; ii++ {
+		for ii := 0; ii < 90; ii++ {
 			resp, serr := http.Get("http://" + p.Addr)
 			if serr == nil {
 				resp.Body.Close()

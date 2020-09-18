@@ -23,7 +23,7 @@ var testVmAppData = shepherd_common.AppMetrics{
 
 func TestVmStats(t *testing.T) {
 	var err error
-	log.InitTracer("")
+	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
