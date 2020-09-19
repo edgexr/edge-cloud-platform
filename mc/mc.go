@@ -23,7 +23,6 @@ var initSql = flag.Bool("initSql", false, "Init db when using localSql")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 var apiTlsCertFile = flag.String("apiTlsCert", "", "API server tls cert file")
 var apiTlsKeyFile = flag.String("apiTlsKey", "", "API server tls key file")
-var clientCert = flag.String("clientCert", "", "internal tls client cert file")
 var localVault = flag.Bool("localVault", false, "Run local Vault")
 var ldapAddr = flag.String("ldapAddr", "127.0.0.1:9389", "LDAP listener address")
 var gitlabAddr = flag.String("gitlabAddr", "http://127.0.0.1:80", "Gitlab server address")
@@ -71,7 +70,6 @@ func main() {
 		LDAPAddr:              *ldapAddr,
 		GitlabAddr:            *gitlabAddr,
 		ArtifactoryAddr:       *artifactoryAddr,
-		ClientCert:            *clientCert,
 		PingInterval:          *pingInterval,
 		SkipVerifyEmail:       *skipVerifyEmail,
 		JaegerAddr:            *jaegerAddr,

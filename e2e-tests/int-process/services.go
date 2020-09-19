@@ -62,6 +62,8 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	envVars := make(map[string]string)
 	notifyAddr := ""
 	tlsCertFile := ""
+	tlsKeyFile := ""
+	tlsCAFile := ""
 	vaultAddr := ""
 	span := ""
 	region := ""
@@ -77,6 +79,8 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		}
 		notifyAddr = cloudlet.NotifySrvAddr
 		tlsCertFile = pfConfig.TlsCertFile
+		tlsKeyFile = pfConfig.TlsKeyFile
+		tlsCAFile = pfConfig.TlsCaFile
 		vaultAddr = pfConfig.VaultAddr
 		span = pfConfig.Span
 		region = pfConfig.Region
@@ -103,6 +107,8 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		},
 		TLS: process.TLSCerts{
 			ServerCert: tlsCertFile,
+			ServerKey:  tlsKeyFile,
+			CACert:     tlsCAFile,
 		},
 		VaultAddr:      vaultAddr,
 		PhysicalName:   cloudlet.PhysicalName,
