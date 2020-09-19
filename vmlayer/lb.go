@@ -468,12 +468,6 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "set rootLB IP to", "ip", ip)
-	rootLB.IP = ip
-	_, err = v.SetupSSHUser(ctx, rootLB, infracommon.SSHUser)
-	if err != nil {
-		return err
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Copy resource-tracker to rootLb", "rootLb", rootLBName)
 	err = CopyResourceTracker(client)
 	if err != nil {
