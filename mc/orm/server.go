@@ -66,7 +66,6 @@ type ServerConfig struct {
 	LDAPPassword          string
 	GitlabAddr            string
 	ArtifactoryAddr       string
-	ClientCert            string
 	PingInterval          time.Duration
 	SkipVerifyEmail       bool
 	JaegerAddr            string
@@ -233,14 +232,7 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
-		opts := []node.TlsOp{node.WithPublicCAPool()}
-		//For the e2e tests we should use our certs
-		if e2e := os.Getenv("E2ETEST_TLS"); e2e != "" {
-			// skip verifying cert if e2e-tests
-			opts = append(opts, node.WithTlsSkipVerify(true))
-		}
-		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
-			nodeMgr.CommonName(), node.CertIssuerGlobal, []node.MatchCA{}, opts...)
+		tlsConfig, err := nodeMgr.GetPublicClientTlsConfig(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to get a client tls config, %s", err.Error())
 		}
