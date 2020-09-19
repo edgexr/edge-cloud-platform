@@ -20,9 +20,14 @@ bootcmd:
  - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
  - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
  - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+ - cloud-init-per once ssh-users-ca echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" >> /etc/ssh/sshd_config
 {{- range .ExtraBootCommands}}
  - {{.}}
 {{- end}}
+write_files:
+  - path: /etc/ssh/trusted-user-ca-keys.pem
+    content: {{ .CACert }}
+    append: true
 chpasswd: { expire: False }
 ssh_pwauth: False
 timezone: UTC

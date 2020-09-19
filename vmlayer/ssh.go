@@ -195,30 +195,6 @@ func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, netw
 	return v.VMProperties.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
 }
 
-func (v *VMPlatform) SetupSSHUser(ctx context.Context, rootLB *MEXRootLB, user string) (ssh.Client, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "setting up ssh user", "user", user)
-	client, err := v.GetSSHClientForServer(ctx, rootLB.Name, v.VMProperties.GetCloudletExternalNetwork(), WithUser(user))
-	if err != nil {
-		return nil, err
-	}
-	// XXX cloud-init creates non root user but it does not populate all the needed files.
-	//  packer will create images with correct things for root .ssh. It cannot provision
-	//  them for the `ubuntu` user. It may not yet exist until cloud-init runs. So we fix it here.
-	for _, cmd := range []string{
-		fmt.Sprintf("sudo cp /root/.ssh/config /home/%s/.ssh/", user),
-		fmt.Sprintf("sudo chown %s:%s /home/%s/.ssh/config", user, user, user),
-		fmt.Sprintf("sudo chmod 600 /home/%s/.ssh/config", user),
-	} {
-		out, err := client.Output(cmd)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "error setting up ssh user",
-				"user", user, "error", err, "out", out)
-			return nil, err
-		}
-	}
-	return client, nil
-}
-
 func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
 	client, ok := sshClient.(*ssh.NativeClient)
 	if !ok {
