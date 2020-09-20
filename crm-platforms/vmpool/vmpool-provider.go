@@ -658,7 +658,7 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 	case <-wgDone:
 		break
 	case err := <-wgError:
-		close(wgError)
+		// note: do not close wgError, let gc clean it
 		return err
 	case <-time.After(AllVMAccessTimeout):
 		return fmt.Errorf("Timed out verifying VMs")
