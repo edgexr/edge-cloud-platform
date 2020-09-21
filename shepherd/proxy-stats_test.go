@@ -76,6 +76,10 @@ func TestCollectProxyStats(t *testing.T) {
 			// dedicated, no ports
 			target := CollectProxyStats(ctx, &obj)
 			assert.Empty(t, target)
+		case 11:
+			// vm app being a lb
+			target := CollectProxyStats(ctx, &obj)
+			assert.NotEmpty(t, target)
 		}
 		AppInstCache.Update(ctx, &testutil.AppInstData[ii], 0)
 	}
@@ -116,6 +120,10 @@ func TestCollectProxyStats(t *testing.T) {
 			// dedicated, no ports
 			target := CollectProxyStats(ctx, &obj)
 			assert.Empty(t, target)
+		case 11:
+			// vm app behind lb
+			target := CollectProxyStats(ctx, &obj)
+			assert.NotEmpty(t, target)
 		}
 		AppInstCache.Delete(ctx, &testutil.AppInstData[ii], 0)
 	}
