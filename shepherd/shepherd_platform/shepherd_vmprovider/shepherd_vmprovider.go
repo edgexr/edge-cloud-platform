@@ -109,6 +109,12 @@ func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, cluster
 	return pc, nil
 }
 
+func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
+	rootLBName := cloudcommon.GetVMAppFQDN(app, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.CloudletKey, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName})
+	return client, err
+}
+
 func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	cloudletMetric := shepherd_common.CloudletMetrics{}
 	platformResources, err := s.VMPlatform.VMProvider.GetPlatformResourceInfo(ctx)
