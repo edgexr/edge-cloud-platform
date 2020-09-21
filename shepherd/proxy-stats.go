@@ -102,13 +102,22 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 }
 
 // Init cluster client for a scrape point
-func initClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, scrapePoint *ProxyScrapePoint) error {
+func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, clusterInst *edgeproto.ClusterInst, scrapePoint *ProxyScrapePoint) error {
 	var err error
-	scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
-	if err != nil {
-		// If we cannot get a platform client no point in trying to get metrics
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
-		return err
+	if app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+		scrapePoint.Client, err = myPlatform.GetVmAppRootLbClient(ctx, &appInst.Key)
+		if err != nil {
+			// If we cannot get a platform client no point in trying to get metrics
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "VmApp", appInst.Key, "error", err)
+			return err
+		}
+	} else {
+		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+		if err != nil {
+			// If we cannot get a platform client no point in trying to get metrics
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "cluster", clusterInst.Key, "error", err)
+			return err
+		}
 	}
 	// Now that we have a client - figure out what container name we should ping
 	scrapePoint.ProxyContainer, err = getProxyContainerName(ctx, *scrapePoint)
@@ -174,13 +183,14 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 
 		clusterInst := edgeproto.ClusterInst{}
 		found := ClusterInstCache.Get(&appInst.Key.ClusterInstKey, &clusterInst)
-		if !found {
+		// lb vm apps continue anyway
+		if !found && !(app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER) {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for "+appInst.Key.AppKey.Name)
 			return ""
 		}
-		err := initClient(ctx, &clusterInst, &scrapePoint)
+		err := initClient(ctx, &app, appInst, &clusterInst, &scrapePoint)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to init platform client - do it later", "cluster", clusterInst.Key, "error", err)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to init platform client - do it later", "app", appInst.Key, "cluster", clusterInst.Key, "error", err)
 		}
 		// If this was created between last check and now
 		ProxyMutex.Lock()

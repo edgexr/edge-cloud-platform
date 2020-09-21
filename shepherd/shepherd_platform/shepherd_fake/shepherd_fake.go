@@ -34,6 +34,10 @@ func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *ed
 	return &pc.LocalClient{}, nil
 }
 
+func (s *Platform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
+	return &pc.LocalClient{}, nil
+}
+
 func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error) {
 	return shepherd_common.CloudletMetrics{}, nil
 }

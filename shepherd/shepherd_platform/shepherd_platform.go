@@ -22,6 +22,8 @@ type Platform interface {
 	GetClusterIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error)
 	// Gets a platform client to be able to run commands against (mainly for curling the prometheuses)
 	GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error)
+	// Gets a rootLb ssh client for VM apps
+	GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error)
 	// Gets cloudlet-level metrics. This is platform-dependent, hence the common interfcae
 	GetPlatformStats(ctx context.Context) (shepherd_common.CloudletMetrics, error)
 	// Get VM metrics - this is really a set of AppMetrics
