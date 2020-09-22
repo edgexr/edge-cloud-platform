@@ -210,6 +210,7 @@ func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
 }
 
 func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Caches) ([]VMAccess, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs")
 	// Store in slice as to preserve order
 	cloudletVMs := []VMAccess{}
 
@@ -217,7 +218,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	pfName := v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
 	client, err := v.GetSSHClientForServer(ctx, pfName, v.VMProperties.GetCloudletExternalNetwork())
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", pfName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client for platform VM", "vm", pfName, "err", err)
 	}
 	cloudletVMs = append(cloudletVMs, VMAccess{
 		Name:   pfName,
@@ -229,13 +230,8 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	sharedRootLBName := v.VMProperties.SharedRootLBName
 	sharedlbclient, err := v.GetSSHClientForServer(ctx, sharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", sharedRootLBName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client for shared rootlb", "vm", sharedRootLBName, "err", err)
 	}
-	cloudletVMs = append(cloudletVMs, VMAccess{
-		Name:   sharedRootLBName,
-		Client: sharedlbclient,
-		Role:   RoleAgent,
-	})
 
 	// Dedicated RootLB + Cluster VMs
 	clusterInstKeys := make(map[edgeproto.ClusterInstKey]struct{})
@@ -243,54 +239,138 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 		clusterInstKeys[*k] = struct{}{}
 	})
 	clusterInst := &edgeproto.ClusterInst{}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs got clusters", "num clusters", len(clusterInstKeys))
 	for k := range clusterInstKeys {
 		if !caches.ClusterInstCache.Get(&k, clusterInst) {
-			var dedicatedlbclient ssh.Client
-			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-				rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-				dedicatedlbclient, err = v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork())
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", rootLBName, "err", err)
-				}
-				cloudletVMs = append(cloudletVMs, VMAccess{
-					Name:   rootLBName,
-					Client: dedicatedlbclient,
-					Role:   RoleAgent,
-				})
-			}
-			var lbClient ssh.Client
-			if dedicatedlbclient != nil {
-				lbClient = dedicatedlbclient
-			} else {
-				lbClient = sharedlbclient
-			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "Error: failed to get cluster", "key", k)
+			continue
+		}
 
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs handle cluster", "key", k, "deployment", clusterInst.Deployment, "IpAccess", clusterInst.IpAccess)
+		var dedicatedlbclient ssh.Client
+		var dedRootLBName string
+		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+			dedRootLBName = v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+			dedicatedlbclient, err = v.GetSSHClientForServer(ctx, dedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", dedRootLBName, "err", err)
+			}
+		}
+		var lbClient ssh.Client
+		if dedicatedlbclient != nil {
+			lbClient = dedicatedlbclient
+		} else {
+			lbClient = sharedlbclient
+		}
+
+		switch clusterInst.Deployment {
+		case cloudcommon.DeploymentTypeKubernetes:
+			var masterClient ssh.Client
 			masterNode := GetClusterMasterName(ctx, clusterInst)
 			masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), masterNode)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", masterNode, "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "error getting masterIP", "vm", masterNode, "err", err)
+			} else {
+				masterClient, err = lbClient.AddHop(masterIP.ExternalAddr, 22)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to master", "masterIP", masterIP, "err", err)
+				}
 			}
-			masterClient, err := lbClient.AddHop(masterIP.ExternalAddr, 22)
 			cloudletVMs = append(cloudletVMs, VMAccess{
 				Name:   masterNode,
 				Client: masterClient,
 				Role:   RoleMaster,
 			})
 			for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
+				var nodeClient ssh.Client
 				clusterNode := GetClusterNodeName(ctx, clusterInst, nn)
 				nodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), clusterNode)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", clusterNode, "err", err)
+					log.SpanLog(ctx, log.DebugLevelInfra, "error getting node IP", "vm", clusterNode, "err", err)
+				} else {
+					nodeClient, err = lbClient.AddHop(nodeIP.ExternalAddr, 22)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to node", "nodeIP", nodeIP, "err", err)
+					}
 				}
-				nodeClient, err := lbClient.AddHop(nodeIP.ExternalAddr, 22)
 				cloudletVMs = append(cloudletVMs, VMAccess{
 					Name:   clusterNode,
 					Client: nodeClient,
 					Role:   RoleNode,
 				})
 			}
+
+		case cloudcommon.DeploymentTypeDocker:
+			var dockerNodeClient ssh.Client
+			dockerNode := v.GetDockerNodeName(ctx, clusterInst)
+			dockerNodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), dockerNode)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "error getting docker node IP", "vm", dockerNode, "err", err)
+			} else {
+				dockerNodeClient, err = lbClient.AddHop(dockerNodeIP.ExternalAddr, 22)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to docker node", "dockerNodeIP", dockerNodeIP, "err", err)
+				}
+			}
+			cloudletVMs = append(cloudletVMs, VMAccess{
+				Name:   dockerNode,
+				Client: dockerNodeClient,
+				Role:   RoleNode,
+			})
+		} // switch deloyment
+
+		// add dedicated LB after all the nodes
+		if dedicatedlbclient != nil {
+			cloudletVMs = append(cloudletVMs, VMAccess{
+				Name:   dedRootLBName,
+				Client: dedicatedlbclient,
+				Role:   RoleAgent,
+			})
 		}
 	}
+
+	// now we need dedicated rootlb for VM Apps
+	appInstKeys := make(map[edgeproto.AppInstKey]struct{})
+	caches.AppInstCache.GetAllKeys(ctx, func(k *edgeproto.AppInstKey, modRev int64) {
+		appInstKeys[*k] = struct{}{}
+	})
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs got appinsts", "num appinsts", len(appInstKeys))
+	for k := range appInstKeys {
+		var appinst edgeproto.AppInst
+		var app edgeproto.App
+		if !caches.AppCache.Get(&k.AppKey, &app) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "appkey", k.AppKey)
+			continue
+		}
+		if app.Deployment != cloudcommon.DeploymentTypeVM || app.AccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			// only vm with load balancers need to be handled
+			continue
+		}
+		if !caches.AppInstCache.Get(&k, &appinst) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get appInst from cache", "key", k)
+			continue
+		}
+		appLbName := cloudcommon.GetVMAppFQDN(&appinst.Key, &appinst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs handle VM appinst with LB", "key", k, "appLbName", appLbName)
+		appLbClient, err := v.GetSSHClientForServer(ctx, appLbName, v.VMProperties.GetCloudletExternalNetwork())
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get client for VM App LB", "appLbName", appLbName, "err", err)
+		}
+		cloudletVMs = append(cloudletVMs, VMAccess{
+			Name:   appLbName,
+			Client: appLbClient,
+			Role:   RoleAgent,
+		})
+	}
+
+	// add the sharedLB last
+	cloudletVMs = append(cloudletVMs, VMAccess{
+		Name:   sharedRootLBName,
+		Client: sharedlbclient,
+		Role:   RoleAgent,
+	})
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs done", "cloudletVMs", fmt.Sprintf("%v", cloudletVMs))
 	return cloudletVMs, nil
 }
 
@@ -366,7 +446,7 @@ func ExecuteUpgradeScript(ctx context.Context, vmName string, client ssh.Client,
 }
 
 func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, vaultConfig *vault.Config, caches *platform.Caches) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade Vms to use Vault SSH signed keys")
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpgradeFuncHandleSSHKeys")
 	// Set SSH client to use mex private key
 	v.VMProperties.sshKey.UseMEXPrivateKey = true
 	fixVMs, err := v.GetAllCloudletVMs(ctx, caches)
@@ -375,6 +455,7 @@ func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, vaultConfig *
 	}
 
 	for _, vm := range fixVMs {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade VM", "vm", fmt.Sprintf("%v", vm))
 		if vm.Client == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "missing ssh client", "vm", vm.Name)
 			continue
