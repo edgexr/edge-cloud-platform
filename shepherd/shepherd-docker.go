@@ -17,7 +17,7 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
+var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"id\":\"{{.ID}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
 var dockerStatsCmd = "docker stats --no-stream --format " + dockerStatsFormat
 
 type ContainerMem struct {
@@ -30,6 +30,7 @@ type ContainerIO struct {
 }
 type ContainerStats struct {
 	App       string `json:"app,omitempty"`
+	Id        string `json:"id,omitempty"`
 	Version   string `json:"version,omitempty"`
 	Container string
 	Memory    ContainerMem
@@ -60,7 +61,7 @@ func (c *DockerClusterStats) GetClusterStats(ctx context.Context) *shepherd_comm
 // Currently we are collecting stats for all apps in the cluster in one shot
 // Implementing  EDGECLOUD-1183 would allow us to query by label and we can have each app be an individual metric
 func (c *DockerClusterStats) GetAppStats(ctx context.Context) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
-	metrics := collectDockerAppMetrics(ctx, c)
+	metrics := c.collectDockerAppMetrics(ctx, c)
 	if metrics == nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect app metrics", "Docker Container", c)
 	}
@@ -143,6 +144,30 @@ func parsePercentStr(pStr string) (float64, error) {
 	return strconv.ParseFloat(pStr[:i], 64)
 }
 
+// This looks like this:
+// $ cat /proc/$CONTAINER_PID/net/dev | grep ens
+//Inter-|   Receive                                                |  Transmit
+//  ens3: 448842077 3084030    0    0    0     0          0         0 514882026 2675536    0    0    0     0       0          0
+func parseNetData(dataStr string) ([]uint64, error) {
+	var items []uint64
+	details := strings.Fields(dataStr)
+	// second element is recv and 9th element is tx
+	if len(details) < 10 {
+		return nil, fmt.Errorf("Improperly formatted output")
+	}
+	if t, err := strconv.ParseUint(details[1], 10, 64); err == nil {
+		items = append(items, t)
+	} else {
+		return nil, fmt.Errorf("Could not parse recv bytes - %s", details[1])
+	}
+	if t, err := strconv.ParseUint(details[9], 10, 64); err == nil {
+		items = append(items, t)
+	} else {
+		return nil, fmt.Errorf("Could not parse send bytes - %s", details[9])
+	}
+	return items, nil
+}
+
 // parse data in the format "1.629MiB / 1.952GiB / 12KB / 12B" into [1.629* 1000000, 1.952 * 1000000000, 12*1000 , 12]
 func parseComputeUnitsDelim(ctx context.Context, dataStr string) ([]uint64, error) {
 	var items []uint64
@@ -201,7 +226,7 @@ func parseComputeUnitsDelim(ctx context.Context, dataStr string) ([]uint64, erro
 // If a more detailed resource usage is needed /containers/(id)/stats API endpoint should be used
 // To get to the API endpoint on a rootLB netcat can be used:
 //   $ echo -e "GET /containers/mobiledgexsdkdemo/stats?stream=0 HTTP/1.0\r\n" | nc -q -1 -U /var/run/docker.sock | grep "^{" | jq
-func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
+func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
 
 	stats, err := p.GetContainerStats(ctx)
@@ -247,16 +272,32 @@ func collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[she
 		}
 		// Disk usage is unsupported
 		stat.Disk = 0
-		netIO, err := parseComputeUnitsDelim(ctx, containerStats.IO.Network)
+
+		// NET data in docker stats only counts docker0 interface,
+		// so for host networking it's always going to be zero - use proc data instead
+		pid, err := c.client.Output("docker inspect -f '{{ .State.Pid }}' " + containerStats.Id)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse Network usage", "App", appKey, "stats", containerStats, "err", err)
+			errstr := fmt.Sprintf("Failed to get pid  for cid <%s> on LB VM", containerStats.Id)
+			log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
 		} else {
-			if len(netIO) > 1 {
-				// TODO EDGECLOUD-1316 - add stats for all containers together
-				stat.NetSent += netIO[1]
-				stat.NetRecv += netIO[0]
+			netdata, err := c.client.Output("cat /proc/" + pid + "/net/dev | grep ens")
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get net stats", "err", err.Error(),
+					"pid", pid, "cid", containerStats.Id)
 			} else {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse network data", "netio", netIO)
+				netIO, err := parseNetData(netdata)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse Network usage", "App", appKey,
+						"stats", containerStats, "err", err, "netdata", netdata)
+				} else {
+					if len(netIO) > 1 {
+						// TODO EDGECLOUD-1316 - add stats for all containers together
+						stat.NetRecv += netIO[0]
+						stat.NetSent += netIO[1]
+					} else {
+						log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse network data", "netio", netIO)
+					}
+				}
 			}
 		}
 	}

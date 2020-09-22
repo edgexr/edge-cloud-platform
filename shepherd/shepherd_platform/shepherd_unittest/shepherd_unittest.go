@@ -20,6 +20,8 @@ type Platform struct {
 	// Contains the response string for a given type of a request
 	DockerAppMetrics     string
 	DockerClusterMetrics string
+	DockerContainerPid   string
+	CatContainerNetData  string
 	// Cloudlet-level test data
 	CloudletMetrics    string
 	VmAppInstMetrics   string
@@ -108,6 +110,12 @@ func (s *UTClient) getUTData(command string) (string, error) {
 		return s.pf.DockerAppMetrics, nil
 	} else if strings.Contains(command, shepherd_common.ResTrackerCmd) {
 		return s.pf.DockerClusterMetrics, nil
+	} else if strings.Contains(command, "docker inspect -f") {
+		// trying to get pid for the container
+		return s.pf.DockerContainerPid, nil
+	} else if strings.Contains(command, "cat /proc/"+s.pf.DockerContainerPid+"/net/dev") {
+		// network data
+		return s.pf.CatContainerNetData, nil
 	}
 	// nginx-stats and envoy-stats unit test
 	// "docker exec containername curl http://url"
