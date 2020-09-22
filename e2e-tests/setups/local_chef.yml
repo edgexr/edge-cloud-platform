@@ -35,12 +35,10 @@ controllers:
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
   notifyaddr: "127.0.0.1:37001"
+  usevaultcerts: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   vaultaddr: "http://127.0.0.1:8200"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
   testmode: true
   deploymenttag: "local"
@@ -50,13 +48,12 @@ mcs:
 - name: mc1
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
-  vaultaddr: "https://127.0.0.1:8200"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
   notifysrvaddr: "127.0.0.1:52001"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
   envvars:
     E2ETEST_TLS: true
 
@@ -66,16 +63,13 @@ sqls:
   httpaddr: "127.0.0.1:5432"
   username: mcuser
   dbname: mcdb
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    serverkey: "{{tlsoutdir}}/mex-server.key"
   hostname: "127.0.0.1"
 
 notifyroots:
 - name: notifyroot
   hostname: "127.0.0.1"
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultcerts: true
 
 alertmanagers:
 - name: alertmanager
