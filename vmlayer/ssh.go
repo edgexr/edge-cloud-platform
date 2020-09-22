@@ -242,7 +242,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
 		clusterInstKeys[*k] = struct{}{}
 	})
-	var clusterInst *edgeproto.ClusterInst
+	clusterInst := &edgeproto.ClusterInst{}
 	for k := range clusterInstKeys {
 		if !caches.ClusterInstCache.Get(&k, clusterInst) {
 			var dedicatedlbclient ssh.Client
