@@ -113,7 +113,8 @@ func (s *UTClient) getUTData(command string) (string, error) {
 	} else if strings.Contains(command, "docker inspect -f") {
 		// trying to get pid for the container
 		return s.pf.DockerContainerPid, nil
-	} else if strings.Contains(command, "cat /proc/"+s.pf.DockerContainerPid+"/net/dev") {
+	} else if strings.Contains(command, "cat /proc/") &&
+		strings.Contains(command, "/net/dev") {
 		// network data
 		return s.pf.CatContainerNetData, nil
 	}

@@ -95,7 +95,7 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 		}
 	}
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint, "err", err)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find envoy proxy for app", "scrapepoint", scrapePoint.Key, "err", err)
 		return "", err
 	}
 	return container, nil
@@ -149,7 +149,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Key already exists", "key", ProxyMapKey,
 				"scrape", scrapePoint.Key)
 			// Re-create the scrape point if the client is not initialized
-			if scrapePoint.Client == nil {
+			if !clientReady(scrapePoint) {
 				delete(ProxyMap, ProxyMapKey)
 			} else {
 				ProxyMutex.Unlock()
@@ -244,6 +244,33 @@ func getProxyScrapePoint(key string) *ProxyScrapePoint {
 	return &scrapePoint
 }
 
+func updateProxyScrapeClient(key edgeproto.AppInstKey) {
+	span := log.StartSpan(log.DebugLevelMetrics, "update-proxyClient")
+	defer span.Finish()
+	log.SetTags(span, cloudletKey.GetTags())
+	span.SetTag("app", key.AppKey.Name)
+	span.SetTag("cluster", key.ClusterInstKey.ClusterKey.Name)
+	span.SetTag("cloudlet", key.ClusterInstKey.CloudletKey.Name)
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	// find appInst in the cache
+	appInst := edgeproto.AppInst{}
+	found := AppInstCache.Get(&key, &appInst)
+	if !found {
+		return
+	}
+	// trigger re-init of the client
+	scrapeKey := CollectProxyStats(ctx, &appInst)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Re-init client for proxy scrape", "app", appInst,
+		"key", scrapeKey)
+}
+
+func clientReady(scrape ProxyScrapePoint) bool {
+	if scrape.Client != nil && scrape.ProxyContainer != "" {
+		return true
+	}
+	return false
+}
 func ProxyScraper(done chan bool) {
 	for {
 		// check if there are any new apps we need to start/stop scraping for
@@ -251,6 +278,12 @@ func ProxyScraper(done chan bool) {
 		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
+				if !clientReady(v) {
+					// Update this in the background
+					go updateProxyScrapeClient(v.Key)
+					// no need to actually collect metrics
+					continue
+				}
 				span := log.StartSpan(log.DebugLevelSampled, "send-metric")
 				log.SetTags(span, cloudletKey.GetTags())
 				span.SetTag("cluster", v.Cluster)
