@@ -153,7 +153,7 @@ func parseNetData(dataStr string) ([]uint64, error) {
 	details := strings.Fields(dataStr)
 	// second element is recv and 9th element is tx
 	if len(details) < 10 {
-		return nil, fmt.Errorf("Improperly formatted output")
+		return nil, fmt.Errorf("Improperly formatted output - %s", dataStr)
 	}
 	if t, err := strconv.ParseUint(details[1], 10, 64); err == nil {
 		items = append(items, t)
@@ -242,6 +242,7 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 	// We scraped it at the same time, so same timestamp for everything
 	ts, _ := types.TimestampProto(time.Now())
 	for _, containerStats := range stats.Containers {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Docker stats - container", "container", containerStats)
 		// TODO EDGECLOUD-1316 - set pod to the container
 		// appKey.Pod = containerStats.Container
 		appKey.Pod = containerStats.App
@@ -277,7 +278,7 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		// so for host networking it's always going to be zero - use proc data instead
 		pid, err := c.client.Output("docker inspect -f '{{ .State.Pid }}' " + containerStats.Id)
 		if err != nil {
-			errstr := fmt.Sprintf("Failed to get pid  for cid <%s> on LB VM", containerStats.Id)
+			errstr := fmt.Sprintf("Failed to get pid for cid <%s> on LB VM", containerStats.Id)
 			log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
 		} else {
 			netdata, err := c.client.Output("cat /proc/" + pid + "/net/dev | grep ens")
