@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+
+import argparse
+import atexit
+import os
+import logging
+import requests
+import subprocess
+import tempfile
+
+DEF_VAULT = os.environ.get("VAULT_ADDR",
+                           "https://vault-main.mobiledgex.net")
+DEF_KEY = os.path.expanduser("~/.ssh/id_rsa")
+DEF_ENGINES = ["ssh", "ssh-ansible"]
+DEF_ROLE = "user"
+DEF_PRINCIPAL = "ubuntu"
+LOG_LEVELS = [ logging.WARNING, logging.INFO, logging.DEBUG ]
+
+def get_keychain_secret(account, server):
+    logging.info("Looking up Github token in keychain")
+    p = subprocess.Popen(["security", "find-internet-password",
+                          "-a", account,
+                          "-s", server, "-w"],
+                         universal_newlines=True,
+                         stdout=subprocess.PIPE)
+    (stdin, stderr) = p.communicate()
+    return stdin.strip()
+
+def get_vault_token(args):
+    token = os.environ.get("VAULT_TOKEN")
+    if token:
+        return token.strip()
+
+    vault_role = os.environ.get("VAULT_ROLE_ID")
+    vault_secret = os.environ.get("VAULT_SECRET_ID")
+    if vault_role and vault_secret:
+        logging.info("Generating token using vault role/secret")
+        try:
+            r = requests.post(f"{args.vault}/v1/auth/approle/login",
+                              json={
+                                  "role_id": vault_role,
+                                  "secret_id": vault_secret,
+                              })
+            logging.debug(r.text)
+            if r.status_code != requests.codes.ok:
+                raise Exception("Failed to generate vault token: "
+                                f"{r.status_code} {r.text}")
+            token = r.json()["auth"]["client_token"]
+            return token.strip()
+        except Exception as e:
+            raise Exception(f"Failed to generate vault token: {e}")
+
+    github_id = os.environ.get("GITHUB_ID")
+    if github_id:
+        logging.info("Generating token using Github auth")
+        github_token = get_keychain_secret(github_id, "github.com")
+
+        logging.info("Fetching vault token using Github token")
+        r = requests.post(f"{args.vault}/v1/auth/github/login",
+                          json={"token": github_token})
+        logging.debug(r.text)
+        if r.status_code != requests.codes.ok:
+            raise Exception("Failed to generate vault token: "
+                            f"{r.status_code} {r.text}")
+        try:
+            token = r.json()["auth"]["client_token"]
+            return token.strip()
+        except Exception:
+            raise Exception("Error retrieving vault token: "
+                            f"{r.status_code} {r.text}")
+
+    raise Exception("""
+        Unable to generate vault token.
+        Set the GITHUB_ID environment variable and add your Github personal
+        access token to the macOS keychain.
+    """)
+
+def get_signed_key(args, token):
+    pub_key_file = args.sshkey + ".pub"
+    with open(pub_key_file) as f:
+        pub_key = f.read().strip()
+    r = requests.post(f"{args.vault}/v1/{args.engine}/sign/{args.role}",
+                      headers={"X-Vault-Token": token},
+                      json={
+                          "public_key": pub_key,
+                          "ttl": args.ttl,
+                          "valid_principals": args.user,
+                      })
+    logging.debug(r.text)
+    try:
+        return r.json()["data"]["signed_key"]
+    except Exception:
+        raise Exception(f"Failed to sign key: {r.status_code} {r.text}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("host", help="Host to SSH in to")
+    parser.add_argument("-V", "--vault", help="Address of the vault to use",
+                        default=DEF_VAULT)
+    parser.add_argument("-i", "--sshkey", help="SSH key to use for signing",
+                        default=DEF_KEY)
+    parser.add_argument("-l", "--user", help="Remote user to sign key for",
+                        default=DEF_PRINCIPAL)
+    parser.add_argument("-j", "--jump", help="Host to proxy (jump) through")
+    parser.add_argument("-t", "--ttl", help="SSH signed cert TTL", default="5m")
+    parser.add_argument("-e", "--engine", help="SSH engine to use",
+                        choices=DEF_ENGINES)
+    parser.add_argument("-r", "--role", help="SSH signing role",
+                        default=DEF_ROLE)
+    parser.add_argument("-v", "--verbose", action='count',
+                        help="Increase log verbosity", default=0)
+    args = parser.parse_args()
+
+    try:
+        log_level = LOG_LEVELS[args.verbose]
+    except IndexError:
+        log_level = logging.DEBUG
+    logging.basicConfig(level=log_level,
+                        format="[%(levelname)s] %(message)s")
+
+    if "@" in args.host:
+        (args.user, args.host) = args.host.split("@", 1)
+
+    if args.user == "ansible" and not args.engine:
+        args.engine = "ssh-ansible"
+    else:
+        args.engine = "ssh"
+
+    logging.info(f"vault={args.vault} engine={args.engine} user={args.user} role={args.role}")
+
+    token = get_vault_token(args)
+    signed_key = get_signed_key(args, token)
+    logging.debug(f"Signed key: {signed_key}")
+
+    _, fname = tempfile.mkstemp(text=True)
+    with open(fname, "w") as t:
+        t.write(signed_key)
+    if args.verbose < 2:
+        atexit.register(os.remove, fname)
+
+    sshcomm = [ "ssh", "-o", "IdentitiesOnly=yes", "-i", args.sshkey,
+                "-i", fname, "-l", args.user ]
+    if args.verbose:
+        sshcomm.append("-" + "v"*args.verbose)
+
+    if args.jump:
+        proxycmd = " ".join(sshcomm) + " -W '[%h]:%p' " + args.jump
+        sshcomm.extend([ "-o", "ProxyCommand=" + proxycmd ])
+
+    sshcomm.append(args.host)
+
+    logging.debug("Executing: " + " ".join(sshcomm))
+    subprocess.call(sshcomm)
