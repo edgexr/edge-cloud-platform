@@ -276,15 +276,15 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 
 		// NET data in docker stats only counts docker0 interface,
 		// so for host networking it's always going to be zero - use proc data instead
-		pid, err := c.client.Output("docker inspect -f '{{ .State.Pid }}' " + containerStats.Id)
+		pid, err := c.clusterClient.Output("docker inspect -f '{{ .State.Pid }}' " + containerStats.Id)
 		if err != nil {
 			errstr := fmt.Sprintf("Failed to get pid for cid <%s> on LB VM", containerStats.Id)
-			log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
+			log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error(), "output", pid)
 		} else {
-			netdata, err := c.client.Output("cat /proc/" + pid + "/net/dev | grep ens")
+			netdata, err := c.clusterClient.Output("cat /proc/" + pid + "/net/dev | grep ens")
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get net stats", "err", err.Error(),
-					"pid", pid, "cid", containerStats.Id)
+					"pid", pid, "cid", containerStats.Id, "output", netdata)
 			} else {
 				netIO, err := parseNetData(netdata)
 				if err != nil {
