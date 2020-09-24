@@ -677,76 +677,32 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 		return false
 	}
 
-	if hasMod("cli", mods) {
-		log.Printf("Using MC URI %s", uri)
-		client := &cliwrapper.Client{
-			DebugLog:   true,
-			SkipVerify: true,
-		}
+	log.Printf("Using MC URI %s", uri)
+	// Regardless of hasMod, use `mcctl` to run exec api's, as exec output
+	// requires additional connections to websocket to read output,
+	// which is already done as part of mcctl run
+	client := &cliwrapper.Client{
+		DebugLog:   true,
+		SkipVerify: true,
+	}
 
-		// RunCommand is a special case only supported by mcctl CLI,
-		// because it leverages the webrtc client code in mcctl.
-		var out string
-		if api == "runcommand" {
-			out, err = client.RunCommandOut(uri, token, &data.Request)
-		} else if api == "accesscloudlet" {
-			out, err = client.AccessCloudletOut(uri, token, &data.Request)
-		} else {
-			out, err = client.ShowLogsOut(uri, token, &data.Request)
-		}
-		if err != nil {
-			log.Printf("Error running %s API %v\n", api, err)
-			return false
-		}
-		log.Printf("Exec %s output: %s\n", api, out)
-		actual := strings.TrimSpace(out)
-		if actual != data.ExpectedOutput {
-			log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
-			return false
-		}
+	var out string
+	if api == "runcommand" {
+		out, err = client.RunCommandOut(uri, token, &data.Request)
+	} else if api == "accesscloudlet" {
+		out, err = client.AccessCloudletOut(uri, token, &data.Request)
 	} else {
-		wsUri := strings.Replace(uri, "http", "ws", -1)
-		wsUri = strings.Replace(wsUri, "api/v1", "ws/api/v1", -1)
-		log.Printf("Using MC URI %s", wsUri)
-
-		data.Request.ExecRequest.Webrtc = true
-
-		client := &ormclient.Client{
-			SkipVerify: true,
-		}
-
-		var streamOut []ormapi.WSStreamPayload
-		var status int
-		var err error
-		if api == "runcommand" {
-			streamOut, status, err = client.RunCommandStream(wsUri, token, &data.Request)
-		} else if api == "accesscloudlet" {
-			// this command is to be run internally, hence websocket support is not required
-			return true
-		} else {
-			streamOut, status, err = client.ShowLogsStream(wsUri, token, &data.Request)
-		}
-		checkMcErr(api, status, err, &rc)
-		log.Printf("Exec %s output: %v\n", api, streamOut)
-		if len(streamOut) != 1 {
-			log.Printf("Invalid output, expected 1 data, but recieved: %d\n", len(streamOut))
-			return false
-		}
-		code := streamOut[0].Code
-		if code != http.StatusOK {
-			log.Printf("Did not get 200 status, got %d\n", code)
-			return false
-		}
-		actual, ok := streamOut[0].Data.(string)
-		if !ok {
-			log.Printf("Did not get payload of type string\n")
-			return false
-		}
-		actual = strings.TrimSpace(actual)
-		if actual != data.ExpectedOutput {
-			log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
-			return false
-		}
+		out, err = client.ShowLogsOut(uri, token, &data.Request)
+	}
+	if err != nil {
+		log.Printf("Error running %s API %v\n", api, err)
+		return false
+	}
+	log.Printf("Exec %s output: %s\n", api, out)
+	actual := strings.TrimSpace(out)
+	if actual != data.ExpectedOutput {
+		log.Printf("Did not get expected output: %s\n", data.ExpectedOutput)
+		return false
 	}
 	return true
 }

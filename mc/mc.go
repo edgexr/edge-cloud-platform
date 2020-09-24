@@ -61,7 +61,6 @@ func main() {
 		ServAddr:              *addr,
 		SqlAddr:               *sqlAddr,
 		VaultAddr:             nodeMgr.VaultAddr,
-		ConsoleProxyAddr:      *consoleProxyAddr,
 		RunLocal:              *localSql,
 		InitLocal:             *initSql,
 		LocalVault:            *localVault,
