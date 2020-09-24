@@ -274,14 +274,14 @@ func mcClientCreate(t *testing.T, v entry, mcClient *ormclient.Client, uri strin
 	token := ""
 	for user, userType := range v.Users {
 		if userType == RoleDeveloperManager || userType == RoleOperatorManager {
-			_, token = testCreateUser(t, mcClient, uri, user)
+			_, token, _ = testCreateUser(t, mcClient, uri, user)
 			testCreateOrg(t, mcClient, uri, token, v.OrgType, v.Org)
 			break
 		}
 	}
 	for user, userType := range v.Users {
 		if userType != RoleDeveloperManager && userType != RoleOperatorManager {
-			worker, _ := testCreateUser(t, mcClient, uri, user)
+			worker, _, _ := testCreateUser(t, mcClient, uri, user)
 			testAddUserRole(t, mcClient, uri, token, v.Org, userType, worker.Name, Success)
 		}
 	}

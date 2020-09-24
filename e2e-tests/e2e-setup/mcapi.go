@@ -126,7 +126,9 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 			return false
 		}
 		for _, user := range users {
-			status, err := mcClient.DeleteUser(uri, token, &user)
+			u := user
+			u.Passhash = ""
+			status, err := mcClient.DeleteUser(uri, token, &u)
 			checkMcErr("DeleteUser", status, err, &rc)
 		}
 	}

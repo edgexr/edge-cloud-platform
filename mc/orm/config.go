@@ -9,9 +9,13 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
+// Password crack times are estimates of how long it would take to brute
+// force crack the password offline.
 var defaultConfig = ormapi.Config{
-	ID:                 1,
-	NotifyEmailAddress: "support@mobiledgex.com",
+	ID:                           1,
+	NotifyEmailAddress:           "support@mobiledgex.com",
+	PasswordMinCrackTimeSec:      30 * 86400,      // 30 days
+	AdminPasswordMinCrackTimeSec: 2 * 365 * 86400, // 2 years
 }
 
 func InitConfig(ctx context.Context) error {
@@ -23,6 +27,20 @@ func InitConfig(ctx context.Context) error {
 	err := db.FirstOrCreate(&config, &ormapi.Config{ID: config.ID}).Error
 	if err != nil {
 		return err
+	}
+
+	err = db.First(&config).Error
+	if err != nil {
+		return err
+	}
+	// set password min times if not set
+	if config.PasswordMinCrackTimeSec == 0 && config.AdminPasswordMinCrackTimeSec == 0 {
+		config.PasswordMinCrackTimeSec = defaultConfig.PasswordMinCrackTimeSec
+		config.AdminPasswordMinCrackTimeSec = defaultConfig.AdminPasswordMinCrackTimeSec
+		err = db.Save(&config).Error
+		if err != nil {
+			return err
+		}
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "using config", "config", config)
 	return nil

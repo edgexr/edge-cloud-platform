@@ -40,3 +40,11 @@ func (s *Client) RestrictedUserUpdate(uri, token string, user map[string]interfa
 	args := []string{"user", "restricteduserupdate"}
 	return s.runObjs(uri, token, args, user, nil)
 }
+
+func (s *Client) NewPassword(uri, token, password string) (int, error) {
+	newpw := ormapi.NewPassword{
+		Password: password,
+	}
+	args := []string{"user", "newpass"}
+	return s.runObjs(uri, token, args, newpw, nil)
+}
