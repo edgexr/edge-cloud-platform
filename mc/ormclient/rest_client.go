@@ -23,7 +23,6 @@ import (
 type Client struct {
 	SkipVerify bool
 	Debug      bool
-	McProxy    bool
 }
 
 func (s *Client) DoLogin(uri, user, pass string) (string, error) {

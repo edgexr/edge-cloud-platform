@@ -18,7 +18,6 @@ var Addr string
 var Token string
 var SkipVerify bool
 var client ormclient.Client
-var McProxy bool
 
 type setFieldsFunc func(in map[string]interface{})
 
@@ -130,9 +129,6 @@ func PreRunE(cmd *cobra.Command, args []string) error {
 	}
 	if SkipVerify {
 		client.SkipVerify = true
-	}
-	if McProxy {
-		client.McProxy = true
 	}
 	return nil
 }

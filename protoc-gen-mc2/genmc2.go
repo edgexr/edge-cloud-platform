@@ -387,11 +387,6 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 	} else if g.genclient {
 		tmpl = g.tmplMethodClient
 		g.importOrmapi = true
-		if inname == "ExecRequest" {
-			args.ExecReq = true
-			g.importStrings = true
-			g.importHttp = true
-		}
 	} else if g.gentest {
 		tmpl = g.tmplMethodTest
 		g.importOrmclient = true
@@ -416,10 +411,6 @@ func (g *GenMC2) generateMethod(service string, method *descriptor.MethodDescrip
 		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto, method)
 		g.importOrmapi = true
 		g.importStrings = true
-		if inname == "ExecRequest" {
-			args.ExecReq = true
-			g.importHttp = true
-		}
 	} else {
 		tmpl = g.tmpl
 		g.importEcho = true
@@ -468,7 +459,6 @@ type tmplArgs struct {
 	HasMethodArgs        bool
 	StreamerCache        bool
 	NotifyRoot           bool
-	ExecReq              bool
 	AuthOps              string
 	HasKey               bool
 }
@@ -824,19 +814,6 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 	return &out, status, err
 }
 {{- end}}
-{{- if .ExecReq}}
-func (s *Client) {{.MethodName}}Stream(uri, token string, in *ormapi.Region{{.InName}}) ([]ormapi.WSStreamPayload, int, error) {
-	out := ormapi.WSStreamPayload{}
-	outlist := []ormapi.WSStreamPayload{}
-	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
-		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
-	}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/{{.MethodName}}", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
-}
-{{- end}}
 `
 
 var tmplMethodCtl = `
@@ -921,11 +898,6 @@ func (s *Client) {{.MethodName}}(uri, token string, in *ormapi.Region{{.InName}}
 		return nil, st, err
 	}
 	return &out, st, err
-}
-{{- end}}
-{{- if .ExecReq}}
-func (s *Client) {{.MethodName}}Stream(uri, token string, in *ormapi.Region{{.InName}}) ([]ormapi.WSStreamPayload, int, error) {
-	return nil, http.StatusBadRequest, fmt.Errorf("not supported")
 }
 {{- end}}
 
@@ -1126,9 +1098,6 @@ func (g *GenMC2) generateClientInterface(service *descriptor.ServiceDescriptorPr
 			g.P(method.Name, "(uri, token string, in *ormapi.Region", inname, ") ([]edgeproto.", outname, ", int, error)")
 		} else {
 			g.P(method.Name, "(uri, token string, in *ormapi.Region", inname, ") (*edgeproto.", outname, ", int, error)")
-		}
-		if inname == "ExecRequest" {
-			g.P(method.Name, "Stream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)")
 		}
 	}
 	g.P("}")

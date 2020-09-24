@@ -4,8 +4,6 @@
 package ormclient
 
 import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "net/http"
-import "strings"
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
@@ -28,17 +26,6 @@ func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*e
 	}
 	return &out, status, err
 }
-func (s *Client) RunCommandStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error) {
-	out := ormapi.WSStreamPayload{}
-	outlist := []ormapi.WSStreamPayload{}
-	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
-		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
-	}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/RunCommand", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
-}
 
 func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	out := edgeproto.ExecRequest{}
@@ -47,17 +34,6 @@ func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*e
 		return nil, status, err
 	}
 	return &out, status, err
-}
-func (s *Client) RunConsoleStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error) {
-	out := ormapi.WSStreamPayload{}
-	outlist := []ormapi.WSStreamPayload{}
-	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
-		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
-	}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/RunConsole", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
 }
 
 func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
@@ -68,17 +44,6 @@ func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edg
 	}
 	return &out, status, err
 }
-func (s *Client) ShowLogsStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error) {
-	out := ormapi.WSStreamPayload{}
-	outlist := []ormapi.WSStreamPayload{}
-	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
-		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
-	}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/ShowLogs", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
-}
 
 func (s *Client) AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
 	out := edgeproto.ExecRequest{}
@@ -88,25 +53,10 @@ func (s *Client) AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest)
 	}
 	return &out, status, err
 }
-func (s *Client) AccessCloudletStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error) {
-	out := ormapi.WSStreamPayload{}
-	outlist := []ormapi.WSStreamPayload{}
-	if !strings.HasPrefix(uri, "ws://") && !strings.HasPrefix(uri, "wss://") {
-		return nil, http.StatusBadRequest, fmt.Errorf("only websocket supported")
-	}
-	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/AccessCloudlet", token, in, &out, func() {
-		outlist = append(outlist, out)
-	})
-	return outlist, status, err
-}
 
 type ExecApiClient interface {
 	RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
-	RunCommandStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 	RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
-	RunConsoleStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 	ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
-	ShowLogsStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 	AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error)
-	AccessCloudletStream(uri, token string, in *ormapi.RegionExecRequest) ([]ormapi.WSStreamPayload, int, error)
 }
