@@ -37,6 +37,10 @@ type User struct {
 	UpdatedAt time.Time `json:",omitempty"`
 	// read only: true
 	Locked bool
+	// read only: true
+	PassEntropy float64
+	// read only: true
+	PassCrackTimeSec float64
 }
 
 type Organization struct {
@@ -114,6 +118,10 @@ type Config struct {
 	NotifyEmailAddress string
 	// Skip email verification for new accounts (testing only)
 	SkipVerifyEmail bool
+	// User accounts min password crack time seconds (a measure of strength)
+	PasswordMinCrackTimeSec float64
+	// Admin accounts min password crack time seconds (a measure of strength)
+	AdminPasswordMinCrackTimeSec float64
 }
 
 type OrgCloudletPool struct {

@@ -280,10 +280,12 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	// Special case Admin roles and the empty org (which implies all orgs).
 	// AdminRoles may only be associated to the empty org, and the
 	// empty org may only be associated with Admin roles.
+	adminRole := false
 	if role.Role == RoleAdminManager || role.Role == RoleAdminContributor || role.Role == RoleAdminViewer {
 		if role.Org != "" {
 			return fmt.Errorf("Admin roles cannot be associated with an org, please specify the empty org \"\"")
 		}
+		adminRole = true
 	} else {
 		if role.Org == "" {
 			return fmt.Errorf("Org name must be specified for the specified role")
@@ -299,6 +301,13 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	}
 	if res.Error != nil {
 		return dbErr(res.Error)
+	}
+	if adminRole {
+		// more stringent password strength requirements
+		err := checkPasswordStrength(ctx, &targetUser, nil, adminRole)
+		if err != nil {
+			return err
+		}
 	}
 	policies, err := enforcer.GetPolicy()
 	if err != nil {

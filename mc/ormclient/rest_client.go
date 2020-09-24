@@ -64,6 +64,13 @@ func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi
 	return users, status, err
 }
 
+func (s *Client) NewPassword(uri, token, password string) (int, error) {
+	newpw := ormapi.NewPassword{
+		Password: password,
+	}
+	return s.PostJson(uri+"/auth/user/newpass", token, newpw, nil)
+}
+
 func (s *Client) CreateController(uri, token string, ctrl *ormapi.Controller) (int, error) {
 	return s.PostJson(uri+"/auth/controller/create", token, ctrl, nil)
 }

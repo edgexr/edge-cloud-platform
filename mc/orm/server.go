@@ -86,7 +86,7 @@ var DefaultDBUser = "mcuser"
 var DefaultDBName = "mcdb"
 var DefaultDBPass = ""
 var DefaultSuperuser = "mexadmin"
-var DefaultSuperpass = "mexadmin123"
+var DefaultSuperpass = "mexadminfastedgecloudinfra"
 var Superuser string
 
 var database *gorm.DB

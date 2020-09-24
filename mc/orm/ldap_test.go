@@ -55,14 +55,14 @@ func TestLDAPServer(t *testing.T) {
 	require.Nil(t, err, "login as superuser")
 
 	// create new users & orgs
-	_, token1 := testCreateUser(t, mcClient, uri, "orgman1")
+	_, token1, orgman1pw := testCreateUser(t, mcClient, uri, "orgman1")
 	org1 := testCreateOrg(t, mcClient, uri, token1, "developer", "bigorg1")
-	worker1, _ := testCreateUser(t, mcClient, uri, "worker1")
+	worker1, _, worker1pw := testCreateUser(t, mcClient, uri, "worker1")
 	testAddUserRole(t, mcClient, uri, token1, org1.Name, "DeveloperContributor", worker1.Name, Success)
 
-	_, token2 := testCreateUser(t, mcClient, uri, "orgman2")
+	_, token2, _ := testCreateUser(t, mcClient, uri, "orgman2")
 	org2 := testCreateOrg(t, mcClient, uri, token2, "developer", "bigorg2")
-	worker2, _ := testCreateUser(t, mcClient, uri, "worker2")
+	worker2, _, _ := testCreateUser(t, mcClient, uri, "worker2")
 	testAddUserRole(t, mcClient, uri, token2, org2.Name, "DeveloperContributor", worker2.Name, Success)
 	testAddUserRole(t, mcClient, uri, token1, org1.Name, "DeveloperContributor", worker2.Name, Success)
 
@@ -81,19 +81,19 @@ func TestLDAPServer(t *testing.T) {
 	unlockUser(t, mcClient, uri, tokenAd, "worker2")
 
 	// Expect Count: 7 (1 admin entry + 4 users + 2 orgs)
-	ldapSearchCheck(t, l, "cn=worker1,ou=users", "worker1-password", "", "(objectClass=*)", 7)
+	ldapSearchCheck(t, l, "cn=worker1,ou=users", worker1pw, "", "(objectClass=*)", 7)
 
 	// Expect Count: 5 (1 admin entry + 4 users)
-	ldapSearchCheck(t, l, "cn=worker1,ou=users", "worker1-password", "ou=users", "(objectClass=*)", 5)
+	ldapSearchCheck(t, l, "cn=worker1,ou=users", worker1pw, "ou=users", "(objectClass=*)", 5)
 
 	// Expect Count: 1 (1 user)
-	ldapSearchCheck(t, l, "cn=worker1,ou=users", "worker1-password", "cn=orgman2,ou=users", "(objectClass=*)", 1)
+	ldapSearchCheck(t, l, "cn=worker1,ou=users", worker1pw, "cn=orgman2,ou=users", "(objectClass=*)", 1)
 
 	// Expect Count: 2 (2 orgs)
-	ldapSearchCheck(t, l, "cn=orgman1,ou=users", "orgman1-password", "ou=orgs", "(objectClass=*)", 2)
+	ldapSearchCheck(t, l, "cn=orgman1,ou=users", orgman1pw, "ou=orgs", "(objectClass=*)", 2)
 
 	// Expect Count: 1 (1 org)
-	sr = ldapSearchCheck(t, l, "cn=orgman1,ou=users", "orgman1-password", "cn=bigorg1,ou=orgs", "(objectClass=*)", 1)
+	sr = ldapSearchCheck(t, l, "cn=orgman1,ou=users", orgman1pw, "cn=bigorg1,ou=orgs", "(objectClass=*)", 1)
 	uniqueMemberEntries := sr.Entries[0].GetAttributeValues("uniqueMember")
 	sort.Strings(uniqueMemberEntries)
 	require.Equal(t, len(uniqueMemberEntries), 3, "num of uniqueMembers")
@@ -116,7 +116,7 @@ func TestLDAPServer(t *testing.T) {
 	ldapSearchCheck(t, l, "cn=gitlab,ou=users", "gitlab", "ou=users", "(email=orgman1@gmail.com)", 1)
 
 	// Expect Count: 2 (2 orgs, as worker2 belongs to 2 orgs: bigorg1,bigorg2)
-	ldapSearchCheck(t, l, "cn=orgman1,ou=users", "orgman1-password", "ou=orgs", "(&(objectClass=groupOfUniqueNames)(|(uniqueMember=cn=worker2,ou=users)(uniqueMember=worker2)))", 2)
+	ldapSearchCheck(t, l, "cn=orgman1,ou=users", orgman1pw, "ou=orgs", "(&(objectClass=groupOfUniqueNames)(|(uniqueMember=cn=worker2,ou=users)(uniqueMember=worker2)))", 2)
 
 	// make sure anonymous search is disabled
 	l2, err := ldap.Dial("tcp", config.LDAPAddr)
