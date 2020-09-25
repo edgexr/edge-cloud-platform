@@ -108,7 +108,7 @@ func recordRegionUsage(ctx context.Context, region, clusterCmd, appCmd string) {
 			"region", region, "query", query, "err", resp.Error())
 		return
 	}
-	empty, err := checkInfluxQueryOutput(resp.Results, cloudcommon.ClusterInstUsage)
+	empty, err := checkInfluxQueryOutput(resp.Results, cloudcommon.ClusterInstCheckpoints)
 	if empty {
 		// no usage records to upload
 		return
@@ -133,7 +133,7 @@ func recordRegionUsage(ctx context.Context, region, clusterCmd, appCmd string) {
 			"region", region, "query", query, "err", resp.Error())
 		return
 	}
-	empty, err = checkInfluxQueryOutput(resp.Results, cloudcommon.VMAppInstUsage)
+	empty, err = checkInfluxQueryOutput(resp.Results, cloudcommon.AppInstCheckpoints)
 	if empty {
 		// no usage records to upload
 		return

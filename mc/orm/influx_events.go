@@ -10,7 +10,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 )
 
-var FlavorFields = []string{
+var clusterEventFields = []string{
+	"reservedBy",
 	"flavor",
 	"vcpu",
 	"ram",
@@ -35,7 +36,7 @@ func getEventFields(eventType string) string {
 	case EVENT_APPINST:
 		selectors = AppFields
 	case EVENT_CLUSTERINST:
-		selectors = append(ClusterFields, FlavorFields...)
+		selectors = append(ClusterFields, clusterEventFields...)
 	case EVENT_CLOUDLET:
 		selectors = CloudletFields
 	default:
@@ -65,7 +66,7 @@ func ClusterEventsQuery(obj *ormapi.RegionClusterInstEvents) string {
 	arg := influxQueryArgs{
 		Selector:     getEventFields(EVENT_CLUSTERINST),
 		Measurement:  EVENT_CLUSTERINST,
-		OrgField:     "clusterorg",
+		OrgField:     "org",
 		ApiCallerOrg: obj.ClusterInst.Organization,
 		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,

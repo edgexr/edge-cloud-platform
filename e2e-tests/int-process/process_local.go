@@ -73,6 +73,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--usageCollectionInterval")
 		args = append(args, p.UsageCollectionInterval)
 	}
+	if p.UsageCheckpointInterval != "" {
+		args = append(args, "--usageCheckpointInterval")
+		args = append(args, p.UsageCheckpointInterval)
+	}
 	if p.UseVaultCerts {
 		args = append(args, "--useVaultCerts")
 	}
