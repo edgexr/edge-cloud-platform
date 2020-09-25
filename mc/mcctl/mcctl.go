@@ -37,6 +37,7 @@ func main() {
 	rootCmd.AddCommand(ormctl.GetMetricsCommand())
 	rootCmd.AddCommand(ormctl.GetBillingEventsCommand())
 	rootCmd.AddCommand(ormctl.GetEventsCommand())
+	rootCmd.AddCommand(ormctl.GetUsageCommand())
 	rootCmd.AddCommand(ormctl.GetAlertReceiverCommand())
 
 	rootCmd.PersistentFlags().StringVar(&ormctl.Addr, "addr", "http://127.0.0.1:9900", "MC address")

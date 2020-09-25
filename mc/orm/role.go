@@ -545,6 +545,15 @@ func dumpRbac() {
 	}
 }
 
+func isAdminRole(role string) bool {
+	if role == RoleAdminManager ||
+		role == RoleAdminContributor ||
+		role == RoleAdminViewer {
+		return true
+	}
+	return false
+}
+
 func isDeveloperRole(role string) bool {
 	if role == RoleDeveloperManager ||
 		role == RoleDeveloperContributor ||

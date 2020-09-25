@@ -46,34 +46,35 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	ServAddr              string
-	SqlAddr               string
-	VaultAddr             string
-	RunLocal              bool
-	InitLocal             bool
-	IgnoreEnv             bool
-	ApiTlsCertFile        string
-	ApiTlsKeyFile         string
-	LocalVault            bool
-	LDAPAddr              string
-	LDAPUsername          string
-	LDAPPassword          string
-	GitlabAddr            string
-	ArtifactoryAddr       string
-	PingInterval          time.Duration
-	SkipVerifyEmail       bool
-	JaegerAddr            string
-	vaultConfig           *vault.Config
-	SkipOriginCheck       bool
-	Hostname              string
-	NotifyAddrs           string
-	NotifySrvAddr         string
-	NodeMgr               *node.NodeMgr
-	Billing               bool
-	BillingPath           string
-	AlertCache            *edgeproto.AlertCache
-	AlertMgrAddr          string
-	AlertmgrResolveTimout time.Duration
+	ServAddr                string
+	SqlAddr                 string
+	VaultAddr               string
+	RunLocal                bool
+	InitLocal               bool
+	IgnoreEnv               bool
+	ApiTlsCertFile          string
+	ApiTlsKeyFile           string
+	LocalVault              bool
+	LDAPAddr                string
+	LDAPUsername            string
+	LDAPPassword            string
+	GitlabAddr              string
+	ArtifactoryAddr         string
+	PingInterval            time.Duration
+	SkipVerifyEmail         bool
+	JaegerAddr              string
+	vaultConfig             *vault.Config
+	SkipOriginCheck         bool
+	Hostname                string
+	NotifyAddrs             string
+	NotifySrvAddr           string
+	NodeMgr                 *node.NodeMgr
+	Billing                 bool
+	BillingPath             string
+	AlertCache              *edgeproto.AlertCache
+	AlertMgrAddr            string
+	AlertmgrResolveTimout   time.Duration
+	UsageCheckpointInterval string
 }
 
 var DefaultDBUser = "mcuser"
@@ -176,6 +177,10 @@ func RunServer(config *ServerConfig) (*Server, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Unable to initialize zuora: %v", err)
 		}
+	}
+
+	if err = checkUsageCheckpointInterval(); err != nil {
+		return nil, err
 	}
 
 	if gitlabToken == "" {
@@ -455,10 +460,15 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	auth.POST("/events/app", GetEventsCommon)
 	auth.POST("/events/cluster", GetEventsCommon)
 	auth.POST("/events/cloudlet", GetEventsCommon)
+
 	// new events/audit apis
 	auth.POST("/events/show", ShowEvents)
 	auth.POST("/events/find", FindEvents)
 	auth.POST("/events/terms", EventTerms)
+
+	auth.POST("/usage/app", GetUsageCommon)
+	auth.POST("/usage/cluster", GetUsageCommon)
+	auth.POST("/usage/cloudletpool", GetCloudletPoolUsageCommon)
 
 	// Alertmanager apis
 	auth.POST("/alertreceiver/create", CreateAlertReceiver)

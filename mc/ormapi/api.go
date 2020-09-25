@@ -274,11 +274,13 @@ type AllMetrics struct {
 }
 
 type MetricData struct {
-	Series []struct {
-		Columns []string        `json:"columns"`
-		Name    string          `json:"name"`
-		Values  [][]interface{} `json:"values"`
-	} `json:"Series"`
+	Series []MetricSeries `json:"Series"`
+}
+
+type MetricSeries struct {
+	Columns []string        `json:"columns"`
+	Name    string          `json:"name"`
+	Values  [][]interface{} `json:"values"`
 }
 
 type RegionAppInstMetrics struct {
@@ -341,6 +343,36 @@ type RegionCloudletEvents struct {
 	StartTime time.Time `json:",omitempty"`
 	EndTime   time.Time `json:",omitempty"`
 	Last      int       `json:",omitempty"`
+}
+
+type RegionAppInstUsage struct {
+	Region    string
+	AppInst   edgeproto.AppInstKey
+	StartTime time.Time `json:",omitempty"`
+	EndTime   time.Time `json:",omitempty"`
+	VmOnly    bool      `json:",omitempty"`
+}
+
+type RegionClusterInstUsage struct {
+	Region      string
+	ClusterInst edgeproto.ClusterInstKey
+	StartTime   time.Time `json:",omitempty"`
+	EndTime     time.Time `json:",omitempty"`
+}
+
+type RegionCloudletPoolUsage struct {
+	Region       string
+	CloudletPool edgeproto.CloudletPoolKey
+	StartTime    time.Time `json:",omitempty"`
+	EndTime      time.Time `json:",omitempty"`
+}
+
+type RegionCloudletPoolUsageRegister struct {
+	Region          string
+	CloudletPool    edgeproto.CloudletPoolKey
+	UpdateFrequency time.Duration
+	PushEndpoint    string
+	StartTime       time.Time
 }
 
 // Configurable part of AlertManager Receiver
