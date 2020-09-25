@@ -122,10 +122,8 @@ if __name__ == "__main__":
     if "@" in args.host:
         (args.user, args.host) = args.host.split("@", 1)
 
-    if args.user == "ansible" and not args.engine:
-        args.engine = "ssh-ansible"
-    else:
-        args.engine = "ssh"
+    if not args.engine:
+        args.engine = "ssh-ansible" if args.user == "ansible" else "ssh"
 
     logging.info(f"vault={args.vault} engine={args.engine} user={args.user} role={args.role}")
 
