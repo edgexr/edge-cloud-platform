@@ -22,6 +22,7 @@ type Platform struct {
 	DockerClusterMetrics string
 	DockerContainerPid   string
 	CatContainerNetData  string
+	DockerPsSizeData     string
 	// Cloudlet-level test data
 	CloudletMetrics    string
 	VmAppInstMetrics   string
@@ -117,6 +118,9 @@ func (s *UTClient) getUTData(command string) (string, error) {
 		strings.Contains(command, "/net/dev") {
 		// network data
 		return s.pf.CatContainerNetData, nil
+	} else if strings.Contains(command, "docker ps -s") {
+		// docker container size data
+		return s.pf.DockerPsSizeData, nil
 	}
 	// nginx-stats and envoy-stats unit test
 	// "docker exec containername curl http://url"

@@ -22,6 +22,7 @@ import (
 // and two containers associated with app testAppInstDocker2
 var testDockerResults = []string{`{
 	"container": "DockerApp1",
+	"id": "1",
 	"memory": {
 	  "raw": "11.11MiB / 1.111GiB",
 	  "percent": "1.11%"
@@ -33,6 +34,7 @@ var testDockerResults = []string{`{
 	}
   }`, `{
 	"container": "DockerApp2Container1",
+	"id": "2",
 	"memory": {
 	  "raw": "21.21MiB / 2.1GiB",
 	  "percent": "2.1%"
@@ -44,6 +46,7 @@ var testDockerResults = []string{`{
 	}
   }`, `{
 	"container": "DockerApp2Container2",
+	"id":"3",
 	"memory": {
 	  "raw": "22.22MiB / 2.2GiB",
 	  "percent": "2.2%"
@@ -55,11 +58,18 @@ var testDockerResults = []string{`{
 	}
   }`}
 
-var testNetDataEmpty = ``
-var testNetDataInvalidStr = `this string is invalid`
+var testDataEmpty = ``
+var testInvalidStr = `this string is invalid`
 var testNetDataInvalidRecv = `  ens3: 448842invalid077 3084030    0    0    0     0          0         0 514882026 2675536    0    0    0     0       0          0`
 var testNetDataInvalidSend = `  ens3: 448842077 3084030    0    0    0     0          0         0 5148invalid82026 2675536    0    0    0     0       0          0`
 var testNetData = `  ens3: 448842077 3084030    0    0    0     0          0         0 514882026 2675536    0    0    0     0       0          0`
+
+var testDiskInvalidData = "0B (virtual invalid)"
+var testDiskData = "0B (virtual 55.5MB)"
+
+var testMultiContainerDiskData = `{"container":"DockerApp1","id":"1","disk":"0B (virtual 1KB)"}
+{"container":"DockerApp2Container1","id":"2","disk":"0B (virtual 2.0MB)"}
+{"container":"DockerApp2Container2","id":"3","disk":"0B (virtual 3GB)"}`
 
 // Example output of resource-tracker
 var testDockerClusterData = shepherd_common.ClusterMetrics{
@@ -133,6 +143,7 @@ func TestDockerStats(t *testing.T) {
 		DockerClusterMetrics: string(buf),
 		DockerContainerPid:   "0",
 		CatContainerNetData:  testNetData,
+		DockerPsSizeData:     testMultiContainerDiskData,
 	}
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.Update(ctx, &testAppInstDocker2, 0)
@@ -150,7 +161,7 @@ func TestDockerStats(t *testing.T) {
 	if found {
 		assert.Equal(t, float64(1.11), stat.Cpu)
 		assert.Equal(t, uint64(11649679), stat.Mem)
-		assert.Equal(t, uint64(0), stat.Disk)
+		assert.Equal(t, uint64(1*1024), stat.Disk)
 		// this comes from testNetData
 		assert.Equal(t, uint64(514882026), stat.NetSent)
 		assert.Equal(t, uint64(448842077), stat.NetRecv)
@@ -165,7 +176,7 @@ func TestDockerStats(t *testing.T) {
 	if found {
 		assert.Equal(t, float64(2.1)+float64(2.2), stat.Cpu)
 		assert.Equal(t, uint64(22240296+23299358), stat.Mem)
-		assert.Equal(t, uint64(0), stat.Disk)
+		assert.Equal(t, uint64(2*1024*1024+3*1024*1024*1024), stat.Disk)
 		// Net is double counted, since we return the same data for both
 		assert.Equal(t, uint64(514882026*2), stat.NetSent)
 		assert.Equal(t, uint64(448842077*2), stat.NetRecv)
@@ -187,10 +198,10 @@ func TestDockerStats(t *testing.T) {
 }
 
 func TestParseNetData(t *testing.T) {
-	data, err := parseNetData(testNetDataEmpty)
+	data, err := parseNetData(testDataEmpty)
 	assert.NotNil(t, err)
 	assert.Nil(t, data)
-	data, err = parseNetData(testNetDataInvalidStr)
+	data, err = parseNetData(testInvalidStr)
 	assert.NotNil(t, err)
 	assert.Nil(t, data)
 	data, err = parseNetData(testNetDataInvalidSend)
@@ -204,4 +215,23 @@ func TestParseNetData(t *testing.T) {
 	assert.NotNil(t, data)
 	assert.Equal(t, uint64(448842077), data[0])
 	assert.Equal(t, uint64(514882026), data[1])
+}
+
+func TestDiskData(t *testing.T) {
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	data, err := parseContainerDiskUsage(ctx, testDataEmpty)
+	assert.NotNil(t, err)
+	assert.Equal(t, uint64(0), data)
+	data, err = parseContainerDiskUsage(ctx, testInvalidStr)
+	assert.NotNil(t, err)
+	assert.Equal(t, uint64(0), data)
+	data, err = parseContainerDiskUsage(ctx, testNetDataInvalidSend)
+	assert.NotNil(t, err)
+	assert.Equal(t, uint64(0), data)
+	data, err = parseContainerDiskUsage(ctx, testDiskData)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(55.5*1024*1024), data)
 }
