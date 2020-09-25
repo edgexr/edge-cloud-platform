@@ -20,6 +20,9 @@ import (
 var dockerStatsFormat = `"{\"container\":\"{{.Name}}\",\"id\":\"{{.ID}}\",\"memory\":{\"raw\":\"{{.MemUsage}}\",\"percent\":\"{{.MemPerc}}\"},\"cpu\":\"{{.CPUPerc}}\",\"io\":{\"network\":\"{{.NetIO}}\",\"block\":\"{{.BlockIO}}\"}}"`
 var dockerStatsCmd = "docker stats --no-stream --format " + dockerStatsFormat
 
+var dockerPsFormat = `"{\"container\":\"{{.Names}}\",\"id\":\"{{.ID}}\",\"disk\":\"{{.Size}}\"}"`
+var dockerPsSizeCmd = "docker ps -s --format " + dockerPsFormat
+
 type ContainerMem struct {
 	Raw     string
 	Percent string
@@ -40,6 +43,12 @@ type ContainerStats struct {
 
 type DockerStats struct {
 	Containers []ContainerStats
+}
+
+type ContainerSize struct {
+	Container string `json:"container,omitempty"`
+	Id        string `json:"id,omitempty"`
+	Disk      string `json:"disk,omitempty"`
 }
 
 // Docker Cluster
@@ -205,7 +214,7 @@ func parseComputeUnitsDelim(ctx context.Context, dataStr string) ([]uint64, erro
 		case 'g':
 			fallthrough
 		case 'G':
-			scale = 1024 * 1024
+			scale = 1024 * 1024 * 1024
 		default:
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unknown Unit string", "units", v[i])
 			continue
@@ -221,12 +230,75 @@ func parseComputeUnitsDelim(ctx context.Context, dataStr string) ([]uint64, erro
 	return items, nil
 }
 
+// Example format: "0B (virtual 332.1GB)"
+func parseContainerDiskUsage(ctx context.Context, diskStr string) (uint64, error) {
+	var writeDisk, virtDisk string
+	// getting just a virtual disk size for the grand total
+	n, err := fmt.Sscanf(diskStr, "%s (virtual %s", &writeDisk, &virtDisk)
+	if err != nil || n < 2 {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse disk usage",
+			"diskStr", diskStr, "err", err.Error())
+		return 0, fmt.Errorf("Failed to parse disk usage - %v", err)
+	}
+	// remove trailing )
+	virtDisk = strings.TrimSuffix(virtDisk, ")")
+	diskBytes, err := parseComputeUnitsDelim(ctx, virtDisk)
+	if err != nil || len(diskBytes) != 1 {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse disk bytes", "virtDisk", virtDisk,
+			"diskStr", diskStr, "err", err.Error())
+		return 0, fmt.Errorf("Failed to parse disk Units - %v", err)
+	}
+	return diskBytes[0], nil
+}
+
+// get disk stats from containers and convert them into a readable format
+func (c *DockerClusterStats) GetContainerDiskUsage(ctx context.Context) (map[string]uint64, error) {
+	containers := make(map[string]uint64)
+	respLB, err := c.client.Output(dockerPsSizeCmd)
+	if err != nil {
+		errstr := fmt.Sprintf("Failed to run <%s> on LB VM", dockerPsSizeCmd)
+		log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
+		return nil, err
+	}
+	respVM, err := c.clusterClient.Output(dockerPsSizeCmd) // check the VM for LoadBalancer docker apps
+	if err != nil {
+		errstr := fmt.Sprintf("Failed to run <%s> on ClusterVM", dockerPsSizeCmd)
+		log.SpanLog(ctx, log.DebugLevelMetrics, errstr, "err", err.Error())
+		return nil, err
+	}
+
+	stats := strings.Split(respLB, "\n")
+	statsVM := strings.Split(respVM, "\n")
+	stats = append(stats, statsVM...)
+	for _, stat := range stats {
+		if stat == "" {
+			// last string is an empty string
+			continue
+		}
+		containerDisk := ContainerSize{}
+		if err = json.Unmarshal([]byte(stat), &containerDisk); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to marshal disk usage", "stats", stat, "err", err.Error())
+			continue
+		}
+		// Convert the Disk string into uint64 and
+		// save results in a hash keyed on the container id
+		if diskSize, err := parseContainerDiskUsage(ctx, containerDisk.Disk); err == nil {
+			containers[containerDisk.Id] = diskSize
+		} else {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse disk bytes",
+				"diskStr", containerDisk.Disk, "err", err)
+		}
+	}
+	return containers, nil
+}
+
 // This is a helper function to get docker container statistics.
 // Currently it runs "docker stats" on rootLB and gets coarse stats from the resource utilization
 // If a more detailed resource usage is needed /containers/(id)/stats API endpoint should be used
 // To get to the API endpoint on a rootLB netcat can be used:
 //   $ echo -e "GET /containers/mobiledgexsdkdemo/stats?stream=0 HTTP/1.0\r\n" | nc -q -1 -U /var/run/docker.sock | grep "^{" | jq
 func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
+	var diskUsageMap map[string]uint64 // map of container id to virtual disk used
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
 
 	stats, err := p.GetContainerStats(ctx)
@@ -234,6 +306,13 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to collect App stats for docker cluster", "err", err)
 		return nil
 	}
+	diskUsageMap, err = p.GetContainerDiskUsage(ctx)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to collect Disk usage stats for docker containers", "err", err)
+		// we can still collect other metrics, so just init this to an empty map
+		diskUsageMap = make(map[string]uint64)
+	}
+
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Docker stats", "stats", stats)
 	appKey := shepherd_common.MetricAppInstKey{
 		ClusterInstKey: p.key,
@@ -271,8 +350,10 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 			// TODO EDGECLOUD-1316 - add stats for all containers together
 			stat.Mem += memData[0]
 		}
-		// Disk usage is unsupported
-		stat.Disk = 0
+		// Add disk usage from the usage map
+		if disk, found := diskUsageMap[containerStats.Id]; found {
+			stat.Disk += disk
+		}
 
 		// NET data in docker stats only counts docker0 interface,
 		// so for host networking it's always going to be zero - use proc data instead
