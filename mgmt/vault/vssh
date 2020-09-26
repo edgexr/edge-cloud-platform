@@ -94,7 +94,17 @@ def get_signed_key(args, token):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog="""
+Any unknown arguments are passed to the SSH command line.
+
+By default, vssh drops you into a shell, but you can pass arguments to the
+command line just like with regular ssh to run a shell command on the remote
+host.
+
+In scp mode ("--scp"), use standard scp arguments instead of the hostname to
+transfer files.
+""")
     parser.add_argument("host", help="Host to SSH in to")
     parser.add_argument("-V", "--vault", help="Address of the vault to use",
                         default=DEF_VAULT)
@@ -108,9 +118,10 @@ if __name__ == "__main__":
                         choices=DEF_ENGINES)
     parser.add_argument("-r", "--role", help="SSH signing role",
                         default=DEF_ROLE)
+    parser.add_argument("-s", "--scp", help="SCP mode", action="store_true")
     parser.add_argument("-v", "--verbose", action='count',
                         help="Increase log verbosity", default=0)
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     try:
         log_level = LOG_LEVELS[args.verbose]
@@ -138,7 +149,7 @@ if __name__ == "__main__":
         atexit.register(os.remove, fname)
 
     sshcomm = [ "ssh", "-o", "IdentitiesOnly=yes", "-i", args.sshkey,
-                "-i", fname, "-l", args.user ]
+                "-i", fname, "-o", "User=" + args.user ]
     if args.verbose:
         sshcomm.append("-" + "v"*args.verbose)
 
@@ -147,6 +158,10 @@ if __name__ == "__main__":
         sshcomm.extend([ "-o", "ProxyCommand=" + proxycmd ])
 
     sshcomm.append(args.host)
+    sshcomm.extend(unknown)
+
+    if args.scp:
+        sshcomm[0] = "scp"
 
     logging.debug("Executing: " + " ".join(sshcomm))
     subprocess.call(sshcomm)
