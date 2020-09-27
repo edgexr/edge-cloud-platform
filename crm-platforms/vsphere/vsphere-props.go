@@ -68,17 +68,16 @@ var VSphereProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_EXTERNAL_VSWITCH": {
 		Name:        "vSphere External vSwitch Name",
 		Description: "vSphere External vSwitch Name",
-		Value:       "ExternalVSwitch",
+		Mandatory:   true,
 	},
 	"MEX_MANAGEMENT_EXTERNAL_VSWITCH": {
 		Name:        "vSphere Management External vSwitch Name",
 		Description: "Optional vSphere External vSwitch Name for management cluster; if not specified, platform VMs use same external vSwitch as compute VMs",
-		Value:       "ExternalVSwitch",
 	},
 	"MEX_INTERNAL_VSWITCH": {
 		Name:        "vSphere Internal vSwitch Name",
 		Description: "vSphere Internal vSwitch Name",
-		Value:       "InternalVSwitch",
+		Mandatory:   true,
 	},
 	"MEX_TEMPLATE_FOLDER": {
 		Name:        "vSphere Template Folder Name",

@@ -190,7 +190,7 @@ func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, 
 	manifest.AddSubItem(fmt.Sprintf("Update port group when prompted to: %s", v.GetExternalVSwitch()), infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")
 	manifest.AddItem("Ensure govc is installed on a machine with access to the vCenter APIs as per the following link", infracommon.ManifestTypeURL, infracommon.ManifestSubTypeNone, govcLocation)
 	manifest.AddItem("Download the deployment script to where govc is installed and name it deploy.sh", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)
-	manifest.AddItem("Execute the downloaded script", infracommon.ManifestTypeCommand, infracommon.ManifestSubTypeNone, "bash deploy.sh")
+	manifest.AddItem("Execute the downloaded script providing the Platform VM IP address as a parameter", infracommon.ManifestTypeCommand, infracommon.ManifestSubTypeNone, "bash deploy.sh <PLATFORM_IP>")
 
 	// for testing, write the script and text to /tmp
 	if v.vmProperties.CommonPf.PlatformConfig.TestMode {

@@ -291,12 +291,14 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "vault auth", "type", vaultConfig.Auth.Type())
 
-	err = v.InitCloudletSSHKeys(ctx, vaultConfig)
-	if err != nil {
-		return err
-	}
+	if !platformConfig.TestMode {
+		err = v.InitCloudletSSHKeys(ctx, vaultConfig)
+		if err != nil {
+			return err
+		}
 
-	go v.RefreshCloudletSSHKeys(vaultConfig)
+		go v.RefreshCloudletSSHKeys(vaultConfig)
+	}
 
 	if err := v.InitProps(ctx, platformConfig, vaultConfig); err != nil {
 		return err

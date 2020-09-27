@@ -227,8 +227,8 @@ func (v *VSpherePlatform) DeleteTag(ctx context.Context, tagname string) error {
 }
 
 func (v *VSpherePlatform) GetTagMatchingField(ctx context.Context, category, fieldName, fieldVal string) (*GovcTag, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetTagsForCategory", "category", category, "fieldName", fieldName, "fieldVal", fieldVal)
-	tags, err := v.GetTagsForCategory(ctx, category, v.vmProperties.Domain)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetTagMatchingField", "category", category, "fieldName", fieldName, "fieldVal", fieldVal)
+	tags, err := v.GetTagsForCategory(ctx, category, vmlayer.VMDomainAny)
 	if err != nil {
 		return nil, err
 	}
