@@ -32,13 +32,14 @@ func TestServer(t *testing.T) {
 	BadAuthDelay = time.Millisecond
 
 	config := ServerConfig{
-		ServAddr:        addr,
-		SqlAddr:         "127.0.0.1:5445",
-		RunLocal:        true,
-		InitLocal:       true,
-		IgnoreEnv:       true,
-		SkipVerifyEmail: true,
-		vaultConfig:     vaultConfig,
+		ServAddr:                addr,
+		SqlAddr:                 "127.0.0.1:5445",
+		RunLocal:                true,
+		InitLocal:               true,
+		IgnoreEnv:               true,
+		SkipVerifyEmail:         true,
+		vaultConfig:             vaultConfig,
+		UsageCheckpointInterval: "MONTH",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

@@ -23,16 +23,17 @@ func TestLDAPServer(t *testing.T) {
 	defer vaultServer.Close()
 
 	config := ServerConfig{
-		ServAddr:        addr,
-		SqlAddr:         "127.0.0.1:5445",
-		RunLocal:        true,
-		InitLocal:       true,
-		IgnoreEnv:       true,
-		LDAPAddr:        "127.0.0.1:9389",
-		SkipVerifyEmail: true,
-		vaultConfig:     vaultConfig,
-		LDAPUsername:    "gitlab",
-		LDAPPassword:    "gitlab",
+		ServAddr:                addr,
+		SqlAddr:                 "127.0.0.1:5445",
+		RunLocal:                true,
+		InitLocal:               true,
+		IgnoreEnv:               true,
+		LDAPAddr:                "127.0.0.1:9389",
+		SkipVerifyEmail:         true,
+		vaultConfig:             vaultConfig,
+		LDAPUsername:            "gitlab",
+		LDAPPassword:            "gitlab",
+		UsageCheckpointInterval: "MONTH",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
