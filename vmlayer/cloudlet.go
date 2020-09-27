@@ -167,9 +167,11 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
-	err = v.InitCloudletSSHKeys(ctx, vaultConfig)
-	if err != nil {
-		return err
+	if !pfConfig.TestMode {
+		err = v.InitCloudletSSHKeys(ctx, vaultConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Source OpenRC file to access openstack API endpoint
@@ -314,9 +316,11 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return err
 	}
 
-	err = v.InitCloudletSSHKeys(ctx, vaultConfig)
-	if err != nil {
-		return err
+	if !pfConfig.TestMode {
+		err = v.InitCloudletSSHKeys(ctx, vaultConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Source OpenRC file to access openstack API endpoint

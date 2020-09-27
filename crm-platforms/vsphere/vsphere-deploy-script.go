@@ -13,11 +13,10 @@ type DeployScriptParams struct {
 	DataStoreName  string
 	Cluster        string
 	ResourcePool   string
-	Netmask        string
 	VMName         string
-	Gateway        string
-	IPAddr         string
 	Network        string
+	Gateway        string
+	Netmask        string
 	Tags           *[]vmlayer.TagOrchestrationParams
 	VM             *vmlayer.VMOrchestrationParams
 	EnvVars        *map[string]string
@@ -25,6 +24,8 @@ type DeployScriptParams struct {
 
 var deployScriptTemplate = `
 #!/bin/bash
+
+PARAMCONFIRM="n"
 
 cleanup(){
 	echo "running cleanup after failure"
@@ -35,6 +36,14 @@ cleanup(){
 	govc pool.destroy -dc {{.DataCenterName}} {{.ResourcePool}}
 	govc vm.destroy -dc {{.DataCenterName}} {{.VM.Name}}
 }
+
+if [ $# -ne 1 ]; then
+    echo "Error: ipaddr argument expected"
+    echo "Example: $0 139.178.83.27"
+    exit 1
+fi
+
+PF_IP=$1
 
 echo "setting environment variables"
 {{- range $k, $v := .EnvVars}}
@@ -91,9 +100,9 @@ if [[ $? != 0 ]]; then
 fi
 
 echo "customizing network"
-govc vm.customize -vm {{.VM.Name}} -dc {{.DataCenterName}} -dns-server {{.VM.DNSServers}} -ip {{.IPAddr}} -netmask {{.Netmask}} -gateway {{.Gateway}}
+govc vm.customize -vm {{.VM.Name}} -dc {{.DataCenterName}} -dns-server {{.VM.DNSServers}} -ip $PF_IP -netmask {{.Netmask}} -gateway {{.Gateway}}
 if [[ $? != 0 ]]; then 
-	echo "ERROR: failed to customize network with IP {{.IPAddr}} mask {{.Netmask}} gw {{.Gateway}}"
+	echo "ERROR: failed to customize network with IP $PF_IP mask {{.Netmask}} gw {{.Gateway}}"
 	cleanup
 	exit 1
 fi
@@ -114,16 +123,21 @@ func (v *VSpherePlatform) GetRemoteDeployScript(ctx context.Context, vmgp *vmlay
 	if len(vmgp.VMs) != 1 {
 		return "", fmt.Errorf("error, should be one VM in the customization params, found: %d", len(vmgp.VMs))
 	}
-	if len(vmgp.VMs[0].Ports) != 1 {
-		return "", fmt.Errorf("error, VM should have one port, found: %d", len(vmgp.VMs[0].Ports))
-	}
-	if len(vmgp.VMs[0].FixedIPs) != 1 {
-		return "", fmt.Errorf("error, VM should have one IP address, found: %d", len(vmgp.VMs[0].FixedIPs))
-	}
-	netMask, err := vmlayer.MaskLenToMask(vmgp.VMs[0].FixedIPs[0].Mask)
+
+	netMask, err := vmlayer.MaskLenToMask(v.GetExternalNetmask())
 	if err != nil {
 		return "", err
 	}
+
+	// add the external IP tag as a variable
+	extNet := v.vmProperties.GetCloudletExternalNetwork()
+	gw, err := v.GetExternalGateway(ctx, extNet)
+	if err != nil {
+		return "", err
+	}
+	extIpTag := v.GetVmIpTag(ctx, vmgp.GroupName, vmgp.VMs[0].Name, extNet, "$PF_IP")
+	tagid := v.IdSanitize(extIpTag)
+	vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVmIpTagCategory(ctx), Id: tagid, Name: extIpTag})
 
 	poolName := getResourcePoolName(vmgp.GroupName, string(vmlayer.VMDomainPlatform))
 	pathPrefix := fmt.Sprintf("/%s/host/%s/Resources/", v.GetDatacenterName(ctx), v.GetHostCluster())
@@ -136,10 +150,9 @@ func (v *VSpherePlatform) GetRemoteDeployScript(ctx context.Context, vmgp *vmlay
 		Cluster:        v.GetHostCluster(),
 		VM:             &vmgp.VMs[0],
 		EnvVars:        &v.vcenterVars,
-		Network:        vmgp.VMs[0].Ports[0].NetworkId,
 		Netmask:        netMask,
-		IPAddr:         vmgp.VMs[0].FixedIPs[0].Address,
-		Gateway:        vmgp.VMs[0].FixedIPs[0].Gateway,
+		Network:        extNet,
+		Gateway:        gw,
 	}
 
 	buf, err := vmlayer.ExecTemplate(vmgp.GroupName, deployScriptTemplate, scriptParams)
