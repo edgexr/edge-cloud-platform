@@ -40,6 +40,8 @@ const (
 	ActionDelete ActionType = "delete"
 )
 
+const TestCACert = "ssh-rsa DUMMYTESTCACERT"
+
 var CloudflareDns = []string{"1.1.1.1", "1.0.0.1"}
 
 var ClusterTypeKubernetesMasterLabel = "mex-k8s-master"
@@ -617,15 +619,20 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 
 	vaultAddr := v.VMProperties.CommonPf.VaultConfig.Addr
-	cmd := exec.Command("curl", "-s", fmt.Sprintf("%s/v1/ssh/public_key", vaultAddr))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vault ssh cert: %s, %v", string(out), err)
+	var vaultSSHCert string
+	if v.VMProperties.CommonPf.PlatformConfig.TestMode {
+		vaultSSHCert = TestCACert
+	} else {
+		cmd := exec.Command("curl", "-s", fmt.Sprintf("%s/v1/ssh/public_key", vaultAddr))
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get vault ssh cert: %s, %v", string(out), err)
+		}
+		if !strings.Contains(string(out), "ssh-rsa") {
+			return nil, fmt.Errorf("invalid vault ssh cert: %s", string(out))
+		}
+		vaultSSHCert = string(out)
 	}
-	if !strings.Contains(string(out), "ssh-rsa") {
-		return nil, fmt.Errorf("invalid vault ssh cert: %s", string(out))
-	}
-	vaultSSHCert := string(out)
 
 	var internalPortNextOctet uint32 = 101
 	for ii, vm := range spec.VMs {

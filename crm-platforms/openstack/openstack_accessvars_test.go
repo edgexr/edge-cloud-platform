@@ -52,7 +52,7 @@ func TestAccessVars(t *testing.T) {
 		VaultAddr: vaultConfig.Addr,
 		EnvVar:    envvars,
 	}
-	op := OpenstackPlatform{TestMode: true}
+	op := OpenstackPlatform{}
 	o := vmlayer.VMPlatform{
 		Type:       "openstack",
 		VMProvider: &op,

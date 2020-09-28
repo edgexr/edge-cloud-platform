@@ -126,7 +126,7 @@ func TestHeatTemplate(t *testing.T) {
 	pc := pf.PlatformConfig{}
 	pc.CloudletKey = &ckey
 
-	op := OpenstackPlatform{TestMode: true}
+	op := OpenstackPlatform{}
 	var vmp = vmlayer.VMPlatform{
 		Type:       "openstack",
 		VMProvider: &op,
@@ -135,7 +135,7 @@ func TestHeatTemplate(t *testing.T) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "init props done", "err", err)
 	require.Nil(t, err)
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", "external-network-shared")
-
+	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
 	// Add chef params
 	for _, vm := range vms {
 		vm.ChefParams = &chefmgmt.VMChefParams{
