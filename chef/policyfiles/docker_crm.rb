@@ -17,6 +17,8 @@ cookbook 'setup_services', '= 1.0.11'
 cookbook 'docker', '= 6.0.3'
 
 # Set edgeCloudVersion (i.e. edge-cloud docker base image version) for all the cloudlets
-override['main']['edgeCloudVersion'] = '2020-08-11'
+override['main']['edgeCloudVersion'] = '2020-09-23-2'
 # By default, commercialCerts is not on. Hence add override to turn it on for all the cloudlets
 override['main']['crmserver']['args']['commercialCerts'] = ""
+# Use upgrade flag to fix all the existing VMs to use vault SSH
+override['main']['crmserver']['args']['upgrade'] = ""
