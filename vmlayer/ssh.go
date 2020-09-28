@@ -82,18 +82,18 @@ func (v *VMPlatform) RefreshCloudletSSHKeys(vaultConfig *vault.Config) {
 		select {
 		case <-time.After(interval):
 		case <-v.VMProperties.sshKey.RefreshTrigger:
-			span := log.StartSpan(log.DebugLevelInfra, "refresh Cloudlet SSH Key")
-			ctx := log.ContextWithSpan(context.Background(), span)
-			err := v.SetCloudletSignedSSHKey(ctx, vaultConfig)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "refresh cloudlet ssh key failure", "err", err)
-				// retry again soon
-				interval = time.Hour
-			} else {
-				interval = CloudletSSHKeyRefreshInterval
-			}
-			span.Finish()
 		}
+		span := log.StartSpan(log.DebugLevelInfra, "refresh Cloudlet SSH Key")
+		ctx := log.ContextWithSpan(context.Background(), span)
+		err := v.SetCloudletSignedSSHKey(ctx, vaultConfig)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "refresh cloudlet ssh key failure", "err", err)
+			// retry again soon
+			interval = time.Hour
+		} else {
+			interval = CloudletSSHKeyRefreshInterval
+		}
+		span.Finish()
 	}
 }
 
