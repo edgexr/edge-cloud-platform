@@ -60,6 +60,7 @@ var IgnoreTaskStatusMessages = cmpopts.AcyclicTransformer("ignoreTaskStatus", fu
 	if !strings.Contains(ar.OperationName, "/data/create") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateClusterInst") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateAppInst") &&
+		!strings.Contains(ar.OperationName, "/ctrl/DeleteAppInst") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateCloudlet") {
 		return ar
 	}
@@ -80,8 +81,8 @@ var IgnoreTaskStatusMessages = cmpopts.AcyclicTransformer("ignoreTaskStatus", fu
 		// (the fake platform)
 		if strings.Contains(resp, "First Create Task") ||
 			strings.Contains(resp, "Second Create Task") ||
-			strings.Contains(resp, "Creating Cloudlet") ||
-			strings.Contains(resp, "Creating App Inst") ||
+			strings.Contains(resp, "Creating") ||
+			strings.Contains(resp, "Deleting") ||
 			strings.Contains(resp, "Starting CRMServer") ||
 			strings.Contains(resp, "fake appInst updated") {
 			continue

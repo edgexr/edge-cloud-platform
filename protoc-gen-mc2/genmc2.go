@@ -228,7 +228,7 @@ func (g *GenMC2) generatePosts() {
 
 				// 6 means service
 				// 2 means method in a service
-				summary := g.support.GetComments(file, fmt.Sprintf("6,%d,2,%d", serviceIndex, methodIndex))
+				summary := g.support.GetComments(file.GetName(), fmt.Sprintf("6,%d,2,%d", serviceIndex, methodIndex))
 				summary = strings.TrimSpace(strings.Map(gensupport.RemoveNewLines, summary))
 				g.genSwaggerSpec(method, summary)
 

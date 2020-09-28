@@ -55,7 +55,6 @@ func runAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcom
 		opts = append(opts, testDialOpt)
 	}
 	opts = append(opts, grpc.WithBlock(),
-		grpc.WithWaitForHandshake(),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
 	conn, err := grpc.Dial(*ctrlAddr, opts...)

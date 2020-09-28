@@ -52,7 +52,6 @@ func autoScale(ctx context.Context, name string, alert *edgeproto.Alert) error {
 	inst.Fields = []string{edgeproto.ClusterInstFieldNumNodes}
 
 	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(),
-		grpc.WithWaitForHandshake(),
 		grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc),
 		grpc.WithStreamInterceptor(log.StreamClientTraceGrpc))
 	if err != nil {

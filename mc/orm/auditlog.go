@@ -60,15 +60,24 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 
 		reqBody := []byte{}
 		resBody := []byte{}
-		// use body dump to capture req/res.
-		bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
-			reqBody = reqB
-			resBody = resB
-		})
+		if strings.HasPrefix(req.RequestURI, "/ws/") {
+			// can't use bodydump on websocket-upgraded connection,
+			// as it tries to write the response back in the body
+			// to preserve it, which triggers a write to a hijacked
+			// connection error because websocket hijacks the http
+			// connection.
+			// req/reply is captured later below
+		} else {
+			// use body dump to capture req/res.
+			bd := middleware.BodyDump(func(c echo.Context, reqB, resB []byte) {
+				reqBody = reqB
+				resBody = resB
+			})
+			next = bd(next)
+		}
 		span.SetTag("method", req.Method)
 
-		handler := bd(next)
-		nexterr = handler(ec)
+		nexterr = next(ec)
 
 		span.SetTag("status", res.Status)
 
