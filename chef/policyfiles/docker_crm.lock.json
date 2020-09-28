@@ -1,5 +1,5 @@
 {
-  "revision_id": "5e894893f7bfa753a2688642ffb54a32c4ad52ab83c9e8aa8e4d82e3de4c97b8",
+  "revision_id": "1cccea05d2720b438c3cde494c798e98996dc486e0764d96646100f160bb9f30",
   "name": "docker_crm",
   "run_list": [
     "recipe[runstatus_handler::default]",
@@ -72,10 +72,11 @@
   },
   "override_attributes": {
     "main": {
-      "edgeCloudVersion": "2020-08-11",
+      "edgeCloudVersion": "2020-09-23-2",
       "crmserver": {
         "args": {
-          "commercialCerts": ""
+          "commercialCerts": "",
+          "upgrade": ""
         }
       }
     }
