@@ -3,20 +3,22 @@
 
 package orm
 
-import edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-import "github.com/labstack/echo"
-import "context"
-import "io"
-import "github.com/mobiledgex/edge-cloud/log"
-import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-import "google.golang.org/grpc/status"
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/gogo/googleapis/google/api"
-import _ "github.com/mobiledgex/edge-cloud/protogen"
-import _ "github.com/gogo/protobuf/gogoproto"
-import _ "github.com/gogo/protobuf/types"
+import (
+	"context"
+	fmt "fmt"
+	_ "github.com/gogo/googleapis/google/api"
+	_ "github.com/gogo/protobuf/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
+	_ "github.com/gogo/protobuf/types"
+	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
+	_ "github.com/mobiledgex/edge-cloud/protogen"
+	"google.golang.org/grpc/status"
+	"io"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

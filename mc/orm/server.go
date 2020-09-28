@@ -660,7 +660,6 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 		// as we plan to call this directly from React (browser)
 		isAuth, err := AuthWSCookie(c, ws)
 		if !isAuth {
-			ws.Close()
 			return err
 		}
 
