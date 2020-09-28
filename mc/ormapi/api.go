@@ -381,7 +381,7 @@ type AlertReceiver struct {
 	Name string
 	// Receiver type. Eg. email, slack, pagerduty
 	Type string
-	// Alert severify filter
+	// Alert severity filter
 	Severity string
 	// User string, hidden from API
 	User string `json:"-"`
