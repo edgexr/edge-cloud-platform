@@ -1,0 +1,22 @@
+global:
+  resolve_timeout: 2m
+  http_config: {}
+  smtp_from: alerts@localhost
+  smtp_hello: localhost
+  smtp_smarthost: localhost:25
+  smtp_auth_username: testuser
+  smtp_auth_password: "12345"
+  smtp_auth_identity: testuser
+  smtp_require_tls: false
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+  opsgenie_api_url: https://api.opsgenie.com/
+  wechat_api_url: https://qyapi.weixin.qq.com/cgi-bin/
+  victorops_api_url: https://alert.victorops.com/integrations/generic/20131114/alert/
+route:
+  receiver: default
+  group_wait: 1s
+  group_interval: 1s
+  repeat_interval: 2h
+receivers:
+- name: default
+templates: []
