@@ -459,14 +459,21 @@ func alertMgrApi(ctx context.Context, addr, method, api, options string, payload
 		return nil, err
 	}
 	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 	// HTTP status 2xx is ok
 	if resp.StatusCode/100 != 2 {
+		var errorStr string
+		if err == nil {
+			respErr := strings.TrimSuffix(string(body), "\n")
+			errorStr = fmt.Sprintf("bad response status %s[%s]", resp.Status, respErr)
+		} else {
+			errorStr = fmt.Sprintf("bad response status %s", resp.Status)
+		}
 		log.SpanLog(ctx, log.DebugLevelInfo, "Alertmanager responded with an error", "method", req.Method,
 			"url", req.URL, "payload", payload, "response code", resp.Status,
-			"response length", resp.ContentLength)
-		return nil, fmt.Errorf("bad response status %s", resp.Status)
+			"response length", resp.ContentLength, "body", string(body))
+		return nil, fmt.Errorf("%s", errorStr)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to read response body", "err", err,
 			"method", req.Method, "url", req.URL, "payload", payload,

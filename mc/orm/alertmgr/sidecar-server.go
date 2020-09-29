@@ -250,7 +250,7 @@ func (s *SidecarServer) alertReceiver(w http.ResponseWriter, req *http.Request) 
 		for _, rec := range config.Receivers {
 			if rec.Name == receiverConfig.Receiver.Name {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Receiver Exists - delete it first")
-				http.Error(w, "Receiver Exists - delete it first", http.StatusBadRequest)
+				http.Error(w, "Receiver Exists - delete it first", http.StatusConflict)
 				return
 			}
 		}
