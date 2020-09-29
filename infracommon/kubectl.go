@@ -17,16 +17,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
-	var out string
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
+// getSecretAuth returns secretName, dockerServer, auth, error
+func getSecretAuth(ctx context.Context, imagePath string, vaultConfig *vault.Config) (string, string, *cloudcommon.RegistryAuth, error) {
 	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
-		return nil
+		return "", "", nil, nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
-		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
+		return "", "", nil, fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
 	}
 	// Note: docker-server must contain port if imagepath contains port,
 	// otherwise imagepullsecrets won't work.
@@ -37,6 +36,40 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	if auth.Port != "" {
 		secretName = auth.Hostname + "-" + auth.Port
 		dockerServer = auth.Hostname + ":" + auth.Port
+	}
+	return secretName, dockerServer, auth, nil
+}
+
+func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting docker registry secret in kubernetes cluster", "imagePath", imagePath)
+	secretName, _, auth, err := getSecretAuth(ctx, imagePath, vaultConfig)
+	if err != nil {
+		return err
+	}
+	if auth == nil {
+		return nil
+	}
+	cmd := fmt.Sprintf("kubectl delete secret  %s --kubeconfig=%s", secretName, kconf)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName)
+	out, err := client.Output(cmd)
+	if err != nil {
+		if !strings.Contains(out, "not found") {
+			return fmt.Errorf("can't delete docker registry secret, %s, %v", out, err)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, docker registry secret already gone")
+	}
+	return nil
+}
+
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+	var out string
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
+	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, vaultConfig)
+	if err != nil {
+		return err
+	}
+	if auth == nil {
+		return nil
 	}
 	// Note that the registry secret name must be per-app, since a developer
 	// may put multiple apps in the same ClusterInst and they may come

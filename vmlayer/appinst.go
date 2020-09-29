@@ -18,7 +18,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
-
+	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -116,6 +116,27 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	orchVals.vmgp = vmgp
 	return &orchVals, nil
+}
+
+func seedDockerSecrets(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames, vaultConfig *vault.Config) error {
+	start := time.Now()
+	for _, imagePath := range names.ImagePaths {
+		for {
+			err := infracommon.SeedDockerSecret(ctx, client, clusterInst, imagePath, vaultConfig)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
+				elapsed := time.Since(start)
+				if elapsed > MaxDockerSeedWait {
+					return fmt.Errorf("can't seed docker secret - %v", err)
+				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "retrying in 10 seconds")
+				time.Sleep(10 * time.Second)
+			} else {
+				break
+			}
+		}
+	}
+	return nil
 }
 
 func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -352,24 +373,10 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			}
 		}
 
-		updateCallback(edgeproto.UpdateTask, "Seeding docker secret")
-
-		start := time.Now()
-		for _, imagePath := range names.ImagePaths {
-			for {
-				err = infracommon.SeedDockerSecret(ctx, appClient, clusterInst, imagePath, v.VMProperties.CommonPf.VaultConfig)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
-					elapsed := time.Since(start)
-					if elapsed > MaxDockerSeedWait {
-						return fmt.Errorf("can't seed docker secret - %v", err)
-					}
-					log.SpanLog(ctx, log.DebugLevelInfra, "retrying in 10 seconds")
-					time.Sleep(10 * time.Second)
-				} else {
-					break
-				}
-			}
+		updateCallback(edgeproto.UpdateTask, "Seeding docker secrets")
+		err = seedDockerSecrets(ctx, appClient, clusterInst, names, v.VMProperties.CommonPf.VaultConfig)
+		if err != nil {
+			return err
 		}
 
 		updateCallback(edgeproto.UpdateTask, "Deploying Docker App")
@@ -584,20 +591,36 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		return err
 	}
 
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return fmt.Errorf("get kube names failed: %s", err)
+	}
+
+	if app.Deployment == cloudcommon.DeploymentTypeKubernetes || app.Deployment == cloudcommon.DeploymentTypeHelm {
+		kconf := k8smgmt.GetKconfName(clusterInst)
+		for _, imagePath := range names.ImagePaths {
+			// secret may have changed, so delete and re-create
+			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.VaultConfig, names)
+			if err != nil {
+				return err
+			}
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.VaultConfig, names)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
-		if err != nil {
-			return fmt.Errorf("get kube names failed: %s", err)
-		}
 		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeDocker:
+		err = seedDockerSecrets(ctx, client, clusterInst, names, v.VMProperties.CommonPf.VaultConfig)
+		if err != nil {
+			return err
+		}
 		return dockermgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.VaultConfig, client, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
-		if err != nil {
-			return fmt.Errorf("get kube names failed: %s", err)
-		}
 		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
 
 	default:
