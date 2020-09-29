@@ -73,21 +73,19 @@ func main() {
 		util.DeploymentReplacementVars = config.Vars
 	}
 
-	retry := setupmex.NewRetry(spec.RetryCount, spec.RetryIntervalSec)
+	retry := setupmex.NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
 	ranTest := false
 	for {
 		tryErrs := []string{}
 		for ii, a := range spec.Actions {
+			if !retry.ShouldRunAction(ii) {
+				continue
+			}
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
 			tryErrs = e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)
 			ranTest = true
-			if ii == 0 && actionretry {
-				// only allow the action to retry for the first
-				// action. This avoids rerunning creates when
-				// followed by shows.
-				retry.ActionEnable()
-			}
+			retry.SetActionRetry(ii, actionretry)
 		}
 		if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
 			pass := e2esetup.CompareYamlFiles(spec.CompareYaml.Yaml1,

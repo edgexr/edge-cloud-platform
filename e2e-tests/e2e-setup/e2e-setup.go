@@ -453,6 +453,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			errors = append(errors, err.Error())
 		}
 	case "email":
+		*retry = true
 		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errors = append(errors, err.Error())
