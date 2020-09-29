@@ -13,10 +13,10 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chef/chef v0.20.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
-	github.com/go-openapi/errors v0.19.6
+	github.com/go-openapi/errors v0.19.7
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/swag v0.19.9
-	github.com/go-openapi/validate v0.19.10
+	github.com/go-openapi/validate v0.19.11
 	github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31 // indirect
 	github.com/gogo/googleapis v1.1.0
 	github.com/gogo/protobuf v1.3.1
@@ -77,7 +77,7 @@ replace (
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.1
 
-replace golang.org/x/net => golang.org/x/net v0.0.0-20200513185701-a91f0712d120
+replace golang.org/x/net => golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 
 replace github.com/Azure/go-ansiterm => github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 
@@ -195,7 +195,7 @@ replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.4
 
 replace github.com/spf13/pflag => github.com/spf13/pflag v1.0.5
 
-replace github.com/stretchr/testify => github.com/stretchr/testify v1.6.0
+replace github.com/stretchr/testify => github.com/stretchr/testify v1.6.1
 
 replace github.com/tmc/grpc-websocket-proxy => github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 
@@ -225,7 +225,7 @@ replace k8s.io/client-go => k8s.io/client-go v0.17.3
 
 replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.5
 
-replace github.com/kr/pty => github.com/kr/pty v1.1.1
+replace github.com/kr/pty => github.com/kr/pty v1.1.5
 
 replace github.com/opentracing/opentracing-go => github.com/opentracing/opentracing-go v1.1.0
 
@@ -296,3 +296,13 @@ replace github.com/golang/snappy => github.com/golang/snappy v0.0.1
 replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
 
 replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.6.0
+
+replace github.com/go-openapi/errors => github.com/go-openapi/errors v0.19.7
+
+replace github.com/go-openapi/strfmt => github.com/go-openapi/strfmt v0.19.5
+
+replace github.com/go-openapi/swag => github.com/go-openapi/swag v0.19.9
+
+replace github.com/go-openapi/validate => github.com/go-openapi/validate v0.19.11
+
+replace github.com/creack/pty => github.com/creack/pty v1.1.10
