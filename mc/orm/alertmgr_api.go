@@ -26,6 +26,10 @@ func CreateAlertReceiver(c echo.Context) error {
 	if !success {
 		return err
 	}
+	// sanity check
+	if in.Name == "" {
+		return setReply(c, fmt.Errorf("Receiver name has to be specified"), nil)
+	}
 	in.User = claims.Username
 	if in.Cloudlet.Organization == "" && in.AppInst.AppKey.Organization == "" {
 		return setReply(c,
