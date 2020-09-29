@@ -13,12 +13,10 @@ run_list 'recipe[runstatus_handler]', 'recipe[setup_infra]', 'recipe[preflight_c
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.0.11'
+cookbook 'setup_services', '= 1.0.12'
 cookbook 'docker', '= 6.0.3'
 
 # Set edgeCloudVersion (i.e. edge-cloud docker base image version) for all the cloudlets
-override['main']['edgeCloudVersion'] = '2020-09-23-2'
+override['main']['edgeCloudVersion'] = '2020-09-23-5'
 # By default, commercialCerts is not on. Hence add override to turn it on for all the cloudlets
 override['main']['crmserver']['args']['commercialCerts'] = ""
-# Use upgrade flag to fix all the existing VMs to use vault SSH
-override['main']['crmserver']['args']['upgrade'] = ""
