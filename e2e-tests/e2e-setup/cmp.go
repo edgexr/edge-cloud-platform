@@ -59,8 +59,10 @@ var IgnoreAdminUser = cmpopts.AcyclicTransformer("removeAdminUser", func(users [
 var IgnoreTaskStatusMessages = cmpopts.AcyclicTransformer("ignoreTaskStatus", func(ar ormapi.AuditResponse) ormapi.AuditResponse {
 	if !strings.Contains(ar.OperationName, "/data/create") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateClusterInst") &&
+		!strings.Contains(ar.OperationName, "/ctrl/DeleteClusterInst") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateAppInst") &&
 		!strings.Contains(ar.OperationName, "/ctrl/DeleteAppInst") &&
+		!strings.Contains(ar.OperationName, "/ctrl/DeleteCloudlet") &&
 		!strings.Contains(ar.OperationName, "/ctrl/CreateCloudlet") {
 		return ar
 	}
