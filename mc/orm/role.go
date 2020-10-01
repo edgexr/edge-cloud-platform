@@ -303,6 +303,9 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 		return dbErr(res.Error)
 	}
 	if adminRole {
+		if targetUser.PassCrackTimeSec == 0 {
+			return fmt.Errorf("Target user password strength not verified, please have user log in to verify password strength")
+		}
 		// more stringent password strength requirements
 		err := checkPasswordStrength(ctx, &targetUser, nil, adminRole)
 		if err != nil {

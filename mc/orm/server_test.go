@@ -706,6 +706,49 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *ormclient
 	require.NotNil(t, err, "add user role weak password")
 	require.Contains(t, err.Error(), "Password too weak")
 
+	// lower configured password strength requirements
+	config := map[string]interface{}{
+		"PasswordMinCrackTimeSec":      0.1,
+		"AdminPasswordMinCrackTimeSec": 0.2,
+	}
+	status, err = mcClient.UpdateConfig(uri, token, config)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// old admin should be able to log in now
+	_, err = mcClient.DoLogin(uri, adminOld.Name, adminOldPw)
+	require.Nil(t, err)
+
+	// assign admin rights to user1, will not work because
+	// password strength was reset
+	status, err = mcClient.AddUserRole(uri, token, &roleArgBad)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Target user password strength not verified")
+	// login to set verify password strength
+	_, err = mcClient.DoLogin(uri, user1.Name, user1.Passhash+"1")
+	require.Nil(t, err)
+	// assign admin rights to user1, should work due to low password strength
+	// requirements
+	status, err = mcClient.AddUserRole(uri, token, &roleArgBad)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// change config back
+	config = map[string]interface{}{
+		"PasswordMinCrackTimeSec":      defaultConfig.PasswordMinCrackTimeSec,
+		"AdminPasswordMinCrackTimeSec": defaultConfig.AdminPasswordMinCrackTimeSec,
+	}
+	status, err = mcClient.UpdateConfig(uri, token, config)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// old admin should not be able to log in now
+	_, err = mcClient.DoLogin(uri, adminOld.Name, adminOldPw)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Existing password for Admin too weak")
+	// user1 is now an admin and should also not be able to log in
+	_, err = mcClient.DoLogin(uri, user1.Name, user1.Passhash+"1")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Existing password for Admin too weak")
+
 	// cleanup
 	status, err = mcClient.DeleteUser(uri, token, &adminOld)
 	require.Nil(t, err)
