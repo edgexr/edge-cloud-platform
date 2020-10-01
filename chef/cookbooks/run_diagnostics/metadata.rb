@@ -1,0 +1,6 @@
+name 'run_diagnostics'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Run diagnostics to collect necessary logs'
+version '1.0.0'
+chef_version '>= 14.0'
