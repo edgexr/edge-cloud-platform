@@ -112,6 +112,13 @@ func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, cluster
 func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
 	rootLBName := cloudcommon.GetVMAppFQDN(app, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.CloudletKey, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName})
+	if err != nil {
+		return nil, err
+	}
+	err = client.StartPersistentConn(shepherd_common.ShepherdSshConnectTimeout)
+	if err != nil {
+		return nil, err
+	}
 	return client, err
 }
 
