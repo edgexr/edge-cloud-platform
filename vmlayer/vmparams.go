@@ -528,6 +528,8 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	}
 	internalSecgrpID := ""
 	internalSecgrpPreexisting := false
+	cloudletComputeAZ := v.VMProperties.GetCloudletComputeAvailabilityZone()
+	cloudletVolumeAZ := v.VMProperties.GetCloudletVolumeAvailabilityZone()
 
 	if err != nil {
 		return nil, err
@@ -636,7 +638,12 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 
 	var internalPortNextOctet uint32 = 101
 	for ii, vm := range spec.VMs {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Defining VM", "vm", vm)
+		computeAZ := vm.ComputeAvailabilityZone
+		if computeAZ == "" {
+			computeAZ = cloudletComputeAZ
+		}
+		volumeAZ := cloudletVolumeAZ
+		log.SpanLog(ctx, log.DebugLevelInfra, "Defining VM", "vm", vm, "computeAZ", computeAZ, "volumeAZ", volumeAZ)
 		var role VMRole
 		var newPorts []PortOrchestrationParams
 		internalPortName := GetPortName(vm.Name, vm.ConnectToSubnet)
@@ -830,25 +837,27 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				DNSDomain:               v.VMProperties.CommonPf.GetCloudletDNSZone(),
 				DeploymentManifest:      vm.DeploymentManifest,
 				Command:                 vm.Command,
-				ComputeAvailabilityZone: vm.ComputeAvailabilityZone,
+				ComputeAvailabilityZone: computeAZ,
 				CloudConfigParams:       vccp,
 			}
 			if vm.ExternalVolumeSize > 0 {
 				externalVolume := VolumeOrchestrationParams{
-					Name:       vm.Name + "-volume",
-					Size:       vm.ExternalVolumeSize,
-					ImageName:  vm.ImageName,
-					DeviceName: "vda",
+					Name:             vm.Name + "-volume",
+					Size:             vm.ExternalVolumeSize,
+					ImageName:        vm.ImageName,
+					DeviceName:       "vda",
+					AvailabilityZone: volumeAZ,
 				}
 				newVM.ImageName = ""
 				newVM.Volumes = append(newVM.Volumes, externalVolume)
 			}
 			if vm.SharedVolumeSize > 0 {
 				sharedVolume := VolumeOrchestrationParams{
-					Name:       vm.Name + "-shared-volume",
-					Size:       vm.SharedVolumeSize,
-					DeviceName: "vdb",
-					UnitNumber: 1,
+					Name:             vm.Name + "-shared-volume",
+					Size:             vm.SharedVolumeSize,
+					DeviceName:       "vdb",
+					UnitNumber:       1,
+					AvailabilityZone: volumeAZ,
 				}
 				newVM.Volumes = append(newVM.Volumes, sharedVolume)
 				newVM.SharedVolume = true
