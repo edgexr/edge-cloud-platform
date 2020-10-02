@@ -303,10 +303,6 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating cluster instance", "clusterInst", clusterInst, "timeout", timeout)
 
 	var err error
-	if clusterInst.AvailabilityZone == "" {
-		//use the cloudlet default AZ if it exists
-		clusterInst.AvailabilityZone = v.VMProperties.GetCloudletComputeAvailabilityZone()
-	}
 	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, privacyPolicy, ActionCreate, nil, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Cluster VM create Failed: %v", err)
@@ -586,6 +582,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		WithSubnetConnection(newSubnetName),
 		WithChefParams(chefParams),
 		WithOptionalResource(clusterInst.OptRes),
+		WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 	)
 	if err != nil {
 		return vms, newSubnetName, newSecgrpName, err
@@ -643,6 +640,11 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		if masterFlavor == "" {
 			masterFlavor = clusterInst.NodeFlavor
 		}
+		masterAZ := ""
+		if clusterInst.NumNodes == 0 {
+			// master is used for workloads
+			masterAZ = clusterInst.AvailabilityZone
+		}
 		master, err := v.GetVMRequestSpec(ctx,
 			VMTypeClusterMaster,
 			GetClusterMasterName(ctx, clusterInst),
@@ -653,6 +655,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			WithExternalVolume(clusterInst.ExternalVolumeSize),
 			WithSubnetConnection(newSubnetName),
 			WithChefParams(chefParams),
+			WithComputeAvailabilityZone(masterAZ),
 		)
 		if err != nil {
 			return nil, err
@@ -673,6 +676,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 				WithExternalVolume(clusterInst.ExternalVolumeSize),
 				WithSubnetConnection(newSubnetName),
 				WithChefParams(chefParams),
+				WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 			)
 			if err != nil {
 				return nil, err
