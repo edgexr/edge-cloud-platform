@@ -73,7 +73,7 @@ type DeploymentData struct {
 	AutoProvs           []*intprocess.AutoProv            `yaml:"autoprovs"`
 	Cloudflare          CloudflareDNS                     `yaml:"cloudflare"`
 	Prometheus          []*intprocess.PromE2e             `yaml:"prometheus"`
-	Exporters           []*intprocess.Exporter            `yaml:"exporter"`
+	HttpServers         []*intprocess.HttpServer          `yaml:"httpservers"`
 	ChefServers         []*intprocess.ChefServer          `yaml:"chefserver"`
 	Alertmanagers       []*intprocess.Alertmanager        `yaml:"alertmanagers"`
 	Maildevs            []*intprocess.Maildev             `yaml:"maildevs"`
@@ -159,7 +159,7 @@ func GetAllProcesses() []process.Process {
 	for _, p := range Deployment.Prometheus {
 		all = append(all, p)
 	}
-	for _, p := range Deployment.Exporters {
+	for _, p := range Deployment.HttpServers {
 		all = append(all, p)
 	}
 	for _, p := range Deployment.ChefServers {
@@ -309,7 +309,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 			return false
 		}
 	}
-	for _, p := range Deployment.Exporters {
+	for _, p := range Deployment.HttpServers {
 		opts := append(opts, process.WithCleanStartup())
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
@@ -455,6 +455,12 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 	case "email":
 		*retry = true
 		err := RunEmailAPI(actionSubtype, spec.ApiFile, outputDir)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	case "slack":
+		*retry = true
+		err := RunSlackAPI(actionSubtype, spec.ApiFile, outputDir)
 		if err != nil {
 			errors = append(errors, err.Error())
 		}

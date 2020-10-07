@@ -11,6 +11,10 @@ import (
 	"github.com/mobiledgex/yaml/v2"
 )
 
+type E2eServerName struct {
+	Name string `json:"name"`
+}
+
 // The structure below is a full maildev email structure.
 // However we only need some of the fields to check
 type MailDevEmail struct {
@@ -78,41 +82,57 @@ func GetMaildev(name string) *intprocess.Maildev {
 
 // get api
 func RunEmailAPI(api, apiFile, outputDir string) error {
+	servers := make([]E2eServerName, 0)
+	if apiFile != "" {
+		err := util.ReadYamlFile(apiFile, &servers)
+		if err != nil {
+			log.Printf("Unable to read api file: %s [%s]\n", apiFile, err.Error())
+			return err
+		}
+	} else {
+		servers = append(servers, E2eServerName{Name: ""})
+	}
+
 	switch api {
 	case "check":
-		// get default
-		proc := GetMaildev("")
-		apiUrl := fmt.Sprintf("0.0.0.0:%d/email", proc.UiPort)
-		cmd := exec.Command("curl", "-s", "-S", apiUrl)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			log.Printf("Error running show emails API on port %d, err: %v\n", proc.UiPort, err)
-			return err
+		for ii, sName := range servers {
+			proc := GetMaildev(sName.Name)
+			apiUrl := fmt.Sprintf("0.0.0.0:%d/email", proc.UiPort)
+			cmd := exec.Command("curl", "-s", "-S", apiUrl)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				log.Printf("Error running show emails API on port %d, err: %v\n", proc.UiPort, err)
+				return err
+			}
+			// unmarshal and marshal back to get just the fields we want
+			emails := []MailDevEmail{}
+			err = json.Unmarshal(out, &emails)
+			if err != nil {
+				log.Printf("email unmarshal error: %v\n", err)
+				return err
+			}
+			// marshal back
+			ymlOut, err := yaml.Marshal(&emails)
+			if err != nil {
+				log.Printf("email marshal into yaml error: %v\n", err)
+				return err
+			}
+			if ii == 0 {
+				util.PrintToFile("show-commands.yml", outputDir, string(ymlOut), true)
+			} else {
+				util.PrintToFile("show-commands.yml", outputDir, string(ymlOut), false)
+			}
 		}
-		// unmarshal and marshal back to get just the fields we want
-		emails := []MailDevEmail{}
-		err = json.Unmarshal(out, &emails)
-		if err != nil {
-			log.Printf("email unmarshal error: %v\n", err)
-			return err
-		}
-		// marshal back
-		ymlOut, err := yaml.Marshal(&emails)
-		if err != nil {
-			log.Printf("email marshal into yaml error: %v\n", err)
-			return err
-		}
-		truncate := true
-		util.PrintToFile("show-commands.yml", outputDir, string(ymlOut), truncate)
 	case "deleteall":
-		// get default
-		proc := GetMaildev("")
-		apiUrl := fmt.Sprintf("0.0.0.0:%d/email/all", proc.UiPort)
-		cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			log.Printf("err: %v\n", err)
-			return err
+		for _, sName := range servers {
+			proc := GetMaildev(sName.Name)
+			apiUrl := fmt.Sprintf("0.0.0.0:%d/email/all", proc.UiPort)
+			cmd := exec.Command("curl", "-s", "-S", "-X", "DELETE", apiUrl)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				log.Printf("err: %v\n", err)
+				return err
+			}
 		}
 	default:
 		return fmt.Errorf("Unknown action for email subsystem")

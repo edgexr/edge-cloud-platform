@@ -9,6 +9,8 @@ import (
 )
 
 var AlertReceiverAliasArgs = []string{
+	"slack-channel=slackchannel",
+	"slack-api-url=slackwebhook",
 	"app-org=appinst.appkey.organization",
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
@@ -52,6 +54,9 @@ var AlertReceiverRequiredArgs = []string{
 }
 
 var AlertReceiverOptionalArgs = []string{
+	"email",
+	"slack-channel",
+	"slack-api-url",
 	"appname",
 	"appvers",
 	"app-org",

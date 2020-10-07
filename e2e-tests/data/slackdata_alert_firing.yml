@@ -1,0 +1,14 @@
+- channel: '#alerts'
+  username: AlertManager
+  attachments:
+  - title: |
+      [FIRING:1] AppInstDown Application: someapplication1 Version: 1.0
+    titlelink: https://console.mobiledgex.net
+    text: "*Alert:* \n\n*Description:* \n\n*Details:*\n   • *alertname:* AppInstDown\n
+      \  • *app:* someapplication1\n   • *apporg:* AcmeAppCo\n   • *appver:* 1.0\n
+      \  • *cloudlet:* dmuus-cloud-1\n   • *cloudletorg:* dmuus\n   • *cluster:* SmallCluster\n
+      \  • *clusterorg:* AcmeAppCo\n   • *envoy_cluster_name:* SmallCluster\n   •
+      *instance:* host.docker.internal:9091\n   • *job:* envoy_targets\n   • *region:*
+      local\n   • *status:* 2\n  \n\n"
+    fallback: '[FIRING:1] AppInstDown Application: someapplication1 Version: 1.0 |
+      https://console.mobiledgex.net'

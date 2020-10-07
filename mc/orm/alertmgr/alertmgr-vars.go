@@ -64,7 +64,7 @@ SOFTWARE.
 <head style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
 <meta name="viewport" content="width=device-width" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
-<title style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">` + alertmanagerCOnfigEmailSubjectTemplate + `</title>
+<title style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">` + alertmanagerConfigEmailSubjectTemplate + `</title>
 
 </head>
 
@@ -158,8 +158,7 @@ SOFTWARE.
 `
 
 // NOTE - below only works for an appInst alert, not a cloudlet alert.
-var alertmanagerCOnfigEmailSubjectTemplate = `[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.` + edgeproto.AppKeyTagName + `}} Version: {{.CommonLabels.` + edgeproto.AppKeyTagVersion + `}}`
-
+var alertmanagerConfigEmailSubjectTemplate = `[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.` + edgeproto.AppKeyTagName + `}} Version: {{.CommonLabels.` + edgeproto.AppKeyTagVersion + `}}`
 var alertmanagerConfigEmailTextTemplate = `
 MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
   {{ .Name }}={{ .Value }}
@@ -172,12 +171,29 @@ MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}
 {{ end }}
 `
 
+var alertmanagerConfigSlackTitle = `[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.` + edgeproto.AppKeyTagName + `}} Version: {{.CommonLabels.` + edgeproto.AppKeyTagVersion + `}}
+`
+var alertmanagerConfigSlackText = `{{ range .Alerts -}}
+*Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - {{ .Labels.severity }}{{ end }}
+
+*Description:* {{ .Annotations.description }}
+
+*Details:*
+  {{ range .Labels.SortedPairs }} • *{{ .Name }}:* {{ .Value }}
+  {{ end }}
+{{ end }}
+`
+var alertmanagerConfigSlackTitleLink = "https://console.mobiledgex.net"
+var alertmanagerConfigSlackFallback = `[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.` + edgeproto.AppKeyTagName + `}} Version: {{.CommonLabels.` + edgeproto.AppKeyTagVersion + `}} | ` + alertmanagerConfigSlackTitleLink
+var alertmanagerConfigSlackIcon = "https://www.mobiledgex.com/img/logo.svg"
+
 const (
-	AlertReceiverTypeEmail = "email"
-	AlertReceiverTypeSlack = "slack"
-	AlertSeverityError     = "error"
-	AlertSeverityWarn      = "warning"
-	AlertSeverityInfo      = "info"
+	AlertReceiverTypeEmail    = "email"
+	AlertReceiverTypeSlack    = "slack"
+	AlertSeverityError        = "error"
+	AlertSeverityWarn         = "warning"
+	AlertSeverityInfo         = "info"
+	AlertMgrSlackWebhookToken = "<hidden>"
 )
 
 const (

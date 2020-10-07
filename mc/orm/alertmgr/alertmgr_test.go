@@ -415,12 +415,12 @@ func TestAlertMgrServer(t *testing.T) {
 
 	// 7. Test alertmgr create receiver api
 	// Invalid receiver test
-	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[0], nil)
+	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[0])
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Invalid receiver type")
 	require.Contains(t, err.Error(), testAlertReceivers[0].Type)
 
-	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[1], &testAlertReceiverEmailCfg)
+	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[1])
 	require.Nil(t, err)
 	require.Equal(t, 1, fakeAlertmanager.ConfigReloads)
 	fakeAlertmanager.verifyReceiversCnt(t, 2)
@@ -428,7 +428,7 @@ func TestAlertMgrServer(t *testing.T) {
 	receiver := fakeAlertmanager.findReceiver(&testAlertReceivers[1])
 	require.NotNil(t, receiver)
 	require.Len(t, receiver.EmailConfigs, 1)
-	require.Equal(t, testAlertReceiverEmailCfg.Email, receiver.EmailConfigs[0].To)
+	require.Equal(t, testAlertReceivers[1].Email, receiver.EmailConfigs[0].To)
 	// check route and labels
 	route := fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[1])
 	require.NotNil(t, route)
@@ -484,6 +484,59 @@ func TestAlertMgrServer(t *testing.T) {
 	require.Nil(t, route)
 	// check routes
 	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[1])
+	require.Nil(t, route)
+	// Verify ShowReceivers is empty
+	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)
+	require.Nil(t, err)
+	require.Len(t, receivers, 0)
+
+	// Test slack receivers
+	// Invalid receiver - missing slack details
+	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[2])
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Invalid Slack api URL")
+
+	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[3])
+	require.Nil(t, err)
+	require.Equal(t, 3, fakeAlertmanager.ConfigReloads)
+	fakeAlertmanager.verifyReceiversCnt(t, 2)
+	// Validate receivers
+	receiver = fakeAlertmanager.findReceiver(&testAlertReceivers[3])
+	require.NotNil(t, receiver)
+	require.Len(t, receiver.SlackConfigs, 1)
+	require.Equal(t, testAlertReceivers[3].SlackWebhook, receiver.SlackConfigs[0].APIURL.String())
+
+	// check route and labels
+	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[3])
+	require.NotNil(t, route)
+	routeLblVal, found = route.Match[edgeproto.AppKeyTagName]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInst.AppKey.Name)
+	routeLblVal, found = route.Match[edgeproto.AppKeyTagOrganization]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[3].AppInst.AppKey.Organization)
+
+	// Verify ShowReceivers
+	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)
+	require.Nil(t, err)
+	// should be a single receiver
+	require.Len(t, receivers, 1)
+	// check the receiver and all fields
+	require.Equal(t, testAlertReceivers[3], receivers[0])
+
+	// Delete slack receiver and verify it's deleted
+	err = testAlertMgrServer.DeleteReceiver(ctx, &testAlertReceivers[3])
+	require.Nil(t, err)
+	require.Equal(t, 4, fakeAlertmanager.ConfigReloads)
+	fakeAlertmanager.verifyReceiversCnt(t, 1)
+	receiver = fakeAlertmanager.findReceiver(&testAlertReceivers[3])
+	require.Nil(t, receiver)
+	// Only receiver should be a default one
+	require.Equal(t, "default", fakeAlertmanager.receivers[0].Name)
+	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[3])
+	require.Nil(t, route)
+	// check routes
+	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[3])
 	require.Nil(t, route)
 	// Verify ShowReceivers is empty
 	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)

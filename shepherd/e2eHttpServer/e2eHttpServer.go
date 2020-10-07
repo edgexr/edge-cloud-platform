@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"text/template"
 
+	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
 	"gopkg.in/yaml.v2"
 )
 
@@ -37,9 +39,9 @@ type Prometheus struct {
 	AppVersion     string `yaml:"appVersion"`
 }
 
-var exportStr string
-var exportStrTemplate *template.Template
-var exportSetup = `# HELP node_netstat_Tcp_CurrEstab mimicking the TcpConns stat
+var promExportStr string
+var promExportStrTemplate *template.Template
+var promExportSetup = `# HELP node_netstat_Tcp_CurrEstab mimicking the TcpConns stat
 # TYPE node_netstat_Tcp_CurrEstab untyped
 node_netstat_Tcp_CurrEstab {{.TcpConn}}
 # HELP node_netstat_Tcp_RetransSegs mimicking the TcpRetrans stat
@@ -87,24 +89,30 @@ kube_pod_labels{pod="{{.AppName}}",label_mexAppName="{{.AppName}}",label_mexAppV
 `
 
 var port = flag.Int("port", 9100, "Port to export metrics on")
-var statsPath = flag.String("statsPath", "", "Path to stats to export")
+var statsPath = flag.String("promStatsPath", "", "Path to stats to export")
+
+var SlackMessages []e2esetup.TestSlackMsg
 
 func main() {
 	flag.Parse()
 	if *port < 0 || 65535 < *port {
 		log.Fatalf("Invalid Port number %d, please specify a port between 0 and 65535", *port)
 	}
-	exportStrTemplate = template.Must(template.New("exporter").Parse(exportSetup))
+	SlackMessages = make([]e2esetup.TestSlackMsg, 0)
+	promExportStrTemplate = template.Must(template.New("exporter").Parse(promExportSetup))
 	stats := ExporterStatsCollector{}
 	GetValuesFromYaml(&stats, *statsPath)
 	buf := bytes.Buffer{}
-	if err := exportStrTemplate.Execute(&buf, &stats.Prom); err != nil {
+	if err := promExportStrTemplate.Execute(&buf, &stats.Prom); err != nil {
 		log.Fatal("Failed to create exporter ", "error:", err)
 	}
-	exportStr = buf.String()
+	promExportStr = buf.String()
 
-	log.Println("Starting fake prometheus exporter...")
-	http.HandleFunc("/metrics", exporter)
+	log.Println("Starting Generic Web Service...")
+	http.HandleFunc("/metrics", promExporter)
+	http.HandleFunc(e2esetup.SlackWebhookApi, slackWebhookHandler)
+	http.HandleFunc(e2esetup.ListSlackMessagesApi, showSlackMessages)
+	http.HandleFunc(e2esetup.DeleteAllSlackMessagesApi, deleteSlackMessages)
 	http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 }
 
@@ -119,6 +127,53 @@ func GetValuesFromYaml(stats *ExporterStatsCollector, ymlPath string) {
 	}
 }
 
-func exporter(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, exportStr)
+func promExporter(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, promExportStr)
+}
+
+func slackWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Failed to decode slack request")
+		http.Error(w, "decoding failed", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Got a request to send a slack message method: %s\n, body:%s", r.Method, string(body))
+	slackMsg := e2esetup.TestSlackMsg{}
+	err = json.Unmarshal(body, &slackMsg)
+	if err != nil {
+		log.Printf("slack message unmarshal error: %v body:<%s>\n", err, string(body))
+	} else {
+		SlackMessages = append(SlackMessages, slackMsg)
+	}
+}
+
+func showSlackMessages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+	}
+	// marshal data and send it back
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(w).Encode(SlackMessages)
+	if err != nil {
+		log.Printf("Failed to get marshal slack messages: %s, messages:<%v>\n",
+			err.Error(), SlackMessages)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	return
+}
+
+func deleteSlackMessages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+	}
+	SlackMessages = nil
 }

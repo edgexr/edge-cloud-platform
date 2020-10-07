@@ -381,9 +381,9 @@ prometheus:
   hostname: "127.0.0.1"
   port: 9090
 
-exporter:
-- name: fakePromExporter
-  datafile: "{{datadir2}}/mc_metrics.yml"
+httpservers:
+- name: PromExporterSlackServer
+  promdatafile: "{{datadir2}}/mc_metrics.yml"
   port: 9100
   hostname: "127.0.0.1"
 
