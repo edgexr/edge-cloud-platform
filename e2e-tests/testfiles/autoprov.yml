@@ -38,13 +38,13 @@ tests:
     apifile: "{{datadir2}}/autoprov_clearactive"
 
   - name: sleep, allow undeploy alert to be visible as pending
-    actions: [sleep=3]
+    actions: [sleep=2]
 
   - name: check undeploy alerts
     actions: [mcapi-showalerts]
     apifile: '{{datadir2}}/show_local_region.yml'
     curuserfile: '{{datadir2}}/mc_admin.yml'
-    retrycount: 10
+    retrycount: 20
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
