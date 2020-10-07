@@ -13,6 +13,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"text/template"
@@ -24,6 +26,7 @@ import (
 
 	//	alertmanager_config "github.com/prometheus/alertmanager/config"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	alertmanager_config "github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr/prometheus_structs/config"
 )
 
@@ -399,6 +402,16 @@ func (s *SidecarServer) writeAlertmanagerConfigLocked(ctx context.Context, confi
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to write default alertmanager config", "err", err, "file", s.alertMgrConfigPath)
 		return err
+	}
+	if runtime.GOOS == "darwin" {
+		// probably because of the way docker uses VMs on mac,
+		// the file watch doesn't detect changes done to the targets
+		// file in the host.
+		cmd := exec.Command("docker", "exec", intprocess.PrometheusContainer, "touch", s.alertMgrConfigPath)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to touch alertmgr file in container to trigger refresh in alertmanager", "out", string(out), "err", err)
+		}
 	}
 
 	// trigger reload of the config
