@@ -73,9 +73,9 @@ type PromE2e struct {
 	cmd            *exec.Cmd
 }
 
-type Exporter struct {
+type HttpServer struct {
 	process.Common `yaml:",inline"`
-	DataFile       string
+	PromDataFile   string
 	Port           int
 	cmd            *exec.Cmd
 }

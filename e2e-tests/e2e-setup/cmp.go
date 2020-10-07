@@ -254,6 +254,42 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 
 		y1 = a1
 		y2 = a2
+	} else if fileType == "slackdata" {
+		// sort email headers
+		var a1 []TestSlackMsg
+		var a2 []TestSlackMsg
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		// If this is an empty file, treat it as an empty list
+		if a1 == nil {
+			a1 = []TestSlackMsg{}
+		}
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		// If this is an empty file, treat it as an empty list
+		if a2 == nil {
+			a2 = []TestSlackMsg{}
+		}
+		sort.Slice(a1, func(i, j int) bool {
+			if len(a1[i].Attachments) < 1 {
+				return false
+			}
+			if len(a1[j].Attachments) < 1 {
+				return true
+			}
+			return a1[i].Attachments[0].Title < a1[j].Attachments[0].Title
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			if len(a2[i].Attachments) < 1 {
+				return false
+			}
+			if len(a2[j].Attachments) < 1 {
+				return true
+			}
+			return a2[i].Attachments[0].Title < a2[j].Attachments[0].Title
+		})
+
+		y1 = a1
+		y2 = a2
 	} else {
 		return util.CompareYamlFiles(firstYamlFile,
 			secondYamlFile, fileType)

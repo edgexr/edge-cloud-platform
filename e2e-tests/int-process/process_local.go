@@ -547,9 +547,9 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 }
 
 func (p *PromE2e) StartLocal(logfile string, opts ...process.StartOp) error {
-	// if the image doesnt exist, build it
+	// if the image doesn't exist, build it
 	if !imageFound(p.Name) {
-		directory := os.Getenv("GOPATH") + "/src/github.com/mobiledgex/edge-cloud-infra/shepherd/fakePromExporter"
+		directory := os.Getenv("GOPATH") + "/src/github.com/mobiledgex/edge-cloud-infra/shepherd/e2eHttpServer"
 		builder := exec.Command("docker", "build", "-t", p.Name, directory)
 		err := builder.Run()
 		if err != nil {
@@ -588,9 +588,9 @@ func (p *PromE2e) GetExeName() string { return "docker" }
 
 func (p *PromE2e) LookupArgs() string { return p.Name }
 
-func (p *Exporter) StartLocal(logfile string, opts ...process.StartOp) error {
+func (p *HttpServer) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{
-		"-port", fmt.Sprintf("%d", p.Port), "-statsPath", p.DataFile,
+		"-port", fmt.Sprintf("%d", p.Port), "-promStatsPath", p.PromDataFile,
 	}
 
 	var err error
@@ -598,13 +598,13 @@ func (p *Exporter) StartLocal(logfile string, opts ...process.StartOp) error {
 	return err
 }
 
-func (p *Exporter) StopLocal() {
+func (p *HttpServer) StopLocal() {
 	process.StopLocal(p.cmd)
 }
 
-func (p *Exporter) GetExeName() string { return "fakepromexporter" }
+func (p *HttpServer) GetExeName() string { return "e2eHttpServer" }
 
-func (p *Exporter) LookupArgs() string { return "" }
+func (p *HttpServer) LookupArgs() string { return "" }
 
 func (p *ChefServer) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{}

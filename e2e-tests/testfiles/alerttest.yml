@@ -65,6 +65,16 @@ tests:
       yaml2: '{{datadir2}}/emaildata_alert_firing.yml'
       filetype: emaildata
 
+  - name: verify that slack notification about an alert was sent
+    actions: [slack-check]
+    apifile: '{{datadir2}}/slack_server_name.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/slackdata_alert_firing.yml'
+      filetype: slackdata
+
   - name: set healthy backend servers to 1
     actions: [cmds]
     apifile: "{{datadir2}}/alert_appinstup"
@@ -80,7 +90,7 @@ tests:
       yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcalerts
 
-  - name: verify that email notification about an alert resoltion was sent
+  - name: verify that email notification about an alert resolution was sent
     actions: [email-check]
     retrycount: 10
     retryintervalsec: 0.5
@@ -88,6 +98,15 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/emaildata_alert_resolved.yml'
       filetype: emaildata
+
+  - name: verify that slack notification about an alert resolution was sent
+    actions: [slack-check]
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/slackdata_alert_resolved.yml'
+      filetype: slackdata
 
   - name: delete alert receiver
     actions: [mcapi-delete]
@@ -108,3 +127,10 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: emaildata
+
+  - name: delete all slack messages and verify that the channel is empty
+    actions: [slack-deleteall, slack-check]
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: slackdata

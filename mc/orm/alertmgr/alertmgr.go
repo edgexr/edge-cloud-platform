@@ -243,7 +243,7 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 
 // Receiver includes a route and a receiver which will receive the alert
 // we create a route on the org tags for a given appInstance
-func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.AlertReceiver, cfg interface{}) error {
+func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.AlertReceiver) error {
 	var rec alertmanager_config.Receiver
 
 	// sanity - certain characters should not be part of the receiver name
@@ -262,17 +262,12 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 	// add a new receiver
 	switch receiver.Type {
 	case AlertReceiverTypeEmail:
-		user, ok := cfg.(*ormapi.User)
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfo, "Passed in struct is not a user struct")
-			return fmt.Errorf("Passed in struct is not a user struct")
-		}
 		emailCfg := alertmanager_config.EmailConfig{
 			NotifierConfig: notifierCfg,
-			To:             user.Email,
+			To:             receiver.Email,
 			HTML:           alertmanagerConfigEmailHtmlTemplate,
 			Headers: map[string]string{
-				"Subject": alertmanagerCOnfigEmailSubjectTemplate,
+				"Subject": alertmanagerConfigEmailSubjectTemplate,
 			},
 			Text: alertmanagerConfigEmailTextTemplate,
 		}
@@ -282,8 +277,29 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 			EmailConfigs: []*alertmanager_config.EmailConfig{&emailCfg},
 		}
 	case AlertReceiverTypeSlack:
-		// TODO - need to figure out where to add slack details; as in which struct
-		fallthrough
+		slackUrl, err := url.Parse(receiver.SlackWebhook)
+		if err != nil || !strings.HasPrefix(slackUrl.Scheme, "http") {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to parse slack URL",
+				"url", receiver.SlackWebhook)
+			return fmt.Errorf("Invalid Slack api URL")
+		}
+		slackCfg := alertmanager_config.SlackConfig{
+			NotifierConfig: notifierCfg,
+			Channel:        receiver.SlackChannel,
+			APIURL: &alertmanager_config.URL{
+				URL: slackUrl,
+			},
+			Title:     alertmanagerConfigSlackTitle,
+			Text:      alertmanagerConfigSlackText,
+			TitleLink: alertmanagerConfigSlackTitleLink,
+			Fallback:  alertmanagerConfigSlackFallback,
+			IconURL:   alertmanagerConfigSlackIcon,
+		}
+		rec = alertmanager_config.Receiver{
+			// to make the name unique - construct it with all the fields and username
+			Name:         receiverName,
+			SlackConfigs: []*alertmanager_config.SlackConfig{&slackCfg},
+		}
 	default:
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unsupported receiver type", "type", receiver.Type,
 			"receiver", receiver)
@@ -293,7 +309,7 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 	route := alertmanager_config.Route{
 		Receiver: receiverName,
 		Match:    routeMatchLabels,
-		Continue: false,
+		Continue: true,
 	}
 	sidecarRec := SidecarReceiverConfig{
 		Receiver: rec,
@@ -372,6 +388,15 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Unable to parse receiver", "err", err, "receiver", rec.Receiver)
 			continue
+		}
+		switch receiver.Type {
+		case AlertReceiverTypeEmail:
+			receiver.Email = rec.Receiver.EmailConfigs[0].To
+		case AlertReceiverTypeSlack:
+			receiver.SlackChannel = rec.Receiver.SlackConfigs[0].Channel
+			receiver.SlackWebhook = AlertMgrSlackWebhookToken
+		default:
+			log.SpanLog(ctx, log.DebugLevelApi, "Unknown receiver type", "type", receiver.Type)
 		}
 		route := rec.Route
 		// Based on the labels it's either cloudlet, or appInst

@@ -2,6 +2,24 @@ alertreceivers:
 - name: emailAlertReceiver
   type: email
   severity: error
+  email: ops@mobiledgex.net
+  appinst:
+    appkey:
+      organization: AcmeAppCo
+      name: someapplication1
+      version: "1.0"
+    clusterinstkey:
+      clusterkey:
+        name: SmallCluster
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+      organization: AcmeAppCo
+- name: emailSlackReceiver
+  type: slack
+  severity: error
+  slackchannel: "#alerts"
+  slackwebhook: "<hidden>"
   appinst:
     appkey:
       organization: AcmeAppCo

@@ -51,18 +51,29 @@ func CreateAlertReceiver(c echo.Context) error {
 
 	switch in.Type {
 	case alertmgr.AlertReceiverTypeEmail:
-		user := ormapi.User{
-			Name:  claims.Username,
-			Email: claims.Email,
+		// if an email is not specified send to an email on file
+		if in.Email == "" {
+			in.Email = claims.Email
 		}
-		err = AlertManagerServer.CreateReceiver(ctx, &in, &user)
+		err = AlertManagerServer.CreateReceiver(ctx, &in)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create a receiver", "err", err)
 			return setReply(c, fmt.Errorf("Unable to create a receiver - %s", err.Error()),
 				nil)
 		}
 	case alertmgr.AlertReceiverTypeSlack:
-		// TODO
+		// TODO - retrieve org slack channel from vault, for now require slack details
+		if in.SlackWebhook == "" || in.SlackChannel == "" {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Slack details are missing", "receiver", in)
+			return setReply(c, fmt.Errorf("Slack URL, or channel are missing"),
+				nil)
+		}
+		err = AlertManagerServer.CreateReceiver(ctx, &in)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create a receiver", "err", err)
+			return setReply(c, fmt.Errorf("Unable to create a receiver - %s", err.Error()),
+				nil)
+		}
 	default:
 		log.SpanLog(ctx, log.DebugLevelInfo, "type of a receiver is invalid")
 		return setReply(c, fmt.Errorf("Receiver type invalid"), nil)

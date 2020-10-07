@@ -386,6 +386,12 @@ type AlertReceiver struct {
 	// User string, hidden from API
 	User string `json:"-"`
 	// TODO - add slack notification details(optional)
+	// Custom receiving email
+	Email string `json:",omitempty"`
+	// Custom slack channel
+	SlackChannel string `json:",omitempty"`
+	// Custom slack webhook
+	SlackWebhook string `json:",omitempty"`
 	// Cloudlet spec for alerts
 	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
 	// AppInst spec for alerts
