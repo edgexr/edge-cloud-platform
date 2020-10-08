@@ -3,6 +3,7 @@ alertreceivers:
   type: email
   severity: error
   email: ops@mobiledgex.net
+  user: mexadmin
   appinst:
     appkey:
       organization: AcmeAppCo
@@ -18,6 +19,7 @@ alertreceivers:
 - name: emailSlackReceiver
   type: slack
   severity: error
+  user: mexadmin
   slackchannel: "#alerts"
   slackwebhook: "<hidden>"
   appinst:

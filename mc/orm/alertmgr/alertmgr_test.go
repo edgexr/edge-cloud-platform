@@ -521,6 +521,10 @@ func TestAlertMgrServer(t *testing.T) {
 	require.Nil(t, err)
 	// should be a single receiver
 	require.Len(t, receivers, 1)
+	// check that webhook is hidden
+	require.Equal(t, AlertMgrSlackWebhookToken, receivers[0].SlackWebhook)
+	// set webhook so next comparison doesn't fail
+	receivers[0].SlackWebhook = testAlertReceivers[3].SlackWebhook
 	// check the receiver and all fields
 	require.Equal(t, testAlertReceivers[3], receivers[0])
 
