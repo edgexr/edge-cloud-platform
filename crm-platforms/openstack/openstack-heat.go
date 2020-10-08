@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -14,7 +13,6 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
-var heatStackLock sync.Mutex
 var heatCreate string = "CREATE"
 var heatUpdate string = "UPDATE"
 var heatDelete string = "DELETE"
@@ -407,12 +405,17 @@ func GetChefKeysFromOSResource(ctx context.Context, stackTemplate *OSHeatStackTe
 }
 
 // populateParams fills in some details which cannot be done outside of heat
-func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) error {
+func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) (*ReservedResources, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams", "VMGroupOrchestrationParams", VMGroupOrchestrationParams.GroupName, "action", action)
+
+	// lock the resource reservations
+	resourceLock.Lock()
+	defer resourceLock.Unlock()
+	var reserved ReservedResources
 
 	usedCidrs := make(map[string]string)
 	if VMGroupOrchestrationParams.Netspec == nil {
-		return fmt.Errorf("Netspec is nil")
+		return nil, fmt.Errorf("Netspec is nil")
 	}
 	masterIP := ""
 
@@ -424,7 +427,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		if action != heatTest && !VMGroupOrchestrationParams.SkipInfraSpecificCheck {
 			sns, snserr := o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
 			if snserr != nil {
-				return fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
+				return nil, fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
 			}
 			for _, s := range sns {
 				usedCidrs[s.Subnet] = s.Name
@@ -443,7 +446,13 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 				// either look for an unused one (create) or the current one (update)
 				newSubnet := action == heatCreate || action == heatTest
 				if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+					resby, alreadyReserved := ReservedSubnets[subnet]
+					if alreadyReserved {
+						log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
+						continue
+					}
 					found = true
+					reserved.Subnets = append(reserved.Subnets, subnet)
 					VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
 					if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
 						VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
@@ -454,7 +463,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 				}
 			}
 			if !found {
-				return fmt.Errorf("cannot find subnet cidr")
+				return nil, fmt.Errorf("cannot find subnet cidr")
 			}
 		}
 
@@ -474,7 +483,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 						}
 					}
 					if !found {
-						return fmt.Errorf("cannot find matching subnet for port: %s", p.Name)
+						return nil, fmt.Errorf("cannot find matching subnet for port: %s", p.Name)
 					}
 				}
 			}
@@ -487,7 +496,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
 		if err != nil {
-			return fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
+			return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
 		}
 		chefClientKeys, err = GetChefKeysFromOSResource(ctx, stackTemplate)
 		if err != nil {
@@ -507,20 +516,20 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			if v.CloudConfigParams.ChefParams.ClientKey == "" {
 				key, ok := chefClientKeys[v.CloudConfigParams.ChefParams.NodeName]
 				if !ok || key == "" {
-					return fmt.Errorf("missing chef client key for %s", v.CloudConfigParams.ChefParams.NodeName)
+					return nil, fmt.Errorf("missing chef client key for %s", v.CloudConfigParams.ChefParams.NodeName)
 				}
 				v.CloudConfigParams.ChefParams.ClientKey = key
 			}
 		}
 		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if v.Role == vmlayer.RoleMaster && action == heatUpdate {
 			if masterUserData, ok := vmsUserData[v.Name]; ok {
 				if !IsUserDataSame(ctx, masterUserData, userdata) {
-					return fmt.Errorf("Unable to update cluster instance as it will redeploy master node, hence will affect running app instances. Please delete and recreate the cluster instance")
+					return nil, fmt.Errorf("Unable to update cluster instance as it will redeploy master node, hence will affect running app instances. Please delete and recreate the cluster instance")
 				}
 			}
 		}
@@ -542,40 +551,50 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 			} else {
 				fipid, err = o.getFreeFloatingIpid(ctx, VMGroupOrchestrationParams.Netspec.FloatingIPExternalNet)
 				if err != nil {
-					return err
+					return nil, err
 				}
+				resby, alreadyReserved := ReservedFloatingIPs[fipid]
+				if alreadyReserved {
+					log.SpanLog(ctx, log.DebugLevelInfra, "floating ip aleady reserved", "fipid", fipid, "resby", resby)
+					continue
+				}
+				reserved.FloatingIpIds = append(reserved.FloatingIpIds, fipid)
 			}
 			VMGroupOrchestrationParams.FloatingIPs[i].FloatingIpId = fipid
 		}
 	}
-
-	return nil
+	err := o.ReserveResourcesLocked(ctx, &reserved, VMGroupOrchestrationParams.GroupName)
+	if err != nil {
+		return nil, err
+	}
+	return &reserved, nil
 }
 
 func (o *OpenstackPlatform) HeatCreateVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "HeatCreateVMs", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
-
-	heatStackLock.Lock()
-	defer heatStackLock.Unlock()
-
-	// populate parameters which cannot be done in advance
-	err := o.populateParams(ctx, VMGroupOrchestrationParams, heatCreate)
+	reservations, err := o.populateParams(ctx, VMGroupOrchestrationParams, heatCreate)
 	if err != nil {
 		return err
 	}
-	return o.CreateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
+	err = o.CreateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
+	releaseErr := o.ReleaseReservations(ctx, reservations)
+	if releaseErr != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations error", "reservations", reservations, "releaseErr", releaseErr)
+	}
+	return err
+
 }
 
 func (o *OpenstackPlatform) HeatUpdateVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "HeatUpdateVMs", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
-
-	heatStackLock.Lock()
-	defer heatStackLock.Unlock()
-
-	err := o.populateParams(ctx, VMGroupOrchestrationParams, heatUpdate)
+	reservations, err := o.populateParams(ctx, VMGroupOrchestrationParams, heatUpdate)
 	if err != nil {
 		return err
 	}
-
-	return o.UpdateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
+	err = o.UpdateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
+	releaseErr := o.ReleaseReservations(ctx, reservations)
+	if releaseErr != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations error", "reservations", reservations, "releaseErr", releaseErr)
+	}
+	return err
 }
