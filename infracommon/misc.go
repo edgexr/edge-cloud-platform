@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -41,6 +42,13 @@ func CopyFile(src string, dst string) error {
 func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, vaultConfig *vault.Config) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", imagePath)
 
+	if !strings.Contains(imagePath, "/") {
+		// docker-compose or zip type apps may have public images with no path which cannot be
+		// parsed as a url.  Allow these to proceed without a secret.  They won't have dockerhub as
+		// the host because the path is embedded within the compose or zipfile
+		log.SpanLog(ctx, log.DebugLevelInfra, "no secret seeded for app without hostname")
+		return nil
+	}
 	urlObj, err := util.ImagePathParse(imagePath)
 	if err != nil {
 		return fmt.Errorf("Cannot parse image path: %s - %v", imagePath, err)
