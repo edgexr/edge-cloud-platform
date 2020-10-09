@@ -114,6 +114,10 @@ variable "jaeger_domain_name" {
   default     = "jaeger-qa.mobiledgex.net"
 }
 
+variable "esproxy_domain_name" {
+  default     = "events-qa.es.mobiledgex.net"
+}
+
 variable "alertmanager_domain_name" {
   default     = "alertmanager-qa.mobiledgex.net"
 }

@@ -122,6 +122,10 @@ variable "jaeger_domain_name" {
   default     = "jaeger-stage.mobiledgex.net"
 }
 
+variable "esproxy_domain_name" {
+  default     = "events-stage.es.mobiledgex.net"
+}
+
 variable "alertmanager_domain_name" {
   default     = "alertmanager-stage.mobiledgex.net"
 }
