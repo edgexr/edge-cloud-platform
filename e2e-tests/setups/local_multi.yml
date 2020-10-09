@@ -172,6 +172,7 @@ clustersvcs:
   pluginrequired: true
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -182,6 +183,7 @@ clustersvcs:
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -194,6 +196,7 @@ clustersvcs:
   usevaultcerts: true
   region: locala
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -205,6 +208,7 @@ clustersvcs:
   usevaultcerts: true
   region: locala
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -221,6 +225,7 @@ dmes:
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
@@ -238,6 +243,7 @@ dmes:
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
@@ -256,6 +262,7 @@ dmes:
   region: locala
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
@@ -274,6 +281,7 @@ dmes:
   region: locala
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     LOCAPI_USER: mexserver
     LOCAPI_PASSWD: eC2835!
@@ -295,6 +303,7 @@ mcs:
   billingpath: "fake"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
   apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -312,6 +321,7 @@ mcs:
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
   apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -360,6 +370,7 @@ autoprovs:
   influxaddr: "http://127.0.0.1:8086"
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -372,6 +383,7 @@ autoprovs:
   region: locala
   usevaultcerts: true
   hostname: "127.0.0.1"
+  deploymenttag: dev
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -392,6 +404,7 @@ notifyroots:
   hostname: "127.0.0.1"
   vaultaddr: "http://127.0.0.1:8200"
   usevaultcerts: true
+  deploymenttag: dev
 
 edgeturns:
 - name: edgeturn
@@ -402,6 +415,7 @@ edgeturns:
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8080"
   proxyaddr: "127.0.0.1:8443"
+  deploymenttag: dev
 
 - name: edgeturna
   region: locala
@@ -411,6 +425,7 @@ edgeturns:
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8081"
   proxyaddr: "127.0.0.1:9443"
+  deploymenttag: dev
 
 alertmanagers:
 - name: alertmanager

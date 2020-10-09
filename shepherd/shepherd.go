@@ -41,7 +41,6 @@ var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
-var deploymentTag = flag.String("deploymentTag", "", "Tag to indicate type of deployment setup. Ex: production, staging, etc")
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
@@ -439,7 +438,7 @@ func start() {
 		VaultAddr:      nodeMgr.VaultAddr,
 		Region:         *region,
 		EnvVars:        cloudlet.EnvVar,
-		DeploymentTag:  *deploymentTag,
+		DeploymentTag:  nodeMgr.DeploymentTag,
 		PhysicalName:   *physicalName,
 		AppDNSRoot:     *appDNSRoot,
 		ChefServerPath: *chefServerPath,
