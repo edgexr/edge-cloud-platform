@@ -21,6 +21,7 @@ var (
 	specStr     *string
 	modsStr     *string
 	outputDir   string
+	stopOnFail  *bool
 )
 
 //re-init the flags because otherwise we inherit a bunch of flags from the testing
@@ -30,6 +31,7 @@ func init() {
 	configStr = flag.String("testConfig", "", "json formatted TestConfig")
 	specStr = flag.String("testSpec", "", "json formatted TestSpec")
 	modsStr = flag.String("mods", "", "json formatted mods")
+	stopOnFail = flag.Bool("stop", false, "stop on failures")
 }
 
 func main() {
@@ -83,9 +85,18 @@ func main() {
 			}
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			tryErrs = e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)
+			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)
+			tryErrs = append(tryErrs, errs...)
 			ranTest = true
+			if *stopOnFail && len(errs) > 0 && !actionretry {
+				errors = append(errors, tryErrs...)
+				break
+			}
 			retry.SetActionRetry(ii, actionretry)
+		}
+		if len(errors) > 0 {
+			// stopOnFail case
+			break
 		}
 		if spec.CompareYaml.Yaml1 != "" && spec.CompareYaml.Yaml2 != "" {
 			pass := e2esetup.CompareYamlFiles(spec.CompareYaml.Yaml1,
