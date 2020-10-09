@@ -1,0 +1,16 @@
+#cloud-config
+# vim: syntax=yaml
+
+users:
+  - name: ${ansible_ssh_user}
+    gecos: Ansible
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    shell: /bin/bash
+
+bootcmd:
+  - curl https://vault-${environ_tag}.mobiledgex.net/v1/ssh-ansible/public_key >/etc/ssh/trusted-user-ca-keys.pem
+  - cloud-init-per once ssh-users-ca echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" >> /etc/ssh/sshd_config
+
+runcmd:
+  - systemctl reload ssh

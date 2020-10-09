@@ -22,6 +22,10 @@ provider "cloudflare" {
   token   = "${var.cloudflare_account_api_token}"
 }
 
+provider "template" {
+  version = "~> 2.2"
+}
+
 terraform {
   backend "azurerm" {
     storage_account_name  = "mexterraformstate"
@@ -34,6 +38,7 @@ module "gitlab" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.gitlab_instance_name}"
+  environ_tag         = "${var.environ_tag}"
   instance_size       = "custom-1-7680-ext"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
@@ -54,13 +59,13 @@ module "gitlab" {
     "vault"           = "true",
     "owner"           = "qa",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "vault_b" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.vault_b_instance_name}"
+  environ_tag         = "${var.environ_tag}"
   instance_size       = "custom-1-7680-ext"
   zone                = "${var.vault_b_gcp_zone}"
   boot_disk_size      = 20
@@ -73,7 +78,6 @@ module "vault_b" {
     "vault"           = "true",
     "owner"           = "qa",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "gitlab_dns" {
@@ -105,6 +109,7 @@ module "console" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.console_instance_name}"
+  environ_tag         = "${var.environ_tag}"
   instance_size       = "custom-2-9216"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
@@ -123,7 +128,6 @@ module "console" {
     "console"         = "true",
     "owner"           = "qa",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "console_dns" {
@@ -147,6 +151,12 @@ module "notifyroot_dns" {
 module "jaeger_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.jaeger_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "esproxy_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.esproxy_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 

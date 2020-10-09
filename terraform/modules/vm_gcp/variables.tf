@@ -1,3 +1,7 @@
+variable "environ_tag" {
+  description = "Setup the VM instance belongs to"
+}
+
 variable "instance_name" {
   description = "VM instance name"
   type        = "string"
@@ -56,9 +60,4 @@ variable "ansible_ssh_user" {
   description = "User account for ansible"
   type        = "string"
   default     = "ansible"
-}
-
-variable "ssh_public_key_file" {
-  description = "SSH public key file for the ansible account"
-  type        = "string"
 }
