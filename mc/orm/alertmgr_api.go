@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -30,7 +31,9 @@ func CreateAlertReceiver(c echo.Context) error {
 	if in.Name == "" {
 		return setReply(c, fmt.Errorf("Receiver name has to be specified"), nil)
 	}
-
+	if !cloudcommon.IsAlertSeverityValid(in.Severity) {
+		return setReply(c, fmt.Errorf("Alert severity has to be one of %s", cloudcommon.GetValidAlertSeverityString()), nil)
+	}
 	// user is derived from the token
 	if in.User != "" {
 		return setReply(c, fmt.Errorf("User is not specifiable, current logged in user will be used"), nil)

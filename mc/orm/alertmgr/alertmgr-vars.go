@@ -190,9 +190,6 @@ var alertmanagerConfigSlackIcon = "https://www.mobiledgex.com/img/logo.svg"
 const (
 	AlertReceiverTypeEmail    = "email"
 	AlertReceiverTypeSlack    = "slack"
-	AlertSeverityError        = "error"
-	AlertSeverityWarn         = "warning"
-	AlertSeverityInfo         = "info"
 	AlertMgrSlackWebhookToken = "<hidden>"
 )
 
