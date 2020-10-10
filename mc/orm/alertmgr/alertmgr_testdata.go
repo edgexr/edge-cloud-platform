@@ -50,13 +50,13 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 	ormapi.AlertReceiver{
 		Name:     "invalidReceiver",
 		Type:     "invalidType",
-		Severity: AlertSeverityError,
+		Severity: cloudcommon.AlertSeverityError,
 		User:     testUsers[0],
 	},
 	ormapi.AlertReceiver{
 		Name:     "testorgemailreceiver",
 		Type:     AlertReceiverTypeEmail,
-		Severity: AlertSeverityError,
+		Severity: cloudcommon.AlertSeverityError,
 		User:     testUsers[0],
 		Email:    "testuser1@testorg.net",
 		AppInst: edgeproto.AppInstKey{
@@ -80,7 +80,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 	ormapi.AlertReceiver{
 		Name:         "testorgslackreceiverInvalidSlackData",
 		Type:         AlertReceiverTypeSlack,
-		Severity:     AlertSeverityError,
+		Severity:     cloudcommon.AlertSeverityError,
 		User:         testUsers[0],
 		SlackChannel: "#alerts",
 		SlackWebhook: "invalidURL",
@@ -105,7 +105,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 	ormapi.AlertReceiver{
 		Name:         "testorgslackreceiver",
 		Type:         AlertReceiverTypeSlack,
-		Severity:     AlertSeverityError,
+		Severity:     cloudcommon.AlertSeverityError,
 		User:         testUsers[1],
 		SlackChannel: "#alerts",
 		SlackWebhook: "https://hooks.slack.com/foo",
