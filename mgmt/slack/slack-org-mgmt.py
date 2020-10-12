@@ -267,6 +267,7 @@ def slack_channel_invite_new_user(token, channels, email, args):
     r = slack_api_post('users.admin.invite', token, data={
         'email': email,
         'channels': channels,
+        'restricted': true,
     })
     logging.debug(r.text)
 
