@@ -466,9 +466,11 @@ func TestAlertMgrServer(t *testing.T) {
 	// should be empty response
 	require.Len(t, receivers, 0)
 
-	// Delete non-existent receiver - nothing should change
+	// Delete non-existent receiver
 	err = testAlertMgrServer.DeleteReceiver(ctx, &testAlertReceivers[0])
-	require.Nil(t, err)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No receiver")
+	require.Contains(t, err.Error(), "bad response status 404 Not Found")
 	require.Equal(t, 1, fakeAlertmanager.ConfigReloads)
 	fakeAlertmanager.verifyReceiversCnt(t, 2)
 	// Delete email receiver and verify it's deleted
