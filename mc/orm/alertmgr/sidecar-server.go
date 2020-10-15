@@ -290,6 +290,19 @@ func (s *SidecarServer) alertReceiver(w http.ResponseWriter, req *http.Request) 
 				break
 			}
 		}
+		// We did not find the receiver - should return an error
+		if !writeConfig {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Could not find a receiver", "receiver", receiverName)
+			recSent, err := getAlertReceiverFromName(receiverName)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			errStr := fmt.Sprintf("No receiver \"%s\" of type %s and severity %s for user \"%s\"",
+				recSent.Name, recSent.Type, recSent.Severity, recSent.User)
+			http.Error(w, errStr, http.StatusNotFound)
+			return
+		}
 	default:
 		log.SpanLog(ctx, log.DebugLevelInfo, "Unsupported method", "method", req.Method,
 			"url", req.URL)
