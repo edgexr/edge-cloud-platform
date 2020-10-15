@@ -34,7 +34,7 @@ func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.C
 	return nil
 }
 
-func (o *OpenstackPlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
+func (o *OpenstackPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	// openstack doesn't need caches
 }
 

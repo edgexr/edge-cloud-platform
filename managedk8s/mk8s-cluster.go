@@ -42,7 +42,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, kconf string, numNodes uint32, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "createClusterInstInternal", "clusterName", clusterName, "numNodes", numNodes, "flavor", flavor)
 	var err error
-	if err = m.Provider.Login(ctx); err != nil {
+	if err = m.Provider.Login(ctx, m.CommonPf.VaultConfig); err != nil {
 		return err
 	}
 	// perform any actions to create prereq resource before the cluster

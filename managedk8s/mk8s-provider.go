@@ -3,23 +3,21 @@ package managedk8s
 import (
 	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
-
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 )
 
 // ManagedK8sProvider is an interface that platforms implement to perform the details of interfacing with managed kubernetes services
 type ManagedK8sProvider interface {
-	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	GetK8sProviderSpecificProps() map[string]*edgeproto.PropertyInfo
-	InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error
-	SetCommonPlatform(cpf *infracommon.CommonPlatform)
-	Login(ctx context.Context) error
+	GatherCloudletInfo(ctx context.Context, vaultConfig *vault.Config, info *edgeproto.CloudletInfo) error
+	GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
+	SetProperties(props *infracommon.InfraProperties)
+	Login(ctx context.Context, vaultConfig *vault.Config) error
 	GetCredentials(ctx context.Context, clusterName string) error
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
@@ -51,8 +49,7 @@ func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.
 		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get vault configs", "vaultAddr", platformConfig.VaultAddr, "err", err)
 		return err
 	}
-	props := m.Provider.GetK8sProviderSpecificProps()
-	err = m.Provider.InitApiAccessProperties(ctx, platformConfig.Region, vaultConfig, platformConfig.EnvVars)
+	props, err := m.Provider.GetProviderSpecificProps(ctx, vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -60,19 +57,19 @@ func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	m.Provider.SetCommonPlatform(&m.CommonPf)
-	return m.Provider.Login(ctx)
+	m.Provider.SetProperties(&m.CommonPf.Properties)
+	return m.Provider.Login(ctx, m.CommonPf.VaultConfig)
 }
 
 func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	return m.Provider.GatherCloudletInfo(ctx, info)
+	return m.Provider.GatherCloudletInfo(ctx, m.CommonPf.VaultConfig, info)
 }
 
 func (m *ManagedK8sPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }
 
-func (m *ManagedK8sPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode) (ssh.Client, error) {
+func (m *ManagedK8sPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
 	return &pc.LocalClient{}, nil
 }
 
@@ -83,7 +80,10 @@ func (m *ManagedK8sPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterI
 func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	props := edgeproto.CloudletProps{}
 	props.Properties = make(map[string]*edgeproto.PropertyInfo)
-	providerProps := m.Provider.GetK8sProviderSpecificProps()
+	providerProps, err := m.Provider.GetProviderSpecificProps(ctx, m.CommonPf.VaultConfig)
+	if err != nil {
+		return nil, err
+	}
 	for k, v := range providerProps {
 		props.Properties[k] = v
 	}

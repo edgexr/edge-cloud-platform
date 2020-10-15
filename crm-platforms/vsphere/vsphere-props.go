@@ -140,8 +140,8 @@ func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, key *edge
 	return nil
 }
 
-func (v *VSpherePlatform) GetProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
-	return VSphereProps
+func (v *VSpherePlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+	return VSphereProps, nil
 }
 
 // GetVSphereAddress returns host and port for the vcenter server

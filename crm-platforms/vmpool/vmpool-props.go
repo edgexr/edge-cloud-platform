@@ -18,8 +18,8 @@ var VMPoolProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (o *VMPoolPlatform) GetProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
-	return VMPoolProps
+func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+	return VMPoolProps, nil
 }
 
 func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error {

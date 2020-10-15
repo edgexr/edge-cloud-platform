@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws"
+	awsec2 "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-ec2"
+	awseks "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-eks"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/azure"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
@@ -38,6 +39,12 @@ func GetPlatform(plat string) (platform.Platform, error) {
 			Type:       vmlayer.VMProviderVMPool,
 			VMProvider: &vmpoolProvider,
 		}
+	case "PLATFORM_TYPE_AWS_EC2":
+		awsVMProvider := awsec2.AwsEc2Platform{}
+		outPlatform = &vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderAwsEc2,
+			VMProvider: &awsVMProvider,
+		}
 	case "PLATFORM_TYPE_AZURE":
 		azureProvider := &azure.AzurePlatform{}
 		outPlatform = &managedk8s.ManagedK8sPlatform{
@@ -50,8 +57,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 			Type:     managedk8s.ManagedK8sProviderGCP,
 			Provider: gcpProvider,
 		}
-	case "PLATFORM_TYPE_AWS":
-		awsProvider := &aws.AWSPlatform{}
+	case "PLATFORM_TYPE_AWS_EKS":
+		awsProvider := &awseks.AwsEksPlatform{}
 		outPlatform = &managedk8s.ManagedK8sPlatform{
 			Type:     managedk8s.ManagedK8sProviderAWS,
 			Provider: awsProvider,

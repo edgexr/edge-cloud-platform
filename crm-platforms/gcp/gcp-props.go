@@ -38,32 +38,28 @@ var gcpProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (g *GCPPlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
-	return gcpProps
-}
-
 func (g *GCPPlatform) GetGcpAuthKeyUrl() string {
-	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_AUTH_KEY_PATH")
+	val, _ := g.properties.GetValue("MEX_GCP_AUTH_KEY_PATH")
 	return val
 }
 
 func (g *GCPPlatform) GetGcpZone() string {
-	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_ZONE")
+	val, _ := g.properties.GetValue("MEX_GCP_ZONE")
 	return val
 }
 
 func (g *GCPPlatform) GetGcpProject() string {
-	val, _ := g.commonPf.Properties.GetValue("MEX_GCP_PROJECT")
+	val, _ := g.properties.GetValue("MEX_GCP_PROJECT")
 	return val
 }
 
-func (g *GCPPlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitApiAccessProperties")
+func (a *GCPPlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
 	err := infracommon.InternVaultEnv(ctx, vaultConfig, gcpVaultPath)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data for API access", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data", "err", err)
 		err = fmt.Errorf("cannot intern vault data from vault %s", err.Error())
-		return err
+		return nil, err
 	}
-	return nil
+	return gcpProps, nil
 }

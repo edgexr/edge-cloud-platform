@@ -3,13 +3,25 @@ package vmlayer
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
+
+type CacheOption bool
+
+const UseCache CacheOption = true
+const NoCache CacheOption = false
+
+var serverCacheLock sync.Mutex
+
+// map of group name to server name to ip
+var serverExternalIpCache map[string]*ServerIP
 
 type NetworkType string
 
@@ -29,21 +41,36 @@ type ServerDetail struct {
 	Status    string
 }
 
-func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subnetName, serverName string) (*ServerIP, error) {
+type VMUpdateList struct {
+	CurrentVMs  (map[string]string)
+	NewVMs      (map[string]*VMOrchestrationParams)
+	VmsToCreate (map[string]*VMOrchestrationParams)
+	VmsToDelete (map[string]string)
+}
+
+func init() {
+	serverExternalIpCache = make(map[string]*ServerIP)
+}
+
+// GetIPFromServerName returns the IP for the givens serverName, on either the network or subnetName.  Optionally lookup and
+// store to cache can be specified
+func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subnetName, serverName string, ops ...pc.SSHClientOp) (*ServerIP, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerName", "networkName", networkName, "subnetName", subnetName, "serverName", serverName)
-	// if this is a root lb, look it up and get the IP if we have it cached
+	opts := pc.SSHOptions{}
+	opts.Apply(ops)
+	isExtNet := networkName == v.VMProperties.GetCloudletExternalNetwork()
+	if isExtNet && opts.CachedIP {
+		sip := GetServerIPFromCache(ctx, serverName)
+		if sip != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerName found ip in cache", "serverName", serverName, "sip", sip)
+			return sip, nil
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetIPFromServerName did not find ip in cache", "serverName", serverName)
+		}
+	}
 	portName := ""
 	if subnetName != "" {
 		portName = GetPortName(serverName, subnetName)
-	}
-	if networkName == v.VMProperties.GetCloudletExternalNetwork() {
-		rootLB, err := GetRootLB(ctx, serverName)
-		if err == nil && rootLB != nil {
-			if rootLB.IP != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "using existing rootLB IP", "IP", rootLB.IP)
-				return rootLB.IP, nil
-			}
-		}
 	}
 	sd, err := v.VMProvider.GetServerDetail(ctx, serverName)
 	if err != nil {
@@ -57,6 +84,9 @@ func (v *VMPlatform) GetIPFromServerName(ctx context.Context, networkName, subne
 		oldFormatPortName := serverName + "-port"
 		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to find server IP, try again with old format port name", "oldFormatPortName", oldFormatPortName)
 		return GetIPFromServerDetails(ctx, networkName, oldFormatPortName, sd)
+	}
+	if err == nil && isExtNet && opts.CachedIP {
+		AddServerExternalIpToCache(ctx, serverName, sip)
 	}
 	return sip, err
 }
@@ -208,4 +238,25 @@ func WaitServerReady(ctx context.Context, provider VMProvider, client ssh.Client
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "WaitServerReady OK", "server", server)
 	return nil
+}
+
+func GetServerIPFromCache(ctx context.Context, serverName string) *ServerIP {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerIPFromCache", "serverName", serverName)
+	serverCacheLock.Lock()
+	defer serverCacheLock.Unlock()
+	return serverExternalIpCache[serverName]
+}
+
+func AddServerExternalIpToCache(ctx context.Context, serverName string, sip *ServerIP) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddServerExternalIpToCache", "serverName", serverName)
+	serverCacheLock.Lock()
+	defer serverCacheLock.Unlock()
+	serverExternalIpCache[serverName] = sip
+}
+
+func DeleteServerIpFromCache(ctx context.Context, serverName string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteServerIpFromCache", "serverName", serverName)
+	serverCacheLock.Lock()
+	defer serverCacheLock.Unlock()
+	delete(serverExternalIpCache, serverName)
 }

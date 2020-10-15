@@ -199,6 +199,9 @@ func TestHeatTemplate(t *testing.T) {
 	var vmp = vmlayer.VMPlatform{
 		Type:       "openstack",
 		VMProvider: &op,
+		VMProperties: vmlayer.VMProperties{
+			CommonPf: &infracommon.CommonPlatform{},
+		},
 	}
 	err := vmp.InitProps(ctx, &pc, vaultConfig)
 	log.SpanLog(ctx, log.DebugLevelInfra, "init props done", "err", err)

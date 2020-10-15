@@ -32,14 +32,14 @@ func (v *VSpherePlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	vmProperties.IptablesBasedFirewall = true
 }
 
-func (v *VSpherePlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetCaches")
+func (v *VSpherePlatform) InitData(ctx context.Context, caches *platform.Caches) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitData")
 	v.caches = caches
 }
 
 func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VSphere", "stage", stage)
-	v.SetCaches(ctx, caches)
+	v.InitData(ctx, caches)
 	if stage == vmlayer.ProviderInitPlatformStart {
 		v.initDebug(v.vmProperties.CommonPf.PlatformConfig.NodeMgr)
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 // GetServerSecurityGroupName gets the secgrp name based on the server name
-func (c *VMPlatform) GetServerSecurityGroupName(serverName string) string {
+func GetServerSecurityGroupName(serverName string) string {
 	return serverName + "-sg"
 }
 
@@ -53,7 +53,7 @@ func (v *VMPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, clien
 	}()
 	go func() {
 		if ops.AddSecurityRules {
-			err := v.VMProvider.WhitelistSecurityRules(ctx, client, v.GetServerSecurityGroupName(rootLBName), rootLBName, GetAppWhitelistRulesLabel(app), GetAllowedClientCIDR(), appInst.MappedPorts)
+			err := v.VMProvider.WhitelistSecurityRules(ctx, client, GetServerSecurityGroupName(rootLBName), rootLBName, GetAppWhitelistRulesLabel(app), GetAllowedClientCIDR(), appInst.MappedPorts)
 			if err == nil {
 				secchan <- ""
 			} else {
