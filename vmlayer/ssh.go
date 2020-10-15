@@ -24,33 +24,6 @@ type VMAccess struct {
 	Role   VMRole
 }
 
-type SSHOptions struct {
-	Timeout time.Duration
-	User    string
-}
-
-type SSHClientOp func(sshp *SSHOptions) error
-
-func WithUser(user string) SSHClientOp {
-	return func(op *SSHOptions) error {
-		op.User = user
-		return nil
-	}
-}
-
-func WithTimeout(timeout time.Duration) SSHClientOp {
-	return func(op *SSHOptions) error {
-		op.Timeout = timeout
-		return nil
-	}
-}
-
-func (o *SSHOptions) Apply(ops []SSHClientOp) {
-	for _, op := range ops {
-		op(o)
-	}
-}
-
 func (v *VMPlatform) SetCloudletSignedSSHKey(ctx context.Context, vaultConfig *vault.Config) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Sign cloudlet public key from Vault")
 
@@ -114,8 +87,8 @@ func (v *VMPlatform) InitCloudletSSHKeys(ctx context.Context, vaultConfig *vault
 }
 
 //GetSSHClientFromIPAddr returns ssh client handle for the given IP.
-func (vp *VMProperties) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...SSHClientOp) (ssh.Client, error) {
-	opts := SSHOptions{Timeout: infracommon.DefaultConnectTimeout, User: infracommon.SSHUser}
+func (vp *VMProperties) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...pc.SSHClientOp) (ssh.Client, error) {
+	opts := pc.SSHOptions{Timeout: infracommon.DefaultConnectTimeout, User: infracommon.SSHUser}
 	opts.Apply(ops)
 	var client ssh.Client
 	var err error
@@ -171,27 +144,17 @@ func (v *VMPlatform) GetSSHClientForCluster(ctx context.Context, clusterInst *ed
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		rootLBName = cloudcommon.GetDedicatedLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	}
-	return v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork())
+	return v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 }
 
 //GetSSHClient returns ssh client handle for the server
-func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, networkName string, ops ...SSHClientOp) (ssh.Client, error) {
-	// if this is a rootLB we may have the IP cached already
-	var externalAddr string
-	rootLB, err := GetRootLB(ctx, serverName)
-	if err == nil && rootLB != nil {
-		if rootLB.IP != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "using existing rootLB IP", "IP", rootLB.IP)
-			externalAddr = rootLB.IP.ExternalAddr
-		}
+func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, networkName string, ops ...pc.SSHClientOp) (ssh.Client, error) {
+	serverIp, err := v.GetIPFromServerName(ctx, networkName, "", serverName, ops...)
+	if err != nil {
+		return nil, err
 	}
-	if externalAddr == "" {
-		serverIp, err := v.GetIPFromServerName(ctx, networkName, "", serverName)
-		if err != nil {
-			return nil, err
-		}
-		externalAddr = serverIp.ExternalAddr
-	}
+	externalAddr := serverIp.ExternalAddr
+
 	return v.VMProperties.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
 }
 
@@ -228,7 +191,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 
 	// Shared RootLB
 	sharedRootLBName := v.VMProperties.SharedRootLBName
-	sharedlbclient, err := v.GetSSHClientForServer(ctx, sharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
+	sharedlbclient, err := v.GetSSHClientForServer(ctx, sharedRootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client for shared rootlb", "vm", sharedRootLBName, "err", err)
 	}
@@ -251,7 +214,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 		var dedRootLBName string
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			dedRootLBName = v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-			dedicatedlbclient, err = v.GetSSHClientForServer(ctx, dedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
+			dedicatedlbclient, err = v.GetSSHClientForServer(ctx, dedRootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "error getting ssh client", "vm", dedRootLBName, "err", err)
 			}
@@ -352,7 +315,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 		}
 		appLbName := cloudcommon.GetVMAppFQDN(&appinst.Key, &appinst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs handle VM appinst with LB", "key", k, "appLbName", appLbName)
-		appLbClient, err := v.GetSSHClientForServer(ctx, appLbName, v.VMProperties.GetCloudletExternalNetwork())
+		appLbClient, err := v.GetSSHClientForServer(ctx, appLbName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get client for VM App LB", "appLbName", appLbName, "err", err)
 		}

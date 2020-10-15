@@ -33,32 +33,28 @@ var azureProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (a *AzurePlatform) GetK8sProviderSpecificProps() map[string]*edgeproto.PropertyInfo {
-	return azureProps
-}
-
 func (a *AzurePlatform) GetAzureLocation() string {
-	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_LOCATION")
+	val, _ := a.properties.GetValue("MEX_AZURE_LOCATION")
 	return val
 }
 
 func (a *AzurePlatform) GetAzureUser() string {
-	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_USER")
+	val, _ := a.properties.GetValue("MEX_AZURE_USER")
 	return val
 }
 
 func (a *AzurePlatform) GetAzurePass() string {
-	val, _ := a.commonPf.Properties.GetValue("MEX_AZURE_PASS")
+	val, _ := a.properties.GetValue("MEX_AZURE_PASS")
 	return val
 }
 
-func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, region string, vaultConfig *vault.Config, vars map[string]string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitApiAccessProperties")
+func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
 	err := infracommon.InternVaultEnv(ctx, vaultConfig, azureVaultPath)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data for API access", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data", "err", err)
 		err = fmt.Errorf("cannot intern vault data from vault %s", err.Error())
-		return err
+		return nil, err
 	}
-	return nil
+	return azureProps, nil
 }

@@ -110,7 +110,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, vaultConfig *vault.Con
 			vms,
 			ActionCreate,
 			updateCallback,
-			WithNewSecurityGroup(v.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithInitOrchestrator(true),
@@ -129,7 +129,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, vaultConfig *vault.Con
 			vms,
 			ActionCreate,
 			updateCallback,
-			WithNewSecurityGroup(v.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithNewSubnet(subnetName),
@@ -162,6 +162,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Creating cloudlet", "cloudletName", cloudlet.Key.Name)
 
+	v.VMProperties.CommonPf = &infracommon.CommonPlatform{}
 	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr, vault.WithEnvMap(pfConfig.EnvVar))
 	if err != nil {
 		return err
@@ -335,6 +336,8 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
 	v.VMProperties.Domain = VMDomainPlatform
+	cpf := infracommon.CommonPlatform{}
+	v.VMProperties.CommonPf = &cpf
 	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
 	err = v.InitProps(ctx, pc, vaultConfig)
 	if err != nil {
@@ -733,6 +736,7 @@ func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.
 func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	v.VMProperties.Domain = VMDomainPlatform
+	v.VMProperties.CommonPf = &infracommon.CommonPlatform{}
 
 	if cloudlet.ChefClientKey == nil {
 		return nil, fmt.Errorf("unable to find chef client key")
@@ -743,7 +747,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 		return nil, err
 	}
 
-	v.VMProvider.SetCaches(ctx, caches)
+	v.VMProvider.InitData(ctx, caches)
 
 	platvms, err := v.GetCloudletVMsSpec(ctx, vaultConfig, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
 	if err != nil {
@@ -765,7 +769,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			ctx,
 			platformVmName,
 			platvms,
-			WithNewSecurityGroup(v.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
 			WithSkipDefaultSecGrp(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
@@ -776,7 +780,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			ctx,
 			platformVmName,
 			platvms,
-			WithNewSecurityGroup(v.GetServerSecurityGroupName(platformVmName)),
+			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
 			WithNewSubnet(subnetName),
 			WithSkipDefaultSecGrp(true),
@@ -811,7 +815,10 @@ func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletP
 		props.Properties[k] = v
 	}
 
-	providerProps := v.VMProvider.GetProviderSpecificProps()
+	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, v.VMProperties.CommonPf.VaultConfig)
+	if err != nil {
+		return nil, err
+	}
 	for k, v := range providerProps {
 		props.Properties[k] = v
 	}

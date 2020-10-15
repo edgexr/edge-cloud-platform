@@ -276,15 +276,8 @@ func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client
 	return err
 }
 
-//MEXRootLB has rootLB data
-type MEXRootLB struct {
-	Name string
-	IP   *ServerIP
-}
-
 var rootLBLock sync.Mutex
 var MaxRootLBWait = 5 * time.Minute
-var MEXRootLBMap = make(map[string]*MEXRootLB)
 
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
@@ -346,40 +339,9 @@ func (v *VMPlatform) GetVMSpecForRootLBPorts(ctx context.Context, rootLbName str
 	return rootlb, err
 }
 
-//NewRootLB gets a new rootLB instance
-func (v *VMPlatform) NewRootLB(ctx context.Context, rootLBName string) (*MEXRootLB, error) {
-	rootLBLock.Lock()
-	defer rootLBLock.Unlock()
-	log.SpanLog(ctx, log.DebugLevelInfra, "getting new rootLB", "rootLBName", rootLBName)
-	if _, ok := MEXRootLBMap[rootLBName]; ok {
-		return nil, fmt.Errorf("rootlb %s already exists", rootLBName)
-	}
-	newRootLB := &MEXRootLB{Name: rootLBName}
-	MEXRootLBMap[rootLBName] = newRootLB
-	return newRootLB, nil
-}
-
-//DeleteRootLB to be called by code that called NewRootLB
-func DeleteRootLB(rootLBName string) {
-	rootLBLock.Lock()
-	defer rootLBLock.Unlock()
-	delete(MEXRootLBMap, rootLBName)
-}
-
-func GetRootLB(ctx context.Context, name string) (*MEXRootLB, error) {
-	rootLB, ok := MEXRootLBMap[name]
-	if !ok {
-		return nil, fmt.Errorf("can't find rootlb %s", name)
-	}
-	if rootLB == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetRootLB, rootLB is null")
-	}
-	return rootLB, nil
-}
-
 //CreateRootLB creates a rootLB.  It should not be called if the rootLB already exists, as to save time we don't check
 func (v *VMPlatform) CreateRootLB(
-	ctx context.Context, rootLB *MEXRootLB,
+	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
 	imgPath, imgVersion string,
 	action ActionType,
@@ -387,29 +349,26 @@ func (v *VMPlatform) CreateRootLB(
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "create rootlb", "name", rootLB.Name, "action", action)
-	if rootLB == nil {
-		return fmt.Errorf("cannot enable rootLB, rootLB is null")
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "create rootlb", "name", rootLBName, "action", action)
 	if action == ActionCreate {
-		_, err := v.VMProvider.GetServerDetail(ctx, rootLB.Name)
+		_, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists")
 			return nil
 		}
 	}
-	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLB.Name, "", tags, updateCallback)
+	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, "", tags, updateCallback)
 	if err != nil {
 		return err
 	}
 	var vms []*VMRequestSpec
 	vms = append(vms, vmreq)
-	_, err = v.OrchestrateVMsFromVMSpec(ctx, rootLB.Name, vms, action, updateCallback, WithNewSecurityGroup(v.GetServerSecurityGroupName(rootLB.Name)))
+	_, err = v.OrchestrateVMsFromVMSpec(ctx, rootLBName, vms, action, updateCallback, WithNewSecurityGroup(GetServerSecurityGroupName(rootLBName)))
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating RootLB VM", "name", rootLB.Name, "error", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating RootLB VM", "name", rootLBName, "error", err)
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "done creating rootlb", "name", rootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "done creating rootlb", "name", rootLBName)
 	return nil
 
 }
@@ -423,13 +382,12 @@ func (v *VMPlatform) SetupRootLB(
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupRootLB", "rootLBName", rootLBName)
+	// ensure no entries exist in the ip cache for this rootlb
+	DeleteServerIpFromCache(ctx, rootLBName)
+
 	//fqdn is that of the machine/kvm-instance running the agent
 	if !valid.IsDNSName(rootLBName) {
 		return fmt.Errorf("fqdn %s is not valid", rootLBName)
-	}
-	rootLB, err := GetRootLB(ctx, rootLBName)
-	if err != nil {
-		return fmt.Errorf("cannot find rootlb in map %s", rootLBName)
 	}
 	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 	if err == nil {
@@ -438,9 +396,9 @@ func (v *VMPlatform) SetupRootLB(
 
 	// setup SSH access to cloudlet for CRM.  Since we are getting the external IP here, this will only work
 	// when CRM accessed via public internet.
-	log.SpanLog(ctx, log.DebugLevelInfra, "setup security group for SSH access")
-	groupName := v.GetServerSecurityGroupName(rootLBName)
-	client, err := v.GetSSHClientForServer(ctx, rootLB.Name, v.VMProperties.GetCloudletExternalNetwork(), WithUser(infracommon.SSHUser))
+	log.SpanLog(ctx, log.DebugLevelInfra, "setup rootLBName group for SSH access")
+	groupName := GetServerSecurityGroupName(rootLBName)
+	client, err := v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithUser(infracommon.SSHUser), pc.WithCachedIp(true))
 	if err != nil {
 		return err
 	}
@@ -458,10 +416,19 @@ func (v *VMPlatform) SetupRootLB(
 		if err != nil {
 			return err
 		}
+		if v.VMProperties.RequiresWhitelistOwnIp {
+			for _, a := range sd.Addresses {
+				extCidr := a.ExternalAddr + "/32"
+				err = v.VMProvider.WhitelistSecurityRules(ctx, client, groupName, rootLBName, "own-externalip-ssh", extCidr, sshPort)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	err = WaitServerReady(ctx, v.VMProvider, client, rootLB.Name, MaxRootLBWait)
+	err = WaitServerReady(ctx, v.VMProvider, client, rootLBName, MaxRootLBWait)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "timeout waiting for rootLB", "name", rootLB.Name)
+		log.SpanLog(ctx, log.DebugLevelInfra, "timeout waiting for rootLB", "name", rootLBName)
 		return fmt.Errorf("Error waiting for rootLB %v", err)
 	}
 	ip, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", sd)
@@ -481,7 +448,7 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("failed to AddRouteToServer %v", err)
 	}
-	err = v.VMProvider.WhitelistSecurityRules(ctx, client, v.GetServerSecurityGroupName(rootLBName), rootLBName, "rootlb-ports", GetAllowedClientCIDR(), RootLBPorts)
+	err = v.VMProvider.WhitelistSecurityRules(ctx, client, GetServerSecurityGroupName(rootLBName), rootLBName, "rootlb-ports", GetAllowedClientCIDR(), RootLBPorts)
 	if err != nil {
 		return fmt.Errorf("failed to WhitelistSecurityRules %v", err)
 	}
@@ -489,10 +456,10 @@ func (v *VMPlatform) SetupRootLB(
 	if err = v.VMProperties.CommonPf.ActivateFQDNA(ctx, rootLBName, ip.ExternalAddr); err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLB.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLBName)
 
 	// perform provider specific prep of the rootLB
-	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, v.GetServerSecurityGroupName(rootLBName), privacyPolicy)
+	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, GetServerSecurityGroupName(rootLBName), privacyPolicy)
 }
 
 // This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics

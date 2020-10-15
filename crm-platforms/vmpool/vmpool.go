@@ -33,13 +33,13 @@ func (o *VMPoolPlatform) GetCloudletKey() *edgeproto.CloudletKey {
 	return o.VMProperties.CommonPf.PlatformConfig.CloudletKey
 }
 
-func (o *VMPoolPlatform) SetCaches(ctx context.Context, caches *platform.Caches) {
+func (o *VMPoolPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	o.caches = caches
 }
 
 func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for VM Pool", "stage", stage)
-	o.SetCaches(ctx, caches)
+	o.InitData(ctx, caches)
 
 	switch stage {
 

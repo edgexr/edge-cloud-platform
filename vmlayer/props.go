@@ -29,14 +29,15 @@ type CloudletSSHKey struct {
 }
 
 type VMProperties struct {
-	CommonPf              infracommon.CommonPlatform
-	SharedRootLBName      string
-	sharedRootLB          *MEXRootLB
-	Domain                VMDomain
-	PlatformSecgrpName    string
-	IptablesBasedFirewall bool
-	sshKey                CloudletSSHKey
-	Upgrade               bool
+	CommonPf                   *infracommon.CommonPlatform
+	SharedRootLBName           string
+	Domain                     VMDomain
+	PlatformSecgrpName         string
+	IptablesBasedFirewall      bool
+	sshKey                     CloudletSSHKey
+	Upgrade                    bool
+	UseSecgrpForInternalSubnet bool
+	RequiresWhitelistOwnIp     bool
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must
@@ -222,6 +223,10 @@ func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) 
 func (vp *VMProperties) GetCloudletSecurityGroupName() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_SECURITY_GROUP")
 	return value
+}
+
+func (vp *VMProperties) SetCloudletSecurityGroupName(name string) {
+	vp.CommonPf.Properties.SetValue("MEX_SECURITY_GROUP", name)
 }
 
 func (vp *VMProperties) GetCloudletExternalNetwork() string {
