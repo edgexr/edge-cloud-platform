@@ -374,7 +374,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/CreateCloudlet", CreateCloudlet)
-	group.Match([]string{method}, "/ctrl/StreamCloudlet", StreamCloudlet)
 	// swagger:route POST /auth/ctrl/DeleteCloudlet Cloudlet DeleteCloudlet
 	// Delete Cloudlet.
 	//  Removes the Cloudlet services where they are no longer managed from the Edge Controller.
@@ -907,7 +906,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/CreateClusterInst", CreateClusterInst)
-	group.Match([]string{method}, "/ctrl/StreamClusterInst", StreamClusterInst)
 	// swagger:route POST /auth/ctrl/DeleteClusterInst ClusterInst DeleteClusterInst
 	// Delete Cluster Instance.
 	//  Deletes an instance of a Cluster deployed on a Cloudlet.
@@ -1131,7 +1129,6 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/CreateAppInst", CreateAppInst)
-	group.Match([]string{method}, "/ctrl/StreamAppInst", StreamAppInst)
 	// swagger:route POST /auth/ctrl/DeleteAppInst AppInst DeleteAppInst
 	// Delete Application Instance.
 	//  Deletes an instance of the App from the Cloudlet.
@@ -1272,6 +1269,36 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowAppInstRefs", ShowAppInstRefs)
+	// swagger:route POST /auth/ctrl/StreamAppInst AppInstKey StreamAppInst
+	// Stream Application Instance current progress.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/StreamAppInst", StreamAppInst)
+	// swagger:route POST /auth/ctrl/StreamClusterInst ClusterInstKey StreamClusterInst
+	// Stream Cluster Instance current progress.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/StreamClusterInst", StreamClusterInst)
+	// swagger:route POST /auth/ctrl/StreamCloudlet CloudletKey StreamCloudlet
+	// Stream Cloudlet current progress.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/StreamCloudlet", StreamCloudlet)
 	// swagger:route POST /auth/ctrl/ShowAppInstClient AppInstClientKey ShowAppInstClient
 	// Show application instance clients.
 	//

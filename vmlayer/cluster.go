@@ -165,7 +165,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 }
 
 //DeleteCluster deletes kubernetes cluster
-func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst) error {
+func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting kubernetes cluster", "clusterInst", clusterInst)
 
 	chefClient := v.VMProperties.GetChefClient()
@@ -290,7 +290,7 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "error in CreateCluster", "err", reterr)
 		if !clusterInst.SkipCrmCleanupOnFailure {
-			delerr := v.deleteCluster(ctx, rootLBName, clusterInst)
+			delerr := v.deleteCluster(ctx, rootLBName, clusterInst, updateCallback)
 			if delerr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "fail to cleanup cluster")
 			}
@@ -377,9 +377,9 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 	return nil
 }
 
-func (v *VMPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
+func (v *VMPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
-	return v.deleteCluster(ctx, lbName, clusterInst)
+	return v.deleteCluster(ctx, lbName, clusterInst, updateCallback)
 }
 
 func (v *VMPlatform) GetClusterAccessIP(ctx context.Context, clusterInst *edgeproto.ClusterInst) (string, error) {

@@ -1,0 +1,167 @@
+regiondata:
+- region: local
+  streamoutdata:
+    streamobjs:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: Creating App Inst
+      - id: 3
+        msg: Ready
+      - id: 4
+        msg: Created AppInst successfully
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: Creating App Inst
+      - id: 3
+        msg: Ready
+      - id: 4
+        msg: Created AppInst successfully
+    - key:
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-1
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: First Create Task
+      - id: 3
+        msg: Second Create Task
+      - id: 4
+        msg: Ready
+      - id: 5
+        msg: Created ClusterInst successfully
+    - key:
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: First Create Task
+      - id: 3
+        msg: Second Create Task
+      - id: 4
+        msg: Ready
+      - id: 5
+        msg: Created ClusterInst successfully
+- region: locala
+  streamoutdata:
+    streamobjs:
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-3
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: Creating App Inst
+      - id: 3
+        msg: Ready
+      - id: 4
+        msg: Created AppInst successfully
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-4
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: Creating App Inst
+      - id: 3
+        msg: Ready
+      - id: 4
+        msg: Created AppInst successfully
+    - key:
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-3
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: First Create Task
+      - id: 3
+        msg: Second Create Task
+      - id: 4
+        msg: Ready
+      - id: 5
+        msg: Created ClusterInst successfully
+    - key:
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-4
+          organization: AcmeAppCo
+      msgs:
+      - id: 1
+        msg: Creating
+      - id: 2
+        msg: First Create Task
+      - id: 3
+        msg: Second Create Task
+      - id: 4
+        msg: Ready
+      - id: 5
+        msg: Created ClusterInst successfully

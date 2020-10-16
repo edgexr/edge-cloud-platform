@@ -30,7 +30,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	if err != nil {
 		if !clusterInst.SkipCrmCleanupOnFailure {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
-			delerr := m.deleteClusterInstInternal(ctx, clusterName)
+			delerr := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
 			if delerr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "fail to cleanup cluster")
 			}
@@ -82,10 +82,10 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 	return nil
 }
 
-func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
+func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	err := m.deleteClusterInstInternal(ctx, clusterName)
+	err := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst 
 	return k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
 }
 
-func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string) error {
+func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleteClusterInstInternal", "clusterName", clusterName)
 	return m.Provider.RunClusterDeleteCommand(ctx, clusterName)
 }

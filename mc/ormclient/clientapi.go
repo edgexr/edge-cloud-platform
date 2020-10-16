@@ -96,5 +96,6 @@ type Api interface {
 	CloudletRefsApiClient
 	ClusterRefsApiClient
 	AppInstRefsApiClient
+	StreamObjApiClient
 	DeviceApiClient
 }

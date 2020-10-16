@@ -27,60 +27,6 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var streamCloudlet = &StreamObj{}
-
-func StreamCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
-	rc := &RegionContext{}
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	rc.username = claims.Username
-
-	in := ormapi.RegionCloudlet{}
-	success, err := ReadConn(c, &in)
-	if !success {
-		return err
-	}
-	rc.region = in.Region
-	span := log.SpanFromContext(ctx)
-	span.SetTag("region", in.Region)
-	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
-	span.SetTag("org", in.Cloudlet.Key.Organization)
-
-	streamer := streamCloudlet.Get(in.Cloudlet.Key)
-	if streamer != nil {
-		payload := ormapi.StreamPayload{}
-		streamCh := streamer.Subscribe()
-		serverClosed := make(chan bool)
-		go func() {
-			for streamMsg := range streamCh {
-				switch out := streamMsg.(type) {
-				case string:
-					payload.Data = &edgeproto.Result{Message: out}
-					WriteStream(c, &payload)
-				case error:
-					WriteError(c, out)
-				default:
-					WriteError(c, fmt.Errorf("Unsupported message type received: %v", streamMsg))
-				}
-			}
-			CloseConn(c)
-			serverClosed <- true
-		}()
-		// Wait for client/server to close
-		// * Server closure is set via above serverClosed flag
-		// * Client closure is sent from client via a message
-		WaitForConnClose(c, serverClosed)
-		streamer.Unsubscribe(streamCh)
-	} else {
-		WriteError(c, fmt.Errorf("Key doesn't exist"))
-		CloseConn(c)
-	}
-	return nil
-}
-
 func CreateCloudlet(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}
@@ -102,26 +48,13 @@ func CreateCloudlet(c echo.Context) error {
 	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
-	streamer := NewStreamer()
-	defer streamer.Stop()
-	streamAdded := false
-
 	err = CreateCloudletStream(ctx, rc, &in.Cloudlet, func(res *edgeproto.Result) {
-		if !streamAdded {
-			streamCloudlet.Add(in.Cloudlet.Key, streamer)
-			streamAdded = true
-		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
-		streamer.Publish(err)
 		WriteError(c, err)
-	}
-	if streamAdded {
-		streamCloudlet.Remove(in.Cloudlet.Key, streamer)
 	}
 	return nil
 }
@@ -193,26 +126,13 @@ func DeleteCloudlet(c echo.Context) error {
 	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
-	streamer := NewStreamer()
-	defer streamer.Stop()
-	streamAdded := false
-
 	err = DeleteCloudletStream(ctx, rc, &in.Cloudlet, func(res *edgeproto.Result) {
-		if !streamAdded {
-			streamCloudlet.Add(in.Cloudlet.Key, streamer)
-			streamAdded = true
-		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
-		streamer.Publish(err)
 		WriteError(c, err)
-	}
-	if streamAdded {
-		streamCloudlet.Remove(in.Cloudlet.Key, streamer)
 	}
 	return nil
 }
@@ -284,26 +204,13 @@ func UpdateCloudlet(c echo.Context) error {
 	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
 
-	streamer := NewStreamer()
-	defer streamer.Stop()
-	streamAdded := false
-
 	err = UpdateCloudletStream(ctx, rc, &in.Cloudlet, func(res *edgeproto.Result) {
-		if !streamAdded {
-			streamCloudlet.Add(in.Cloudlet.Key, streamer)
-			streamAdded = true
-		}
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		streamer.Publish(res.Message)
 		WriteStream(c, &payload)
 	})
 	if err != nil {
-		streamer.Publish(err)
 		WriteError(c, err)
-	}
-	if streamAdded {
-		streamCloudlet.Remove(in.Cloudlet.Key, streamer)
 	}
 	return nil
 }
