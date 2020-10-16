@@ -133,6 +133,13 @@ transfer files.
     if "@" in args.host:
         (args.user, args.host) = args.host.split("@", 1)
 
+    try:
+        if args.scp and "@" in unknown[-1]:
+            (args.user, scp_host) = unknown[-1].split("@", 1)
+            unknown[-1] = scp_host
+    except IndexError:
+        pass
+
     if not args.engine:
         args.engine = "ssh-ansible" if args.user == "ansible" else "ssh"
 
