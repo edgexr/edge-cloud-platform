@@ -36,6 +36,6 @@ func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *ed
 	return nil
 }
 
-func (e *EdgeboxPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
-	return e.generic.DeleteClusterInst(ctx, clusterInst)
+func (e *EdgeboxPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+	return e.generic.DeleteClusterInst(ctx, clusterInst, updateCallback)
 }

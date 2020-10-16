@@ -1,0 +1,58 @@
+regiondata:
+- region: local
+  streamoutdata:
+    streamobjs:
+    - key:
+        appkey:
+          organization: user3org
+          name: ep1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: enterprise
+            name: enterprise-1
+          organization: user3org
+      msgs:
+      - id: 1
+        msg: Deleting
+      - id: 2
+        msg: First Delete Task
+      - id: 3
+        msg: Second Delete Task
+      - id: 4
+        msg: NotPresent
+      - id: 5
+        msg: Deleted AppInst successfully
+    - key:
+        clusterinstkey:
+          clusterkey:
+            name: SmallCluster
+          cloudletkey:
+            organization: enterprise
+            name: enterprise-1
+          organization: user3org
+      msgs:
+      - id: 1
+        msg: Autodeleting AppInst MEXPrometheusAppName
+      - id: 2
+        msg: Deleting
+      - id: 3
+        msg: First Delete Task
+      - id: 4
+        msg: Second Delete Task
+      - id: 5
+        msg: NotPresent
+      - id: 6
+        msg: Deleted AppInst successfully
+      - id: 7
+        msg: Deleting
+      - id: 8
+        msg: First Delete Task
+      - id: 9
+        msg: Second Delete Task
+      - id: 10
+        msg: NotPresent
+      - id: 11
+        msg: Deleted ClusterInst successfully

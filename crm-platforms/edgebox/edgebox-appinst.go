@@ -48,7 +48,7 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	// set up DNS
 	cluster, err := dind.FindCluster(names.ClusterName)
 	if err != nil {
-		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst)
+		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst, updateCallback)
 		return err
 	}
 	masterIP := cluster.MasterAddr
@@ -72,13 +72,13 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	}
 	if err = e.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "cannot add DNS entries", "error", err)
-		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst)
+		e.generic.DeleteAppInst(ctx, clusterInst, app, appInst, updateCallback)
 		return err
 	}
 	return nil
 }
 
-func (e *EdgeboxPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func (e *EdgeboxPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	client, err := e.generic.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
@@ -96,7 +96,7 @@ func (e *EdgeboxPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgepr
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "error", err)
 		}
 	}
-	if err = e.generic.DeleteAppInst(ctx, clusterInst, app, appInst); err != nil {
+	if err = e.generic.DeleteAppInst(ctx, clusterInst, app, appInst, updateCallback); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete AppInst", "error", err)
 		return err
 	}

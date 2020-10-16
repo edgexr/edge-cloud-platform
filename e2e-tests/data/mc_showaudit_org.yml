@@ -46,9 +46,13 @@
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 731726320ef94647
@@ -68,9 +72,13 @@
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 78a606d3224b7e07
@@ -119,6 +127,8 @@
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
   response: |
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 673c172cdefa2da
@@ -140,6 +150,8 @@
   request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
   response: |
     {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 16280f277fec9a7a
