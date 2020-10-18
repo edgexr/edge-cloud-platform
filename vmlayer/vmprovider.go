@@ -250,6 +250,10 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range providerProps {
 		props[k] = v
 	}
+	// sometimes commonPf might be nil (if coming from shepherd) so initialize it before InitInfraCommon
+	if v.VMProperties.CommonPf == nil {
+		v.VMProperties.CommonPf = &infracommon.CommonPlatform{}
+	}
 	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, vaultConfig)
 	if err != nil {
 		return err
