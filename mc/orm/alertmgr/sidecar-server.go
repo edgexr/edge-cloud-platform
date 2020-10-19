@@ -125,19 +125,6 @@ func (s *SidecarServer) Run() error {
 				if !ok {
 					log.FatalLog("Failed to append CA file", "cert", string(cabs))
 				}
-				// TODO - Internal PKI refactor.
-				// For now add /root/tls/mex-ca.crt because we don't fully use internal pki yet
-				cabs, err = ioutil.ReadFile("/root/tls/mex-ca.crt")
-				if err != nil {
-					// Non-fatal, as once we fully transition to internal PKI
-					// we just need to remove this code
-					log.DebugLog(log.DebugLevelInfo, "Could not read CA file", "err", err)
-				} else {
-					ok := caCertPool.AppendCertsFromPEM(cabs)
-					if !ok {
-						log.FatalLog("Failed to append CA file", "cert", string(cabs))
-					}
-				}
 				tlsConfig := &tls.Config{
 					ClientCAs:  caCertPool,
 					ClientAuth: tls.RequireAndVerifyClientCert,
