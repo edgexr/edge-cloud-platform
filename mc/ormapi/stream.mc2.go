@@ -54,10 +54,3 @@ type swaggerStreamCloudlet struct {
 	// in: body
 	Body RegionCloudletKey
 }
-
-type RegionCloudletKey struct {
-	// required: true
-	// Region name
-	Region      string
-	CloudletKey edgeproto.CloudletKey
-}

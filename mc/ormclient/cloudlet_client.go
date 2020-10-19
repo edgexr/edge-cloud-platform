@@ -103,6 +103,24 @@ func (s *Client) FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch
 	return &out, status, err
 }
 
+func (s *Client) RevokeAccessKey(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/RevokeAccessKey", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
+func (s *Client) GenerateAccessKey(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/GenerateAccessKey", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 type CloudletApiClient interface {
 	CreateCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error)
 	DeleteCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Result, int, error)
@@ -113,6 +131,8 @@ type CloudletApiClient interface {
 	AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error)
+	RevokeAccessKey(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error)
+	GenerateAccessKey(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error)
 }
 
 func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
