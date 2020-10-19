@@ -1,0 +1,6 @@
+name 'run_cmd'
+maintainer 'MobiledgeX Inc.'
+maintainer_email 'mobiledgex.ops@mobiledgex.com'
+description 'Run bash commands on the node as root user'
+version '1.0.0'
+chef_version '>= 14.0'

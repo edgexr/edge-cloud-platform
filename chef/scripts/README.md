@@ -13,3 +13,8 @@ Reference : https://docs.chef.io/workstation/knife_exec/
   ❯ curl -u "<username>":"<password>" -XPOST https://artifactory.mobiledgex.net/artifactory/api/security/token  -d "expires_in=1800" -d "username=diaguser" -d "scope=member-of-groups:diagnostics"
 
   ```
+* `run_cmd.rb`
+  * Used to execute command on the platform node
+  ```
+  knife exec run_cmd.rb <node-name> <cmd>
+  ```
