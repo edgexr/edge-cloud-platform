@@ -112,6 +112,27 @@ type RegionFlavorMatch struct {
 	FlavorMatch edgeproto.FlavorMatch
 }
 
+// Request summary for RevokeAccessKey
+// swagger:parameters RevokeAccessKey
+type swaggerRevokeAccessKey struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
+type RegionCloudletKey struct {
+	// required: true
+	// Region name
+	Region      string
+	CloudletKey edgeproto.CloudletKey
+}
+
+// Request summary for GenerateAccessKey
+// swagger:parameters GenerateAccessKey
+type swaggerGenerateAccessKey struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
 // Request summary for ShowCloudletInfo
 // swagger:parameters ShowCloudletInfo
 type swaggerShowCloudletInfo struct {

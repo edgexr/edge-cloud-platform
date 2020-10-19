@@ -475,6 +475,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// MaintenanceState: 30
 	// OverridePolicyContainerVersion: 31
 	// VmPool: 32
+	// CrmAccessPublicKey: 33
+	// CrmAccessKeyUpgradeRequired: 34
 	// ```
 	// Security:
 	//   Bearer:
@@ -547,6 +549,26 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/FindFlavorMatch", FindFlavorMatch)
+	// swagger:route POST /auth/ctrl/RevokeAccessKey CloudletKey RevokeAccessKey
+	// Revoke crm access key.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RevokeAccessKey", RevokeAccessKey)
+	// swagger:route POST /auth/ctrl/GenerateAccessKey CloudletKey GenerateAccessKey
+	// Generate new crm access key.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GenerateAccessKey", GenerateAccessKey)
 	// swagger:route POST /auth/ctrl/ShowCloudletInfo CloudletInfo ShowCloudletInfo
 	// Show CloudletInfos.
 	// Security:
