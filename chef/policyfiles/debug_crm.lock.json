@@ -1,0 +1,80 @@
+{
+  "revision_id": "c18142aa52056a113f162929e8a0f16eebd30379ca7f96c81b8b4696b3656b4f",
+  "name": "debug_crm",
+  "run_list": [
+    "recipe[runstatus_handler::default]",
+    "recipe[run_cmd::default]",
+    "recipe[run_diagnostics::default]"
+  ],
+  "included_policy_locks": [
+
+  ],
+  "cookbook_locks": {
+    "run_cmd": {
+      "version": "1.0.0",
+      "identifier": "b008f660b08bc6f63dc52dfab53cd66d7500e2a6",
+      "dotted_decimal_identifier": "49549450178235334.69310761360078140.235765602771622",
+      "cache_key": "run_cmd-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
+    "run_diagnostics": {
+      "version": "1.0.0",
+      "identifier": "22e55a74a20430b6be01411c1fd1d560a61491f6",
+      "dotted_decimal_identifier": "9822325874754608.51437358357946321.234611079942646",
+      "cache_key": "run_diagnostics-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    },
+    "runstatus_handler": {
+      "version": "1.0.0",
+      "identifier": "779bf5d49799fcf3e2e455abc0232abd5a792470",
+      "dotted_decimal_identifier": "33667002364566012.68647889658429475.46992755074160",
+      "cache_key": "runstatus_handler-1.0.0",
+      "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
+      "source_options": {
+        "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
+        "version": "1.0.0"
+      }
+    }
+  },
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "solution_dependencies": {
+    "Policyfile": [
+      [
+        "run_cmd",
+        "= 1.0.0"
+      ],
+      [
+        "run_diagnostics",
+        "= 1.0.0"
+      ],
+      [
+        "runstatus_handler",
+        "= 1.0.0"
+      ]
+    ],
+    "dependencies": {
+      "run_cmd (1.0.0)": [
+
+      ],
+      "run_diagnostics (1.0.0)": [
+
+      ],
+      "runstatus_handler (1.0.0)": [
+
+      ]
+    }
+  }
+}
