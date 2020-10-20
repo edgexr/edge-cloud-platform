@@ -44,12 +44,14 @@ var DeveloperResources = []string{
 	ResourceAppAnalytics,
 	ResourceClusterAnalytics,
 	ResourceDeveloperPolicy,
+	ResourceAlert,
 }
 var OperatorResources = []string{
 	ResourceCloudlets,
 	ResourceCloudletAnalytics,
 	ResourceResTagTable,
 	ResourceCloudletPools,
+	ResourceAlert,
 }
 
 // built-in roles
