@@ -108,7 +108,21 @@ func DeleteAlertReceiver(c echo.Context) error {
 		return setReply(c, fmt.Errorf("User is not specifiable, current logged in user will be used"), nil)
 	}
 	in.User = claims.Username
-	// Since we actually use claims.Username, don't need to in fact authorize as the receivers are unique
+
+	// Check that user is allowed to access either of the orgs
+	if in.Cloudlet.Organization != "" {
+		if err := authorized(ctx, claims.Username, in.Cloudlet.Organization,
+			ResourceAlert, ActionView); err != nil {
+			return setReply(c, err, nil)
+		}
+	}
+	if in.AppInst.AppKey.Organization != "" {
+		if err := authorized(ctx, claims.Username, in.AppInst.AppKey.Organization,
+			ResourceAlert, ActionView); err != nil {
+			return setReply(c, err, nil)
+		}
+	}
+	// If the user is not specified look for the alertname for the user that's logged in
 	err = AlertManagerServer.DeleteReceiver(ctx, &in)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to delete a receiver", "err", err)

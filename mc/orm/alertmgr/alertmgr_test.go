@@ -276,25 +276,6 @@ func TestAlertMgrServer(t *testing.T) {
 	// any requests that don't have a registered URL will be fetched normally
 	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 
-	// // Run MC to test the actual MC apis
-	// // master controller
-	// addr := "127.0.0.1:9999"
-	// var testAlertCache edgeproto.AlertCache
-	// config := orm.ServerConfig{
-	// 	ServAddr:         addr,
-	// 	SqlAddr:         "127.0.0.1:5445",
-	// 	RunLocal:        true,
-	// 	InitLocal:       true,
-	// 	IgnoreEnv:       true,
-	// 	SkipVerifyEmail: true,
-	// 	LocalVault:      true,
-	// 	AlertCache:      &testAlertCache,
-	// }
-
-	// server, err := orm.RunServer(&config)
-	// require.Nil(t, err, "run mc server")
-	// defer server.Stop()
-
 	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9093"
 	testAlertMgrConfig := "testAlertMgrConfig.yml"
 	// start with clean configFile

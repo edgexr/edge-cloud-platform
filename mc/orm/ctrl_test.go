@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jarcoal/httpmock"
 	"github.com/mitchellh/mapstructure"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -36,6 +37,14 @@ func TestController(t *testing.T) {
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
 
+	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9094"
+	// mock http to redirect requests
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	// any requests that don't have a registered URL will be fetched normally
+	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	InitAlertmgrMock(testAlertMgrAddr)
+
 	config := ServerConfig{
 		ServAddr:                addr,
 		SqlAddr:                 "127.0.0.1:5445",
@@ -44,6 +53,7 @@ func TestController(t *testing.T) {
 		IgnoreEnv:               true,
 		SkipVerifyEmail:         true,
 		vaultConfig:             vaultConfig,
+		AlertMgrAddr:            testAlertMgrAddr,
 		UsageCheckpointInterval: "MONTH",
 	}
 	server, err := RunServer(&config)
@@ -160,6 +170,7 @@ func TestController(t *testing.T) {
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org1)
 	badPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	badPermTestEvents(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	badPermTestAlertReceivers(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 	// add new users to orgs
 	testAddUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperContributor", dev3.Name, Success)
 	testAddUserRole(t, mcClient, uri, tokenDev, org1, "DeveloperViewer", dev4.Name, Success)
@@ -350,6 +361,9 @@ func TestController(t *testing.T) {
 	goodPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3, ccount)
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
 	badPermTestClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org1, tc3)
+
+	// test alert receivers permissions and validations
+	goodPermTestAlertReceivers(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
 
 	{
 		// developers can't create AppInsts on other developer's ClusterInsts
