@@ -279,6 +279,9 @@ func (s *OpenstackPlatform) addIpUsageDetails(ctx context.Context, platformRes *
 	}
 	// Assume first subnet for now - see similar note in GetExternalGateway()
 	sd, err := s.GetSubnetDetail(ctx, subnets[0])
+	if err != nil {
+		return err
+	}
 	if platformRes.Ipv4Max, err = getIpCountFromPools(sd.AllocationPools); err != nil {
 		return err
 	}
