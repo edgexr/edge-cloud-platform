@@ -1,5 +1,5 @@
 IMAGE = slack-org-mgmt
-VERSION = 1.2.3
+VERSION = 1.2.4
 REGISTRY = registry.mobiledgex.net:5000/mobiledgex
 
 build:
