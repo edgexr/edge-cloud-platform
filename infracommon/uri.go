@@ -102,10 +102,13 @@ func DeleteFile(filePath string) error {
 
 // Get the externally visible public IP address
 func GetExternalPublicAddr(ctx context.Context) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalPublicAddr")
 	myip, err := stunGetMyIP(ctx)
 	if err == nil {
 		return myip, nil
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get IP from STUN, try DNS", "err", err)
+
 	// Alternatively use dns resolver to fetch external IP
 	myip, err = dnsGetMyIP()
 	if err == nil {
@@ -149,7 +152,7 @@ func stunGetMyIP(ctx context.Context) (string, error) {
 func dnsGetMyIP() (string, error) {
 	c := new(dns.Client)
 	m := new(dns.Msg)
-	m.SetQuestion(dns.Fqdn("myip.opendns.com"), dns.TypeANY)
+	m.SetQuestion(dns.Fqdn("myip.opendns.com"), dns.TypeA)
 	m.RecursionDesired = true
 
 	r, _, err := c.Exchange(m, net.JoinHostPort("resolver1.opendns.com", "53"))
