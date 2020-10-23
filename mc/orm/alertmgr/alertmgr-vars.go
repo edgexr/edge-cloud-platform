@@ -22,7 +22,8 @@ const DefaultAlertmanagerConfigT = `global:
   smtp_auth_password: "{{.Token}}"
   {{if .Tls}}smtp_require_tls: {{.Tls}}{{end}}
 route:
-  group_wait: 1s
+  group_by: ['...']
+  group_wait: 0s
   group_interval: 1s
   repeat_interval: 2h
   receiver: default

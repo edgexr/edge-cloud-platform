@@ -54,6 +54,7 @@ func TestController(t *testing.T) {
 		SkipVerifyEmail:         true,
 		vaultConfig:             vaultConfig,
 		AlertMgrAddr:            testAlertMgrAddr,
+		AlertmgrResolveTimout:   3 * time.Minute,
 		UsageCheckpointInterval: "MONTH",
 	}
 	server, err := RunServer(&config)
