@@ -25,6 +25,7 @@ START_FROM = os.environ.get('START_FROM', '2019-12-03')
 LOG_LEVEL = logging.DEBUG if os.environ.get('LOG_LEVEL', None) == 'debug' else logging.WARNING
 LOOKUPS = {}
 SKIP_CHANNELS = set()
+PUBLIC_CHANNELS = ["general", "community", "random"]
 
 logging.basicConfig(level=LOG_LEVEL,
                     format='%(asctime)s [%(levelname)s] {%(pathname)s:%(lineno)d} %(message)s')
@@ -152,7 +153,7 @@ def slack_api_post(path, token, data={}):
 
 def slack_channels(token):
     r = slack_api_get_paginated('conversations.list', token, 'channels',
-                                params={'types': 'private_channel'})
+                                params={'types': 'public_channel,private_channel'})
     channels = {
         'by_name': {},
         'by_id': {},
@@ -267,7 +268,7 @@ def slack_channel_invite_new_user(token, channels, email, args):
     r = slack_api_post('users.admin.invite', token, data={
         'email': email,
         'channels': channels,
-        'restricted': true,
+        'restricted': True,
     })
     logging.debug(r.text)
 
@@ -339,6 +340,9 @@ def main():
         return ','.join([ users['by_id'][x]['name'] for x in ulist.split(',') ])
     LOOKUPS['user'] = user_lookup
 
+    public_channel_ids = [ channels['by_name'][x]['id'] for x in PUBLIC_CHANNELS ]
+    logging.info(f"Public channels: {public_channel_ids}")
+
     need_invite = {}
     for norg in nusers:
         if norg in SKIP_CHANNELS:
@@ -389,7 +393,7 @@ def main():
                     need_invite[nuser].add(channelid)
 
     for nuser in need_invite:
-        nuserchannels = ','.join(need_invite[nuser])
+        nuserchannels = ','.join(need_invite[nuser].union(public_channel_ids))
         slack_channel_invite_new_user(slack_legacy_token, nuserchannels, nuser, args)
 
     # Persist skipped channel list
