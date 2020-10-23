@@ -39,6 +39,7 @@ var defaultConfigTemplate *template.Template
 type AlertMgrServer struct {
 	AlertMrgAddr          string
 	AlertResolutionTimout time.Duration
+	AlertRefreshInterval  time.Duration
 	AlertCache            *edgeproto.AlertCache
 	TlsConfig             *tls.Config
 	waitGrp               sync.WaitGroup
@@ -48,6 +49,14 @@ type AlertMgrServer struct {
 // TODO - use version to track where this alert came from
 func getAgentName() string {
 	return "MasterControllerV1"
+}
+
+// resolveTimeout should be at least 3x of alert refresh rate
+func getAlertRefreshRate(resolveTimeout time.Duration) time.Duration {
+	if alertRefreshInterval < resolveTimeout/3 {
+		return alertRefreshInterval
+	}
+	return resolveTimeout / 3
 }
 
 func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config,
@@ -63,6 +72,7 @@ func NewAlertMgrServer(alertMgrAddr string, tlsConfig *tls.Config,
 	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
 
+	server.AlertRefreshInterval = getAlertRefreshRate(resolveTimeout)
 	// We might need to wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
 		_, err = alertMgrApi(ctx, server.AlertMrgAddr, "GET", "", "", nil, server.TlsConfig)
@@ -94,7 +104,7 @@ func (s *AlertMgrServer) runServer() {
 	for !done {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
-		case <-time.After(alertRefreshInterval):
+		case <-time.After(s.AlertRefreshInterval):
 			span := log.StartSpan(log.DebugLevelInfo, "alert-mgr")
 			ctx := log.ContextWithSpan(context.Background(), span)
 			log.SpanLog(ctx, log.DebugLevelInfo, "Sending Alerts to AlertMgr", "AlertMrgAddr",
@@ -130,7 +140,7 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 	for _, a := range alerts {
 		start := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds, int64(a.ActiveAt.Nanos)))
 		// Set endsAt to now + s.AlertResolutionTimout
-		end := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds+int64(s.AlertResolutionTimout.Seconds()), int64(a.ActiveAt.Nanos)))
+		end := strfmt.DateTime(time.Now().Add(s.AlertResolutionTimout))
 		// Add region label to differentiate these at the global level
 		labels := make(map[string]string)
 		for k, v := range a.Labels {

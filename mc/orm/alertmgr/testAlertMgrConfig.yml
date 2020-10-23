@@ -14,7 +14,9 @@ global:
   victorops_api_url: https://alert.victorops.com/integrations/generic/20131114/alert/
 route:
   receiver: default
-  group_wait: 1s
+  group_by:
+  - '...'
+  group_wait: 0s
   group_interval: 1s
   repeat_interval: 2h
 receivers:
