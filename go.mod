@@ -31,7 +31,7 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/influxdata/influxdb v1.7.7
 	github.com/jaegertracing/jaeger v1.13.1
-	github.com/jarcoal/httpmock v1.0.4
+	github.com/jarcoal/httpmock v1.0.6
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
@@ -306,3 +306,5 @@ replace github.com/go-openapi/swag => github.com/go-openapi/swag v0.19.9
 replace github.com/go-openapi/validate => github.com/go-openapi/validate v0.19.11
 
 replace github.com/creack/pty => github.com/creack/pty v1.1.10
+
+replace github.com/jarcoal/httpmock => github.com/jarcoal/httpmock v1.0.6

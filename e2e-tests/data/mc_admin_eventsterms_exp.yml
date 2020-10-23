@@ -28,6 +28,8 @@
     - /ws/api/v1/auth/ctrl/ShowLogs
     - AutoProv create AppInst
     - AutoProv delete AppInst
+    - Cloudlet maintenance start
+    - Cloudlet maintenance done
     - Cloudlet online
     - cluster-svc create App
     - cluster-svc create AppInst
@@ -66,6 +68,7 @@
     - flavor
     - hostname
     - lineno
+    - maintenance-state
     - method
     - node
     - noderegion
@@ -84,3 +87,4 @@
     - status
     - traceid
     - username
+    - version

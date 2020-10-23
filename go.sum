@@ -369,6 +369,8 @@ github.com/jaegertracing/jaeger v1.13.1 h1:vvub5of4Bc2yze5q+qvqjipO3UkeDPr1YUJfN
 github.com/jaegertracing/jaeger v1.13.1/go.mod h1:LUWPSnzNPGRubM8pk0inANGitpiMOOxihXx0+53llXI=
 github.com/jarcoal/httpmock v1.0.4 h1:jp+dy/+nonJE4g4xbVtl9QdrUNbn6/3hDT5R4nDIZnA=
 github.com/jarcoal/httpmock v1.0.4/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
+github.com/jarcoal/httpmock v1.0.6 h1:e81vOSexXU3mJuJ4l//geOmKIt+Vkxerk1feQBC8D0g=
+github.com/jarcoal/httpmock v1.0.6/go.mod h1:ATjnClrvW/3tijVmpL/va5Z3aAyGvqU3gCT8nX0Txik=
 github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 h1:EFT6MH3igZK/dIVqgGbTqWVvkZ7wJ5iGN03SVtvvdd8=
 github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25/go.mod h1:sWkGw/wsaHtRsT9zGQ/WyJCotGWG/Anow/9hsAcBWRw=
 github.com/jefferai/jsonx v1.0.0 h1:Xoz0ZbmkpBvED5W9W1B5B/zc3Oiq7oXqiW7iRV3B6EI=
