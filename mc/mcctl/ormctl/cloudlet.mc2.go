@@ -368,6 +368,8 @@ var PlatformConfigOptionalArgs = []string{
 	"chefserverpath",
 	"chefclientinterval",
 	"deploymenttag",
+	"crmaccessprivatekey",
+	"accessapiaddr",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -390,6 +392,8 @@ var PlatformConfigAliasArgs = []string{
 	"chefserverpath=platformconfig.chefserverpath",
 	"chefclientinterval=platformconfig.chefclientinterval",
 	"deploymenttag=platformconfig.deploymenttag",
+	"crmaccessprivatekey=platformconfig.crmaccessprivatekey",
+	"accessapiaddr=platformconfig.accessapiaddr",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -412,6 +416,8 @@ var PlatformConfigComments = map[string]string{
 	"chefserverpath":        "Path to Chef Server",
 	"chefclientinterval":    "Chef client interval",
 	"deploymenttag":         "Deployment Tag",
+	"crmaccessprivatekey":   "crm access private key",
+	"accessapiaddr":         "controller access API address",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -542,6 +548,8 @@ var CloudletAliasArgs = []string{
 	"config.chefserverpath=cloudlet.config.chefserverpath",
 	"config.chefclientinterval=cloudlet.config.chefclientinterval",
 	"config.deploymenttag=cloudlet.config.deploymenttag",
+	"config.crmaccessprivatekey=cloudlet.config.crmaccessprivatekey",
+	"config.accessapiaddr=cloudlet.config.accessapiaddr",
 	"restagmap:#.key=cloudlet.restagmap:#.key",
 	"restagmap:#.value.name=cloudlet.restagmap:#.value.name",
 	"restagmap:#.value.organization=cloudlet.restagmap:#.value.organization",
@@ -608,6 +616,8 @@ var CloudletComments = map[string]string{
 	"config.chefserverpath":               "Path to Chef Server",
 	"config.chefclientinterval":           "Chef client interval",
 	"config.deploymenttag":                "Deployment Tag",
+	"config.crmaccessprivatekey":          "crm access private key",
+	"config.accessapiaddr":                "controller access API address",
 	"restagmap:#.value.name":              "Resource Table Name",
 	"restagmap:#.value.organization":      "Operator organization of the cloudlet site.",
 	"accessvars":                          "Variables required to access cloudlet",

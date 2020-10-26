@@ -99,6 +99,8 @@ controllers:
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41001"
+  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -118,6 +120,8 @@ controllers:
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41002"
+  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -139,6 +143,8 @@ controllers:
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
+  accessapiaddr: "127.0.0.1:41011"
+  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -160,6 +166,8 @@ controllers:
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
+  accessapiaddr: "127.0.0.1:41012"
+  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true

@@ -83,6 +83,7 @@ func main() {
 			if !retry.ShouldRunAction(ii) {
 				continue
 			}
+			util.PrintStepBanner("name: " + spec.Name)
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
 			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)

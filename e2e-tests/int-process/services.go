@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -72,6 +73,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	appDNSRoot := ""
 	deploymentTag := ""
 	chefServerPath := ""
+	accessApiAddr := ""
 	if pfConfig != nil {
 		// Same vault role-id/secret-id as CRM
 		for k, v := range pfConfig.EnvVar {
@@ -89,6 +91,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		appDNSRoot = pfConfig.AppDnsRoot
 		deploymentTag = pfConfig.DeploymentTag
 		chefServerPath = pfConfig.ChefServerPath
+		accessApiAddr = pfConfig.AccessApiAddr
 	}
 
 	for envKey, envVal := range cloudlet.EnvVar {
@@ -119,6 +122,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		AppDNSRoot:     appDNSRoot,
 		DeploymentTag:  deploymentTag,
 		ChefServerPath: chefServerPath,
+		AccessApiAddr:  accessApiAddr,
 	}, opts, nil
 }
 
@@ -145,6 +149,7 @@ func StartShepherdService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfC
 	if err != nil {
 		return nil, err
 	}
+	shepherdProc.AccessKeyFile = cloudcommon.GetLocalAccessKeyFile(cloudlet.Key.Name)
 
 	err = shepherdProc.StartLocal("/tmp/"+cloudlet.Key.Name+".shepherd.log", opts...)
 	if err != nil {

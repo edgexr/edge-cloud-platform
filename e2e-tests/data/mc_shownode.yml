@@ -67,7 +67,7 @@ nodes:
       organization: enterprise
       name: enterprise-1
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: local
@@ -75,7 +75,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-1
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: local
@@ -83,7 +83,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-2
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: local
@@ -91,7 +91,7 @@ nodes:
       organization: azure
       name: azure-cloud-4
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: local
@@ -99,7 +99,7 @@ nodes:
       organization: gcp
       name: gcp-cloud-5
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 
 - key:
     type: crm
@@ -108,7 +108,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-3
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: locala
@@ -116,7 +116,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-4
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 - key:
     type: crm
     region: locala
@@ -124,7 +124,7 @@ nodes:
       organization: enterprise
       name: enterprise-2
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
 
 - key:
     type: shepherd
@@ -132,7 +132,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,useVaultCAs,useVaultCerts
   
 - key:
     type: cluster-svc
