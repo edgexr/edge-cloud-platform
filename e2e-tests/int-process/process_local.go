@@ -321,6 +321,12 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--chefServerPath")
 		args = append(args, p.ChefServerPath)
 	}
+	if p.AccessKeyFile != "" {
+		args = append(args, "--accessKeyFile", p.AccessKeyFile)
+	}
+	if p.AccessApiAddr != "" {
+		args = append(args, "--accessApiAddr", p.AccessApiAddr)
+	}
 
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)

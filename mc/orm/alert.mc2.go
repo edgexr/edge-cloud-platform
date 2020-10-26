@@ -455,6 +455,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigChefServerPath: 21.17
 	// ConfigChefClientInterval: 21.18
 	// ConfigDeploymentTag: 21.19
+	// ConfigCrmAccessPrivateKey: 21.22
+	// ConfigAccessApiAddr: 21.23
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2

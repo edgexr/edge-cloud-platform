@@ -1,6 +1,7 @@
 package e2esetup
 
 type TestSpec struct {
+	Name             string      `json:"name" yaml:"name"`
 	ApiType          string      `json:"api" yaml:"api"`
 	ApiFile          string      `json:"apifile" yaml:"apifile"`
 	Actions          []string    `json:"actions" yaml:"actions"`

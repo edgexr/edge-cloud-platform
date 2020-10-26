@@ -139,6 +139,7 @@ func deleteCloudletPrometheusAlertFile(ctx context.Context, file string) error {
 // Write prometheus rules file and reload rules
 func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf []byte) error {
 	// write alerting rules
+	log.SpanLog(ctx, log.DebugLevelInfo, "writing alerts file", "file", file)
 	err := ioutil.WriteFile(file, alertsBuf, 0644)
 	if err != nil {
 		return err
@@ -149,6 +150,7 @@ func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf [
 }
 
 func reloadCloudletProm(ctx context.Context) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "reloading promemtheus config")
 	resp, err := http.Post("http://0.0.0.0:9092/-/reload", "", bytes.NewBuffer([]byte{}))
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload prometheus", "err", err)

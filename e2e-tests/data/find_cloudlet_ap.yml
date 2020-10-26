@@ -9,6 +9,7 @@ findcloudletrequest:
     latitude: 36.00
     longitude: -96.00
   cellid: 1234
+countperinterval: 3
 repeat: 3
 runatintervalsec: 1
 runatoffsetsec: 0.6

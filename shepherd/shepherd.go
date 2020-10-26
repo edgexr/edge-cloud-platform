@@ -307,6 +307,7 @@ func getPlatform() (platform.Platform, error) {
 
 func main() {
 	nodeMgr.InitFlags()
+	nodeMgr.AccessKeyClient.InitFlags()
 	flag.Parse()
 	start()
 	defer stop()
@@ -369,7 +370,11 @@ func start() {
 	edgeproto.InitCloudletCache(&CloudletCache)
 
 	addrs := strings.Split(*notifyAddrs, ",")
-	notifyClient = notify.NewClient(nodeMgr.Name(), addrs, tls.GetGrpcDialOption(clientTlsConfig))
+	notifyClient = notify.NewClient(nodeMgr.Name(), addrs,
+		tls.GetGrpcDialOption(clientTlsConfig),
+		notify.ClientUnaryInterceptors(nodeMgr.AccessKeyClient.UnaryAddAccessKey),
+		notify.ClientStreamInterceptors(nodeMgr.AccessKeyClient.StreamAddAccessKey),
+	)
 	notifyClient.SetFilterByCloudletKey()
 	notifyClient.RegisterRecvSettingsCache(&SettingsCache)
 	notifyClient.RegisterRecvVMPoolCache(&VMPoolCache)

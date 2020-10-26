@@ -278,6 +278,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 		}
 	}
 	for _, p := range Deployment.AlertmgrSidecars {
+		opts = append(opts, process.WithDebug("api,notify,metrics,events"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}
@@ -471,8 +472,7 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			fmt.Fprintf(os.Stderr, "ERROR: unmarshaling setupmex TestSpec: %v", err)
 			errors = append(errors, "Error in unmarshaling TestSpec")
 		} else {
-			retry := false
-			errs := setupmex.RunAction(ctx, actionSpec, outputDir, &ecSpec, mods, vars, &retry)
+			errs := setupmex.RunAction(ctx, actionSpec, outputDir, &ecSpec, mods, vars, retry)
 			errors = append(errors, errs...)
 		}
 	}

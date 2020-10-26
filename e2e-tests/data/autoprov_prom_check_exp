@@ -1,0 +1,60 @@
+ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
+{
+  "status": "success",
+  "data": {
+    "groups": [
+      {
+        "name": "autoprov-feature",
+        "file": "/tmp/rulefile_autoprovappd.yml",
+        "rules": [
+          {
+            "state": "inactive",
+            "name": "AutoProvUndeploy",
+            "query": "envoy_cluster_upstream_cx_active{app=\"autoprovappd\",apporg=\"AcmeAppCo\",appver=\"1.0\"} <= 1",
+            "duration": 3,
+            "labels": {},
+            "annotations": {},
+            "alerts": [],
+            "health": "ok",
+            "type": "alerting"
+          }
+        ],
+        "interval": 1,
+      },
+      {
+        "name": "StaticRules",
+        "file": "/tmp/rulefile_healthcheck.yml",
+        "rules": [
+          {
+            "state": "inactive",
+            "name": "AppInstDown",
+            "query": "up == 0",
+            "duration": 15,
+            "labels": {
+              "status": "1"
+            },
+            "annotations": {},
+            "alerts": [],
+            "health": "ok",
+            "type": "alerting"
+          },
+          {
+            "state": "inactive",
+            "name": "AppInstDown",
+            "query": "envoy_cluster_health_check_healthy == 0",
+            "duration": 0,
+            "labels": {
+              "status": "2"
+            },
+            "annotations": {},
+            "alerts": [],
+            "health": "ok",
+            "type": "alerting"
+          }
+        ],
+        "interval": 1,
+      }
+    ]
+  }
+}
+
