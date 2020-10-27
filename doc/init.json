@@ -6,11 +6,11 @@
                 },
                 {
                         "name": "Operator API",
-                        "tags": ["Cloudlet"]
+                        "tags": ["Cloudlet", "OperatorCode", "Flavor", "CloudletProps", "CloudletResMap", "FlavorMatch", "CloudletPool", "CloudletPoolMember", "VMPool", "VMPoolMember", "OperatorMetrics", "Events", "OperatorUsage", "AlertReceiver"]
                 },
                 {
                         "name": "Developer API",
-                        "tags": ["ClusterInst", "App", "AppInst"]
+                        "tags": ["ClusterInst", "App", "AppInst", "AutoProvPolicy", "AppAutoProvPolicy", "AutoScalePolicy", "PrivacyPolicy", "AutoProvPolicyCloudlet", "AppInstClientKey", "ExecRequest", "DeveloperMetrics", "Events", "DeveloperUsage", "AlertReceiver"]
                 }
         ],
 	"tags": [
@@ -27,8 +27,52 @@
 			"description": "Organizations group a set of resources together, for example Apps, App Instances, or Cloudlets. Users given a role in an Organization can operate on those resources in the scope provided by their role."
 		},
 		{
+			"name": "OperatorCode",
+			"description": "OperatorCode maps a carrier code to an Operator organization name."
+		},
+		{
+			"name": "Flavor",
+			"description": "Flavors define the compute, memory and storage capacity of computing instances. To put it simply, a flavor is an available hardware configuration for a server. It defines the size of a virtual server that can be launched."
+		},
+		{
+			"name": "AutoProvPolicy",
+			"description": "AutoProvPolicy defines the automated provisioning policy."
+		},
+		{
+			"name": "AppAutoProvPolicy",
+			"description": "AutoProvPolicy belonging to an app."
+		},
+		{
+			"name": "AutoScalePolicy",
+			"description": "AutoScalePolicy defines when and how ClusterInsts will have their nodes scaled up or down."
+		},
+		{
+			"name": "PrivacyPolicy",
+			"description": "PrivacyPolicy defines security restrictions for cluster instances nodes scaled up or down."
+		},
+		{
+			"name": "AutoProvPolicyCloudlet",
+			"description": "AutoProvPolicyCloudlet belong to a cloudlet."
+		},
+		{
+			"name": "VMPool",
+			"description": "Pool of VMs to be part of a Cloudlet."
+		},
+		{
+			"name": "VMPoolMember",
+			"description": "Members belong to a VMPool."
+		},
+		{
 			"name": "Cloudlet",
 			"description": "Cloudlet is a set of compute resources at a particular location, provided by an Operator."
+		},
+		{
+			"name": "CloudletPool",
+			"description": "CloudletPool defines a pool of Cloudlets that have restricted access."
+		},
+		{
+			"name": "CloudletPoolMember",
+			"description": "Member belong to a cloudlet pool."
 		},
 		{
 			"name": "ClusterInst",
@@ -41,6 +85,50 @@
 		{
 			"name": "AppInst",
 			"description": "AppInst is an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key."
+		},
+		{
+			"name": "CloudletProps",
+			"description": "Infra properties used to setup cloudlet."
+		},
+		{
+			"name": "CloudletResMap",
+			"description": "Cloudlet resouce mapping."
+		},
+		{
+			"name": "FlavorMatch",
+			"description": "To match a flavor with platform flavor."
+		},
+		{
+			"name": "AppInstClientKey",
+			"description": "Client is an AppInst client that called FindCloudlet DME Api."
+		},
+		{
+			"name": "ExecRequest",
+			"description": "ExecRequest is a common struct for enabling a connection to execute some work on a container."
+		},
+		{
+			"name": "DeveloperMetrics",
+			"description": "Collection of statistcs related to Client/App/Cluster."
+		},
+		{
+			"name": "OperatorMetrics",
+			"description": "Collection of statistcs related to Cloudlet."
+		},
+		{
+			"name": "Events",
+			"description": "Collection of event/audit logs from edge services."
+		},
+		{
+			"name": "DeveloperUsage",
+			"description": "Usage details of App/Cluster."
+		},
+		{
+			"name": "OperatorUsage",
+			"description": "Usage details of Cloudlet."
+		},
+		{
+			"name": "AlertReceiver",
+			"description": "Manage receiver for alerts from edge services."
 		}
 	]
 }

@@ -2,6 +2,7 @@ package doc
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 )
 
 // swagger:parameters Login
@@ -38,4 +39,64 @@ type swaggerPasswdReset struct {
 type swaggerCreateOrg struct {
 	// in: body
 	Body ormapi.Organization
+}
+
+// swagger:parameters AppMetrics
+type swaggerAppMetrics struct {
+	// in: body
+	Body ormapi.RegionAppInstMetrics
+}
+
+// swagger:parameters ClusterMetrics
+type swaggerClusterMetrics struct {
+	// in: body
+	Body ormapi.RegionClusterInstMetrics
+}
+
+// swagger:parameters CloudletMetrics
+type swaggerCloudletMetrics struct {
+	// in: body
+	Body ormapi.RegionCloudletMetrics
+}
+
+// swagger:parameters ClientMetrics
+type swaggerClientMetrics struct {
+	// in: body
+	Body ormapi.RegionClientMetrics
+}
+
+// swagger:parameters AppUsage
+type swaggerAppUsage struct {
+	// in: body
+	Body ormapi.RegionAppInstUsage
+}
+
+// swagger:parameters ClusterUsage
+type swaggerClusterUsage struct {
+	// in: body
+	Body ormapi.RegionClusterInstUsage
+}
+
+// swagger:parameters CloudletPoolUsage
+type swaggerCloudletPoolUsage struct {
+	// in: body
+	Body ormapi.RegionCloudletPoolUsage
+}
+
+// swagger:parameters SearchEvents FindEvents
+type swaggerEvents struct {
+	// in: body
+	Body node.EventSearch
+}
+
+// swagger:parameters TermsEvents
+type swaggerTermsEvents struct {
+	// in: body
+	Body node.EventTerms
+}
+
+// swagger:parameters CreateAlertReceiver DeleteAlertReceiver ShowAlertReceiver
+type swaggerAlertReceiver struct {
+	// in: body
+	Body ormapi.AlertReceiver
 }

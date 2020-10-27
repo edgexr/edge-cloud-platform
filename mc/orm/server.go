@@ -452,27 +452,163 @@ func RunServer(config *ServerConfig) (*Server, error) {
 
 	// Support multiple connection types: HTTP(s), Websockets
 	addControllerApis("POST", auth)
+
 	// Metrics api route use auth to serve a query to influxDB
+
+	// swagger:route POST /auth/metrics/app DeveloperMetrics AppMetrics
+	// App related metrics.
+	// Display app related metrics.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/metrics/app", GetMetricsCommon)
+
+	// swagger:route POST /auth/metrics/cluster DeveloperMetrics ClusterMetrics
+	// Cluster related metrics.
+	// Display cluster related metrics.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/metrics/cluster", GetMetricsCommon)
+
+	// swagger:route POST /auth/metrics/cloudlet OperatorMetrics CloudletMetrics
+	// Cloudlet related metrics.
+	// Display cloudlet related metrics.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/metrics/cloudlet", GetMetricsCommon)
+
+	// swagger:route POST /auth/metrics/client DeveloperMetrics ClientMetrics
+	// Client related metrics.
+	// Display client related metrics.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/metrics/client", GetMetricsCommon)
+
 	auth.POST("/events/app", GetEventsCommon)
 	auth.POST("/events/cluster", GetEventsCommon)
 	auth.POST("/events/cloudlet", GetEventsCommon)
 
 	// new events/audit apis
+	// swagger:route POST /auth/events/show Events SearchEvents
+	// Search events
+	// Display events based on search filter.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/events/show", ShowEvents)
+	// swagger:route POST /auth/events/find Events FindEvents
+	// Find events
+	// Display events based on find filter.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/events/find", FindEvents)
+	// swagger:route POST /auth/events/terms Events TermsEvents
+	// Terms Events
+	// Display events terms.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/events/terms", EventTerms)
 
+	// swagger:route POST /auth/usage/app DeveloperUsage AppUsage
+	// App Usage
+	// Display app usage.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/usage/app", GetUsageCommon)
+	// swagger:route POST /auth/usage/cluster DeveloperUsage ClusterUsage
+	// Cluster Usage
+	// Display cluster usage.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/usage/cluster", GetUsageCommon)
+	// swagger:route POST /auth/usage/cloudletpool OperatorUsage CloudletPoolUsage
+	// CloudletPool Usage
+	// Display cloudletpool usage.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/usage/cloudletpool", GetCloudletPoolUsageCommon)
 
 	// Alertmanager apis
+	// swagger:route POST /auth/alertreceiver/create AlertReceiver CreateAlertReceiver
+	// Create Alert Receiver
+	// Create alert receiver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/alertreceiver/create", CreateAlertReceiver)
+	// swagger:route POST /auth/alertreceiver/delete AlertReceiver DeleteAlertReceiver
+	// Delete Alert Receiver
+	// Delete alert receiver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/alertreceiver/delete", DeleteAlertReceiver)
+	// swagger:route POST /auth/alertreceiver/show AlertReceiver ShowAlertReceiver
+	// Show Alert Receiver
+	// Show alert receiver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/alertreceiver/show", ShowAlertReceiver)
 
 	// Use GET method for websockets as thats the method used
