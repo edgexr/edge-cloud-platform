@@ -19,10 +19,33 @@ const TagFieldSubnetName = "subnetname"
 const TagFieldCidr = "cidr"
 const TagFieldVlan = "vlan"
 const TagFieldVmName = "vmname"
+const TagFieldRole = "role"
+const TagFieldFlavor = "flavor"
 const TagFieldNetName = "netname"
 
 const TagNotFound = "tag not found"
 const TagAlreadyExists = "ALREADY_EXISTS"
+
+type VMDomainTagContents struct {
+	Vmname string
+	Domain string
+	Role   string
+	Flavor string
+}
+
+type VMIpTagContents struct {
+	Vmname  string
+	Network string
+	Ipaddr  string
+	Domain  string
+}
+
+type SubnetTagContents struct {
+	SubnetName string
+	Cidr       string
+	Vlan       uint32
+	Domain     string
+}
 
 // vCenter has a bug in which if the tag query API is run while a tag delete is in progress, the query
 // will return and error, even if the tag being deleted is just one of many.  To avoid this, lock around
@@ -77,28 +100,33 @@ func (v *VSpherePlatform) GetVmIpTag(ctx context.Context, group, vmName, network
 }
 
 // ParseVMIpTag returns vmname, network, ipaddr, domain
-func (v *VSpherePlatform) ParseVMIpTag(ctx context.Context, tag string) (string, string, string, string, error) {
+func (v *VSpherePlatform) ParseVMIpTag(ctx context.Context, tag string) (*VMIpTagContents, error) {
+	var contents VMIpTagContents
 	fm, err := v.GetTagFieldMap(tag)
 	if err != nil {
-		return "", "", "", "", err
+		return nil, err
 	}
 	vmname, ok := fm[TagFieldVmName]
 	if !ok {
-		return "", "", "", "", fmt.Errorf("No vmname in vmip tag")
+		return nil, fmt.Errorf("No vmname in vmip tag")
 	}
+	contents.Vmname = vmname
 	network, ok := fm[TagFieldNetName]
 	if !ok {
-		return "", "", "", "", fmt.Errorf("No netname in vmip tag")
+		return nil, fmt.Errorf("No netname in vmip tag")
 	}
+	contents.Network = network
 	ip, ok := fm[TagFieldIp]
 	if !ok {
-		return "", "", "", "", fmt.Errorf("No ip in vmip tag")
+		return nil, fmt.Errorf("No ip in vmip tag")
 	}
+	contents.Ipaddr = ip
 	domain, ok := fm[TagFieldDomain]
 	if !ok {
-		return "", "", "", "", fmt.Errorf("No domain in vmip tag")
+		return nil, fmt.Errorf("No domain in vmip tag")
 	}
-	return vmname, network, ip, domain, nil
+	contents.Domain = domain
+	return &contents, nil
 }
 
 func (v *VSpherePlatform) GetSubnetTag(ctx context.Context, group, subnetName, cidr string, vlan uint32) string {
@@ -106,53 +134,96 @@ func (v *VSpherePlatform) GetSubnetTag(ctx context.Context, group, subnetName, c
 }
 
 // ParseSubnetTag returns subnetName, cidr, vlan, domain
-func (v *VSpherePlatform) ParseSubnetTag(ctx context.Context, tag string) (string, string, string, uint32, error) {
+func (v *VSpherePlatform) ParseSubnetTag(ctx context.Context, tag string) (*SubnetTagContents, error) {
+	var contents SubnetTagContents
 	fm, err := v.GetTagFieldMap(tag)
 	if err != nil {
-		return "", "", "", 0, err
+		return nil, err
 	}
 	subnetName, ok := fm[TagFieldSubnetName]
 	if !ok {
-		return "", "", "", 0, fmt.Errorf("No subnetname in subnet tag")
+		return nil, fmt.Errorf("No subnetname in subnet tag")
 	}
+	contents.SubnetName = subnetName
 	cidr, ok := fm[TagFieldCidr]
 	if !ok {
-		return "", "", "", 0, fmt.Errorf("No cidr in subnet tag")
+		return nil, fmt.Errorf("No cidr in subnet tag")
 	}
+	contents.Cidr = cidr
 	domain, ok := fm[TagFieldDomain]
 	if !ok {
-		return "", "", "", 0, fmt.Errorf("No domain in subnet tag")
+		return nil, fmt.Errorf("No domain in subnet tag")
 	}
+	contents.Domain = domain
 	vlanstr, ok := fm[TagFieldVlan]
 	if !ok {
-		return "", "", "", 0, fmt.Errorf("No vlan in subnet tag")
+		return nil, fmt.Errorf("No vlan in subnet tag")
 	}
 	vlan, err := strconv.ParseUint(vlanstr, 10, 32)
 	if err != nil {
-		return "", "", "", 0, fmt.Errorf("Fail to parse VLAN in subnet tag: %v", err)
+		return nil, fmt.Errorf("Fail to parse VLAN in subnet tag: %v", err)
 	}
-	return subnetName, cidr, domain, uint32(vlan), nil
+	contents.Vlan = uint32(vlan)
+	return &contents, nil
 }
 
-func (v *VSpherePlatform) GetVmDomainTag(ctx context.Context, group, vmName string) string {
-	return TagFieldGroup + "=" + group + "," + TagFieldVmName + "=" + vmName + "," + TagFieldDomain + "=" + string(v.vmProperties.Domain)
+func (v *VSpherePlatform) GetVmDomainTag(ctx context.Context, group, vmName, role, flavor string) string {
+	return TagFieldGroup + "=" + group + "," +
+		TagFieldVmName + "=" + vmName + "," +
+		TagFieldRole + "=" + role + "," +
+		TagFieldFlavor + "=" + flavor + "," +
+		TagFieldDomain + "=" + string(v.vmProperties.Domain)
 }
 
-// ParseVMDomainTag returns vmname, domain
-func (v *VSpherePlatform) ParseVMDomainTag(ctx context.Context, tag string) (string, string, error) {
+// ParseVMDomainTag returns vmname, domain, role, flavor
+func (v *VSpherePlatform) ParseVMDomainTag(ctx context.Context, tag string) (*VMDomainTagContents, error) {
+	var contents VMDomainTagContents
 	fm, err := v.GetTagFieldMap(tag)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	vmName, ok := fm[TagFieldVmName]
 	if !ok {
-		return "", "", fmt.Errorf("No subnetname in vmdomain tag")
+		return nil, fmt.Errorf("No vmname in vmdomain tag")
 	}
+	contents.Vmname = vmName
 	domain, ok := fm[TagFieldDomain]
 	if !ok {
-		return "", "", fmt.Errorf("No domain in vmdomain tag")
+		return nil, fmt.Errorf("No domain in vmdomain tag")
 	}
-	return vmName, domain, nil
+	contents.Domain = domain
+	role, ok := fm[TagFieldRole]
+	if !ok {
+		// optional
+		log.SpanLog(ctx, log.DebugLevelInfra, "No role in vmdomain tag", "tag", tag)
+	} else {
+		contents.Role = role
+	}
+	flavor, ok := fm[TagFieldFlavor]
+	if !ok {
+		// optional
+		return nil, fmt.Errorf("No flavor in vmdomain tag")
+	} else {
+		contents.Flavor = flavor
+	}
+	return &contents, nil
+}
+
+// GetAllVmIpsFromTags returns a map of vmname to ip list
+func (v *VSpherePlatform) GetAllVmIpsFromTags(ctx context.Context) (map[string][]string, error) {
+	results := make(map[string][]string)
+	tags, err := v.GetTagsForCategory(ctx, v.GetVmIpTagCategory(ctx), vmlayer.VMDomainAny)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		vmipTagContents, err := v.ParseVMIpTag(ctx, tag.Name)
+		if err != nil {
+			return nil, err
+		}
+		results[vmipTagContents.Vmname] = append(results[vmipTagContents.Vmname], vmipTagContents.Ipaddr)
+	}
+	return results, nil
 }
 
 func (v *VSpherePlatform) GetIpsFromTagsForVM(ctx context.Context, vmName string, sd *vmlayer.ServerDetail) error {
@@ -162,34 +233,34 @@ func (v *VSpherePlatform) GetIpsFromTagsForVM(ctx context.Context, vmName string
 		return err
 	}
 	for _, t := range tags {
-		vm, net, ip, _, err := v.ParseVMIpTag(ctx, t.Name)
+		vmipTagContents, err := v.ParseVMIpTag(ctx, t.Name)
 		if err != nil {
 			return err
 		}
-		if vm != vmName {
+		if vmipTagContents.Vmname != vmName {
 			continue
 		}
 
 		// see if there is an existing port in the server details and update it
 		found := false
 		for i, s := range sd.Addresses {
-			if s.Network == net {
-				log.SpanLog(ctx, log.DebugLevelInfra, "Updated address via tag", "vm", vm, "net", net, "ip", ip)
-				sd.Addresses[i].ExternalAddr = ip
-				sd.Addresses[i].InternalAddr = ip
+			if s.Network == vmipTagContents.Network {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Updated address via tag", "contents", vmipTagContents)
+				sd.Addresses[i].ExternalAddr = vmipTagContents.Ipaddr
+				sd.Addresses[i].InternalAddr = vmipTagContents.Ipaddr
 				found = true
 			}
 		}
 		if !found {
-			portName := vmlayer.GetPortName(vmName, net)
+			portName := vmlayer.GetPortName(vmName, vmipTagContents.Network)
 			sip := vmlayer.ServerIP{
-				InternalAddr: ip,
-				ExternalAddr: ip,
-				Network:      net,
+				InternalAddr: vmipTagContents.Ipaddr,
+				ExternalAddr: vmipTagContents.Ipaddr,
+				Network:      vmipTagContents.Network,
 				PortName:     portName,
 			}
 			sd.Addresses = append(sd.Addresses, sip)
-			log.SpanLog(ctx, log.DebugLevelInfra, "Added address via tag", "vm", vm, "net", net, "ip", ip)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Added address via tag", "contents", vmipTagContents)
 		}
 	}
 	return nil
@@ -355,11 +426,11 @@ func (v *VSpherePlatform) CreateTagCategories(ctx context.Context) error {
 func (v *VSpherePlatform) GetVmNamesFromTags(ctx context.Context, tags []GovcTag) (map[string]string, error) {
 	names := make(map[string]string)
 	for _, tag := range tags {
-		vmname, _, err := v.ParseVMDomainTag(ctx, tag.Name)
+		vmDomainTagContents, err := v.ParseVMDomainTag(ctx, tag.Name)
 		if err != nil {
 			return nil, err
 		}
-		names[vmname] = vmname
+		names[vmDomainTagContents.Vmname] = vmDomainTagContents.Vmname
 	}
 	return names, nil
 }

@@ -136,9 +136,9 @@ func (v *VSpherePlatform) GetPortGroup(ctx context.Context, serverName, network 
 	if err != nil {
 		return "", fmt.Errorf("Error in GetPortName: %v", err)
 	}
-	_, _, _, vlan, err := v.ParseSubnetTag(ctx, subnetTag.Name)
+	subnetTagContents, err := v.ParseSubnetTag(ctx, subnetTag.Name)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("VLAN-%d", vlan), nil
+	return fmt.Sprintf("VLAN-%d", subnetTagContents.Vlan), nil
 }

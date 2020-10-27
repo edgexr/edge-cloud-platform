@@ -14,6 +14,14 @@ func (e *EdgeboxPlatform) UpdateClusterInst(ctx context.Context, clusterInst *ed
 	return fmt.Errorf("update not implemented")
 }
 
+func (e *EdgeboxPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResources, error) {
+	return e.generic.GetCloudletInfraResources(ctx)
+}
+
+func (e *EdgeboxPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+	return e.generic.GetClusterInfraResources(ctx, clusterKey)
+}
+
 func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	err := e.generic.CreateClusterInst(ctx, clusterInst, privacyPolicy, updateCallback, timeout)
 	if err != nil {

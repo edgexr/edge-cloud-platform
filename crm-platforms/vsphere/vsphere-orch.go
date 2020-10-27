@@ -52,12 +52,12 @@ func (v *VSpherePlatform) DeleteResourcesForGroup(ctx context.Context, groupName
 	// runs platform code with the domain set to "platform" and deletes the compute VMs
 	domain := string(v.vmProperties.Domain)
 	for _, vmtag := range vmtags {
-		vmname, vmdomain, err := v.ParseVMDomainTag(ctx, vmtag.Name)
+		vmDomainTagContents, err := v.ParseVMDomainTag(ctx, vmtag.Name)
 		if err != nil {
 			return err
 		}
-		domain = vmdomain
-		err = v.DeleteVM(ctx, vmname)
+		domain = vmDomainTagContents.Domain
+		err = v.DeleteVM(ctx, vmDomainTagContents.Vmname)
 		if err != nil {
 			return err
 		}
@@ -331,7 +331,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 		// we need to put the interface with the external ip first
 		var sortedPorts []vmlayer.PortResourceReference
 		for p, port := range vmgp.VMs[vmidx].Ports {
-			if port.NetworkId != v.vmProperties.GetCloudletExternalNetwork() {
+			if port.NetworkId == v.vmProperties.GetCloudletExternalNetwork() {
 				sortedPorts = append([]vmlayer.PortResourceReference{vmgp.VMs[vmidx].Ports[p]}, sortedPorts...)
 			} else {
 				sortedPorts = append(sortedPorts, vmgp.VMs[vmidx].Ports[p])
@@ -340,7 +340,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 		vmgp.VMs[vmidx].Ports = sortedPorts
 		log.SpanLog(ctx, log.DebugLevelInfra, "Interfaces after sorting", "vmname", vmgp.VMs[vmidx].Name, "FixedIPs", vmgp.VMs[vmidx].FixedIPs, "Ports", sortedPorts)
 
-		tagname := v.GetVmDomainTag(ctx, vmgp.GroupName, vm.Name)
+		tagname := v.GetVmDomainTag(ctx, vmgp.GroupName, vm.Name, string(vm.Role), vm.FlavorName)
 		tagid := v.IdSanitize(tagname)
 		vmgp.Tags = append(vmgp.Tags, vmlayer.TagOrchestrationParams{Category: v.GetVMDomainTagCategory(ctx), Id: tagid, Name: tagname})
 
@@ -616,6 +616,40 @@ func (v *VSpherePlatform) DeleteVMAndTags(ctx context.Context, vmName string) er
 	return nil
 }
 
+func (v *VSpherePlatform) GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResources", "name", name)
+	var resources edgeproto.InfraResources
+	vmTags, err := v.GetTagsMatchingField(ctx, TagFieldGroup, name, v.GetVMDomainTagCategory(ctx))
+	if err != nil {
+		return nil, err
+	}
+	vmips, err := v.GetAllVmIpsFromTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, vt := range vmTags {
+		vmDomainTagContents, err := v.ParseVMDomainTag(ctx, vt.Name)
+		if err != nil {
+			return nil, err
+		}
+		vminfo := edgeproto.VmInfo{
+			Name:        vmDomainTagContents.Vmname,
+			InfraFlavor: vmDomainTagContents.Flavor,
+			Type:        string(vmlayer.GetVmTypeForRole(vmDomainTagContents.Role)),
+		}
+		ips, ok := vmips[vmDomainTagContents.Vmname]
+		if ok {
+			for _, ip := range ips {
+				var vmip edgeproto.IpAddr
+				vmip.ExternalIp = ip
+				vminfo.Ipaddresses = append(vminfo.Ipaddresses, vmip)
+			}
+		}
+		resources.Vms = append(resources.Vms, vminfo)
+	}
+	return &resources, nil
+}
+
 func (v *VSpherePlatform) getVMListsForUpdate(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, vmLists *vmlayer.VMUpdateList, updateCallback edgeproto.CacheUpdateCallback) error {
 	orchVmLock.Lock()
 	defer orchVmLock.Unlock()
@@ -629,11 +663,11 @@ func (v *VSpherePlatform) getVMListsForUpdate(ctx context.Context, vmgp *vmlayer
 		return err
 	}
 	for _, vt := range vmTags {
-		vmname, _, err := v.ParseVMDomainTag(ctx, vt.Name)
+		vmDomainTagContents, err := v.ParseVMDomainTag(ctx, vt.Name)
 		if err != nil {
 			return err
 		}
-		vmLists.CurrentVMs[vmname] = vmname
+		vmLists.CurrentVMs[vmDomainTagContents.Vmname] = vmDomainTagContents.Vmname
 	}
 	// Get new VMs
 	for i := range vmgp.VMs {
@@ -769,11 +803,11 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 	}
 	// delete the tag matching this subnet
 	for _, t := range tags {
-		_, tagnet, _, _, err := v.ParseVMIpTag(ctx, t.Name)
+		vmipTagContents, err := v.ParseVMIpTag(ctx, t.Name)
 		if err != nil {
 			return err
 		}
-		if tagnet == subnetName {
+		if vmipTagContents.Network == subnetName {
 			return v.DeleteTag(ctx, t.Name)
 		}
 	}
