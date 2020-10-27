@@ -38,7 +38,7 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 	return &sd, nil
 }
 
-// UpdateServerIPsFromAddrs gets the ServerIPs forthe given network from the addresses and ports
+// UpdateServerIPs gets the ServerIPs for the given network from the addresses and ports
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
@@ -48,10 +48,9 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 	for _, it := range its {
 		sits := strings.Split(it, "=")
 		if len(sits) != 2 {
-			return fmt.Errorf("GetServerIPFromAddrs: Unable to parse '%s'", it)
+			return fmt.Errorf("UpdateServerIPs: Unable to parse '%s'", it)
 		}
 		network := strings.TrimSpace(sits[0])
-
 		addr := sits[1]
 
 		if network == externalNetname {
@@ -345,4 +344,84 @@ func (s *OpenstackPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) e
 func (s *OpenstackPlatform) CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error {
 	// no special checks to be done
 	return nil
+}
+
+func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResources")
+	var resources edgeproto.InfraResources
+	serverMap, err := o.ListServers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stackTemplate, err := o.getHeatStackTemplateDetail(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", name, err)
+	}
+	for resourceName, resource := range stackTemplate.Resources {
+		if resource.Type != "OS::Nova::Server" {
+			continue
+		}
+		vmName, ok := resource.Properties["name"]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "missing VM Name", "resourceName", resourceName, "resource", resource)
+			continue
+		}
+		vmNameStr, ok := vmName.(string)
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "invalid vm name", "vmName", vmName)
+			continue
+		}
+		svr, ok := serverMap[vmNameStr]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "unable to find server name in map", "vmNameStr", vmNameStr)
+			continue
+		}
+		var ports []OSPort
+		var sd vmlayer.ServerDetail
+		err = o.UpdateServerIPs(ctx, svr.Networks, ports, &sd)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "fail to get server IPs", "vmNameStr", vmNameStr, "networks", svr.Networks, "err", err)
+			continue
+		}
+		vmInfo := edgeproto.VmInfo{
+			Name:        vmNameStr,
+			Status:      svr.Status,
+			InfraFlavor: svr.Flavor,
+		}
+		for _, sip := range sd.Addresses {
+			vmip := edgeproto.IpAddr{
+				ExternalIp: sip.ExternalAddr,
+			}
+			if sip.InternalAddr != "" && sip.InternalAddr != sip.ExternalAddr {
+				vmip.InternalIp = sip.InternalAddr
+			}
+			vmInfo.Ipaddresses = append(vmInfo.Ipaddresses, vmip)
+		}
+		// fetch the role from the metadata, if available
+		role := ""
+		metadata, ok := resource.Properties["metadata"]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "missing metadata", "resource", resource)
+		} else {
+			metamap, ok := metadata.(map[string]interface{})
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelInfra, "invalid meta data", "metadata", metadata)
+			} else {
+				roleobj, ok := metamap["role"]
+				if ok {
+					rolestr, ok := roleobj.(string)
+					if ok {
+						role = rolestr
+					} else {
+						log.SpanLog(ctx, log.DebugLevelInfra, "invalid metadata role", "roleobj", roleobj)
+					}
+				} else {
+					log.SpanLog(ctx, log.DebugLevelInfra, "no role in metadata", "metamap", metamap)
+				}
+			}
+		}
+		vmInfo.Type = string(vmlayer.GetVmTypeForRole(role))
+		resources.Vms = append(resources.Vms, vmInfo)
+	}
+	return &resources, nil
 }

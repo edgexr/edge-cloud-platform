@@ -982,6 +982,21 @@ func addControllerApis(method string, group *echo.Group) {
 	// MasterNodeFlavor: 25
 	// SkipCrmCleanupOnFailure: 26
 	// OptRes: 27
+	// Resources: 28
+	// ResourcesVms: 28.1
+	// ResourcesVmsName: 28.1.1
+	// ResourcesVmsType: 28.1.2
+	// ResourcesVmsStatus: 28.1.3
+	// ResourcesVmsInfraFlavor: 28.1.4
+	// ResourcesVmsIpaddresses: 28.1.5
+	// ResourcesVmsIpaddressesExternalIp: 28.1.5.1
+	// ResourcesVmsIpaddressesInternalIp: 28.1.5.2
+	// ResourcesVmsContainers: 28.1.6
+	// ResourcesVmsContainersName: 28.1.6.1
+	// ResourcesVmsContainersType: 28.1.6.2
+	// ResourcesVmsContainersStatus: 28.1.6.3
+	// ResourcesVmsContainersClusterip: 28.1.6.4
+	// ResourcesVmsContainersRestarts: 28.1.6.5
 	// ```
 	// Security:
 	//   Bearer:

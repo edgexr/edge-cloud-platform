@@ -93,6 +93,22 @@ type PortResourceReference struct {
 	PortGroup   string
 }
 
+func GetVmTypeForRole(role string) VMType {
+	switch role {
+	case string(RoleAgent):
+		return VMTypeRootLB
+	case string(RoleMaster):
+		return VMTypeClusterMaster
+	case string(RoleNode):
+		return VMTypeClusterNode
+	case string(RoleVMApplication):
+		return VMTypeAppVM
+	case string(RoleVMPlatform):
+		return VMTypePlatform
+	}
+	return "unknown"
+}
+
 func GetPortName(vmname, netname string) string {
 	return fmt.Sprintf("%s-%s-port", vmname, netname)
 }

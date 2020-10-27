@@ -38,24 +38,28 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 
 }
 
-//ListServers returns list of servers, KVM instances, running on the system
-func (s *OpenstackPlatform) ListServers(ctx context.Context) ([]OSServer, error) {
+// ListServers returns a map of servers keyed by name
+func (s *OpenstackPlatform) ListServers(ctx context.Context) (map[string]OSServer, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "list", "-f", "json")
-
 	if err != nil {
 		err = fmt.Errorf("cannot get server list, %s, %v", out, err)
 		return nil, err
 	}
 	var servers []OSServer
+	var serverMap = make(map[string]OSServer)
+
 	err = json.Unmarshal(out, &servers)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	return servers, nil
+	for _, s := range servers {
+		serverMap[s.Name] = s
+	}
+	return serverMap, nil
 }
 
-//ListServers returns list of servers, KVM instances, running on the system
+// ListPorts returns a list of ports
 func (s *OpenstackPlatform) ListPorts(ctx context.Context) ([]OSPort, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "-f", "json")
 
