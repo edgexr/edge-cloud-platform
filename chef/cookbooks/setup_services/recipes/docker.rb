@@ -29,6 +29,13 @@ docker_image "#{node['prometheusImage']}" do
   notifies :prune, 'docker_image_prune[prune-old-images]', :delayed
 end
 
+directory '/root/accesskey' do
+  owner 'root'
+  group 'root'
+  mode '0700'
+  action :create
+end
+
 cmd = crmserver_cmd
 docker_container "crmserver" do
   Chef::Log.info("Start crmserver container, cmd: #{cmd}")
@@ -38,7 +45,7 @@ docker_container "crmserver" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['crmserver']['env']
-  volumes ['/var/tmp:/var/tmp']
+  volumes ['/var/tmp:/var/tmp', '/root/accesskey:/root/accesskey']
   command cmd
 end
 
@@ -51,7 +58,7 @@ docker_container "shepherd" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['shepherd']['env']
-  volumes ['/tmp:/tmp']
+  volumes ['/tmp:/tmp', '/root/accesskey:/root/accesskey']
   command cmd
 end
 
