@@ -388,8 +388,8 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 }
 
 func collectDockerClusterMetrics(ctx context.Context, p *DockerClusterStats) error {
-	// VM stats from Openstack might be a better idea going forward, but for now use a simple script to scrape the metrics on the RootLB
-	resp, err := p.client.Output(shepherd_common.ResTrackerCmd)
+	// VM stats from Openstack might be a better idea going forward, but for now use a simple script to scrape metrics from the cluster node
+	resp, err := p.clusterClient.Output(shepherd_common.ResTrackerCmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run", "cmd", shepherd_common.ResTrackerCmd, "err", err.Error())
 		return err
