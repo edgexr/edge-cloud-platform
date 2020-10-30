@@ -28,6 +28,13 @@ write_files:
   - path: /etc/ssh/trusted-user-ca-keys.pem
     content: {{ .CACert }}
     append: true
+{{- if .AccessKey }}
+  - path: /root/accesskey/accesskey.pem
+    content: |
+{{ Indent .AccessKey 10 }}
+    owner: root:root
+    permissions: '0600'
+{{- end}}
 chpasswd: { expire: False }
 ssh_pwauth: False
 timezone: UTC
