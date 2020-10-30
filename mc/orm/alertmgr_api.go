@@ -41,7 +41,7 @@ func CreateAlertReceiver(c echo.Context) error {
 	in.User = claims.Username
 	if in.Cloudlet.Organization == "" && in.AppInst.AppKey.Organization == "" {
 		return setReply(c,
-			fmt.Errorf("Either cloudlet, or app instance details have to be specified"), nil)
+			fmt.Errorf("Either cloudlet or app instance details have to be specified"), nil)
 	}
 	// Check that user is allowed to access either of the orgs
 	if in.Cloudlet.Organization != "" {
@@ -73,7 +73,7 @@ func CreateAlertReceiver(c echo.Context) error {
 		// TODO - retrieve org slack channel from vault, for now require slack details
 		if in.SlackWebhook == "" || in.SlackChannel == "" {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Slack details are missing", "receiver", in)
-			return setReply(c, fmt.Errorf("Slack URL, or channel are missing"),
+			return setReply(c, fmt.Errorf("Both slack URL and slack channel must be specified"),
 				nil)
 		}
 		err = AlertManagerServer.CreateReceiver(ctx, &in)
