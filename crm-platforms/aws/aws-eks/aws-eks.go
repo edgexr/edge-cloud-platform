@@ -8,6 +8,7 @@ import (
 	"github.com/codeskyblue/go-sh"
 	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -18,7 +19,7 @@ type AwsEksPlatform struct {
 }
 
 func (a *AwsEksPlatform) GatherCloudletInfo(ctx context.Context, vaultConfig *vault.Config, info *edgeproto.CloudletInfo) error {
-	return a.awsGenPf.GatherCloudletInfo(ctx, info)
+	return a.awsGenPf.GatherCloudletInfo(ctx, "", info)
 }
 
 // CreateClusterPrerequisites does nothing for now, but for outpost may need to create a vpc
@@ -72,11 +73,11 @@ func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) {
 }
 
 func (a *AwsEksPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
-	return a.awsGenPf.GetFlavorList(ctx)
+	return a.awsGenPf.GetFlavorList(ctx, "")
 }
 
-func (a *AwsEksPlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
-	return a.awsGenPf.GetProviderSpecificProps(ctx, vaultConfig)
+func (a *AwsEksPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+	return a.awsGenPf.GetProviderSpecificProps(ctx, pfconfig, vaultConfig)
 }
 
 func (a *AwsEksPlatform) Login(ctx context.Context, vaultConfig *vault.Config) error {

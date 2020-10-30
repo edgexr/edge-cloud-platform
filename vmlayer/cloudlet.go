@@ -818,7 +818,7 @@ func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletP
 		props.Properties[k] = v
 	}
 
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, v.VMProperties.CommonPf.VaultConfig)
+	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, v.VMProperties.CommonPf.PlatformConfig, v.VMProperties.CommonPf.VaultConfig)
 	if err != nil {
 		return nil, err
 	}

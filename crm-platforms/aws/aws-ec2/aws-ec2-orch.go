@@ -52,7 +52,7 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 	for _, vm := range vmgp.VMs {
 		_, ok := resources.imageNameToId[vm.ImageName]
 		if !ok {
-			imgId, err := a.GetImageId(ctx, vm.ImageName, a.IamAccountId)
+			imgId, err := a.GetImageId(ctx, vm.ImageName, a.AmiIamAccountId)
 			if err != nil {
 				return nil, err
 			}
@@ -61,9 +61,12 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 	}
 	resources.VpcId = vpc.VpcId
 	mexNet := a.VMProperties.GetCloudletMexNetwork()
-	internalRouteTableId, err := a.GetRouteTableId(ctx, vpc.VpcId, SearchForRouteTableByName, mexNet)
-	if err != nil {
-		return nil, err
+	internalRouteTableId := ""
+	if !a.awsGenPf.IsAwsOutpost() {
+		internalRouteTableId, err = a.GetRouteTableId(ctx, vpc.VpcId, SearchForRouteTableByName, mexNet)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// lock around the rest of this function which gets and creates subnets, secgrps
@@ -101,13 +104,29 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 	if action == vmlayer.ActionCreate {
 		updateCallback(edgeproto.UpdateTask, "Creating Subnets")
 		for _, sn := range vmgp.Subnets {
-			routeTableId := MainRouteTable
-			if sn.NetworkName == mexNet {
-				routeTableId = internalRouteTableId
-			}
-			_, err := a.CreateSubnet(ctx, vmgp.GroupName, sn.Name, sn.CIDR, routeTableId)
-			if err != nil {
-				return nil, err
+			if sn.ReservedName != "" {
+				log.SpanLog(ctx, log.DebugLevelInfra, "assign reserved subnet", "ReservedName", sn.ReservedName)
+				snMap, err := a.GetSubnets(ctx)
+				if err != nil {
+					return nil, err
+				}
+				subn, ok := snMap[sn.ReservedName]
+				if !ok {
+					return nil, fmt.Errorf("Cannot find reserved subnet in list: %s", sn.ReservedName)
+				}
+				err = a.AssignFreePrecreatedSubnet(ctx, subn.SubnetId, vmgp.GroupName, sn.Name)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				routeTableId := MainRouteTable
+				if sn.NetworkName == mexNet {
+					routeTableId = internalRouteTableId
+				}
+				_, err := a.CreateSubnet(ctx, vmgp.GroupName, sn.Name, sn.CIDR, routeTableId)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -131,6 +150,13 @@ func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *
 			usedCidrs[s.CidrBlock] = s.Name
 		}
 	}
+	var flavors []*edgeproto.FlavorInfo
+	var err error
+	flavors, err = a.GetFlavorList(ctx)
+	if err != nil {
+		return err
+	}
+
 	masterIP := ""
 	currentSubnetName := ""
 	if action != vmlayer.ActionCreate {
@@ -148,7 +174,24 @@ func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *
 			subnet := fmt.Sprintf("%s.%s.%d.%d/%s", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 0, vmgp.Netspec.NetmaskBits)
 			// either look for an unused one (create) or the current one (update)
 			newSubnet := action == vmlayer.ActionCreate
-			if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+			match := false
+
+			if a.awsGenPf.IsAwsOutpost() {
+				_, ok := usedCidrs[subnet]
+				if !ok {
+					continue
+				}
+				// find a free one rather than creating one
+				if (strings.Contains(usedCidrs[subnet], FreeInternalSubnetType)) || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+					vmgp.Subnets[i].ReservedName = usedCidrs[subnet]
+					match = true
+				}
+			} else {
+				if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+					match = true
+				}
+			}
+			if match {
 				found = true
 				vmgp.Subnets[i].CIDR = subnet
 				vmgp.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 1)
@@ -163,6 +206,19 @@ func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *
 	}
 	metaDir := "/mnt/mobiledgex-config/openstack/latest/"
 	for vmidx, vm := range vmgp.VMs {
+		flavormatch := false
+		for _, f := range flavors {
+			if f.Name == vm.FlavorName {
+				// only the disk needs to be specified
+				vmgp.VMs[vmidx].Disk = f.Disk
+				flavormatch = true
+				break
+			}
+		}
+		if !flavormatch {
+			return fmt.Errorf("No match in flavor cache for flavor name: %s", vm.FlavorName)
+		}
+
 		// metadata for AWS EC2 is embedded in the user data and then extracted within cloud-init
 		metaData := vmlayer.GetVMMetaData(vm.Role, masterIP, awsMetaDataFormatter)
 		vm.CloudConfigParams.ExtraBootCommands = append(vm.CloudConfigParams.ExtraBootCommands, "mkdir -p "+metaDir)
@@ -378,8 +434,15 @@ func (a *AwsEc2Platform) DeleteAllResourcesForGroup(ctx context.Context, vmGroup
 	subNets, err := a.GetSubnets(ctx)
 	for _, s := range subNets {
 		for _, tag := range s.Tags {
+			// currently we never delete external subnets as this is created with the cloudlet.  This
+			// will need to be revisited when supporting create and delete cloudlet for outpost
+			subnetType := FreeInternalSubnetType
 			if tag.Key == VMGroupNameTag && tag.Value == vmGroupName {
-				err = a.DeleteSubnet(ctx, s.SubnetId)
+				if a.awsGenPf.IsAwsOutpost() {
+					err = a.ReleasePrecreatedSubnet(ctx, s.SubnetId, vmGroupName, subnetType)
+				} else {
+					err = a.DeleteSubnet(ctx, s.SubnetId)
+				}
 				if err != nil {
 					return err
 				}

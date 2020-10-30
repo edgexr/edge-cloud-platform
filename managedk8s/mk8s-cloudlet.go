@@ -55,7 +55,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return err
 	}
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig)
-	props, err := m.Provider.GetProviderSpecificProps(ctx, vaultConfig)
+	props, err := m.Provider.GetProviderSpecificProps(ctx, platCfg, vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 		return err
 	}
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig)
-	props, err := m.Provider.GetProviderSpecificProps(ctx, vaultConfig)
+	props, err := m.Provider.GetProviderSpecificProps(ctx, platCfg, vaultConfig)
 	if err != nil {
 		return err
 	}

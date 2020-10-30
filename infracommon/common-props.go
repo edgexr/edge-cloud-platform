@@ -46,6 +46,11 @@ var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Flavors matching this pattern will be used by Cloudlet to bringup VMs",
 		Value:       ".*",
 	},
+	"SKIP_INSTALL_RESOURCE_TRACKER": &edgeproto.PropertyInfo{
+		Name:        "Skip Install Resource Tracker",
+		Description: "If set to true, the resource tracker is not installed to save time. For test only",
+		Internal:    true,
+	},
 }
 
 func GetVaultCloudletCommonPath(filePath string) string {

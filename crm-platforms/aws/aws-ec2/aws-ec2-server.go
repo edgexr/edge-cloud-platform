@@ -272,6 +272,7 @@ func (a *AwsEc2Platform) CreateVM(ctx context.Context, groupName string, vm *vml
 			DeviceName: v.DeviceName,
 			Ebs: AwsEc2Ebs{
 				DeleteOnTermination: true,
+				VolumeSize:          vm.Disk,
 			},
 		}
 		blockDevices = append(blockDevices, blockDevice)

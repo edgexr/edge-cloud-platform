@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -53,7 +55,7 @@ func (g *GCPPlatform) GetGcpProject() string {
 	return val
 }
 
-func (a *GCPPlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (a *GCPPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
 	err := infracommon.InternVaultEnv(ctx, vaultConfig, gcpVaultPath)
 	if err != nil {

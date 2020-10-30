@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -53,10 +54,10 @@ func (a *AwsGenericPlatform) TimedAwsCommand(ctx context.Context, name string, p
 	return out, nil
 }
 
-func (a *AwsGenericPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
+func (a *AwsGenericPlatform) GetFlavorList(ctx context.Context, flavorMatchPattern string) ([]*edgeproto.FlavorInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList")
 	var info edgeproto.CloudletInfo
-	err := a.GatherCloudletInfo(ctx, &info)
+	err := a.GatherCloudletInfo(ctx, flavorMatchPattern, &info)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +65,15 @@ func (a *AwsGenericPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Fl
 }
 
 // GatherCloudletInfo gets flavor info from AWS
-func (a *AwsGenericPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+func (a *AwsGenericPlatform) GatherCloudletInfo(ctx context.Context, flavorMatchPattern string, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo (AWS)")
 	filter := "Name=instance-storage-supported,Values=true"
 	query := "InstanceTypes[].[InstanceType,VCpuInfo.DefaultVCpus,MemoryInfo.SizeInMiB,InstanceStorageInfo.TotalSizeInGB]"
+
+	r, err := regexp.Compile(flavorMatchPattern)
+	if err != nil {
+		return fmt.Errorf("Cannot compile flavor match pattern")
+	}
 
 	out, err := a.TimedAwsCommand(ctx, "aws", "ec2", "describe-instance-types",
 		"--filter", filter,
@@ -111,15 +117,17 @@ func (a *AwsGenericPlatform) GatherCloudletInfo(ctx context.Context, info *edgep
 			return err
 		}
 
-		info.Flavors = append(
-			info.Flavors,
-			&edgeproto.FlavorInfo{
-				Name:  name,
-				Vcpus: uint64(vcpus),
-				Ram:   uint64(ram),
-				Disk:  uint64(disk),
-			},
-		)
+		if r.MatchString(name) {
+			info.Flavors = append(
+				info.Flavors,
+				&edgeproto.FlavorInfo{
+					Name:  name,
+					Vcpus: uint64(vcpus),
+					Ram:   uint64(ram),
+					Disk:  uint64(disk),
+				},
+			)
+		}
 	}
 	return nil
 }
