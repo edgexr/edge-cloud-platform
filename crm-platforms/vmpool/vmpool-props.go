@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
@@ -18,7 +19,7 @@ var VMPoolProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
 	return VMPoolProps, nil
 }
 

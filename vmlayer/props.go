@@ -279,6 +279,11 @@ func (vp *VMProperties) GetCloudletFlavorMatchPattern() string {
 	return value
 }
 
+func (vp *VMProperties) GetSkipInstallResourceTracker() bool {
+	value, _ := vp.CommonPf.Properties.GetValue("SKIP_INSTALL_RESOURCE_TRACKER")
+	return strings.ToLower(value) == "true"
+}
+
 func (vp *VMProperties) GetCloudletExternalRouter() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_ROUTER")
 	return value

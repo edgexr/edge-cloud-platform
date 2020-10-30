@@ -205,17 +205,23 @@ func (a *AwsEc2Platform) AllowIntraVpcTraffic(ctx context.Context, groupId strin
 	return nil
 }
 
-// GetIamAccountId gets the account Id for the logged in user
-func (a *AwsEc2Platform) GetIamAccountId(ctx context.Context) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetIamAccountId")
+// GetIamAccountForImage gets the account Id, which is either the logged in account
+// or the account specified as the GetAmiIamOwner
+func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIamAccountForImage")
 
+	acct := a.awsGenPf.GetAwsAmiIamOwner()
+	if acct != "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "using account specified AWS_AMI_IAM_OWNER", "acct", acct)
+		return acct, nil
+	}
 	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
 		"iam",
 		"get-user")
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "get-user result", "out", string(out), "err", err)
 	if err != nil {
-		return "", fmt.Errorf("GetIamAccountId failed: %s - %v", string(out), err)
+		return "", fmt.Errorf("GetIamAccountForImage failed: %s - %v", string(out), err)
 	}
 	var iamResult AwsIamUserResult
 	err = json.Unmarshal(out, &iamResult)

@@ -15,7 +15,7 @@ import (
 // ManagedK8sProvider is an interface that platforms implement to perform the details of interfacing with managed kubernetes services
 type ManagedK8sProvider interface {
 	GatherCloudletInfo(ctx context.Context, vaultConfig *vault.Config, info *edgeproto.CloudletInfo) error
-	GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
+	GetProviderSpecificProps(ctx context.Context, pfconfig *platform.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
 	SetProperties(props *infracommon.InfraProperties)
 	Login(ctx context.Context, vaultConfig *vault.Config) error
 	GetCredentials(ctx context.Context, clusterName string) error
@@ -49,7 +49,7 @@ func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.
 		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get vault configs", "vaultAddr", platformConfig.VaultAddr, "err", err)
 		return err
 	}
-	props, err := m.Provider.GetProviderSpecificProps(ctx, vaultConfig)
+	props, err := m.Provider.GetProviderSpecificProps(ctx, platformConfig, vaultConfig)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (m *ManagedK8sPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterI
 func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	props := edgeproto.CloudletProps{}
 	props.Properties = make(map[string]*edgeproto.PropertyInfo)
-	providerProps, err := m.Provider.GetProviderSpecificProps(ctx, m.CommonPf.VaultConfig)
+	providerProps, err := m.Provider.GetProviderSpecificProps(ctx, m.CommonPf.PlatformConfig, m.CommonPf.VaultConfig)
 	if err != nil {
 		return nil, err
 	}

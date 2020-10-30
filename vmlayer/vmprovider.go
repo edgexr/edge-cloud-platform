@@ -24,7 +24,7 @@ import (
 type VMProvider interface {
 	NameSanitize(string) string
 	IdSanitize(string) string
-	GetProviderSpecificProps(ctx context.Context, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
+	GetProviderSpecificProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
 	SetVMProperties(vmProperties *VMProperties)
 	InitData(ctx context.Context, caches *platform.Caches)
 	InitProvider(ctx context.Context, caches *platform.Caches, stage ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error
@@ -244,7 +244,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, vaultConfig)
+	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, platformConfig, vaultConfig)
 	if err != nil {
 		return err
 	}
