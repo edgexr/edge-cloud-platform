@@ -8,6 +8,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 type AlertManagerContext struct {
@@ -31,6 +32,11 @@ func CreateAlertReceiver(c echo.Context) error {
 	if in.Name == "" {
 		return setReply(c, fmt.Errorf("Receiver name has to be specified"), nil)
 	}
+	// Name validation
+	if !util.ValidName(in.Name) {
+		return setReply(c, fmt.Errorf("Receiver name is invalid"), nil)
+	}
+
 	if !cloudcommon.IsAlertSeverityValid(in.Severity) {
 		return setReply(c, fmt.Errorf("Alert severity has to be one of %s", cloudcommon.GetValidAlertSeverityString()), nil)
 	}
@@ -62,6 +68,11 @@ func CreateAlertReceiver(c echo.Context) error {
 		// if an email is not specified send to an email on file
 		if in.Email == "" {
 			in.Email = claims.Email
+		} else {
+			// validate email
+			if !util.ValidEmail(in.Email) {
+				return setReply(c, fmt.Errorf("Receiver email is invalid"), nil)
+			}
 		}
 		err = AlertManagerServer.CreateReceiver(ctx, &in)
 		if err != nil {
