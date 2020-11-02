@@ -369,6 +369,21 @@ func getAlertReceiverFromName(name string) (*ormapi.AlertReceiver, error) {
 	return &receiver, nil
 }
 
+func alertReceiverMatchesFilter(receiver *ormapi.AlertReceiver, filter *ormapi.AlertReceiver) bool {
+	if filter != nil {
+		if filter.Name != "" && filter.Name != receiver.Name ||
+			filter.Email != "" && filter.Email != receiver.Email ||
+			filter.Severity != "" && filter.Severity != receiver.Severity ||
+			filter.Type != "" && filter.Type != receiver.Type ||
+			filter.User != "" && filter.User != receiver.User ||
+			filter.SlackChannel != "" && filter.SlackChannel != receiver.SlackChannel ||
+			!receiver.Cloudlet.Matches(&filter.Cloudlet, edgeproto.MatchFilter()) ||
+			!receiver.AppInst.Matches(&filter.AppInst, edgeproto.MatchFilter()) {
+			return false
+		}
+	}
+	return true
+}
 func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, error) {
 	alertReceivers := []ormapi.AlertReceiver{}
 	apiUrl := mobiledgeXReceiversApi
@@ -441,7 +456,10 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 			log.SpanLog(ctx, log.DebugLevelApi, "Unexpected receiver map data for route", "route", route)
 			continue
 		}
-		alertReceivers = append(alertReceivers, *receiver)
+		// Check against a filter
+		if alertReceiverMatchesFilter(receiver, filter) {
+			alertReceivers = append(alertReceivers, *receiver)
+		}
 	}
 	return alertReceivers, nil
 }

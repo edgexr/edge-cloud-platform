@@ -41,9 +41,12 @@ func GetAlertReceiverCommand() *cobra.Command {
 		Comments:     AlertReceiverArgsComments,
 		Run:          runRest("/auth/alertreceiver/delete"),
 	}, &cli.Command{
-		Use:       "show",
-		ReplyData: &[]ormapi.AlertReceiver{},
-		Run:       runRest("/auth/alertreceiver/show"),
+		Use:          "show",
+		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
+		Comments:     AlertReceiverArgsComments,
+		OptionalArgs: strings.Join(AlertReceiverOptionalArgs, " ") + " " + strings.Join(AlertReceiverRequiredArgs, " "),
+		ReplyData:    &[]ormapi.AlertReceiver{},
+		Run:          runRest("/auth/alertreceiver/show"),
 	}}
 	return cli.GenGroup("alertreceiver", "manage alert receivers", cmds)
 }
