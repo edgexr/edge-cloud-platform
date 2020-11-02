@@ -648,6 +648,7 @@ func (p *ChefServer) LookupArgs() string { return fmt.Sprintf("--port %d --multi
 
 func (p *Alertmanager) StartLocal(logfile string, opts ...process.StartOp) error {
 	configFile := "/tmp/alertmanager.yml"
+	templateFile := "/tmp/alertmanager.tmpl"
 	if p.ConfigFile != "" {
 		// Copy file from data dir to /tmp since it's going to be written to
 		in, err := ioutil.ReadFile(p.ConfigFile)
@@ -661,9 +662,13 @@ func (p *Alertmanager) StartLocal(logfile string, opts ...process.StartOp) error
 			return err
 		}
 	}
+	if p.TemplateFile != "" {
+		templateFile = p.TemplateFile
+	}
 	args := []string{
 		"run", "--rm", "-p", fmt.Sprintf("%d:%d", p.Port, p.Port),
 		"-v", configFile + ":/etc/prometheus/alertmanager.yml",
+		"-v", templateFile + ":/etc/alertmanager/templates/alertmanager.tmpl",
 		"--name", p.Name,
 		"prom/alertmanager:v0.21.0",
 		"--web.listen-address", fmt.Sprintf(":%d", p.Port),

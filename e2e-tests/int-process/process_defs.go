@@ -91,6 +91,7 @@ type ChefServer struct {
 type Alertmanager struct {
 	process.Common `yaml:",inline"`
 	ConfigFile     string
+	TemplateFile   string
 	Port           int
 	cmd            *exec.Cmd
 }

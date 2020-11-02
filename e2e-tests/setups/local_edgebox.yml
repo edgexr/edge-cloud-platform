@@ -143,6 +143,7 @@ notifyroots:
 alertmanagers:
 - name: alertmanager
   configfile: "{{datadir2}}/alertmanager.yml"
+  templatefile: "{{datadir2}}/alertmanager.tmpl"
   port: 9093
   hostname: "127.0.0.1"
 
