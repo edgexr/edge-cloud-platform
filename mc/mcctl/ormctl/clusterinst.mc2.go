@@ -154,7 +154,6 @@ var ClusterInstOptionalArgs = []string{
 	"nummasters",
 	"numnodes",
 	"autoscalepolicy",
-	"availabilityzone",
 	"imagename",
 	"reservable",
 	"sharedvolumesize",
