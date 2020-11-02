@@ -82,3 +82,6 @@ e2e-tests/chef/syntaxcache
 envoy/certs/envoyTlsCerts.key
 envoy/certs/envoyTlsCerts.crt
 plugin/common/foo
+
+# unit-test file
+mc/orm/alertmgr/testAlertMgrConfig.yml
