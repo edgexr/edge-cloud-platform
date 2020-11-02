@@ -65,7 +65,7 @@ func testShowAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, 
 	return recs, status, err
 }
 
-func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity, username string) (int, error) {
+func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity, username, email string) (int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	dat := &ormapi.AlertReceiver{}
@@ -74,6 +74,7 @@ func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 	dat.Name = name
 	dat.AppInst = *in
 	dat.User = username
+	dat.Email = email
 
 	status, err := mcClient.CreateAlertReceiver(uri, token, dat)
 	return status, err
@@ -94,7 +95,7 @@ func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 }
 
 func badPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
-	status, err := testCreateAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "")
+	status, err := testCreateAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "", "")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 	status, err = testDeleteAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error")
@@ -109,7 +110,7 @@ func badPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, to
 
 func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, devToken, operToken, region, devOrg, operOrg string) {
 	// Permissions test
-	status, err := testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "")
+	status, err := testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error")
@@ -122,19 +123,31 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, d
 	require.Equal(t, 0, len(list))
 
 	// missing name check
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "email", "error", "")
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "email", "error", "", "")
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Receiver name has to be specified")
+	// invalid receiver name
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "%alertreceiver", "email", "error", "", "")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Receiver name is invalid")
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "al\\!ertreceiver", "email", "error", "", "")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Receiver name is invalid")
 	// invalid receiver type check
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "invalid", "error", "")
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "invalid", "error", "", "")
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Receiver type invalid")
 	// invalid severity check
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "invalid", "")
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "invalid", "", "")
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Alert severity has to be one of")
 	// specifying a user in the call - disallowed
-	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "error", "user1")
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "slack", "error", "user1", "")
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "User is not specifiable")
+	// invalid receiver email format
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "xx.com")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Receiver email is invalid")
+
 }
