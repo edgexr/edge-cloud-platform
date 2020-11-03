@@ -230,10 +230,5 @@ func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, err
 		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return "", err
 	}
-	arns := strings.Split(iamResult.User.Arn, ":")
-	if len(arns) <= ArnAccountIdIdx {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Wrong number of fields in ARN", "iamResult.User.Arn", iamResult.User.Arn)
-		return "", fmt.Errorf("Cannot parse IAM ARN: %s", iamResult.User.Arn)
-	}
-	return arns[ArnAccountIdIdx], nil
+	return a.awsGenPf.GetUserAccountIdFromArn(ctx, iamResult.User.Arn)
 }

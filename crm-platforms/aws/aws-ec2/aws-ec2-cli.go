@@ -34,8 +34,6 @@ const MainRouteTable string = "mainRouteTable"
 const MatchAnyVmName string = "anyvm"
 const MatchAnyGroupName string = "anygroup"
 
-const ArnAccountIdIdx = 4
-
 type AwsIamUser struct {
 	UserId string
 	Arn    string

@@ -82,6 +82,10 @@ func (a *AwsEc2Platform) GetRouterDetail(ctx context.Context, routerName string)
 func (a *AwsEc2Platform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider", "stage", stage)
 	a.InitData(ctx, caches)
+	err := a.awsGenPf.GetAwsSessionToken(ctx, a.VMProperties.CommonPf.VaultConfig)
+	if err != nil {
+		return err
+	}
 	vpcName := a.GetVpcName()
 
 	acct, err := a.GetIamAccountForImage(ctx)
@@ -177,6 +181,8 @@ func (a *AwsEc2Platform) InitProvider(ctx context.Context, caches *platform.Cach
 			return err
 		}
 	}
+
+	go a.awsGenPf.RefreshAwsSessionToken(a.VMProperties.CommonPf.PlatformConfig, a.VMProperties.CommonPf.VaultConfig)
 
 	return nil
 
