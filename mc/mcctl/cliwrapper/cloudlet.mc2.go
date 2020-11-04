@@ -150,7 +150,7 @@ func (s *Client) GenerateAccessKey(uri, token string, in *ormapi.RegionCloudletK
 func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) ([]edgeproto.CloudletInfo, int, error) {
 	args := []string{"region", "ShowCloudletInfo"}
 	outlist := []edgeproto.CloudletInfo{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Resources", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
@@ -161,7 +161,7 @@ func (s *Client) ShowCloudletInfo(uri, token string, in *ormapi.RegionCloudletIn
 func (s *Client) InjectCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
 	args := []string{"region", "InjectCloudletInfo"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Resources", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -172,7 +172,7 @@ func (s *Client) InjectCloudletInfo(uri, token string, in *ormapi.RegionCloudlet
 func (s *Client) EvictCloudletInfo(uri, token string, in *ormapi.RegionCloudletInfo) (*edgeproto.Result, int, error) {
 	args := []string{"region", "EvictCloudletInfo"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Resources", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
