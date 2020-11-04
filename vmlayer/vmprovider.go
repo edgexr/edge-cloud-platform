@@ -428,10 +428,14 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 	platResources, err := v.VMProvider.GetServerGroupResources(ctx, v.GetPlatformVMName(&v.VMProperties.CommonPf.PlatformConfig.NodeMgr.MyNode.Key.CloudletKey))
 	if err == nil {
 		resources.Vms = append(resources.Vms, platResources.Vms...)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get platform VM resources", "err", err)
 	}
 	rootlbResources, err := v.VMProvider.GetServerGroupResources(ctx, v.VMProperties.SharedRootLBName)
 	if err == nil {
 		resources.Vms = append(resources.Vms, rootlbResources.Vms...)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get root lb resources", "err", err)
 	}
 	return &resources, nil
 }
