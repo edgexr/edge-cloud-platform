@@ -202,7 +202,7 @@ func (v *VSpherePlatform) ParseVMDomainTag(ctx context.Context, tag string) (*VM
 	flavor, ok := fm[TagFieldFlavor]
 	if !ok {
 		// optional
-		return nil, fmt.Errorf("No flavor in vmdomain tag")
+		log.SpanLog(ctx, log.DebugLevelInfra, "No flavor in vmdomain tag", "tag", tag)
 	} else {
 		contents.Flavor = flavor
 	}
