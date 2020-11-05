@@ -310,6 +310,13 @@ func (s *SidecarServer) alertReceiver(w http.ResponseWriter, req *http.Request) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// trigger reload of the config
+	res, err := alertMgrApi(ctx, s.alertMgrAddr, "POST", ReloadConfigApi, "", nil, nil)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload alertmanager config", "err", err, "result", res)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *SidecarServer) initAlertmanager(initInfo *AlertmgrInitInfo) error {
@@ -317,6 +324,13 @@ func (s *SidecarServer) initAlertmanager(initInfo *AlertmgrInitInfo) error {
 	span := log.StartSpan(log.DebugLevelApi|log.DebugLevelInfo, "Alertmgr Sidecar Init")
 	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
+
+	//  Make sure config file is in the good condition prior to connecting
+	if err = s.initConfigFile(ctx, initInfo); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to init config file", "err", err, "initInfo", initInfo)
+		return err
+	}
+
 	// wait for alertmanager to be up first
 	for ii := 0; ii < 10; ii++ {
 		_, err = alertMgrApi(ctx, s.alertMgrAddr, "GET", "", "", nil, nil)
@@ -329,9 +343,10 @@ func (s *SidecarServer) initAlertmanager(initInfo *AlertmgrInitInfo) error {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to connect to alertmanager", "err", err)
 		return err
 	}
-
-	if err := s.initConfigFile(ctx, initInfo); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Unable to init config file", "err", err, "initInfo", initInfo)
+	// Connected to alertmanager - trigger a reload to make sure latest config changes were picked up
+	res, err := alertMgrApi(ctx, s.alertMgrAddr, "POST", ReloadConfigApi, "", nil, nil)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload alertmanager config", "err", err, "result", res)
 		return err
 	}
 	return nil
@@ -412,13 +427,6 @@ func (s *SidecarServer) writeAlertmanagerConfigLocked(ctx context.Context, confi
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to touch alertmgr file in container to trigger refresh in alertmanager", "out", string(out), "err", err)
 		}
-	}
-
-	// trigger reload of the config
-	res, err := alertMgrApi(ctx, s.alertMgrAddr, "POST", ReloadConfigApi, "", nil, nil)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload alertmanager config", "err", err, "result", res)
-		return err
 	}
 	return nil
 }

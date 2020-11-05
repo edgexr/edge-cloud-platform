@@ -7,6 +7,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -45,19 +46,36 @@ func CreateAlertReceiver(c echo.Context) error {
 		return setReply(c, fmt.Errorf("User is not specifiable, current logged in user will be used"), nil)
 	}
 	in.User = claims.Username
-	if in.Cloudlet.Organization == "" && in.AppInst.AppKey.Organization == "" {
+	if in.Cloudlet.Organization == "" &&
+		in.AppInst.AppKey.Organization == "" &&
+		in.AppInst.ClusterInstKey.Organization == "" {
 		return setReply(c,
-			fmt.Errorf("Either cloudlet or app instance details have to be specified"), nil)
+			fmt.Errorf("Either cloudlet, cluster or app instance details have to be specified"), nil)
 	}
-	// Check that user is allowed to access either of the orgs
 	if in.Cloudlet.Organization != "" {
+		// Check that user is allowed to access either of the orgs
 		if err := authorized(ctx, claims.Username, in.Cloudlet.Organization,
 			ResourceAlert, ActionView); err != nil {
 			return setReply(c, err, nil)
 		}
+		if !in.AppInst.Matches(&edgeproto.AppInstKey{}) {
+			return setReply(c,
+				fmt.Errorf("AppInst details cannot be specified if this receiver is for cloudlet alerts"), nil)
+		}
+	} else {
+		if !in.Cloudlet.Matches(&edgeproto.CloudletKey{}) {
+			return setReply(c,
+				fmt.Errorf("Cloudlet details cannot be specified if this receiver is for appInst or cluster alerts"), nil)
+		}
 	}
 	if in.AppInst.AppKey.Organization != "" {
 		if err := authorized(ctx, claims.Username, in.AppInst.AppKey.Organization,
+			ResourceAlert, ActionView); err != nil {
+			return setReply(c, err, nil)
+		}
+	} else if in.AppInst.ClusterInstKey.Organization != "" {
+		// It could be just a cluster-based alert receiver
+		if err := authorized(ctx, claims.Username, in.AppInst.ClusterInstKey.Organization,
 			ResourceAlert, ActionView); err != nil {
 			return setReply(c, err, nil)
 		}
