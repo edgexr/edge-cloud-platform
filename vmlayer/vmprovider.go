@@ -44,7 +44,7 @@ type VMProvider interface {
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
 	GetApiAccessFilename() string
-	InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error
+	InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage ProviderInitStage) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
 	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error
@@ -142,6 +142,7 @@ const (
 	ProviderInitCreateCloudletRestricted ProviderInitStage = "CreateCloudletRestricted"
 	ProviderInitPlatformStart            ProviderInitStage = "PlatformStart"
 	ProviderInitDeleteCloudlet           ProviderInitStage = "DeleteCloudlet"
+	ProviderInitGetVmSpec                ProviderInitStage = "GetVmSpec"
 )
 
 type StringSanitizer func(value string) string
@@ -315,8 +316,10 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return err
 	}
 
+	v.VMProvider.InitData(ctx, caches)
+
 	updateCallback(edgeproto.UpdateTask, "Fetching API Access access credentials")
-	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars); err != nil {
+	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars, ProviderInitPlatformStart); err != nil {
 		return err
 	}
 

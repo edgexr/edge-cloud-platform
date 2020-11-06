@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -53,7 +54,7 @@ func (a *AwsEc2Platform) DeleteInstances(ctx context.Context, instancesIds []str
 		"--instance-ids",
 	}
 	cmdArgs = append(cmdArgs, instancesIds...)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws", cmdArgs...)
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws", cmdArgs...)
 	log.SpanLog(ctx, log.DebugLevelInfra, "terminate-instances result", "out", string(out), "err", err)
 	if err != nil {
 		return fmt.Errorf("terminate ec2 instances failed: %s - %v", string(out), err)
@@ -153,7 +154,7 @@ func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, sub
 	if err != nil {
 		return err
 	}
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-network-interface",
 		"--subnet-id", sn.SubnetId,
@@ -175,7 +176,7 @@ func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, sub
 	log.SpanLog(ctx, log.DebugLevelInfra, "created interface", "interface", createdIf)
 
 	// Attach the interface
-	out, err = a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err = a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"attach-network-interface",
 		"--instance-id", sd.ID,
@@ -188,7 +189,7 @@ func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, sub
 	}
 
 	// Disable SourceDestCheck to allow NAT
-	out, err = a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err = a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"modify-network-interface-attribute",
 		"--no-source-dest-check",
@@ -300,7 +301,7 @@ func (a *AwsEc2Platform) CreateVM(ctx context.Context, groupName string, vm *vml
 		"--network-interfaces", string(niParms),
 		"--block-device-mappings", string(ebsParams),
 	}
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws", createArgs...)
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws", createArgs...)
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVM result", "out", string(out), "err", err)
 	if err != nil {
 		return fmt.Errorf("run-instances error: %s - %v", string(out), err)
@@ -311,7 +312,7 @@ func (a *AwsEc2Platform) CreateVM(ctx context.Context, groupName string, vm *vml
 func (a *AwsEc2Platform) GetImageId(ctx context.Context, imageName, accountId string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetImageId", "imageName", imageName, "accountId", accountId)
 
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-images",
 		"--region", a.awsGenPf.GetAwsRegion(),
@@ -365,7 +366,7 @@ func (a *AwsEc2Platform) getEc2Instances(ctx context.Context, vmNameFilter, grou
 	}
 	cmdArgs = append(cmdArgs, filters...)
 
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws", cmdArgs...)
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws", cmdArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("Error in describe-instances: %v", err)
 	}
@@ -395,7 +396,7 @@ func (a *AwsEc2Platform) SetPowerState(ctx context.Context, serverName, serverAc
 func (a *AwsEc2Platform) GetNetworkInterfaces(ctx context.Context) (*AwsEc2NetworkInterfaceList, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkInterfaces")
 	// now add the natgw as the default route
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-network-interfaces",
 		"--region", a.awsGenPf.GetAwsRegion())

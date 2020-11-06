@@ -23,7 +23,7 @@ func (o *VMPoolPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig 
 	return VMPoolProps, nil
 }
 
-func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error {
+func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage vmlayer.ProviderInitStage) error {
 	return nil
 }
 
