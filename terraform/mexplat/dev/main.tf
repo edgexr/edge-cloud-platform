@@ -100,7 +100,9 @@ module "console" {
     "http-server",
     "https-server",
     "console-debug",
-    "mc",
+    "mc-artifactory",
+    "mc-ldap-${var.environ_tag}",
+    "mc-notify-${var.environ_tag}",
     "jaeger",
     "alt-https",
     "vault-ac",
@@ -186,4 +188,34 @@ module "fw_vault_gcp" {
   source                        = "../../modules/fw_vault_gcp"
   firewall_name                 = "${var.environ_tag}-vault-fw-hc-and-proxy"
   target_tag                    = "${var.environ_tag}-vault-hc-and-proxy"
+}
+
+resource "google_compute_firewall" mc_ldap {
+  name                          = "mc-ldap-${var.environ_tag}"
+  network                       = "default"
+
+  allow {
+    protocol                    = "tcp"
+    ports                       = [ "9389" ]
+  }
+
+  target_tags                   = [ "mc-ldap-${var.environ_tag}" ]
+  source_ranges                 = [
+    "${module.gitlab.external_ip}/32"
+  ]
+}
+
+resource "google_compute_firewall" mc_notify {
+  name                          = "mc-notify-${var.environ_tag}"
+  network                       = "default"
+
+  allow {
+    protocol                    = "tcp"
+    ports                       = [ "52001" ]
+  }
+
+  target_tags                   = [ "mc-notify-${var.environ_tag}" ]
+  source_ranges                 = [
+    "0.0.0.0/0"
+  ]
 }
