@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -102,4 +103,13 @@ func WriteTemplateFile(filename string, buf *bytes.Buffer) error {
 	outFile.Sync()
 	outFile.Close()
 	return nil
+}
+
+func IncrIP(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
 }

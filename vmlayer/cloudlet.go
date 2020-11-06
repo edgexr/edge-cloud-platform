@@ -175,10 +175,24 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		}
 	}
 
+	v.VMProperties.Domain = VMDomainPlatform
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
+	err = v.InitProps(ctx, pc, vaultConfig)
+	if err != nil {
+		return err
+	}
+
+	v.VMProvider.InitData(ctx, caches)
+
+	stage := ProviderInitCreateCloudletDirect
+	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+		stage = ProviderInitCreateCloudletRestricted
+	}
+
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
 	log.SpanLog(ctx, log.DebugLevelInfra, "Sourcing access variables", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
-	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
+	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar, stage)
 	if err != nil {
 		return err
 	}
@@ -196,13 +210,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
 
-	v.VMProperties.Domain = VMDomainPlatform
-	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig)
-	err = v.InitProps(ctx, pc, vaultConfig)
-	if err != nil {
-		return err
-	}
-
 	if cloudlet.InfraConfig.ExternalNetworkName != "" {
 		v.VMProperties.SetCloudletExternalNetwork(cloudlet.InfraConfig.ExternalNetworkName)
 	}
@@ -217,10 +224,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	// save caches needed for flavors
 	v.Caches = caches
-	stage := ProviderInitCreateCloudletDirect
-	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-		stage = ProviderInitCreateCloudletRestricted
-	}
+
 	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
 	if err != nil {
 		return err
@@ -324,17 +328,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		}
 	}
 
-	// Source OpenRC file to access openstack API endpoint
-	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
-	if err != nil {
-		// ignore this error, as no creation would've happened on infra, so nothing to delete
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
-		return nil
-	}
-
-	if pfConfig.ChefServerPath == "" {
-		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
-	}
 	v.VMProperties.Domain = VMDomainPlatform
 	cpf := infracommon.CommonPlatform{}
 	v.VMProperties.CommonPf = &cpf
@@ -344,6 +337,20 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to init props", "cloudletName", cloudlet.Key.Name, "err", err)
 		return nil
+	}
+
+	v.VMProvider.InitData(ctx, caches)
+
+	// Source OpenRC file to access openstack API endpoint
+	err = v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar, ProviderInitDeleteCloudlet)
+	if err != nil {
+		// ignore this error, as no creation would've happened on infra, so nothing to delete
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
+		return nil
+	}
+
+	if pfConfig.ChefServerPath == "" {
+		pfConfig.ChefServerPath = chefmgmt.DefaultChefServerPath
 	}
 
 	v.Caches = caches
@@ -563,7 +570,7 @@ func GetDockerCrtFile(crtFilePath string) (string, error) {
 
 func (v *VMPlatform) GetCloudletVMsSpec(ctx context.Context, vaultConfig *vault.Config, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletVMsSpec", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "pfFlavor", pfFlavor)
-	err := v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar)
+	err := v.VMProvider.InitApiAccessProperties(ctx, &cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName, vaultConfig, cloudlet.EnvVar, ProviderInitGetVmSpec)
 	if err != nil {
 		return nil, err
 	}

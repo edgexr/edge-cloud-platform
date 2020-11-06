@@ -53,7 +53,7 @@ func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context, pfconf
 	return map[string]*edgeproto.PropertyInfo{}, nil
 }
 
-func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error {
+func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage vmlayer.ProviderInitStage) error {
 	err := o.GetOpenRCVars(ctx, key, region, physicalName, vaultConfig)
 	if err != nil {
 		return err

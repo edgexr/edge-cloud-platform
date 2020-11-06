@@ -133,7 +133,7 @@ func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, key *edgeproto.Clo
 	return nil
 }
 
-func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string) error {
+func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage vmlayer.ProviderInitStage) error {
 	err := v.GetVsphereVars(ctx, key, region, physicalName, vaultConfig)
 	if err != nil {
 		return err

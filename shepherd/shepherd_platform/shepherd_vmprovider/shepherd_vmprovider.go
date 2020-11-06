@@ -52,7 +52,8 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	if err = s.VMPlatform.InitProps(ctx, pc, vaultConfig); err != nil {
 		return err
 	}
-	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.CloudletKey, pc.Region, pc.PhysicalName, vaultConfig, pc.EnvVars); err != nil {
+	s.VMPlatform.VMProvider.InitData(ctx, caches)
+	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.CloudletKey, pc.Region, pc.PhysicalName, vaultConfig, pc.EnvVars, vmlayer.ProviderInitPlatformStart); err != nil {
 		return err
 	}
 

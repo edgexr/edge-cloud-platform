@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -24,7 +25,7 @@ func (a *AwsEc2Platform) GetVpcName() string {
 func (a *AwsEc2Platform) GetVPC(ctx context.Context, name string) (*AwsEc2Vpc, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVPCs", "name", name)
 	filter := fmt.Sprintf("Name=tag-value,Values=%s", name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-vpcs",
 		"--filters", "Name=tag-key,Values=Name", filter,
@@ -64,7 +65,7 @@ func (a *AwsEc2Platform) CreateVPC(ctx context.Context, name string, cidr string
 		return "", err
 	}
 	tagspec := fmt.Sprintf("ResourceType=vpc,Tags=[{Key=%s,Value=%s}]", NameTag, name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-vpc",
 		"--cidr-block", cidr,
@@ -90,7 +91,7 @@ func (a *AwsEc2Platform) CreateVPC(ctx context.Context, name string, cidr string
 func (a *AwsEc2Platform) GetInternetGateway(ctx context.Context, name string) (*AwsEc2Gateway, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetInternetGateway", "name", name)
 	filter := fmt.Sprintf("Name=tag-value,Values=%s", name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-internet-gateways",
 		"--filters", "Name=tag-key,Values=Name", filter,
@@ -129,7 +130,7 @@ func (a *AwsEc2Platform) CreateInternetGateway(ctx context.Context, vpcName stri
 	if !strings.Contains(err.Error(), GatewayDoesNotExistError) {
 		return nil, err
 	}
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-internet-gateway",
 		"--region", a.awsGenPf.GetAwsRegion(),
@@ -157,7 +158,7 @@ func (a *AwsEc2Platform) CreateInternetGatewayDefaultRoute(ctx context.Context, 
 		return err
 	}
 	// attach the GW to the VPC
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"attach-internet-gateway",
 		"--region", a.awsGenPf.GetAwsRegion(),
@@ -177,7 +178,7 @@ func (a *AwsEc2Platform) CreateInternetGatewayDefaultRoute(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	out, err = a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err = a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-route",
 		"--region", a.awsGenPf.GetAwsRegion(),
@@ -195,7 +196,7 @@ func (a *AwsEc2Platform) CreateInternetGatewayDefaultRoute(ctx context.Context, 
 func (a *AwsEc2Platform) GetRouteTableId(ctx context.Context, vpcId string, searchType RouteTableSearchType, name string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetRouteTableId", "vpcId", vpcId, "searchType", searchType, "name", name)
 	filter := fmt.Sprintf("Name=vpc-id,Values=%s", vpcId)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-route-tables",
 		"--filters", filter,
@@ -248,7 +249,7 @@ func (a *AwsEc2Platform) CreateInternalRouteTable(ctx context.Context, vpcId, na
 	}
 
 	tagspec := fmt.Sprintf("ResourceType=route-table,Tags=[{Key=%s,Value=%s}]", NameTag, name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-route-table",
 		"--vpc-id", vpcId,
@@ -269,7 +270,7 @@ func (a *AwsEc2Platform) CreateInternalRouteTable(ctx context.Context, vpcId, na
 	log.SpanLog(ctx, log.DebugLevelInfra, "created route table", "rt", createdRt)
 
 	// now add the natgw as the default route
-	out, err = a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err = a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-route",
 		"--route-table-id", createdRt.RouteTable.RouteTableId,
@@ -297,7 +298,7 @@ func (a *AwsEc2Platform) GetElasticIP(ctx context.Context, name, vpcId string) (
 		}
 	}
 
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-addresses",
 		"--region", a.awsGenPf.GetAwsRegion())
@@ -330,7 +331,7 @@ func (a *AwsEc2Platform) GetElasticIP(ctx context.Context, name, vpcId string) (
 func (a *AwsEc2Platform) AllocateElasticIP(ctx context.Context) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AllocateElasticIP")
 
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"allocate-address",
 		"--domain", "vpc",
@@ -351,7 +352,7 @@ func (a *AwsEc2Platform) AllocateElasticIP(ctx context.Context) (string, error) 
 func (a *AwsEc2Platform) GetSubnets(ctx context.Context) (map[string]*AwsEc2Subnet, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetSubnets")
 	snMap := make(map[string]*AwsEc2Subnet)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-subnets",
 		"--region", a.awsGenPf.GetAwsRegion())
@@ -384,7 +385,7 @@ func (a *AwsEc2Platform) GetSubnets(ctx context.Context) (map[string]*AwsEc2Subn
 func (a *AwsEc2Platform) GetSubnet(ctx context.Context, name string) (*AwsEc2Subnet, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetSubnet", "name", name)
 	filter := fmt.Sprintf("Name=tag-value,Values=%s", name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-subnets",
 		"--filters", "Name=tag-key,Values=Name", filter,
@@ -428,7 +429,7 @@ func (a *AwsEc2Platform) CreateSubnet(ctx context.Context, vmGroupName, name str
 	if err != nil {
 		return "", err
 	}
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-subnet",
 		"--vpc-id", vpc.VpcId,
@@ -447,7 +448,7 @@ func (a *AwsEc2Platform) CreateSubnet(ctx context.Context, vmGroupName, name str
 	}
 	if routeTableId != MainRouteTable {
 		// associate the non default route table
-		out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+		out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 			"ec2",
 			"associate-route-table",
 			"--route-table-id", routeTableId,
@@ -463,7 +464,7 @@ func (a *AwsEc2Platform) CreateSubnet(ctx context.Context, vmGroupName, name str
 
 func (a *AwsEc2Platform) DeleteSubnet(ctx context.Context, snId string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteSubnet", "snId", snId)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"delete-subnet",
 		"--subnet-id", snId,
@@ -477,7 +478,7 @@ func (a *AwsEc2Platform) DeleteSubnet(ctx context.Context, snId string) error {
 
 func (a *AwsEc2Platform) GetNatGateway(ctx context.Context, name string) (*AwsEc2NatGateway, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNatGateway", "name", name)
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"describe-nat-gateways",
 		"--region", a.awsGenPf.GetAwsRegion())
@@ -522,7 +523,7 @@ func (a *AwsEc2Platform) CreateNatGateway(ctx context.Context, subnetId, elastic
 	if !strings.Contains(err.Error(), GatewayDoesNotExistError) {
 		return "", err
 	}
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-nat-gateway",
 		"--subnet-id", subnetId,
@@ -568,7 +569,7 @@ func (a *AwsEc2Platform) AssignFreePrecreatedSubnet(ctx context.Context, subnetI
 		fmt.Sprintf("Key=%s,Value=%s", VMGroupNameTag, vmGroupName),
 	}
 	for _, t := range tags {
-		out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+		out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 			"ec2",
 			"create-tags",
 			"--resources", subnetId,
@@ -589,7 +590,7 @@ func (a *AwsEc2Platform) ReleasePrecreatedSubnet(ctx context.Context, subnetId, 
 	nameTag := fmt.Sprintf("Key=%s,Value=%s", NameTag, subnetType+"-"+subnetId)
 	groupTag := fmt.Sprintf("Key=%s,Value=%s", VMGroupNameTag, vmGroupName)
 
-	out, err := a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err := a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"create-tags",
 		"--resources", subnetId,
@@ -598,7 +599,7 @@ func (a *AwsEc2Platform) ReleasePrecreatedSubnet(ctx context.Context, subnetId, 
 	if err != nil {
 		return fmt.Errorf("Error in setting subnet name tag %s: %s - %v", nameTag, out, err)
 	}
-	out, err = a.awsGenPf.TimedAwsCommand(ctx, "aws",
+	out, err = a.awsGenPf.TimedAwsCommand(ctx, awsgen.AwsCredentialsSession, "aws",
 		"ec2",
 		"delete-tags",
 		"--resources", subnetId,
