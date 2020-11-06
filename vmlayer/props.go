@@ -138,7 +138,7 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	},
 	"MEX_SUBNET_DNS": {
 		Name:        "Subnet DNS",
-		Description: "Subnet DNS",
+		Description: "Override cloudflare DNS server IP(s) for subnet, e.g. \"8.8.8.8\" or \"1.1.1.1,8.8.8.8\". Set to NONE to use cloud-init settings",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Egress",

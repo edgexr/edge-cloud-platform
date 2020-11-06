@@ -564,7 +564,12 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		// Contrail workaround, see EDGECLOUD-2420 for details
 		vmDns = strings.Join(CloudflareDns, " ")
 	} else {
-		subnetDns = CloudflareDns
+		if v.VMProperties.GetSubnetDNS() != "" {
+			// A value other than NONE or empty means to use the specified servers
+			subnetDns = strings.Split(v.VMProperties.GetSubnetDNS(), ",")
+		} else {
+			subnetDns = CloudflareDns
+		}
 	}
 
 	vmgp.Netspec, err = ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
