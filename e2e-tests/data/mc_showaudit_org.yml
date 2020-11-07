@@ -48,11 +48,13 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 731726320ef94647
@@ -74,11 +76,13 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
   traceid: 78a606d3224b7e07
@@ -129,6 +133,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 673c172cdefa2da
@@ -152,6 +157,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 16280f277fec9a7a

@@ -183,6 +183,8 @@ var ClusterInstAliasArgs = []string{
 	"status.maxtasks=clusterinst.status.maxtasks",
 	"status.taskname=clusterinst.status.taskname",
 	"status.stepname=clusterinst.status.stepname",
+	"status.msgcount=clusterinst.status.msgcount",
+	"status.msgs=clusterinst.status.msgs",
 	"externalvolumesize=clusterinst.externalvolumesize",
 	"autoscalepolicy=clusterinst.autoscalepolicy",
 	"availabilityzone=clusterinst.availabilityzone",
@@ -215,7 +217,7 @@ var ClusterInstComments = map[string]string{
 	"flavor":                                 "Flavor name",
 	"liveness":                               "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic, LivenessAutoprov",
 	"auto":                                   "Auto is set to true when automatically created by back-end (internal use only)",
-	"state":                                  "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                                  "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                 "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"ipaccess":                               "IP access type (RootLB Type), one of IpAccessUnknown, IpAccessDedicated, IpAccessShared",
@@ -246,8 +248,9 @@ var ClusterInstComments = map[string]string{
 	"resources.vms:#.containers:#.restarts":  "Restart count, applicable to kubernetes only",
 }
 var ClusterInstSpecialArgs = map[string]string{
-	"clusterinst.errors": "StringArray",
-	"clusterinst.fields": "StringArray",
+	"clusterinst.errors":      "StringArray",
+	"clusterinst.fields":      "StringArray",
+	"clusterinst.status.msgs": "StringArray",
 }
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
@@ -263,6 +266,8 @@ var ClusterInstInfoOptionalArgs = []string{
 	"status.maxtasks",
 	"status.taskname",
 	"status.stepname",
+	"status.msgcount",
+	"status.msgs",
 	"resources.vms:#.name",
 	"resources.vms:#.type",
 	"resources.vms:#.status",
@@ -288,6 +293,8 @@ var ClusterInstInfoAliasArgs = []string{
 	"status.maxtasks=clusterinstinfo.status.maxtasks",
 	"status.taskname=clusterinstinfo.status.taskname",
 	"status.stepname=clusterinstinfo.status.stepname",
+	"status.msgcount=clusterinstinfo.status.msgcount",
+	"status.msgs=clusterinstinfo.status.msgs",
 	"resources.vms:#.name=clusterinstinfo.resources.vms:#.name",
 	"resources.vms:#.type=clusterinstinfo.resources.vms:#.type",
 	"resources.vms:#.status=clusterinstinfo.resources.vms:#.status",
@@ -307,7 +314,7 @@ var ClusterInstInfoComments = map[string]string{
 	"key.cloudletkey.name":                   "Name of the cloudlet",
 	"key.organization":                       "Name of Developer organization that this cluster belongs to",
 	"notifyid":                               "Id of client assigned by server (internal use only)",
-	"state":                                  "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                                  "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                 "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
 	"resources.vms:#.name":                   "Virtual machine name",
 	"resources.vms:#.type":                   "Type can be platform, rootlb, cluster-master, cluster-node, vmapp",
@@ -320,6 +327,7 @@ var ClusterInstInfoComments = map[string]string{
 	"resources.vms:#.containers:#.restarts":  "Restart count, applicable to kubernetes only",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
-	"clusterinstinfo.errors": "StringArray",
-	"clusterinstinfo.fields": "StringArray",
+	"clusterinstinfo.errors":      "StringArray",
+	"clusterinstinfo.fields":      "StringArray",
+	"clusterinstinfo.status.msgs": "StringArray",
 }

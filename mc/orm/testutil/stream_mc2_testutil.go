@@ -23,7 +23,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestStreamAppInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstKey, modFuncs ...func(*edgeproto.AppInstKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestStreamAppInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstKey, modFuncs ...func(*edgeproto.AppInstKey)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionAppInstKey{}
 	dat.Region = region
 	dat.AppInstKey = *in
@@ -32,13 +32,13 @@ func TestStreamAppInst(mcClient *ormclient.Client, uri, token, region string, in
 	}
 	return mcClient.StreamAppInst(uri, token, dat)
 }
-func TestPermStreamAppInst(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestPermStreamAppInst(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstKey)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	return TestStreamAppInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestStreamClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInstKey, modFuncs ...func(*edgeproto.ClusterInstKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestStreamClusterInst(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.ClusterInstKey, modFuncs ...func(*edgeproto.ClusterInstKey)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionClusterInstKey{}
 	dat.Region = region
 	dat.ClusterInstKey = *in
@@ -47,13 +47,13 @@ func TestStreamClusterInst(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.StreamClusterInst(uri, token, dat)
 }
-func TestPermStreamClusterInst(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestPermStreamClusterInst(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.ClusterInstKey{}
 	in.Organization = org
 	return TestStreamClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestStreamCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestStreamCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
 	dat.CloudletKey = *in
@@ -62,13 +62,13 @@ func TestStreamCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 	}
 	return mcClient.StreamCloudlet(uri, token, dat)
 }
-func TestPermStreamCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.StreamMsg, int, error) {
+func TestPermStreamCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletKey{}
 	in.Organization = org
 	return TestStreamCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func (s *TestClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.StreamMsg, error) {
+func (s *TestClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionAppInstKey{
 		Region:     s.Region,
 		AppInstKey: *in,
@@ -80,7 +80,11 @@ func (s *TestClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey
 	return out, err
 }
 
-func (s *TestClient) StreamCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.StreamMsg, error) {
+func (s *TestClient) StreamLocalMsgs(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
+	return nil, nil
+}
+
+func (s *TestClient) StreamCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionCloudletKey{
 		Region:      s.Region,
 		CloudletKey: *in,
@@ -92,7 +96,7 @@ func (s *TestClient) StreamCloudlet(ctx context.Context, in *edgeproto.CloudletK
 	return out, err
 }
 
-func (s *TestClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterInstKey) ([]edgeproto.StreamMsg, error) {
+func (s *TestClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterInstKey) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionClusterInstKey{
 		Region:         s.Region,
 		ClusterInstKey: *in,
@@ -102,8 +106,4 @@ func (s *TestClient) StreamClusterInst(ctx context.Context, in *edgeproto.Cluste
 		err = fmt.Errorf("status: %d\n", status)
 	}
 	return out, err
-}
-
-func (s *TestClient) ShowStreamObjInfo(ctx context.Context, in *edgeproto.StreamObjInfo) ([]edgeproto.StreamObjInfo, error) {
-	return nil, nil
 }

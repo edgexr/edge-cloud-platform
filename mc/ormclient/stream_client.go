@@ -21,27 +21,27 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.StreamMsg, int, error) {
-	out := edgeproto.StreamMsg{}
-	outlist := []edgeproto.StreamMsg{}
+func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/StreamAppInst", token, in, &out, func() {
 		outlist = append(outlist, out)
 	})
 	return outlist, status, err
 }
 
-func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.StreamMsg, int, error) {
-	out := edgeproto.StreamMsg{}
-	outlist := []edgeproto.StreamMsg{}
+func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/StreamClusterInst", token, in, &out, func() {
 		outlist = append(outlist, out)
 	})
 	return outlist, status, err
 }
 
-func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.StreamMsg, int, error) {
-	out := edgeproto.StreamMsg{}
-	outlist := []edgeproto.StreamMsg{}
+func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	outlist := []edgeproto.Result{}
 	status, err := s.PostJsonStreamOut(uri+"/auth/ctrl/StreamCloudlet", token, in, &out, func() {
 		outlist = append(outlist, out)
 	})
@@ -49,7 +49,7 @@ func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey)
 }
 
 type StreamObjApiClient interface {
-	StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.StreamMsg, int, error)
-	StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.StreamMsg, int, error)
-	StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.StreamMsg, int, error)
+	StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.Result, int, error)
+	StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.Result, int, error)
+	StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Result, int, error)
 }

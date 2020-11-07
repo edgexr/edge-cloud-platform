@@ -26,6 +26,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 1a85b37a06450386
@@ -49,6 +50,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 143959c31dceec96
@@ -88,6 +90,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 7a4fceccaf2c4405
@@ -111,6 +114,7 @@
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
     {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 66c2c901b490f8d5
