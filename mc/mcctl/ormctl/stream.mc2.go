@@ -31,7 +31,7 @@ var StreamAppInstCmd = &cli.Command{
 	SpecialArgs:          &AppInstKeySpecialArgs,
 	Comments:             addRegionComment(AppInstKeyComments),
 	ReqData:              &ormapi.RegionAppInstKey{},
-	ReplyData:            &edgeproto.StreamMsg{},
+	ReplyData:            &edgeproto.Result{},
 	Run:                  runRest("/auth/ctrl/StreamAppInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
@@ -45,7 +45,7 @@ var StreamClusterInstCmd = &cli.Command{
 	SpecialArgs:          &ClusterInstKeySpecialArgs,
 	Comments:             addRegionComment(ClusterInstKeyComments),
 	ReqData:              &ormapi.RegionClusterInstKey{},
-	ReplyData:            &edgeproto.StreamMsg{},
+	ReplyData:            &edgeproto.Result{},
 	Run:                  runRest("/auth/ctrl/StreamClusterInst"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
@@ -59,7 +59,7 @@ var StreamCloudletCmd = &cli.Command{
 	SpecialArgs:          &CloudletKeySpecialArgs,
 	Comments:             addRegionComment(CloudletKeyComments),
 	ReqData:              &ormapi.RegionCloudletKey{},
-	ReplyData:            &edgeproto.StreamMsg{},
+	ReplyData:            &edgeproto.Result{},
 	Run:                  runRest("/auth/ctrl/StreamCloudlet"),
 	StreamOut:            true,
 	StreamOutIncremental: true,
@@ -70,100 +70,3 @@ var StreamObjApiCmds = []*cli.Command{
 	StreamClusterInstCmd,
 	StreamCloudletCmd,
 }
-
-var StreamMsgRequiredArgs = []string{}
-var StreamMsgOptionalArgs = []string{
-	"id",
-	"msg",
-}
-var StreamMsgAliasArgs = []string{
-	"id=streammsg.id",
-	"msg=streammsg.msg",
-}
-var StreamMsgComments = map[string]string{
-	"id":  "Unique message ID",
-	"msg": "Stream message",
-}
-var StreamMsgSpecialArgs = map[string]string{}
-var StreamObjRequiredArgs = []string{
-	"key.appkey.organization",
-	"key.appkey.name",
-	"key.appkey.version",
-	"key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization",
-}
-var StreamObjOptionalArgs = []string{
-	"state",
-}
-var StreamObjAliasArgs = []string{
-	"key.appkey.organization=streamobj.key.appkey.organization",
-	"key.appkey.name=streamobj.key.appkey.name",
-	"key.appkey.version=streamobj.key.appkey.version",
-	"key.clusterinstkey.clusterkey.name=streamobj.key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization=streamobj.key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name=streamobj.key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization=streamobj.key.clusterinstkey.organization",
-	"msgs:#.id=streamobj.msgs:#.id",
-	"msgs:#.msg=streamobj.msgs:#.msg",
-	"state=streamobj.state",
-	"lastid=streamobj.lastid",
-	"lease=streamobj.lease",
-	"errormsg=streamobj.errormsg",
-}
-var StreamObjComments = map[string]string{
-	"key.appkey.organization":                     "App developer organization",
-	"key.appkey.name":                             "App name",
-	"key.appkey.version":                          "App version",
-	"key.clusterinstkey.clusterkey.name":          "Cluster name",
-	"key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
-	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
-	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
-	"msgs:#.id":                                   "Unique message ID",
-	"msgs:#.msg":                                  "Stream message",
-	"state":                                       "Current state of the obj on the Cloudlet, one of StreamUnknown, StreamStart, StreamStop, StreamError",
-	"lastid":                                      "Last ID to track duplicate messages",
-	"lease":                                       "Lease time",
-	"errormsg":                                    "Stream error message, if any",
-}
-var StreamObjSpecialArgs = map[string]string{}
-var StreamObjInfoRequiredArgs = []string{
-	"key.appkey.organization",
-	"key.appkey.name",
-	"key.appkey.version",
-	"key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization",
-}
-var StreamObjInfoOptionalArgs = []string{
-	"msgs:#.id",
-	"msgs:#.msg",
-	"lastid",
-}
-var StreamObjInfoAliasArgs = []string{
-	"key.appkey.organization=streamobjinfo.key.appkey.organization",
-	"key.appkey.name=streamobjinfo.key.appkey.name",
-	"key.appkey.version=streamobjinfo.key.appkey.version",
-	"key.clusterinstkey.clusterkey.name=streamobjinfo.key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization=streamobjinfo.key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name=streamobjinfo.key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization=streamobjinfo.key.clusterinstkey.organization",
-	"msgs:#.id=streamobjinfo.msgs:#.id",
-	"msgs:#.msg=streamobjinfo.msgs:#.msg",
-	"lastid=streamobjinfo.lastid",
-}
-var StreamObjInfoComments = map[string]string{
-	"key.appkey.organization":                     "App developer organization",
-	"key.appkey.name":                             "App name",
-	"key.appkey.version":                          "App version",
-	"key.clusterinstkey.clusterkey.name":          "Cluster name",
-	"key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
-	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
-	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
-	"msgs:#.id":                                   "Unique message ID",
-	"msgs:#.msg":                                  "Stream message",
-	"lastid":                                      "Last ID to track duplicate messages",
-}
-var StreamObjInfoSpecialArgs = map[string]string{}

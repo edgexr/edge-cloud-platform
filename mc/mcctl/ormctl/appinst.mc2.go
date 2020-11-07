@@ -288,6 +288,8 @@ var AppInstAliasArgs = []string{
 	"status.maxtasks=appinst.status.maxtasks",
 	"status.taskname=appinst.status.taskname",
 	"status.stepname=appinst.status.stepname",
+	"status.msgcount=appinst.status.msgcount",
+	"status.msgs=appinst.status.msgs",
 	"revision=appinst.revision",
 	"forceupdate=appinst.forceupdate",
 	"updatemultiple=appinst.updatemultiple",
@@ -328,7 +330,7 @@ var AppInstComments = map[string]string{
 	"mappedports:#.tls":              "TLS termination for this port",
 	"mappedports:#.nginx":            "use nginx proxy for this port if you really need a transparent proxy (udp only)",
 	"flavor":                         "Flavor name",
-	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"runtimeinfo.containerids":       "List of container names",
@@ -351,6 +353,7 @@ var AppInstSpecialArgs = map[string]string{
 	"appinst.errors":                   "StringArray",
 	"appinst.fields":                   "StringArray",
 	"appinst.runtimeinfo.containerids": "StringArray",
+	"appinst.status.msgs":              "StringArray",
 }
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
@@ -383,6 +386,8 @@ var AppInstInfoOptionalArgs = []string{
 	"status.maxtasks",
 	"status.taskname",
 	"status.stepname",
+	"status.msgcount",
+	"status.msgs",
 	"powerstate",
 }
 var AppInstInfoAliasArgs = []string{
@@ -402,6 +407,8 @@ var AppInstInfoAliasArgs = []string{
 	"status.maxtasks=appinstinfo.status.maxtasks",
 	"status.taskname=appinstinfo.status.taskname",
 	"status.stepname=appinstinfo.status.stepname",
+	"status.msgcount=appinstinfo.status.msgcount",
+	"status.msgs=appinstinfo.status.msgs",
 	"powerstate=appinstinfo.powerstate",
 }
 var AppInstInfoComments = map[string]string{
@@ -414,7 +421,7 @@ var AppInstInfoComments = map[string]string{
 	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
 	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
 	"notifyid":                                    "Id of client assigned by server (internal use only)",
-	"state":                                       "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                                       "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                      "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"runtimeinfo.containerids":                    "List of container names",
 	"powerstate":                                  "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
@@ -423,6 +430,7 @@ var AppInstInfoSpecialArgs = map[string]string{
 	"appinstinfo.errors":                   "StringArray",
 	"appinstinfo.fields":                   "StringArray",
 	"appinstinfo.runtimeinfo.containerids": "StringArray",
+	"appinstinfo.status.msgs":              "StringArray",
 }
 var AppInstMetricsRequiredArgs = []string{}
 var AppInstMetricsOptionalArgs = []string{

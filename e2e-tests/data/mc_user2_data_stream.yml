@@ -15,14 +15,10 @@ regiondata:
             name: dmuus-cloud-1
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: Creating App Inst
-      - id: 3
-        msg: Ready
-      - id: 4
-        msg: Created AppInst successfully
+      - message: Creating
+      - message: Creating App Inst
+      - message: Ready
+      - message: Created AppInst successfully
     - key:
         appkey:
           organization: AcmeAppCo
@@ -36,14 +32,10 @@ regiondata:
             name: dmuus-cloud-2
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: Creating App Inst
-      - id: 3
-        msg: Ready
-      - id: 4
-        msg: Created AppInst successfully
+      - message: Creating
+      - message: Creating App Inst
+      - message: Ready
+      - message: Created AppInst successfully
     - key:
         clusterinstkey:
           clusterkey:
@@ -53,16 +45,11 @@ regiondata:
             name: dmuus-cloud-1
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: First Create Task
-      - id: 3
-        msg: Second Create Task
-      - id: 4
-        msg: Ready
-      - id: 5
-        msg: Created ClusterInst successfully
+      - message: Creating
+      - message: First Create Task
+      - message: Second Create Task
+      - message: Ready
+      - message: Created ClusterInst successfully
     - key:
         clusterinstkey:
           clusterkey:
@@ -72,16 +59,11 @@ regiondata:
             name: dmuus-cloud-2
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: First Create Task
-      - id: 3
-        msg: Second Create Task
-      - id: 4
-        msg: Ready
-      - id: 5
-        msg: Created ClusterInst successfully
+      - message: Creating
+      - message: First Create Task
+      - message: Second Create Task
+      - message: Ready
+      - message: Created ClusterInst successfully
 - region: locala
   streamoutdata:
     streamobjs:
@@ -98,14 +80,10 @@ regiondata:
             name: dmuus-cloud-3
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: Creating App Inst
-      - id: 3
-        msg: Ready
-      - id: 4
-        msg: Created AppInst successfully
+      - message: Creating
+      - message: Creating App Inst
+      - message: Ready
+      - message: Created AppInst successfully
     - key:
         appkey:
           organization: AcmeAppCo
@@ -119,14 +97,10 @@ regiondata:
             name: dmuus-cloud-4
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: Creating App Inst
-      - id: 3
-        msg: Ready
-      - id: 4
-        msg: Created AppInst successfully
+      - message: Creating
+      - message: Creating App Inst
+      - message: Ready
+      - message: Created AppInst successfully
     - key:
         clusterinstkey:
           clusterkey:
@@ -136,16 +110,11 @@ regiondata:
             name: dmuus-cloud-3
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: First Create Task
-      - id: 3
-        msg: Second Create Task
-      - id: 4
-        msg: Ready
-      - id: 5
-        msg: Created ClusterInst successfully
+      - message: Creating
+      - message: First Create Task
+      - message: Second Create Task
+      - message: Ready
+      - message: Created ClusterInst successfully
     - key:
         clusterinstkey:
           clusterkey:
@@ -155,13 +124,8 @@ regiondata:
             name: dmuus-cloud-4
           organization: AcmeAppCo
       msgs:
-      - id: 1
-        msg: Creating
-      - id: 2
-        msg: First Create Task
-      - id: 3
-        msg: Second Create Task
-      - id: 4
-        msg: Ready
-      - id: 5
-        msg: Created ClusterInst successfully
+      - message: Creating
+      - message: First Create Task
+      - message: Second Create Task
+      - message: Ready
+      - message: Created ClusterInst successfully

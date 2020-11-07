@@ -45,7 +45,7 @@ func StreamAppInst(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppInstKey.AppKey.Organization)
 
-	err = StreamAppInstStream(ctx, rc, &in.AppInstKey, func(res *edgeproto.StreamMsg) {
+	err = StreamAppInstStream(ctx, rc, &in.AppInstKey, func(res *edgeproto.Result) {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		WriteStream(c, &payload)
@@ -56,7 +56,7 @@ func StreamAppInst(c echo.Context) error {
 	return nil
 }
 
-func StreamAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey, cb func(res *edgeproto.StreamMsg)) error {
+func StreamAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
@@ -94,9 +94,9 @@ func StreamAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.
 	return nil
 }
 
-func StreamAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey) ([]edgeproto.StreamMsg, error) {
-	arr := []edgeproto.StreamMsg{}
-	err := StreamAppInstStream(ctx, rc, obj, func(res *edgeproto.StreamMsg) {
+func StreamAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
+	arr := []edgeproto.Result{}
+	err := StreamAppInstStream(ctx, rc, obj, func(res *edgeproto.Result) {
 		arr = append(arr, *res)
 	})
 	return arr, err
@@ -122,7 +122,7 @@ func StreamClusterInst(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ClusterInstKey.Organization)
 
-	err = StreamClusterInstStream(ctx, rc, &in.ClusterInstKey, func(res *edgeproto.StreamMsg) {
+	err = StreamClusterInstStream(ctx, rc, &in.ClusterInstKey, func(res *edgeproto.Result) {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		WriteStream(c, &payload)
@@ -133,7 +133,7 @@ func StreamClusterInst(c echo.Context) error {
 	return nil
 }
 
-func StreamClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey, cb func(res *edgeproto.StreamMsg)) error {
+func StreamClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Organization,
@@ -171,9 +171,9 @@ func StreamClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgepr
 	return nil
 }
 
-func StreamClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey) ([]edgeproto.StreamMsg, error) {
-	arr := []edgeproto.StreamMsg{}
-	err := StreamClusterInstStream(ctx, rc, obj, func(res *edgeproto.StreamMsg) {
+func StreamClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey) ([]edgeproto.Result, error) {
+	arr := []edgeproto.Result{}
+	err := StreamClusterInstStream(ctx, rc, obj, func(res *edgeproto.Result) {
 		arr = append(arr, *res)
 	})
 	return arr, err
@@ -199,7 +199,7 @@ func StreamCloudlet(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.CloudletKey.Organization)
 
-	err = StreamCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.StreamMsg) {
+	err = StreamCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.Result) {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		WriteStream(c, &payload)
@@ -210,7 +210,7 @@ func StreamCloudlet(c echo.Context) error {
 	return nil
 }
 
-func StreamCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey, cb func(res *edgeproto.StreamMsg)) error {
+func StreamCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Organization,
@@ -248,9 +248,9 @@ func StreamCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto
 	return nil
 }
 
-func StreamCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) ([]edgeproto.StreamMsg, error) {
-	arr := []edgeproto.StreamMsg{}
-	err := StreamCloudletStream(ctx, rc, obj, func(res *edgeproto.StreamMsg) {
+func StreamCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
+	arr := []edgeproto.Result{}
+	err := StreamCloudletStream(ctx, rc, obj, func(res *edgeproto.Result) {
 		arr = append(arr, *res)
 	})
 	return arr, err

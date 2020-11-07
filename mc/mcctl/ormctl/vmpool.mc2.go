@@ -267,6 +267,8 @@ var VMPoolAliasArgs = []string{
 	"status.maxtasks=vmpool.status.maxtasks",
 	"status.taskname=vmpool.status.taskname",
 	"status.stepname=vmpool.status.stepname",
+	"status.msgcount=vmpool.status.msgcount",
+	"status.msgs=vmpool.status.msgs",
 	"crmoverride=vmpool.crmoverride",
 }
 var VMPoolComments = map[string]string{
@@ -286,13 +288,14 @@ var VMPoolComments = map[string]string{
 	"vms:#.flavor.ram":         "Ram in MB on the Cloudlet",
 	"vms:#.flavor.disk":        "Amount of disk in GB on the Cloudlet",
 	"vms:#.flavor.propmap":     "OS Flavor Properties, if any",
-	"state":                    "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                    "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
 	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
 var VMPoolSpecialArgs = map[string]string{
 	"vmpool.errors":               "StringArray",
 	"vmpool.fields":               "StringArray",
+	"vmpool.status.msgs":          "StringArray",
 	"vmpool.vms:#.flavor.propmap": "StringToString",
 }
 var VMPoolMemberRequiredArgs = []string{
@@ -407,6 +410,8 @@ var VMPoolInfoOptionalArgs = []string{
 	"status.maxtasks",
 	"status.taskname",
 	"status.stepname",
+	"status.msgcount",
+	"status.msgs",
 }
 var VMPoolInfoAliasArgs = []string{
 	"fields=vmpoolinfo.fields",
@@ -432,6 +437,8 @@ var VMPoolInfoAliasArgs = []string{
 	"status.maxtasks=vmpoolinfo.status.maxtasks",
 	"status.taskname=vmpoolinfo.status.taskname",
 	"status.stepname=vmpoolinfo.status.stepname",
+	"status.msgcount=vmpoolinfo.status.msgcount",
+	"status.msgs=vmpoolinfo.status.msgs",
 }
 var VMPoolInfoComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
@@ -451,11 +458,12 @@ var VMPoolInfoComments = map[string]string{
 	"vms:#.flavor.ram":         "Ram in MB on the Cloudlet",
 	"vms:#.flavor.disk":        "Amount of disk in GB on the Cloudlet",
 	"vms:#.flavor.propmap":     "OS Flavor Properties, if any",
-	"state":                    "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies",
+	"state":                    "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
 }
 var VMPoolInfoSpecialArgs = map[string]string{
 	"vmpoolinfo.errors":               "StringArray",
 	"vmpoolinfo.fields":               "StringArray",
+	"vmpoolinfo.status.msgs":          "StringArray",
 	"vmpoolinfo.vms:#.flavor.propmap": "StringToString",
 }

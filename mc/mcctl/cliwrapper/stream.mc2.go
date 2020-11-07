@@ -22,9 +22,9 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.StreamMsg, int, error) {
+func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "StreamAppInst"}
-	outlist := []edgeproto.StreamMsg{}
+	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
@@ -34,9 +34,9 @@ func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) (
 	return outlist, st, err
 }
 
-func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.StreamMsg, int, error) {
+func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "StreamClusterInst"}
-	outlist := []edgeproto.StreamMsg{}
+	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
@@ -46,9 +46,9 @@ func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterIn
 	return outlist, st, err
 }
 
-func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.StreamMsg, int, error) {
+func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "StreamCloudlet"}
-	outlist := []edgeproto.StreamMsg{}
+	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
