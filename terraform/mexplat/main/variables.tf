@@ -45,6 +45,14 @@ variable "gcp_zone" {
   default     = "us-west2-a"
 }
 
+variable "gitlab_instance_name" {
+  default     = "gitlab-main"
+}
+
+variable "gitlab_gcp_zone" {
+  default     = "us-west1-b"
+}
+
 variable "vault_vm_name" {
   default     = "vault-main"
 }
@@ -98,6 +106,11 @@ variable "alertmanager_domain_name" {
 variable "notifyroot_domain_name" {
   description = "Notifyroot service domain name"
   type        = "string"
+}
+
+variable "stun_domain_name" {
+  description = "STUN service domain name"
+  default     = "stun.mobiledgex.net"
 }
 
 variable "ssh_public_key_file" {

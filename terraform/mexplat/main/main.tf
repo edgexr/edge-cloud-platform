@@ -22,6 +22,10 @@ provider "cloudflare" {
   token   = "${var.cloudflare_account_api_token}"
 }
 
+provider "template" {
+  version = "~> 2.2"
+}
+
 terraform {
   backend "azurerm" {
     storage_account_name  = "mexterraformstate"
@@ -30,11 +34,34 @@ terraform {
   }
 }
 
+module "gitlab" {
+  source                    = "../../modules/vm_gcp"
+
+  instance_name             = "${var.gitlab_instance_name}"
+  environ_tag               = "${var.environ_tag}"
+  zone                      = "${var.gitlab_gcp_zone}"
+  boot_image                = ""
+  boot_disk_size            = 100
+  allow_stopping_for_update = ""
+  tags                      = [
+    "mexplat-${var.environ_tag}",
+    "gitlab-registry",
+    "http-server",
+    "https-server",
+  ]
+  labels                    = {
+    "environ"               = "${var.environ_tag}",
+    "gitlab"                = "true",
+    "owner"                 = "ops",
+  }
+}
+
 # Vault VMs
 module "vault_a" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.vault_a_vm_name}"
+  environ_tag         = "${var.environ_tag}"
   zone                = "${var.vault_a_gcp_zone}"
   boot_disk_size      = 20
   tags                = [
@@ -47,7 +74,6 @@ module "vault_a" {
     "vault"           = "true",
     "owner"           = "ops",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "vault_a_dns" {
@@ -60,6 +86,7 @@ module "vault_b" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.vault_b_vm_name}"
+  environ_tag         = "${var.environ_tag}"
   zone                = "${var.vault_b_gcp_zone}"
   boot_disk_size      = 20
   tags                = [
@@ -72,7 +99,6 @@ module "vault_b" {
     "vault"           = "true",
     "owner"           = "ops",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "vault_b_dns" {
@@ -86,6 +112,8 @@ module "console" {
   source              = "../../modules/vm_gcp"
 
   instance_name       = "${var.console_instance_name}"
+  environ_tag         = "${var.environ_tag}"
+  instance_size       = "custom-1-7680-ext"
   zone                = "${var.gcp_zone}"
   boot_disk_size      = 100
   tags                = [
@@ -103,7 +131,6 @@ module "console" {
     "console"         = "true",
     "owner"           = "ops",
   }
-  ssh_public_key_file = "${var.ssh_public_key_file}"
 }
 
 module "console_dns" {
@@ -127,6 +154,12 @@ module "alertmanager_dns" {
 module "notifyroot_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.notifyroot_domain_name}"
+  ip                            = "${module.console.external_ip}"
+}
+
+module "stun_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.stun_domain_name}"
   ip                            = "${module.console.external_ip}"
 }
 
