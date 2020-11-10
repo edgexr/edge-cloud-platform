@@ -212,12 +212,11 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 	for vmidx, vm := range vmgp.VMs {
 		vmHasExternalIp := false
 		vmgp.VMs[vmidx].MetaData = vmlayer.GetVMMetaData(vm.Role, masterIP, vmsphereMetaDataFormatter)
-		userdata, err := vmlayer.GetVMUserData(vm.Name, vm.SharedVolume, vm.DNSServers, vm.DeploymentManifest, vm.Command, &vm.CloudConfigParams, vmsphereUserDataFormatter)
+		userdata, err := vmlayer.GetVMUserData(vm.Name, vm.SharedVolume, vm.DeploymentManifest, vm.Command, &vm.CloudConfigParams, vmsphereUserDataFormatter)
 		if err != nil {
 			return err
 		}
 		vmgp.VMs[vmidx].UserData = userdata
-		vmgp.VMs[vmidx].DNSServers = strings.Join(vmlayer.CloudflareDns, ",")
 		flavormatch := false
 		for _, f := range flavors {
 			if f.Name == vm.FlavorName {
@@ -452,9 +451,13 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 		if err != nil {
 			return err
 		}
+		dnsServers := []string{vm.CloudConfigParams.PrimaryDNS}
+		if vm.CloudConfigParams.FallbackDNS != "" {
+			dnsServers = append(dnsServers, vm.CloudConfigParams.FallbackDNS)
+		}
 		custArgs = append(custArgs, []string{"-ip", ip.Address}...)
 		custArgs = append(custArgs, []string{"-netmask", netmask}...)
-		custArgs = append(custArgs, []string{"-dns-server", vm.DNSServers}...)
+		custArgs = append(custArgs, []string{"-dns-server", strings.Join(dnsServers, ",")}...)
 		if ip.Gateway != "" {
 			custArgs = append(custArgs, []string{"-gateway", ip.Gateway}...)
 		}

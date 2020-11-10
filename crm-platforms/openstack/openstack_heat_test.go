@@ -111,7 +111,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	genVMsUserData := make(map[string]string)
 	for _, v := range vmgp.VMs {
-		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DNSServers, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
+		userdata, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		require.Nil(t, err)
 		genVMsUserData[v.Name] = userdata
 	}

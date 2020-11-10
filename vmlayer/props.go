@@ -137,8 +137,13 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Required if infra API endpoint is completely isolated from external network",
 	},
 	"MEX_SUBNET_DNS": {
-		Name:        "Subnet DNS",
-		Description: "Override cloudflare DNS server IP(s) for subnet, e.g. \"8.8.8.8\" or \"1.1.1.1,8.8.8.8\". Set to NONE to use cloud-init settings",
+		Name:        "DNS Override for Subnet",
+		Description: "Set to NONE to use no DNS entry for new subnets.  Otherwise subnet DNS is set to MEX_DNS",
+	},
+	"MEX_DNS": {
+		Name:        "DNS Server(s)",
+		Description: "Override DNS server IP(s), e.g. \"8.8.8.8\" or \"1.1.1.1,8.8.8.8\"",
+		Value:       "1.1.1.1,1.0.0.1",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Egress",
@@ -286,6 +291,11 @@ func (vp *VMProperties) GetSkipInstallResourceTracker() bool {
 
 func (vp *VMProperties) GetCloudletExternalRouter() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_ROUTER")
+	return value
+}
+
+func (vp *VMProperties) GetCloudletDNS() string {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_DNS")
 	return value
 }
 
