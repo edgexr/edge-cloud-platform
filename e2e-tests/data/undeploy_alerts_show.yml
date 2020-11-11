@@ -7,9 +7,7 @@
     cloudletorg: dmuus
     cluster: ReservableD
     clusterorg: MobiledgeX
-    envoy_cluster_name: ReservableD
-    instance: host.docker.internal:9091
-    job: envoy_targets
+    job: MobiledgeX Monitoring
     region: local
   state: pending
   activeat:

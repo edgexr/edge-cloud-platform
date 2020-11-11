@@ -150,7 +150,7 @@ func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf [
 }
 
 func reloadCloudletProm(ctx context.Context) {
-	log.SpanLog(ctx, log.DebugLevelInfo, "reloading promemtheus config")
+	log.SpanLog(ctx, log.DebugLevelInfo, "reloading prometheus config")
 	resp, err := http.Post("http://0.0.0.0:9092/-/reload", "", bytes.NewBuffer([]byte{}))
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload prometheus", "err", err)

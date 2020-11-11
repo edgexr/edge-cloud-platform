@@ -33,11 +33,18 @@ var prometheusConfig = `global:
 rule_files:
 - "/tmp/` + PrometheusRulesPrefix + `*"
 scrape_configs:
-- job_name: envoy_targets
+- job_name: MobiledgeX Monitoring
   scrape_interval: {{.ScrapeInterval}}
   file_sd_configs:
   - files:
     - '/tmp/prom_targets.json'
+  metric_relabel_configs:
+    - regex: 'instance|envoy_cluster_name'
+      action: labeldrop
+    - source_labels: [envoy_cluster_name]
+      target_label: port
+      regex: 'backend(.*)'
+      replacement: '${1}'
 `
 
 type prometheusConfigArgs struct {

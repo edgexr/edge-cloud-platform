@@ -245,6 +245,14 @@ func (s *AlertmanagerMock) findRouteByReceiver(receiver *ormapi.AlertReceiver) *
 func (s *AlertmanagerMock) verifyAlertPresent(t *testing.T, alert *edgeproto.Alert) {
 	labelSet := model.LabelSet{}
 	for k, v := range alert.Labels {
+		// Convert to string of integer
+		if k == cloudcommon.AlertHealthCheckStatus {
+			if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {
+				if statusVal, ok := edgeproto.HealthCheck_CamelName[int32(tmp)]; ok {
+					v = statusVal
+				}
+			}
+		}
 		labelSet[model.LabelName(k)] = model.LabelValue(v)
 	}
 	key := labelSet.String()
@@ -384,7 +392,7 @@ func TestAlertMgrServer(t *testing.T) {
 		require.Equal(t, "testcloudlet", val)
 		val, found = alert.Labels[cloudcommon.AlertHealthCheckStatus]
 		require.True(t, found)
-		require.Equal(t, strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)), val)
+		require.Equal(t, edgeproto.HealthCheck_CamelName[int32(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)], val)
 		region, ok := alert.Labels["region"]
 		require.True(t, ok)
 		if ok {
