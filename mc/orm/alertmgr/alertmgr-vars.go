@@ -34,10 +34,10 @@ receivers:
 var alertmanagerConfigEmailHtmlTemplate = `{{ template "email.html" . }}`
 
 // NOTE - below only works for an appInst alert, not a cloudlet alert.
-var alertmanagerConfigEmailSubjectTemplate = `{{ template "email.subject" . }}`
+var alertmanagerConfigEmailSubjectTemplate = `{{ template "common.title" . }}`
 var alertmanagerConfigEmailTextTemplate = `{{ template "email.text" . }}`
 
-var alertmanagerConfigSlackTitle = `{{ template "slack.title" . }}`
+var alertmanagerConfigSlackTitle = `{{ template "common.title" . }}`
 
 var alertmanagerConfigSlackText = `{{ template "slack.text" . }}`
 var alertmanagerConfigSlackFallback = `{{ template "slack.fallback" . }}`

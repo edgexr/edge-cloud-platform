@@ -44,19 +44,12 @@ SOFTWARE.
         <table width="100%" cellpadding="0" cellspacing="0" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; border-radius: 3px; background-color: #fff; margin: 0; border: 1px solid #e9e9e9;" bgcolor="#fff">
           <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
             <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box- sizing: border-box; font-size: 16px; vertical-align: top; color: #fff; font-weight: 500; text-align: center; border-radius: 3px 3px 0 0; background-color: #292C33; margin: 0; padding: 20px;" align="center" bgcolor="#292C33" valign="top">
-              {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
-                {{ .Name }}={{ .Value }}
-              {{ end }}
+                <img src="https://console.mobiledgex.net/assets/brand/MobiledgeX_Logo_tm_white.svg" alt="MobiledgeX" width="200"> 
             </td>
           </tr>
           <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
             <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 10px;" valign="top">
               <table width="100%" cellpadding="0" cellspacing="0" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-                <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-                  <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
-                    <a href="https://console.mobiledgex.net" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; color: #FFF; text-decoration: none; line-height: 2em; font-weight: bold; text-align: center; cursor: pointer; display: inline-block; border-radius: 5px; text-transform: capitalize; background-color: #74AA19; margin: 0; border-color: #74AA19; border-style: solid; border-width: 10px 20px;">View on MobiledgeX Console </a>
-                  </td>
-                </tr>
                 {{ if gt (len .Alerts.Firing) 0 }}
                 <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                   <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
@@ -98,10 +91,14 @@ SOFTWARE.
                     {{ range .Labels.SortedPairs }}{{ .Name }} = {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                     {{ if gt (len .Annotations) 0 }}<strong style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">Annotations</strong><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
                     {{ range .Annotations.SortedPairs }}{{ .Name }} = {{ .Value }}<br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />{{ end }}
-                    <a href="{{ .GeneratorURL }}" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; color: #348eda; text-decoration: underline; margin: 0;">Source</a><br style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;" />
                   </td>
                 </tr>
                 {{ end }}
+                <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
+                  <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top" align="center">
+                    <a href="{{ template "console.link" .}}" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; color: #FFF; text-decoration: none; line-height: 2em; font-weight: bold; text-align: center; cursor: pointer; display: inline-block; border-radius: 5px; text-transform: capitalize; background-color: #74AA19; margin: 0; border-color: #74AA19; border-style: solid; border-width: 10px 20px;">View on MobiledgeX Console </a>
+                  </td>
+                </tr>
               </table>
             </td>
           </tr>
@@ -110,7 +107,7 @@ SOFTWARE.
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; width: 100%; clear: both; color: #999; margin: 0; padding: 20px;">
           <table width="100%" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
             <tr style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
-              <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 12px; vertical-align: top; text-align: center; color: #999; margin: 0; padding: 0 0 20px;" align="center" valign="top"><a href="https://console.mobiledgex.net/" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 12px; color: #999; text-decoration: underline; margin: 0;">Sent by MobiledX Monitoring</a></td>
+              <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 12px; vertical-align: top; text-align: center; text-decoration: underline; color: #999; margin: 0; padding: 0 0 20px;" align="center" valign="top">Sent by MobiledX Monitoring</td>
             </tr>
           </table>
         </div></div>
@@ -123,8 +120,8 @@ SOFTWARE.
 </html>
 {{ end }}
 
-{{ define "email.subject" }}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}
+{{ define "common.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}
 {{ end }}
 
 {{ define "email.text" }}
@@ -139,8 +136,8 @@ MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}
 {{ end }}
 {{ end }}
 
-{{ define "slack.title" }}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}
+{{ define "slack.fallback" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}} | {{template "console.link" .}}
 {{ end }}
 
 {{ define "slack.text" }}
@@ -155,10 +152,6 @@ MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}
 {{ end }}
 {{ end }}
 
-{{ define "slack.fallback" }}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{.CommonLabels.alertname}} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}} | ` + alertmanagerConfigSlackTitleLink
-{{ end }}
-
-{{ define "console.link" }}
+{{ define "console.link" -}}
 https://console.mobiledgex.net
 {{ end }}

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -141,9 +143,16 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 		start := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds, int64(a.ActiveAt.Nanos)))
 		// Set endsAt to now + s.AlertResolutionTimout
 		end := strfmt.DateTime(time.Now().Add(s.AlertResolutionTimout))
-		// Add region label to differentiate these at the global level
 		labels := make(map[string]string)
 		for k, v := range a.Labels {
+			// Convert appInst status to a human-understandable format
+			if k == cloudcommon.AlertHealthCheckStatus {
+				if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {
+					if _, ok := edgeproto.HealthCheck_CamelName[int32(tmp)]; ok {
+						v = edgeproto.HealthCheck_CamelName[int32(tmp)]
+					}
+				}
+			}
 			labels[k] = v
 		}
 		openAPIAlerts = append(openAPIAlerts, &models.PostableAlert{

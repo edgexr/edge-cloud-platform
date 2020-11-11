@@ -68,11 +68,18 @@ func TestShepherdUpdate(t *testing.T) {
 rule_files:
 - "/tmp/rulefile_*"
 scrape_configs:
-- job_name: envoy_targets
+- job_name: MobiledgeX Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:
     - '/tmp/prom_targets.json'
+  metric_relabel_configs:
+    - regex: 'instance|envoy_cluster_name'
+      action: labeldrop
+    - source_labels: [envoy_cluster_name]
+      target_label: port
+      regex: 'backend(.*)'
+      replacement: '${1}'
 `
 	require.Equal(t, expected, string(fileContents))
 
@@ -129,11 +136,18 @@ scrape_configs:
 rule_files:
 - "/tmp/rulefile_*"
 scrape_configs:
-- job_name: envoy_targets
+- job_name: MobiledgeX Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:
     - '/tmp/prom_targets.json'
+  metric_relabel_configs:
+    - regex: 'instance|envoy_cluster_name'
+      action: labeldrop
+    - source_labels: [envoy_cluster_name]
+      target_label: port
+      regex: 'backend(.*)'
+      replacement: '${1}'
 `
 	require.Equal(t, expected, string(fileContents))
 	// check rules file (new "for" time)

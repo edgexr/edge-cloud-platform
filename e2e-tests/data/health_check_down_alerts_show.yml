@@ -7,9 +7,7 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    envoy_cluster_name: SmallCluster
-    instance: host.docker.internal:9091
-    job: envoy_targets
+    job: MobiledgeX Monitoring
     region: local
     status: "2"
   state: firing
