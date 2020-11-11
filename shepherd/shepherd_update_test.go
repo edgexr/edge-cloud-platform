@@ -74,12 +74,12 @@ scrape_configs:
   - files:
     - '/tmp/prom_targets.json'
   metric_relabel_configs:
-    - regex: 'instance|envoy_cluster_name'
-      action: labeldrop
     - source_labels: [envoy_cluster_name]
       target_label: port
       regex: 'backend(.*)'
       replacement: '${1}'
+    - regex: 'instance|envoy_cluster_name'
+      action: labeldrop
 `
 	require.Equal(t, expected, string(fileContents))
 
@@ -142,12 +142,12 @@ scrape_configs:
   - files:
     - '/tmp/prom_targets.json'
   metric_relabel_configs:
-    - regex: 'instance|envoy_cluster_name'
-      action: labeldrop
     - source_labels: [envoy_cluster_name]
       target_label: port
       regex: 'backend(.*)'
       replacement: '${1}'
+    - regex: 'instance|envoy_cluster_name'
+      action: labeldrop
 `
 	require.Equal(t, expected, string(fileContents))
 	// check rules file (new "for" time)
