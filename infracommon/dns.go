@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -43,15 +42,7 @@ var NoDnsOverride = ""
 func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "createAppDNS")
-	useDns := true
-	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
-		if testMode {
-			useDns = false
-			log.SpanLog(ctx, log.DebugLevelInfra, "cannot init cloudflare api", "err", err)
-		} else {
-			return fmt.Errorf("cannot init cloudflare api, %v", err)
-		}
-	}
+
 	if kubeNames.AppURI == "" {
 		return fmt.Errorf("URI not specified")
 	}
@@ -95,7 +86,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 				return err
 			}
 		}
-		if action.AddDNS && useDns {
+		if action.AddDNS {
 			mappedAddr := c.GetMappedExternalIP(action.ExternalIP)
 			fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 			if overrideDns != "" {
@@ -106,8 +97,12 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 				dnsRecType = "CNAME"
 				mappedAddr = action.Hostname
 			}
-			if err := cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, dnsRecType, mappedAddr, 1, false); err != nil {
-				return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
+			if err := c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, dnsRecType, mappedAddr, 1, false); err != nil {
+				if testMode {
+					log.SpanLog(ctx, log.DebugLevelInfra, "ignoring dns error in testMode", "err", err)
+				} else {
+					return fmt.Errorf("can't create DNS record for %s,%s, %v", fqdn, mappedAddr, err)
+				}
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", action.ExternalIP)
 		}
@@ -117,9 +112,6 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 
 func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
-	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
-		return fmt.Errorf("cannot init cloudflare api, %v", err)
-	}
 	if kubeNames.AppURI == "" {
 		return fmt.Errorf("URI not specified")
 	}
@@ -154,16 +146,13 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 
 func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteDNSRecords", "fqdn", fqdn)
-	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
-		return fmt.Errorf("cannot init cloudflare api, %v", err)
-	}
-	recs, derr := cloudflare.GetDNSRecords(ctx, c.GetCloudletDNSZone(), fqdn)
+	recs, derr := c.PlatformConfig.AccessApi.GetDNSRecords(ctx, c.GetCloudletDNSZone(), fqdn)
 	if derr != nil {
 		return fmt.Errorf("error getting dns records for %s, %v", c.GetCloudletDNSZone(), derr)
 	}
 	for _, rec := range recs {
 		if (rec.Type == "A" || rec.Type == "CNAME") && rec.Name == fqdn {
-			if err := cloudflare.DeleteDNSRecord(c.GetCloudletDNSZone(), rec.ID); err != nil {
+			if err := c.PlatformConfig.AccessApi.DeleteDNSRecord(ctx, c.GetCloudletDNSZone(), rec.ID); err != nil {
 				return fmt.Errorf("cannot delete existing DNS record %v, %v", rec, err)
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "deleted DNS record", "name", fqdn)

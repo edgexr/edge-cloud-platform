@@ -14,12 +14,12 @@ import (
 	"github.com/mobiledgex/edge-cloud/vmspec"
 )
 
-func (m *ManagedK8sPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SaveCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
 	return nil
 }
 
-func (m *ManagedK8sPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
 	return nil
 }
@@ -29,7 +29,7 @@ func (m *ManagedK8sPlatform) SyncControllerCache(ctx context.Context, caches *pl
 	return nil
 }
 
-func (m *ManagedK8sPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
+func (m *ManagedK8sPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest not supported", "cloudletName", cloudlet.Key.Name)
 	return nil, fmt.Errorf("GetCloudletManifest not supported for managed k8s provider")
 }
@@ -43,23 +43,22 @@ func (m *ManagedK8sPlatform) getCloudletClusterName(cloudlet *edgeproto.Cloudlet
 	return m.Provider.NameSanitize(cloudlet.Key.Name + "-pf")
 }
 
-func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 
 	if cloudlet.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("Only kubernetes deployment supported for cloudlet platform: %s", m.Type)
 	}
-	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get vault configs", "vaultAddr", pfConfig.VaultAddr, "err", err)
-		return err
-	}
-	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig)
-	props, err := m.Provider.GetProviderSpecificProps(ctx, platCfg, vaultConfig)
+	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	props, err := m.Provider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
 	}
-	if err := m.CommonPf.InitInfraCommon(ctx, platCfg, props, vaultConfig); err != nil {
+	err = m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	if err != nil {
+		return err
+	}
+	if err := m.CommonPf.InitInfraCommon(ctx, platCfg, props); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
@@ -69,7 +68,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 
 	// find available flavors
 	var info edgeproto.CloudletInfo
-	err = m.Provider.GatherCloudletInfo(ctx, m.CommonPf.VaultConfig, &info)
+	err = m.Provider.GatherCloudletInfo(ctx, &info)
 	if err != nil {
 		return err
 	}
@@ -89,26 +88,25 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
-	return m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, vaultConfig, pfConfig)
+	return m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, accessApi, pfConfig)
 }
 
 func (m *ManagedK8sPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
-func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)
-	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get vault configs", "vaultAddr", pfConfig.VaultAddr, "err", err)
-		return err
-	}
-	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig)
-	props, err := m.Provider.GetProviderSpecificProps(ctx, platCfg, vaultConfig)
+	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	props, err := m.Provider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
 	}
-	if err := m.CommonPf.InitInfraCommon(ctx, platCfg, props, vaultConfig); err != nil {
+	err = m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	if err != nil {
+		return err
+	}
+	if err := m.CommonPf.InitInfraCommon(ctx, platCfg, props); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}

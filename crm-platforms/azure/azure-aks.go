@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -14,7 +14,7 @@ const NotFound = "could not be found"
 // CreateResourceGroup creates azure resource group
 func (a *AzurePlatform) CreateResourceGroup(ctx context.Context, group, location string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateResourceGroup", "group", group, "location", location)
-	out, err := sh.Command("az", "group", "create", "-l", location, "-n", group).CombinedOutput()
+	out, err := infracommon.Sh(a.accessVars).Command("az", "group", "create", "-l", location, "-n", group).CombinedOutput()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in CreateResourceGroup", "out", string(out), "err", err)
 		return fmt.Errorf("Error in CreateResourceGroup: %s - %v", string(out), err)
@@ -38,7 +38,7 @@ func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName
 	rg := a.GetResourceGroupForCluster(clusterName)
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterCreateCommand", "clusterName", clusterName, "rgName", rg)
 	numNodesStr := fmt.Sprintf("%d", numNodes)
-	out, err := sh.Command("az", "aks", "create", "--resource-group", rg,
+	out, err := infracommon.Sh(a.accessVars).Command("az", "aks", "create", "--resource-group", rg,
 		"--name", clusterName, "--generate-ssh-keys",
 		"--node-vm-size", flavor,
 		"--node-count", numNodesStr).CombinedOutput()
@@ -53,7 +53,7 @@ func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName
 func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName", clusterName)
 	rg := a.GetResourceGroupForCluster(clusterName)
-	out, err := sh.Command("az", "group", "delete", "--name", rg, "--yes", "--no-wait").CombinedOutput()
+	out, err := infracommon.Sh(a.accessVars).Command("az", "group", "delete", "--name", rg, "--yes", "--no-wait").CombinedOutput()
 	if err != nil {
 		if strings.Contains(string(out), NotFound) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cluster already gone", "out", out, "err", err)
@@ -69,7 +69,7 @@ func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName
 func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCredentials", "clusterName", clusterName)
 	rg := a.GetResourceGroupForCluster(clusterName)
-	out, err := sh.Command("az", "aks", "get-credentials", "--resource-group", rg, "--name", clusterName).CombinedOutput()
+	out, err := infracommon.Sh(a.accessVars).Command("az", "aks", "get-credentials", "--resource-group", rg, "--name", clusterName).CombinedOutput()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in Azure GetCredentials", "out", string(out), "err", err)
 		return fmt.Errorf("Error in GetCredentials: %s - %v", string(out), err)

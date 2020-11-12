@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
@@ -24,7 +25,7 @@ import (
 type VMProvider interface {
 	NameSanitize(string) string
 	IdSanitize(string) string
-	GetProviderSpecificProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
+	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetVMProperties(vmProperties *VMProperties)
 	InitData(ctx context.Context, caches *platform.Caches)
 	InitProvider(ctx context.Context, caches *platform.Caches, stage ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error
@@ -44,10 +45,10 @@ type VMProvider interface {
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
 	GetApiAccessFilename() string
-	InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage ProviderInitStage) error
+	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage ProviderInitStage) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
-	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error
+	SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error
 	SetPowerState(ctx context.Context, serverName, serverAction string) error
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, VMGroupOrchestrationParams *VMGroupOrchestrationParams) (string, error)
@@ -240,23 +241,19 @@ func (v *VMPlatform) GetResTablesForCloudlet(ctx context.Context, ckey *edgeprot
 	return tbls
 }
 
-func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig, vaultConfig *vault.Config) error {
+func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.PlatformConfig) error {
 	props := make(map[string]*edgeproto.PropertyInfo)
 	for k, v := range VMProviderProps {
 		props[k] = v
 	}
-	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx, platformConfig, vaultConfig)
+	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
 	}
 	for k, v := range providerProps {
 		props[k] = v
 	}
-	// sometimes commonPf might be nil (if coming from shepherd) so initialize it before InitInfraCommon
-	if v.VMProperties.CommonPf == nil {
-		v.VMProperties.CommonPf = &infracommon.CommonPlatform{}
-	}
-	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props, vaultConfig)
+	err = v.VMProperties.CommonPf.InitInfraCommon(ctx, platformConfig, props)
 	if err != nil {
 		return err
 	}
@@ -277,7 +274,7 @@ func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
 }
 
 func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
-	results, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.VaultConfig, v.Caches)
+	results, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, v.Caches)
 	if err != nil {
 		return fmt.Sprintf("failed to upgrade vms to vault ssh keys: %v", err)
 	}
@@ -285,41 +282,34 @@ func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequ
 }
 
 func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+	var err error
 	log.SpanLog(ctx,
 		log.DebugLevelInfra, "Init VMPlatform",
 		"physicalName", platformConfig.PhysicalName,
-		"vaultAddr", platformConfig.VaultAddr,
 		"type",
 		v.Type)
 
 	updateCallback(edgeproto.UpdateTask, "Initializing VM platform type: "+v.Type)
 	v.Caches = caches
-	cpf := infracommon.CommonPlatform{}
-	v.VMProperties.CommonPf = &cpf
 	v.VMProperties.Domain = VMDomainCompute
-	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "vault auth", "type", vaultConfig.Auth.Type())
 
 	if !platformConfig.TestMode {
-		err = v.InitCloudletSSHKeys(ctx, vaultConfig)
+		err := v.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
 		if err != nil {
 			return err
 		}
 
-		go v.RefreshCloudletSSHKeys(vaultConfig)
+		go v.RefreshCloudletSSHKeys(platformConfig.AccessApi)
 	}
 
-	if err := v.InitProps(ctx, platformConfig, vaultConfig); err != nil {
+	if err := v.InitProps(ctx, platformConfig); err != nil {
 		return err
 	}
 
 	v.VMProvider.InitData(ctx, caches)
 
-	updateCallback(edgeproto.UpdateTask, "Fetching API Access access credentials")
-	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.CloudletKey, platformConfig.Region, platformConfig.PhysicalName, vaultConfig, platformConfig.EnvVars, ProviderInitPlatformStart); err != nil {
+	updateCallback(edgeproto.UpdateTask, "Fetching API access credentials")
+	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars, ProviderInitPlatformStart); err != nil {
 		return err
 	}
 
@@ -348,7 +338,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		v.VMProperties.Upgrade = true
 		// Pull private key from Vault
 		log.SpanLog(ctx, log.DebugLevelInfra, "Fetch private key from vault")
-		mexKey, err := infracommon.GetMEXKeyFromVault(vaultConfig)
+		mexKey, err := platformConfig.AccessApi.GetOldSSHKey(ctx)
 		if err != nil {
 			return err
 		}
@@ -363,7 +353,11 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		if err != nil {
 			return err
 		}
-		upgradeScript := GetVaultCAScript(vaultConfig)
+		publicSSHKey, err := platformConfig.AccessApi.GetSSHPublicKey(ctx)
+		if err != nil {
+			return err
+		}
+		upgradeScript := GetVaultCAScript(publicSSHKey)
 		ExecuteUpgradeScript(ctx, v.VMProperties.SharedRootLBName, sharedRootLBClient, upgradeScript)
 		// Verify if shared rootlb is reachable using vault SSH
 		// Set SSH client to use vault signed Keys
@@ -406,7 +400,7 @@ func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.C
 	// no sync needed right now
 
 	if v.VMProperties.Upgrade {
-		_, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.VaultConfig, caches)
+		_, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, caches)
 		if err != nil {
 			return err
 		}
@@ -447,4 +441,18 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *e
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterInfraResources")
 	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterKey))
 	return v.VMProvider.GetServerGroupResources(ctx, clusterName)
+}
+
+func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType)
+	switch dataType {
+	case accessapi.GetCloudletAccessVars:
+		path := GetVaultCloudletAccessPath(&cloudlet.Key, region, v.Type, cloudlet.PhysicalName, v.VMProvider.GetApiAccessFilename())
+		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
+		if err != nil {
+			return nil, err
+		}
+		return vars, nil
+	}
+	return nil, fmt.Errorf("VMPlatform unhandled GetAccessData type %s", dataType)
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -26,7 +25,7 @@ type ShepherdPlatform struct {
 	SharedClient    ssh.Client
 	VMPlatform      *vmlayer.VMPlatform
 	collectInterval time.Duration
-	vaultConfig     *vault.Config
+	platformConfig  *platform.PlatformConfig
 	appDNSRoot      string
 }
 
@@ -35,25 +34,21 @@ func (s *ShepherdPlatform) GetType() string {
 }
 
 func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
-	vaultConfig, err := vault.BestConfig(pc.VaultAddr)
-	if err != nil {
-		return err
-	}
-	s.vaultConfig = vaultConfig
+	s.platformConfig = pc
 	s.appDNSRoot = pc.AppDNSRoot
 
-	err = s.VMPlatform.InitCloudletSSHKeys(ctx, vaultConfig)
+	err := s.VMPlatform.InitCloudletSSHKeys(ctx, pc.AccessApi)
 	if err != nil {
 		return err
 	}
 
-	go s.VMPlatform.RefreshCloudletSSHKeys(vaultConfig)
+	go s.VMPlatform.RefreshCloudletSSHKeys(pc.AccessApi)
 
-	if err = s.VMPlatform.InitProps(ctx, pc, vaultConfig); err != nil {
+	if err = s.VMPlatform.InitProps(ctx, pc); err != nil {
 		return err
 	}
 	s.VMPlatform.VMProvider.InitData(ctx, caches)
-	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.CloudletKey, pc.Region, pc.PhysicalName, vaultConfig, pc.EnvVars, vmlayer.ProviderInitPlatformStart); err != nil {
+	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, pc.EnvVars, vmlayer.ProviderInitPlatformStart); err != nil {
 		return err
 	}
 
@@ -70,8 +65,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	}
 
 	s.collectInterval = VmScrapeInterval
-	log.SpanLog(ctx, log.DebugLevelInfra, "init openstack", "rootLB", s.rootLbName,
-		"physicalName", pc.PhysicalName, "vaultAddr", pc.VaultAddr)
+	log.SpanLog(ctx, log.DebugLevelInfra, "init shepherd done", "rootLB", s.rootLbName, "physicalName", pc.PhysicalName)
 	return nil
 }
 

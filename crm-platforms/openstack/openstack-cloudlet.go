@@ -14,12 +14,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
-	vaultConfig, err := vault.BestConfig(pfConfig.VaultAddr, vault.WithEnvMap(pfConfig.EnvVar))
-	if err != nil {
-		return err
-	}
 	openrcData, ok := accessVarsIn["OPENRC_DATA"]
 	if !ok {
 		return fmt.Errorf("Invalid accessvars, missing OPENRC_DATA")
@@ -87,7 +83,7 @@ func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet
 	}
 
 	path := vmlayer.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, o.GetType(), cloudlet.PhysicalName, o.GetApiAccessFilename())
-	err = infracommon.PutDataToVault(vaultConfig, path, data)
+	err := infracommon.PutDataToVault(vaultConfig, path, data)
 	if err != nil {
 		updateCallback(edgeproto.UpdateTask, "Failed to save access vars to vault")
 		log.SpanLog(ctx, log.DebugLevelInfra, err.Error(), "cloudletName", cloudlet.Key.Name)

@@ -34,30 +34,41 @@ func interpolate(val string) string {
 	return val
 }
 
-func internEnv(envs []EnvData) error {
-	for _, e := range envs {
-		val := interpolate(e.Value)
-		err := os.Setenv(e.Name, val)
+func InternEnv(envs map[string]string) error {
+	for k, v := range envs {
+		val := interpolate(v)
+		err := os.Setenv(k, val)
 		if err != nil {
 			return err
 		}
-		//log.SpanLog(ctx,log.DebugLevelInfra, "setenv", "name", e.Name, "value", val)
 	}
 	return nil
 }
 
-func InternVaultEnv(ctx context.Context, config *vault.Config, path string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", config.Addr, "path", path)
+func GetEnvVarsFromVault(ctx context.Context, config *vault.Config, path string) (map[string]string, error) {
 	envData := &VaultEnvData{}
 	err := vault.GetData(config, path, 0, envData)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "no secrets") {
+			return nil, fmt.Errorf("Failed to source access variables from '%s', does not exist in secure secrets storage (Vault)", path)
+		}
+		return nil, fmt.Errorf("Failed to source access variables from %s, %s: %v", config.Addr, path, err)
 	}
-	err = internEnv(envData.Env)
+	vars := make(map[string]string, 1)
+	for _, envData := range envData.Env {
+		vars[envData.Name] = envData.Value
+	}
+	return vars, nil
+}
+
+// Get data from Vault as a string
+func GetVaultDataString(ctx context.Context, config *vault.Config, path string) ([]byte, error) {
+	vaultData := &VaultData{}
+	err := vault.GetData(config, path, 0, vaultData)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return []byte(vaultData.Data), nil
 }
 
 func GetVaultDataToFile(config *vault.Config, path, fileName string) error {
@@ -103,44 +114,4 @@ func DeleteDataFromVault(config *vault.Config, path string) error {
 	// Deleting metadata will delete all version of data
 	metadataPath := strings.Replace(path, "secret/data", "secret/metadata", -1)
 	return vault.DeleteKV(client, metadataPath)
-}
-
-func GetSignedKeyFromVault(config *vault.Config, data map[string]interface{}) (string, error) {
-	client, err := config.Login()
-	if err != nil {
-		return "", err
-	}
-	ssh := client.SSH()
-	secret, err := ssh.SignKey("machine", data)
-	if err != nil {
-		return "", err
-	}
-	signedKey, ok := secret.Data["signed_key"]
-	if !ok {
-		return "", fmt.Errorf("failed to get signed key from vault: %v", secret)
-	}
-	signedKeyStr, ok := signedKey.(string)
-	if !ok {
-		return "", fmt.Errorf("invalid signed key from vault: %v", signedKey)
-	}
-	return signedKeyStr, nil
-}
-
-type MEXKey struct {
-	PrivateKey string `mapstructure:"private_key"`
-	PublicKey  string `mapstructure:"public_key"`
-}
-
-func GetMEXKeyFromVault(vaultConfig *vault.Config) (*MEXKey, error) {
-	if vaultConfig.Addr == "" {
-		return &MEXKey{}, nil
-	}
-	vaultPath := "/secret/data/keys/id_rsa_mex"
-	log.DebugLog(log.DebugLevelApi, "get mex key", "vault-path", vaultPath)
-	key := &MEXKey{}
-	err := vault.GetData(vaultConfig, vaultPath, 0, key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get mex key for %s, %v", vaultPath, err)
-	}
-	return key, nil
 }

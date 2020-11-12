@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codeskyblue/go-sh"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -216,10 +216,7 @@ func (v *VSpherePlatform) TimedGovcCommand(ctx context.Context, name string, a .
 	start := time.Now()
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Govc Command Start", "name", name, "parms", parmstr)
-	newSh := sh.NewSession()
-	for key, val := range v.vcenterVars {
-		newSh.SetEnv(key, val)
-	}
+	newSh := infracommon.Sh(v.vcenterVars)
 
 	out, err := newSh.Command(name, a).CombinedOutput()
 	if err != nil {

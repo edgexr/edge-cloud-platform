@@ -15,13 +15,11 @@ import (
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 type CommonPlatform struct {
 	Properties        InfraProperties
 	PlatformConfig    *pf.PlatformConfig
-	VaultConfig       *vault.Config
 	MappedExternalIPs map[string]string
 	ChefClient        *chef.Client
 	ChefServerPath    string
@@ -31,30 +29,12 @@ type CommonPlatform struct {
 // Package level test mode variable
 var testMode = false
 
-func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo, vaultConfig *vault.Config) error {
+func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon", "cloudletKey", platformConfig.CloudletKey)
 
-	if vaultConfig.Addr == "" {
-		return fmt.Errorf("vaultAddr is not specified")
-	}
 	c.PlatformConfig = platformConfig
-	c.VaultConfig = vaultConfig
-
-	// fetch properties from vault
-	mexEnvPath := GetVaultCloudletCommonPath("mexenv.json")
-	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", vaultConfig.Addr, "path", mexEnvPath)
-	envData := &VaultEnvData{}
-	err := vault.GetData(vaultConfig, mexEnvPath, 0, envData)
-	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return fmt.Errorf("Failed to source access variables as mexenv.json " +
-				"does not exist in secure secrets storage (Vault)")
-		}
-		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, mexEnvPath, err)
-	}
 	c.Properties.Init()
 	c.Properties.SetProperties(platformSpecificProps)
-	c.Properties.SetPropsFromEnvData(envData.Env)
 	// fetch properties from user input
 	c.Properties.SetPropsFromVars(ctx, c.PlatformConfig.EnvVars)
 
@@ -67,7 +47,7 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		}
 	}
 
-	err = c.initMappedIPs()
+	err := c.initMappedIPs()
 	if err != nil {
 		return fmt.Errorf("unable to init Mapped IPs: %v", err)
 	}
@@ -80,7 +60,7 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		return fmt.Errorf("missing deployment tag")
 	}
 
-	chefAuth, err := chefmgmt.GetChefAuthKeys(ctx, vaultConfig)
+	chefAuth, err := platformConfig.AccessApi.GetChefAuthKey(ctx)
 	if err != nil {
 		return err
 	}
@@ -120,21 +100,6 @@ func (c *CommonPlatform) GetCloudletDNSZone() string {
 	return c.PlatformConfig.AppDNSRoot
 }
 
-func (c *CommonPlatform) GetCloudletRegistryFileServer() string {
-	value, _ := c.Properties.GetValue("MEX_REGISTRY_FILE_SERVER")
-	return value
-}
-
-func (c *CommonPlatform) GetCloudletCFKey() string {
-	value, _ := c.Properties.GetValue("MEX_CF_KEY")
-	return value
-}
-
-func (c *CommonPlatform) GetCloudletCFUser() string {
-	value, _ := c.Properties.GetValue("MEX_CF_USER")
-	return value
-}
-
 func SetTestMode(tMode bool) {
 	testMode = tMode
 }
@@ -170,19 +135,18 @@ func (c *CommonPlatform) GetMappedExternalIP(ip string) string {
 }
 
 // GetPlatformConfig builds a platform.PlatformConfig from a cloudlet and an edgeproto.PlatformConfig
-func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) *pf.PlatformConfig {
+func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi pf.AccessApi) *pf.PlatformConfig {
 	platCfg := pf.PlatformConfig{
 		CloudletKey:         &cloudlet.Key,
 		PhysicalName:        cloudlet.PhysicalName,
-		VaultAddr:           pfConfig.VaultAddr,
 		Region:              pfConfig.Region,
 		TestMode:            pfConfig.TestMode,
 		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
 		VMImageVersion:      cloudlet.VmImageVersion,
 		EnvVars:             pfConfig.EnvVar,
 		AppDNSRoot:          pfConfig.AppDnsRoot,
-		ChefServerPath:      pfConfig.ChefServerPath,
 		DeploymentTag:       pfConfig.DeploymentTag,
+		AccessApi:           accessApi,
 	}
 	return &platCfg
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/go-chef/chef"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 const (
@@ -69,20 +68,6 @@ const (
 	ResourceDockerImage     = "docker_image"
 	ResourceDockerContainer = "docker_container"
 )
-
-func GetChefAuthKeys(ctx context.Context, vaultConfig *vault.Config) (*ChefAuthKey, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "fetch chef auth keys")
-	vaultPath := "/secret/data/accounts/chef"
-	auth := &ChefAuthKey{}
-	err := vault.GetData(vaultConfig, vaultPath, 0, auth)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to find chef auth keys from vault path %s, %v", vaultPath, err)
-	}
-	if auth.ApiKey == "" {
-		return nil, fmt.Errorf("Unable to find chef API key")
-	}
-	return auth, nil
-}
 
 func GetChefClient(ctx context.Context, apiKey, chefServerPath string) (*chef.Client, error) {
 	if chefServerPath == "" {

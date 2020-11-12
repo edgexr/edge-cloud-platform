@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
 var VSphereProps = map[string]*edgeproto.PropertyInfo{
@@ -97,26 +93,12 @@ func (v *VSpherePlatform) GetApiAccessFilename() string {
 	return "vcenter.json"
 }
 
-func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config) error {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
-		return fmt.Errorf("vaultAddr is not specified")
-	}
-	vcpath := vmlayer.GetVaultCloudletAccessPath(key, region, v.GetType(), physicalName, v.GetApiAccessFilename())
-	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", vaultConfig.Addr, "path", vcpath)
-	envData := &infracommon.VaultEnvData{}
-	err := vault.GetData(vaultConfig, vcpath, 0, envData)
+func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, accessApi platform.AccessApi) error {
+	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return fmt.Errorf("Failed to source access variables as '%s/%s' "+
-				"does not exist in secure secrets storage (Vault)",
-				key.Organization, physicalName)
-		}
-		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, vcpath, err)
+		return err
 	}
-	v.vcenterVars = make(map[string]string, 1)
-	for _, envData := range envData.Env {
-		v.vcenterVars[envData.Name] = envData.Value
-	}
+	v.vcenterVars = vars
 
 	// vcenter vars are used for govc.  They are stored in the vault in a
 	// generic format which is not specific to govc
@@ -133,15 +115,15 @@ func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, key *edgeproto.Clo
 	return nil
 }
 
-func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage vmlayer.ProviderInitStage) error {
-	err := v.GetVsphereVars(ctx, key, region, physicalName, vaultConfig)
+func (v *VSpherePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+	err := v.GetVsphereVars(ctx, accessApi)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (v *VSpherePlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (v *VSpherePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	return VSphereProps, nil
 }
 

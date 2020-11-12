@@ -90,7 +90,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		tlsCertFile = pfConfig.TlsCertFile
 		tlsKeyFile = pfConfig.TlsKeyFile
 		tlsCAFile = pfConfig.TlsCaFile
-		vaultAddr = pfConfig.VaultAddr
 		span = pfConfig.Span
 		region = pfConfig.Region
 		useVaultCAs = pfConfig.UseVaultCas
@@ -133,20 +132,12 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	}, opts, nil
 }
 
-func GetShepherdCmd(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (string, *map[string]string, error) {
-	ShepherdProc, opts, err := getShepherdProc(cloudlet, pfConfig)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return ShepherdProc.String(opts...), &ShepherdProc.Common.EnvVars, nil
-}
-
 func GetShepherdCmdArgs(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) ([]string, *map[string]string, error) {
 	ShepherdProc, opts, err := getShepherdProc(cloudlet, pfConfig)
 	if err != nil {
 		return nil, nil, err
 	}
+	ShepherdProc.AccessKeyFile = cloudcommon.GetCrmAccessKeyFile()
 
 	return ShepherdProc.GetArgs(opts...), &ShepherdProc.Common.EnvVars, nil
 }

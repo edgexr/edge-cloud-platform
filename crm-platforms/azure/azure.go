@@ -12,7 +12,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -20,6 +19,7 @@ const AzureMaxResourceGroupNameLen int = 80
 
 type AzurePlatform struct {
 	properties *infracommon.InfraProperties
+	accessVars map[string]string
 }
 
 type AZName struct {
@@ -41,14 +41,14 @@ type AZFlavor struct {
 	VCPUs int
 }
 
-func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, vaultConfig *vault.Config, info *edgeproto.CloudletInfo) error {
+func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo")
-	if err := a.Login(ctx, vaultConfig); err != nil {
+	if err := a.Login(ctx); err != nil {
 		return err
 	}
 
 	var limits []AZLimit
-	out, err := sh.Command("az", "vm", "list-usage", "--location", a.GetAzureLocation(), sh.Dir("/tmp")).CombinedOutput()
+	out, err := infracommon.Sh(a.accessVars).Command("az", "vm", "list-usage", "--location", a.GetAzureLocation(), sh.Dir("/tmp")).CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("cannot get limits from azure, %s, %s", out, err.Error())
 		return err
@@ -77,7 +77,7 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, vaultConfig *vau
 	* https://azure.microsoft.com/en-in/pricing/details/virtual-machines/series/
 	 */
 	var vmsizes []AZFlavor
-	out, err = sh.Command("az", "vm", "list-sizes",
+	out, err = infracommon.Sh(a.accessVars).Command("az", "vm", "list-sizes",
 		"--location", a.GetAzureLocation(),
 		"--query", "[].{"+
 			"Name:name,"+
@@ -121,9 +121,9 @@ func (a *AzurePlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts 
 }
 
 // Login logs into azure
-func (a *AzurePlatform) Login(ctx context.Context, vaultConfig *vault.Config) error {
+func (a *AzurePlatform) Login(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "doing azure login")
-	out, err := sh.Command("az", "login", "--username", a.GetAzureUser(), "--password", a.GetAzurePass()).CombinedOutput()
+	out, err := infracommon.Sh(a.accessVars).Command("az", "login", "--username", a.GetAzureUser(), "--password", a.GetAzurePass()).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("Login Failed: %s %v", out, err)
 	}

@@ -438,7 +438,6 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigContainerRegistryPath: 21.1
 	// ConfigCloudletVmImagePath: 21.2
 	// ConfigNotifyCtrlAddrs: 21.3
-	// ConfigVaultAddr: 21.4
 	// ConfigTlsCertFile: 21.5
 	// ConfigTlsKeyFile: 21.20
 	// ConfigTlsCaFile: 21.21

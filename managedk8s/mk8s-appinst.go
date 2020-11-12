@@ -7,10 +7,10 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +32,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 
 	updateCallback(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
-		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.CommonPf.VaultConfig, names)
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.CommonPf.PlatformConfig.AccessApi, names)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, m.CommonPf.VaultConfig, client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 		if err == nil {
 			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 
@@ -137,7 +137,7 @@ func (m *ManagedK8sPlatform) UpdateAppInst(ctx context.Context, clusterInst *edg
 		return err
 	}
 
-	err = k8smgmt.UpdateAppInst(ctx, m.CommonPf.VaultConfig, client, names, app, appInst)
+	err = k8smgmt.UpdateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
@@ -176,7 +176,7 @@ func (m *ManagedK8sPlatform) SetPowerState(ctx context.Context, app *edgeproto.A
 	return fmt.Errorf("Unsupported command for platform")
 }
 
-func (m *ManagedK8sPlatform) CreatePlatformApp(ctx context.Context, name string, kconf string, vaultConfig *vault.Config, pfConfig *edgeproto.PlatformConfig) error {
+func (m *ManagedK8sPlatform) CreatePlatformApp(ctx context.Context, name string, kconf string, accessApi platform.AccessApi, pfConfig *edgeproto.PlatformConfig) error {
 	// TODO: we can either create the crm app directly here on the cloudlet cluster, or we can create some kind
 	// of chef sidecar app that then runs and creates/maintains the crm pod
 	return fmt.Errorf("CreatePlatformApp not yet implemented")

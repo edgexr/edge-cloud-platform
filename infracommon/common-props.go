@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -19,19 +20,6 @@ var DefaultContainerRegistryPath = "registry.mobiledgex.net:5000/mobiledgex/edge
 // Cloudlet Infra Common Properties
 var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 	// Property: Default-Value
-	"MEX_CF_KEY": &edgeproto.PropertyInfo{
-		Name:        "Cloudflare Key",
-		Description: "Cloudflare Key",
-		Secret:      true,
-		Mandatory:   true,
-		Internal:    true,
-	},
-	"MEX_CF_USER": &edgeproto.PropertyInfo{
-		Name:        "Cloudflare User",
-		Description: "Cloudflare User",
-		Mandatory:   true,
-		Internal:    true,
-	},
 	"MEX_EXTERNAL_IP_MAP": &edgeproto.PropertyInfo{
 		Name:        "External IP Map",
 		Description: "External IP Map",
@@ -126,25 +114,6 @@ func (p *InfraProperties) SetPropsFromVars(ctx context.Context, vars map[string]
 	}
 }
 
-func (p *InfraProperties) SetPropsFromEnvData(env []EnvData) {
-	p.Mux.Lock()
-	defer p.Mux.Unlock()
-	for _, envData := range env {
-		if _, ok := p.Properties[envData.Name]; ok {
-			p.Properties[envData.Name].Value = envData.Value
-		} else {
-			// quick fix for EDGECLOUD-2572.  Assume the mexenv.json item is secret if we have
-			// not defined it one way or another in code, of if the props that defines it is not
-			// run (e.g. an Azure property defined in mexenv.json when we are running openstack)
-			p.Properties[envData.Name] = &edgeproto.PropertyInfo{
-				Name:   envData.Name,
-				Value:  envData.Value,
-				Secret: true,
-			}
-		}
-	}
-}
-
 func (p *InfraProperties) UpdatePropsFromVars(ctx context.Context, vars map[string]string) {
 	p.Mux.Lock()
 	defer p.Mux.Unlock()
@@ -158,4 +127,12 @@ func (p *InfraProperties) UpdatePropsFromVars(ctx context.Context, vars map[stri
 			p.Properties[k].Value = val
 		}
 	}
+}
+
+func Sh(envVars map[string]string) *sh.Session {
+	newSh := sh.NewSession()
+	for key, val := range envVars {
+		newSh.SetEnv(key, val)
+	}
+	return newSh
 }

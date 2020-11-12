@@ -29,7 +29,7 @@ type CloudletSSHKey struct {
 }
 
 type VMProperties struct {
-	CommonPf                   *infracommon.CommonPlatform
+	CommonPf                   infracommon.CommonPlatform
 	SharedRootLBName           string
 	Domain                     VMDomain
 	PlatformSecgrpName         string

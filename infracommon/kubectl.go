@@ -12,16 +12,18 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
 
 // getSecretAuth returns secretName, dockerServer, auth, error
-func getSecretAuth(ctx context.Context, imagePath string, vaultConfig *vault.Config) (string, string, *cloudcommon.RegistryAuth, error) {
-	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
+func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.RegistryAuthApi) (string, string, *cloudcommon.RegistryAuth, error) {
+	auth, err := authApi.GetRegistryAuth(ctx, imagePath)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
+		return "", "", nil, err
+	}
+	if auth == nil || auth.AuthType == cloudcommon.NoAuth {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry")
 		return "", "", nil, nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
@@ -40,9 +42,9 @@ func getSecretAuth(ctx context.Context, imagePath string, vaultConfig *vault.Con
 	return secretName, dockerServer, auth, nil
 }
 
-func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, _, auth, err := getSecretAuth(ctx, imagePath, vaultConfig)
+	secretName, _, auth, err := getSecretAuth(ctx, imagePath, authApi)
 	if err != nil {
 		return err
 	}
@@ -61,10 +63,10 @@ func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	return nil
 }
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, vaultConfig *vault.Config, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, vaultConfig)
+	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, authApi)
 	if err != nil {
 		return err
 	}
