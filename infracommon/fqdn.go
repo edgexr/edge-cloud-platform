@@ -2,10 +2,7 @@ package infracommon
 
 import (
 	"context"
-	"fmt"
 	"strings"
-
-	"github.com/mobiledgex/edge-cloud-infra/openstack-tenant/agent/cloudflare"
 )
 
 func isDomainName(s string) bool {
@@ -64,8 +61,5 @@ func uri2fqdn(uri string) string {
 func (c *CommonPlatform) ActivateFQDNA(ctx context.Context, fqdn, addr string) error {
 
 	mappedAddr := c.GetMappedExternalIP(addr)
-	if err := cloudflare.InitAPI(c.GetCloudletCFUser(), c.GetCloudletCFKey()); err != nil {
-		return fmt.Errorf("cannot init cloudflare api, %v", err)
-	}
-	return cloudflare.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false)
+	return c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, c.GetCloudletDNSZone(), fqdn, "A", mappedAddr, 1, false)
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -16,6 +16,7 @@ import (
 
 const SessionTokenDurationSecs = 60 * 60 * 24 // 24 hours
 const AwsSessionTokenRefreshInterval = 12 * time.Hour
+const TotpTokenName = "code"
 
 type AwsSessionCredentials struct {
 	AccessKeyId     string
@@ -29,21 +30,27 @@ type AwsSessionData struct {
 }
 
 // GetAwsSessionToken gets a totp code from the vault and then gets an AWS session token
-func (a *AwsGenericPlatform) GetAwsSessionToken(ctx context.Context, vaultConfig *vault.Config) error {
+func (a *AwsGenericPlatform) GetAwsSessionToken(ctx context.Context, accessApi platform.AccessApi) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsSessionToken")
 
 	user, err := a.GetUserAccountIdFromArn(ctx, a.GetAwsUserArn())
 	if err != nil {
 		return err
 	}
-	code, err := a.GetAwsTotpToken(ctx, vaultConfig, user)
+	// This calls to Controller which eventually calls GetAwsTotpToken() via GetAccessData
+	tokens, err := accessApi.GetSessionTokens(ctx, []byte(user))
 	if err != nil {
 		return err
+	}
+	code, found := tokens[TotpTokenName]
+	if !found {
+		return fmt.Errorf("token key \"%s\" not found in aws session tokens", TotpTokenName)
 	}
 	return a.GetAwsSessionTokenWithCode(ctx, code)
 }
 
-// GetAwsTotpToken gets a totp token from the vault
+// GetAwsTotpToken gets a totp token from the vault.
+// Called only from the Controller context.
 func (a *AwsGenericPlatform) GetAwsTotpToken(ctx context.Context, vaultConfig *vault.Config, account string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsTotpToken", "account", account)
 	path := "totp/code/aws-" + account
@@ -94,7 +101,7 @@ func (a *AwsGenericPlatform) GetAwsSessionTokenWithCode(ctx context.Context, cod
 }
 
 // RefreshAwsSessionToken periodically gets a new session token
-func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) {
+func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig) {
 	interval := AwsSessionTokenRefreshInterval
 	for {
 		select {
@@ -102,7 +109,7 @@ func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig,
 		}
 		span := log.StartSpan(log.DebugLevelInfra, "refresh aws session token")
 		ctx := log.ContextWithSpan(context.Background(), span)
-		err := a.GetAwsSessionToken(ctx, vaultConfig)
+		err := a.GetAwsSessionToken(ctx, pfconfig.AccessApi)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "refresh aws session error", "err", err)
 			// retry again soon
@@ -114,28 +121,24 @@ func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig,
 	}
 }
 
-func (a *AwsGenericPlatform) GetAwsAccountAccessVars(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsAccountAccessVars", "key", key)
-
+func (a *AwsGenericPlatform) GetVaultCloudletAccessPath(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string) string {
 	vaultPath := AwsDefaultVaultPath
-	if key.Organization != "aws" {
+	if cloudlet.Key.Organization != "aws" {
 		// this is not a public cloud aws cloudlet, use the operator specific path
-		vaultPath = fmt.Sprintf("/secret/data/%s/cloudlet/%s/%s/%s/%s", region, "aws", key.Organization, physicalName, "credentials")
+		vaultPath = fmt.Sprintf("/secret/data/%s/cloudlet/aws/%s/%s/credentials", region, cloudlet.Key.Organization, cloudlet.PhysicalName)
 	}
-	envData := &infracommon.VaultEnvData{}
-	err := vault.GetData(vaultConfig, vaultPath, 0, envData)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVaultCloudletAccessPath", "path", vaultPath)
+	return vaultPath
+}
+
+func (a *AwsGenericPlatform) GetAwsAccountAccessVars(ctx context.Context, accessApi platform.AccessApi) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsAccountAccessVars")
+
+	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return fmt.Errorf("Failed to source access variables as '%s/%s' "+
-				"does not exist in secure secrets storage (Vault)",
-				key.Organization, physicalName)
-		}
-		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, vaultPath, err)
+		return err
 	}
-	a.AccountAccessVars = make(map[string]string)
-	for _, envData := range envData.Env {
-		a.AccountAccessVars[envData.Name] = envData.Value
-	}
+	a.AccountAccessVars = vars
 	a.AccountAccessVars["AWS_REGION"] = a.GetAwsRegion()
 	return nil
 }

@@ -15,9 +15,9 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/miekg/dns"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	"gortc.io/stun"
 )
 
@@ -51,9 +51,9 @@ func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
 	return nil, fmt.Errorf("http status not OK, %v", resp.StatusCode)
 }
 
-func GetUrlInfo(ctx context.Context, vaultConfig *vault.Config, fileUrlPath string) (time.Time, string, error) {
+func GetUrlInfo(ctx context.Context, accessApi platform.AccessApi, fileUrlPath string) (time.Time, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get url last-modified time", "file-url", fileUrlPath)
-	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, vaultConfig, nil)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, accessApi, nil)
 	if err != nil {
 		return time.Time{}, "", err
 	}

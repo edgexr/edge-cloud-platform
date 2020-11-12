@@ -49,8 +49,7 @@ func TestAccessVars(t *testing.T) {
 	var envvars = make(map[string]string)
 	envvars["VAULT_TOKEN"] = "dummy"
 	pc := edgeproto.PlatformConfig{
-		VaultAddr: vaultConfig.Addr,
-		EnvVar:    envvars,
+		EnvVar: envvars,
 	}
 	op := OpenstackPlatform{}
 	o := vmlayer.VMPlatform{
@@ -60,29 +59,29 @@ func TestAccessVars(t *testing.T) {
 	var cloudlet = edgeproto.Cloudlet{
 		Key: ckey,
 	}
-	err := o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestGood, &pc, edgeproto.DummyUpdateCallback)
+	err := o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestGood, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestGood result", "err", err)
 	require.Nil(t, err)
 
-	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoCert, &pc, edgeproto.DummyUpdateCallback)
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoCert, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestNoCert result", "err", err)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "missing CACERT_DATA")
 
-	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBadOSVar, &pc, edgeproto.DummyUpdateCallback)
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBadOSVar, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestBadOSVar result", "err", err)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "must start with 'OS_' prefix")
 
-	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankLines, &pc, edgeproto.DummyUpdateCallback)
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankLines, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestBlankLines result", "err", err)
 	require.Nil(t, err)
 
-	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankVars, &pc, edgeproto.DummyUpdateCallback)
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestBlankVars, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestBlankVars result", "err", err)
 	require.Nil(t, err)
 
-	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoAuthURL, &pc, edgeproto.DummyUpdateCallback)
+	err = o.SaveCloudletAccessVars(ctx, &cloudlet, accessVarsTestNoAuthURL, &pc, vaultConfig, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "accessVarsTestNoAuthURL result", "err", err)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "missing OS_AUTH_URL")

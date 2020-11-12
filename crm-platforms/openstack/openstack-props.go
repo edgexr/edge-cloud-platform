@@ -2,41 +2,24 @@ package openstack
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config) error {
-	if vaultConfig == nil || vaultConfig.Addr == "" {
-		return fmt.Errorf("vaultAddr is not specified")
-	}
-	openRCPath := vmlayer.GetVaultCloudletAccessPath(key, region, o.GetType(), physicalName, o.GetApiAccessFilename())
-	log.SpanLog(ctx, log.DebugLevelInfra, "interning vault", "addr", vaultConfig.Addr, "path", openRCPath)
-	envData := &infracommon.VaultEnvData{}
-	err := vault.GetData(vaultConfig, openRCPath, 0, envData)
+func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platform.AccessApi) error {
+	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "no secrets") {
-			return fmt.Errorf("Failed to source access variables as '%s/%s' "+
-				"does not exist in secure secrets storage (Vault)",
-				key.Organization, physicalName)
-		}
-		return fmt.Errorf("Failed to source access variables from %s, %s: %v", vaultConfig.Addr, openRCPath, err)
+		return err
 	}
-	o.openRCVars = make(map[string]string, 1)
-	for _, envData := range envData.Env {
-		o.openRCVars[envData.Name] = envData.Value
-	}
+	o.openRCVars = vars
 	if authURL, ok := o.openRCVars["OS_AUTH_URL"]; ok {
 		if strings.HasPrefix(authURL, "https") {
 			if certData, ok := o.openRCVars["OS_CACERT_DATA"]; ok {
+				key := o.VMProperties.CommonPf.PlatformConfig.CloudletKey
 				certFile := vmlayer.GetCertFilePath(key)
 				err = ioutil.WriteFile(certFile, []byte(certData), 0644)
 				if err != nil {
@@ -49,12 +32,12 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, key *edgeproto.Cl
 	return nil
 }
 
-func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	return map[string]*edgeproto.PropertyInfo{}, nil
 }
 
-func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, key *edgeproto.CloudletKey, region, physicalName string, vaultConfig *vault.Config, vars map[string]string, stage vmlayer.ProviderInitStage) error {
-	err := o.GetOpenRCVars(ctx, key, region, physicalName, vaultConfig)
+func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
+	err := o.GetOpenRCVars(ctx, accessApi)
 	if err != nil {
 		return err
 	}

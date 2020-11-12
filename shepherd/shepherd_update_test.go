@@ -10,10 +10,12 @@ import (
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_test"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 // Test notify and updates
@@ -34,9 +36,33 @@ func TestShepherdUpdate(t *testing.T) {
 	crm.RegisterServer(crmServer)
 	crmServer.Start("crm", *notifyAddrs, nil)
 	defer crmServer.Stop()
+	// handle access api
+	keyServer := node.NewAccessKeyServer(&crm.CloudletCache)
+	accessKeyGrpcServer := node.AccessKeyGrpcServer{}
+	basicUpgradeHandler := node.BasicUpgradeHandler{
+		KeyServer: keyServer,
+	}
+	getPublicCertApi := &node.TestPublicCertApi{}
+	publicCertManager := node.NewPublicCertManager("localhost", getPublicCertApi)
+	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
+	require.Nil(t, err)
+	accessKeyGrpcServer.Start("127.0.0.1:0", keyServer, tlsConfig, func(server *grpc.Server) {
+		edgeproto.RegisterCloudletAccessKeyApiServer(server, &basicUpgradeHandler)
+	})
+	defer accessKeyGrpcServer.Stop()
+	// setup access key
+	accessKey, err := node.GenerateAccessKey()
+	require.Nil(t, err)
+	nodeMgr.AccessKeyClient.AccessApiAddr = accessKeyGrpcServer.ApiAddr()
+	nodeMgr.AccessKeyClient.AccessKeyFile = "/tmp/acceskey_shepherd_unittest"
+	nodeMgr.AccessKeyClient.TestSkipTlsVerify = true
+	err = ioutil.WriteFile(nodeMgr.AccessKeyClient.AccessKeyFile, []byte(accessKey.PrivatePEM), 0600)
+	require.Nil(t, err)
 
 	// cloudlet must be sent during startup
-	crm.CloudletCache.Update(ctx, &shepherd_test.TestCloudlet, 0)
+	cloudlet := shepherd_test.TestCloudlet
+	cloudlet.CrmAccessPublicKey = accessKey.PublicPEM
+	crm.CloudletCache.Update(ctx, &cloudlet, 0)
 	set := edgeproto.GetDefaultSettings()
 	set.ShepherdMetricsCollectionInterval = edgeproto.Duration(time.Second)
 	set.ShepherdAlertEvaluationInterval = edgeproto.Duration(3 * time.Second)

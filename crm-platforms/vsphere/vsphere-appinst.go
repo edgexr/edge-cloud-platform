@@ -29,10 +29,10 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edge
 	if err != nil {
 		return err
 	}
-	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.VaultConfig, app.ImagePath)
+	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 
 	updateCallback(edgeproto.UpdateTask, "Downloading VM Image")
-	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.VaultConfig, imageName, app.ImagePath, md5Sum)
+	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageName, app.ImagePath, md5Sum)
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@
     tags:
       app: someapplication1
       cloudlet: "dmuus cloud"
-- limit: 3
+- limit: 2
   match:
     tags:
       app: autoprovHA

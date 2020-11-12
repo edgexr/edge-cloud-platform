@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -84,8 +85,32 @@ func (a *AwsGenericPlatform) GetAwsUserArn() string {
 	return val
 }
 
-func (a *AwsGenericPlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (a *AwsGenericPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	return AWSProps, nil
+}
+
+func (a *AwsGenericPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetAccessData", "dataType", dataType)
+	switch dataType {
+	case accessapi.GetCloudletAccessVars:
+		path := a.GetVaultCloudletAccessPath(ctx, cloudlet, region)
+		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
+		if err != nil {
+			return nil, err
+		}
+		return vars, nil
+	case accessapi.GetSessionTokens:
+		user := string(arg)
+		token, err := a.GetAwsTotpToken(ctx, vaultConfig, user)
+		if err != nil {
+			return nil, err
+		}
+		tokens := map[string]string{
+			TotpTokenName: token,
+		}
+		return tokens, nil
+	}
+	return nil, fmt.Errorf("AwsGeneric unhandled GetAccessData type %s", dataType)
 }
 
 func (a *AwsGenericPlatform) GetUserAccountIdFromArn(ctx context.Context, arn string) (string, error) {

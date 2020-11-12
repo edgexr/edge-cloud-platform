@@ -503,7 +503,7 @@
       tags:
         app: autoprovHA
         reason: orph*
-    limit: 3
+    limit: 2
   results:
   - name: AutoProv delete AppInst
     org: AcmeAppCo

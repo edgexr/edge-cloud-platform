@@ -10,7 +10,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -646,20 +645,16 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		vmgp.Subnets = append(vmgp.Subnets, newSubnet)
 	}
 
-	vaultAddr := v.VMProperties.CommonPf.VaultConfig.Addr
 	var vaultSSHCert string
 	if v.VMProperties.CommonPf.PlatformConfig.TestMode {
 		vaultSSHCert = TestCACert
 	} else {
-		cmd := exec.Command("curl", "-s", fmt.Sprintf("%s/v1/ssh/public_key", vaultAddr))
-		out, err := cmd.CombinedOutput()
+		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
+		publicSSHKey, err := accessApi.GetSSHPublicKey(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get vault ssh cert: %s, %v", string(out), err)
+			return nil, err
 		}
-		if !strings.Contains(string(out), "ssh-rsa") {
-			return nil, fmt.Errorf("invalid vault ssh cert: %s", string(out))
-		}
-		vaultSSHCert = string(out)
+		vaultSSHCert = publicSSHKey
 	}
 
 	var internalPortNextOctet uint32 = 101

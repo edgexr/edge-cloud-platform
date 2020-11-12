@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -19,19 +19,6 @@ var azureProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "Azure Location",
 		Description: "Azure Location",
 		Mandatory:   true,
-	},
-	"MEX_AZURE_USER": {
-		Name:        "Azure User",
-		Description: "Azure User",
-		Mandatory:   true,
-		Internal:    true,
-	},
-	"MEX_AZURE_PASS": {
-		Name:        "Azure Password",
-		Description: "Azure Password",
-		Secret:      true,
-		Mandatory:   true,
-		Internal:    true,
 	},
 }
 
@@ -50,13 +37,29 @@ func (a *AzurePlatform) GetAzurePass() string {
 	return val
 }
 
-func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context, pfconfig *pf.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error) {
+func (a *AzurePlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetProviderSpecificProps")
-	err := infracommon.InternVaultEnv(ctx, vaultConfig, azureVaultPath)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to intern vault data", "err", err)
-		err = fmt.Errorf("cannot intern vault data from vault %s", err.Error())
-		return nil, err
-	}
 	return azureProps, nil
+}
+
+func (a *AzurePlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AzurePlatform GetAccessData", "dataType", dataType)
+	switch dataType {
+	case accessapi.GetCloudletAccessVars:
+		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, azureVaultPath)
+		if err != nil {
+			return nil, err
+		}
+		return vars, nil
+	}
+	return nil, fmt.Errorf("Azure unhandled GetAccessData type %s", dataType)
+}
+
+func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
+	accessVars, err := accessApi.GetCloudletAccessVars(ctx)
+	if err != nil {
+		return err
+	}
+	a.accessVars = accessVars
+	return nil
 }

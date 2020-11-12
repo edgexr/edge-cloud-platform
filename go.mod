@@ -7,26 +7,23 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 	github.com/atlassian/go-artifactory/v2 v2.3.0
-	github.com/cloudflare/cloudflare-go v0.8.5
+	github.com/cloudflare/cloudflare-go v0.13.4
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-chef/chef v0.20.1
+	github.com/go-chef/chef v0.23.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/errors v0.19.7
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.11
-	github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31 // indirect
 	github.com/gogo/googleapis v1.1.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.0
-	github.com/gorilla/websocket v1.4.0
-	github.com/hashicorp/go-hclog v0.8.0 // indirect
+	github.com/gorilla/websocket v1.4.1
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
-	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/influxdata/influxdb v1.7.7
@@ -36,7 +33,7 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/labstack/echo v0.0.0-20180911044237-1abaa3049251
-	github.com/lib/pq v1.1.1
+	github.com/lib/pq v1.5.2
 	github.com/miekg/dns v1.1.27
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.2
@@ -51,13 +48,13 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.9.1
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/shirou/gopsutil v2.18.12+incompatible
+	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.4
 	github.com/stretchr/testify v1.6.1
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	github.com/xanzy/go-gitlab v0.16.0
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
 	google.golang.org/grpc v1.27.1
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.3.0
@@ -77,11 +74,9 @@ replace (
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.1
 
-replace golang.org/x/net => golang.org/x/net v0.0.0-20200602114024-627f9648deb9
+replace golang.org/x/net => golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
 
 replace github.com/Azure/go-ansiterm => github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-
-replace github.com/Microsoft/go-winio => github.com/Microsoft/go-winio v0.4.12
 
 replace github.com/NYTimes/gziphandler => github.com/NYTimes/gziphandler v1.1.1
 
@@ -101,11 +96,7 @@ replace github.com/bmizerany/assert => github.com/bmizerany/assert v0.0.0-201606
 
 replace github.com/cespare/xxhash => github.com/cespare/xxhash v1.1.0
 
-replace github.com/codegangsta/inject => github.com/codegangsta/inject v0.0.0-20140425184007-37d7f8432a3e
-
 replace github.com/codeskyblue/go-sh => github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
-
-replace github.com/containerd/continuity => github.com/containerd/continuity v0.0.0-20181203112020-004b46473808
 
 replace github.com/coreos/bbolt => github.com/coreos/bbolt v1.3.2
 
@@ -129,8 +120,6 @@ replace github.com/fatih/structs => github.com/fatih/structs v1.1.0
 
 replace github.com/go-ldap/ldap => github.com/go-ldap/ldap v3.0.2+incompatible
 
-replace github.com/go-test/deep => github.com/go-test/deep v1.0.1
-
 replace github.com/gocql/gocql => github.com/gocql/gocql v0.0.0-20190402132108-0e1d5de854df
 
 replace github.com/gogo/gateway => github.com/gogo/gateway v1.0.0
@@ -149,7 +138,7 @@ replace github.com/google/go-cmp => github.com/google/go-cmp v0.4.0
 
 replace github.com/gophercloud/gophercloud => github.com/gophercloud/gophercloud v0.8.0
 
-replace github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.0
+replace github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.1
 
 replace github.com/gotestyourself/gotestyourself => github.com/gotestyourself/gotestyourself v2.2.0+incompatible
 
@@ -157,21 +146,13 @@ replace github.com/grpc-ecosystem/go-grpc-middleware => github.com/grpc-ecosyste
 
 replace github.com/grpc-ecosystem/grpc-gateway => github.com/grpc-ecosystem/grpc-gateway v1.14.1
 
-replace github.com/hashicorp/go-memdb => github.com/hashicorp/go-memdb v1.0.0
-
-replace github.com/hashicorp/go-plugin => github.com/hashicorp/go-plugin v1.0.0
-
-replace github.com/hashicorp/vault => github.com/hashicorp/vault v0.11.5
-
-replace github.com/hashicorp/vault-plugin-secrets-kv => github.com/hashicorp/vault-plugin-secrets-kv v0.0.0-20190404212640-4807e6564154
+replace github.com/hashicorp/vault => github.com/hashicorp/vault v1.4.2
 
 replace github.com/influxdata/influxdb => github.com/influxdata/influxdb v1.7.7
 
 replace github.com/jefferai/jsonx => github.com/jefferai/jsonx v1.0.0
 
 replace github.com/keybase/go-crypto => github.com/keybase/go-crypto v0.0.0-20190403132359-d65b6b94177f
-
-replace github.com/lib/pq => github.com/lib/pq v1.0.0
 
 replace github.com/mitchellh/copystructure => github.com/mitchellh/copystructure v1.0.0
 
@@ -183,11 +164,7 @@ replace github.com/opencontainers/image-spec => github.com/opencontainers/image-
 
 replace github.com/opencontainers/runc => github.com/opencontainers/runc v0.1.1
 
-replace github.com/ory/dockertest => github.com/ory/dockertest v3.3.4+incompatible
-
 replace github.com/patrickmn/go-cache => github.com/patrickmn/go-cache v2.1.0+incompatible
-
-replace github.com/ryanuber/go-glob => github.com/ryanuber/go-glob v0.0.0-20160226084822-572520ed46db
 
 replace github.com/spaolacci/murmur3 => github.com/spaolacci/murmur3 v1.1.0
 
@@ -201,7 +178,7 @@ replace github.com/tmc/grpc-websocket-proxy => github.com/tmc/grpc-websocket-pro
 
 replace go.uber.org/zap => go.uber.org/zap v1.13.0
 
-replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20200305110556-506484158171
 
@@ -293,8 +270,6 @@ replace github.com/pkg/errors => github.com/pkg/errors v0.9.1
 
 replace github.com/golang/snappy => github.com/golang/snappy v0.0.1
 
-replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae
-
 replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.6.0
 
 replace github.com/go-openapi/errors => github.com/go-openapi/errors v0.19.7
@@ -308,3 +283,9 @@ replace github.com/go-openapi/validate => github.com/go-openapi/validate v0.19.1
 replace github.com/creack/pty => github.com/creack/pty v1.1.10
 
 replace github.com/jarcoal/httpmock => github.com/jarcoal/httpmock v1.0.6
+
+replace github.com/go-chef/chef => github.com/go-chef/chef v0.23.1
+
+replace github.com/hashicorp/vault/api => github.com/hashicorp/vault/api v1.0.5-0.20200317185738-82f498082f02
+
+replace github.com/cloudflare/cloudflare-go => github.com/cloudflare/cloudflare-go v0.13.4

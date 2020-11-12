@@ -11,7 +11,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/tmc/scp"
 )
@@ -24,13 +23,10 @@ type VMAccess struct {
 	Role   VMRole
 }
 
-func (v *VMPlatform) SetCloudletSignedSSHKey(ctx context.Context, vaultConfig *vault.Config) error {
+func (v *VMPlatform) SetCloudletSignedSSHKey(ctx context.Context, accessApi platform.AccessApi) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Sign cloudlet public key from Vault")
 
-	data := map[string]interface{}{
-		"public_key": v.VMProperties.sshKey.PublicKey,
-	}
-	signedKey, err := infracommon.GetSignedKeyFromVault(vaultConfig, data)
+	signedKey, err := accessApi.SignSSHKey(ctx, v.VMProperties.sshKey.PublicKey)
 	if err != nil {
 		return err
 	}
@@ -49,7 +45,7 @@ func (v *VMPlatform) triggerRefreshCloudletSSHKeys() {
 	}
 }
 
-func (v *VMPlatform) RefreshCloudletSSHKeys(vaultConfig *vault.Config) {
+func (v *VMPlatform) RefreshCloudletSSHKeys(accessApi platform.AccessApi) {
 	interval := CloudletSSHKeyRefreshInterval
 	for {
 		select {
@@ -58,7 +54,7 @@ func (v *VMPlatform) RefreshCloudletSSHKeys(vaultConfig *vault.Config) {
 		}
 		span := log.StartSpan(log.DebugLevelInfra, "refresh Cloudlet SSH Key")
 		ctx := log.ContextWithSpan(context.Background(), span)
-		err := v.SetCloudletSignedSSHKey(ctx, vaultConfig)
+		err := v.SetCloudletSignedSSHKey(ctx, accessApi)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "refresh cloudlet ssh key failure", "err", err)
 			// retry again soon
@@ -70,7 +66,7 @@ func (v *VMPlatform) RefreshCloudletSSHKeys(vaultConfig *vault.Config) {
 	}
 }
 
-func (v *VMPlatform) InitCloudletSSHKeys(ctx context.Context, vaultConfig *vault.Config) error {
+func (v *VMPlatform) InitCloudletSSHKeys(ctx context.Context, accessApi platform.AccessApi) error {
 	// Generate Cloudlet SSH Keys
 	cloudletPubKey, cloudletPrivKey, err := ssh.GenKeyPair()
 	if err != nil {
@@ -78,7 +74,7 @@ func (v *VMPlatform) InitCloudletSSHKeys(ctx context.Context, vaultConfig *vault
 	}
 	v.VMProperties.sshKey.PublicKey = cloudletPubKey
 	v.VMProperties.sshKey.PrivateKey = cloudletPrivKey
-	err = v.SetCloudletSignedSSHKey(ctx, vaultConfig)
+	err = v.SetCloudletSignedSSHKey(ctx, accessApi)
 	if err != nil {
 		return err
 	}
@@ -337,7 +333,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	return cloudletVMs, nil
 }
 
-func GetVaultCAScript(vaultConfig *vault.Config) string {
+func GetVaultCAScript(publicSSHKey string) string {
 	return fmt.Sprintf(`
 #!/bin/bash
 
@@ -346,8 +342,10 @@ die() {
         exit 2
 }
 
-curl %s/v1/ssh/public_key | sudo tee /etc/ssh/trusted-user-ca-keys.pem
-[[ $? -ne 0 ]] && die "failed to get CA cert from vault"
+sudo cat > /etc/ssh/trusted-user-ca-keys.pem << EOL
+%s
+EOL
+
 sudo grep "ssh-rsa" /etc/ssh/trusted-user-ca-keys.pem
 [[ $? -ne 0 ]] && die "invalid CA cert from vault"
 
@@ -359,10 +357,10 @@ rm -f id_rsa_mex
 echo "" > .ssh/authorized_keys
 
 echo "Done setting up vault ssh"
-`, vaultConfig.Addr)
+`, publicSSHKey)
 }
 
-func GetVaultCAScriptForMasterNode(vaultConfig *vault.Config) string {
+func GetVaultCAScriptForMasterNode(publicSSHKey string) string {
 	k8sJoinSvcScript := `
 mkdir -p /var/tmp/k8s-join
 cp /tmp/k8s-join-cmd.tmp /var/tmp/k8s-join/k8s-join-cmd
@@ -388,7 +386,7 @@ sudo systemctl start k8s-join
 
 echo "Done setting k8s-join service"
 `
-	vaultCAScript := GetVaultCAScript(vaultConfig)
+	vaultCAScript := GetVaultCAScript(publicSSHKey)
 	return vaultCAScript + k8sJoinSvcScript
 }
 
@@ -408,8 +406,12 @@ func ExecuteUpgradeScript(ctx context.Context, vmName string, client ssh.Client,
 	return nil
 }
 
-func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, vaultConfig *vault.Config, caches *platform.Caches) (map[string]string, error) {
+func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, accessApi platform.AccessApi, caches *platform.Caches) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpgradeFuncHandleSSHKeys")
+	publicSSHKey, err := accessApi.GetSSHPublicKey(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vault ssh cert: %v", err)
+	}
 	// Set SSH client to use mex private key
 	v.VMProperties.sshKey.UseMEXPrivateKey = true
 	fixVMs, err := v.GetAllCloudletVMs(ctx, caches)
@@ -426,9 +428,9 @@ func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, vaultConfig *
 		script := ""
 		if vm.Role == RoleMaster {
 			// Start k8s-join webserver
-			script = GetVaultCAScriptForMasterNode(vaultConfig)
+			script = GetVaultCAScriptForMasterNode(publicSSHKey)
 		} else {
-			script = GetVaultCAScript(vaultConfig)
+			script = GetVaultCAScript(publicSSHKey)
 		}
 		err = ExecuteUpgradeScript(ctx, vm.Name, vm.Client, script)
 		if err != nil {

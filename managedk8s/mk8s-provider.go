@@ -14,15 +14,17 @@ import (
 
 // ManagedK8sProvider is an interface that platforms implement to perform the details of interfacing with managed kubernetes services
 type ManagedK8sProvider interface {
-	GatherCloudletInfo(ctx context.Context, vaultConfig *vault.Config, info *edgeproto.CloudletInfo) error
-	GetProviderSpecificProps(ctx context.Context, pfconfig *platform.PlatformConfig, vaultConfig *vault.Config) (map[string]*edgeproto.PropertyInfo, error)
+	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
+	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetProperties(props *infracommon.InfraProperties)
-	Login(ctx context.Context, vaultConfig *vault.Config) error
+	Login(ctx context.Context) error
 	GetCredentials(ctx context.Context, clusterName string) error
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
 	RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error
 	RunClusterDeleteCommand(ctx context.Context, clusterName string) error
+	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
+	GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error)
 }
 
 const (
@@ -44,25 +46,27 @@ func (m *ManagedK8sPlatform) GetType() string {
 
 func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", m.GetType())
-	vaultConfig, err := vault.BestConfig(platformConfig.VaultAddr)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to get vault configs", "vaultAddr", platformConfig.VaultAddr, "err", err)
-		return err
-	}
-	props, err := m.Provider.GetProviderSpecificProps(ctx, platformConfig, vaultConfig)
+	props, err := m.Provider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
 	}
-	if err := m.CommonPf.InitInfraCommon(ctx, platformConfig, props, vaultConfig); err != nil {
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "Init API access properties")
+	err = m.Provider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars)
+	if err != nil {
+		return err
+	}
+
+	if err := m.CommonPf.InitInfraCommon(ctx, platformConfig, props); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
 	m.Provider.SetProperties(&m.CommonPf.Properties)
-	return m.Provider.Login(ctx, m.CommonPf.VaultConfig)
+	return m.Provider.Login(ctx)
 }
 
 func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	return m.Provider.GatherCloudletInfo(ctx, m.CommonPf.VaultConfig, info)
+	return m.Provider.GatherCloudletInfo(ctx, info)
 }
 
 func (m *ManagedK8sPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
@@ -80,7 +84,7 @@ func (m *ManagedK8sPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterI
 func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	props := edgeproto.CloudletProps{}
 	props.Properties = make(map[string]*edgeproto.PropertyInfo)
-	providerProps, err := m.Provider.GetProviderSpecificProps(ctx, m.CommonPf.PlatformConfig, m.CommonPf.VaultConfig)
+	providerProps, err := m.Provider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,4 +92,9 @@ func (m *ManagedK8sPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.C
 		props.Properties[k] = v
 	}
 	return &props, nil
+}
+
+func (m *ManagedK8sPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "ManagedK8sPlatform GetAccessData", "dataType", dataType)
+	return m.Provider.GetAccessData(ctx, cloudlet, region, vaultConfig, dataType, arg)
 }

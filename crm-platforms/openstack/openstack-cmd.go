@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -23,10 +22,7 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 	start := time.Now()
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Start", "name", name, "parms", parmstr)
-	newSh := sh.NewSession()
-	for key, val := range s.openRCVars {
-		newSh.SetEnv(key, val)
-	}
+	newSh := infracommon.Sh(s.openRCVars)
 
 	out, err := newSh.Command(name, a).CombinedOutput()
 	if err != nil {
@@ -678,7 +674,7 @@ func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName
 
 //CreateImageFromUrl downloads image from URL and then puts into glance
 func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
-	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.VaultConfig, imageName, imageUrl, md5Sum)
+	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imageName, imageUrl, md5Sum)
 	if err != nil {
 		return err
 	}
@@ -1025,7 +1021,7 @@ func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, im
 			return "", err
 		}
 		// Validate if pfImageName is same as we expected
-		_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.VMProperties.CommonPf.VaultConfig, imgPath)
+		_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imgPath)
 		if err != nil {
 			return "", err
 		}

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -40,7 +40,7 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, vaultConfig *vault.Config) error {
+func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, imagePath string, accessApi platform.AccessApi) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", imagePath)
 
 	if !strings.Contains(imagePath, "/") {
@@ -58,7 +58,7 @@ func SeedDockerSecret(ctx context.Context, client ssh.Client, clusterInst *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "no secret needed for public image")
 		return nil
 	}
-	auth, err := cloudcommon.GetRegistryAuth(ctx, imagePath, vaultConfig)
+	auth, err := accessApi.GetRegistryAuth(ctx, imagePath)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "err", err)
 		return nil

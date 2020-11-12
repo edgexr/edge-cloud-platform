@@ -19,6 +19,10 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+func (s *TestClient) GetAccessData(ctx context.Context, in *edgeproto.AccessDataRequest) (*edgeproto.AccessDataReply, error) {
+	return nil, nil
+}
+
 func (s *TestClient) GetCas(ctx context.Context, in *edgeproto.GetCasRequest) (*edgeproto.GetCasReply, error) {
 	return nil, nil
 }
