@@ -311,6 +311,17 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	//   403: forbidden
 	//   404: notFound
 	auth.POST("/user/delete", DeleteUser)
+	// swagger:route POST /auth/user/update User UpdateUser
+	// Update User.
+	// Updates current user.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/user/update", UpdateUser)
 	auth.POST("/user/newpass", NewPassword)
 	auth.POST("/role/assignment/show", ShowRoleAssignment)
 	auth.POST("/role/perms/show", ShowRolePerms)

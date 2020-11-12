@@ -676,3 +676,94 @@ func isUserAdmin(ctx context.Context, username string) (bool, error) {
 	}
 	return false, nil
 }
+
+func UpdateUser(c echo.Context) error {
+	ctx := GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+
+	cuser := ormapi.CreateUser{}
+	cuser.User.Name = claims.Username
+	user := &cuser.User
+	db := loggedDB(ctx)
+	res := db.Where(user).First(user)
+	if res.RecordNotFound() {
+		return c.JSON(http.StatusBadRequest, Msg("User not found"))
+	}
+	old := *user
+
+	// read args onto existing data, will overwrite only specified fields
+	if err := c.Bind(&cuser); err != nil {
+		return bindErr(c, err)
+	}
+	// check for fields that are not allowed to change
+	if old.Name != user.Name {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change username"))
+	}
+	if old.EmailVerified != user.EmailVerified {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change emailverified"))
+	}
+	if old.Passhash != user.Passhash {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change passhash"))
+	}
+	if old.Salt != user.Salt {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change salt"))
+	}
+	if old.Iter != user.Iter {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change iter"))
+	}
+	if !old.CreatedAt.Equal(user.CreatedAt) {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change createdat"))
+	}
+	if !old.UpdatedAt.Equal(user.UpdatedAt) {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change updatedat"))
+	}
+	if old.Locked != user.Locked {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change locked"))
+	}
+	if old.PassEntropy != user.PassEntropy {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change passentropy"))
+	}
+	if old.PassCrackTimeSec != user.PassCrackTimeSec {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot change passcracktimesec"))
+	}
+
+	// if email changed, need to verify
+	sendVerify := false
+	if old.Email != user.Email {
+		config, err := getConfig(ctx)
+		if err != nil {
+			return err
+		}
+		if !getSkipVerifyEmail(ctx, config) {
+			err := ValidEmailRequest(c, &cuser.Verify)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, MsgErr(err))
+			}
+			sendVerify = true
+		}
+		user.EmailVerified = false
+	}
+
+	err = db.Save(user).Error
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"email_pkey") {
+			return fmt.Errorf("Email %s already in use", user.Email)
+		}
+		return dbErr(err)
+	}
+
+	if sendVerify {
+		err = sendVerifyEmail(ctx, user.Name, &cuser.Verify)
+		if err != nil {
+			undoErr := db.Save(&old).Error
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "undo update user failed", "user", claims.Username, "err", undoErr)
+			}
+			return err
+		}
+	}
+	return nil
+}

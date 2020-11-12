@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -158,6 +159,37 @@ func TestServer(t *testing.T) {
 	status, err = mcClient.CreateUser(uri, &user2ci)
 	require.NotNil(t, err, "create duplicate user (case-insensitive)")
 	require.Equal(t, http.StatusBadRequest, status, "create dup user")
+
+	// update user2
+	updateNewEmail := "misteryyy@gmail.com"
+	updateNewPicture := "my pic"
+	updateNewNickname := "mistery"
+	mapData := map[string]interface{}{
+		"Email":    updateNewEmail,
+		"Picture":  updateNewPicture,
+		"Nickname": updateNewNickname,
+	}
+	jsonData, err := json.Marshal(mapData)
+	require.Nil(t, err)
+	status, err = mcClient.UpdateUser(uri, tokenMisterY, string(jsonData))
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	checkUser, status, err := showCurrentUser(mcClient, uri, tokenMisterY)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, updateNewEmail, checkUser.Email)
+	require.Equal(t, updateNewPicture, checkUser.Picture)
+	require.Equal(t, updateNewNickname, checkUser.Nickname)
+
+	// update user: disallowed fields
+	mapData = map[string]interface{}{
+		"Passhash": "uhoh",
+	}
+	jsonData, err = json.Marshal(mapData)
+	require.Nil(t, err)
+	status, err = mcClient.UpdateUser(uri, tokenMisterY, string(jsonData))
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
 
 	// create an Organization
 	org2 := ormapi.Organization{

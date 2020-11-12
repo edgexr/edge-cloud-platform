@@ -11,6 +11,7 @@ type Api interface {
 
 	CreateUser(uri string, user *ormapi.User) (int, error)
 	DeleteUser(uri, token string, user *ormapi.User) (int, error)
+	UpdateUser(uri, token string, createUserJSON string) (int, error)
 	ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error)
 	RestrictedUserUpdate(uri, token string, user map[string]interface{}) (int, error)
 	NewPassword(uri, token, password string) (int, error)

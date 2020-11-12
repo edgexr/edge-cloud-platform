@@ -25,6 +25,12 @@ func GetUserCommand() *cobra.Command {
 		ReqData:      &ormapi.User{},
 		Run:          runRest("/auth/user/delete"),
 	}, &cli.Command{
+		Use:          "update",
+		OptionalArgs: "email nickname familyname givenname callbackurl",
+		AliasArgs:    "email=user.email nickname=user.nickname familyname=user.familyname givenname=user.givenname callbackurl=verify.callbackurl",
+		ReqData:      &ormapi.CreateUser{},
+		Run:          runRest("/auth/user/update"),
+	}, &cli.Command{
 		Use:          "show",
 		ReqData:      &ormapi.Organization{},
 		OptionalArgs: "orgname",
