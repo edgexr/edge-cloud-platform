@@ -29,6 +29,11 @@ func (s *Client) DeleteUser(uri, token string, user *ormapi.User) (int, error) {
 	return s.runObjs(uri, token, args, user, nil)
 }
 
+func (s *Client) UpdateUser(uri, token string, createUserJSON string) (int, error) {
+	args := []string{"user", "update"}
+	return s.runObjs(uri, token, args, createUserJSON, nil)
+}
+
 func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error) {
 	args := []string{"user", "show"}
 	users := []ormapi.User{}

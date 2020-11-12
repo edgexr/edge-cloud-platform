@@ -57,6 +57,10 @@ func (s *Client) DeleteUser(uri, token string, user *ormapi.User) (int, error) {
 	return s.PostJson(uri+"/auth/user/delete", token, user, nil)
 }
 
+func (s *Client) UpdateUser(uri, token string, createUserJSON string) (int, error) {
+	return s.PostJson(uri+"/auth/user/update", token, createUserJSON, nil)
+}
+
 func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error) {
 	users := []ormapi.User{}
 	status, err := s.PostJson(uri+"/auth/user/show", token, org, &users)
