@@ -124,10 +124,16 @@ resources:
                   - path: /etc/ssh/trusted-user-ca-keys.pem
                     content: ssh-rsa DUMMYTESTCACERT
                     append: true
+                  - path:  /etc/systemd/resolved.conf
+                    content: |
+                       [Resolve]
+                       DNS=1.1.1.1
+                       FallbackDNS=1.0.0.1
                 chpasswd: { expire: False }
                 ssh_pwauth: False
                 timezone: UTC
                 runcmd:
+                 - systemctl restart systemd-resolved
                  - echo MOBILEDGEX doing ifconfig
                  - ifconfig -a
             metadata:
@@ -176,10 +182,16 @@ resources:
                   - path: /etc/ssh/trusted-user-ca-keys.pem
                     content: ssh-rsa DUMMYTESTCACERT
                     append: true
+                  - path:  /etc/systemd/resolved.conf
+                    content: |
+                       [Resolve]
+                       DNS=1.1.1.1
+                       FallbackDNS=1.0.0.1
                 chpasswd: { expire: False }
                 ssh_pwauth: False
                 timezone: UTC
                 runcmd:
+                 - systemctl restart systemd-resolved
                  - echo MOBILEDGEX doing ifconfig
                  - ifconfig -a
             metadata:
@@ -218,10 +230,16 @@ resources:
                   - path: /etc/ssh/trusted-user-ca-keys.pem
                     content: ssh-rsa DUMMYTESTCACERT
                     append: true
+                  - path:  /etc/systemd/resolved.conf
+                    content: |
+                       [Resolve]
+                       DNS=1.1.1.1
+                       FallbackDNS=1.0.0.1
                 chpasswd: { expire: False }
                 ssh_pwauth: False
                 timezone: UTC
                 runcmd:
+                 - systemctl restart systemd-resolved
                  - echo MOBILEDGEX doing ifconfig
                  - ifconfig -a
             metadata:
@@ -260,10 +278,16 @@ resources:
                   - path: /etc/ssh/trusted-user-ca-keys.pem
                     content: ssh-rsa DUMMYTESTCACERT
                     append: true
+                  - path:  /etc/systemd/resolved.conf
+                    content: |
+                       [Resolve]
+                       DNS=1.1.1.1
+                       FallbackDNS=1.0.0.1
                 chpasswd: { expire: False }
                 ssh_pwauth: False
                 timezone: UTC
                 runcmd:
+                 - systemctl restart systemd-resolved
                  - echo MOBILEDGEX doing ifconfig
                  - ifconfig -a
             metadata:
