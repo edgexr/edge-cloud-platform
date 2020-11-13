@@ -45,7 +45,9 @@ class Chef
         "useVaultCerts" => false,
         "chefServerPath" => true,
         "deploymentTag" => true,
-        "upgrade" => false
+        "upgrade" => false,
+        "accessKeyFile" => true,
+        "accessApiAddr" => true
       }
       cmd = extract_cmd("crmserver", argsmap, false, false) 
       cmd
@@ -68,7 +70,9 @@ class Chef
         "useVaultCAs" => false,
         "useVaultCerts" => false,
         "chefServerPath" => true,
-        "deploymentTag" => true
+        "deploymentTag" => true,
+        "accessKeyFile" => true,
+        "accessApiAddr" => true
       }
       cmd = extract_cmd("shepherd", argsmap, false, false)
       cmd
