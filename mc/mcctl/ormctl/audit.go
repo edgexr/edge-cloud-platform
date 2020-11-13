@@ -14,6 +14,7 @@ func GetAuditCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "showself",
 		OptionalArgs: "limit operation tags starttime endtime startage endage",
+		AliasArgs:    strings.Join(AuditAliasArgs, " "),
 		Comments:     AuditSelfComments,
 		SpecialArgs:  &AuditSpecialArgs,
 		ReqData:      &ormapi.AuditQuery{},
@@ -22,6 +23,7 @@ func GetAuditCommand() *cobra.Command {
 	}, &cli.Command{
 		Use:          "showorg",
 		OptionalArgs: "org limit operation tags starttime endtime startage endage",
+		AliasArgs:    strings.Join(AuditAliasArgs, " "),
 		Comments:     AuditOrgComments,
 		SpecialArgs:  &AuditSpecialArgs,
 		ReqData:      &ormapi.AuditQuery{},
@@ -62,4 +64,11 @@ var AuditSelfComments = map[string]string{
 
 var AuditSpecialArgs = map[string]string{
 	"tags": "StringToString",
+}
+
+var AuditAliasArgs = []string{
+	"starttime=timerange.starttime",
+	"endtime=timerange.endtime",
+	"startage=timerange.startage",
+	"endage=timerange.endage",
 }

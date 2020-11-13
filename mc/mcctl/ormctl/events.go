@@ -71,6 +71,10 @@ var EventsAliasArgs = []string{
 	"noterror=notmatch.error",
 	"nottags=notmatch.tags",
 	"notfailed=notmatch.failed",
+	"starttime=timerange.starttime",
+	"endtime=timerange.endtime",
+	"startage=timerange.startage",
+	"endage=timerange.endage",
 }
 
 var EventsComments = map[string]string{
