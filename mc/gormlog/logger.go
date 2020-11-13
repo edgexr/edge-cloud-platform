@@ -2,9 +2,24 @@ package gormlog
 
 import (
 	"context"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+var DoNotLogFields = map[string]struct{}{
+	"passhash":            {},
+	"salt":                {},
+	"iter":                {},
+	"picture":             {},
+	"pass_entropy":        {},
+	"pass_crack_time_sec": {},
+}
+
+var updateFieldRE = regexp.MustCompile(`"([^"]+?)" = \$(\d+)`)
+var insertFieldRE = regexp.MustCompile(`"([^"]+?)"`)
 
 // GormLogger carries the span context into the database logger
 // so it can log SQL calls. It implements the gorm.logger interface.
@@ -23,7 +38,7 @@ func (s *Logger) Print(v ...interface{}) {
 		kvs = append(kvs, "sql")
 		kvs = append(kvs, v[3])
 		kvs = append(kvs, "vars")
-		kvs = append(kvs, v[4])
+		kvs = append(kvs, filterDoNotLog(v[3], v[4]))
 		kvs = append(kvs, "rows-affected")
 		kvs = append(kvs, v[5])
 		kvs = append(kvs, "took")
@@ -34,4 +49,77 @@ func (s *Logger) Print(v ...interface{}) {
 		kvs = append(kvs, v[2:])
 	}
 	log.SpanLog(s.Ctx, log.DebugLevelApi, msg, kvs...)
+}
+
+func filterDoNotLog(query, vars interface{}) interface{} {
+	queryStr, ok := query.(string)
+	if !ok {
+		return vars
+	}
+	varsArray, ok := vars.([]interface{})
+	if !ok {
+		return vars
+	}
+	var dontLog []int
+	if strings.HasPrefix(queryStr, "UPDATE") {
+		dontLog = findUpdateFields(queryStr, DoNotLogFields)
+	} else if strings.HasPrefix(queryStr, "INSERT") {
+		dontLog = findInsertFields(queryStr, DoNotLogFields)
+	}
+	for _, ii := range dontLog {
+		// note that sql fields index starts from 1, not 0
+		if ii == 0 {
+			continue
+		}
+		ii--
+		if ii >= len(varsArray) {
+			continue
+		}
+		varsArray[ii] = ""
+	}
+	return varsArray
+}
+
+func findUpdateFields(sql string, fieldNames map[string]struct{}) []int {
+	matches := updateFieldRE.FindAllStringSubmatch(sql, -1)
+	if matches == nil {
+		return nil
+	}
+	varIndices := []int{}
+	for _, match := range matches {
+		if len(match) != 3 {
+			continue
+		}
+		if _, found := fieldNames[match[1]]; !found {
+			continue
+		}
+		ii, err := strconv.Atoi(match[2])
+		if err != nil {
+			continue
+		}
+		varIndices = append(varIndices, ii)
+	}
+	return varIndices
+}
+
+func findInsertFields(sql string, fieldNames map[string]struct{}) []int {
+	matches := insertFieldRE.FindAllStringSubmatch(sql, -1)
+	if matches == nil {
+		return nil
+	}
+	varIndices := []int{}
+	for ii, match := range matches {
+		if len(match) != 2 {
+			continue
+		}
+		if _, found := fieldNames[match[1]]; !found {
+			continue
+		}
+		// index is the order in which it's found.
+		// Note that the regexp will also match the table name,
+		// and that ends up as index 0, which is ok because
+		// the returned indices should start from 1.
+		varIndices = append(varIndices, ii)
+	}
+	return varIndices
 }
