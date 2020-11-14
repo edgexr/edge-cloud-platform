@@ -37,7 +37,7 @@ func TestShepherdUpdate(t *testing.T) {
 	crmServer.Start("crm", *notifyAddrs, nil)
 	defer crmServer.Stop()
 	// handle access api
-	keyServer := node.NewAccessKeyServer(&crm.CloudletCache)
+	keyServer := node.NewAccessKeyServer(&crm.CloudletCache, "")
 	accessKeyGrpcServer := node.AccessKeyGrpcServer{}
 	basicUpgradeHandler := node.BasicUpgradeHandler{
 		KeyServer: keyServer,
