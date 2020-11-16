@@ -629,3 +629,7 @@ func (a *AwsEc2Platform) GetFreePrecreatedSubnet(ctx context.Context, subnetName
 	}
 	return fmt.Errorf("No free subnet found for type %s", subnetType)
 }
+
+func (o *AwsEc2Platform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+	return fmt.Errorf("Additional networks not supported in AWS EC2 cloudlets")
+}

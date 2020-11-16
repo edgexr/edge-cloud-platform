@@ -600,6 +600,14 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 				return nil, fmt.Errorf("cannot find infra external network %s", cloudlet.InfraConfig.ExternalNetworkName)
 			}
 		}
+		additionalNets := v.VMProperties.GetCloudletAdditionalPlatformNetworks()
+		if len(additionalNets) > 0 {
+			err = v.VMProvider.ValidateAdditionalNetworks(ctx, additionalNets)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		flavorList, err := v.VMProvider.GetFlavorList(ctx)
 		if err != nil {
 			return nil, err
@@ -677,6 +685,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			true, //connect external
 			WithChefParams(chefParams),
 			WithAccessKey(pfConfig.CrmAccessPrivateKey),
+			WithAdditionalNetworks(v.VMProperties.GetCloudletAdditionalPlatformNetworks()),
 		)
 		if err != nil {
 			return nil, err
