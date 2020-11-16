@@ -127,4 +127,23 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 			},
 		},
 	},
+	ormapi.AlertReceiver{
+		Name:     "testclusteremailreceiver",
+		Type:     AlertReceiverTypeEmail,
+		Severity: cloudcommon.AlertSeverityError,
+		User:     testUsers[0],
+		Email:    "testuser1@testorg.net",
+		AppInst: edgeproto.AppInstKey{
+			ClusterInstKey: edgeproto.ClusterInstKey{
+				ClusterKey: edgeproto.ClusterKey{
+					Name: "testCluster",
+				},
+				CloudletKey: edgeproto.CloudletKey{
+					Name:         "testCloudlet",
+					Organization: "testCloudletOrg",
+				},
+				Organization: "testClusterOrg",
+			},
+		},
+	},
 }

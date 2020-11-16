@@ -565,6 +565,39 @@ func TestAlertMgrServer(t *testing.T) {
 	require.Nil(t, err)
 	require.Len(t, receivers, 0)
 
+	// Test cluster alert receivers
+	err = testAlertMgrServer.CreateReceiver(ctx, &testAlertReceivers[4])
+	require.Nil(t, err)
+	fakeAlertmanager.verifyReceiversCnt(t, 2)
+	// Validate receivers
+	receiver = fakeAlertmanager.findReceiver(&testAlertReceivers[4])
+	require.NotNil(t, receiver)
+	require.Len(t, receiver.EmailConfigs, 1)
+	require.Equal(t, testAlertReceivers[4].Email, receiver.EmailConfigs[0].To)
+	// check route and labels
+	route = fakeAlertmanager.findRouteByReceiver(&testAlertReceivers[4])
+	require.NotNil(t, route)
+	routeLblVal, found = route.Match[edgeproto.ClusterInstKeyTagOrganization]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.Organization)
+	routeLblVal, found = route.Match[edgeproto.ClusterKeyTagName]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.ClusterKey.Name)
+	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagName]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.CloudletKey.Name)
+	routeLblVal, found = route.Match[edgeproto.CloudletKeyTagOrganization]
+	require.True(t, found)
+	require.Equal(t, routeLblVal, testAlertReceivers[4].AppInst.ClusterInstKey.CloudletKey.Organization)
+
+	// Verify ShowReceivers
+	receivers, err = testAlertMgrServer.ShowReceivers(ctx, nil)
+	require.Nil(t, err)
+	// should be a single receiver
+	require.Len(t, receivers, 1)
+	// check the receiver and all fields
+	require.Equal(t, testAlertReceivers[4], receivers[0])
+
 	// TODO - test silencers
 	testAlertMgrServer.Stop()
 }
