@@ -61,6 +61,7 @@ type VMProvider interface {
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
 	CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error
 	GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error)
+	ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error
 }
 
 // VMPlatform contains the needed by all VM based platforms

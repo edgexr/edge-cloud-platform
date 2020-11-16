@@ -137,6 +137,7 @@ type VMRequestSpec struct {
 	ChefParams              *chefmgmt.VMChefParams
 	OptionalResource        string
 	AccessKey               string
+	AdditionalNetworks      []string
 }
 
 type VMReqOp func(vmp *VMRequestSpec) error
@@ -218,6 +219,12 @@ func WithOptionalResource(optRes string) VMReqOp {
 func WithAccessKey(accessKey string) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.AccessKey = accessKey
+		return nil
+	}
+}
+func WithAdditionalNetworks(networks []string) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.AdditionalNetworks = networks
 		return nil
 	}
 }
@@ -668,7 +675,6 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		var role VMRole
 		var newPorts []PortOrchestrationParams
 		internalPortName := GetPortName(vm.Name, vm.ConnectToSubnet)
-		externalPortName := GetPortName(vm.Name, externalNetName)
 
 		connectToPreexistingSubnet := false
 		if vm.ConnectToSubnet != "" && spec.NewSubnetName != vm.ConnectToSubnet {
@@ -804,49 +810,63 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		}
 
 		if vm.ConnectToExternalNet {
-			if spec.NewSecgrpName == "" {
-				return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
+
+			extNets := []string{}
+			if vm.ConnectToExternalNet {
+				extNets = append(extNets, externalNetName)
 			}
-			var externalport PortOrchestrationParams
-			if vmgp.Netspec.FloatingIPNet != "" {
-				externalport = PortOrchestrationParams{
-					Name:        externalPortName,
-					Id:          v.VMProvider.NameSanitize(externalPortName),
-					NetworkName: vmgp.Netspec.FloatingIPNet,
-					NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
-					VnicType:    vmgp.Netspec.VnicType,
-					NetworkType: NetTypeExternal,
+			if len(vm.AdditionalNetworks) > 0 {
+				err = v.VMProvider.ValidateAdditionalNetworks(ctx, vm.AdditionalNetworks)
+				if err != nil {
+					return nil, err
 				}
-				fip := FloatingIPOrchestrationParams{
-					Name:         externalPortName + "-fip",
-					FloatingIpId: NextAvailableResource,
-					Port:         NewResourceReference(externalport.Name, externalport.Id, false),
+				extNets = append(extNets, vm.AdditionalNetworks...)
+			}
+			for _, net := range extNets {
+				portName := GetPortName(vm.Name, net)
+				if spec.NewSecgrpName == "" {
+					return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
 				}
-				if len(spec.VMs) == 1 {
-					fip.ParamName = "floatingIpId"
+				var externalport PortOrchestrationParams
+				if vmgp.Netspec.FloatingIPNet != "" {
+					externalport = PortOrchestrationParams{
+						Name:        portName,
+						Id:          v.VMProvider.NameSanitize(portName),
+						NetworkName: vmgp.Netspec.FloatingIPNet,
+						NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
+						VnicType:    vmgp.Netspec.VnicType,
+						NetworkType: NetTypeExternal,
+					}
+					fip := FloatingIPOrchestrationParams{
+						Name:         portName + "-fip",
+						FloatingIpId: NextAvailableResource,
+						Port:         NewResourceReference(externalport.Name, externalport.Id, false),
+					}
+					if len(spec.VMs) == 1 {
+						fip.ParamName = "floatingIpId"
+					} else {
+						fip.ParamName = fmt.Sprintf("floatingIpId%d", ii+1)
+					}
+					vmgp.FloatingIPs = append(vmgp.FloatingIPs, fip)
+
 				} else {
-					fip.ParamName = fmt.Sprintf("floatingIpId%d", ii+1)
+					externalport = PortOrchestrationParams{
+						Name:        portName,
+						Id:          v.VMProvider.IdSanitize(portName),
+						NetworkName: net,
+						NetworkId:   v.VMProvider.IdSanitize(net),
+						VnicType:    vmgp.Netspec.VnicType,
+						NetworkType: NetTypeExternal,
+					}
 				}
-				vmgp.FloatingIPs = append(vmgp.FloatingIPs, fip)
-
-			} else {
-				externalport = PortOrchestrationParams{
-					Name:        externalPortName,
-					Id:          v.VMProvider.IdSanitize(externalPortName),
-					NetworkName: externalNetName,
-					NetworkId:   v.VMProvider.IdSanitize(externalNetName),
-					VnicType:    vmgp.Netspec.VnicType,
-					NetworkType: NetTypeExternal,
+				externalport.SecurityGroups = []ResourceReference{
+					NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
 				}
+				if !spec.SkipDefaultSecGrp {
+					externalport.SecurityGroups = append(externalport.SecurityGroups, NewResourceReference(cloudletSecGrpID, cloudletSecGrpID, true))
+				}
+				newPorts = append(newPorts, externalport)
 			}
-			externalport.SecurityGroups = []ResourceReference{
-				NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
-			}
-			if !spec.SkipDefaultSecGrp {
-				externalport.SecurityGroups = append(externalport.SecurityGroups, NewResourceReference(cloudletSecGrpID, cloudletSecGrpID, true))
-			}
-			newPorts = append(newPorts, externalport)
-
 		}
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)

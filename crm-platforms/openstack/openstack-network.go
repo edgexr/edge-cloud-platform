@@ -128,8 +128,37 @@ func (o *OpenstackPlatform) ValidateNetwork(ctx context.Context) error {
 	return nil
 }
 
-//PrepNetwork validates and does the work needed to ensure MEX network setup
+// ValidateAdditionalNetworks ensures that any specified additional networks have
+// just one subnet with no default GW and DHCP must be enabled
+func (o *OpenstackPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ValidateAdditionalNetworks")
+
+	for _, n := range additionalNets {
+		subnets, err := o.ListSubnets(ctx, n)
+		if err != nil {
+			return err
+		}
+		if len(subnets) != 1 {
+			return fmt.Errorf("Unexpected number of subnets: %d in network %s", len(subnets), n)
+		}
+		subnet, err := o.GetSubnetDetail(ctx, subnets[0].Name)
+		if err != nil {
+			return err
+		}
+		if subnet.GatewayIP != "" {
+			return fmt.Errorf("Additional network cannot have a Gateway IP: %s", subnet.Name)
+		}
+		if !subnet.EnableDHCP {
+			return fmt.Errorf("Additional network must have DHCP enabled: %s", subnet.Name)
+		}
+	}
+	return nil
+}
+
+// PrepNetwork validates and does the work needed to ensure MEX network setup
 func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "PrepNetwork")
+
 	nets, err := o.ListNetworks(ctx)
 	if err != nil {
 		return err
@@ -144,6 +173,11 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
 	}
 	if !found {
 		return fmt.Errorf("cannot find ext net %s", o.VMProperties.GetCloudletExternalNetwork())
+	}
+
+	err = o.ValidateAdditionalNetworks(ctx, o.VMProperties.GetCloudletAdditionalRootLbNetworks())
+	if err != nil {
+		return err
 	}
 
 	found = false
@@ -194,7 +228,7 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
 	return o.PrepareCloudletSecurityGroup(ctx)
 }
 
-//GetCloudletSubnets returns subnets inside MEX Network
+// GetCloudletSubnets returns subnets inside MEX Network
 func (o *OpenstackPlatform) GetCloudletSubnets(ctx context.Context) ([]string, error) {
 	nd, err := o.GetNetworkDetail(ctx, o.VMProperties.GetCloudletMexNetwork())
 	if err != nil {
