@@ -38,8 +38,6 @@ type User struct {
 	// read only: true
 	Locked bool
 	// read only: true
-	PassEntropy float64
-	// read only: true
 	PassCrackTimeSec float64
 }
 
