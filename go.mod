@@ -11,6 +11,7 @@ require (
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/go-chef/chef v0.23.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/errors v0.19.7
@@ -41,7 +42,6 @@ require (
 	github.com/mobiledgex/golang-ssh v0.0.10
 	github.com/mobiledgex/yaml/v2 v2.2.5
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
-	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
 	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/opentracing/opentracing-go v1.1.0
@@ -51,7 +51,9 @@ require (
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.4
 	github.com/stretchr/testify v1.6.1
+	github.com/test-go/testify v1.1.4 // indirect
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
+	github.com/trustelem/zxcvbn v1.0.1
 	github.com/xanzy/go-gitlab v0.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb

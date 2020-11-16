@@ -676,7 +676,7 @@ func testRoleOrgCombos(t *testing.T, uri, token string, mcClient *ormclient.Clie
 func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, token string) {
 	// Create user in db to simulate old user with existing weak password
 	db := loggedDB(ctx)
-	adminOldPw := "oldpw"
+	adminOldPw := "oldpwd1"
 	passhash, salt, iter := NewPasshash(adminOldPw)
 	adminOld := ormapi.User{
 		Name:          "oldadmin",
@@ -711,7 +711,7 @@ func testPasswordStrength(t *testing.T, ctx context.Context, mcClient *ormclient
 	user1 := ormapi.User{
 		Name:     "MisterX",
 		Email:    "misterx@gmail.com",
-		Passhash: "misterx-password-super",
+		Passhash: "misterx-password-supe",
 	}
 	status, err = mcClient.CreateUser(uri, &user1)
 	require.Nil(t, err, "create user")

@@ -28,6 +28,7 @@ var PasswordMaxLength = 4096
 var PasshashIter = 10000
 var PasshashKeyBytes = 32
 var PasshashSaltBytes = 8
+var BruteForceGuessesPerSecond = 1000000
 
 var Jwks vault.JWKS
 
