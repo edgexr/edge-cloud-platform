@@ -32,4 +32,16 @@ alertreceivers:
         organization: dmuus
         name: dmuus-cloud-1
       organization: AcmeAppCo
+- name: emailClusterAlertReceiver
+  type: email
+  severity: error
+  email: cluster-ops@mobiledgex.net
+  appinst:
+    clusterinstkey:
+      clusterkey:
+        name: SmallCluster
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+      organization: AcmeAppCo
 

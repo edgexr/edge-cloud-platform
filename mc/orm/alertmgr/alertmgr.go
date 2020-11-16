@@ -234,8 +234,7 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 		if in.Cloudlet.Name != "" {
 			labels[edgeproto.CloudletKeyTagName] = in.Cloudlet.Name
 		}
-	}
-	if in.AppInst.AppKey.Organization != "" {
+	} else if in.AppInst.AppKey.Organization != "" {
 		// add labels for app instance
 		labels[edgeproto.AppKeyTagOrganization] = in.AppInst.AppKey.Organization
 		if in.AppInst.AppKey.Name != "" {
@@ -255,6 +254,18 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 		}
 		if in.AppInst.ClusterInstKey.Organization != "" {
 			labels[edgeproto.ClusterInstKeyTagOrganization] = in.AppInst.ClusterInstKey.Organization
+		}
+	} else if in.AppInst.ClusterInstKey.Organization != "" {
+		// add labels for cluster instance
+		labels[edgeproto.ClusterInstKeyTagOrganization] = in.AppInst.ClusterInstKey.Organization
+		if in.AppInst.ClusterInstKey.CloudletKey.Name != "" {
+			labels[edgeproto.CloudletKeyTagName] = in.AppInst.ClusterInstKey.CloudletKey.Name
+		}
+		if in.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
+			labels[edgeproto.CloudletKeyTagOrganization] = in.AppInst.ClusterInstKey.CloudletKey.Organization
+		}
+		if in.AppInst.ClusterInstKey.ClusterKey.Name != "" {
+			labels[edgeproto.ClusterKeyTagName] = in.AppInst.ClusterInstKey.ClusterKey.Name
 		}
 	}
 	return labels
@@ -393,6 +404,22 @@ func alertReceiverMatchesFilter(receiver *ormapi.AlertReceiver, filter *ormapi.A
 	}
 	return true
 }
+
+func fillClusterDetails(receiver *ormapi.AlertReceiver, route alertmanager_config.Route) {
+	if cluster, ok := route.Match[edgeproto.ClusterKeyTagName]; ok {
+		receiver.AppInst.ClusterInstKey.ClusterKey.Name = cluster
+	}
+	if clusterorg, ok := route.Match[edgeproto.ClusterInstKeyTagOrganization]; ok {
+		receiver.AppInst.ClusterInstKey.Organization = clusterorg
+	}
+	if cloudlet, ok := route.Match[edgeproto.CloudletKeyTagName]; ok {
+		receiver.AppInst.ClusterInstKey.CloudletKey.Name = cloudlet
+	}
+	if cloudletorg, ok := route.Match[edgeproto.CloudletKeyTagOrganization]; ok {
+		receiver.AppInst.ClusterInstKey.CloudletKey.Organization = cloudletorg
+	}
+}
+
 func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, error) {
 	alertReceivers := []ormapi.AlertReceiver{}
 	apiUrl := mobiledgeXReceiversApi
@@ -443,18 +470,10 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 			if ver, ok := route.Match[edgeproto.AppKeyTagVersion]; ok {
 				receiver.AppInst.AppKey.Version = ver
 			}
-			if cluster, ok := route.Match[edgeproto.ClusterKeyTagName]; ok {
-				receiver.AppInst.ClusterInstKey.ClusterKey.Name = cluster
-			}
-			if clusterorg, ok := route.Match[edgeproto.ClusterInstKeyTagOrganization]; ok {
-				receiver.AppInst.ClusterInstKey.Organization = clusterorg
-			}
-			if cloudlet, ok := route.Match[edgeproto.CloudletKeyTagName]; ok {
-				receiver.AppInst.ClusterInstKey.CloudletKey.Name = cloudlet
-			}
-			if cloudletorg, ok := route.Match[edgeproto.CloudletKeyTagOrganization]; ok {
-				receiver.AppInst.ClusterInstKey.CloudletKey.Organization = cloudletorg
-			}
+			fillClusterDetails(receiver, route)
+		} else if _, ok := route.Match[edgeproto.ClusterInstKeyTagOrganization]; ok {
+			// cluster inst
+			fillClusterDetails(receiver, route)
 		} else if cloudletorg, ok := route.Match[edgeproto.CloudletKeyTagOrganization]; ok {
 			// cloudlet
 			receiver.Cloudlet.Organization = cloudletorg
