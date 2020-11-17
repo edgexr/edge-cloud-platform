@@ -16,7 +16,7 @@ import (
 type ManagedK8sProvider interface {
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
-	SetProperties(props *infracommon.InfraProperties)
+	SetProperties(props *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
 	GetCredentials(ctx context.Context, clusterName string) error
 	NameSanitize(name string) string
@@ -61,7 +61,10 @@ func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	if err != nil {
+		return err
+	}
 	return m.Provider.Login(ctx)
 }
 

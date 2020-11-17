@@ -67,8 +67,9 @@ func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string)
 	return nil
 }
 
-func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) {
+func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: props}
+	return nil
 }
 
 func (a *AwsEksPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {

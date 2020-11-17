@@ -63,7 +63,10 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return err
 	}
 
-	m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	if err != nil {
+		return err
+	}
 	cloudletClusterName := m.getCloudletClusterName(cloudlet)
 
 	// find available flavors
@@ -110,7 +113,10 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	if err != nil {
+		return err
+	}
 	cloudletClusterName := m.getCloudletClusterName(cloudlet)
 	return m.deleteClusterInstInternal(ctx, cloudletClusterName, updateCallback)
 }
