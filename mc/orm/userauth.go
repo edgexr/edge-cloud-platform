@@ -78,9 +78,10 @@ func PasswordMatches(password, passhash, salt string, iter int) (bool, error) {
 
 type UserClaims struct {
 	jwt.StandardClaims
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Kid      int    `json:"kid"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	Kid           int    `json:"kid"`
+	FirstIssuedAt int64  `json:"firstiat,omitempty"`
 }
 
 func (u *UserClaims) GetKid() (int, error) {
@@ -100,6 +101,9 @@ func GenerateCookie(user *ormapi.User) (string, error) {
 		},
 		Username: user.Name,
 		Email:    user.Email,
+		// This is used to keep track of when the first auth token was issued,
+		// using this info we allow refreshing of auth token if the token is valid
+		FirstIssuedAt: time.Now().Unix(),
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
 	return cookie, err

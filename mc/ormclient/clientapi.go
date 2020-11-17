@@ -7,11 +7,11 @@ import (
 )
 
 type Api interface {
-	DoLogin(uri, user, pass string) (string, error)
+	DoLogin(uri, user, pass, otp string) (string, error)
 
-	CreateUser(uri string, user *ormapi.User) (int, error)
+	CreateUser(uri string, user *ormapi.User) (*ormapi.UserResponse, int, error)
 	DeleteUser(uri, token string, user *ormapi.User) (int, error)
-	UpdateUser(uri, token string, createUserJSON string) (int, error)
+	UpdateUser(uri, token string, createUserJSON string) (*ormapi.UserResponse, int, error)
 	ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error)
 	RestrictedUserUpdate(uri, token string, user map[string]interface{}) (int, error)
 	NewPassword(uri, token, password string) (int, error)

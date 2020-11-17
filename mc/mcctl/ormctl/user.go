@@ -13,11 +13,12 @@ func GetUserCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:            "create",
 		RequiredArgs:   "name email",
-		OptionalArgs:   "nickname familyname givenname callbackurl",
-		AliasArgs:      "name=user.name email=user.email nickname=user.nickname familyname=user.familyname givenname=user.givenname password=user.passhash callbackurl=verify.callbackurl",
+		OptionalArgs:   "nickname familyname givenname callbackurl enabletotp",
+		AliasArgs:      "name=user.name email=user.email nickname=user.nickname familyname=user.familyname givenname=user.givenname password=user.passhash callbackurl=verify.callbackurl enabletotp=user.enabletotp",
 		PasswordArg:    "user.passhash",
 		VerifyPassword: true,
 		ReqData:        &ormapi.CreateUser{},
+		ReplyData:      &ormapi.UserResponse{},
 		Run:            runRest("/usercreate"),
 	}, &cli.Command{
 		Use:          "delete",
@@ -26,9 +27,10 @@ func GetUserCommand() *cobra.Command {
 		Run:          runRest("/auth/user/delete"),
 	}, &cli.Command{
 		Use:          "update",
-		OptionalArgs: "email nickname familyname givenname callbackurl",
-		AliasArgs:    "email=user.email nickname=user.nickname familyname=user.familyname givenname=user.givenname callbackurl=verify.callbackurl",
+		OptionalArgs: "email nickname familyname givenname callbackurl enabletotp",
+		AliasArgs:    "email=user.email nickname=user.nickname familyname=user.familyname givenname=user.givenname callbackurl=verify.callbackurl enabletotp=user.enabletotp",
 		ReqData:      &ormapi.CreateUser{},
+		ReplyData:    &ormapi.UserResponse{},
 		Run:          runRest("/auth/user/update"),
 	}, &cli.Command{
 		Use:          "show",
@@ -82,6 +84,7 @@ func GetLoginCmd() *cobra.Command {
 	cmd := cli.Command{
 		Use:          "login",
 		RequiredArgs: "name",
+		OptionalArgs: "totp",
 		Run:          runLogin,
 	}
 	return cmd.GenCmd()
@@ -98,7 +101,7 @@ func runLogin(c *cli.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	token, err := client.DoLogin(getUri(), login.Username, login.Password)
+	token, err := client.DoLogin(getUri(), login.Username, login.Password, login.TOTP)
 	if err != nil {
 		return err
 	}

@@ -101,6 +101,13 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 		}
 		reply = res.Data
 	}
+	if res, ok := reply.(*ormapi.UserResponse); ok && !cli.Parsable {
+		if res.Message != "" {
+			fmt.Println(res.Message)
+			fmt.Println(res.TOTPSharedKey)
+		}
+		return nil
+	}
 	// formatted output
 	if reply != nil {
 		// don't write output for empty slices
@@ -124,7 +131,7 @@ func PreRunE(cmd *cobra.Command, args []string) error {
 	if Token == "" {
 		tok, err := ioutil.ReadFile(getTokenFile())
 		if err == nil {
-			Token = string(tok)
+			Token = strings.TrimSpace(string(tok))
 		}
 	}
 	if SkipVerify {
