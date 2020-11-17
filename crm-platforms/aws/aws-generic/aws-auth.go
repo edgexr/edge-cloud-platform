@@ -33,7 +33,11 @@ type AwsSessionData struct {
 func (a *AwsGenericPlatform) GetAwsSessionToken(ctx context.Context, accessApi platform.AccessApi) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAwsSessionToken")
 
-	user, err := a.GetUserAccountIdFromArn(ctx, a.GetAwsUserArn())
+	arn := a.GetAwsUserArn()
+	if arn == "" {
+		return fmt.Errorf("AWS_USER_ARN must be set to get session token")
+	}
+	user, err := a.GetUserAccountIdFromArn(ctx, arn)
 	if err != nil {
 		return err
 	}
@@ -121,13 +125,12 @@ func (a *AwsGenericPlatform) RefreshAwsSessionToken(pfconfig *pf.PlatformConfig)
 	}
 }
 
-func (a *AwsGenericPlatform) GetVaultCloudletAccessPath(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string) string {
+func (a *AwsGenericPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
 	vaultPath := AwsDefaultVaultPath
-	if cloudlet.Key.Organization != "aws" {
+	if key.Organization != "aws" {
 		// this is not a public cloud aws cloudlet, use the operator specific path
-		vaultPath = fmt.Sprintf("/secret/data/%s/cloudlet/aws/%s/%s/credentials", region, cloudlet.Key.Organization, cloudlet.PhysicalName)
+		vaultPath = fmt.Sprintf("/secret/data/%s/cloudlet/aws/%s/%s/aws.json", region, key.Organization, physicalName)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVaultCloudletAccessPath", "path", vaultPath)
 	return vaultPath
 }
 

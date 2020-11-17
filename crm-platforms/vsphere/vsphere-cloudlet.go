@@ -166,6 +166,10 @@ func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error
 	return vcaddr, nil
 }
 
+func (o *VSpherePlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
+	return nil, fmt.Errorf("GetSessionTokens not supported in VSpherePlatform")
+}
+
 // GetCloudletManifest follows the standard practice for vSphere to use OVF for this purpose.  We store the OVF
 // in artifactory along with with the vmdk formatted disk.  No customization is needed per cloudlet as the OVF
 // import tool will prompt for datastore and portgroup.

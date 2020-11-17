@@ -398,10 +398,12 @@ func (v *VMPlatform) DeleteCloudletAccessVars(ctx context.Context, cloudlet *edg
 
 	updateCallback(edgeproto.UpdateTask, "Deleting access vars from secure secrets storage")
 
-	path := GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, v.Type, cloudlet.PhysicalName, v.VMProvider.GetApiAccessFilename())
-	err := infracommon.DeleteDataFromVault(vaultConfig, path)
-	if err != nil {
-		return fmt.Errorf("Failed to delete access vars from vault: %v", err)
+	path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, pfConfig.Region, cloudlet.PhysicalName)
+	if path != "" {
+		err := infracommon.DeleteDataFromVault(vaultConfig, path)
+		if err != nil {
+			return fmt.Errorf("Failed to delete access vars from vault: %v", err)
+		}
 	}
 	return nil
 }

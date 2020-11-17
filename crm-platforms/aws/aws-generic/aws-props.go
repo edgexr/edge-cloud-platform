@@ -89,26 +89,30 @@ func (a *AwsGenericPlatform) GetProviderSpecificProps(ctx context.Context) (map[
 	return AWSProps, nil
 }
 
+func (a *AwsGenericPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetSessionTokens", "account", account)
+	token, err := a.GetAwsTotpToken(ctx, vaultConfig, account)
+	if err != nil {
+		return nil, err
+	}
+	tokens := map[string]string{
+		TotpTokenName: token,
+	}
+	return tokens, nil
+}
+
 func (a *AwsGenericPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "AwsGenericPlatform GetAccessData", "dataType", dataType)
 	switch dataType {
 	case accessapi.GetCloudletAccessVars:
-		path := a.GetVaultCloudletAccessPath(ctx, cloudlet, region)
+		path := a.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
 		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
 		if err != nil {
 			return nil, err
 		}
 		return vars, nil
 	case accessapi.GetSessionTokens:
-		user := string(arg)
-		token, err := a.GetAwsTotpToken(ctx, vaultConfig, user)
-		if err != nil {
-			return nil, err
-		}
-		tokens := map[string]string{
-			TotpTokenName: token,
-		}
-		return tokens, nil
+		return a.GetSessionTokens(ctx, vaultConfig, string(arg))
 	}
 	return nil, fmt.Errorf("AwsGeneric unhandled GetAccessData type %s", dataType)
 }

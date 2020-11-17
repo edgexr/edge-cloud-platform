@@ -89,8 +89,8 @@ var VSphereProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (v *VSpherePlatform) GetApiAccessFilename() string {
-	return "vcenter.json"
+func (v *VSpherePlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
+	return fmt.Sprintf("/secret/data/%s/cloudlet/vsphere/%s/%s/vcenter.json", region, key.Organization, physicalName)
 }
 
 func (v *VSpherePlatform) GetVsphereVars(ctx context.Context, accessApi platform.AccessApi) error {

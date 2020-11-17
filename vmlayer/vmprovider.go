@@ -44,7 +44,7 @@ type VMProvider interface {
 	WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName string, serverName, label, allowedCIDR string, ports []dme.AppPort) error
 	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
-	GetApiAccessFilename() string
+	GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage ProviderInitStage) error
 	GetApiEndpointAddr(ctx context.Context) (string, error)
 	GetExternalGateway(ctx context.Context, extNetName string) (string, error)
@@ -62,6 +62,7 @@ type VMProvider interface {
 	CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error
 	GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error)
 	ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error
+	GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error)
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -448,12 +449,19 @@ func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Clou
 	log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType)
 	switch dataType {
 	case accessapi.GetCloudletAccessVars:
-		path := GetVaultCloudletAccessPath(&cloudlet.Key, region, v.Type, cloudlet.PhysicalName, v.VMProvider.GetApiAccessFilename())
+		path := v.VMProvider.GetVaultCloudletAccessPath(&cloudlet.Key, region, cloudlet.PhysicalName)
+		if path == "" {
+			log.SpanLog(ctx, log.DebugLevelApi, "No access vars path, returning empty map")
+			vars := make(map[string]string, 1)
+			return vars, nil
+		}
 		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
 		if err != nil {
 			return nil, err
 		}
 		return vars, nil
+	case accessapi.GetSessionTokens:
+		return v.VMProvider.GetSessionTokens(ctx, vaultConfig, string(arg))
 	}
 	return nil, fmt.Errorf("VMPlatform unhandled GetAccessData type %s", dataType)
 }
