@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -122,6 +123,8 @@ func TestChoose(t *testing.T) {
 
 func TestAppChecker(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelNotify | log.DebugLevelApi | log.DebugLevelMetrics)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
 	// init
@@ -139,7 +142,10 @@ func TestAppChecker(t *testing.T) {
 	// run iterations manually, otherwise the cache update loop causes
 	// checkApp to be run multiple times, and without the Controller code
 	// to block invalid creates/deletes, we end up with incorrect states.
-	minmax.workers.Pause()
+	// To track if app was scheduled for checking, replace the workers
+	// work func with a dummy func.
+	dummyCheckApp := newDummyCheckApp()
+	minmax.workers.Init("autoprov-minmax-test", dummyCheckApp.CheckApp)
 
 	// object data
 	pt1Max := uint32(4)
@@ -493,6 +499,8 @@ func TestAppChecker(t *testing.T) {
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
 	require.Nil(t, err)
+	minmax.workers.WaitIdle()
+	dummyCheckApp.Clear()
 
 	// bring cloudlets back online, should trigger delete of AppInsts
 	// since they are no longer part of policy.
@@ -503,6 +511,10 @@ func TestAppChecker(t *testing.T) {
 		cinfo.State = edgeproto.CloudletState_CLOUDLET_STATE_READY
 		cacheData.cloudletInfoCache.Update(ctx, &cinfo, 0)
 	}
+	// bug3506: App should be marked for checking
+	minmax.workers.WaitIdle()
+	require.True(t, dummyCheckApp.HasApp(app.Key))
+	// run check
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
@@ -636,4 +648,38 @@ func (s *policyTest) deleteAppInsts(ctx context.Context, dc *DummyController, ke
 	for _, inst := range s.getAppInsts(key) {
 		dc.deleteAppInst(ctx, &inst)
 	}
+}
+
+type DummyCheckApp struct {
+	mux     sync.Mutex
+	checked map[edgeproto.AppKey]struct{}
+}
+
+func newDummyCheckApp() *DummyCheckApp {
+	s := &DummyCheckApp{}
+	s.checked = make(map[edgeproto.AppKey]struct{})
+	return s
+}
+
+func (s *DummyCheckApp) CheckApp(ctx context.Context, k interface{}) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	key, ok := k.(edgeproto.AppKey)
+	if !ok {
+		panic("not AppKey")
+	}
+	s.checked[key] = struct{}{}
+}
+
+func (s *DummyCheckApp) HasApp(key edgeproto.AppKey) bool {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	_, found := s.checked[key]
+	return found
+}
+
+func (s *DummyCheckApp) Clear() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.checked = make(map[edgeproto.AppKey]struct{})
 }

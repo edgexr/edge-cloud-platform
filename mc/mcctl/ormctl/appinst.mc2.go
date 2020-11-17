@@ -479,3 +479,39 @@ var AppInstLookupComments = map[string]string{
 	"policykey.name":                              "Policy name",
 }
 var AppInstLookupSpecialArgs = map[string]string{}
+var AppInstLookup2RequiredArgs = []string{
+	"key.appkey.organization",
+	"key.appkey.name",
+	"key.appkey.version",
+	"key.clusterinstkey.clusterkey.name",
+	"key.clusterinstkey.cloudletkey.organization",
+	"key.clusterinstkey.cloudletkey.name",
+	"key.clusterinstkey.organization",
+}
+var AppInstLookup2OptionalArgs = []string{
+	"cloudletkey.organization",
+	"cloudletkey.name",
+}
+var AppInstLookup2AliasArgs = []string{
+	"key.appkey.organization=appinstlookup2.key.appkey.organization",
+	"key.appkey.name=appinstlookup2.key.appkey.name",
+	"key.appkey.version=appinstlookup2.key.appkey.version",
+	"key.clusterinstkey.clusterkey.name=appinstlookup2.key.clusterinstkey.clusterkey.name",
+	"key.clusterinstkey.cloudletkey.organization=appinstlookup2.key.clusterinstkey.cloudletkey.organization",
+	"key.clusterinstkey.cloudletkey.name=appinstlookup2.key.clusterinstkey.cloudletkey.name",
+	"key.clusterinstkey.organization=appinstlookup2.key.clusterinstkey.organization",
+	"cloudletkey.organization=appinstlookup2.cloudletkey.organization",
+	"cloudletkey.name=appinstlookup2.cloudletkey.name",
+}
+var AppInstLookup2Comments = map[string]string{
+	"key.appkey.organization":                     "App developer organization",
+	"key.appkey.name":                             "App name",
+	"key.appkey.version":                          "App version",
+	"key.clusterinstkey.clusterkey.name":          "Cluster name",
+	"key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
+	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
+	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
+	"cloudletkey.organization":                    "Organization of the cloudlet site",
+	"cloudletkey.name":                            "Name of the cloudlet",
+}
+var AppInstLookup2SpecialArgs = map[string]string{}
