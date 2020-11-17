@@ -50,8 +50,20 @@ cat > /home/ubuntu/client.pem << EOF
 %s
 EOF
 
+`, cloudConfigParams.ChefParams.ClientKey)
+
+	if cloudConfigParams.AccessKey != "" {
+		scriptText += fmt.Sprintf(`
+cat > /root/accesskey/accesskey.pem << EOF
+%s
+EOF
+
+`, cloudConfigParams.AccessKey)
+	}
+
+	scriptText += fmt.Sprintf(`
 sudo bash /etc/mobiledgex/setup-chef.sh -s "%s" -n "%s"
-`, cloudConfigParams.ChefParams.ClientKey, cloudConfigParams.ChefParams.ServerPath, cloudConfigParams.ChefParams.NodeName)
+`, cloudConfigParams.ChefParams.ServerPath, cloudConfigParams.ChefParams.NodeName)
 
 	manifest.AddItem("SSH into one of the VMs from the VMPool which has access to controller's notify port", infracommon.ManifestTypeNone, infracommon.ManifestSubTypeNone, "")
 	manifest.AddItem("Save and execute the following script on the VM", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)
