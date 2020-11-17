@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -16,12 +17,13 @@ import (
 )
 
 var (
-	commandName = "test-mex-infra"
-	configStr   *string
-	specStr     *string
-	modsStr     *string
-	outputDir   string
-	stopOnFail  *bool
+	commandName    = "test-mex-infra"
+	configStr      *string
+	specStr        *string
+	modsStr        *string
+	outputDir      string
+	stopOnFail     *bool
+	sharedDataPath = "/tmp/e2e_test_out/shared_data.json"
 )
 
 //re-init the flags because otherwise we inherit a bunch of flags from the testing
@@ -77,6 +79,21 @@ func main() {
 
 	retry := setupmex.NewRetry(spec.RetryCount, spec.RetryIntervalSec, len(spec.Actions))
 	ranTest := false
+
+	// Load from file
+	sharedData := make(map[string]string)
+	plan, err := ioutil.ReadFile(sharedDataPath)
+	if err != nil {
+		// ignore
+		fmt.Printf("error reading shared data file, err: %v\n", err)
+	} else {
+		err = json.Unmarshal(plan, &sharedData)
+		if err != nil {
+			// ignore
+			fmt.Printf("failed to marshal shared data, err: %v\n", err)
+		}
+	}
+
 	for {
 		tryErrs := []string{}
 		for ii, a := range spec.Actions {
@@ -86,7 +103,7 @@ func main() {
 			util.PrintStepBanner("name: " + spec.Name)
 			util.PrintStepBanner("running action: " + a + retry.Tries())
 			actionretry := false
-			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, &actionretry)
+			errs := e2esetup.RunAction(ctx, a, outputDir, &config, &spec, *specStr, mods, config.Vars, sharedData, &actionretry)
 			tryErrs = append(tryErrs, errs...)
 			ranTest = true
 			if *stopOnFail && len(errs) > 0 && !actionretry {
@@ -119,6 +136,20 @@ func main() {
 	}
 	if !ranTest {
 		errors = append(errors, "no test content")
+	}
+
+	if len(sharedData) > 0 {
+		dataStr, err := json.Marshal(sharedData)
+		if err != nil {
+			// ignore
+			fmt.Printf("error in json marshal of shared data, err: %v\n", err)
+		} else {
+			err = ioutil.WriteFile(sharedDataPath, []byte(dataStr), 0644)
+			if err != nil {
+				// ignore
+				fmt.Printf("error writing shared data file, err: %v\n", err)
+			}
+		}
 	}
 
 	fmt.Printf("\nNum Errors found: %d, Results in: %s\n", len(errors), outputDir)

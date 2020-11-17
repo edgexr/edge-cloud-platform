@@ -26,6 +26,7 @@ var passwordResetNoneTmpl *template.Template
 var notifyTmpl *template.Template
 var welcomeTmpl *template.Template
 var addedTmpl *template.Template
+var otpTmpl *template.Template
 
 func init() {
 	passwordResetTmpl = template.Must(template.New("pwdreset").Parse(passwordResetT))
@@ -33,6 +34,7 @@ func init() {
 	notifyTmpl = template.Must(template.New("notify").Parse(notifyT))
 	welcomeTmpl = template.Must(template.New("welcome").Parse(welcomeT))
 	addedTmpl = template.Must(template.New("added").Parse(addedT))
+	otpTmpl = template.Must(template.New("added").Parse(otpT))
 }
 
 type emailTmplArg struct {
@@ -327,4 +329,51 @@ func getSkipVerifyEmail(ctx context.Context, config *ormapi.Config) bool {
 		}
 	}
 	return config.SkipVerifyEmail
+}
+
+type otpTmplArg struct {
+	From               string
+	To                 string
+	Name               string
+	TOTP               string
+	TOTPExpirationTime string
+}
+
+var otpT = `From: {{.From}}
+To: {{.To}}
+Subject: One Time Password (OTP) for you MobiledgeX account login
+
+Hi {{.Name}},
+
+The One Time Password (OTP) for your account login is {{.TOTP}}.
+This OTP is valid for {{.TOTPExpirationTime}}.
+
+In case you have not requested for OTP, please contact us at support@mobiledgex.com
+
+Thanks!
+MobiledgeX Team
+`
+
+func sendOTPEmail(ctx context.Context, username, email, totp, totpExpTime string) error {
+	if getSkipVerifyEmail(ctx, nil) {
+		return nil
+	}
+	noreply, err := getNoreply(ctx)
+	if err != nil {
+		return err
+	}
+	arg := otpTmplArg{
+		From:               noreply.Email,
+		To:                 email,
+		Name:               username,
+		TOTP:               totp,
+		TOTPExpirationTime: totpExpTime,
+	}
+	buf := bytes.Buffer{}
+	if err := otpTmpl.Execute(&buf, &arg); err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "send otp email",
+		"from", noreply.Email, "to", email)
+	return sendEmail(noreply, email, &buf)
 }

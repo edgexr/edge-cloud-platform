@@ -46,6 +46,7 @@ require (
 	github.com/nmcclain/ldap v0.0.0-20160601145537-6e14e8271933
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.9.1
+	github.com/pquerna/otp v1.2.1-0.20191009055518-468c2dd2b58d
 	github.com/prometheus/common v0.9.1
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shirou/gopsutil v2.20.4+incompatible

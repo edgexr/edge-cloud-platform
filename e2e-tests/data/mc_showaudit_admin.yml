@@ -4,7 +4,7 @@
   status: 200
   starttime: "2019-09-26T15:31:35.18021-07:00"
   duration: 8.795ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 6c427d0d953b4ca3
 - operationname: /api/v1/login
@@ -13,7 +13,7 @@
   status: 200
   starttime: "2019-09-26T15:31:35.071965-07:00"
   duration: 8.68ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 1014cbe2417a52e8
 - operationname: /api/v1/auth/config/update
@@ -30,7 +30,7 @@
   status: 200
   starttime: "2020-04-22T13:16:44.267852-07:00"
   duration: 9.85ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 3e7b42b8da07e1bf
 - operationname: /api/v1/login
@@ -39,7 +39,7 @@
   status: 200
   starttime: "2020-04-22T13:16:44.216712-07:00"
   duration: 9.499ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: d5bf5b9951f8654
 - operationname: /api/v1/auth/config/reset
@@ -55,7 +55,7 @@
   status: 200
   starttime: "2020-04-22T13:16:44.196441-07:00"
   duration: 10.276ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 6952d4a12820c6cc
 - operationname: /api/v1/login
@@ -64,7 +64,7 @@
   status: 200
   starttime: "2020-04-22T13:16:44.141164-07:00"
   duration: 10.69ms
-  request: '{"username":"mexadmin","password":""}'
+  request: '{"username":"mexadmin","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 78f8789d037bc23f
 - operationname: /api/v1/auth/user/delete
@@ -73,7 +73,7 @@
   status: 200
   starttime: "2019-09-26T15:31:35.063628-07:00"
   duration: 4.773ms
-  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0}'
+  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
   response: '{"message":"user deleted"}'
   traceid: 5e2e18be94124fbb
 - operationname: /api/v1/auth/user/delete
@@ -82,6 +82,6 @@
   status: 200
   starttime: "2019-09-26T15:31:35.055474-07:00"
   duration: 4.827ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0}'
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
   response: '{"message":"user deleted"}'
   traceid: e04509e7b06b2c5

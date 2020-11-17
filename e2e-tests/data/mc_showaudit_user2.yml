@@ -4,7 +4,7 @@
   status: 200
   starttime: "2019-08-11T09:36:04.320621-07:00"
   duration: 12.441ms
-  request: '{"username":"user2","password":""}'
+  request: '{"username":"user2","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 230c2137535baf7c
 - operationname: /api/v1/usercreate
@@ -13,8 +13,8 @@
   status: 200
   starttime: "2019-08-11T09:36:04.249624-07:00"
   duration: 13.074ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
-  response: '{"message":"user created"}'
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
+  response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
   traceid: 24625321e53de041
 - operationname: /api/v1/auth/ctrl/ShowSettings
   username: user2
@@ -40,7 +40,7 @@
   status: 200
   starttime: "2019-08-11T09:36:02.92884-07:00"
   duration: 11.782ms
-  request: '{"username":"user2","password":""}'
+  request: '{"username":"user2","password":"","totp":""}'
   response: '{"token":""}'
   traceid: 635be073ef98bea
 - operationname: /api/v1/auth/org/delete

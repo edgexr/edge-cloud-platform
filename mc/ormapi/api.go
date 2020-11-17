@@ -39,6 +39,16 @@ type User struct {
 	Locked bool
 	// read only: true
 	PassCrackTimeSec float64
+	// read only: true
+	EnableTOTP bool
+	// read only: true
+	TOTPSharedKey string
+}
+
+type UserResponse struct {
+	Message       string
+	TOTPSharedKey string
+	TOTPQRImage   []byte
 }
 
 type Organization struct {
@@ -155,6 +165,8 @@ type UserLogin struct {
 	// User's password
 	// required: true
 	Password string `form:"password" json:"password"`
+	// read only: true
+	TOTP string `form:"totp" json:"totp"`
 }
 
 type NewPassword struct {

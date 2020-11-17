@@ -16,6 +16,8 @@ var DoNotLogFields = map[string]struct{}{
 	"picture":             {},
 	"pass_entropy":        {},
 	"pass_crack_time_sec": {},
+	"totp":                {},
+	"totp_shared_key":     {},
 }
 
 var updateFieldRE = regexp.MustCompile(`"([^"]+?)" = \$(\d+)`)

@@ -19,6 +19,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
+	"github.com/pquerna/otp/totp"
 )
 
 var mcClient ormclient.Api
@@ -35,7 +36,7 @@ type AllDataOut struct {
 	RegionData []edgetestutil.AllDataOut
 }
 
-func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
 	mc := getMC(mcname)
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
@@ -53,31 +54,31 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	}
 
 	if strings.HasSuffix(api, "users") {
-		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if strings.HasPrefix(api, "audit") {
-		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
+		return runMcAudit(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 	} else if strings.HasPrefix(api, "config") {
-		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if strings.HasPrefix(api, "events") {
 		return runMcEvents(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if api == "runcommand" {
-		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if api == "showlogs" {
-		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if api == "accesscloudlet" {
-		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if api == "nodeshow" {
-		return runMcShowNode(uri, curUserFile, outputDir, vars)
+		return runMcShowNode(uri, curUserFile, outputDir, vars, sharedData)
 	} else if api == "showalerts" {
 		*retry = true
-		return showMcAlerts(uri, apiFile, curUserFile, outputDir, vars)
+		return showMcAlerts(uri, apiFile, curUserFile, outputDir, vars, sharedData)
 	} else if strings.HasPrefix(api, "debug") {
-		return runMcDebug(api, uri, apiFile, curUserFile, outputDir, mods, vars)
+		return runMcDebug(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if api == "showalertreceivers" {
 		*retry = true
-		return showMcAlertReceivers(uri, curUserFile, outputDir, vars)
+		return showMcAlertReceivers(uri, curUserFile, outputDir, vars, sharedData)
 	}
-	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
+	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 }
 
 func getMC(name string) *intprocess.MC {
@@ -93,12 +94,12 @@ func getMC(name string) *intprocess.MC {
 	return nil //unreachable
 }
 
-func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Applying MC users via APIs for %s\n", apiFile)
 
 	rc := true
 	if api == "showusers" {
-		token, rc := loginCurUser(uri, curUserFile, vars)
+		token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 		if !rc {
 			return false
 		}
@@ -117,11 +118,12 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 	switch api {
 	case "createusers":
 		for _, user := range users {
-			status, err := mcClient.CreateUser(uri, &user)
+			resp, status, err := mcClient.CreateUser(uri, &user)
 			checkMcErr("CreateUser", status, err, &rc)
+			sharedData[user.Name] = resp.TOTPSharedKey
 		}
 	case "deleteusers":
-		token, ok := loginCurUser(uri, curUserFile, vars)
+		token, ok := loginCurUser(uri, curUserFile, vars, sharedData)
 		if !ok {
 			return false
 		}
@@ -135,10 +137,10 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 	return rc
 }
 
-func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Applying MC config via APIs for %s\n", apiFile)
 
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -168,13 +170,13 @@ func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string
 	return rc
 }
 
-func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
 	log.Printf("Applying MC data via APIs for %s mods %v vars %v\n", apiFile, mods, vars)
 	// Data APIs are all run by a given user.
 	// That user is specified in the current user file.
 	// We need to log in as that user.
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -345,7 +347,8 @@ func readMCMetricTargetsFile(file string, vars map[string]string) *MetricTargets
 	return &targets
 }
 
-func loginCurUser(uri, curUserFile string, vars map[string]string) (string, bool) {
+func loginCurUser(uri, curUserFile string, vars, sharedData map[string]string) (string, bool) {
+	var err error
 	if curUserFile == "" {
 		log.Println("Error: Cannot run MC APIs without current user file")
 		return "", false
@@ -355,7 +358,17 @@ func loginCurUser(uri, curUserFile string, vars map[string]string) (string, bool
 		log.Printf("no user to run MC api\n")
 		return "", false
 	}
-	token, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash)
+	otp := ""
+	otpKey, ok := sharedData[users[0].Name]
+	if !ok {
+		log.Printf("no user OTP key found to run MC api: %v, %s\n", sharedData, users[0].Name)
+	} else {
+		otp, err = totp.GenerateCode(otpKey, time.Now())
+		if err != nil {
+			log.Printf("failed to generate otp: %v, %s\n", sharedData, users[0].Name)
+		}
+	}
+	token, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash, otp)
 	rc := true
 	checkMcErr("DoLogin", http.StatusOK, err, &rc)
 	return token, rc
@@ -667,8 +680,8 @@ type runCommandData struct {
 	ExpectedOutput string
 }
 
-func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
-	token, rc := loginCurUser(uri, curUserFile, vars)
+func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -712,7 +725,8 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 
 var eventsStartTimeFile = "events-starttime"
 
-func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, retry *bool) bool {
+	var err error
 	log.Printf("Running %s MC audit APIs for %s %v\n", api, apiFile, mods)
 
 	if apiFile == "" {
@@ -729,7 +743,17 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 		// be used later.
 		users := readUsersFiles(apiFile, vars)
 		for _, user := range users {
-			token, err := mcClient.DoLogin(uri, user.Name, user.Passhash)
+			otp := ""
+			otpKey, ok := sharedData[user.Name]
+			if !ok {
+				log.Printf("no user OTP key found to run MC api: %v, %s\n", sharedData, user.Name)
+			} else {
+				otp, err = totp.GenerateCode(otpKey, time.Now())
+				if err != nil {
+					log.Printf("failed to generate otp: %v, %s\n", sharedData, user.Name)
+				}
+			}
+			token, err := mcClient.DoLogin(uri, user.Name, user.Passhash, otp)
 			checkMcErr("DoLogin", http.StatusOK, err, &rc)
 			if err == nil && rc {
 				fname := getTokenFile(user.Name, outputDir)
@@ -917,9 +941,9 @@ func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
 	return &result
 }
 
-func runMcShowNode(uri, curUserFile, outputDir string, vars map[string]string) bool {
+func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[string]string) bool {
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -933,7 +957,7 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars map[string]string) b
 	return rc
 }
 
-func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string) bool {
+func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
 	log.Printf("Running %s MC debug APIs for %s %v\n", api, apiFile, mods)
 
 	if apiFile == "" {
@@ -942,7 +966,7 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	}
 
 	rc := true
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -983,14 +1007,14 @@ func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 	return rc
 }
 
-func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars map[string]string) bool {
+func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars, sharedData map[string]string) bool {
 	if apiFile == "" {
 		log.Println("Error: Cannot run MC audit APIs without API file")
 		return false
 	}
 	log.Printf("Running MC showalert APIs for %s\n", apiFile)
 
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
@@ -1008,13 +1032,13 @@ func showMcAlerts(uri, apiFile, curUserFile, outputDir string, vars map[string]s
 	return rc
 }
 
-func showMcAlertReceivers(uri, curUserFile, outputDir string, vars map[string]string) bool {
+func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData map[string]string) bool {
 	var err error
 	var status int
 
 	log.Printf("Running MC showalert receivers APIs\n")
 
-	token, rc := loginCurUser(uri, curUserFile, vars)
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}

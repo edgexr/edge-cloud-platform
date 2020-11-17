@@ -107,6 +107,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			err := json.Unmarshal(reqBody, &login)
 			if err == nil {
 				login.Password = ""
+				login.TOTP = ""
 				reqBody, err = json.Marshal(login)
 			}
 			if err != nil {
@@ -179,6 +180,22 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 						response = result
 					}
 				}
+			} else if strings.Contains(string(resBody), "TOTP") {
+				resp := ormapi.UserResponse{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.TOTPSharedKey = ""
+					resp.TOTPQRImage = nil
+					updatedResp, err := json.Marshal(&resp)
+					if err == nil {
+						response = string(updatedResp)
+					} else {
+						response = string(resBody)
+					}
+				} else {
+					response = string(resBody)
+				}
+
 			} else {
 				response = string(resBody)
 			}
