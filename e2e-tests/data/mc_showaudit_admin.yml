@@ -73,7 +73,7 @@
   status: 200
   starttime: "2019-09-26T15:31:35.063628-07:00"
   duration: 4.773ms
-  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
+  request: '{"Name":"user3","Email":"user3@enterprise.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
   response: '{"message":"user deleted"}'
   traceid: 5e2e18be94124fbb
 - operationname: /api/v1/auth/user/delete
@@ -82,6 +82,6 @@
   status: 200
   starttime: "2019-09-26T15:31:35.055474-07:00"
   duration: 4.827ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassEntropy":0,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":""}'
   response: '{"message":"user deleted"}'
   traceid: e04509e7b06b2c5
