@@ -21,6 +21,7 @@ type GCPPlatform struct {
 	properties  *infracommon.InfraProperties
 	accessVars  map[string]string
 	authKeyJSON string
+	gcpRegion   string
 }
 
 type GCPQuotas struct {
@@ -47,7 +48,7 @@ func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cl
 	}
 	var quotas []GCPQuotasList
 
-	filter := fmt.Sprintf("name=(%s) AND quotas.metric=(CPUS, DISKS_TOTAL_GB)", g.GetGcpZone())
+	filter := fmt.Sprintf("name=(%s) AND quotas.metric=(CPUS, DISKS_TOTAL_GB)", g.gcpRegion)
 	flatten := "quotas[]"
 	format := "json(quotas.metric,quotas.limit)"
 
@@ -151,6 +152,9 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 	return clusterName
 }
 
-func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) {
+func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	g.properties = props
+	var err error
+	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())
+	return err
 }
