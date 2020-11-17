@@ -22,9 +22,10 @@ type MinMaxChecker struct {
 	mux              sync.Mutex
 	// maintain reverse relationships to be able to look up
 	// which Apps are affected by cloudlet state changes.
-	policiesByCloudlet edgeproto.AutoProvPolicyByCloudletKey
-	appsByPolicy       edgeproto.AppByAutoProvPolicy
-	workers            tasks.KeyWorkers
+	policiesByCloudlet      edgeproto.AutoProvPolicyByCloudletKey
+	appsByPolicy            edgeproto.AppByAutoProvPolicy
+	autoprovInstsByCloudlet edgeproto.AppInstLookup2ByCloudletKey
+	workers                 tasks.KeyWorkers
 }
 
 func newMinMaxChecker(caches *CacheData) *MinMaxChecker {
@@ -34,6 +35,7 @@ func newMinMaxChecker(caches *CacheData) *MinMaxChecker {
 	s.workers.Init("autoprov-minmax", s.CheckApp)
 	s.policiesByCloudlet.Init()
 	s.appsByPolicy.Init()
+	s.autoprovInstsByCloudlet.Init()
 	// set callbacks to respond to changes
 	caches.appCache.AddUpdatedCb(s.UpdatedApp)
 	caches.appCache.AddDeletedCb(s.DeletedApp)
@@ -129,6 +131,14 @@ func (s *MinMaxChecker) cloudletNeedsCheck(key edgeproto.CloudletKey) map[edgepr
 			appsToCheck[appKey] = struct{}{}
 		}
 	}
+	// If orphaned AppInsts cannot be deleted at the time they are
+	// removed from the policy, then they end up with no reference to
+	// them via the policies. So they are tracked in here so they can
+	// be cleaned up later when the Cloudlet comes back online.
+	for _, appInstKey := range s.autoprovInstsByCloudlet.Find(key) {
+		appsToCheck[appInstKey.AppKey] = struct{}{}
+	}
+
 	return appsToCheck
 }
 
@@ -192,6 +202,12 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 		return
 	}
 
+	lookup := edgeproto.AppInstLookup2{
+		Key:         new.Key,
+		CloudletKey: new.Key.ClusterInstKey.CloudletKey,
+	}
+	s.autoprovInstsByCloudlet.Updated(&lookup)
+
 	// recheck if online state changed
 	if old != nil {
 		cloudletInfo := edgeproto.CloudletInfo{}
@@ -220,6 +236,12 @@ func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, key *edgeproto.AppIn
 	if !s.isAutoProvApp(&key.AppKey) {
 		return
 	}
+	lookup := edgeproto.AppInstLookup2{
+		Key:         *key,
+		CloudletKey: key.ClusterInstKey.CloudletKey,
+	}
+	s.autoprovInstsByCloudlet.Deleted(&lookup)
+
 	s.workers.NeedsWork(ctx, key.AppKey)
 }
 
