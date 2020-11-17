@@ -22,7 +22,7 @@ docker_image "#{node['edgeCloudImage']}" do
   notifies :prune, 'docker_image_prune[prune-old-images]', :delayed
 end
 
-docker_image "#{node['prometheusImage']}" do
+docker_image "docker.mobiledgex.net/mobiledgex/mobiledgex_public/#{node['prometheusImage']}" do
   Chef::Log.info("Pull prometheus image #{node['prometheusImage']}:#{node['prometheusVersion']}")
   action :pull
   tag "#{node['prometheusVersion']}"
@@ -72,7 +72,7 @@ end
 cmd = cloudlet_prometheus_cmd
 docker_container "cloudletPrometheus" do
   Chef::Log.info("Start cloudlet prometheus container, cmd: #{cmd}")
-  repo "#{node['prometheusImage']}"
+  repo "docker.mobiledgex.net/mobiledgex/mobiledgex_public/#{node['prometheusImage']}"
   tag "#{node['prometheusVersion']}"
   action :run
   network_mode 'host'
