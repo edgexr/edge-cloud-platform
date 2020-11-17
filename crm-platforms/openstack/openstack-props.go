@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -44,8 +45,8 @@ func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessA
 	return nil
 }
 
-func (o *OpenstackPlatform) GetApiAccessFilename() string {
-	return "openrc.json"
+func (o *OpenstackPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
+	return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/openrc.json", region, key.Organization, physicalName)
 }
 
 func (o *OpenstackPlatform) GetCloudletProjectName() string {

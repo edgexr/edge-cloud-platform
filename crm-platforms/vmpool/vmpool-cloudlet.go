@@ -21,6 +21,10 @@ func (o *VMPoolPlatform) GetApiEndpointAddr(ctx context.Context) (string, error)
 	return "", nil
 }
 
+func (o *VMPoolPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
+	return nil, fmt.Errorf("GetSessionTokens not supported in VMPoolPlatform")
+}
+
 func (o *VMPoolPlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name)
 	var manifest infracommon.CloudletManifest

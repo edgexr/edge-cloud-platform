@@ -26,7 +26,7 @@ func (o *VMPoolPlatform) InitApiAccessProperties(ctx context.Context, accessApi 
 	return nil
 }
 
-func (o *VMPoolPlatform) GetApiAccessFilename() string {
+func (o *VMPoolPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
 	return ""
 }
 

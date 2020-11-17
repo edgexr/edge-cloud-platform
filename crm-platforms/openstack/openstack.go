@@ -17,10 +17,6 @@ type OpenstackPlatform struct {
 	VMProperties *vmlayer.VMProperties
 }
 
-func (o *OpenstackPlatform) GetType() string {
-	return "openstack"
-}
-
 func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	o.VMProperties = vmProperties
 }

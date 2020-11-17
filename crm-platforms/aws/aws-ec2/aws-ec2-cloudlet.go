@@ -33,10 +33,6 @@ func (a *AwsEc2Platform) DeleteImage(ctx context.Context, folder, imageName stri
 	return fmt.Errorf("DeleteImage not implemented")
 }
 
-func (o *AwsEc2Platform) GetApiAccessFilename() string {
-	return "aws.json"
-}
-
 func (a *AwsEc2Platform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
 	// we don't currently have the ability to download and setup the template, but we will verify it is there
 	return "", fmt.Errorf("AddCloudletImageIfNotPresent not implemented")
@@ -270,4 +266,12 @@ func (a *AwsEc2Platform) GetOutpostFlavorsForCloudletInfo(ctx context.Context, i
 		)
 	}
 	return nil
+}
+
+func (a *AwsEc2Platform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
+	return a.awsGenPf.GetVaultCloudletAccessPath(key, region, physicalName)
+}
+
+func (a *AwsEc2Platform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
+	return a.awsGenPf.GetSessionTokens(ctx, vaultConfig, account)
 }
