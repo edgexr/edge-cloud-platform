@@ -434,6 +434,7 @@ type VMCloudConfigParams struct {
 	AccessKey         string
 	PrimaryDNS        string
 	FallbackDNS       string
+	NtpServers        string
 }
 
 // VMOrchestrationParams contains all details  that are needed by the orchestator
@@ -547,6 +548,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	internalNetName := v.VMProperties.GetCloudletMexNetwork()
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
+	ntpServers := strings.Join(v.VMProperties.GetNtpServers(), " ")
 
 	var err error
 	vmDns := strings.Split(v.VMProperties.GetCloudletDNS(), ",")
@@ -883,6 +885,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					vccp.FallbackDNS = vmDns[1]
 				}
 			}
+			vccp.NtpServers = ntpServers
 			// gpu
 			if vm.OptionalResource == "gpu" {
 				gpuCmds := getGpuExtraCommands()

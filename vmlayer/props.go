@@ -162,6 +162,10 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "Additional RootLB Networks",
 		Description: "Optional comma separated list of networks to add to rootLB VMs",
 	},
+	"MEX_NTP_SERVERS": {
+		Name:        "NTP Servers",
+		Description: "Optional comma separated list of NTP servers to override default of ntp.ubuntu.com",
+	},
 }
 
 func GetSupportedRouterTypes() string {
@@ -263,6 +267,13 @@ func (vp *VMProperties) GetCloudletAdditionalPlatformNetworks() []string {
 
 func (vp *VMProperties) GetCloudletAdditionalRootLbNetworks() []string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_ADDITIONAL_ROOTLB_NETWORKS")
+	if value == "" {
+		return []string{}
+	}
+	return strings.Split(value, ",")
+}
+func (vp *VMProperties) GetNtpServers() []string {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_NTP_SERVERS")
 	if value == "" {
 		return []string{}
 	}
