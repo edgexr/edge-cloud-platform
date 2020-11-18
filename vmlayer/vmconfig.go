@@ -35,6 +35,12 @@ write_files:
        {{- if .FallbackDNS}}
        FallbackDNS={{.FallbackDNS}}
        {{- end}}
+  {{- if .NtpServers}}
+  - path:  /etc/systemd/timesyncd.conf
+    content: |
+       [Time]
+       NTP={{.NtpServers}}
+  {{- end}}
 {{- if .AccessKey }}
   - path: /root/accesskey/accesskey.pem
     content: |
@@ -47,6 +53,9 @@ ssh_pwauth: False
 timezone: UTC
 runcmd:
  - systemctl restart systemd-resolved
+ {{- if .NtpServers}}
+ - systemctl restart systemd-timesyncd
+ {{- end}} 
  - echo MOBILEDGEX doing ifconfig
  - ifconfig -a`
 
