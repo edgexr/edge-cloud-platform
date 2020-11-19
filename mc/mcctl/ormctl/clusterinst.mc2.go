@@ -10,6 +10,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
+	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -207,6 +208,10 @@ var ClusterInstAliasArgs = []string{
 	"resources.vms:#.containers:#.status=clusterinst.resources.vms:#.containers:#.status",
 	"resources.vms:#.containers:#.clusterip=clusterinst.resources.vms:#.containers:#.clusterip",
 	"resources.vms:#.containers:#.restarts=clusterinst.resources.vms:#.containers:#.restarts",
+	"createdat.seconds=clusterinst.createdat.seconds",
+	"createdat.nanos=clusterinst.createdat.nanos",
+	"updatedat.seconds=clusterinst.updatedat.seconds",
+	"updatedat.nanos=clusterinst.updatedat.nanos",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",

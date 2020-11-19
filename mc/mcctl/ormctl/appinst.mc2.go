@@ -303,6 +303,8 @@ var AppInstAliasArgs = []string{
 	"availabilityzone=appinst.availabilityzone",
 	"vmflavor=appinst.vmflavor",
 	"optres=appinst.optres",
+	"updatedat.seconds=appinst.updatedat.seconds",
+	"updatedat.nanos=appinst.updatedat.nanos",
 }
 var AppInstComments = map[string]string{
 	"fields":                         "Fields are used for the Update API to specify which fields to apply",

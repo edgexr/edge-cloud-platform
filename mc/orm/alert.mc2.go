@@ -480,6 +480,12 @@ func addControllerApis(method string, group *echo.Group) {
 	// VmPool: 32
 	// CrmAccessPublicKey: 33
 	// CrmAccessKeyUpgradeRequired: 34
+	// CreatedAt: 35
+	// CreatedAtSeconds: 35.1
+	// CreatedAtNanos: 35.2
+	// UpdatedAt: 36
+	// UpdatedAtSeconds: 36.1
+	// UpdatedAtNanos: 36.2
 	// ```
 	// Security:
 	//   Bearer:
@@ -630,6 +636,12 @@ func addControllerApis(method string, group *echo.Group) {
 	// KeyOrganization: 2.1
 	// KeyName: 2.2
 	// Cloudlets: 3
+	// CreatedAt: 4
+	// CreatedAtSeconds: 4.1
+	// CreatedAtNanos: 4.2
+	// UpdatedAt: 5
+	// UpdatedAtSeconds: 5.1
+	// UpdatedAtNanos: 5.2
 	// ```
 	// Security:
 	//   Bearer:
@@ -882,6 +894,12 @@ func addControllerApis(method string, group *echo.Group) {
 	// AutoProvPolicies: 32
 	// TemplateDelimiter: 33
 	// SkipHcPorts: 34
+	// CreatedAt: 35
+	// CreatedAtSeconds: 35.1
+	// CreatedAtNanos: 35.2
+	// UpdatedAt: 36
+	// UpdatedAtSeconds: 36.1
+	// UpdatedAtNanos: 36.2
 	// ```
 	// Security:
 	//   Bearer:
@@ -1002,6 +1020,12 @@ func addControllerApis(method string, group *echo.Group) {
 	// ResourcesVmsContainersStatus: 28.1.6.3
 	// ResourcesVmsContainersClusterip: 28.1.6.4
 	// ResourcesVmsContainersRestarts: 28.1.6.5
+	// CreatedAt: 29
+	// CreatedAtSeconds: 29.1
+	// CreatedAtNanos: 29.2
+	// UpdatedAt: 30
+	// UpdatedAtSeconds: 30.1
+	// UpdatedAtNanos: 30.2
 	// ```
 	// Security:
 	//   Bearer:
@@ -1265,6 +1289,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// AvailabilityZone: 33
 	// VmFlavor: 34
 	// OptRes: 35
+	// UpdatedAt: 36
+	// UpdatedAtSeconds: 36.1
+	// UpdatedAtNanos: 36.2
 	// ```
 	// Security:
 	//   Bearer:

@@ -563,6 +563,10 @@ var CloudletAliasArgs = []string{
 	"vmpool=cloudlet.vmpool",
 	"crmaccesspublickey=cloudlet.crmaccesspublickey",
 	"crmaccesskeyupgraderequired=cloudlet.crmaccesskeyupgraderequired",
+	"createdat.seconds=cloudlet.createdat.seconds",
+	"createdat.nanos=cloudlet.createdat.nanos",
+	"updatedat.seconds=cloudlet.updatedat.seconds",
+	"updatedat.nanos=cloudlet.updatedat.nanos",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",

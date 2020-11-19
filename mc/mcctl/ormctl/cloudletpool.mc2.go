@@ -10,6 +10,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
+	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -153,6 +154,10 @@ var CloudletPoolAliasArgs = []string{
 	"org=cloudletpool.key.organization",
 	"name=cloudletpool.key.name",
 	"cloudlets=cloudletpool.cloudlets",
+	"createdat.seconds=cloudletpool.createdat.seconds",
+	"createdat.nanos=cloudletpool.createdat.nanos",
+	"updatedat.seconds=cloudletpool.updatedat.seconds",
+	"updatedat.nanos=cloudletpool.updatedat.nanos",
 }
 var CloudletPoolComments = map[string]string{
 	"fields":    "Fields are used for the Update API to specify which fields to apply",
