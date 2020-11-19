@@ -3,15 +3,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:42:49.824473-07:00"
-  duration: 129.512ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:14:08.729736+05:30"
+  duration: 211.346ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 20b5fa8b29111d59
+  traceid: 67ffe890f1dc64a1
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -25,15 +25,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:42:49.716537-07:00"
-  duration: 103.027ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:14:08.537564+05:30"
+  duration: 187.617ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 6c9577a37b88d6a3
+  traceid: 7302549cebe7a8ab
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -47,15 +47,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:42:48.696869-07:00"
-  duration: 112.482ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:14:07.357929+05:30"
+  duration: 187.794ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 3c844a6a12b3578e
+  traceid: 28431982c431cd0f
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -69,15 +69,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:42:48.560272-07:00"
-  duration: 131.949ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:14:07.148856+05:30"
+  duration: 204.147ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 36d5bc201908aca2
+  traceid: 56e40d08f0f90301
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -91,15 +91,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:41:48.203686-07:00"
-  duration: 118.021ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:12:28.010289+05:30"
+  duration: 310.461ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 51a8a6d7e86ae608
+  traceid: 0442775c1f984b58
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -113,15 +113,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:41:48.107696-07:00"
-  duration: 91.872ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:12:27.786346+05:30"
+  duration: 218.796ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 3d568bc72ce1175d
+  traceid: 62b93a611b0673e4
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -135,15 +135,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:41:47.122401-07:00"
-  duration: 129.241ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:12:26.107459+05:30"
+  duration: 270.086ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 320bd7326b74b621
+  traceid: 4fa16bdd4d93ce02
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -157,15 +157,15 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-08-07T10:41:46.993941-07:00"
-  duration: 124.167ms
-  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T14:12:25.852887+05:30"
+  duration: 249.433ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Creating"}}
     {"data":{"message":"Creating App Inst"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created AppInst successfully"}}
-  traceid: 62710ea8ab628e16
+  traceid: 413695193cb83952
   tags:
     app: someapplication1
     apporg: AcmeAppCo

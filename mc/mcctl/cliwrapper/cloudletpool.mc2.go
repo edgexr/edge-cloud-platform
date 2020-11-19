@@ -9,6 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -25,7 +26,7 @@ var _ = math.Inf
 func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateCloudletPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Members", ",")
+	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -36,7 +37,7 @@ func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteCloudletPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Members", ",")
+	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -47,7 +48,7 @@ func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 func (s *Client) UpdateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateCloudletPool"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("Members", ",")
+	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -58,7 +59,7 @@ func (s *Client) UpdateCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) ([]edgeproto.CloudletPool, int, error) {
 	args := []string{"region", "ShowCloudletPool"}
 	outlist := []edgeproto.CloudletPool{}
-	noconfig := strings.Split("Members", ",")
+	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}

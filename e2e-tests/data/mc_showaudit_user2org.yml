@@ -3,22 +3,22 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:42.173053-07:00"
-  duration: 7.154ms
+  starttime: "2020-11-18T13:59:33.316416+05:30"
+  duration: 38.451ms
   request: '{"Name":"AcmeAppCo","Type":"developer","Address":"123 Maple Street, Gainesville,
     FL 32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Organization deleted"}'
-  traceid: 3f80227e8749927a
+  traceid: 3eddb6585d189caa
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy
   username: user2
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-12-18T13:44:44.543446-08:00"
-  duration: 16.81ms
+  starttime: "2020-11-18T13:59:33.216382+05:30"
+  duration: 46.32ms
   request: '{"Region":"locala","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-3"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-4"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
-  traceid: 1b1f287407047931
+  traceid: 13881137eeb83b65
   tags:
     policy: autoprov1
     policyorg: AcmeAppCo
@@ -27,11 +27,11 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-10-23T17:37:07.310346-07:00"
-  duration: 14.924ms
+  starttime: "2020-11-18T13:59:33.137084+05:30"
+  duration: 75.179ms
   request: '{"Region":"locala","AutoScalePolicy":{"key":{"organization":"AcmeAppCo","name":"scale1"},"min_nodes":1,"max_nodes":3,"scale_up_cpu_thresh":85,"scale_down_cpu_thresh":20,"trigger_time_sec":60}}'
   response: '{}'
-  traceid: 4e507c541c45009a
+  traceid: 0968f2b53104c97e
   tags:
     policy: scale1
     policyorg: AcmeAppCo
@@ -40,9 +40,9 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:42.071157-07:00"
-  duration: 98.232ms
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null}}}'
+  starttime: "2020-11-18T13:59:32.63759+05:30"
+  duration: 495.19ms
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":3,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null},"created_at":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -57,7 +57,7 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 14b6087cd25e2c9e
+  traceid: 0a96044eef6668fd
   tags:
     cloudlet: dmuus-cloud-4
     cloudletorg: dmuus
@@ -68,9 +68,9 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:41.979993-07:00"
-  duration: 87.801ms
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null}}}'
+  starttime: "2020-11-18T13:59:32.178778+05:30"
+  duration: 453.709ms
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"liveness":1,"ip_access":1,"node_flavor":"x1.small","num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -85,7 +85,7 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted ClusterInst successfully"}}
-  traceid: 260e5bb9a9413721
+  traceid: 4f7b7b57d1623291
   tags:
     cloudlet: dmuus-cloud-3
     cloudletorg: dmuus
@@ -96,11 +96,11 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-12-18T13:44:44.285586-08:00"
-  duration: 17.826ms
-  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policy":"autoprov1"}}'
+  starttime: "2020-11-18T13:59:31.956319+05:30"
+  duration: 126.368ms
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policy":"autoprov1","created_at":{},"updated_at":{}}}'
   response: '{}'
-  traceid: 38d6124bc329b12
+  traceid: 10fd354e01f49f60
   tags:
     app: autoprovapp
     apporg: AcmeAppCo
@@ -110,13 +110,13 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:41.93511-07:00"
-  duration: 19.104ms
+  starttime: "2020-11-18T13:59:31.814269+05:30"
+  duration: 134.37ms
   request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
     PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
-    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":{},"updated_at":{}}}'
   response: '{}'
-  traceid: 55f441548b685db1
+  traceid: 06fb60be94c59ffe
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -126,9 +126,9 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:41.888583-07:00"
-  duration: 42.802ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T13:59:31.574867+05:30"
+  duration: 230.518ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":35,"longitude":-95},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
@@ -136,7 +136,7 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
-  traceid: 46fdae027aa84e31
+  traceid: 0d0cbd4ddf45c398
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -150,9 +150,9 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2019-08-10T16:13:41.844651-07:00"
-  duration: 40.222ms
-  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{}}}'
+  starttime: "2020-11-18T13:59:31.352477+05:30"
+  duration: 215.81ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"}},"cloudlet_loc":{"latitude":31,"longitude":-91},"liveness":1,"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
     {"data":{"message":"Deleting"}}
     {"data":{"message":"First Delete Task"}}
@@ -160,7 +160,7 @@
     {"data":{"message":"DeleteDone"}}
     {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
-  traceid: 4242788f1d2a702f
+  traceid: 67dcebd20eca0701
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -174,11 +174,11 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
-  starttime: "2020-03-18T14:19:48.41892-07:00"
-  duration: 13.994ms
+  starttime: "2020-11-18T13:59:31.299196+05:30"
+  duration: 48.565ms
   request: '{"Region":"local","AutoProvPolicy":{"key":{"organization":"AcmeAppCo","name":"autoprov1"},"deploy_client_count":3,"deploy_interval_count":3,"cloudlets":[{"key":{"organization":"dmuus","name":"dmuus-cloud-1"},"loc":{}},{"key":{"organization":"dmuus","name":"dmuus-cloud-2"},"loc":{}}],"undeploy_client_count":1,"undeploy_interval_count":3}}'
   response: '{}'
-  traceid: 1bf7b6b1f18e9fe3
+  traceid: 0020291113218c98
   tags:
     policy: autoprov1
     policyorg: AcmeAppCo
