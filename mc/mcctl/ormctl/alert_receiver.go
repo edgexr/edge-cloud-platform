@@ -58,6 +58,7 @@ var AlertReceiverRequiredArgs = []string{
 }
 
 var AlertReceiverOptionalArgs = []string{
+	"region",
 	"email",
 	"slack-channel",
 	"slack-api-url",
@@ -73,6 +74,7 @@ var AlertReceiverOptionalArgs = []string{
 }
 
 var AlertReceiverArgsComments = map[string]string{
+	"region":           "Region where alert originated",
 	"name":             "Unique name of this receiver",
 	"type":             "Receiver type - email, or slack",
 	"severity":         "Alert severity level - one of " + cloudcommon.GetValidAlertSeverityString(),

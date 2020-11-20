@@ -37,6 +37,7 @@ alertreceivers:
 - name: emailClusterAlertReceiver
   type: email
   severity: error
+  region: local
   user: mexadmin
   email: cluster-ops@mobiledgex.net
   appinst:

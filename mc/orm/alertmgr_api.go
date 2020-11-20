@@ -115,7 +115,7 @@ func CreateAlertReceiver(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelInfo, "type of a receiver is invalid")
 		return setReply(c, fmt.Errorf("Receiver type invalid"), nil)
 	}
-	return nil
+	return setReply(c, nil, Msg("Alert receiver created successfully"))
 }
 
 // Delete alert receiver api handler
@@ -158,7 +158,7 @@ func DeleteAlertReceiver(c echo.Context) error {
 		return setReply(c, fmt.Errorf("Unable to delete a receiver - %s", err.Error()),
 			nil)
 	}
-	return nil
+	return setReply(c, err, Msg("Alert receiver deleted successfully"))
 }
 
 // Show alert receivers api handler

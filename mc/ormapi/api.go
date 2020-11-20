@@ -393,6 +393,8 @@ type AlertReceiver struct {
 	Type string
 	// Alert severity filter
 	Severity string
+	// Region for the alert receiver
+	Region string `json:",omitempty"`
 	// User that created this receiver
 	User string `json:",omitempty"`
 	// Custom receiving email
