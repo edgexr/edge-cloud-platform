@@ -67,6 +67,7 @@ cookbook_file '/tmp/prometheus.yml' do
   mode '0644'
   action :create
   force_unlink true
+  notifies :restart, 'docker_container[cloudletPrometheus]', :delayed
 end
 
 cmd = cloudlet_prometheus_cmd
