@@ -63,6 +63,10 @@ controllers:
   hostname: "127.0.0.1"
   testmode: true
   checkpointinterval: 3m
+  requirenotifyaccesskey: true
+  envvars:
+    E2ETEST_TLS: true
+
 
 dmes:
 - name: dme1
