@@ -228,6 +228,10 @@ func getAlertmgrReceiverName(receiver *ormapi.AlertReceiver) string {
 
 func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]string {
 	labels := map[string]string{}
+	// Add region label if one is specified
+	if in.Region != "" {
+		labels["region"] = in.Region
+	}
 	if in.Cloudlet.Organization != "" {
 		// add labels for the cloudlet
 		labels[edgeproto.CloudletKeyTagOrganization] = in.Cloudlet.Organization
@@ -396,6 +400,7 @@ func alertReceiverMatchesFilter(receiver *ormapi.AlertReceiver, filter *ormapi.A
 			filter.Severity != "" && filter.Severity != receiver.Severity ||
 			filter.Type != "" && filter.Type != receiver.Type ||
 			filter.User != "" && filter.User != receiver.User ||
+			filter.Region != "" && filter.Region != receiver.Region ||
 			filter.SlackChannel != "" && filter.SlackChannel != receiver.SlackChannel ||
 			!receiver.Cloudlet.Matches(&filter.Cloudlet, edgeproto.MatchFilter()) ||
 			!receiver.AppInst.Matches(&filter.AppInst, edgeproto.MatchFilter()) {
@@ -483,6 +488,10 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi, "Unexpected receiver map data for route", "route", route)
 			continue
+		}
+		// get the region if it was configured
+		if region, ok := route.Match["region"]; ok {
+			receiver.Region = region
 		}
 		// Check against a filter
 		if alertReceiverMatchesFilter(receiver, filter) {

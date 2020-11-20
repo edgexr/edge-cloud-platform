@@ -35,6 +35,7 @@ alertreceivers:
 - name: emailClusterAlertReceiver
   type: email
   severity: error
+  region: local
   email: cluster-ops@mobiledgex.net
   appinst:
     clusterinstkey:

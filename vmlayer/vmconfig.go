@@ -55,7 +55,7 @@ runcmd:
  - systemctl restart systemd-resolved
  {{- if .NtpServers}}
  - systemctl restart systemd-timesyncd
- {{- end}} 
+ {{- end}}
  - echo MOBILEDGEX doing ifconfig
  - ifconfig -a`
 
