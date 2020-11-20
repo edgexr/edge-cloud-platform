@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -93,20 +94,20 @@ func (s *ShepherdPlatform) GetClusterIP(ctx context.Context, clusterInst *edgepr
 }
 
 func (s *ShepherdPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	pc, err := s.VMPlatform.GetClusterPlatformClient(ctx, clusterInst, clientType)
+	client, err := s.VMPlatform.GetClusterPlatformClientInternal(ctx, clusterInst, clientType, pc.WithCachedIp(false))
 	if err != nil {
 		return nil, err
 	}
-	err = pc.StartPersistentConn(shepherd_common.ShepherdSshConnectTimeout)
+	err = client.StartPersistentConn(shepherd_common.ShepherdSshConnectTimeout)
 	if err != nil {
 		return nil, err
 	}
-	return pc, nil
+	return client, nil
 }
 
 func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
 	rootLBName := cloudcommon.GetVMAppFQDN(app, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.CloudletKey, s.VMPlatform.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
-	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName})
+	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName}, pc.WithCachedIp(false))
 	if err != nil {
 		return nil, err
 	}
