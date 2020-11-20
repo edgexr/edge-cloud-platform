@@ -34,7 +34,7 @@ tests:
   - name: check that Prometheus active connections is 50
     actions: [cmds]
     apifile: "{{datadir2}}/autoprov_prom_check_active"
-    retrycount: 20
+    retrycount: 40
     retryintervalsec: 0.2
     compareyaml:
       yaml1: '{{outputdir}}/cmds-output'
