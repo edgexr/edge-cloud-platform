@@ -460,6 +460,7 @@ func (v *VMPlatform) GetAccessData(ctx context.Context, cloudlet *edgeproto.Clou
 			return vars, nil
 		}
 		vars, err := infracommon.GetEnvVarsFromVault(ctx, vaultConfig, path)
+		log.SpanLog(ctx, log.DebugLevelApi, "VMProvider GetAccessData", "dataType", dataType, "path", path, "err", err)
 		if err != nil {
 			return nil, err
 		}

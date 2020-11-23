@@ -308,16 +308,16 @@ var CloudletInfoApiCmds = []*cli.Command{
 
 var CloudletKeyRequiredArgs = []string{}
 var CloudletKeyOptionalArgs = []string{
-	"organization",
-	"name",
+	"cloudlet-org",
+	"cloudlet",
 }
 var CloudletKeyAliasArgs = []string{
-	"organization=cloudletkey.organization",
-	"name=cloudletkey.name",
+	"cloudlet-org=cloudletkey.organization",
+	"cloudlet=cloudletkey.name",
 }
 var CloudletKeyComments = map[string]string{
-	"organization": "Organization of the cloudlet site",
-	"name":         "Name of the cloudlet",
+	"cloudlet-org": "Organization of the cloudlet site",
+	"cloudlet":     "Name of the cloudlet",
 }
 var CloudletKeySpecialArgs = map[string]string{}
 var OperationTimeLimitsRequiredArgs = []string{}
