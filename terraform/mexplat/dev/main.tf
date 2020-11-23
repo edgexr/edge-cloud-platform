@@ -47,7 +47,7 @@ module "gitlab" {
     "gitlab-registry",
     "http-server",
     "https-server",
-    "pg-5432",
+    "postgres-${var.environ_tag}",
     "crm",
     "mc",
     "stun-turn",
@@ -217,5 +217,20 @@ resource "google_compute_firewall" mc_notify {
   target_tags                   = [ "mc-notify-${var.environ_tag}" ]
   source_ranges                 = [
     "0.0.0.0/0"
+  ]
+}
+
+resource "google_compute_firewall" postgres {
+  name                          = "postgres-${var.environ_tag}"
+  network                       = "default"
+
+  allow {
+    protocol                    = "tcp"
+    ports                       = [ "5432" ]
+  }
+
+  target_tags                   = [ "postgres-${var.environ_tag}" ]
+  source_ranges                 = [
+    "${module.console.external_ip}/32"
   ]
 }
