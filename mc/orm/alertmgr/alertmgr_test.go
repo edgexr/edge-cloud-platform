@@ -369,6 +369,9 @@ func TestAlertMgrServer(t *testing.T) {
 	testAlertCache.Update(ctx, &testAlerts[1], 0)
 	fakeAlertmanager.verifyAlertCnt(t, 2)
 	fakeAlertmanager.verifyAlertPresent(t, &testAlerts[1])
+	// Raise an internal alert - should not get propagated to alertmanager
+	testAlertCache.Update(ctx, &testAlerts[2], 0)
+	fakeAlertmanager.verifyAlertCnt(t, 2)
 	// Test alertmgr show alert api
 	alerts, err := testAlertMgrServer.ShowAlerts(ctx, nil)
 	require.Nil(t, err)

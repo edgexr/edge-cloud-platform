@@ -137,9 +137,23 @@ func (s *AlertMgrServer) Stop() {
 	s.waitGrp.Wait()
 }
 
+func isInternalAlert(alert *edgeproto.Alert) bool {
+	name, ok := alert.Labels["alertname"]
+	if !ok {
+		return true
+	}
+	if name == cloudcommon.AlertAppInstDown {
+		return false
+	}
+	return true
+}
+
 func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models.PostableAlerts {
 	openAPIAlerts := models.PostableAlerts{}
 	for _, a := range alerts {
+		if isInternalAlert(a) {
+			continue
+		}
 		start := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds, int64(a.ActiveAt.Nanos)))
 		// Set endsAt to now + s.AlertResolutionTimout
 		end := strfmt.DateTime(time.Now().Add(s.AlertResolutionTimout))
