@@ -18,3 +18,10 @@ func (s *Client) ShowConfig(uri, token string) (*ormapi.Config, int, error) {
 	st, err := s.runObjs(uri, token, args, nil, &config)
 	return &config, st, err
 }
+
+func (s *Client) PublicConfig(uri string) (*ormapi.Config, int, error) {
+	args := []string{"config", "public"}
+	config := ormapi.Config{}
+	st, err := s.runObjs(uri, "", args, nil, &config)
+	return &config, st, err
+}

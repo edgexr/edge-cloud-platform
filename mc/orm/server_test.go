@@ -625,6 +625,16 @@ func testLockedUsers(t *testing.T, uri string, mcClient *ormclient.Client) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, notifyEmail, config.NotifyEmailAddress)
+	// show public config, make sure certain fields are hidden
+	publicConfig, status, err := mcClient.PublicConfig(uri)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, config.PasswordMinCrackTimeSec, publicConfig.PasswordMinCrackTimeSec)
+	require.Equal(t, 0, publicConfig.ID)
+	require.Equal(t, false, publicConfig.LockNewAccounts)
+	require.Equal(t, "", publicConfig.NotifyEmailAddress)
+	require.Equal(t, false, publicConfig.SkipVerifyEmail)
+	require.Equal(t, float64(0), publicConfig.AdminPasswordMinCrackTimeSec)
 
 	// make sure users can't see config
 	_, status, err = mcClient.ShowConfig(uri, tok1)

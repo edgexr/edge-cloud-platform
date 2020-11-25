@@ -238,6 +238,12 @@ func (s *Client) ShowConfig(uri, token string) (*ormapi.Config, int, error) {
 	return &config, status, err
 }
 
+func (s *Client) PublicConfig(uri string) (*ormapi.Config, int, error) {
+	config := ormapi.Config{}
+	status, err := s.PostJson(uri+"/publicconfig", "", nil, &config)
+	return &config, status, err
+}
+
 func (s *Client) RestrictedUserUpdate(uri, token string, user map[string]interface{}) (int, error) {
 	return s.PostJson(uri+"/auth/restricted/user/update", token, user, nil)
 }

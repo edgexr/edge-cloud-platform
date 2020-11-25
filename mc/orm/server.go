@@ -274,6 +274,14 @@ func RunServer(config *ServerConfig) (*Server, error) {
 	//   404: notFound
 	e.POST(root+"/usercreate", CreateUser)
 	e.POST(root+"/passwordresetrequest", PasswordResetRequest)
+	// swagger:route POST /publicconfig Config PublicConfig
+	// Show Public Configuration.
+	// Show Public Configuration for UI
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   404: notFound
+	e.POST(root+"/publicconfig", PublicConfig)
 	// swagger:route POST /passwordreset Security PasswdReset
 	// Reset Login Password.
 	// This resets your login password.

@@ -20,6 +20,10 @@ func GetConfigCommand() *cobra.Command {
 		ReplyData: &ormapi.Config{},
 		Run:       runRest("/auth/config/show"),
 	}, &cli.Command{
+		Use:       "public",
+		ReplyData: &ormapi.Config{},
+		Run:       runRest("/publicconfig"),
+	}, &cli.Command{
 		Use:       "version",
 		ReplyData: &ormapi.Version{},
 		Run:       runRest("/auth/config/version"),
