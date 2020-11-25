@@ -28,10 +28,15 @@ tests:
       yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcdata
 
-  - name: create alert receiver
+  - name: admin creates an alert receiver
     actions: [mcapi-create]
     apifile: '{{datadir2}}/mc_admin_alert_receiver.yml'
     curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: user2 creates alert receivers
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/mc_user2_alert_receiver.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
 
   - name: verify alert receiver was created
     actions: [mcapi-showalertreceivers]
@@ -39,6 +44,14 @@ tests:
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mc_admin_data_alert_receiver_show.yml'
+      filetype: mcdata
+
+  - name: verify user only sees owned alert receivers
+    actions: [mcapi-showalertreceivers]
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_user2_data_alert_receiver_show.yml'
       filetype: mcdata
 
   - name: set healthy backend servers to 0
@@ -108,10 +121,15 @@ tests:
       yaml2: '{{datadir2}}/slackdata_alert_resolved.yml'
       filetype: slackdata
 
-  - name: delete alert receiver
+  - name: admin deletes an alert receiver
     actions: [mcapi-delete]
     apifile: '{{datadir2}}/mc_admin_alert_receiver.yml'
     curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: user2 deletes alert receivers
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/mc_user2_alert_receiver.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
 
   - name: verify no alert receivers are present
     actions: [mcapi-showalertreceivers]
