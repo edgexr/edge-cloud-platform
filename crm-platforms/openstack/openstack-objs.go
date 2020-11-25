@@ -32,7 +32,7 @@ type OSFloatingIP struct {
 	Project           string `json:"Project"`
 	FixedIPAddress    string `json:"Fixed IP Address"`
 	Port              string `json:"Port"`
-	FloatingNetwork   string `json:"FloatingNetwork"`
+	FloatingNetwork   string `json:"Floating Network"`
 	FloatingIPAddress string `json:"Floating IP Address"`
 }
 
