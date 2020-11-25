@@ -643,7 +643,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			Name:              spec.NewSubnetName,
 			Id:                v.VMProvider.IdSanitize(spec.NewSubnetName),
 			CIDR:              NextAvailableResource,
-			DHCPEnabled:       "no",
+			DHCPEnabled:       "yes",
 			DNSServers:        subnetDns,
 			NetworkName:       v.VMProperties.GetCloudletMexNetwork(),
 			SecurityGroupName: spec.NewSecgrpName,
