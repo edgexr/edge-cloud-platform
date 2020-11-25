@@ -17,7 +17,7 @@ resources:
             cidr: 10.101.0.0/24
             network: mex-k8s-net-1
             gateway_ip: 10.101.0.1
-            enable_dhcp: no
+            enable_dhcp: yes
             dns_nameservers:
                  - 1.1.1.1
                  - 1.0.0.1
