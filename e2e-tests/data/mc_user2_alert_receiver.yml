@@ -1,22 +1,7 @@
 alertreceivers:
-- name: emailClusterAlertReceiver
-  type: email
-  severity: error
-  region: local
-  user: mexadmin
-  email: cluster-ops@mobiledgex.net
-  appinst:
-    clusterinstkey:
-      clusterkey:
-        name: SmallCluster
-      cloudletkey:
-        organization: dmuus
-        name: dmuus-cloud-1
-      organization: AcmeAppCo
 - name: emailAlertReceiver
   type: email
   severity: error
-  user: user2
   email: ops@mobiledgex.net
   appinst:
     appkey:
@@ -33,9 +18,8 @@ alertreceivers:
 - name: emailSlackReceiver
   type: slack
   severity: error
-  user: user2
-  slackchannel: '#alerts'
-  slackwebhook: <hidden>
+  slackchannel: "#alerts"
+  slackwebhook: "http://host.docker.internal:9100/slack/webhook"
   appinst:
     appkey:
       organization: AcmeAppCo

@@ -182,6 +182,11 @@ func ShowAlertReceiver(c echo.Context) error {
 		return setReply(c, fmt.Errorf("Slack URL is not specifiable as a filter"), nil)
 	}
 
+	// Admin users can specify a user, or see all the receivers
+	adminUser, _ := isUserAdmin(ctx, claims.Username)
+	if !adminUser {
+		filter.User = claims.Username
+	}
 	receivers, err := AlertManagerServer.ShowReceivers(ctx, &filter)
 	if err != nil {
 		return err
