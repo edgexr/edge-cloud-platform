@@ -360,16 +360,15 @@ func GetCloudletManifest(c echo.Context) error {
 	}
 	rc.username = claims.Username
 
-	in := ormapi.RegionCloudlet{}
+	in := ormapi.RegionCloudletKey{}
 	if err := c.Bind(&in); err != nil {
 		return bindErr(c, err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
-	span.SetTag("org", in.Cloudlet.Key.Organization)
-	resp, err := GetCloudletManifestObj(ctx, rc, &in.Cloudlet)
+	span.SetTag("org", in.CloudletKey.Organization)
+	resp, err := GetCloudletManifestObj(ctx, rc, &in.CloudletKey)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -378,10 +377,10 @@ func GetCloudletManifest(c echo.Context) error {
 	return setReply(c, err, resp)
 }
 
-func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet) (*edgeproto.CloudletManifest, error) {
+func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
+		if err := authorized(ctx, rc.username, obj.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
 			return nil, err
 		}

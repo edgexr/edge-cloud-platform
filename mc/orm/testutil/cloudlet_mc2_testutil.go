@@ -83,18 +83,18 @@ func TestPermShowCloudlet(mcClient *ormclient.Client, uri, token, region, org st
 	return TestShowCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletManifest(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) (*edgeproto.CloudletManifest, int, error) {
-	dat := &ormapi.RegionCloudlet{}
+func TestGetCloudletManifest(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
+	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
-	dat.Cloudlet = *in
+	dat.CloudletKey = *in
 	for _, fn := range modFuncs {
-		fn(&dat.Cloudlet)
+		fn(&dat.CloudletKey)
 	}
 	return mcClient.GetCloudletManifest(uri, token, dat)
 }
-func TestPermGetCloudletManifest(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) (*edgeproto.CloudletManifest, int, error) {
-	in := &edgeproto.Cloudlet{}
-	in.Key.Organization = org
+func TestPermGetCloudletManifest(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
+	in := &edgeproto.CloudletKey{}
+	in.Organization = org
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -235,10 +235,10 @@ func (s *TestClient) ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) (
 	return out, err
 }
 
-func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.CloudletManifest, error) {
-	inR := &ormapi.RegionCloudlet{
-		Region:   s.Region,
-		Cloudlet: *in,
+func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
+	inR := &ormapi.RegionCloudletKey{
+		Region:      s.Region,
+		CloudletKey: *in,
 	}
 	out, status, err := s.McClient.GetCloudletManifest(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {

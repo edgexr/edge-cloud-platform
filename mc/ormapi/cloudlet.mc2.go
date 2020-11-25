@@ -60,7 +60,14 @@ type swaggerShowCloudlet struct {
 // swagger:parameters GetCloudletManifest
 type swaggerGetCloudletManifest struct {
 	// in: body
-	Body RegionCloudlet
+	Body RegionCloudletKey
+}
+
+type RegionCloudletKey struct {
+	// required: true
+	// Region name
+	Region      string
+	CloudletKey edgeproto.CloudletKey
 }
 
 // Request summary for GetCloudletProps
@@ -117,13 +124,6 @@ type RegionFlavorMatch struct {
 type swaggerRevokeAccessKey struct {
 	// in: body
 	Body RegionCloudletKey
-}
-
-type RegionCloudletKey struct {
-	// required: true
-	// Region name
-	Region      string
-	CloudletKey edgeproto.CloudletKey
 }
 
 // Request summary for GenerateAccessKey

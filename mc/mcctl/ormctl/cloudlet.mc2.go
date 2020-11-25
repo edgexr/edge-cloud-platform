@@ -103,12 +103,12 @@ var ShowCloudletCmd = &cli.Command{
 
 var GetCloudletManifestCmd = &cli.Command{
 	Use:          "GetCloudletManifest",
-	RequiredArgs: "region " + strings.Join(CloudletRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
-	SpecialArgs:  &CloudletSpecialArgs,
-	Comments:     addRegionComment(CloudletComments),
-	ReqData:      &ormapi.RegionCloudlet{},
+	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:  &CloudletKeySpecialArgs,
+	Comments:     addRegionComment(CloudletKeyComments),
+	ReqData:      &ormapi.RegionCloudletKey{},
 	ReplyData:    &edgeproto.CloudletManifest{},
 	Run:          runRest("/auth/ctrl/GetCloudletManifest"),
 }

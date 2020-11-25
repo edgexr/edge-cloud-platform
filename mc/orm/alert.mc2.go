@@ -506,7 +506,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowCloudlet", ShowCloudlet)
-	// swagger:route POST /auth/ctrl/GetCloudletManifest Cloudlet GetCloudletManifest
+	// swagger:route POST /auth/ctrl/GetCloudletManifest CloudletKey GetCloudletManifest
 	// Get Cloudlet Manifest.
 	//  Shows deployment manifest required to setup cloudlet
 	// Security:
