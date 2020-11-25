@@ -142,3 +142,17 @@ func resetUserPasswordCrackTimes(ctx context.Context) error {
 	res := db.Model(&ormapi.User{}).Where("pass_crack_time_sec > ?", 0).Update("pass_crack_time_sec", 0)
 	return res.Error
 }
+
+// PubliConfig gets configuration that the UI needs to make the behavior of the
+// UI consistent with the behavior of the back-end. This is an un-authenticated
+// API so only that which is needed should be revealed.
+func PublicConfig(c echo.Context) error {
+	ctx := GetContext(c)
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
+	publicConfig := &ormapi.Config{}
+	publicConfig.PasswordMinCrackTimeSec = config.PasswordMinCrackTimeSec
+	return c.JSON(http.StatusOK, publicConfig)
+}
