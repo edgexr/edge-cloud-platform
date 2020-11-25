@@ -265,6 +265,9 @@ func (s *OpenstackPlatform) ListFloatingIPs(ctx context.Context, network string)
 	} else {
 		out, err = s.TimedOpenStackCommand(ctx, "openstack", "floating", "ip", "list", "--network", network, "-f", "json")
 	}
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list floating IPs: %s, %s - %v", network, out, err)
+	}
 	var fips []OSFloatingIP
 	err = json.Unmarshal(out, &fips)
 	if err != nil {
