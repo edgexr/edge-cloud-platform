@@ -38,13 +38,13 @@ func TestController(t *testing.T) {
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
 
-	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9094"
 	// mock http to redirect requests
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 	// any requests that don't have a registered URL will be fetched normally
 	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
-	InitAlertmgrMock(testAlertMgrAddr)
+	testAlertMgrAddr, err := InitAlertmgrMock()
+	require.Nil(t, err)
 
 	config := ServerConfig{
 		ServAddr:                addr,
@@ -133,7 +133,7 @@ func TestController(t *testing.T) {
 	// create a developers
 	org1 := "org1"
 	org2 := "org2"
-	_, _, tokenDev := testCreateUserOrg(t, mcClient, uri, "dev", "developer", org1)
+	dev, _, tokenDev := testCreateUserOrg(t, mcClient, uri, "dev", "developer", org1)
 	_, _, tokenDev2 := testCreateUserOrg(t, mcClient, uri, "dev2", "developer", org2)
 	dev3, tokenDev3, _ := testCreateUser(t, mcClient, uri, "dev3")
 	dev4, tokenDev4, _ := testCreateUser(t, mcClient, uri, "dev4")
@@ -366,9 +366,11 @@ func TestController(t *testing.T) {
 
 	// test alert receivers permissions and validations
 	goodPermTestAlertReceivers(t, mcClient, uri, tokenDev3, tokenOper3, ctrl.Region, org1, org3)
+	// test ability of different users to delete/show other users's receivers
+	userPermTestAlertReceivers(t, mcClient, uri, dev.Name, tokenDev, dev3.Name, tokenDev3, ctrl.Region, org1, org3)
 
 	{
-		// developers can't create AppInsts on other developer's ClusterInsts
+		// developers can't create AppInsts on other developemar's ClusterInsts
 		appinst := edgeproto.AppInst{}
 		appinst.Key.AppKey.Organization = org1
 		appinst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX

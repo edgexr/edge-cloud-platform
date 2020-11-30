@@ -14,9 +14,9 @@ func (s *Client) DeleteAlertReceiver(uri, token string, receiver *ormapi.AlertRe
 	return s.runObjs(uri, token, args, receiver, nil)
 }
 
-func (s *Client) ShowAlertReceiver(uri, token string) ([]ormapi.AlertReceiver, int, error) {
+func (s *Client) ShowAlertReceiver(uri, token string, in *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, int, error) {
 	args := []string{"alertreceiver", "show"}
 	receivers := []ormapi.AlertReceiver{}
-	st, err := s.runObjs(uri, token, args, nil, &receivers)
+	st, err := s.runObjs(uri, token, args, in, &receivers)
 	return receivers, st, err
 }

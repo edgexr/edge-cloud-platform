@@ -3,9 +3,9 @@ package orm
 import (
 	fmt "fmt"
 	"net/http"
+	"os"
 	"testing"
 
-	"github.com/jarcoal/httpmock"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
@@ -13,55 +13,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getReceiversPath(addr string) string {
-	return fmt.Sprintf(`=~^%s/%s(.*)\z`, addr, "api/v3/receiver")
+func InitAlertmgrMock() (string, error) {
+	testAlertMgrAddr := "http://dummyalertmgr.mobiledgex.net:9093"
+	testAlertMgrConfig := "testAlertMgrConfig.yml"
+	// start with clean configFile
+	err := os.Remove(testAlertMgrConfig)
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	if fakeAlertmanager := alertmgr.NewAlertmanagerMock(testAlertMgrAddr, testAlertMgrConfig); fakeAlertmanager == nil {
+		return "", fmt.Errorf("Failed to start alertmanager")
+	}
+
+	// Start up a sidecar server on an available port
+	sidecarServer, err := alertmgr.NewSidecarServer(testAlertMgrAddr, testAlertMgrConfig, ":0", &alertmgr.TestInitInfo, "", "", "", false)
+	if err != nil {
+		return "", err
+	}
+	if err = sidecarServer.Run(); err != nil {
+		return "", err
+	}
+	return sidecarServer.GetApiAddr(), nil
 }
 
-func InitAlertmgrMock(addr string) {
-	httpmock.RegisterResponder("GET", addr+"/",
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewStringResponse(200, "Success"), nil
-		},
-	)
-	httpmock.RegisterResponder("GET", addr,
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewStringResponse(200, "Success"), nil
-		},
-	)
-	httpmock.RegisterResponder("POST", addr+alertmgr.AlertApi,
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewStringResponse(200, "Success"), nil
-		},
-	)
-	httpmock.RegisterResponder("GET", addr+alertmgr.AlertApi,
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewJsonResponse(200, make([]interface{}, 0))
-		},
-	)
-	httpmock.RegisterResponder("GET", getReceiversPath(addr),
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewJsonResponse(200, alertmgr.SidecarReceiverConfigs{})
-		},
-	)
-	httpmock.RegisterResponder("POST", getReceiversPath(addr),
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewStringResponse(200, "Success"), nil
-		},
-	)
-	httpmock.RegisterResponder("DELETE", getReceiversPath(addr),
-		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewStringResponse(200, "Success"), nil
-		},
-	)
-}
-func testShowAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name string) ([]ormapi.AlertReceiver, int, error) {
+func testShowAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, username string) ([]ormapi.AlertReceiver, int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	dat := &ormapi.AlertReceiver{}
 	dat.Name = name
 	dat.AppInst = *in
+	dat.User = username
 
-	recs, status, err := mcClient.ShowAlertReceiver(uri, token)
+	recs, status, err := mcClient.ShowAlertReceiver(uri, token, dat)
 	return recs, status, err
 }
 
@@ -85,7 +68,7 @@ func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 	return status, err
 }
 
-func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity string) (int, error) {
+func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity, username string) (int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	dat := &ormapi.AlertReceiver{}
@@ -93,6 +76,7 @@ func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 	dat.Type = rType
 	dat.Name = name
 	dat.AppInst = *in
+	dat.User = username
 
 	status, err := mcClient.DeleteAlertReceiver(uri, token, dat)
 	return status, err
@@ -103,11 +87,70 @@ func badPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, to
 	status, err := testCreateAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "", "", nil, nil)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	status, err = testDeleteAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error")
+	status, err = testDeleteAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "")
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
-	list, status, err := testShowAlertReceiver(mcClient, uri, token, region, org, "testAlert")
+	list, status, err := testShowAlertReceiver(mcClient, uri, token, region, org, "testAlert", "")
 	// we don't take the filter for the show command, so return is just an empty list
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list))
+}
+
+func userPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, devMgr, devMgrToken, dev, devToken, region, devOrg, operOrg string) {
+	// mgrDeveloper creates a receiver
+	status, err := testCreateAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "mgrReceiver", "email", "error", "", "", nil, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// Developer doesn't see the receiver
+	list, status, err := testShowAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list))
+	// Developer contributor creates a receiver
+	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "devReceiver", "email", "error", "", "", nil, nil)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// Developer can only see it's own alert receiver
+	list, status, err = testShowAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(list))
+	require.Equal(t, "devReceiver", list[0].Name)
+	// Manager only sees it's receivers by default
+	list, status, err = testShowAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(list))
+	require.Equal(t, "mgrReceiver", list[0].Name)
+	// Manager sees other developer's receivers if username is specified
+	list, status, err = testShowAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "", dev)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(list))
+	require.Equal(t, "devReceiver", list[0].Name)
+	// Developer cannot see the receivers of others
+	list, status, err = testShowAlertReceiver(mcClient, uri, devToken, region, devOrg, "", devMgr)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Developer cannot delete other user's receiver
+	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "mgrReceiver", "email", "error", devMgr)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Manager can delete other user's receiver
+	status, err = testDeleteAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "devReceiver", "email", "error", dev)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// Receiver was deleted
+	list, status, err = testShowAlertReceiver(mcClient, uri, devToken, region, "", "", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list))
+	// Delete it's own receiver
+	status, err = testDeleteAlertReceiver(mcClient, uri, devMgrToken, region, "", "mgrReceiver", "email", "error", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	list, status, err = testShowAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(list))
@@ -124,17 +167,19 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, d
 			Organization: devOrg,
 		},
 	}
+	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", &appInst, nil)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error")
+	list, status, err := testShowAlertReceiver(mcClient, uri, devToken, region, "", "testAlert", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	list, status, err := testShowAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert")
+	require.Equal(t, 1, len(list))
+	status, err = testDeleteAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "")
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	// we always return empty result for the unit-test
-	require.Equal(t, 0, len(list))
 
 	// missing name check
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "", "email", "error", "", "", nil, nil)
@@ -182,4 +227,10 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, d
 	status, err = testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", &appInst, &cloudlet)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Cloudlet details cannot be specified if this receiver is for appInst or cluster alerts")
+
+	// Clean up last receiver
+	list, status, err = testShowAlertReceiver(mcClient, uri, devToken, region, "", "testAlert", "")
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list))
 }
