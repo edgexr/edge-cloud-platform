@@ -24,7 +24,7 @@ var operatorInfluxDBTemplate *template.Template
 // 100 values at a time
 var queryChunkSize = 100
 
-var MaxEntriesFromInfluxDb = 2000
+var maxEntriesFromInfluxDb = 10000
 
 type InfluxDBContext struct {
 	region string
@@ -291,7 +291,7 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 	}
 	// We set max number of responses we will get from InfluxDB
 	if q.Last == 0 {
-		q.Last = MaxEntriesFromInfluxDb
+		q.Last = maxEntriesFromInfluxDb
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
@@ -528,7 +528,11 @@ func GetMetricsCommon(c echo.Context) error {
 	}
 	rc.claims = claims
 	ctx := GetContext(c)
-
+	// Get the current config
+	config, err := getConfig(ctx)
+	if err == nil {
+		maxEntriesFromInfluxDb = config.MaxMetricsDataPoints
+	}
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
 		success, err := ReadConn(c, &in)
