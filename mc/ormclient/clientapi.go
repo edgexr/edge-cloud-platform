@@ -74,7 +74,7 @@ type Api interface {
 
 	CreateAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error)
 	DeleteAlertReceiver(uri, token string, receiver *ormapi.AlertReceiver) (int, error)
-	ShowAlertReceiver(uri, token string) ([]ormapi.AlertReceiver, int, error)
+	ShowAlertReceiver(uri, token string, in *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, int, error)
 
 	FlavorApiClient
 	CloudletApiClient

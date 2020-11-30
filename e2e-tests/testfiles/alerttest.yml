@@ -126,9 +126,14 @@ tests:
     apifile: '{{datadir2}}/mc_admin_alert_receiver.yml'
     curuserfile: '{{datadir2}}/mc_admin.yml'
 
+  - name: admin deletes user alert receiver
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/mc_admin_delete_user_alert_receiver.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
   - name: user2 deletes alert receivers
     actions: [mcapi-delete]
-    apifile: '{{datadir2}}/mc_user2_alert_receiver.yml'
+    apifile: '{{datadir2}}/mc_user2_alert_receiver_delete.yml'
     curuserfile: '{{datadir2}}/mc_user2.yml'
 
   - name: verify no alert receivers are present

@@ -603,8 +603,8 @@ func (s *Client) DeleteAlertReceiver(uri, token string, receiver *ormapi.AlertRe
 	return s.PostJson(uri+"/auth/alertreceiver/delete", token, receiver, nil)
 }
 
-func (s *Client) ShowAlertReceiver(uri, token string) ([]ormapi.AlertReceiver, int, error) {
+func (s *Client) ShowAlertReceiver(uri, token string, in *ormapi.AlertReceiver) ([]ormapi.AlertReceiver, int, error) {
 	receivers := []ormapi.AlertReceiver{}
-	status, err := s.PostJson(uri+"/auth/alertreceiver/show", token, nil, &receivers)
+	status, err := s.PostJson(uri+"/auth/alertreceiver/show", token, in, &receivers)
 	return receivers, status, err
 }

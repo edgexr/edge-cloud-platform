@@ -8,7 +8,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-var testInitInfo = AlertmgrInitInfo{
+var TestInitInfo = AlertmgrInitInfo{
 	Email:          "alerts@localhost",
 	User:           "testuser",
 	Token:          "12345",

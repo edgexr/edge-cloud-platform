@@ -118,6 +118,22 @@ func CreateAlertReceiver(c echo.Context) error {
 	return setReply(c, nil, Msg("Alert receiver created successfully"))
 }
 
+func getOrgForReceiver(in *ormapi.AlertReceiver) string {
+	if in == nil {
+		return ""
+	}
+	org := ""
+
+	if in.Cloudlet.Organization != "" {
+		org = in.Cloudlet.Organization
+	} else if in.AppInst.AppKey.Organization != "" {
+		org = in.AppInst.AppKey.Organization
+	} else if in.AppInst.ClusterInstKey.Organization != "" {
+		org = in.AppInst.ClusterInstKey.Organization
+	}
+	return org
+}
+
 // Delete alert receiver api handler
 func DeleteAlertReceiver(c echo.Context) error {
 	claims, err := getClaims(c)
@@ -132,25 +148,28 @@ func DeleteAlertReceiver(c echo.Context) error {
 		return err
 	}
 
-	// user is derived from the token
-	if in.User != "" {
-		return setReply(c, fmt.Errorf("User is not specifiable, current logged in user will be used"), nil)
+	org := getOrgForReceiver(&in)
+	// if a user is specified we need to make sure this user has permissions to manage the users in the org
+	if in.User != "" && in.User != claims.Username {
+		if org == "" {
+			return setReply(c, fmt.Errorf("Org details must be present to manage a specific receiver"), nil)
+		}
+		// check if this user is authorized to manage users in the org
+		if err := authorized(ctx, claims.Username, org,
+			ResourceUsers, ActionManage); err != nil {
+			return setReply(c, err, nil)
+		}
+	} else {
+		in.User = claims.Username
 	}
-	in.User = claims.Username
 
 	// Check that user is allowed to access either of the orgs
-	if in.Cloudlet.Organization != "" {
-		if err := authorized(ctx, claims.Username, in.Cloudlet.Organization,
-			ResourceAlert, ActionView); err != nil {
+	if org != "" {
+		if err := authorized(ctx, claims.Username, org, ResourceAlert, ActionView); err != nil {
 			return setReply(c, err, nil)
 		}
 	}
-	if in.AppInst.AppKey.Organization != "" {
-		if err := authorized(ctx, claims.Username, in.AppInst.AppKey.Organization,
-			ResourceAlert, ActionView); err != nil {
-			return setReply(c, err, nil)
-		}
-	}
+
 	// If the user is not specified look for the alertname for the user that's logged in
 	err = AlertManagerServer.DeleteReceiver(ctx, &in)
 	if err != nil {
@@ -185,23 +204,28 @@ func ShowAlertReceiver(c echo.Context) error {
 	// Admin users can specify a user, or see all the receivers
 	adminUser, _ := isUserAdmin(ctx, claims.Username)
 	if !adminUser {
-		filter.User = claims.Username
+		// If a user is a user-management role for the org in the filter allow user to be specified
+		if filter.User != "" && filter.User != claims.Username {
+			filterOrg := getOrgForReceiver(&filter)
+			if filterOrg == "" {
+				return setReply(c, fmt.Errorf("Org details must be present to see receivers"), nil)
+			}
+			// check if this user is authorized to manage users in the org
+			if err := authorized(ctx, claims.Username, filterOrg, ResourceUsers, ActionManage); err != nil {
+				return setReply(c, err, nil)
+			}
+		} else {
+			filter.User = claims.Username
+		}
 	}
 	receivers, err := AlertManagerServer.ShowReceivers(ctx, &filter)
 	if err != nil {
 		return err
 	}
 	for ii := range receivers {
-		if receivers[ii].Cloudlet.Organization != "" {
-			if err := authorized(ctx, claims.Username, receivers[ii].Cloudlet.Organization,
-				ResourceAlert, ActionView); err == nil {
-				alertRecs = append(alertRecs, receivers[ii])
-			}
-		} else {
-			if err := authorized(ctx, claims.Username, receivers[ii].AppInst.AppKey.Organization,
-				ResourceAlert, ActionView); err == nil {
-				alertRecs = append(alertRecs, receivers[ii])
-			}
+		org := getOrgForReceiver(&receivers[ii])
+		if err := authorized(ctx, claims.Username, org, ResourceAlert, ActionView); err == nil {
+			alertRecs = append(alertRecs, receivers[ii])
 		}
 	}
 	return setReply(c, err, alertRecs)

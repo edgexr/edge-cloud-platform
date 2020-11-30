@@ -1043,7 +1043,7 @@ func showMcAlertReceivers(uri, curUserFile, outputDir string, vars, sharedData m
 		return false
 	}
 	showData := ormapi.AllData{}
-	showData.AlertReceivers, status, err = mcClient.ShowAlertReceiver(uri, token)
+	showData.AlertReceivers, status, err = mcClient.ShowAlertReceiver(uri, token, &ormapi.AlertReceiver{})
 	checkMcErr("ShowAlertReceiver", status, err, &rc)
 
 	util.PrintToYamlFile("show-commands.yml", outputDir, showData, true)
