@@ -130,6 +130,8 @@ type Config struct {
 	PasswordMinCrackTimeSec float64
 	// Admin accounts min password crack time seconds (a measure of strength)
 	AdminPasswordMinCrackTimeSec float64
+	// InfluxDB max number of data points returned
+	MaxMetricsDataPoints int
 }
 
 type OrgCloudletPool struct {

@@ -9,7 +9,7 @@ import (
 func GetConfigCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "update",
-		OptionalArgs: "locknewaccounts notifyemailaddress, skipverifyemail",
+		OptionalArgs: "locknewaccounts notifyemailaddress, skipverifyemail, maxmetricsdatapoints",
 		ReqData:      &ormapi.Config{},
 		Run:          runRest("/auth/config/update"),
 	}, &cli.Command{
