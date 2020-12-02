@@ -555,10 +555,8 @@ func GetDockerCrtFile(crtFilePath string) (string, error) {
 
 func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.AccessApi, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) ([]*VMRequestSpec, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletVMsSpec", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "pfFlavor", pfFlavor)
-	err := v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar, ProviderInitGetVmSpec)
-	if err != nil {
-		return nil, err
-	}
+
+	var err error
 	// edge-cloud image already contains the certs
 	if pfConfig.TlsCertFile != "" {
 		crtFile, err := GetDockerCrtFile(pfConfig.TlsCertFile)
@@ -566,12 +564,6 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			return nil, err
 		}
 		pfConfig.TlsCertFile = crtFile
-	}
-
-	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
-	err = v.InitProps(ctx, pc)
-	if err != nil {
-		return nil, err
 	}
 
 	if pfConfig.ContainerRegistryPath == "" {
@@ -739,14 +731,24 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 
 func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
-	v.VMProperties.Domain = VMDomainPlatform
 
 	if cloudlet.ChefClientKey == nil {
 		return nil, fmt.Errorf("unable to find chef client key")
 	}
 
+	v.VMProperties.Domain = VMDomainPlatform
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	err := v.InitProps(ctx, pc)
+	if err != nil {
+		return nil, err
+	}
+
 	v.VMProvider.InitData(ctx, caches)
 
+	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar, ProviderInitGetVmSpec)
+	if err != nil {
+		return nil, err
+	}
 	platvms, err := v.getCloudletVMsSpec(ctx, accessApi, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return nil, err
