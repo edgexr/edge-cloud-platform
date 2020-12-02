@@ -144,7 +144,7 @@ func Login(c echo.Context) error {
 		}
 		valid := totp.Validate(login.TOTP, user.TOTPSharedKey)
 		if !valid {
-			return c.JSON(http.StatusBadRequest, Msg("Invalid OTP"))
+			return c.JSON(http.StatusBadRequest, Msg("Invalid or expired OTP. Please login again to receive another OTP"))
 		}
 	}
 
