@@ -128,9 +128,15 @@ func Login(c echo.Context) error {
 	}
 
 	if user.TOTPSharedKey != "" {
+		opts := totp.ValidateOpts{
+			Period:    OTPExpirationTime,
+			Skew:      1,
+			Digits:    OTPLen,
+			Algorithm: otp.AlgorithmSHA1,
+		}
 		if login.TOTP == "" {
 			// Send OTP over email
-			otp, err := totp.GenerateCode(user.TOTPSharedKey, time.Now().UTC())
+			otp, err := totp.GenerateCodeCustom(user.TOTPSharedKey, time.Now().UTC(), opts)
 			if err != nil {
 				return setReply(c, err, nil)
 			}
@@ -142,8 +148,9 @@ func Login(c echo.Context) error {
 			return c.JSON(http.StatusNetworkAuthenticationRequired, Msg("Missing OTP\nPlease use two factor authenticator app on "+
 				"your phone to get OTP. We have also sent OTP to your registered email address"))
 		}
-		valid := totp.Validate(login.TOTP, user.TOTPSharedKey)
+		valid, err := totp.ValidateCustom(login.TOTP, user.TOTPSharedKey, time.Now().UTC(), opts)
 		if !valid {
+			log.SpanLog(ctx, log.DebugLevelApi, "invalid or expired otp", "user", user.Name, "err", err)
 			return c.JSON(http.StatusBadRequest, Msg("Invalid or expired OTP. Please login again to receive another OTP"))
 		}
 	}
