@@ -25,7 +25,8 @@ import (
 var BadAuthDelay = 3 * time.Second
 var NoOTP = ""
 var OTPLen otp.Digits = otp.DigitsSix
-var OTPExpirationTime = uint(2 * 60) // seconds
+var OTPExpirationTime = uint(2 * 60)   // seconds
+var OTPAuthenticatorExpTime = uint(30) // seconds
 var OTPExpirationTimeStr = "2 minutes"
 
 // Init admin creates the admin user and adds the admin role.
@@ -148,10 +149,18 @@ func Login(c echo.Context) error {
 			return c.JSON(http.StatusNetworkAuthenticationRequired, Msg("Missing OTP\nPlease use two factor authenticator app on "+
 				"your phone to get OTP. We have also sent OTP to your registered email address"))
 		}
+		// Default OTP expiration time for Authenticator client is set to 30secs
+		// Hence first validate for 30secs, if that fails then validate for
+		// 2mins (which is our default setting for email based OTP)
+		opts.Period = OTPAuthenticatorExpTime
 		valid, err := totp.ValidateCustom(login.TOTP, user.TOTPSharedKey, time.Now().UTC(), opts)
 		if !valid {
-			log.SpanLog(ctx, log.DebugLevelApi, "invalid or expired otp", "user", user.Name, "err", err)
-			return c.JSON(http.StatusBadRequest, Msg("Invalid or expired OTP. Please login again to receive another OTP"))
+			opts.Period = OTPExpirationTime
+			valid, err = totp.ValidateCustom(login.TOTP, user.TOTPSharedKey, time.Now().UTC(), opts)
+			if !valid {
+				log.SpanLog(ctx, log.DebugLevelApi, "invalid or expired otp", "user", user.Name, "err", err)
+				return c.JSON(http.StatusBadRequest, Msg("Invalid or expired OTP. Please login again to receive another OTP"))
+			}
 		}
 	}
 
