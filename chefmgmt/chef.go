@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/go-chef/chef"
 	"github.com/mitchellh/mapstructure"
@@ -145,7 +144,7 @@ func ChefClientDelete(ctx context.Context, client *chef.Client, clientName strin
 	return nil
 }
 
-func ChefClientRunStatus(ctx context.Context, client *chef.Client, clientName string, startTime time.Time) ([]ChefStatusInfo, error) {
+func ChefClientRunStatus(ctx context.Context, client *chef.Client, clientName string) ([]ChefStatusInfo, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "fetch chef client's run status", "client name", clientName)
 	nodeInfo, err := client.Nodes.Get(clientName)
 	if err != nil {

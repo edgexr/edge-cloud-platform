@@ -120,3 +120,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	cloudletClusterName := m.getCloudletClusterName(cloudlet)
 	return m.deleteClusterInstInternal(ctx, cloudletClusterName, updateCallback)
 }
+
+func (v *ManagedK8sPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
