@@ -13,7 +13,7 @@
   status: 200
   starttime: "2019-08-11T09:36:04.249624-07:00"
   duration: 13.074ms
-  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
+  request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
   response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
   traceid: 24625321e53de041
 - operationname: /api/v1/auth/ctrl/ShowSettings

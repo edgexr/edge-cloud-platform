@@ -43,6 +43,8 @@ type User struct {
 	EnableTOTP bool
 	// read only: true
 	TOTPSharedKey string
+	// Metadata
+	Metadata string
 }
 
 type UserResponse struct {
