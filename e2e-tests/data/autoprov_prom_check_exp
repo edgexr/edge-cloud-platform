@@ -31,6 +31,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
             "query": "up == 0",
             "duration": 15,
             "labels": {
+              "scope": "Application",
               "status": "1"
             },
             "annotations": {},
@@ -44,6 +45,7 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
             "query": "envoy_cluster_health_check_healthy == 0",
             "duration": 0,
             "labels": {
+              "scope": "Application",
               "status": "2"
             },
             "annotations": {},

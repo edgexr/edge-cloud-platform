@@ -1,0 +1,10 @@
+- labels:
+    alertname: CloudletDown
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    region: local
+    scope: Cloudlet
+  state: firing
+  activeat:
+    seconds: 1606856995
+    nanos: 918670000

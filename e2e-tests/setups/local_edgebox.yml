@@ -81,6 +81,8 @@ dmes:
   vaultaddr: "http://127.0.0.1:8200"
   cookieexpr: "24h"
   hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
 
 clustersvcs:
 - name: cluster-svc1
@@ -92,6 +94,8 @@ clustersvcs:
   promports: "tcp:9090"
   interval: "5s"
   hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
 
 mcs:
 - name: mc1
@@ -137,6 +141,8 @@ autoprovs:
   vaultaddr: "http://127.0.0.1:8200"
   ctrladdrs: "127.0.0.1:55001"
   hostname: "127.0.0.1"
+  envvars:
+    E2ETEST_TLS: true
 
 notifyroots:
 - name: notifyroot

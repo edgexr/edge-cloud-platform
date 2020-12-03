@@ -1,0 +1,8 @@
+alertreceivers:
+- name: emailCloudletAlertReceiver
+  type: email
+  severity: error
+  email: ops@mobiledgex.net
+  cloudlet:
+    organization: dmuus
+    name: dmuus-cloud-1
