@@ -1,4 +1,5 @@
 - labels:
+    scope: Application
     alertname: AppInstDown
     app: someapplication1
     apporg: AcmeAppCo
@@ -15,4 +16,4 @@
     seconds: 1596481173
     nanos: 399557679
   notifyid: 2
-  controller: LSHVARTS-MAC@127.0.0.1:55001
+

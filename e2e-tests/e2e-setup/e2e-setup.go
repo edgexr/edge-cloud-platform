@@ -15,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
+	"github.com/mobiledgex/edge-cloud/setup-env/apis"
 	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
@@ -371,7 +372,14 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			actionParam = actionArgs[0]
 			actionArgs = actionArgs[1:]
 		}
-
+		if actionSubtype == "crm" {
+			// read the apifile and start crm with the details
+			err := apis.StartCrmsLocal(ctx, actionParam, spec.ApiFile, outputDir)
+			if err != nil {
+				errors = append(errors, err.Error())
+			}
+			break
+		}
 		if !StartProcesses(actionParam, actionArgs, outputDir) {
 			startFailed = true
 			errors = append(errors, "start failed")
@@ -396,12 +404,18 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			errors = append(errors, "wait for process failed")
 		}
 	case "stop":
-		allprocs := GetAllProcesses()
-		if !setupmex.StopProcesses(actionParam, allprocs) {
-			errors = append(errors, "stop local failed")
-		}
-		if !StopRemoteProcesses(actionParam) {
-			errors = append(errors, "stop remote failed")
+		if actionSubtype == "crm" {
+			if err := apis.StopCrmsLocal(ctx, actionParam, spec.ApiFile); err != nil {
+				errors = append(errors, err.Error())
+			}
+		} else {
+			allprocs := GetAllProcesses()
+			if !setupmex.StopProcesses(actionParam, allprocs) {
+				errors = append(errors, "stop local failed")
+			}
+			if !StopRemoteProcesses(actionParam) {
+				errors = append(errors, "stop remote failed")
+			}
 		}
 	case "mcapi":
 		if !RunMcAPI(actionSubtype, actionParam, spec.ApiFile, spec.CurUserFile, outputDir, mods, vars, sharedData, retry) {

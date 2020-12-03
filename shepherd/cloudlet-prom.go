@@ -55,10 +55,12 @@ var promHealthCheckAlerts = `groups:
     for: 15s
     labels:
       ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)) + `
+      ` + cloudcommon.AlertScopeTypeTag + ": " + cloudcommon.AlertScopeApp + `
   - alert: ` + cloudcommon.AlertAppInstDown + `
     expr: envoy_cluster_health_check_healthy == 0
     labels:
-      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL))
+      ` + cloudcommon.AlertHealthCheckStatus + ": " + strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_SERVER_FAIL)) + `
+      ` + cloudcommon.AlertScopeTypeTag + ": " + cloudcommon.AlertScopeApp
 
 type targetData struct {
 	MetricsProxyAddr string

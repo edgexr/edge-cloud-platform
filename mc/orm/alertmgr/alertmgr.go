@@ -142,7 +142,7 @@ func isInternalAlert(alert *edgeproto.Alert) bool {
 	if !ok {
 		return true
 	}
-	if name == cloudcommon.AlertAppInstDown {
+	if name == cloudcommon.AlertAppInstDown || name == cloudcommon.AlertCloudletDown {
 		return false
 	}
 	return true
@@ -248,12 +248,14 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 	}
 	if in.Cloudlet.Organization != "" {
 		// add labels for the cloudlet
+		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeCloudlet
 		labels[edgeproto.CloudletKeyTagOrganization] = in.Cloudlet.Organization
 		if in.Cloudlet.Name != "" {
 			labels[edgeproto.CloudletKeyTagName] = in.Cloudlet.Name
 		}
 	} else if in.AppInst.AppKey.Organization != "" {
 		// add labels for app instance
+		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
 		labels[edgeproto.AppKeyTagOrganization] = in.AppInst.AppKey.Organization
 		if in.AppInst.AppKey.Name != "" {
 			labels[edgeproto.AppKeyTagName] = in.AppInst.AppKey.Name
@@ -275,6 +277,7 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 		}
 	} else if in.AppInst.ClusterInstKey.Organization != "" {
 		// add labels for cluster instance
+		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
 		labels[edgeproto.ClusterInstKeyTagOrganization] = in.AppInst.ClusterInstKey.Organization
 		if in.AppInst.ClusterInstKey.CloudletKey.Name != "" {
 			labels[edgeproto.CloudletKeyTagName] = in.AppInst.ClusterInstKey.CloudletKey.Name
