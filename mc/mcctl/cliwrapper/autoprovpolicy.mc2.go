@@ -27,7 +27,7 @@ var _ = math.Inf
 func (s *Client) CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateAutoProvPolicy"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Cloudlets:#.Loc", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -38,7 +38,7 @@ func (s *Client) CreateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoPr
 func (s *Client) DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteAutoProvPolicy"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Cloudlets:#.Loc", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -49,7 +49,7 @@ func (s *Client) DeleteAutoProvPolicy(uri, token string, in *ormapi.RegionAutoPr
 func (s *Client) UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateAutoProvPolicy"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Cloudlets:#.Loc", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -60,7 +60,7 @@ func (s *Client) UpdateAutoProvPolicy(uri, token string, in *ormapi.RegionAutoPr
 func (s *Client) ShowAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProvPolicy) ([]edgeproto.AutoProvPolicy, int, error) {
 	args := []string{"region", "ShowAutoProvPolicy"}
 	outlist := []edgeproto.AutoProvPolicy{}
-	noconfig := strings.Split("", ",")
+	noconfig := strings.Split("Cloudlets:#.Loc", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
