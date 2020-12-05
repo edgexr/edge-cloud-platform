@@ -5,12 +5,12 @@
       [FIRING:1] Alert for emailSlackReceiver: AppInstDown Application: someapplication1 Version: 1.0
     titlelink: |
       https://console.mobiledgex.net
-    text: "\n*Alert:* \n\n*Description:* \n\n*Details:*\n   • *alertname:* AppInstDown\n
-      \  • *app:* someapplication1\n   • *apporg:* AcmeAppCo\n   • *appver:* 1.0\n
-      \  • *cloudlet:* dmuus-cloud-1\n   • *cloudletorg:* dmuus\n   • *cluster:* SmallCluster\n
-      \  • *clusterorg:* AcmeAppCo\n   • *job:* MobiledgeX Monitoring\n   • *region:*
-      local\n   • *scope:* Application\n   • *status:* HealthCheckFailServerFail\n
-      \ \n\n"
+    text: "\n*Alert:* AppInstDown\n\n*Description:* Application server port is not responding\n\n*Details:*\n
+      \  • *alertname:* AppInstDown\n   • *app:* someapplication1\n   • *apporg:*
+      AcmeAppCo\n   • *appver:* 1.0\n   • *cloudlet:* dmuus-cloud-1\n   • *cloudletorg:*
+      dmuus\n   • *cluster:* SmallCluster\n   • *clusterorg:* AcmeAppCo\n   • *job:*
+      MobiledgeX Monitoring\n   • *region:* local\n   • *scope:* Application\n   •
+      *status:* HealthCheckFailServerFail\n  \n\n"
     fallback: |+
       [FIRING:1] Alert for emailSlackReceiver: AppInstDown Application: someapplication1 Version: 1.0 | https://console.mobiledgex.net
 

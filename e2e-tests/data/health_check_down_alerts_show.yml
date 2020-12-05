@@ -1,5 +1,4 @@
 - labels:
-    scope: Application
     alertname: AppInstDown
     app: someapplication1
     apporg: AcmeAppCo
@@ -10,7 +9,11 @@
     clusterorg: AcmeAppCo
     job: MobiledgeX Monitoring
     region: local
+    scope: Application
     status: "2"
+  annotations:
+    description: Application server port is not responding
+    title: AppInstDown
   state: firing
   activeat:
     seconds: 1596481173
