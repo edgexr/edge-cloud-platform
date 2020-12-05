@@ -4,6 +4,9 @@
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
+  annotations:
+    description: Cloudlet Infrastructure is unresponsive
+    title: CloudletDown
   state: firing
   activeat:
     seconds: 1606856995
