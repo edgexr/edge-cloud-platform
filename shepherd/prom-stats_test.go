@@ -353,8 +353,8 @@ func TestPromStats(t *testing.T) {
 	assert.Equal(t, float64(50.0), clusterMetrics.Disk)
 	assert.Equal(t, uint64(11111), clusterMetrics.NetSent)
 	assert.Equal(t, uint64(22222), clusterMetrics.NetRecv)
-	// Check Alerts
-	require.Equal(t, len(expectedTestAlerts), len(alerts))
+	// Check Alerts - should not return pending alert
+	require.Equal(t, len(expectedTestAlerts)-1, len(alerts))
 	for ii := 0; ii < len(alerts); ii++ {
 		expected := expectedTestAlerts[ii]
 		alert := alerts[ii]

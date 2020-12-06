@@ -9,7 +9,7 @@
     clusterorg: MobiledgeX
     job: MobiledgeX Monitoring
     region: local
-  state: pending
+  state: firing
   activeat:
     seconds: 1594945144
     nanos: 494892341

@@ -95,6 +95,11 @@ func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgep
 	}
 	alerts := []edgeproto.Alert{}
 	for _, pa := range resp.Data.Alerts {
+		// skip pending alerts
+		if pa.State != "firing" {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Skip pending alert", "alert", pa)
+			continue
+		}
 		alert := edgeproto.Alert{}
 		alert.Labels = pa.Labels
 		alert.Annotations = pa.Annotations
