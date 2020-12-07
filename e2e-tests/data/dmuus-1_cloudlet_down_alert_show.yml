@@ -5,7 +5,7 @@
     region: local
     scope: Cloudlet
   annotations:
-    description: Cloudlet Infrastructure is unresponsive
+    description: Cloudlet resource manager is offline
     title: CloudletDown
   state: firing
   activeat:
