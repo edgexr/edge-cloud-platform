@@ -148,6 +148,12 @@ func isInternalAlert(alert *edgeproto.Alert) bool {
 	return true
 }
 
+func isLabelInternal(label string) bool {
+	if label == "instance" {
+		return true
+	}
+	return false
+}
 func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models.PostableAlerts {
 	openAPIAlerts := models.PostableAlerts{}
 	for _, a := range alerts {
@@ -159,6 +165,10 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 		end := strfmt.DateTime(time.Now().Add(s.AlertResolutionTimout))
 		labels := make(map[string]string)
 		for k, v := range a.Labels {
+			// drop labels we don't want to expose to the end-users
+			if isLabelInternal(k) {
+				continue
+			}
 			// Convert appInst status to a human-understandable format
 			if k == cloudcommon.AlertHealthCheckStatus {
 				if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {

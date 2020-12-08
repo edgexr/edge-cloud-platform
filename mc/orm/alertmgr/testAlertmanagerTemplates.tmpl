@@ -121,7 +121,7 @@ SOFTWARE.
 {{ end }}
 
 {{ define "common.title" -}}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }}{{ if .CommonLabels.app }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}{{ else if .CommonLabels.cloudlet}} Cloudlet: {{.CommonLabels.cloudlet}}{{ end }}
 {{ end }}
 
 {{ define "email.text" }}
