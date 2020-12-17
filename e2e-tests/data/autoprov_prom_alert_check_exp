@@ -1,0 +1,18 @@
+ran: curl -s http://localhost:9092/api/v1/alerts | jq '.data.alerts[] | select(.labels.alertname == "AutoProvUndeploy") | del(.activeAt)'
+{
+  "labels": {
+    "alertname": "AutoProvUndeploy",
+    "app": "autoprovappd",
+    "apporg": "AcmeAppCo",
+    "appver": "1.0",
+    "cloudlet": "dmuus-cloud-1",
+    "cloudletorg": "dmuus",
+    "cluster": "ReservableD",
+    "clusterorg": "MobiledgeX",
+    "job": "MobiledgeX Monitoring"
+  },
+  "annotations": {},
+  "state": "pending",
+  "value": "0e+00"
+}
+
