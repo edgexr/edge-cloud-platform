@@ -55,16 +55,19 @@ tests:
       yaml2: '{{datadir2}}/autoprov_prom_check_active_exp2'
       filetype: raw
 
+    # check prometheus directly since shepherd skips pending alerts,
+    # and the firing alert is handled immediately by AutoProv, so is only
+    # present for a very short time.
   - name: check undeploy alerts
-    actions: [mcapi-showalerts]
-    apifile: '{{datadir2}}/show_local_region.yml'
+    actions: [cmds]
+    apifile: '{{datadir2}}/autoprov_prom_alert_check'
     curuserfile: '{{datadir2}}/mc_admin.yml'
-    retrycount: 20
+    retrycount: 15
     retryintervalsec: 0.2
     compareyaml:
-      yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/undeploy_alerts_show.yml'
-      filetype: mcalerts
+      yaml1: '{{outputdir}}/cmds-output'
+      yaml2: '{{datadir2}}/autoprov_prom_alert_check_exp'
+      filetype: raw
 
   - name: sleep, allow alerts to go active and delete autoprovappd
     actions: [sleep=3]
