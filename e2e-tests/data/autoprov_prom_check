@@ -1,1 +1,2 @@
 curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
+curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | select(.labels.app == "autoprovappd" and .labels.apporg == "AcmeAppCo" and .labels.appver == "1.0" and .labels.cloudlet == "dmuus-cloud-1") | del(.lastScrape) | del(.lastScrapeDuration) | del(.health)'

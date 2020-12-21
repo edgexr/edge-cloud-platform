@@ -1,0 +1,2 @@
+requests:
+- cmd: dump-cloudlet-pools

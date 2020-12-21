@@ -286,7 +286,7 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	}
 	for _, p := range Deployment.Mcs {
 		opts = append(opts, process.WithRolesFile(rolesfile))
-		opts = append(opts, process.WithDebug("api,metrics,events"))
+		opts = append(opts, process.WithDebug("api,metrics,events,notify"))
 		if !setupmex.StartLocal(processName, outputDir, p, opts...) {
 			return false
 		}

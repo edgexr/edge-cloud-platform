@@ -15,6 +15,7 @@
     - /api/v1/auth/ctrl/DeleteAppInst
     - /api/v1/auth/ctrl/DeleteAutoProvPolicy
     - /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
+    - /api/v1/auth/ctrl/RunDebug
     - /api/v1/auth/ctrl/ShowSettings
     - /api/v1/auth/ctrl/UpdateCloudlet
     - /api/v1/auth/ctrl/UpdateSettings

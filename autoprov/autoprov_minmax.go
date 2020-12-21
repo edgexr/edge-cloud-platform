@@ -269,7 +269,7 @@ func (s *MinMaxChecker) isAutoProvApp(key *edgeproto.AppKey) bool {
 func (s *MinMaxChecker) CheckApp(ctx context.Context, k interface{}) {
 	key, ok := k.(edgeproto.AppKey)
 	if !ok {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Unexpected failure, key not AppKey", "key", key)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unexpected failure, key not AppKey", "key", k)
 		return
 	}
 	log.SetContextTags(ctx, key.GetTags())
