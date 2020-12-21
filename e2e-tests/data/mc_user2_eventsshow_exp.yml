@@ -8,7 +8,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/org/delete
-    org: platos
+    org:
+    - platos
     type: audit
     timestamp: 2020-09-09T17:10:52.693266-07:00
     error: '{"message":"Organization platos in use or check failed: region local:
@@ -29,7 +30,8 @@
       traceid: 48396b1484074331
       username: mexadmin
   - name: /api/v1/auth/org/delete
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-09T17:10:52.307068-07:00
     error: '{"message":"Organization AcmeAppCo in use or check failed: region local:
@@ -64,7 +66,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:29.881577-07:00
     mtags:
@@ -85,7 +88,8 @@
       traceid: 44b06f07458463ce
       username: user2
   - name: /api/v1/auth/ctrl/DeleteApp
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:29.610307-07:00
     mtags:
@@ -107,7 +111,8 @@
       traceid: 64077fc143d6f50f
       username: user2
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-09T11:23:48.885277-07:00
@@ -133,7 +138,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/CreateAppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:14:40.219345-07:00
     mtags:
@@ -163,7 +169,8 @@
       traceid: 7b604591ea1eade7
       username: user2
   - name: /api/v1/auth/ctrl/CreateAppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:14:39.945511-07:00
     mtags:
@@ -193,7 +200,8 @@
       traceid: 6fa4e717f2ee45a4
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:14:38.909215-07:00
     mtags:
@@ -223,7 +231,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/CreateApp
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:26.470698-07:00
     mtags:
@@ -245,7 +254,8 @@
       traceid: 20c7c1f2a300135d
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:07.366876-07:00
     mtags:
@@ -267,7 +277,8 @@
       traceid: 668c49ef5bff7d5e
       username: user2
   - name: /api/v1/auth/ctrl/CreateApp
-    org: platos
+    org:
+    - platos
     type: audit
     timestamp: 2020-09-04T17:14:39.858191-07:00
     mtags:
@@ -295,7 +306,8 @@
     limit: 3
   results:
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:26.627815-07:00
@@ -315,7 +327,8 @@
       spanid: 5f2c99bf7b83b6a0
       traceid: 20c7c1f2a300135d
   - name: AutoProv delete AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:25.086823-07:00
@@ -335,7 +348,8 @@
       spanid: 278a4ce9975369e8
       traceid: 10214038df4326d8
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:18.311282-07:00
@@ -362,7 +376,8 @@
     limit: 3
   results:
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:26.627815-07:00
@@ -382,7 +397,8 @@
       spanid: 5f2c99bf7b83b6a0
       traceid: 20c7c1f2a300135d
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:07.561815-07:00
@@ -409,7 +425,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/CreateAppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-08T10:25:09.917215-07:00
     mtags:
@@ -439,7 +456,8 @@
       traceid: 396b747caef9a4d8
       username: user2
   - name: /api/v1/auth/ctrl/CreateAppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-08T10:25:09.741157-07:00
     mtags:
@@ -469,7 +487,8 @@
       traceid: 5642eddf217e3dc7
       username: user2
   - name: /api/v1/auth/ctrl/CreateAppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-08T10:25:07.877523-07:00
     mtags:
@@ -506,7 +525,8 @@
     limit: 2
   results:
   - name: AutoProv delete AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:28.390621-07:00
@@ -526,7 +546,8 @@
       spanid: 4171815fd35fd0d0
       traceid: 1e693893ca472c76
   - name: AutoProv delete AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-04T17:15:09.631348-07:00
@@ -552,7 +573,8 @@
     limit: 2
   results:
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-08T12:53:55.16642-07:00
@@ -572,7 +594,8 @@
       spanid: 2a8c310b1992e050
       traceid: 890f00f09475317
   - name: AutoProv create AppInst
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: event
     region: local
     timestamp: 2020-09-08T12:53:53.521235-07:00
@@ -598,7 +621,8 @@
     limit: 3
   results:
   - name: /api/v1/auth/ctrl/DeleteAutoProvPolicy
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:29.881577-07:00
     mtags:
@@ -619,7 +643,8 @@
       traceid: 44b06f07458463ce
       username: user2
   - name: /api/v1/auth/ctrl/DeleteApp
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:29.610307-07:00
     mtags:
@@ -641,7 +666,8 @@
       traceid: 64077fc143d6f50f
       username: user2
   - name: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
-    org: AcmeAppCo
+    org:
+    - AcmeAppCo
     type: audit
     timestamp: 2020-09-04T17:15:28.364116-07:00
     mtags:

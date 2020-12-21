@@ -112,11 +112,12 @@ type BillingOrganization struct {
 }
 
 type Controller struct {
-	Region    string    `gorm:"primary_key"`
-	Address   string    `gorm:"unique;not null"`
-	InfluxDB  string    `gorm:"type:text"`
-	CreatedAt time.Time `json:",omitempty"`
-	UpdatedAt time.Time `json:",omitempty"`
+	Region     string    `gorm:"primary_key"`
+	Address    string    `gorm:"unique;not null"`
+	NotifyAddr string    `gorm:"type:text"`
+	InfluxDB   string    `gorm:"type:text"`
+	CreatedAt  time.Time `json:",omitempty"`
+	UpdatedAt  time.Time `json:",omitempty"`
 }
 
 type Config struct {

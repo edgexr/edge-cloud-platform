@@ -19,4 +19,4 @@ requests:
   levels: sampled,info
 - node:
     type: mc
-  levels: notify,info
+  levels: info

@@ -2,20 +2,26 @@ package orm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/labstack/echo"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/mobiledgex/edge-cloud-infra/billing/zuora"
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util/tasks"
 )
 
 var retryInterval = 10 * time.Second
+var psqlInfo string
+var sqlListenerWorkers tasks.KeyWorkers
+var sqlPingInterval = 90 * time.Second
 
 func InitSql(ctx context.Context, addr, username, password, dbname string) (*gorm.DB, error) {
 	hostport := strings.Split(addr, ":")
@@ -23,7 +29,7 @@ func InitSql(ctx context.Context, addr, username, password, dbname string) (*gor
 		return nil, fmt.Errorf("Invalid postgres address format %s", addr)
 	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+	psqlInfo = fmt.Sprintf("host=%s port=%s user=%s "+
 		"dbname=%s sslmode=disable password=%s",
 		hostport[0], hostport[1], username, dbname, password)
 	var err error
@@ -105,4 +111,121 @@ func loggedDB(ctx context.Context) *gorm.DB {
 	db.SetLogger(&gormlog.Logger{Ctx: ctx})
 	db.LogMode(true)
 	return db
+}
+
+const sqlEventsChannel = "events"
+
+// Trigger function for sending a notification of what changed in a table
+var postgresTriggerFunc = `
+CREATE OR REPLACE FUNCTION notify_event() RETURNS TRIGGER AS $$
+
+DECLARE
+    notification json;
+BEGIN
+    notification = json_build_object(
+        'table', TG_TABLE_NAME,
+        'action', TG_OP);
+
+    -- execute pg_notify(channel, notification)
+    PERFORM pg_notify('` + sqlEventsChannel + `', notification::text);
+
+    -- result is ignored since this is an AFTER trigger
+    RETURN NULL;
+END;
+
+$$ LANGUAGE plpgsql;
+`
+
+type sqlNotice struct {
+	Table  string `json:"table"`
+	Action string `json:"action"`
+}
+
+func initSqlListener(ctx context.Context) (*pq.Listener, error) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "init sql listener")
+	sqlListenerWorkers.Init("sqlListener", sqlListenerWorkFunc)
+
+	db := loggedDB(ctx)
+	// set up the trigger function
+	err := db.Exec(postgresTriggerFunc).Error
+	if err != nil {
+		return nil, err
+	}
+	// register trigger for controllers table
+	err = setSqlTrigger(ctx, &ormapi.Controller{})
+	if err != nil {
+		return nil, err
+	}
+	// set up listener
+	minReconnectInterval := 5 * time.Second
+	maxReconnectInterval := 60 * time.Second
+	listener := pq.NewListener(psqlInfo, minReconnectInterval, maxReconnectInterval, sqlListenerEventCb)
+	go func() {
+		for {
+			select {
+			case noticeData := <-listener.Notify:
+				if noticeData == nil {
+					// listener reconnected
+					continue
+				}
+				span := log.StartSpan(log.DebugLevelApi, "sql-notice")
+				ctx := log.ContextWithSpan(context.Background(), span)
+				span.SetTag("channel", noticeData.Channel)
+				notice := &sqlNotice{}
+				err := json.Unmarshal([]byte(noticeData.Extra), notice)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "failed to unmarshal notice", "err", err, "data", string(noticeData.Extra))
+					span.Finish()
+					continue
+				}
+				sqlListenerWorkers.NeedsWork(ctx, notice.Table)
+				span.Finish()
+			case <-time.After(sqlPingInterval):
+				go func() {
+					listener.Ping()
+				}()
+			}
+		}
+	}()
+	return listener, nil
+}
+
+func setSqlTrigger(ctx context.Context, tableData interface{}) error {
+	scope := loggedDB(ctx).Unscoped().NewScope(tableData)
+	tableName := scope.TableName()
+	cmd := fmt.Sprintf(`
+CREATE TRIGGER %s_notify_event
+AFTER INSERT OR UPDATE OR DELETE ON %s
+FOR EACH ROW EXECUTE PROCEDURE notify_event();`,
+		tableName, tableName)
+	err := loggedDB(ctx).Exec(cmd).Error
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		err = nil
+	}
+	return err
+}
+
+func sqlListenerEventCb(event pq.ListenerEventType, err error) {
+	span := log.StartSpan(log.DebugLevelApi, "sql-listener-event")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	log.SpanLog(ctx, log.DebugLevelApi, "callback event", "event", event, "err", err)
+	if event == pq.ListenerEventConnected || event == pq.ListenerEventReconnected {
+		sqlListenerWorkers.NeedsWork(ctx, "controllers")
+	}
+}
+
+func sqlListenerWorkFunc(ctx context.Context, k interface{}) {
+	key, ok := k.(string)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, key not string", "key", k)
+		return
+	}
+	if key == "controllers" {
+		err := allRegionCaches.refreshRegions(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to refresh controller clients", "err", err)
+		}
+	}
 }

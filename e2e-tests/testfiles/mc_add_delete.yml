@@ -39,7 +39,7 @@ tests:
 
 - name: setup user tokens to avoid extra login audit logs
   actions: [mcapi-auditsetup]
-  apifile: '{{datadir2}}/mc_admin.yml,{{datadir2}}/mc_user2.yml'
+  apifile: '{{datadir2}}/mc_admin.yml,{{datadir2}}/mc_user2.yml,{{datadir2}}/mc_user1.yml'
 
 - name: admin creates controllers, flavors; verify it is there
   actions: [mcapi-create, mcapi-show]
@@ -90,6 +90,15 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_user3_data_show.yml'
     filetype: mcdata
+
+- name: check that CloudletPool data reached all nodes
+  actions: [mcapi-debugrun]
+  apifile: '{{datadir2}}/mc_dumpcloudletpools.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: "{{outputdir}}/api-output.yml"
+    yaml2: "{{datadir2}}/mc_dumpcloudletpools_output.yml"
+    filetype: debugoutput
 
 - name: test RunCommand
   actions: [mcapi-runcommand]
@@ -151,6 +160,15 @@ tests:
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_user2_eventsshow_exp.yml'
+    filetype: mcevents
+
+- name: user1 (operator) check events
+  actions: [mcapi-eventsshow]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  apifile: '{{datadir2}}/mc_user1_eventsshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_eventsshow_exp.yml'
     filetype: mcevents
 
 - includefile: mc_debugtest.yml

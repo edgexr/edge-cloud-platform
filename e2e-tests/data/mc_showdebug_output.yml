@@ -4,10 +4,10 @@ requests:
     output: api,notify,events
   - node:
       type: mc
-    output: api,metrics,events
+    output: api,notify,metrics,events
   - node:
       type: mc
-    output: api,metrics,events
+    output: api,notify,metrics,events
   - node:
       type: controller
       region: local
