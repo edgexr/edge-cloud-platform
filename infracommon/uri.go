@@ -21,6 +21,12 @@ import (
 	"gortc.io/stun"
 )
 
+type ImageInfo struct {
+	Md5sum          string
+	LocalImageName  string
+	SourceImageTime time.Time
+}
+
 //validateDomain does strange validation, not strictly domain, due to the data passed from controller.
 // if it is Fqdn it is valid. And if it starts with http:// or https:// and followed by fqdn, it is valid.
 func validateDomain(uri string) error {

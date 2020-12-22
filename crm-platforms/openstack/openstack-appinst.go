@@ -8,7 +8,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -21,13 +20,10 @@ func (o *OpenstackPlatform) GetConsoleUrl(ctx context.Context, serverName string
 	return consoleUrl.Url, nil
 }
 
-func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	imageName, err := cloudcommon.GetFileName(app.ImagePath)
-	if err != nil {
-		return err
-	}
-	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, o.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
-	imageDetail, err := o.GetImageDetail(ctx, imageName)
+func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "imageInfo", imageInfo, "imagePath", app.ImagePath)
+
+	imageDetail, err := o.GetImageDetail(ctx, imageInfo.LocalImageName)
 	createImage := false
 	if err != nil {
 		if strings.Contains(err.Error(), ResourceNotFound) {
@@ -39,24 +35,24 @@ func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, app *ed
 		}
 	} else {
 		if imageDetail.Status != "active" {
-			return fmt.Errorf("image in store %s is not active", imageName)
+			return fmt.Errorf("image in store %s is not active", imageInfo.LocalImageName)
 		}
-		if imageDetail.Checksum != md5Sum {
+		if imageDetail.Checksum != imageInfo.Md5sum {
 			if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW && imageDetail.DiskFormat == vmlayer.ImageFormatVmdk {
 				log.SpanLog(ctx, log.DebugLevelInfra, "image was imported as vmdk, checksum match not possible")
 			} else {
-				return fmt.Errorf("mismatch in md5sum for image in glance: %s", imageName)
+				return fmt.Errorf("mismatch in md5sum for image in glance: %s", imageInfo.LocalImageName)
 			}
 		}
 		glanceImageTime, err := time.Parse(time.RFC3339, imageDetail.UpdatedAt)
 		if err != nil {
 			return err
 		}
-		if !sourceImageTime.IsZero() {
-			if sourceImageTime.Sub(glanceImageTime) > 0 {
+		if !imageInfo.SourceImageTime.IsZero() {
+			if imageInfo.SourceImageTime.Sub(glanceImageTime) > 0 {
 				// Update the image in Glance
 				updateCallback(edgeproto.UpdateTask, "Image in store is outdated, deleting old image")
-				err = o.DeleteImage(ctx, "", imageName)
+				err = o.DeleteImage(ctx, "", imageInfo.LocalImageName)
 				if err != nil {
 					return err
 				}
@@ -65,8 +61,8 @@ func (o *OpenstackPlatform) AddAppImageIfNotPresent(ctx context.Context, app *ed
 		}
 	}
 	if createImage {
-		updateCallback(edgeproto.UpdateTask, "Creating VM Image from URL")
-		err = o.CreateImageFromUrl(ctx, imageName, app.ImagePath, md5Sum)
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating VM Image from URL: %s", imageInfo.LocalImageName))
+		err = o.CreateImageFromUrl(ctx, imageInfo.LocalImageName, app.ImagePath, imageInfo.Md5sum)
 		if err != nil {
 			return err
 		}

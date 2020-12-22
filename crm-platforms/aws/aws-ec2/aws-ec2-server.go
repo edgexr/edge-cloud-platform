@@ -8,6 +8,7 @@ import (
 	"time"
 
 	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -418,7 +419,7 @@ func (a *AwsEc2Platform) GetConsoleUrl(ctx context.Context, serverName string) (
 	return "", fmt.Errorf("GetConsoleUrl not implemented")
 }
 
-func (a *AwsEc2Platform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AwsEc2Platform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("AddAppImageIfNotPresent not implemented")
 }
 
