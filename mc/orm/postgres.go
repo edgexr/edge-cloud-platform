@@ -11,7 +11,7 @@ import (
 	_ "github.com/labstack/echo"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/mobiledgex/edge-cloud-infra/billing/zuora"
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -65,7 +65,7 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 
 		// create or update tables
 		err := db.AutoMigrate(&ormapi.User{}, &ormapi.Organization{},
-			&ormapi.Controller{}, &ormapi.Config{}, &ormapi.OrgCloudletPool{}, &zuora.AccountInfo{}, &ormapi.BillingOrganization{}).Error
+			&ormapi.Controller{}, &ormapi.Config{}, &ormapi.OrgCloudletPool{}, &billing.AccountInfo{}, &ormapi.BillingOrganization{}).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
 			continue

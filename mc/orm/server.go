@@ -13,7 +13,9 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/lib/pq"
-	"github.com/mobiledgex/edge-cloud-infra/billing/zuora"
+	"github.com/mobiledgex/edge-cloud-infra/billing"
+	"github.com/mobiledgex/edge-cloud-infra/billing/chargify"
+	"github.com/mobiledgex/edge-cloud-infra/billing/fakebilling"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -73,6 +75,7 @@ type ServerConfig struct {
 	NodeMgr                 *node.NodeMgr
 	Billing                 bool
 	BillingPath             string
+	BillingService          billing.BillingService
 	AlertCache              *edgeproto.AlertCache
 	AlertMgrAddr            string
 	AlertmgrResolveTimout   time.Duration
@@ -182,9 +185,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	InitVault(config.vaultConfig, server.initJWKDone)
 
 	if config.Billing {
-		err = zuora.InitZuora(config.vaultConfig, config.BillingPath)
+		serverConfig.BillingService = &chargify.BillingService{}
+		if config.BillingPath == billing.BillingTypeFake {
+			serverConfig.BillingService = &fakebilling.BillingService{}
+		}
+		err = serverConfig.BillingService.Init(ctx, config.vaultConfig, config.BillingPath)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to initialize zuora: %v", err)
+			return nil, fmt.Errorf("Unable to initialize billing services: %v", err)
 		}
 	}
 
