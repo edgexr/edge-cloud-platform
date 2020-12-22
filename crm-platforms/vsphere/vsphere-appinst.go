@@ -18,21 +18,15 @@ import (
 
 var qcowConvertTimeout = 10 * time.Minute
 
-func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "flavor", flavor)
 
 	f, err := v.GetFlavor(ctx, flavor)
 	if err != nil {
 		return err
 	}
-	imageName, err := cloudcommon.GetFileName(app.ImagePath)
-	if err != nil {
-		return err
-	}
-	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
-
 	updateCallback(edgeproto.UpdateTask, "Downloading VM Image")
-	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageName, app.ImagePath, md5Sum)
+	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.LocalImageName, app.ImagePath, imageInfo.Md5sum)
 	if err != nil {
 		return err
 	}

@@ -51,7 +51,17 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 
 	if action == ActionCreate {
-		err = v.VMProvider.AddAppImageIfNotPresent(ctx, app, appInst.Flavor.Name, updateCallback)
+		imgName, err := cloudcommon.GetFileName(app.ImagePath)
+		if err != nil {
+			return &orchVals, err
+		}
+		var imageInfo infracommon.ImageInfo
+		sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
+		imageInfo.LocalImageName = imgName + "-" + md5Sum
+		imageInfo.Md5sum = md5Sum
+		imageInfo.SourceImageTime = sourceImageTime
+
+		err = v.VMProvider.AddAppImageIfNotPresent(ctx, &imageInfo, app, appInst.Flavor.Name, updateCallback)
 		if err != nil {
 			return &orchVals, err
 		}
@@ -503,7 +513,10 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-		err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), imgName)
+		_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
+		localImageName := imgName + "-" + md5Sum
+
+		err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "imgName", imgName)
 		}
