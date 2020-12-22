@@ -53,7 +53,7 @@ path "pki-global/issue/*" {
   capabilities = [ "read", "update" ]
 }
 
-path "secret/data/accounts/zuora/sandbox" {
+path "secret/data/accounts/chargify/*" {
   capabilities = [ "read" ]
 }
 EOF

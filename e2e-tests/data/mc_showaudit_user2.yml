@@ -72,7 +72,7 @@
   starttime: "2020-07-01T03:02:11.782055-07:00"
   duration: 14.966ms
   request: '{"Name":"AcmeAppCo","Type":"self","FirstName":"john","LastName":"acme","Email":"john@acme.com","Address":"123
-    Maple Street","City":"Gainesville","Country":"US","State":"FL","PostalCode":"32604","Phone":"123-123-1234","Currency":"USD","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
+    Maple Street","City":"Gainesville","Country":"US","State":"FL","PostalCode":"32604","Phone":"123-123-1234","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}'
   response: '{"message":"Billing Organization deleted"}'
   traceid: 397a58cc5045994e
 - operationname: /api/v1/auth/ctrl/DeleteAutoProvPolicy

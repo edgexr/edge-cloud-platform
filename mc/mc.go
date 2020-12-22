@@ -36,7 +36,7 @@ var alertMgrAddr = flag.String("alertMgrApiAddr", "http://127.0.0.1:9094", "Glob
 
 var alertMgrResolveTimeout = flag.Duration("alertResolveTimeout", 3*time.Minute, "Alertmanager alert Resolution timeout")
 var hostname = flag.String("hostname", "", "Unique hostname")
-var billingPath = flag.String("billingPath", "", "Zuora account path in vault")
+var billingPath = flag.String("billingPath", "", "Billing account path in vault")
 var usageCollectionInterval = flag.Duration("usageCollectionInterval", -1*time.Second, "Collection interval")
 var usageCheckpointInterval = flag.String("usageCheckpointInterval", "MONTH", "Checkpointing interval(must be same as controller's checkpointInterval)")
 
@@ -99,12 +99,8 @@ func main() {
 		span := log.StartSpan(log.DebugLevelInfo, "billing")
 		defer span.Finish()
 		ctx := log.ContextWithSpan(context.Background(), span)
-		if usageCollectionInterval.Seconds() > float64(0) { // if positive, use it
-			ctx = context.WithValue(ctx, "usageInterval", *usageCollectionInterval)
-		}
 
-		// TODO: this needs to be reworked after usageApi comes out
-		// go collections.CollectDailyUsage(ctx)
+		go orm.CollectBillingUsage(ctx, *usageCollectionInterval)
 	}
 
 	// wait until process is killed/interrupted

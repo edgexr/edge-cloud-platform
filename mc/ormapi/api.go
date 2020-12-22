@@ -3,6 +3,7 @@ package ormapi
 import (
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -75,6 +76,24 @@ type Organization struct {
 	Parent string `json:",omitempty"`
 }
 
+// used for CreateBillingOrg, so we can pass through payment details to the billing service without actually storing them
+type CreateBillingOrganization struct {
+	Name       string `json:",omitempty"`
+	Type       string `json:",omitempty"`
+	FirstName  string `json:",omitempty"`
+	LastName   string `json:",omitempty"`
+	Email      string `json:",omitempty"`
+	Address    string `json:",omitempty"`
+	Address2   string `json:",omitempty"`
+	City       string `json:",omitempty"`
+	Country    string `json:",omitempty"`
+	State      string `json:",omitempty"`
+	PostalCode string `json:",omitempty"`
+	Phone      string `json:",omitempty"`
+	Children   string `json:",omitempty"`
+	Payment    billing.PaymentMethod
+}
+
 type BillingOrganization struct {
 	// BillingOrganization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen
 	// required: true
@@ -89,6 +108,8 @@ type BillingOrganization struct {
 	Email string `json:",omitempty"`
 	// Organization address
 	Address string `json:",omitempty"`
+	// Organization address2
+	Address2 string `json:",omitempty"`
 	// Organization city
 	City string `json:",omitempty"`
 	// Organization Country
@@ -99,8 +120,6 @@ type BillingOrganization struct {
 	PostalCode string `json:",omitempty"`
 	// Organization phone number
 	Phone string `json:",omitempty"`
-	// Currency
-	Currency string `json:",omitempty"` // currently only allow "USD"
 	// Children belonging to this BillingOrganization
 	Children string `json:",omitempty"`
 	// read only: true
