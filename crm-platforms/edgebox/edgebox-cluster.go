@@ -10,7 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (e *EdgeboxPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (e *EdgeboxPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("update not implemented")
 }
 
@@ -22,8 +22,8 @@ func (e *EdgeboxPlatform) GetClusterInfraResources(ctx context.Context, clusterK
 	return e.generic.GetClusterInfraResources(ctx, clusterKey)
 }
 
-func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
-	err := e.generic.CreateClusterInst(ctx, clusterInst, privacyPolicy, updateCallback, timeout)
+func (e *EdgeboxPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+	err := e.generic.CreateClusterInst(ctx, clusterInst, updateCallback, timeout)
 	if err != nil {
 		return err
 	}

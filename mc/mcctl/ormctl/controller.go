@@ -40,7 +40,7 @@ func GetRegionCommand() *cobra.Command {
 	cmds = append(cmds, AlertApiCmds...)
 	cmds = append(cmds, AutoScalePolicyApiCmds...)
 	cmds = append(cmds, AutoProvPolicyApiCmds...)
-	cmds = append(cmds, PrivacyPolicyApiCmds...)
+	cmds = append(cmds, TrustPolicyApiCmds...)
 	cmds = append(cmds, SettingsApiCmds...)
 	cmds = append(cmds, ResTagTableApiCmds...)
 	cmds = append(cmds, AppInstClientApiCmds...)

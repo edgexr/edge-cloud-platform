@@ -39,7 +39,7 @@ resources:
             network: public_internal
             security_groups:
                 - { get_resource: testvmgroup-sg }
-                - default-testingID
+                - unit-test-MobiledgeX-cloudlet-sg-testingID
     master-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
@@ -56,7 +56,7 @@ resources:
             network: public_internal
             security_groups:
                 - { get_resource: testvmgroup-sg }
-                - default-testingID
+                - unit-test-MobiledgeX-cloudlet-sg-testingID
     node1-xyz-subnet-test-port:
         type: OS::Neutron::Port
         properties:
@@ -78,19 +78,20 @@ resources:
     testvmgroup-sg:
         type: OS::Neutron::SecurityGroup
         properties:
-                name: testvmgroup-sg
-                rules:
-                    - direction: egress
-                    - direction: ingress
-                      remote_ip_prefix: 0.0.0.0/0
-                      protocol: tcp
-                      port_range_min: 7777
-                      port_range_max: 7777
-                    - direction: ingress
-                      remote_ip_prefix: 0.0.0.0/0
-                      protocol: udp
-                      port_range_min: 8888
-                      port_range_max: 8888
+            name: testvmgroup-sg
+            rules:
+                - direction: egress
+                  remote_ip_prefix: 0.0.0.0/32
+                - direction: ingress
+                  remote_ip_prefix: 0.0.0.0/0
+                  protocol: tcp
+                  port_range_min: 7777
+                  port_range_max: 7777
+                - direction: ingress
+                  remote_ip_prefix: 0.0.0.0/0
+                  protocol: udp
+                  port_range_min: 8888
+                  port_range_max: 8888
     rootlb-xyz-volume:
         type: OS::Cinder::Volume
         properties:

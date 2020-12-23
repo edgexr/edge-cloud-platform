@@ -97,30 +97,29 @@ resources:
     {{.Name}}:
         type: OS::Neutron::SecurityGroup
         properties:
-                name: {{.Name}}
-                rules:
-                {{- if .EgressRestricted}}
-                {{- range .EgressRules}}
-                    - direction: egress
-                      protocol: {{.Protocol}}
-                    {{- if .RemoteCidr}}
-                      remote_ip_prefix: {{.RemoteCidr}}
-                    {{- end}}
-                    {{- if .PortRangeMin}}
-                      port_range_min: {{.PortRangeMin}}
-                      port_range_max: {{.PortRangeMax}}
-                    {{- end}}
+            name: {{.Name}}
+            rules:
+            {{- range .EgressRules}}
+                - direction: egress
+                {{- if .Protocol}}
+                  protocol: {{.Protocol}}
                 {{- end}}
-                {{- else}}
-                    - direction: egress
+                {{- if .RemoteCidr}}
+                  remote_ip_prefix: {{.RemoteCidr}}
                 {{- end}}
-                {{- range .AccessPorts}}
-                    - direction: ingress
-                      remote_ip_prefix: 0.0.0.0/0
-                      protocol: {{.Proto}}
-                      port_range_min: {{.Port}}
-                      port_range_max: {{.EndPort}}
+                {{- if .PortRangeMin}}
+                  port_range_min: {{.PortRangeMin}}
+                  port_range_max: {{.PortRangeMax}}
                 {{- end}}
+            {{- end}}
+            {{- $RemoteCidr := .AccessPorts.RemoteCidr}}
+            {{- range .AccessPorts.Ports}}
+                - direction: ingress
+                  remote_ip_prefix: {{$RemoteCidr}}
+                  protocol: {{.Proto}}
+                  port_range_min: {{.Port}}
+                  port_range_max: {{.EndPort}}
+            {{- end}}
     {{- end}}
     
     {{- range .VMs}}
@@ -271,7 +270,11 @@ func (o *OpenstackPlatform) waitForStack(ctx context.Context, stackname string, 
 func (o *OpenstackPlatform) createOrUpdateHeatStackFromTemplate(ctx context.Context, templateData interface{}, stackName string, templateString string, action string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "createHeatStackFromTemplate", "stackName", stackName, "action", action)
 
-	updateCallback(edgeproto.UpdateTask, "Creating Heat Stack for "+stackName)
+	if action == heatCreate {
+		updateCallback(edgeproto.UpdateTask, "Creating Heat Stack for "+stackName)
+	} else {
+		updateCallback(edgeproto.UpdateTask, "Updating Heat Stack for "+stackName)
+	}
 	buf, err := vmlayer.ExecTemplate(stackName, templateString, templateData)
 	if err != nil {
 		return err

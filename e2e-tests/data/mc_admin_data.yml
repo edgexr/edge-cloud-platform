@@ -62,6 +62,7 @@ regiondata:
       createclusterinsttimeout: 3s
       updateclusterinsttimeout: 2s
       deleteclusterinsttimeout: 2s
+      updatetrustpolicytimeout: 5s
       masternodeflavor: x1.tiny
       loadbalancermaxportrange: 100
       maxtrackeddmeclients: 100
@@ -101,6 +102,7 @@ regiondata:
       createclusterinsttimeout: 3s
       updateclusterinsttimeout: 2s
       deleteclusterinsttimeout: 2s
+      updatetrustpolicytimeout: 5s
       masternodeflavor: x1.tiny
       loadbalancermaxportrange: 100
       maxtrackeddmeclients: 100

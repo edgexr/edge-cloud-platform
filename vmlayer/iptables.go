@@ -449,7 +449,7 @@ func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label st
 	return deleteIptablesRules(ctx, client, label, fwRules)
 }
 
-func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, privacyPolicy *edgeproto.PrivacyPolicy) error {
+func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client ssh.Client, sshCidrsAllowed []string, TrustPolicy *edgeproto.TrustPolicy) error {
 
 	var netRules FirewallRules
 	var ppRules FirewallRules
@@ -493,12 +493,12 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 
 	// optionally add Privacy Policy
 	allowEgressAll := false
-	if privacyPolicy != nil {
-		if len(privacyPolicy.OutboundSecurityRules) == 0 {
+	if TrustPolicy != nil {
+		if len(TrustPolicy.OutboundSecurityRules) == 0 {
 			// a privacy policy with no rules means we need to open all egress traffic
 			allowEgressAll = true
 		}
-		for _, p := range privacyPolicy.OutboundSecurityRules {
+		for _, p := range TrustPolicy.OutboundSecurityRules {
 			allowEgressAll = false
 			portRange := fmt.Sprintf("%d", p.PortRangeMin)
 			if p.PortRangeMax != 0 {

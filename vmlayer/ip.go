@@ -135,8 +135,7 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 }
 
 func GetAllowedClientCIDR() string {
-	//XXX TODO get real list of allowed clients from remote database or template configuration
-	return "0.0.0.0/0"
+	return RemoteCidrAll
 }
 
 // serverIsNetplanEnabled checks for the existence of netplan, in which case there are no ifcfg files.  The current

@@ -45,9 +45,14 @@ const (
 	VMDomainAny      VMDomain = "any" // used for matching only
 )
 
+func (v *VMPlatform) GetSanitizedCloudletName(key *edgeproto.CloudletKey) string {
+	// Form platform VM name based on cloudletKey
+	return v.VMProvider.NameSanitize(key.Name + "-" + key.Organization)
+}
+
 func (v *VMPlatform) GetPlatformVMName(key *edgeproto.CloudletKey) string {
 	// Form platform VM name based on cloudletKey
-	return v.VMProvider.NameSanitize(key.Name + "-" + key.Organization + "-pf")
+	return v.GetSanitizedCloudletName(key) + "-pf"
 }
 
 func (v *VMPlatform) GetPlatformSubnetName(key *edgeproto.CloudletKey) string {
@@ -112,7 +117,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 			ActionCreate,
 			updateCallback,
 			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22"),
+			WithAccessPorts("tcp:22", RemoteCidrAll),
 			WithSkipDefaultSecGrp(true),
 			WithInitOrchestrator(true),
 		)
@@ -131,7 +136,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 			ActionCreate,
 			updateCallback,
 			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22"),
+			WithAccessPorts("tcp:22", RemoteCidrAll),
 			WithSkipDefaultSecGrp(true),
 			WithNewSubnet(subnetName),
 			WithSkipSubnetGateway(true),
@@ -331,6 +336,12 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// Update envvars
 	v.VMProperties.CommonPf.Properties.UpdatePropsFromVars(ctx, cloudlet.EnvVar)
 	return nil
+}
+
+func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
+	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
+	egressRestricted := TrustPolicy.Key.Name != ""
+	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, edgeproto.DummyUpdateCallback)
 }
 
 func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -798,7 +809,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			platformVmName,
 			platvms,
 			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22"),
+			WithAccessPorts("tcp:22", RemoteCidrAll),
 			WithSkipDefaultSecGrp(true),
 			WithSkipInfraSpecificCheck(skipInfraSpecificCheck),
 		)
@@ -809,7 +820,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 			platformVmName,
 			platvms,
 			WithNewSecurityGroup(GetServerSecurityGroupName(platformVmName)),
-			WithAccessPorts("tcp:22"),
+			WithAccessPorts("tcp:22", RemoteCidrAll),
 			WithNewSubnet(subnetName),
 			WithSkipDefaultSecGrp(true),
 			WithSkipSubnetGateway(true),

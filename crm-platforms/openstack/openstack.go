@@ -15,6 +15,7 @@ import (
 type OpenstackPlatform struct {
 	openRCVars   map[string]string
 	VMProperties *vmlayer.VMProperties
+	caches       *platform.Caches
 }
 
 func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
@@ -25,13 +26,13 @@ func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.C
 	o.InitResourceReservations(ctx)
 	if stage == vmlayer.ProviderInitPlatformStart {
 		o.initDebug(o.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-		return o.PrepNetwork(ctx)
+		return o.PrepNetwork(ctx, updateCallback)
 	}
 	return nil
 }
 
 func (o *OpenstackPlatform) InitData(ctx context.Context, caches *platform.Caches) {
-	// openstack doesn't need caches
+	o.caches = caches
 }
 
 func (o *OpenstackPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
@@ -81,7 +82,7 @@ func (o *OpenstackPlatform) GetResourceID(ctx context.Context, resourceType vmla
 	return "", fmt.Errorf("GetResourceID not implemented for resource type: %s ", resourceType)
 }
 
-func (o *OpenstackPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, privacyPolicy *edgeproto.PrivacyPolicy) error {
+func (o *OpenstackPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, TrustPolicy *edgeproto.TrustPolicy) error {
 	// nothing to do
 	return nil
 }

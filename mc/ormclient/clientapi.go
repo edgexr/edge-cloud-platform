@@ -87,7 +87,7 @@ type Api interface {
 	AutoScalePolicyApiClient
 	ResTagTableApiClient
 	AutoProvPolicyApiClient
-	PrivacyPolicyApiClient
+	TrustPolicyApiClient
 	OperatorCodeApiClient
 	SettingsApiClient
 	AppInstClientApiClient
