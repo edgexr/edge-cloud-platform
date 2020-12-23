@@ -8,6 +8,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -135,6 +136,10 @@ func (v *VSpherePlatform) GetPortGroup(ctx context.Context, serverName, network 
 	return fmt.Sprintf("VLAN-%d", subnetTagContents.Vlan), nil
 }
 
-func (o *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+func (v *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
 	return fmt.Errorf("Additional networks not supported in vSphere cloudlets")
+}
+
+func (v *VSpherePlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
 }

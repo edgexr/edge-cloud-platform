@@ -33,6 +33,7 @@ type VMProperties struct {
 	SharedRootLBName           string
 	Domain                     VMDomain
 	PlatformSecgrpName         string
+	CloudletSecgrpName         string
 	IptablesBasedFirewall      bool
 	sshKey                     CloudletSSHKey
 	Upgrade                    bool
@@ -88,7 +89,6 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_SECURITY_GROUP": {
 		Name:        "Security Group Name",
 		Description: "Name of the security group to which cloudlet VMs will be part of",
-		Value:       "default",
 	},
 	"MEX_SHARED_ROOTLB_RAM": {
 		Name:        "Security Group Name",
@@ -233,13 +233,15 @@ func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) 
 	return nil
 }
 
-func (vp *VMProperties) GetCloudletSecurityGroupName() string {
-	value, _ := vp.CommonPf.Properties.GetValue("MEX_SECURITY_GROUP")
-	return value
-}
-
-func (vp *VMProperties) SetCloudletSecurityGroupName(name string) {
-	vp.CommonPf.Properties.SetValue("MEX_SECURITY_GROUP", name)
+// GetCloudletSecurityGroupName overrides cloudlet wide security group if set in
+// envvars, but normally is derived from the cloudlet name.  It is not exported
+// as providers should use VMProperties.CloudletSecgrpName
+func (v *VMPlatform) getCloudletSecurityGroupName() string {
+	value, _ := v.VMProperties.CommonPf.Properties.GetValue("MEX_SECURITY_GROUP")
+	if value != "" {
+		return value
+	}
+	return v.GetSanitizedCloudletName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey) + "-cloudlet-sg"
 }
 
 func (vp *VMProperties) GetCloudletExternalNetwork() string {

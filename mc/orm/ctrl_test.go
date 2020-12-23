@@ -350,7 +350,7 @@ func TestController(t *testing.T) {
 		org1, org2, dcnt)
 	permTestAutoScalePolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
 		org1, org2, dcnt)
-	permTestPrivacyPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
+	permTestTrustPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
 		org1, org2, dcnt)
 	// test users with different roles
 	goodPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
@@ -802,7 +802,7 @@ func badPermTestNonExistent(t *testing.T, mcClient *ormclient.Client, uri, token
 	badPermCreateOperatorCode(t, mcClient, uri, token, region, neOrg)
 	badPermCreateAutoProvPolicy(t, mcClient, uri, token, region, neOrg)
 	badPermCreateAutoScalePolicy(t, mcClient, uri, token, region, neOrg)
-	badPermCreatePrivacyPolicy(t, mcClient, uri, token, region, neOrg)
+	badPermCreateTrustPolicy(t, mcClient, uri, token, region, neOrg)
 	badPermCreateCloudletPool(t, mcClient, uri, token, region, neOrg)
 	badPermCreateResTagTable(t, mcClient, uri, token, region, neOrg)
 }

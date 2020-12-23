@@ -232,6 +232,7 @@ var CreateCloudletOptionalArgs = []string{
 	"maintenancestate",
 	"overridepolicycontainerversion",
 	"vmpool",
+	"trustpolicy",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -266,6 +267,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"maintenancestate",
 	"overridepolicycontainerversion",
 	"vmpool",
+	"trustpolicy",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -288,6 +290,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"envvar",
 	"accessvars",
 	"maintenancestate",
+	"trustpolicy",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -322,6 +325,7 @@ var ShowCloudletOptionalArgs = []string{
 	"maintenancestate",
 	"overridepolicycontainerversion",
 	"vmpool",
+	"trustpolicy",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -553,6 +557,7 @@ var CloudletOptionalArgs = []string{
 	"maintenancestate",
 	"overridepolicycontainerversion",
 	"vmpool",
+	"trustpolicy",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -632,6 +637,8 @@ var CloudletAliasArgs = []string{
 	"createdat.nanos=cloudlet.createdat.nanos",
 	"updatedat.seconds=cloudlet.updatedat.seconds",
 	"updatedat.nanos=cloudlet.updatedat.nanos",
+	"trustpolicy=cloudlet.trustpolicy",
+	"trustpolicystate=cloudlet.trustpolicystate",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -698,6 +705,8 @@ var CloudletComments = map[string]string{
 	"vmpool":                              "VM Pool",
 	"crmaccesspublickey":                  "CRM access public key",
 	"crmaccesskeyupgraderequired":         "CRM access key upgrade required",
+	"trustpolicy":                         "Optional Trust Policy",
+	"trustpolicystate":                    "State of trust policy, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":    "StringToString",
@@ -883,6 +892,7 @@ var CloudletInfoOptionalArgs = []string{
 	"osimages:#.diskformat",
 	"controllercachereceived",
 	"maintenancestate",
+	"trustpolicystate",
 }
 var CloudletInfoAliasArgs = []string{
 	"fields=cloudletinfo.fields",
@@ -926,6 +936,7 @@ var CloudletInfoAliasArgs = []string{
 	"resources.vms:#.containers:#.status=cloudletinfo.resources.vms:#.containers:#.status",
 	"resources.vms:#.containers:#.clusterip=cloudletinfo.resources.vms:#.containers:#.clusterip",
 	"resources.vms:#.containers:#.restarts=cloudletinfo.resources.vms:#.containers:#.restarts",
+	"trustpolicystate=cloudletinfo.trustpolicystate",
 }
 var CloudletInfoComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -959,6 +970,7 @@ var CloudletInfoComments = map[string]string{
 	"resources.vms:#.containers:#.status":    "Runtime status of the container",
 	"resources.vms:#.containers:#.clusterip": "IP within the CNI and is applicable to kubernetes only",
 	"resources.vms:#.containers:#.restarts":  "Restart count, applicable to kubernetes only",
+	"trustpolicystate":                       "Trust Policy State, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"cloudletinfo.errors":            "StringArray",

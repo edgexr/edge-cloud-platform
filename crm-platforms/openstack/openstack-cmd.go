@@ -16,6 +16,7 @@ import (
 )
 
 const ResourceNotFound string = "Could not find resource"
+const StackNotFound string = "Stack not found"
 
 func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
 	parmstr := strings.Join(a, " ")
@@ -800,12 +801,12 @@ func (s *OpenstackPlatform) deleteHeatStack(ctx context.Context, stackName strin
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete heat stack", "stackName", stackName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "stack", "delete", stackName)
 	if err != nil {
-		if strings.Contains("Stack not found", string(out)) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "stack not found")
+		if strings.Contains(StackNotFound, string(out)) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "stack not found", "stackName", stackName)
 			return nil
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "stack deletion failed", "stackName", stackName, "out", string(out), "err", err)
-		if strings.Contains(string(out), "Stack not found") {
+		if strings.Contains(string(out), StackNotFound) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "stack already deleted", "stackName", stackName)
 			return nil
 		}

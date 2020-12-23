@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -156,7 +157,7 @@ func (o *OpenstackPlatform) ValidateAdditionalNetworks(ctx context.Context, addi
 }
 
 // PrepNetwork validates and does the work needed to ensure MEX network setup
-func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
+func (o *OpenstackPlatform) PrepNetwork(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepNetwork")
 
 	nets, err := o.ListNetworks(ctx)
@@ -225,7 +226,7 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context) error {
 			}
 		}
 	}
-	return o.PrepareCloudletSecurityGroup(ctx)
+	return nil
 }
 
 // GetCloudletSubnets returns subnets inside MEX Network
