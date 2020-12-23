@@ -42,29 +42,25 @@ func GetAppWhitelistRulesLabel(app *edgeproto.App) string {
 	return "appaccess-" + k8smgmt.NormalizeName(app.Key.Name)
 }
 
-func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, privacyPolicy *edgeproto.PrivacyPolicy, action ActionType, updateCallback edgeproto.CacheUpdateCallback) (*vmAppOrchValues, error) {
+func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, privacyPolicy *edgeproto.PrivacyPolicy, updateCallback edgeproto.CacheUpdateCallback) (*vmAppOrchValues, error) {
 	var orchVals vmAppOrchValues
 
 	imageName, err := cloudcommon.GetFileName(app.ImagePath)
 	if err != nil {
 		return &orchVals, err
 	}
+	var imageInfo infracommon.ImageInfo
+	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
+	imageInfo.LocalImageName = imageName + "-" + md5Sum
+	imageInfo.Md5sum = md5Sum
+	imageInfo.SourceImageTime = sourceImageTime
+	if err != nil {
+		return &orchVals, err
+	}
 
-	if action == ActionCreate {
-		imgName, err := cloudcommon.GetFileName(app.ImagePath)
-		if err != nil {
-			return &orchVals, err
-		}
-		var imageInfo infracommon.ImageInfo
-		sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
-		imageInfo.LocalImageName = imgName + "-" + md5Sum
-		imageInfo.Md5sum = md5Sum
-		imageInfo.SourceImageTime = sourceImageTime
-
-		err = v.VMProvider.AddAppImageIfNotPresent(ctx, &imageInfo, app, appInst.Flavor.Name, updateCallback)
-		if err != nil {
-			return &orchVals, err
-		}
+	err = v.VMProvider.AddAppImageIfNotPresent(ctx, &imageInfo, app, appInst.Flavor.Name, updateCallback)
+	if err != nil {
+		return &orchVals, err
 	}
 
 	objName := cloudcommon.GetAppFQN(&app.Key)
@@ -103,7 +99,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		VMTypeAppVM,
 		objName,
 		appInst.VmFlavor,
-		imageName,
+		imageInfo.LocalImageName,
 		appConnectsExternal,
 		WithComputeAvailabilityZone(appInst.AvailabilityZone),
 		WithExternalVolume(appInst.ExternalVolumeSize),
@@ -117,7 +113,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	vms = append(vms, appVm)
 	updateCallback(edgeproto.UpdateTask, "Deploying App")
-	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx, objName, vms, action, updateCallback, WithNewSubnet(orchVals.newSubnetName),
+	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx, objName, vms, ActionCreate, updateCallback, WithNewSubnet(orchVals.newSubnetName),
 		WithPrivacyPolicy(privacyPolicy),
 		WithAccessPorts(app.AccessPorts),
 		WithNewSecurityGroup(GetServerSecurityGroupName(orchVals.externalServerName)),
@@ -251,7 +247,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 	case cloudcommon.DeploymentTypeVM:
 		objName := cloudcommon.GetAppFQN(&app.Key)
-		orchVals, err := v.PerformOrchestrationForVMApp(ctx, app, appInst, privacyPolicy, ActionCreate, updateCallback)
+		orchVals, err := v.PerformOrchestrationForVMApp(ctx, app, appInst, privacyPolicy, updateCallback)
 		if err != nil {
 			return err
 		}
