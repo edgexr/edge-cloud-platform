@@ -36,6 +36,8 @@ const ResourceAlert = "alert"
 const ResourceDeveloperPolicy = "developerpolicy"
 const ResourceResTagTable = "restagtbl"
 
+const ApiKeyRoleSuffix = "-role"
+
 var DeveloperResources = []string{
 	ResourceApps,
 	ResourceAppInsts,
@@ -509,6 +511,10 @@ func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error
 		if role == nil {
 			continue
 		}
+		if isApiKeyRole(role.Role) {
+			// hide API key role from users as it is managed internally
+			continue
+		}
 		if !authz.Ok(role.Org) {
 			continue
 		}
@@ -572,6 +578,17 @@ func isOperatorRole(role string) bool {
 	if role == RoleOperatorManager ||
 		role == RoleOperatorContributor ||
 		role == RoleOperatorViewer {
+		return true
+	}
+	return false
+}
+
+func getApiKeyRoleName(apiKeyId string) string {
+	return apiKeyId + ApiKeyRoleSuffix
+}
+
+func isApiKeyRole(role string) bool {
+	if strings.HasSuffix(role, ApiKeyRoleSuffix) {
 		return true
 	}
 	return false

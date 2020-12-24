@@ -108,6 +108,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err == nil {
 				login.Password = ""
 				login.TOTP = ""
+				login.ApiKey = ""
 				reqBody, err = json.Marshal(login)
 			}
 			if err != nil {
@@ -186,6 +187,20 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 				if err == nil {
 					resp.TOTPSharedKey = ""
 					resp.TOTPQRImage = nil
+					updatedResp, err := json.Marshal(&resp)
+					if err == nil {
+						response = string(updatedResp)
+					} else {
+						response = string(resBody)
+					}
+				} else {
+					response = string(resBody)
+				}
+			} else if strings.Contains(string(resBody), "ApiKey") {
+				resp := ormapi.CreateUserApiKey{}
+				err := json.Unmarshal(resBody, &resp)
+				if err == nil {
+					resp.ApiKey = ""
 					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
 						response = string(updatedResp)

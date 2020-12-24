@@ -26,11 +26,13 @@ type Client struct {
 	Debug      bool
 }
 
-func (s *Client) DoLogin(uri, user, pass, otp string) (string, error) {
+func (s *Client) DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, error) {
 	login := ormapi.UserLogin{
 		Username: user,
 		Password: pass,
 		TOTP:     otp,
+		ApiKeyId: apikeyid,
+		ApiKey:   apikey,
 	}
 	result := make(map[string]interface{})
 	status, err := s.PostJson(uri+"/login", "", &login, &result)
@@ -607,4 +609,20 @@ func (s *Client) ShowAlertReceiver(uri, token string, in *ormapi.AlertReceiver) 
 	receivers := []ormapi.AlertReceiver{}
 	status, err := s.PostJson(uri+"/auth/alertreceiver/show", token, in, &receivers)
 	return receivers, status, err
+}
+
+func (s *Client) CreateUserApiKey(uri, token string, userApiKey *ormapi.CreateUserApiKey) (*ormapi.CreateUserApiKey, int, error) {
+	resp := ormapi.CreateUserApiKey{}
+	st, err := s.PostJson(uri+"/auth/user/create/apikey", token, userApiKey, &resp)
+	return &resp, st, err
+}
+
+func (s *Client) DeleteUserApiKey(uri, token string, userApiKey *ormapi.CreateUserApiKey) (int, error) {
+	return s.PostJson(uri+"/auth/user/delete/apikey", token, userApiKey, nil)
+}
+
+func (s *Client) ShowUserApiKey(uri, token string, userApiKey *ormapi.CreateUserApiKey) ([]ormapi.CreateUserApiKey, int, error) {
+	userApiKeys := []ormapi.CreateUserApiKey{}
+	status, err := s.PostJson(uri+"/auth/user/show/apikey", token, userApiKey, &userApiKeys)
+	return userApiKeys, status, err
 }

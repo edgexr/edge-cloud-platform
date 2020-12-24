@@ -47,6 +47,10 @@ g = _, _
 // (adam, orgXYZ, Users, Manage) -> Denied
 // (superuser, <anything here>, Users, Manage) -> OK
 //
+// As part of our rbac query, we refer to above with table headers p_type, v0, v1, v2, ...
+// So for example:
+// p_type = p, v0 = DeveloperManager, v1 = Users, v2 = Manage
+// p_type = g, v0 = orgABC::adam, v1 = DeveloperManager
 
 func GetCasbinGroup(org, username string) string {
 	if org == "" {

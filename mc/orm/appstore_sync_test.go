@@ -160,7 +160,7 @@ func TestAppStoreApi(t *testing.T) {
 	mcClient := &ormclient.Client{}
 
 	// login as super user
-	tokenAdmin, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP)
+	tokenAdmin, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
 
 	// Before Artifactory/Gitlab are hooked into mock, create "missing" data

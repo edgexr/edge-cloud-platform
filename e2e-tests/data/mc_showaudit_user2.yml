@@ -4,7 +4,7 @@
   status: 200
   starttime: "2019-08-11T09:36:04.320621-07:00"
   duration: 12.441ms
-  request: '{"username":"user2","password":"","totp":""}'
+  request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"token":""}'
   traceid: 230c2137535baf7c
 - operationname: /api/v1/usercreate
@@ -40,7 +40,7 @@
   status: 200
   starttime: "2019-08-11T09:36:02.92884-07:00"
   duration: 11.782ms
-  request: '{"username":"user2","password":"","totp":""}'
+  request: '{"username":"user2","password":"","totp":"","apikeyid":"","apikey":""}'
   response: '{"token":""}'
   traceid: 635be073ef98bea
 - operationname: /api/v1/auth/org/delete

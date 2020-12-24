@@ -85,3 +85,4 @@ plugin/common/foo
 
 # unit-test file
 mc/orm/alertmgr/testAlertMgrConfig.yml
+mc/orm/testAlertMgrConfig.yml
