@@ -1,6 +1,10 @@
 package rbac
 
-import "context"
+import (
+	"context"
+
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+)
 
 func (e *Enforcer) AddPolicy(ctx context.Context, params ...string) error {
 	return e.adapter.AddPolicy(ctx, "p", params)
@@ -32,4 +36,8 @@ func (e *Enforcer) HasPolicy(params ...string) (bool, error) {
 
 func (e *Enforcer) HasGroupingPolicy(params ...string) (bool, error) {
 	return e.adapter.HasPolicy("g", params)
+}
+
+func (e *Enforcer) GetPermissions(ctx context.Context, username, org string) (map[ormapi.RolePerm]struct{}, error) {
+	return e.adapter.GetPermissions(ctx, username, org)
 }

@@ -16,6 +16,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/mobiledgex/edge-cloud-infra/mc/gormlog"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -126,6 +127,42 @@ SELECT o2.sub, o1.role FROM
 		log.SpanLog(ctx, log.DebugLevelApi, "GetAuthorized", "authz", authz)
 	}
 	return authz, nil
+}
+
+func (a *Adapter) GetPermissions(ctx context.Context, username, org string) (map[ormapi.RolePerm]struct{}, error) {
+	c := CasbinRule{}
+	subj := GetCasbinGroup(org, username)
+	// Get all permissions for the specified user and org. Grabs all the roles from the table (o1)
+	// that satisfy the subject (org+user). Then grabs all the resource,actions from the table (o2)
+	// for those roles.
+	query := fmt.Sprintf(`
+SELECT o2.resource, o2.action FROM
+ (SELECT v1 AS role FROM %s WHERE p_type = 'g' AND v0 = '%s') o1
+ INNER JOIN LATERAL
+ (SELECT v1 AS resource, v2 AS action FROM %s WHERE p_type = 'p' AND v0 = o1.role) o2
+ON true;`, c.TableName(), subj, c.TableName())
+	db := a.db
+	if a.logAuthz {
+		db = a.loggedDB(ctx)
+	}
+	rows, err := db.Raw(query).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	perms := make(map[ormapi.RolePerm]struct{})
+	for rows.Next() {
+		perm := ormapi.RolePerm{}
+		err := rows.Scan(&perm.Resource, &perm.Action)
+		if err != nil {
+			return nil, err
+		}
+		perms[perm] = struct{}{}
+	}
+	if a.logAuthz {
+		log.SpanLog(ctx, log.DebugLevelApi, "GetPermissions", "perms", perms)
+	}
+	return perms, nil
 }
 
 func (a *Adapter) GetPolicies(ptype string) ([][]string, error) {

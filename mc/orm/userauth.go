@@ -30,7 +30,14 @@ var PasshashKeyBytes = 32
 var PasshashSaltBytes = 8
 var BruteForceGuessesPerSecond = 1000000
 
+var JWTShortDuration = 4 * time.Hour
+
 var Jwks vault.JWKS
+
+const (
+	ApiKeyAuth   string = "apikeyauth"
+	PasswordAuth string = "passwordauth"
+)
 
 type TokenAuth struct {
 	Token string
@@ -78,10 +85,12 @@ func PasswordMatches(password, passhash, salt string, iter int) (bool, error) {
 
 type UserClaims struct {
 	jwt.StandardClaims
-	Username      string `json:"username"`
-	Email         string `json:"email"`
-	Kid           int    `json:"kid"`
-	FirstIssuedAt int64  `json:"firstiat,omitempty"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Kid            int    `json:"kid"`
+	FirstIssuedAt  int64  `json:"firstiat,omitempty"`
+	AuthType       string `json:"authtype"`
+	ApiKeyUsername string `json:"apikeyusername"`
 }
 
 func (u *UserClaims) GetKid() (int, error) {
@@ -92,7 +101,7 @@ func (u *UserClaims) SetKid(kid int) {
 	u.Kid = kid
 }
 
-func GenerateCookie(user *ormapi.User) (string, error) {
+func GenerateCookie(user *ormapi.User, apiKeyId string) (string, error) {
 	claims := UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
@@ -104,6 +113,17 @@ func GenerateCookie(user *ormapi.User) (string, error) {
 		// This is used to keep track of when the first auth token was issued,
 		// using this info we allow refreshing of auth token if the token is valid
 		FirstIssuedAt: time.Now().Unix(),
+	}
+	if apiKeyId != "" {
+		// Set ApiKeyId as username to ensure that we always enforce RBAC on ApikeyId,
+		// rather than on user name
+		claims.Username = apiKeyId
+		// shorter expiration time if apiKeyId is specified
+		claims.ExpiresAt = time.Now().Add(JWTShortDuration).Unix()
+		claims.AuthType = ApiKeyAuth
+		claims.ApiKeyUsername = user.Name
+	} else {
+		claims.AuthType = PasswordAuth
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
 	return cookie, err
@@ -131,7 +151,12 @@ func getClaims(c echo.Context) (*UserClaims, error) {
 		return nil, echo.ErrUnauthorized
 	}
 	span := log.SpanFromContext(ctx)
-	span.SetTag("username", claims.Username)
+	if claims.AuthType == ApiKeyAuth {
+		span.SetTag("username", claims.ApiKeyUsername)
+		span.SetTag("apikeyid", claims.Username)
+	} else {
+		span.SetTag("username", claims.Username)
+	}
 	span.SetTag("email", claims.Email)
 	return claims, nil
 }

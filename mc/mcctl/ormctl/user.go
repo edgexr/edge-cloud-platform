@@ -76,6 +76,27 @@ func GetUserCommand() *cobra.Command {
 		OptionalArgs: "name email emailverified familyname givenname nickname locked",
 		ReqData:      &ormapi.User{},
 		Run:          runRest("/auth/restricted/user/update"),
+	}, &cli.Command{
+		Use:          "createapikey",
+		RequiredArgs: "org description",
+		OptionalArgs: "permissions:#.action permissions:#.resource",
+		AliasArgs:    "org=userapikey.org description=userapikey.description",
+		ReqData:      &ormapi.CreateUserApiKey{},
+		ReplyData:    &ormapi.CreateUserApiKey{},
+		Run:          runRest("/auth/user/create/apikey"),
+	}, &cli.Command{
+		Use:          "deleteapikey",
+		RequiredArgs: "apikeyid",
+		AliasArgs:    "apikeyid=userapikey.id",
+		ReqData:      &ormapi.CreateUserApiKey{},
+		Run:          runRest("/auth/user/delete/apikey"),
+	}, &cli.Command{
+		Use:          "showapikey",
+		ReqData:      &ormapi.CreateUserApiKey{},
+		OptionalArgs: "apikeyid",
+		AliasArgs:    "apikeyid=userapikey.id",
+		ReplyData:    &[]ormapi.CreateUserApiKey{},
+		Run:          runRest("/auth/user/show/apikey"),
 	}}
 	return cli.GenGroup("user", "manage users", cmds)
 }
@@ -83,8 +104,7 @@ func GetUserCommand() *cobra.Command {
 func GetLoginCmd() *cobra.Command {
 	cmd := cli.Command{
 		Use:          "login",
-		RequiredArgs: "name",
-		OptionalArgs: "totp",
+		OptionalArgs: "name totp apikeyid apikey",
 		Run:          runLogin,
 	}
 	return cmd.GenCmd()
@@ -92,16 +112,16 @@ func GetLoginCmd() *cobra.Command {
 
 func runLogin(c *cli.Command, args []string) error {
 	input := cli.Input{
-		RequiredArgs: []string{"name"},
-		PasswordArg:  "password",
-		AliasArgs:    []string{"name=username"},
+		PasswordArg: "password",
+		ApiKeyArg:   "apikey",
+		AliasArgs:   []string{"name=username"},
 	}
 	login := ormapi.UserLogin{}
 	_, err := input.ParseArgs(args, &login)
 	if err != nil {
 		return err
 	}
-	token, err := client.DoLogin(getUri(), login.Username, login.Password, login.TOTP)
+	token, err := client.DoLogin(getUri(), login.Username, login.Password, login.TOTP, login.ApiKeyId, login.ApiKey)
 	if err != nil {
 		return err
 	}

@@ -13,8 +13,10 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/pquerna/otp"
@@ -24,6 +26,10 @@ import (
 
 var BadAuthDelay = 3 * time.Second
 var NoOTP = ""
+var NoApiKeyId = ""
+var NoApiKey = ""
+var NoUserName = ""
+var NoPassword = ""
 var OTPLen otp.Digits = otp.DigitsSix
 var OTPExpirationTime = uint(2 * 60)   // seconds
 var OTPAuthenticatorExpTime = uint(30) // seconds
@@ -67,37 +73,75 @@ func Login(c echo.Context) error {
 	if err := c.Bind(&login); err != nil {
 		return bindErr(c, err)
 	}
-	if login.Username == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Username not specified"))
-	}
-	user := ormapi.User{}
-	lookup := ormapi.User{Name: login.Username}
 	db := loggedDB(ctx)
-	res := db.Where(&lookup).First(&user)
-	if res.RecordNotFound() {
-		// try look-up by email
-		lookup.Name = ""
-		lookup.Email = login.Username
-		res = db.Where(&lookup).First(&user)
-	}
-	err := res.Error
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
-		time.Sleep(BadAuthDelay)
-		return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
-	}
-	span := log.SpanFromContext(ctx)
-	span.SetTag("username", user.Name)
-	span.SetTag("email", user.Email)
+	user := ormapi.User{}
+	if login.ApiKey != "" || login.ApiKeyId != "" {
+		if login.ApiKeyId == "" {
+			return c.JSON(http.StatusBadRequest, Msg("apikeyid not specified"))
+		}
+		if login.ApiKey == "" {
+			return c.JSON(http.StatusBadRequest, Msg("apikey not specified"))
+		}
+		apiKeyObj := ormapi.UserApiKey{Id: login.ApiKeyId}
+		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "ApiKey lookup failed", "apiKey", apiKeyObj, "err", err)
+			time.Sleep(BadAuthDelay)
+			return c.JSON(http.StatusBadRequest, Msg("Invalid ApiKey"))
+		}
+		user.Name = apiKeyObj.Username
+		err = db.Where(&user).First(&user).Error
+		if err != nil {
+			return setReply(c, dbErr(err), nil)
+		}
+		span := log.SpanFromContext(ctx)
+		span.SetTag("username", user.Name)
+		span.SetTag("email", user.Email)
 
-	matches, err := PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
+		matches, err := PasswordMatches(login.ApiKey, apiKeyObj.ApiKeyHash, apiKeyObj.Salt, apiKeyObj.Iter)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "apiKeyId matches err", "err", err)
+		}
+		if !matches || err != nil {
+			time.Sleep(BadAuthDelay)
+			return c.JSON(http.StatusBadRequest, Msg("Invalid ApiKey or ApiKeyId"))
+		}
+	} else {
+		if login.Username == "" {
+			return c.JSON(http.StatusBadRequest, Msg("Username not specified"))
+		}
+
+		if login.Password == "" {
+			return c.JSON(http.StatusBadRequest, Msg("Please specify password"))
+		}
+		lookup := ormapi.User{Name: login.Username}
+		res := db.Where(&lookup).First(&user)
+		if res.RecordNotFound() {
+			// try look-up by email
+			lookup.Name = ""
+			lookup.Email = login.Username
+			res = db.Where(&lookup).First(&user)
+		}
+		err := res.Error
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
+			time.Sleep(BadAuthDelay)
+			return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
+		}
+		span := log.SpanFromContext(ctx)
+		span.SetTag("username", user.Name)
+		span.SetTag("email", user.Email)
+
+		matches, err := PasswordMatches(login.Password, user.Passhash, user.Salt, user.Iter)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "password matches err", "err", err)
+		}
+		if !matches || err != nil {
+			time.Sleep(BadAuthDelay)
+			return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
+		}
 	}
-	if !matches || err != nil {
-		time.Sleep(BadAuthDelay)
-		return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
-	}
+
 	if user.Locked {
 		return c.JSON(http.StatusBadRequest, Msg("Account is locked, please contact MobiledgeX support"))
 	}
@@ -105,7 +149,7 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Email not verified yet"))
 	}
 
-	if user.PassCrackTimeSec == 0 {
+	if login.Password != "" && user.PassCrackTimeSec == 0 {
 		calcPasswordStrength(ctx, &user, login.Password)
 		isAdmin, err := isUserAdmin(ctx, user.Name)
 		if err != nil {
@@ -128,7 +172,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	if user.TOTPSharedKey != "" {
+	if login.Password != "" && user.TOTPSharedKey != "" {
 		opts := totp.ValidateOpts{
 			Period:    OTPExpirationTime,
 			Skew:      1,
@@ -164,7 +208,7 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	cookie, err := GenerateCookie(&user)
+	cookie, err := GenerateCookie(&user, login.ApiKeyId)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
@@ -904,4 +948,219 @@ func UpdateUser(c echo.Context) error {
 		userResponse.Message = "user updated"
 	}
 	return c.JSON(http.StatusOK, &userResponse)
+}
+
+func CreateUserApiKey(c echo.Context) error {
+	ctx := GetContext(c)
+	db := loggedDB(ctx)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Disallow apikey creation if auth type is ApiKey auth
+	if claims.AuthType == ApiKeyAuth {
+		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to create API keys, please log in with user account"))
+	}
+	apiKeyReq := ormapi.CreateUserApiKey{}
+	if err := c.Bind(&apiKeyReq); err != nil {
+		return bindErr(c, err)
+	}
+	config, err := getConfig(ctx)
+	if err != nil {
+		return err
+	}
+	// ensure that user has not reached the limit on the number of api keys it can create
+	lookup := ormapi.UserApiKey{Username: claims.Username}
+	curApiKeys := []ormapi.UserApiKey{}
+	err = db.Where(&lookup).Find(&curApiKeys).Error
+	if err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+	if len(curApiKeys) >= config.UserApiKeyCreateLimit {
+		return setReply(c, fmt.Errorf("User cannot create more than %d API keys, please delete existing keys to create new one", config.UserApiKeyCreateLimit), nil)
+	}
+	if len(apiKeyReq.Permissions) == 0 {
+		return c.JSON(http.StatusBadRequest, Msg("No permissions for specified org"))
+	}
+
+	apiKeyObj := ormapi.UserApiKey{}
+	apiKeyObj.Username = claims.Username
+	apiKeyObj.Org = apiKeyReq.Org
+	apiKeyObj.Description = apiKeyReq.Description
+
+	// verify that specified org exists
+	org := ormapi.Organization{}
+	org.Name = apiKeyObj.Org
+	err = db.Where(&org).First(&org).Error
+	if err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+
+	lookupOrg := apiKeyObj.Org
+	if claims.Username == Superuser {
+		lookupOrg = ""
+	}
+	// make sure caller has perms to access resource of target org
+	validRolePerms, err := enforcer.GetPermissions(ctx, claims.Username, lookupOrg)
+	if err != nil {
+		return err
+	}
+
+	apiKeyId := uuid.New().String()
+	apiKey := uuid.New().String()
+	apiKeyRole := getApiKeyRoleName(apiKeyId)
+	psub := rbac.GetCasbinGroup(apiKeyObj.Org, apiKeyId)
+	cleanupPoliciesOnErr := func() {
+		log.SpanLog(ctx, log.DebugLevelApi, "cleaning up all the policies", "user", claims.Username, "apiKeyId", apiKeyId)
+		// remove policy if present, ignore err
+		enforcer.RemovePolicy(ctx, apiKeyRole)
+		enforcer.RemoveGroupingPolicy(ctx, psub, apiKeyRole)
+	}
+
+	// verify if user specified role/resource/action for the API key is valid
+	var policyErr error
+	for _, perm := range apiKeyReq.Permissions {
+		if perm.Action != ActionView && perm.Action != ActionManage {
+			cleanupPoliciesOnErr()
+			return c.JSON(http.StatusBadRequest, Msg(fmt.Sprintf("Invalid action %s, valid actions are %s, %s", perm.Action, ActionView, ActionManage)))
+		}
+		lookupRolePerm := ormapi.RolePerm{
+			Resource: perm.Resource,
+			Action:   perm.Action,
+		}
+		validPerms := []string{}
+		for rPerm, _ := range validRolePerms {
+			validPerms = append(validPerms, rPerm.Resource+":"+rPerm.Action)
+		}
+		if _, ok := validRolePerms[lookupRolePerm]; !ok {
+			cleanupPoliciesOnErr()
+			return c.JSON(http.StatusBadRequest, Msg(fmt.Sprintf("Invalid permission specified: [%s:%s], valid permissions (resource:action) are %v", perm.Resource, perm.Action, validPerms)))
+		}
+		addPolicy(ctx, &policyErr, apiKeyRole, perm.Resource, perm.Action)
+	}
+	if policyErr != nil {
+		cleanupPoliciesOnErr()
+		return setReply(c, dbErr(policyErr), nil)
+	}
+
+	err = enforcer.AddGroupingPolicy(ctx, psub, apiKeyRole)
+	if err != nil {
+		cleanupPoliciesOnErr()
+		return dbErr(err)
+	}
+
+	apiKeyHash, apiKeySalt, apiKeyIter := NewPasshash(apiKey)
+	apiKeyObj.ApiKeyHash = apiKeyHash
+	apiKeyObj.Salt = apiKeySalt
+	apiKeyObj.Iter = apiKeyIter
+	apiKeyObj.Id = apiKeyId
+	if err := db.Create(&apiKeyObj).Error; err != nil {
+		cleanupPoliciesOnErr()
+		return setReply(c, dbErr(err), nil)
+	}
+	apiKeyOut := ormapi.CreateUserApiKey{}
+	apiKeyOut.Id = apiKeyId
+	apiKeyOut.ApiKey = apiKey
+	return c.JSON(http.StatusOK, &apiKeyOut)
+}
+
+func DeleteUserApiKey(c echo.Context) error {
+	ctx := GetContext(c)
+	db := loggedDB(ctx)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Disallow apikey deletion if auth type is ApiKey auth
+	if claims.AuthType == ApiKeyAuth {
+		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to delete API keys, please log in with user account"))
+	}
+	lookup := ormapi.CreateUserApiKey{}
+	if err := c.Bind(&lookup); err != nil {
+		return bindErr(c, err)
+	}
+	apiKeyObj := ormapi.UserApiKey{Id: lookup.Id}
+	err = db.Where(&apiKeyObj).First(&apiKeyObj).Error
+	if err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+	apiKeyRole := getApiKeyRoleName(apiKeyObj.Id)
+	err = enforcer.RemovePolicy(ctx, apiKeyRole)
+	if err != nil {
+		return dbErr(err)
+	}
+	psub := rbac.GetCasbinGroup(apiKeyObj.Org, apiKeyObj.Id)
+	err = enforcer.RemoveGroupingPolicy(ctx, psub, apiKeyRole)
+	if err != nil {
+		return dbErr(err)
+	}
+	// delete user api key
+	err = db.Delete(&apiKeyObj).Error
+	if err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+	return c.JSON(http.StatusOK, Msg("deleted API Key successfully"))
+}
+
+func ShowUserApiKey(c echo.Context) error {
+	ctx := GetContext(c)
+	db := loggedDB(ctx)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	// Disallow apikey users to view api keys
+	if claims.AuthType == ApiKeyAuth {
+		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to show API keys, please log in with user account"))
+	}
+	filter := ormapi.CreateUserApiKey{}
+	if c.Request().ContentLength > 0 {
+		if err := c.Bind(&filter); err != nil {
+			return bindErr(c, err)
+		}
+	}
+	apiKeys := []ormapi.UserApiKey{}
+	// if filter ID is 0, show all keys
+	if filter.Id == "" {
+		err := db.Find(&apiKeys).Error
+		if err != nil {
+			return setReply(c, dbErr(err), nil)
+		}
+	} else {
+		apiKeyObj := ormapi.UserApiKey{Id: filter.Id}
+		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
+		if err != nil {
+			return setReply(c, dbErr(err), nil)
+		}
+		apiKeys = append(apiKeys, apiKeyObj)
+	}
+	super := false
+	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) == nil {
+		// super user, show all apikeys
+		super = true
+	}
+	outApiKeys := []ormapi.CreateUserApiKey{}
+	for _, apiKeyObj := range apiKeys {
+		if !super && apiKeyObj.Username != claims.Username {
+			continue
+		}
+		out := ormapi.CreateUserApiKey{}
+		out.Id = apiKeyObj.Id
+		out.Description = apiKeyObj.Description
+		out.Org = apiKeyObj.Org
+		out.CreatedAt = apiKeyObj.CreatedAt
+		if super {
+			out.Username = apiKeyObj.Username
+		}
+		out.Permissions = []ormapi.RolePerm{}
+		rolePerms, err := enforcer.GetPermissions(ctx, apiKeyObj.Id, apiKeyObj.Org)
+		if err != nil {
+			return err
+		}
+		for rolePerm, _ := range rolePerms {
+			out.Permissions = append(out.Permissions, rolePerm)
+		}
+		outApiKeys = append(outApiKeys, out)
+	}
+	return c.JSON(http.StatusOK, &outApiKeys)
 }
