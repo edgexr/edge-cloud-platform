@@ -61,7 +61,7 @@ func CreateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgepr
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
 			return err
 		}
 	}
