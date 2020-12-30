@@ -659,8 +659,10 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 		egressRules = spec.TrustPolicy.OutboundSecurityRules
 	}
 	if spec.NewSecgrpName != "" {
-		// egress is always restricted on per-cluster groups.  If egress is allowed, it is done on the cloudlet level group
-		externalSecGrp, err := GetSecGrpParams(spec.NewSecgrpName, SecGrpWithAccessPorts(spec.AccessPorts, spec.AccessCidr), SecGrpWithEgressRules(egressRules, true))
+		// egress is always restricted on per-cluster groups.  If egress is allowed, it is done on the cloudlet level group,
+		// unless there is no cloudlet group applied (in which case SkipDefaultSecGrp is true)
+		egressRestricted := !spec.SkipDefaultSecGrp
+		externalSecGrp, err := GetSecGrpParams(spec.NewSecgrpName, SecGrpWithAccessPorts(spec.AccessPorts, spec.AccessCidr), SecGrpWithEgressRules(egressRules, egressRestricted))
 		if err != nil {
 			return nil, err
 		}
