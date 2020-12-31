@@ -157,3 +157,7 @@ func (a *AzurePlatform) SetProperties(props *infracommon.InfraProperties) error 
 	a.properties = props
 	return nil
 }
+
+func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+	return nil, nil
+}

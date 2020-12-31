@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 func (m *ManagedK8sPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -128,4 +129,8 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 
 func (v *ManagedK8sPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
+}
+
+func (v *ManagedK8sPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+	return nil, nil
 }
