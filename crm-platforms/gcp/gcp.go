@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 const GcpMaxClusterNameLen int = 40
@@ -157,4 +158,8 @@ func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
 	var err error
 	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())
 	return err
+}
+
+func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+	return nil, nil
 }
