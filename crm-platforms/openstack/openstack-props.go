@@ -11,6 +11,14 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
+var OpenstackProps = map[string]*edgeproto.PropertyInfo{
+	"MEX_CONSOLE_TYPE": {
+		Name:        "Openstack console type",
+		Description: "Openstack supported console type: novnc, xvpvnc, spice, rdp, serial, mks",
+		Value:       "novnc",
+	},
+}
+
 func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platform.AccessApi) error {
 	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
@@ -34,7 +42,7 @@ func (o *OpenstackPlatform) GetOpenRCVars(ctx context.Context, accessApi platfor
 }
 
 func (o *OpenstackPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
-	return map[string]*edgeproto.PropertyInfo{}, nil
+	return OpenstackProps, nil
 }
 
 func (o *OpenstackPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage vmlayer.ProviderInitStage) error {
@@ -51,5 +59,10 @@ func (o *OpenstackPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKe
 
 func (o *OpenstackPlatform) GetCloudletProjectName() string {
 	val, _ := o.openRCVars["OS_PROJECT_NAME"]
+	return val
+}
+
+func (o *OpenstackPlatform) GetConsoleType() string {
+	val, _ := o.VMProperties.CommonPf.Properties.GetValue("MEX_CONSOLE_TYPE")
 	return val
 }

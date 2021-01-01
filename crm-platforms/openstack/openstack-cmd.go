@@ -934,7 +934,11 @@ func (o *OpenstackPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Fla
 
 func (s *OpenstackPlatform) OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get console url", "server", serverName)
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", "console", "url", "show", "-f", "json", "-c", "url", "--novnc", serverName)
+	consoleType := s.GetConsoleType()
+	if consoleType == "" {
+		consoleType = "novnc"
+	}
+	out, err := s.TimedOpenStackCommand(ctx, "openstack", "console", "url", "show", "-f", "json", "-c", "url", "--"+consoleType, serverName)
 	if err != nil {
 		err = fmt.Errorf("can't get console url details for %s, %s, %v", serverName, out, err)
 		return nil, err
