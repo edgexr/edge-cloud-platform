@@ -337,6 +337,7 @@ func TestController(t *testing.T) {
 	badPermTestCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, org3)
 	permTestCloudletPool(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
 	permTestVMPool(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
+	permTestTrustPolicy(t, mcClient, uri, tokenOper, tokenOper2, ctrl.Region, org3, org4, dcnt)
 
 	// test developers can modify their own objs but not each other's
 	// tests also that developers can create AppInsts/ClusterInsts on tc3.
@@ -349,8 +350,6 @@ func TestController(t *testing.T) {
 	permTestAutoProvPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
 		org1, org2, dcnt)
 	permTestAutoScalePolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
-		org1, org2, dcnt)
-	permTestTrustPolicy(t, mcClient, uri, tokenDev, tokenDev2, ctrl.Region,
 		org1, org2, dcnt)
 	// test users with different roles
 	goodPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1, dcnt)
