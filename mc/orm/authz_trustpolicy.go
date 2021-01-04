@@ -12,8 +12,8 @@ import (
 // 3) there at least one cloudlet using that policy that they can see, based
 //    on AuthzCloudlet pool checking
 type AuthzTrustPolicy struct {
-	authzCloudlet *AuthzCloudlet
-	cloudlets     []*edgeproto.Cloudlet
+	authzCloudlet        *AuthzCloudlet
+	allowedTrustPolicies map[edgeproto.PolicyKey]struct{}
 }
 
 func (s *AuthzTrustPolicy) Ok(obj *edgeproto.TrustPolicy) bool {
@@ -24,12 +24,8 @@ func (s *AuthzTrustPolicy) Ok(obj *edgeproto.TrustPolicy) bool {
 		// operator has access to policies created by their org
 		return true
 	}
-	// see if this user is allowed on any cloudlet associated with this policy
-	for _, cloudlet := range s.cloudlets {
-		if obj.Key.Organization == cloudlet.Key.Organization &&
-			obj.Key.Name == cloudlet.TrustPolicy {
-			return true
-		}
+	if _, found := s.allowedTrustPolicies[obj.Key]; found {
+		return true
 	}
 	return false
 }
@@ -38,10 +34,18 @@ func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string
 	rc := RegionContext{
 		region:    region,
 		username:  username,
-		skipAuthz: false,
+		skipAuthz: true, // skip since we already have the cloudlet authz
 	}
+	// allow policies associated with cloudlets that the user can see
 	err := ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) {
-		s.cloudlets = append(s.cloudlets, cloudlet)
+		if !s.authzCloudlet.Ok(cloudlet) || cloudlet.TrustPolicy == "" {
+			return
+		}
+		key := edgeproto.PolicyKey{
+			Organization: cloudlet.Key.Organization,
+			Name:         cloudlet.TrustPolicy,
+		}
+		s.allowedTrustPolicies[key] = struct{}{}
 	})
 	if err != nil {
 		return err
@@ -56,7 +60,8 @@ func newShowTrustPolicyAuthz(ctx context.Context, region, username, resource, ac
 		return nil, err
 	}
 	authzTrustPolicy := AuthzTrustPolicy{
-		authzCloudlet: &authzCloudlet,
+		authzCloudlet:        &authzCloudlet,
+		allowedTrustPolicies: make(map[edgeproto.PolicyKey]struct{}),
 	}
 	err = authzTrustPolicy.populate(ctx, region, username)
 	if err != nil {
