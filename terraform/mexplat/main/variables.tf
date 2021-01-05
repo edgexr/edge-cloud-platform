@@ -85,18 +85,30 @@ variable "vault_b_domain_name" {
   default     = "vault-main-b.mobiledgex.net"
 }
 
+variable "vault_c_vm_name" {
+  default     = "vault-main-c"
+}
+
+variable "vault_c_gcp_zone" {
+  default     = "asia-east1-b"
+}
+
+variable "vault_c_domain_name" {
+  default     = "vault-main-c.mobiledgex.net"
+}
+
 variable "console_instance_name" {
   default     = "console-main"
 }
 
 variable "console_domain_name" {
   description = "Console domain name"
-  type        = "string"
+  default     = "console.mobiledgex.net"
 }
 
 variable "console_vnc_domain_name" {
   description = "Console VNC domain name"
-  type        = "string"
+  default     = "console-vnc.mobiledgex.net"
 }
 
 variable "alertmanager_domain_name" {
@@ -105,7 +117,7 @@ variable "alertmanager_domain_name" {
 
 variable "notifyroot_domain_name" {
   description = "Notifyroot service domain name"
-  type        = "string"
+  default     = "notifyroot.mobiledgex.net"
 }
 
 variable "stun_domain_name" {
