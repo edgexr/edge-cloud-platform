@@ -26,7 +26,7 @@ var _ = math.Inf
 func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "CreateClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -38,7 +38,7 @@ func (s *Client) CreateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -50,7 +50,7 @@ func (s *Client) DeleteClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateClusterInst"}
 	outlist := []edgeproto.Result{}
-	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 		withStreamOutIncremental(),
@@ -62,7 +62,7 @@ func (s *Client) UpdateClusterInst(uri, token string, in *ormapi.RegionClusterIn
 func (s *Client) ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.ClusterInst, int, error) {
 	args := []string{"region", "ShowClusterInst"}
 	outlist := []edgeproto.ClusterInst{}
-	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt", ",")
+	noconfig := strings.Split("Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
