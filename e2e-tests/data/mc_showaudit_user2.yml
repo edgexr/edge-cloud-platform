@@ -16,6 +16,30 @@
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
   response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
   traceid: 24625321e53de041
+- operationname: /api/v1/auth/ctrl/ShowCloudlet
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
+  starttime: "2021-01-04T18:52:45.406782+05:30"
+  duration: 22.693ms
+  request: '{"Region":"locala","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{}}}'
+  response: '{"message":"Forbidden"}'
+  traceid: 1faacbbb1e096aae
+  tags:
+    cloudlet: ""
+    cloudletorg: ""
+- operationname: /api/v1/auth/ctrl/ShowTrustPolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
+  starttime: "2021-01-04T18:52:45.380103+05:30"
+  duration: 22.594ms
+  request: '{"Region":"locala","TrustPolicy":{"key":{},"outbound_security_rules":null}}'
+  response: '{"message":"Forbidden"}'
+  traceid: 2e86d947a2399539
+  tags:
+    policy: ""
+    policyorg: ""
 - operationname: /api/v1/auth/ctrl/ShowSettings
   username: user2
   clientip: 127.0.0.1
@@ -25,6 +49,30 @@
   request: '{"Region":"locala","Settings":{}}'
   response: '{"message":"Forbidden"}'
   traceid: 33f2e0e8baa458b5
+- operationname: /api/v1/auth/ctrl/ShowCloudlet
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
+  starttime: "2021-01-04T18:52:45.173535+05:30"
+  duration: 18.783ms
+  request: '{"Region":"local","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{}}}'
+  response: '{"message":"Forbidden"}'
+  traceid: 570314dca40b1a6b
+  tags:
+    cloudlet: ""
+    cloudletorg: ""
+- operationname: /api/v1/auth/ctrl/ShowTrustPolicy
+  username: user2
+  clientip: 127.0.0.1
+  status: 403
+  starttime: "2021-01-04T18:52:45.146452+05:30"
+  duration: 22.141ms
+  request: '{"Region":"local","TrustPolicy":{"key":{},"outbound_security_rules":null}}'
+  response: '{"message":"Forbidden"}'
+  traceid: 39eee5242bd5c852
+  tags:
+    policy: ""
+    policyorg: ""
 - operationname: /api/v1/auth/ctrl/ShowSettings
   username: user2
   clientip: 127.0.0.1

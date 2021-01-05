@@ -300,9 +300,6 @@ func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 	var err error
 	if !rc.skipAuthz {
 		authz, err = newShowTrustPolicyAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
 		if err != nil {
 			return err
 		}

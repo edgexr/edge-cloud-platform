@@ -61,9 +61,6 @@ func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node,
 	var err error
 	if !rc.skipAuthz {
 		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceConfig, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
 		if err != nil {
 			return err
 		}
