@@ -301,9 +301,6 @@ func ShowCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.C
 	var err error
 	if !rc.skipAuthz {
 		authz, err = newShowCloudletAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
 		if err != nil {
 			return err
 		}
@@ -733,9 +730,6 @@ func ShowCloudletInfoStream(ctx context.Context, rc *RegionContext, obj *edgepro
 	var err error
 	if !rc.skipAuthz {
 		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudletAnalytics, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
 		if err != nil {
 			return err
 		}

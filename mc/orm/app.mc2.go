@@ -214,9 +214,6 @@ func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, c
 	var err error
 	if !rc.skipAuthz {
 		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceApps, ActionView)
-		if err == echo.ErrForbidden {
-			return nil
-		}
 		if err != nil {
 			return err
 		}
