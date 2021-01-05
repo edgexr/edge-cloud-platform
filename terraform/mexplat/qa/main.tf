@@ -41,7 +41,7 @@ module "gitlab" {
   environ_tag         = "${var.environ_tag}"
   instance_size       = "custom-1-7680-ext"
   zone                = "${var.gcp_zone}"
-  boot_disk_size      = 100
+  boot_disk_size      = 200
   tags                = [
     "mexplat-${var.environ_tag}",
     "gitlab-registry",
@@ -124,11 +124,13 @@ module "console" {
     "alt-https",
     "notifyroot",
     "alertmanager",
+    "vault-ac",
   ]
   labels              = {
     "environ"         = "${var.environ_tag}",
     "console"         = "true",
     "owner"           = "qa",
+    "vault"           = "true",
   }
 }
 
@@ -178,6 +180,12 @@ module "vault_b_dns" {
   source                        = "../../modules/cloudflare_record"
   hostname                      = "${var.vault_b_domain_name}"
   ip                            = "${module.vault_b.external_ip}"
+}
+
+module "vault_c_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.vault_c_domain_name}"
+  ip                            = "${module.console.external_ip}"
 }
 
 module "fw_vault_gcp" {

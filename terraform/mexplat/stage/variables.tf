@@ -138,6 +138,10 @@ variable "vault_b_domain_name" {
   default     = "vault-stage-b.mobiledgex.net"
 }
 
+variable "vault_c_domain_name" {
+  default     = "vault-stage-c.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = "string"
