@@ -957,13 +957,18 @@ func (s *OpenstackPlatform) OSGetConsoleUrl(ctx context.Context, serverName stri
 // Openstack example call:
 //   <openstack metric resource search --type instance_network_interface instance_id=dc32daa6-0d0a-4512-a9fa-2b989e913014>
 // We only use the the first found result
-func (s *OpenstackPlatform) OSFindResourceByInstId(ctx context.Context, resourceType string, instId string) (*OSMetricResource, error) {
+func (s *OpenstackPlatform) OSFindResourceByInstId(ctx context.Context, resourceType, instId, name string) (*OSMetricResource, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "find resource for instance Id", "id", instId,
 		"resource", resourceType)
 	osRes := []OSMetricResource{}
 	instArg := fmt.Sprintf("instance_id=%s", instId)
+	queryArg := instArg
+	// if resource name is specified - for example name of disk for an instance("vda") add this to the query
+	if name != "" {
+		queryArg = fmt.Sprintf("%s and name=%s", instArg, name)
+	}
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "metric", "resource", "search",
-		"-f", "json", "--type", resourceType, instArg)
+		"-f", "json", "--type", resourceType, queryArg)
 	if err != nil {
 		err = fmt.Errorf("can't find resource %s, for %s, %s %v", resourceType, instId, out, err)
 		return nil, err

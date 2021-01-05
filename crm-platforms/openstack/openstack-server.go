@@ -157,6 +157,7 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	var Cpu, Mem, Disk, NetSent, NetRecv OSMetricMeasurement
 	netSentChan := make(chan string)
 	netRecvChan := make(chan string)
+	diskChan := make(chan string)
 	vmMetrics := vmlayer.VMMetrics{}
 
 	if key == nil {
@@ -171,10 +172,19 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	// Get a bunch of the results in parallel as it might take a bit of time
 	cpuChan := s.goGetMetricforId(ctx, server.ID, "cpu_util", &Cpu)
 	memChan := s.goGetMetricforId(ctx, server.ID, "memory.usage", &Mem)
-	diskChan := s.goGetMetricforId(ctx, server.ID, "disk.usage", &Disk)
+
+	// For disk we get all instance_disk type and vda one, that's associated with the instance
+	disk, err := s.OSFindResourceByInstId(ctx, "instance_disk", server.ID, "vda")
+	if err == nil {
+		diskChan = s.goGetMetricforId(ctx, disk.Id, "disk.device.usage", &Disk)
+	} else {
+		go func() {
+			diskChan <- "Unavailable"
+		}()
+	}
 
 	// For network we try to get the id of the instance_network_interface for an instance
-	netIf, err := s.OSFindResourceByInstId(ctx, "instance_network_interface", server.ID)
+	netIf, err := s.OSFindResourceByInstId(ctx, "instance_network_interface", server.ID, "")
 	if err == nil {
 		netSentChan = s.goGetMetricforId(ctx, netIf.Id, "network.outgoing.bytes.rate", &NetSent)
 		netRecvChan = s.goGetMetricforId(ctx, netIf.Id, "network.incoming.bytes.rate", &NetRecv)
