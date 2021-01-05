@@ -141,7 +141,6 @@ var CreateAppInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"healthcheck",
 	"vmflavor",
-	"optres",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"app-org",
@@ -163,7 +162,6 @@ var DeleteAppInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"healthcheck",
 	"vmflavor",
-	"optres",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"app-org",
@@ -244,7 +242,6 @@ var AppInstOptionalArgs = []string{
 	"healthcheck",
 	"powerstate",
 	"vmflavor",
-	"optres",
 }
 var AppInstAliasArgs = []string{
 	"fields=appinst.fields",
