@@ -60,6 +60,9 @@ func CreateClusterInst(c echo.Context) error {
 
 func CreateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateClusterInst(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authzCreateClusterInst(ctx, rc.region, rc.username, obj,
 			ResourceClusterInsts, ActionManage); err != nil {
@@ -138,6 +141,9 @@ func DeleteClusterInst(c echo.Context) error {
 
 func DeleteClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteClusterInst(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {
@@ -216,6 +222,9 @@ func UpdateClusterInst(c echo.Context) error {
 
 func UpdateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateClusterInst(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {

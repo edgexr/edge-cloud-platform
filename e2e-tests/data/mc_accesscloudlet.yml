@@ -6,7 +6,6 @@ request:
         cloudletkey:
           organization: dmuus
           name: dmuus-cloud-1
-        organization: AcmeAppCo
     cmd:
       command: echo foo
       cloudletmgmtnode:

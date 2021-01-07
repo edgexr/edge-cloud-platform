@@ -56,6 +56,9 @@ func CreateVMPool(c echo.Context) error {
 
 func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateVMPool(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -106,6 +109,9 @@ func DeleteVMPool(c echo.Context) error {
 
 func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteVMPool(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -156,6 +162,9 @@ func UpdateVMPool(c echo.Context) error {
 
 func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateVMPool(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -290,6 +299,9 @@ func AddVMPoolMember(c echo.Context) error {
 
 func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddVMPoolMember(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -340,6 +352,9 @@ func RemoveVMPoolMember(c echo.Context) error {
 
 func RemoveVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveVMPoolMember(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {

@@ -23,7 +23,6 @@ clusterinsts:
     organization: MobiledgeX
   flavor:
     name: x1.medium
-  liveness: LivenessStatic
   nummasters: 1 
   numnodes: 1
 

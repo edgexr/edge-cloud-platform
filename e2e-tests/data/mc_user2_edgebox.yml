@@ -32,7 +32,6 @@ regiondata:
         organization: DevOrg
       flavor:
         name: x1.medium
-      liveness: LivenessStatic
       nummasters: 1
       numnodes: 3
       autoscalepolicy: scale1

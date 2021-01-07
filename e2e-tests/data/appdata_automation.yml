@@ -13,10 +13,6 @@ flavors:
 clusterflavors:
 - key:
     name: automation_api_cluster_flavor
-  nodeflavor:
-    name: automation_api_flavor
-  masterflavor:
-    name: automation_api_flavor
   numnodes: 1
   maxnodes: 1
   nummasters: 1
@@ -132,7 +128,6 @@ appinstances:
   cloudletloc:
     latitude: 31
     longitude: -91
-  liveness: LivenessStatic
   flavor:
     name: automation_api_flavor
 

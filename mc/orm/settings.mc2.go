@@ -52,6 +52,9 @@ func UpdateSettings(c echo.Context) error {
 
 func UpdateSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateSettings(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -100,6 +103,9 @@ func ResetSettings(c echo.Context) error {
 
 func ResetSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForResetSettings(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {

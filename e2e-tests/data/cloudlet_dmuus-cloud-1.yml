@@ -8,7 +8,6 @@ cloudlets:
   ipsupport: IpSupportDynamic
   numdynamicips: 254
   platformtype: PlatformTypeFakeinfra
-  notifysrvaddr: 127.0.0.1:51001
   flavor:
     name: DefaultPlatformFlavor
 

@@ -37,10 +37,7 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       autoscalepolicy: scale1
@@ -53,10 +50,7 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
 
@@ -124,10 +118,6 @@ regiondata:
             organization: dmuus
             name: dmuus-cloud-1
           organization: AcmeAppCo
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      liveness: LivenessStatic
       flavor:
         name: x1.small
     - key:
@@ -142,10 +132,6 @@ regiondata:
             organization: dmuus
             name: dmuus-cloud-2
           organization: AcmeAppCo
-      cloudletloc:
-        latitude: 35
-        longitude: -95
-      liveness: LivenessStatic
       flavor:
         name: x1.small
 
@@ -187,10 +173,7 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       autoscalepolicy: scale1
@@ -203,10 +186,7 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
 
@@ -263,10 +243,6 @@ regiondata:
             organization: dmuus
             name: dmuus-cloud-3
           organization: AcmeAppCo
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      liveness: LivenessStatic
       flavor:
         name: x1.small
     - key:
@@ -281,10 +257,6 @@ regiondata:
             organization: dmuus
             name: dmuus-cloud-4
           organization: AcmeAppCo
-      cloudletloc:
-        latitude: 35
-        longitude: -95
-      liveness: LivenessStatic
       flavor:
         name: x1.small
 

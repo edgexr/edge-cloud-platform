@@ -11,10 +11,7 @@ regiondata:
         organization: MobiledgeX
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       reservable: true
@@ -28,10 +25,7 @@ regiondata:
       flavor:
         name: x1.small
       deployment: docker
-      liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: x1.small
-      masterflavor: x1.small
       reservable: true
     - key:
         clusterkey:
@@ -42,10 +36,7 @@ regiondata:
         organization: MobiledgeX
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessShared
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       reservable: true
@@ -58,10 +49,7 @@ regiondata:
         organization: MobiledgeX
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       reservable: true
@@ -74,10 +62,7 @@ regiondata:
         organization: MobiledgeX
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
       reservable: true

@@ -44,7 +44,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFakeinfra
-      notifysrvaddr: 127.0.0.1:51001
       envvar:
         foo: bar
     - key:
@@ -57,7 +56,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51002
     - key:
         organization: azure
         name: azure-cloud-4
@@ -68,7 +66,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51004
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -79,7 +76,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51005
     - key:
         organization: enterprise
         name: enterprise-1
@@ -89,12 +85,10 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51006
       flavor:
         name: x1.small
       physicalname: enterprise-1
       containerversion: 2019-10-24
-      state: Ready
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -108,7 +102,6 @@ regiondata:
     - key:
         organization: enterprise
         name: enterprise-1
-      state: CloudletStateReady
       notifyid: 0
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 500
@@ -137,7 +130,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51017
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -148,7 +140,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51018
     - key:
         organization: enterprise
         name: enterprise-2
@@ -158,12 +149,10 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51016
       flavor:
         name: x1.small
       physicalname: enterprise-2
       containerversion: 2019-10-24
-      state: Ready
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -177,7 +166,6 @@ regiondata:
     - key:
         organization: enterprise
         name: enterprise-2
-      state: CloudletStateReady
       notifyid: 0
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 500

@@ -55,6 +55,9 @@ func CreateAutoScalePolicy(c echo.Context) error {
 
 func CreateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateAutoScalePolicy(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -105,6 +108,9 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 
 func DeleteAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteAutoScalePolicy(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage); err != nil {
@@ -155,6 +161,9 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 
 func UpdateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateAutoScalePolicy(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceDeveloperPolicy, ActionManage); err != nil {

@@ -34,7 +34,6 @@ regiondata:
       ipaccess: IpAccessShared
       flavor:
         name: x1.medium
-      liveness: LivenessStatic
     apps:
     - key:
         organization: DevOrg
