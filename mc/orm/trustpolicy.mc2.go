@@ -59,6 +59,9 @@ func CreateTrustPolicy(c echo.Context) error {
 
 func CreateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateTrustPolicy(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -137,6 +140,9 @@ func DeleteTrustPolicy(c echo.Context) error {
 
 func DeleteTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteTrustPolicy(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -215,6 +221,9 @@ func UpdateTrustPolicy(c echo.Context) error {
 
 func UpdateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateTrustPolicy(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {

@@ -55,6 +55,9 @@ func InjectDevice(c echo.Context) error {
 
 func InjectDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForInjectDevice(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {
@@ -187,6 +190,9 @@ func EvictDevice(c echo.Context) error {
 
 func EvictDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForEvictDevice(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceConfig, ActionManage); err != nil {

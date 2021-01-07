@@ -52,6 +52,9 @@ func RunCommand(c echo.Context) error {
 
 func RunCommandObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRunCommand(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
@@ -101,6 +104,9 @@ func RunConsole(c echo.Context) error {
 
 func RunConsoleObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRunConsole(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
 			ResourceAppInsts, ActionManage); err != nil {
@@ -198,6 +204,9 @@ func AccessCloudlet(c echo.Context) error {
 
 func AccessCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAccessCloudlet(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
 			ResourceCloudlets, ActionManage); err != nil {

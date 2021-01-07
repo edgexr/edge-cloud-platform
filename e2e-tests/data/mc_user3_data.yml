@@ -11,10 +11,7 @@ regiondata:
         organization: user3org
       flavor:
         name: x1.small
-      liveness: LivenessStatic
       ipaccess: IpAccessDedicated
-      nodeflavor: x1.small
-      masterflavor: x1.small
       nummasters: 1
       numnodes: 1
     apps:
@@ -43,9 +40,5 @@ regiondata:
             organization: enterprise
             name: enterprise-1
           organization: user3org
-      cloudletloc:
-        latitude: 31
-        longitude: -91
-      liveness: LivenessStatic
       flavor:
         name: x1.small

@@ -61,6 +61,9 @@ func CreateCloudlet(c echo.Context) error {
 
 func CreateCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateCloudlet(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
@@ -139,6 +142,9 @@ func DeleteCloudlet(c echo.Context) error {
 
 func DeleteCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteCloudlet(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -217,6 +223,9 @@ func UpdateCloudlet(c echo.Context) error {
 
 func UpdateCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result)) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateCloudlet(); err != nil {
+		return err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -376,6 +385,9 @@ func GetCloudletManifest(c echo.Context) error {
 
 func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForGetCloudletManifest(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -474,6 +486,9 @@ func AddCloudletResMapping(c echo.Context) error {
 
 func AddCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddCloudletResMapping(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -524,6 +539,9 @@ func RemoveCloudletResMapping(c echo.Context) error {
 
 func RemoveCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveCloudletResMapping(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -623,6 +641,9 @@ func RevokeAccessKey(c echo.Context) error {
 
 func RevokeAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRevokeAccessKey(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -672,6 +693,9 @@ func GenerateAccessKey(c echo.Context) error {
 
 func GenerateAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForGenerateAccessKey(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -806,6 +830,9 @@ func InjectCloudletInfo(c echo.Context) error {
 
 func InjectCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForInjectCloudletInfo(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {
@@ -856,6 +883,9 @@ func EvictCloudletInfo(c echo.Context) error {
 
 func EvictCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForEvictCloudletInfo(); err != nil {
+		return nil, err
+	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
 			ResourceCloudlets, ActionManage); err != nil {

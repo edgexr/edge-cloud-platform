@@ -17,7 +17,6 @@ regiondata:
       state: Ready
       platformtype: PlatformTypeFakeinfra
       deploymentlocal: false
-      notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
@@ -31,7 +30,6 @@ regiondata:
       numdynamicips: 254
       state: Ready
       deploymentlocal: false
-      notifysrvaddr: 127.0.0.1:51002
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
@@ -45,7 +43,6 @@ regiondata:
       numdynamicips: 254
       state: Ready
       deploymentlocal: false
-      notifysrvaddr: 127.0.0.1:51004
       flavor:
         name: DefaultPlatformFlavor
       physicalname: azure-cloud-4
@@ -59,7 +56,6 @@ regiondata:
       numdynamicips: 254
       state: Ready
       deploymentlocal: false
-      notifysrvaddr: 127.0.0.1:51005
       flavor:
         name: DefaultPlatformFlavor
       physicalname: gcp-cloud-5
