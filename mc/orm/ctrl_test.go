@@ -126,6 +126,11 @@ func TestController(t *testing.T) {
 	require.Equal(t, ctrl.Region, ctrls[0].Region)
 	require.Equal(t, ctrl.Address, ctrls[0].Address)
 
+	// delete non-existing controller
+	status, err = mcClient.DeleteController(uri, token, &ormapi.Controller{})
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Controller Region not specified")
+
 	// create admin
 	admin, tokenAd, _ := testCreateUser(t, mcClient, uri, "admin1")
 	testAddUserRole(t, mcClient, uri, token, "", "AdminManager", admin.Name, Success)
