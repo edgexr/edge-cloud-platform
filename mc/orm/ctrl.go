@@ -127,6 +127,9 @@ func DeleteController(c echo.Context) error {
 }
 
 func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
+	if ctrl.Region == "" {
+		return fmt.Errorf("Controller Region not specified")
+	}
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
 		return err
 	}
