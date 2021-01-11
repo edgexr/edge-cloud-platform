@@ -4,34 +4,34 @@ variable "environ_tag" {
 
 variable "instance_name" {
   description = "VM instance name"
-  type        = "string"
+  type        = string
 }
 
 variable "instance_size" {
   description = "VM instance size"
-  type        = "string"
+  type        = string
   default     = "n1-standard-2"
 }
 
 variable "tags" {
   description = "Tags for VM instance"
-  type        = "list"
+  type        = list(string)
 }
 
 variable "labels" {
   description = "Labels for VM instance"
-  type        = "map"
+  type        = map(string)
   default     = {}
 }
 
 variable "zone" {
   description = "GCP zone for VM instance"
-  type        = "string"
+  type        = string
 }
 
 variable "boot_image" {
   description = "OS image"
-  type        = "string"
+  type        = string
   default     = "ubuntu-os-cloud/ubuntu-1804-lts"
 }
 
@@ -52,12 +52,13 @@ variable "deletion_protection" {
 
 variable "network" {
   description = "Network for the VM instance"
-  type        = "string"
+  type        = string
   default     = "default"
 }
 
 variable "ansible_ssh_user" {
   description = "User account for ansible"
-  type        = "string"
+  type        = string
   default     = "ansible"
 }
+

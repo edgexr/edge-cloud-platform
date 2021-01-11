@@ -1,33 +1,24 @@
-ANSIBLE_ROOT		= ../../ansible
-ANSIBLE_INVENTORY	= internal
-ANSIBLE_TFVARS		= ansible.auto.tfvars
+ANSIBLE_ROOT		= ../../../ansible
 INIT_DONE_FLAG		= .terraform.init.done
+TFWRAP			= ../tfwrap
 
 all:
 	@echo "make plan  : List changes that would be made"
 	@echo "make deploy: Deploy the platform components"
 
-$(ANSIBLE_TFVARS): FORCE
-	cd $(ANSIBLE_ROOT); \
-	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES \
-	ansible-playbook -i $(ANSIBLE_INVENTORY) \
-			 -e @ansible-mex-vault.yml \
-			 -e "output_file=$(CURDIR)/ansible.auto.tfvars" \
-			 internal-terraform-vars.yml
-
 init: $(INIT_DONE_FLAG)
 
 $(INIT_DONE_FLAG): $(wildcard *.tf)
-	terraform init
+	$(TFWRAP) init
 	touch $(INIT_DONE_FLAG)
 
-plan: $(ANSIBLE_TFVARS) init
-	terraform plan
+plan: init
+	$(TFWRAP) plan
 
-deploy: $(ANSIBLE_TFVARS) init
+deploy: init
 	terraform apply
 
 clean:
-	$(RM) $(ANSIBLE_TFVARS) $(INIT)
+	$(RM) $(INIT_DONE_FLAG)
 
 FORCE:
