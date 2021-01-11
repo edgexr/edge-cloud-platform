@@ -1,6 +1,6 @@
-variable "cloudflare_domain" {
-  description = "Cloudflare domain"
-  default     = "mobiledgex.net"
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID"
+  default     = "7fcd588fdae300ac2ad0b519b0c0c8d8"
 }
 
 variable "hostname" {

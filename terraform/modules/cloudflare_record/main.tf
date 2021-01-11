@@ -1,5 +1,5 @@
 resource "cloudflare_record" vm {
-  domain        = "${var.cloudflare_domain}"
+  zone_id       = "${var.cloudflare_zone_id}"
   name          = "${var.hostname}"
   value         = "${var.ip}"
   type          = "A"
