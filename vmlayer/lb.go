@@ -91,7 +91,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if externalIP.MacAddress == "" {
 		return fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
 	}
-	err = WaitServerReady(ctx, v.VMProvider, client, externalIP.ExternalAddr, MaxRootLBWait)
+	err = WaitServerReady(ctx, v.VMProvider, client, serverDetails.Name, MaxRootLBWait)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "server not ready", "err", err)
 		return err

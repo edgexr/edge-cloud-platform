@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vcd"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	"github.com/mobiledgex/edge-cloud-infra/managedk8s"
@@ -38,6 +39,12 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &vmlayer.VMPlatform{
 			Type:       vmlayer.VMProviderVMPool,
 			VMProvider: &vmpoolProvider,
+		}
+	case "PLATFORM_TYPE_VCD":
+		vcdProvider := vcd.VcdPlatform{}
+		outPlatform = &vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderVCD,
+			VMProvider: &vcdProvider,
 		}
 	case "PLATFORM_TYPE_AWS_EC2":
 		awsVMProvider := awsec2.AwsEc2Platform{}
