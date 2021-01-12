@@ -140,7 +140,7 @@ var RemoteConnectionAliasArgs = []string{
 	"remoteip=remoteconnection.remoteip",
 }
 var RemoteConnectionComments = map[string]string{
-	"protocol": "tcp, udp",
+	"protocol": "tcp, udp or icmp",
 	"port":     "TCP or UDP port",
 	"remoteip": "remote IP X.X.X.X",
 }
@@ -283,7 +283,7 @@ var AppComments = map[string]string{
 	"templatedelimiter":                      "Delimiter to be used for template parsing, defaults to [[ ]]",
 	"skiphcports":                            "Comma separated list of protocol:port pairs that we should not run health check on Should be configured in case app does not always listen on these ports all can be specified if no health check to be run for this app Numerical values must be decimal format. i.e. tcp:80,udp:10002,http:443",
 	"trusted":                                "Indicates that an instance of this app can be started on a trusted cloudlet",
-	"requiredoutboundconnections:#.protocol": "tcp, udp",
+	"requiredoutboundconnections:#.protocol": "tcp, udp or icmp",
 	"requiredoutboundconnections:#.port":     "TCP or UDP port",
 	"requiredoutboundconnections:#.remoteip": "remote IP X.X.X.X",
 }
