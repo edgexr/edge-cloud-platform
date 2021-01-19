@@ -3,6 +3,7 @@ package vcd
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -83,6 +84,11 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		return nil, err
 	}
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "Compose Vapp succefully", "VApp", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
+	// 10.0 if we retrieved the template from the catalog, we can compose, but the validation of the vm
+	// is in question seems to be missing vmspec.MemoryResourceMb.Configured
+	err = v.validateVMSpecSection(ctx, *vapp)
+
 	// ensure we have a clean slate
 	task, err = vapp.RemoveAllNetworks()
 	if err != nil {
@@ -98,7 +104,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
-
+		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp nextCidr for vapp internal net", "Cidr", nextCidr, "vmRole", vmRole, "vmType", vmType)
 
@@ -117,12 +123,17 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 
 	if numVMs > 1 {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName)
-		err = v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr)
+		vmsAdded, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
 			return nil, err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VMs added", "GroupName", vmgp.GroupName)
+		// poweron and customize
+		err = v.powerOnVmsAndForceCustomization(ctx, vmsAdded)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		if v.Verbose {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VApp no extra VMs added", "GroupName", vmgp.GroupName)
@@ -246,17 +257,38 @@ func vcdUserDataFormatter(instring string) string {
 	return base64.StdEncoding.EncodeToString([]byte(instring))
 }
 
+func makeMetaMap(ctx context.Context, mexmeta string) map[string]string {
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "makeMetaMap", "meta", mexmeta)
+	smap := make(map[string]string)
+	s := strings.Replace(mexmeta, "\n", ":", -1)
+	parts := strings.Split(s, ":")
+	len := len(parts)
+	for i := 0; i < len; i += 2 {
+		key := strings.TrimSpace(parts[i])
+		val := strings.TrimSpace(parts[i+1])
+		smap[key] = val
+	}
+	return smap
+}
+
+func vcdMetaDataFormatter(instring string) string {
+	return instring
+}
 func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams) (*types.ProductSectionList, error) {
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "vm", vm.VM.Name)
 	command := ""
 	manifest := ""
 	// format vmparams.CloudConfigParams into yaml format, which we'll then base64 encode for the ovf datasource
 	udata, err := vmlayer.GetVMUserData(vm.VM.Name, false, manifest, command, &vmparams.CloudConfigParams, vcdUserDataFormatter)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to retrive VMUserData", "err", err)
 		return nil, err
 	}
 	guestCustomSec, err := vm.GetGuestCustomizationSection()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetGuestCustomizationSection failed", "err", err)
 		return nil, err
 	}
 	if !*guestCustomSec.Enabled {
@@ -265,16 +297,54 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 		// vault kv get -field=value secret/accounts/baseimage/password
 		_, err := vm.SetGuestCustomizationSection(guestCustomSec)
 		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)
 			return nil, err
 
 		}
 	}
+	// find the master, which can be either the first or second vm in the vapp, or none
+	masterIP := ""
+	if vmparams.Role == vmlayer.RoleNode { // k8s-node
+		log.SpanLog(ctx, log.DebugLevelInfra, "Have k8s-node find masterIP ", "vm", vm.VM.Name)
+		vapp, err := vm.GetParentVApp()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Could not GetParentVapp for", "vm", vm.VM.Name, "err", err)
+			return nil, err
+		}
+		for _, child := range vapp.VApp.Children.VM {
+			log.SpanLog(ctx, log.DebugLevelInfra, "found child VM in vapp", "child", child.Name)
+			if !strings.Contains(child.Name, vmlayer.ClusterTypeKubernetesMasterLabel) {
+				continue
+			}
+			tvm, err := vapp.GetVMByName(child.Name, true)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetVMByName failed for", "vm", child.Name, "err", err)
+				return nil, err
+			}
+			ips, err := v.GetIntAddrsOfVM(ctx, tvm)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection failed to retrieve master ip for k8s-master", "vm", child.Name, "err", err)
+				return nil, err
+			}
+			if len(ips) != 0 {
+				log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection retrieve master ip for k8s-master", "vm", child.Name, "maserIP", masterIP)
+				masterIP = ips[0]
+			} else {
+				return nil, fmt.Errorf("No IPs on master: %s", child.Name)
+			}
+		}
+	}
+	mexMetadata := vmlayer.GetVMMetaData(vmparams.Role, masterIP, vcdMetaDataFormatter)
+	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "masterIP", masterIP, "vmMetadata", mexMetadata)
+	mdMap := makeMetaMap(ctx, mexMetadata)
 
 	psl, err := vm.GetProductSectionList()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetProductSectionList failed", "vm", vm.VM.Name, "err", err)
 		return nil, err
 	}
 	if psl.ProductSection == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetGuestCustomizationSection nil creating", "vm", vm.VM.Name)
 		psl = &types.ProductSectionList{
 			ProductSection: &types.ProductSection{
 				Info:     "Guest Properties",
@@ -295,11 +365,13 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "name", vmparams.Name, "role", vmparams.Role)
 	role := vmparams.Role
 	props = append(props, makeProp("ROLE", string(role)))
-	skipk8s := vmlayer.SkipK8sYes
-	if role == vmlayer.RoleMaster || role == vmlayer.RoleNode {
-		skipk8s = vmlayer.SkipK8sNo
+	for k, val := range mdMap {
+		if v.Verbose {
+			log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection mdata", "key", k, "value", val)
+		}
+		props = append(props, makeProp(k, val))
 	}
-	props = append(props, makeProp("SKIPK8S", string(skipk8s)))
+
 	psl.ProductSection.Property = props
 
 	return psl, nil
@@ -321,5 +393,39 @@ func (v *VcdPlatform) refreshVappNets(ctx context.Context, vapp *govcd.VApp) err
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (v *VcdPlatform) GetVMFromVAppByIdx(ctx context.Context, vapp *govcd.VApp, idx int) (*govcd.VM, error) {
+
+	if vapp.VApp.Children == nil {
+		return nil, fmt.Errorf("vapp has no children vms")
+	}
+	vmName := vapp.VApp.Children.VM[idx].Name
+	vm, err := vapp.GetVMByName(vmName, true)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
+}
+
+func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp) error {
+
+	vm, err := v.GetVMFromVAppByIdx(ctx, &vapp, 0)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "validateVMSpecSecion VM not found", "Vapp", vapp.VApp.Name, "idx", 0)
+	}
+	vmSpec := vm.VM.VmSpecSection
+	if vmSpec.MemoryResourceMb == nil {
+		mresMB := &types.MemoryResourceMb{
+			Configured: 4096,
+		}
+		vmSpec.MemoryResourceMb = mresMB
+		_, err := vm.UpdateVmSpecSection(vmSpec, "update missing MB")
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "validateVMSpecSecion err updating spec section", "vm", vm.VM.Name, "err", err)
+		}
+	}
+	// what else will we find missing in 10.0? No problems in 10.1
 	return nil
 }

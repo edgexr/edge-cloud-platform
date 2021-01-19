@@ -101,16 +101,49 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate
 	}
 	tmpl, err := v.FindTemplate(ctx, tmplName)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Template not found locally", "template", tmplName, "err", err)
-		return nil, err
+		// Not found as a vdc.Resource, try direct from our catalog
+		log.SpanLog(ctx, log.DebugLevelInfra, "Template not vdc.Resource, Try fetch from catalog", "template", tmplName)
+		cat, err := v.GetCatalog(ctx, v.GetCatalogName())
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed retrieving catalog", "cat", v.GetCatalogName())
+			return nil, fmt.Errorf("Template invalid")
+		}
+
+		emptyItem := govcd.CatalogItem{}
+		catItem, err := cat.FindCatalogItem(tmplName)
+		// Now, how to get this item type. catalog.go?
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item failed", "err", err)
+			return nil, fmt.Errorf("Template invalid")
+		}
+		if catItem == emptyItem { // empty!
+			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item retured empty item")
+			return nil, fmt.Errorf("Template invalid")
+		} else {
+			tmpl, err := catItem.GetVAppTemplate()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "catItem.GetVAppTemplate failed", "err", err)
+				return nil, fmt.Errorf("Template invalid")
+			}
+
+			if tmpl.VAppTemplate.Children == nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "template has no children")
+				return nil, fmt.Errorf("Template invalid")
+			} else {
+				numChildren := len(tmpl.VAppTemplate.Children.VM)
+				log.SpanLog(ctx, log.DebugLevelInfra, "template looks good from cat", "numChildren", numChildren)
+				return &tmpl, nil
+			}
+		}
 	}
 	// The way we look for templates this should never trigger, but just in case
 	if tmpl.VAppTemplate.Children == nil {
-		if v.Verbose {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Invalid", "template", tmpl)
-		}
-		return nil, fmt.Errorf("Invalid Template %s", tmpl.VAppTemplate.Name)
+		// Wait, try once more
+		log.SpanLog(ctx, log.DebugLevelInfra, "catItem.GetVAppTemplate failed", "err", err)
+		return nil, fmt.Errorf("Template invalid")
+
 	}
+	// if it was found as vdc.resource and children !nil, good to go
 	log.SpanLog(ctx, log.DebugLevelInfra, "RetrieveTemplate using", "Template", tmplName)
 	return tmpl, nil
 }
@@ -178,16 +211,19 @@ func (v *VcdPlatform) updateVmDisk(vm *govcd.VM, size int64) error {
 	return nil
 }
 
-// For each vm spec defined in vmgp, add a new VM to vapp with those applicable attributes.
-func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string) error {
-	if nextCidr == "" {
-		panic("next cider null for AddVMsToVApp")
-	}
+// For each vm spec defined in vmgp, add a new VM to vapp with those applicable attributes.  Returns a map of VMs added
+func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string) (map[string]*govcd.VM, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName)
 
+	vmsAdded := make(map[string]*govcd.VM)
+	if nextCidr == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp next cidr nil", "GroupName", vmgp.GroupName)
+		return nil, fmt.Errorf("IP range exhaused")
+	}
 	var err error
 	numVMs := len(vmgp.VMs)
 	if numVMs < 2 {
-		return fmt.Errorf("invalid VMGroupOrchParams for call")
+		return nil, fmt.Errorf("invalid VMGroupOrchParams for call")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp numVMs ", "count", numVMs, "GroupName", vmgp.GroupName, "Internal IP", nextCidr)
 
@@ -213,18 +249,18 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 			task, err := vapp.AddNewVM(vmparams.Name, *tmpl, ncs, true)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "create add vm failed", "err", err)
-				return err
+				return nil, err
 			}
 			err = task.WaitTaskCompletion()
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "wait add vm failed", "err", err)
-				return err
+				return nil, err
 			}
 			// Make sure it's there
 			vm, err = vapp.GetVMByName(vmparams.Name, true)
 			if err != nil {
 				// internal error
-				return err
+				return nil, err
 			}
 		}
 		// Consider nextwork assignement XXX revist for pf and cloudlet (no internal nets)
@@ -235,7 +271,7 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 			vmIp, err = IncrIP(ctx, baseAddr, 100+(n-1))
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
-				return err
+				return nil, err
 			}
 			ncs.PrimaryNetworkConnectionIndex = 0
 		}
@@ -243,22 +279,11 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 		key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n)
 		vm.VM.OperationKey = key
 
-		// add portName to metadata xxx
-		err = v.AddMetadataToVM(ctx, vm, vmparams, vmType, vapp.VApp.Name)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add ext net failed", "VM", lbvm.VM.Name, "error", err)
-			return err
-		}
-
 		ncs, err = vm.GetNetworkConnectionSection()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		// we just want to set the ip address and connection index for an internal network
-		// of the parent vapp.
-		// We know the name of the internal subnet if one is needed
-		// by our ports
 		internalNetName := ""
 		ports := vmgp.Ports
 		for _, port := range ports {
@@ -283,7 +308,7 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 			err = vm.UpdateNetworkConnectionSection(ncs)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", lbvm.VM.Name, "error", err)
-				return err
+				return nil, err
 			}
 		}
 
@@ -291,11 +316,12 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 		err = v.updateVM(ctx, vm, vmparams, subnet)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
-			return err
+			return nil, err
 		}
+		vmsAdded[vm.VM.Name] = vm
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp complete")
-	return nil
+	return vmsAdded, nil
 }
 
 // useless remove
@@ -311,6 +337,8 @@ func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmpar
 // set vm params and call vm.UpdateVmSpecSection
 func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams, subnet string) error {
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM", "vm", vm.VM.Name)
+
 	flavorName := vmparams.FlavorName
 	flavor, err := v.GetFlavor(ctx, flavorName)
 	vmSpecSec := vm.VM.VmSpecSection
@@ -322,29 +350,33 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 	desc := fmt.Sprintf("Update flavor: %s", flavorName)
 	_, err = vm.UpdateVmSpecSection(vmSpecSec, desc)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM UpdateVmSpecSection failed", "vm", vm.VM.Name, "err", err)
+
 		return err
 	}
 
-	// meta data for Role etc
+	err = v.AddMetadataToVM(ctx, vm, vmparams)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM AddMetadataToVm  failed", "vm", vm.VM.Name, "err", err)
+		return nil
+	}
 	psl, err := v.populateProductSection(ctx, vm, &vmparams)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM populateProdcutSection failed", "vm", vm.VM.Name, "err", err)
 		return fmt.Errorf("updateVM-E-error from populateProductSection: %s", err.Error())
 	}
 
 	_, err = vm.SetProductSectionList(psl)
 	if err != nil {
-		return fmt.Errorf("updateVM-E-error Setting product section %s", err.Error())
-	}
-	_, err = vm.SetProductSectionList(psl)
-	if err != nil {
-		return err
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM vm.SetProductSectionList  failed", "vm", vm.VM.Name, "err", err)
+		return fmt.Errorf("Error Setting product section %s", err.Error())
 	}
 
 	err = v.guestCustomization(ctx, *vm, vmparams, subnet)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
 		return fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
 	}
-
 	return err
 }
 
@@ -575,7 +607,11 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM) ([]vmlay
 
 func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
-	vmProperties.IptablesBasedFirewall = true
+	// TODO: the intention is to use Iptables firewall for VCD. However, as this
+	// is not implemented yet, we will set this to false for now so that the forwarding
+	// rules can be added. As part of the implementation of iptables for vCD, the forwarding
+	// rules will be done in that code and this can be set back to true
+	vmProperties.IptablesBasedFirewall = false
 }
 
 // Should always be a vapp/cluster/group name
@@ -658,9 +694,10 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	return resources, nil
 }
 
-// Store attrs of vm for crmrestarts
-func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams, vmType, parentCluster string) error {
+// Store attrs of vm for crmrestarts and resource fetching
+func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
 
+	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
 	// why no async for vms?
 	task, err := vm.AddMetadata("vmType", vmType)
 	if err != nil {
@@ -688,15 +725,24 @@ func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparam
 	if err != nil {
 		return err
 	}
-
-	task, err = vm.AddMetadata("ParentCluster", parentCluster)
-	if err != nil {
-		return err
-	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// powerOnVmsAndForceCustomization calls PowerOnAndForceCustomization on each VM provided.  Unfortunately
+// this needs to be done one at a time or it tends to fail
+func (v *VcdPlatform) powerOnVmsAndForceCustomization(ctx context.Context, vms map[string]*govcd.VM) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "powerOnVmsAndForceCustomization")
+	for vmName, vm := range vms {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Powering on VM", "vmName", vmName)
+		err := vm.PowerOnAndForceCustomization()
+		if err != nil {
+			return fmt.Errorf("Error powering on VM: %s - %v", vmName, vm)
+		}
+	}
 	return nil
 }

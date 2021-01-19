@@ -579,7 +579,7 @@ func (v *VcdPlatform) GetNextExtAddrForVdcNet(ctx context.Context) (string, erro
 		return curAddr, nil
 	}
 
-	for i := s; i < e; i++ {
+	for i := s; i <= e; i++ {
 		if _, found := vappMap[curAddr]; !found {
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetNextExtAddr return", "curAddr", curAddr)
 			return curAddr, nil

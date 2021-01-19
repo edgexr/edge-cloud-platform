@@ -177,11 +177,20 @@ func (v *VcdPlatform) GetInternalNetmask() string {
 }
 
 func (v *VcdPlatform) GetCatalogName() string {
+	if v.TestMode {
+		val := os.Getenv("MEX_CATALOG")
+		return val
+	}
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_CATALOG")
 	return val
 }
 
 func (v *VcdPlatform) GetTemplateName() string {
+	if v.TestMode {
+		val := os.Getenv("MEX_VDC_TEMPLATE")
+		return val
+	}
+
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VDC_TEMPLATE")
 	return val
 }
