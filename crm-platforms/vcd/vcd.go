@@ -178,6 +178,15 @@ func (v *VcdPlatform) GetOrg(ctx context.Context) (*govcd.Org, error) {
 	cli := v.Client
 	org, err := cli.GetOrgByName(v.Creds.Org)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg failed get new client", "Org", v.Creds.Org)
+		// Perhaps we've lost our client, try and get it again
+		client, err := v.GetClient(ctx, v.Creds)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg GetClient failed", "err", err)
+			return nil, fmt.Errorf("Unable to create Vcd Client: %s\n", err.Error())
+		}
+		v.Client = client
+
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrgByName failed", "org", v.Creds.Org, "err", err)
 		return nil, fmt.Errorf("GetOrgByName error %s", err.Error())
 	}
