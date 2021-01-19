@@ -311,23 +311,25 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 				return nil, err
 			}
 		}
-
-		var subnet string
-		err = v.updateVM(ctx, vm, vmparams, subnet)
+		err = v.guestCustomization(ctx, *vm, vmparams)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
+			return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
+		}
+		err = v.updateVM(ctx, vm, vmparams)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
 			return nil, err
 		}
+
 		vmsAdded[vm.VM.Name] = vm
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp complete")
 	return vmsAdded, nil
 }
 
-// useless remove
-func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmparams vmlayer.VMOrchestrationParams, subnet string) error {
-	//script := "#!/bin/bash  &#13; ip route del default via 10.101.1.1  &#13;"
-
+// guestCustomization updates some fields in the customization section, including the host name
+func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "guestCustomization ", "VM", vm.VM.Name, "HostName", vmparams.HostName)
 	vm.VM.GuestCustomizationSection.ComputerName = vmparams.HostName
 	vm.VM.GuestCustomizationSection.Enabled = TakeBoolPointer(true)
@@ -335,7 +337,7 @@ func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmpar
 }
 
 // set vm params and call vm.UpdateVmSpecSection
-func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams, subnet string) error {
+func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM", "vm", vm.VM.Name)
 
@@ -372,7 +374,7 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 		return fmt.Errorf("Error Setting product section %s", err.Error())
 	}
 
-	err = v.guestCustomization(ctx, *vm, vmparams, subnet)
+	err = v.guestCustomization(ctx, *vm, vmparams)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
 		return fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
