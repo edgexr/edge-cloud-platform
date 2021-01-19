@@ -172,8 +172,8 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 			// Convert appInst status to a human-understandable format
 			if k == cloudcommon.AlertHealthCheckStatus {
 				if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {
-					if _, ok := edgeproto.HealthCheck_CamelName[int32(tmp)]; ok {
-						v = edgeproto.HealthCheck_CamelName[int32(tmp)]
+					if _, ok := dme.HealthCheck_CamelName[int32(tmp)]; ok {
+						v = dme.HealthCheck_CamelName[int32(tmp)]
 					}
 				}
 			}

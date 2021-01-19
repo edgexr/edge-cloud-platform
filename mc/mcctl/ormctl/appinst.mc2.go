@@ -140,6 +140,7 @@ var CreateAppInstOptionalArgs = []string{
 	"configs:#.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"app-org",
@@ -160,6 +161,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"configs:#.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"app-org",
@@ -174,6 +176,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
+	"privacypolicy",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"app-org",
@@ -188,8 +191,26 @@ var UpdateAppInstOptionalArgs = []string{
 	"crmoverride",
 	"configs:#.kind",
 	"configs:#.config",
+	"privacypolicy",
 	"powerstate",
 }
+
+var RequestAppInstLatencyCmd = &cli.Command{
+	Use:          "RequestAppInstLatency",
+	RequiredArgs: strings.Join(AppInstLatencyRequiredArgs, " "),
+	OptionalArgs: strings.Join(AppInstLatencyOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppInstLatencyAliasArgs, " "),
+	SpecialArgs:  &AppInstLatencySpecialArgs,
+	Comments:     addRegionComment(AppInstLatencyComments),
+	ReqData:      &ormapi.RegionAppInstLatency{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/RequestAppInstLatency"),
+}
+
+var AppInstLatencyApiCmds = []*cli.Command{
+	RequestAppInstLatencyCmd,
+}
+
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
 	"appkey.organization",
@@ -238,6 +259,7 @@ var AppInstOptionalArgs = []string{
 	"configs:#.config",
 	"sharedvolumesize",
 	"healthcheck",
+	"privacypolicy",
 	"powerstate",
 }
 var AppInstAliasArgs = []string{
@@ -288,6 +310,7 @@ var AppInstAliasArgs = []string{
 	"configs:#.config=appinst.configs:#.config",
 	"sharedvolumesize=appinst.sharedvolumesize",
 	"healthcheck=appinst.healthcheck",
+	"privacypolicy=appinst.privacypolicy",
 	"powerstate=appinst.powerstate",
 	"externalvolumesize=appinst.externalvolumesize",
 	"availabilityzone=appinst.availabilityzone",
@@ -334,7 +357,8 @@ var AppInstComments = map[string]string{
 	"configs:#.config":               "config file contents or URI reference",
 	"sharedvolumesize":               "shared volume size when creating auto cluster",
 	"healthcheck":                    "Health Check status, one of HealthCheckUnknown, HealthCheckFailRootlbOffline, HealthCheckFailServerFail, HealthCheckOk",
-	"powerstate":                     "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
+	"privacypolicy":                  "Optional privacy policy name",
+	"powerstate":                     "Power State of the AppInst, one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError",
 	"externalvolumesize":             "Size of external volume to be attached to nodes.  This is for the root partition",
 	"availabilityzone":               "Optional Availability Zone if any",
 	"vmflavor":                       "OS node flavor to use",
@@ -415,7 +439,7 @@ var AppInstInfoComments = map[string]string{
 	"state":                                       "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                      "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"runtimeinfo.containerids":                    "List of container names",
-	"powerstate":                                  "Power State of the AppInst, one of PowerOn, PowerOff, Reboot",
+	"powerstate":                                  "Power State of the AppInst, one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"appinstinfo.errors":                   "StringArray",
@@ -506,3 +530,35 @@ var AppInstLookup2Comments = map[string]string{
 	"cloudletkey.name":                            "Name of the cloudlet",
 }
 var AppInstLookup2SpecialArgs = map[string]string{}
+var AppInstLatencyRequiredArgs = []string{
+	"app-org",
+	"appname",
+	"appvers",
+	"cluster",
+	"cloudlet-org",
+	"cloudlet",
+	"cluster-org",
+}
+var AppInstLatencyOptionalArgs = []string{
+	"message",
+}
+var AppInstLatencyAliasArgs = []string{
+	"app-org=appinstlatency.key.appkey.organization",
+	"appname=appinstlatency.key.appkey.name",
+	"appvers=appinstlatency.key.appkey.version",
+	"cluster=appinstlatency.key.clusterinstkey.clusterkey.name",
+	"cloudlet-org=appinstlatency.key.clusterinstkey.cloudletkey.organization",
+	"cloudlet=appinstlatency.key.clusterinstkey.cloudletkey.name",
+	"cluster-org=appinstlatency.key.clusterinstkey.organization",
+	"message=appinstlatency.message",
+}
+var AppInstLatencyComments = map[string]string{
+	"app-org":      "App developer organization",
+	"appname":      "App name",
+	"appvers":      "App version",
+	"cluster":      "Cluster name",
+	"cloudlet-org": "Organization of the cloudlet site",
+	"cloudlet":     "Name of the cloudlet",
+	"cluster-org":  "Name of Developer organization that this cluster belongs to",
+}
+var AppInstLatencySpecialArgs = map[string]string{}

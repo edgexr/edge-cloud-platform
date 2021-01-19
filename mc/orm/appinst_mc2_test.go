@@ -162,3 +162,17 @@ func permTestAppInst(t *testing.T, mcClient *ormclient.Client, uri, token1, toke
 	goodPermTestAppInst(t, mcClient, uri, token1, region, org1, targetCloudlet, showcount, modFuncs...)
 	goodPermTestAppInst(t, mcClient, uri, token2, region, org2, targetCloudlet, showcount, modFuncs...)
 }
+
+var _ = edgeproto.GetFields
+
+func badPermRequestAppInstLatency(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstLatency)) {
+	_, status, err := testutil.TestPermRequestAppInstLatency(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermRequestAppInstLatency(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstLatency)) {
+	_, status, err := testutil.TestPermRequestAppInstLatency(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}

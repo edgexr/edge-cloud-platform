@@ -15,6 +15,7 @@ import (
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
+	"google.golang.org/grpc/status"
 	"io"
 	math "math"
 )
@@ -432,4 +433,57 @@ func ShowAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppIn
 		arr = append(arr, *res)
 	})
 	return arr, err
+}
+
+func RequestAppInstLatency(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionAppInstLatency{}
+	if err := c.Bind(&in); err != nil {
+		return bindErr(c, err)
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	log.SetTags(span, in.AppInstLatency.GetKey().GetTags())
+	span.SetTag("org", in.AppInstLatency.Key.AppKey.Organization)
+	resp, err := RequestAppInstLatencyObj(ctx, rc, &in.AppInstLatency)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+	}
+	return setReply(c, err, resp)
+}
+
+func RequestAppInstLatencyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstLatency) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRequestAppInstLatency(); err != nil {
+		return nil, err
+	}
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Key.AppKey.Organization,
+			ResourceAppInsts, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectNotifyRoot(ctx)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewAppInstLatencyApiClient(rc.conn)
+	return api.RequestAppInstLatency(ctx, obj)
 }

@@ -56,7 +56,7 @@ var (
 	TestAppInst = edgeproto.AppInst{
 		Key:         TestAppInstKey,
 		State:       edgeproto.TrackedState_READY,
-		HealthCheck: edgeproto.HealthCheck_HEALTH_CHECK_OK,
+		HealthCheck: dme.HealthCheck_HEALTH_CHECK_OK,
 		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,
 		MappedPorts: []dme.AppPort{
 			dme.AppPort{

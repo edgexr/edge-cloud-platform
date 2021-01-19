@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util/tasks"
@@ -164,7 +165,7 @@ func (s *MinMaxChecker) UpdatedCloudlet(ctx context.Context, old *edgeproto.Clou
 
 // Caller must hold MinMaxChecker.mux
 func (s *MinMaxChecker) handleFailoverReq(ctx context.Context, cloudlet *edgeproto.Cloudlet, appsToCheck map[edgeproto.AppKey]struct{}) {
-	if cloudlet.MaintenanceState != edgeproto.MaintenanceState_FAILOVER_REQUESTED {
+	if cloudlet.MaintenanceState != dme.MaintenanceState_FAILOVER_REQUESTED {
 		// not a failover request
 		return
 	}
@@ -173,7 +174,7 @@ func (s *MinMaxChecker) handleFailoverReq(ctx context.Context, cloudlet *edgepro
 		// no apps to trigger reply so send reply now
 		info := edgeproto.AutoProvInfo{}
 		info.Key = cloudlet.Key
-		info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
+		info.MaintenanceState = dme.MaintenanceState_FAILOVER_DONE
 		s.caches.autoProvInfoCache.Update(ctx, &info, 0)
 		return
 	}
@@ -306,9 +307,9 @@ func (s *MinMaxChecker) CheckApp(ctx context.Context, k interface{}) {
 
 			r.waitApiCalls.Wait()
 			if len(r.info.Errors) == 0 {
-				r.info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_DONE
+				r.info.MaintenanceState = dme.MaintenanceState_FAILOVER_DONE
 			} else {
-				r.info.MaintenanceState = edgeproto.MaintenanceState_FAILOVER_ERROR
+				r.info.MaintenanceState = dme.MaintenanceState_FAILOVER_ERROR
 			}
 			s.caches.autoProvInfoCache.Update(ctx, &r.info, 0)
 		}(ctx, req)

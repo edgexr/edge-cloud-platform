@@ -14,7 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	"github.com/mobiledgex/edge-cloud-infra/managedk8s"
-	"github.com/mobiledgex/edge-cloud-infra/plugin/common"
+	"github.com/mobiledgex/edge-cloud-infra/plugin/platform/common"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 )

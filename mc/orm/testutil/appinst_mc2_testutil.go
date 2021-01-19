@@ -178,3 +178,30 @@ func (s *TestClient) ShowAppInstInfo(ctx context.Context, in *edgeproto.AppInstI
 func (s *TestClient) ShowAppInstMetrics(ctx context.Context, in *edgeproto.AppInstMetrics) ([]edgeproto.AppInstMetrics, error) {
 	return nil, nil
 }
+
+func TestRequestAppInstLatency(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstLatency, modFuncs ...func(*edgeproto.AppInstLatency)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppInstLatency{}
+	dat.Region = region
+	dat.AppInstLatency = *in
+	for _, fn := range modFuncs {
+		fn(&dat.AppInstLatency)
+	}
+	return mcClient.RequestAppInstLatency(uri, token, dat)
+}
+func TestPermRequestAppInstLatency(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstLatency)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppInstLatency{}
+	in.Key.AppKey.Organization = org
+	return TestRequestAppInstLatency(mcClient, uri, token, region, in, modFuncs...)
+}
+
+func (s *TestClient) RequestAppInstLatency(ctx context.Context, in *edgeproto.AppInstLatency) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppInstLatency{
+		Region:         s.Region,
+		AppInstLatency: *in,
+	}
+	out, status, err := s.McClient.RequestAppInstLatency(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
