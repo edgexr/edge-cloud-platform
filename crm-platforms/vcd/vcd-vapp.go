@@ -114,8 +114,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve", "VM", vmtmplName)
 		return nil, err
 	}
-	var subnet string
-	err = v.updateVM(ctx, vm, vmparams, subnet)
+	err = v.updateVM(ctx, vm, vmparams)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
 		return nil, err
@@ -291,16 +290,12 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetGuestCustomizationSection failed", "err", err)
 		return nil, err
 	}
-	if !*guestCustomSec.Enabled {
-		guestCustomSec.Enabled = TakeBoolPointer(true)
-		// FixMe:  'AdminPassword' should either be reset or remain unchanged when auto"}
-		// vault kv get -field=value secret/accounts/baseimage/password
-		_, err := vm.SetGuestCustomizationSection(guestCustomSec)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)
-			return nil, err
-
-		}
+	guestCustomSec.Enabled = TakeBoolPointer(true)
+	guestCustomSec.ComputerName = vmparams.HostName
+	_, err = vm.SetGuestCustomizationSection(guestCustomSec)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)
+		return nil, err
 	}
 	// find the master, which can be either the first or second vm in the vapp, or none
 	masterIP := ""
@@ -363,8 +358,6 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "name", vmparams.Name, "role", vmparams.Role)
-	role := vmparams.Role
-	props = append(props, makeProp("ROLE", string(role)))
 	for k, val := range mdMap {
 		if v.Verbose {
 			log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection mdata", "key", k, "value", val)
