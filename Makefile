@@ -42,7 +42,8 @@ build-internal:
 	make -f proto.make
 	make -C vault/letsencrypt-plugin letsencrypt/version.go
 	go build ./...
-	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so plugin/*.go
+	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so plugin/platform/*.go
+	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so plugin/edgeevents/*.go	
 	go vet ./...
 
 install-edge-cloud:

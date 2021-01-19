@@ -5,6 +5,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -30,7 +31,7 @@ var testAlerts = []edgeproto.Alert{
 			edgeproto.AppKeyTagOrganization:    "testorg",
 			edgeproto.AppKeyTagVersion:         "1.0",
 			edgeproto.CloudletKeyTagName:       "testcloudlet",
-			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
+			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
 		},
 	},
 	edgeproto.Alert{ //testAlerts[0], but in a different region
@@ -41,7 +42,7 @@ var testAlerts = []edgeproto.Alert{
 			edgeproto.AppKeyTagOrganization:    "testorg",
 			edgeproto.AppKeyTagVersion:         "1.0",
 			edgeproto.CloudletKeyTagName:       "testcloudlet",
-			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(edgeproto.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
+			cloudcommon.AlertHealthCheckStatus: strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_FAIL_ROOTLB_OFFLINE)),
 		},
 	},
 	edgeproto.Alert{ // AlertAutoUndeploy alert

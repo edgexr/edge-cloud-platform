@@ -100,4 +100,5 @@ type Api interface {
 	AppInstRefsApiClient
 	StreamObjApiClient
 	DeviceApiClient
+	AppInstLatencyApiClient
 }

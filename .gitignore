@@ -81,7 +81,7 @@ e2e-tests/chef/syntaxcache
 # leftovers after regression tests
 envoy/certs/envoyTlsCerts.key
 envoy/certs/envoyTlsCerts.crt
-plugin/common/foo
+plugin/platform/common/foo
 
 # unit-test file
 mc/orm/alertmgr/testAlertMgrConfig.yml

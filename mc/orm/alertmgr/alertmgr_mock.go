@@ -12,6 +12,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 
 	//	open_api_models "github.com/prometheus/alertmanager/api/v2/models"
@@ -245,7 +246,7 @@ func (s *AlertmanagerMock) verifyAlertPresent(t *testing.T, alert *edgeproto.Ale
 		// Convert to string of integer
 		if k == cloudcommon.AlertHealthCheckStatus {
 			if tmp, err := strconv.ParseInt(v, 10, 32); err == nil {
-				if statusVal, ok := edgeproto.HealthCheck_CamelName[int32(tmp)]; ok {
+				if statusVal, ok := dme.HealthCheck_CamelName[int32(tmp)]; ok {
 					v = statusVal
 				}
 			}

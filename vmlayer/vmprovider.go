@@ -406,7 +406,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	return nil
 }
 
-func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState edgeproto.CloudletState) error {
+func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerCache", "cloudletState", cloudletState)
 
 	if v.VMProperties.Upgrade {

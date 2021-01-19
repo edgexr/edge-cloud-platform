@@ -81,3 +81,14 @@ func (s *Client) ShowAppInst(uri, token string, in *ormapi.RegionAppInst) ([]edg
 	st, err := s.runObjs(uri, token, args, in, &outlist, ops...)
 	return outlist, st, err
 }
+
+func (s *Client) RequestAppInstLatency(uri, token string, in *ormapi.RegionAppInstLatency) (*edgeproto.Result, int, error) {
+	args := []string{"region", "RequestAppInstLatency"}
+	out := edgeproto.Result{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}

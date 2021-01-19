@@ -13,5 +13,7 @@ tests:
     loops: 2
   - includefile: verify_loc.yml
     loops: 2
+  - includefile: stream_edgeevent.yml
+    loops: 2
   - includefile: fetchlogs.yml
   - includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
