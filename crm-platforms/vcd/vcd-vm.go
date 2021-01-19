@@ -111,7 +111,6 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate
 
 		emptyItem := govcd.CatalogItem{}
 		catItem, err := cat.FindCatalogItem(tmplName)
-		// Now, how to get this item type. catalog.go?
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item failed", "err", err)
 			return nil, fmt.Errorf("Template invalid")
@@ -130,9 +129,13 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate
 				log.SpanLog(ctx, log.DebugLevelInfra, "template has no children")
 				return nil, fmt.Errorf("Template invalid")
 			} else {
-				numChildren := len(tmpl.VAppTemplate.Children.VM)
-				log.SpanLog(ctx, log.DebugLevelInfra, "template looks good from cat", "numChildren", numChildren)
-				return &tmpl, nil
+				// while this works for 10.1, it still does not for 10.0 so make this an error for now
+				//numChildren := len(tmpl.VAppTemplate.Children.VM)
+				//log.SpanLog(ctx, log.DebugLevelInfra, "template looks good from cat", "numChildren", numChildren)
+				//return &tmpl, nil
+				log.SpanLog(ctx, log.DebugLevelInfra, "template has children but marking invalid for 10.0")
+				// Remedy to persure, fill in VM's vmSpecSection for expected resources that seem missing.
+				return nil, fmt.Errorf("Template invalid")
 			}
 		}
 	}
