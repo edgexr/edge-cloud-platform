@@ -143,7 +143,6 @@ build-edgebox:
 	rsync -a ansible/playbooks edgebox_bin/ansible
 	rsync -a e2e-tests edgebox_bin
 	rsync -a ../edge-cloud/setup-env/e2e-tests/data edgebox_bin/e2e-tests/edgebox
-	rsync -a ../edge-cloud/tls/out/mex-* edgebox_bin/e2e-tests/edgebox/tlsout
 	rsync -a $(GOPATH)/plugins edgebox_bin
 	rsync -a $(GOPATH)/bin/crmserver \
 		 $(GOPATH)/bin/e2e-tests \

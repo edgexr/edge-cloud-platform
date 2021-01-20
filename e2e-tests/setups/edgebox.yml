@@ -8,13 +8,14 @@ crms:
   apiaddr: "0.0.0.0:55091"
   notifyaddrs: "{{controller}}:37001"
   cloudletkey: '{"organization": "{{cloudlet-org}}","name":"{{cloudlet}}"}'
-  tls:
-    servercert: "{{tlsoutdir}}/mex-server.crt"
-    clientcert: "{{tlsoutdir}}/mex-client.crt"
   hostname: "127.0.0.1"
-  vaultaddr: "{{vault}}"
   usevaultcas: true
+  usevaultcerts: true
+  accessapiaddr: "{{controller}}:41001"
+  accesskeyfile: "{{outputdir}}/accesskey.pem"
+  deploymenttag: "{{deploy-env}}"
+  region: "{{region}}"
   envvars:
     PLATFORM: PLATFORM_TYPE_EDGEBOX
-    JAEGER_ENDPOINT: https://jaeger.mobiledgex.net:14268/api/traces
+    JAEGER_ENDPOINT: "https://jaeger-{{deploy-env}}.mobiledgex.net:14268/api/traces"
 

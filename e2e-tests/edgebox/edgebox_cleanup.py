@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
-import re
-import sys
 import os
 import subprocess
-from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
+import sys
+
+from master_controller import MC
 
 # Handle incompatibility between Pythons 2 and 3
 try:
@@ -16,158 +12,75 @@ try:
 except NameError:
     pass
 
-Debug = False
-CloudletOrg = None
-Cloudlet = None
-Appinsts = None
-Controller = None
-Clusterinsts = None
-Edgectl = None
-TlsDir = "tlsout"
+varsfile = "./edgebox_vars.yml"
 
-Varsfile = "./edgebox_vars.yml"
+def cleanup_docker(mc):
+    mc.banner("Cleaning up docker containers")
+    p = subprocess.Popen(["docker", "ps", "-a", "-q"], stdout=subprocess.PIPE,
+                         universal_newlines=True)
+    out, err = p.communicate()
+    for container in out.splitlines():
+        print("Deleting docker container " + container)
+        subprocess.call(["docker", "stop", container])
+        subprocess.call(["docker", "rm", container])
 
+    mc.banner("Cleaning up docker networks")
+    p = subprocess.Popen(["docker", "network", "list", "--format", "{{.Name}}"],
+                         stdout=subprocess.PIPE, universal_newlines=True)
+    out, err = p.communicate()
+    for network in out.splitlines():
+        if "kubeadm" in network:
+            print("Deleting docker network " + network)
 
-def readConfig():
-    global CloudletOrg
-    global Controller
-    global Cloudlet
-    global Controller
-    global Edgectl
-
-    with open(Varsfile, 'r') as stream:
-       data = load(stream, Loader=Loader)
-       CloudletOrg = data['cloudlet-org']
-       Cloudlet = data['cloudlet']
-       Controller = data['controller']
-       Edgectl = "edgectl --addr %s:55001 --tls %s/mex-client.crt" % (Controller, TlsDir)
-    
-def getAppClusterInsts():
-        global Appinsts
-        global Clusterinsts
-
-        print("getAppInsts")
-        if not CloudletOrg:
-                sys.exit("CloudletOrg")
-
-        if not Cloudlet:
-                sys.exit("missing cloudlet")
-                
-        p = subprocess.Popen([Edgectl+" controller ShowAppInst cloudlet-org=\""+CloudletOrg+"\"   cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-       
-        out,err = p.communicate()
-        Appinsts = load(out, Loader=Loader)
-        print ("\nFound APPINST %s\n" % Appinsts)
-        if not Appinsts or len(Appinsts) == 0:
-           print("ERROR: no data\n")
-
-
-        p = subprocess.Popen([Edgectl+" controller ShowClusterInst cloudlet-org=\""+CloudletOrg+"\" cloudlet=\""+Cloudlet+"\""], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-       
-        out,err = p.communicate()
-        Clusterinsts = load(out, Loader=Loader)
-        print ("\nFound CLUSTERINST %s]n" % Clusterinsts)
-        if not Clusterinsts or len(Clusterinsts) == 0:
-           print("ERROR: no data\n")
-
-def deleteAppInsts():
-     print("\n\ndeleteAppInsts\n")
-
-     if not Appinsts or len(Appinsts) == 0:
-           print("nothing to delete\n")
-           return
-
-     for appinst in Appinsts:
-         appname = appinst['key']['appkey']['name']
-         apporg = appinst['key']['appkey']['organization']
-         appvers = appinst['key']['appkey']['version']
-         cloudletname = appinst['key']['clusterinstkey']['cloudletkey']['name']
-         cloudletorg = appinst['key']['clusterinstkey']['cloudletkey']['organization']
-         clustername = appinst['key']['clusterinstkey']['clusterkey']['name']
-         
-         if cloudletorg != CloudletOrg:
-             sys.exit("Mismatched cloudlet org -- this is a bug")
-         
-         command = (Edgectl+" controller DeleteAppInst app-org=\""+apporg+"\" appname=\""+appname+"\" appvers=\""+appvers+"\""
-               " cloudlet=\""+cloudletname+"\"  cluster=\""+clustername+"\""
-               " app-org=\""+apporg+"\""+ " cloudlet-org=\""+cloudletorg+"\" crmoverride=IgnoreCrmAndTransientState")
-
-         print ("DELETE COMMAND: "+command)
-         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-       
-         out,err = p.communicate()
-         print ("Command Out:"+out)
-         if err:
-           print("Error: "+err)
-
-def deleteClusterInsts():
-     print("\n\ndeleteClusterInsts\n")
-
-     if not Clusterinsts or len(Clusterinsts) == 0:
-           print("nothing to delete\n")
-           return
-
-     for clinst in Clusterinsts:
-         devname = ""
-         clustername = clinst['key']['clusterkey']['name']
-         if 'organization' in  clinst['key']:
-            clusterorg = clinst['key']['organization']
-         cloudletname = clinst['key']['cloudletkey']['name']
-         cloudletorg = clinst['key']['cloudletkey']['organization']
-         
-         if cloudletorg != CloudletOrg:
-             sys.exit("Mismatched cloudletorg -- this is a bug")        
- 
-         command = (Edgectl+" controller DeleteClusterInst cluster-org=\""+clusterorg+"\""
-               " cloudlet=\""+Cloudlet+"\" cluster=\""+clustername+"\""
-               " cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")
-
-         print ("DELETE COMMAND: "+command)
-         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-       
-         out,err = p.communicate()
-         print ("Command Out:"+out)
-         if err:
-             print("Error: "+err)
-
-def deleteCloudlet():
-    command = (Edgectl+" controller DeleteCloudlet name=\""+Cloudlet+"\" cloudlet-org=\""+CloudletOrg+"\" crmoverride=IgnoreCrmAndTransientState")  
-    print ("DELETE COMMAND: "+command)
-    p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
-
-    out,err = p.communicate()
-    print ("Command Out:"+out)
-
-
-def dockerCleanup():
-   print ("Cleaning up docker containers")
-   subprocess.call('docker stop $(docker ps -a -q)', shell=True)
-   subprocess.call('docker rm $(docker ps -a -q)', shell=True)
-   print ("Cleaning up docker networks")
-   subprocess.call('docker network list --format {{.Name}}|grep kubeadm|xargs docker network rm', shell=True)
-def yesOrNo(question):
-    reply = str(input(question+' (y/n): ')).lower().strip()
-    if reply[0] == 'y':
-        return True
-    if reply[0] == 'n':
-        return False
-    else:
-        return yesOrNo("please enter")
-
-def crmCleanup():
-     print ("Killing CRM process")
-     subprocess.call('pkill -9 crmserver', shell=True)
-
+def cleanup_crm(mc):
+    mc.banner("Killing CRM process")
+    p = subprocess.Popen(["ps", "-e", "-o", "pid,args"], stdout=subprocess.PIPE,
+                         universal_newlines=True)
+    out, err = p.communicate()
+    for line in out.splitlines():
+        (pid, args) = line.split(None, 1)
+        if not args.startswith("crmserver "):
+            continue
+        if '"' + mc.cloudlet + '"' not in args:
+            continue
+        subprocess.call(["kill", "-9", pid])
+        break
 
 if __name__ == "__main__":
-   readConfig()
-   print("\n")
-   if yesOrNo("CONFIRM: Delete cloudlet org: %s cloudlet: %s from controller: %s ?\n" % (CloudletOrg, Cloudlet, Controller)):
-     getAppClusterInsts()
-     deleteAppInsts()
-     deleteClusterInsts()
-     deleteCloudlet()
-     dockerCleanup()        
-     crmCleanup()   
+    mc = MC(varsfile)
+    print("\nClean up edgebox cloudlet:")
+    print(mc)
+    if not mc.confirm_continue():
+        sys.exit("Cleanup aborted")
 
-        
+    # Load user credentials
+    mc.username
+    mc.password
+
+    for c in mc.get_cluster_instances():
+        cluster = c["key"]["cluster_key"]["name"]
+        cluster_org = c["key"]["organization"]
+
+        for a in mc.get_app_instances(cluster, cluster_org):
+            app_name = a["key"]["app_key"]["name"]
+            app_vers = a["key"]["app_key"]["version"]
+            app_org = a["key"]["app_key"]["organization"]
+
+            mc.banner("Deleting app {0}@{1}".format(app_name, app_vers))
+            mc.delete_app_instance(cluster, cluster_org, app_name, app_org, app_vers)
+
+        mc.banner("Deleting cluster {0}".format(cluster))
+        mc.delete_cluster_instance(cluster, cluster_org)
+
+    mc.banner("Deleting cloudlet {0}".format(mc.cloudlet))
+    try:
+        mc.delete_cloudlet()
+    except Exception as e:
+        if "not found" in str(e):
+            # Cloudlet has already been deleted
+            print("Cloudlet does not exist")
+        else:
+            raise e
+
+    cleanup_docker(mc)
+    cleanup_crm(mc)
