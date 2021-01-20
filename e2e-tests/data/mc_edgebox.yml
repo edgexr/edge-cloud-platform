@@ -14,4 +14,3 @@ regiondata:
       platformtype: PlatformTypeEdgebox
       flavor:
         name: x1.medium
-      state: Ready

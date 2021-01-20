@@ -21,9 +21,6 @@ warn() {
 setup() {
 	echo "Checking requirements..."
 
-	# Ensure LDAP_ID is set
-	[[ -z "$LDAP_ID" ]] && die "LDAP_ID environment variable not set"
-
 	# Disable Github logins for EdgeBox
 	unset GITHUB_ID
 
