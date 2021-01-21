@@ -160,11 +160,8 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		return err
 	}
 
-	// check to see if this org had a billingOrg attached
-	selfOrg := false
-	if orgCheck.Parent == orgCheck.Name {
-		selfOrg = true
-	} else if orgCheck.Parent != "" {
+	// check to see if this org has a billingOrg attached
+	if orgCheck.Parent != "" {
 		undoerr := markOrgForDelete(db, org.Name, !doMark)
 		if undoerr != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
@@ -183,13 +180,6 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 			return fmt.Errorf("Cannot delete organization because it is referenced by an OrgCloudletPool")
 		}
 		return dbErr(err)
-	}
-
-	if selfOrg {
-		err = DeleteBillingOrgObj(ctx, claims, &ormapi.BillingOrganization{Name: org.Name})
-		if err != nil {
-			return err
-		}
 	}
 
 	// delete all casbin groups associated with org

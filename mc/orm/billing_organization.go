@@ -123,12 +123,11 @@ func CreateBillingOrgObj(ctx context.Context, claims *UserClaims, createOrg *orm
 		enforcer.RemoveGroupingPolicy(ctx, rbac.GetCasbinGroup(org.Name, claims.Username), RoleBillingManager)
 		return err
 	}
-
 	return nil
 }
 
 func createBillingAccount(ctx context.Context, info *ormapi.CreateBillingOrganization) error {
-	if !serverConfig.Billing {
+	if !billingEnabled(ctx) {
 		return nil
 	}
 	accountInfo := billing.AccountInfo{OrgName: info.Name}
@@ -583,7 +582,7 @@ func accountInfoExists(ctx context.Context, orgName string) (*billing.AccountInf
 }
 
 func deleteBillingAccount(ctx context.Context, orgName, deleteType string) error {
-	if !serverConfig.Billing {
+	if !billingEnabled(ctx) {
 		return nil
 	}
 	// and remove the customer from the db and the billing service
@@ -695,7 +694,7 @@ func billingOrgDeletable(ctx context.Context, orgName string) error {
 
 // Check to make sure Organization is attached able to be charged
 func isBillable(ctx context.Context, orgName string) bool {
-	if !serverConfig.Billing {
+	if !billingEnabled(ctx) {
 		return true
 	}
 	if strings.ToLower(orgName) == strings.ToLower(cloudcommon.OrganizationMobiledgeX) || strings.ToLower(orgName) == strings.ToLower(cloudcommon.OrganizationEdgeBox) {
@@ -714,7 +713,7 @@ func isBillable(ctx context.Context, orgName string) bool {
 }
 
 func linkChildAccount(ctx context.Context, parent *ormapi.BillingOrganization, child string) error {
-	if !serverConfig.Billing {
+	if !billingEnabled(ctx) {
 		return nil
 	}
 	parentAcc, err := GetAccountObj(ctx, parent.Name)
@@ -760,7 +759,7 @@ func linkChildAccount(ctx context.Context, parent *ormapi.BillingOrganization, c
 }
 
 func updateBillingInfo(ctx context.Context, info *ormapi.BillingOrganization) error {
-	if !serverConfig.Billing {
+	if !billingEnabled(ctx) {
 		return nil
 	}
 	// get the accountInfo for this billingOrg
@@ -782,4 +781,12 @@ func updateBillingInfo(ctx context.Context, info *ormapi.BillingOrganization) er
 	}
 	// update it
 	return serverConfig.BillingService.UpdateCustomer(ctx, acc, &billTo)
+}
+
+func billingEnabled(ctx context.Context) bool {
+	config, _ := getConfig(ctx)
+	if config == nil {
+		return false
+	}
+	return config.BillingEnable
 }

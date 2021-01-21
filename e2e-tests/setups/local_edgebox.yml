@@ -105,7 +105,9 @@ mcs:
   notifysrvaddr: "127.0.0.1:52001"
   usevaultcerts: true
   hostname: "127.0.0.1"
-  usagecheckpointinterval: 3m
+  billingplatform: fake
+  usagecollectioninterval: 3m
+  usagecheckpointinterval: 5m
   alertmgrapiaddr: "https://127.0.0.1:9094"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
   apitlskey: "{{tlsoutdir}}/mex-server.key"

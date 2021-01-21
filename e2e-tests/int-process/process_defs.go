@@ -18,7 +18,7 @@ type MC struct {
 	UseVaultCAs             bool
 	UseVaultCerts           bool
 	AlertResolveTimeout     string
-	BillingPath             string
+	BillingPlatform         string
 	UsageCollectionInterval string
 	UsageCheckpointInterval string
 	AlertMgrApiAddr         string

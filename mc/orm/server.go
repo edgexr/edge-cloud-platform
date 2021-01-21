@@ -73,8 +73,7 @@ type ServerConfig struct {
 	NotifyAddrs             string
 	NotifySrvAddr           string
 	NodeMgr                 *node.NodeMgr
-	Billing                 bool
-	BillingPath             string
+	BillingPlatform         string
 	BillingService          billing.BillingService
 	AlertCache              *edgeproto.AlertCache
 	AlertMgrAddr            string
@@ -184,15 +183,18 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server.initJWKDone = make(chan struct{}, 1)
 	InitVault(config.vaultConfig, server.initJWKDone)
 
-	if config.Billing {
+	switch serverConfig.BillingPlatform {
+	case "fake":
+		serverConfig.BillingService = &fakebilling.BillingService{}
+	case "chargify":
 		serverConfig.BillingService = &chargify.BillingService{}
-		if config.BillingPath == billing.BillingTypeFake {
-			serverConfig.BillingService = &fakebilling.BillingService{}
-		}
-		err = serverConfig.BillingService.Init(ctx, config.vaultConfig, config.BillingPath)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to initialize billing services: %v", err)
-		}
+	default:
+		return nil, fmt.Errorf("Unable to determine billing platform: %s\n", serverConfig.BillingPlatform)
+	}
+
+	err = serverConfig.BillingService.Init(ctx, config.vaultConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to initialize billing services: %v", err)
 	}
 
 	if err = checkUsageCheckpointInterval(); err != nil {

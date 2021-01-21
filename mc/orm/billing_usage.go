@@ -9,13 +9,12 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	opentracing "github.com/opentracing/opentracing-go"
 )
 
 var retryMax = 3
 var retryPercentage = 0.05 // this number is a percentage, so that the retryInterval is based off of the collectionInterval
 
-func CollectBillingUsage(ctx context.Context, collectInterval time.Duration) {
+func CollectBillingUsage(collectInterval time.Duration) {
 	retryInterval := 5 * time.Minute
 	nextCollectTime := getNextCollectTime(time.Now(), collectInterval)
 	prevCollectTime := nextCollectTime.Add(collectInterval * (-1))
@@ -25,7 +24,13 @@ func CollectBillingUsage(ctx context.Context, collectInterval time.Duration) {
 	for {
 		select {
 		case <-time.After(nextCollectTime.Sub(time.Now())):
-			span := log.StartSpan(log.DebugLevelInfo, "Billing usage collection thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
+			span := log.StartSpan(log.DebugLevelInfo, "Billing usage collection thread")
+			ctx := log.ContextWithSpan(context.Background(), span)
+			if !billingEnabled(ctx) {
+				prevCollectTime = nextCollectTime
+				nextCollectTime = getNextCollectTime(nextCollectTime, collectInterval)
+				continue
+			}
 			controllers, err := ShowControllerObj(ctx, nil)
 			if err != nil {
 				retryCount := 0

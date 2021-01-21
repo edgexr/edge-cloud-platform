@@ -188,6 +188,8 @@ type Config struct {
 	MaxMetricsDataPoints int
 	// Max number of API keys a user can create
 	UserApiKeyCreateLimit int
+	// Toggle for enabling billing (primarily for testing purposes)
+	BillingEnable bool
 }
 
 type OrgCloudletPool struct {

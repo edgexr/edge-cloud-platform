@@ -74,7 +74,7 @@ type UsageRecord struct {
 
 type BillingService interface {
 	// Init is called once during startup
-	Init(ctx context.Context, vaultConfig *vault.Config, path string) error
+	Init(ctx context.Context, vaultConfig *vault.Config) error
 	// The Billing service's type ie. "chargify" or "zuora"
 	GetType() string
 	// Create Customer, and fills out the accountInfo for that customer
