@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -36,7 +35,7 @@ var alertMgrAddr = flag.String("alertMgrApiAddr", "http://127.0.0.1:9094", "Glob
 
 var alertMgrResolveTimeout = flag.Duration("alertResolveTimeout", 3*time.Minute, "Alertmanager alert Resolution timeout")
 var hostname = flag.String("hostname", "", "Unique hostname")
-var billingPath = flag.String("billingPath", "", "Billing account path in vault")
+var billingPlatform = flag.String("billingPlatform", "fake", "Billing platform to use")
 var usageCollectionInterval = flag.Duration("usageCollectionInterval", -1*time.Second, "Collection interval")
 var usageCheckpointInterval = flag.String("usageCheckpointInterval", "MONTH", "Checkpointing interval(must be same as controller's checkpointInterval)")
 
@@ -51,11 +50,6 @@ func main() {
 	defer nodeMgr.Finish()
 
 	sigChan = make(chan os.Signal, 1)
-
-	billingEnabled := false
-	if *billingPath != "" {
-		billingEnabled = true
-	}
 
 	config := orm.ServerConfig{
 		ServAddr:                *addr,
@@ -77,8 +71,7 @@ func main() {
 		NotifyAddrs:             *notifyAddrs,
 		NotifySrvAddr:           *notifySrvAddr,
 		NodeMgr:                 &nodeMgr,
-		Billing:                 billingEnabled,
-		BillingPath:             *billingPath,
+		BillingPlatform:         *billingPlatform,
 		AlertMgrAddr:            *alertMgrAddr,
 		AlertCache:              &alertCache,
 		AlertmgrResolveTimout:   *alertMgrResolveTimeout,
@@ -95,13 +88,8 @@ func main() {
 	if err != nil {
 		log.FatalLog("Server could not be started", "err", err)
 	}
-	if billingEnabled {
-		span := log.StartSpan(log.DebugLevelInfo, "billing")
-		defer span.Finish()
-		ctx := log.ContextWithSpan(context.Background(), span)
 
-		go orm.CollectBillingUsage(ctx, *usageCollectionInterval)
-	}
+	go orm.CollectBillingUsage(*usageCollectionInterval)
 
 	// wait until process is killed/interrupted
 	signal.Notify(sigChan, os.Interrupt)

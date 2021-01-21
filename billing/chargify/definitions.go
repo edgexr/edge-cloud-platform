@@ -2,8 +2,8 @@ package chargify
 
 var apiKey string
 var siteName string
-var apiPassword = "x"                            // password to go with apiKey in basic auth for http. This is always x, the apiKey is what changes
-var vaultPath = "secret/data/accounts/chargify/" // remainder of the path will be either something like "dev", "test", or "live"
+var apiPassword = "x" // password to go with apiKey in basic auth for http. This is always x, the apiKey is what changes
+var vaultPath = "secret/data/accounts/chargify"
 var publicEdgeProductHandle = "publicedge"
 
 var paymentTypeCC = "credit_card"

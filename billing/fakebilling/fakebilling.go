@@ -17,7 +17,7 @@ var accountCounter = 1
 var subMux sync.Mutex
 var accMux sync.Mutex
 
-func (bs *BillingService) Init(ctx context.Context, vaultConfig *vault.Config, path string) error {
+func (bs *BillingService) Init(ctx context.Context, vaultConfig *vault.Config) error {
 	return nil
 }
 
