@@ -12,6 +12,7 @@ import (
 
 	awsec2 "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-ec2"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vcd"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
@@ -289,6 +290,15 @@ func getPlatform() (platform.Platform, error) {
 		vmPlatform := vmlayer.VMPlatform{
 			Type:       vmlayer.VMProviderVSphere,
 			VMProvider: &vsphereProvider,
+		}
+		plat = &shepherd_vmprovider.ShepherdPlatform{
+			VMPlatform: &vmPlatform,
+		}
+	case "PLATFORM_TYPE_VCD":
+		vcdProvider := vcd.VcdPlatform{}
+		vmPlatform := vmlayer.VMPlatform{
+			Type:       vmlayer.VMProviderVCD,
+			VMProvider: &vcdProvider,
 		}
 		plat = &shepherd_vmprovider.ShepherdPlatform{
 			VMPlatform: &vmPlatform,
