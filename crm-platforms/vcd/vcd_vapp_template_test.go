@@ -17,15 +17,17 @@ func TestInstanciateTmpl(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
 	if live {
 
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc err: %s\n", err.Error())
 			return
 		}
 		fmt.Printf("TestInstancitate tmplName %s vappName %s\n", *tmplName, *vappName)
-		tmpl, err := tv.FindTemplate(ctx, *tmplName)
+		tmpl, err := tv.FindTemplate(ctx, *tmplName, testVcdClient)
 		require.Nil(t, err, "FindVappTemplate")
 
 		tmplRef := &types.Reference{
@@ -74,7 +76,7 @@ func popNetConfig(t *testing.T, ctx context.Context) *types.NetworkConfigSection
 	// This is the guy with the IPScopes /Features
 	// *Note SubInterface and DistributedInterface here, they are mutually exclusive
 	// When both are nil, the internal (default) interface is  used.
-	vdcnet, err := tv.GetExtNetwork(ctx)
+	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient)
 	if err != nil {
 		return nil
 	}
@@ -116,7 +118,7 @@ func popNetConfig(t *testing.T, ctx context.Context) *types.NetworkConfigSection
 }
 
 func popNetConnect(t *testing.T, ctx context.Context) *types.NetworkConnectionSection {
-	vdcnet, err := tv.GetExtNetwork(ctx)
+	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient)
 	if err != nil {
 		return nil
 	}
@@ -206,7 +208,7 @@ func populateVAppTmplInstatiationParams(t *testing.T, ctx context.Context) *type
 // catalogItem.Delete()
 // So must frist get the catitem for this templ name.
 func testDestroyVAppTmpl(t *testing.T, ctx context.Context, tmplname string) error {
-	cat, err := tv.GetCatalog(ctx, tv.GetCatalogName())
+	cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
 	if err != nil {
 		return err
 	}
@@ -271,7 +273,7 @@ func dumpVAppTemplate(tv *VcdPlatform, ctx context.Context, vt *govcd.VAppTempla
 	if vt.VAppTemplate.Type == "application/vnd.vmware.vcloud.vm+xml" {
 
 		// we can fetch it from vCD or from our local cache if we've done things right
-		vm, err := tv.FindVMByName(ctx, vt.VAppTemplate.Name)
+		vm, err := tv.FindVMByName(ctx, vt.VAppTemplate.Name, testVcdClient)
 		if err != nil {
 			fmt.Printf("Failed to find vm %s locally\n", vt.VAppTemplate.Name)
 		} else {

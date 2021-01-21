@@ -3,11 +3,12 @@ package vcd
 import (
 	"context"
 	"fmt"
-	gogotypes "github.com/gogo/protobuf/types"
-	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"strings"
 	"time"
 	"unicode"
+
+	gogotypes "github.com/gogo/protobuf/types"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -36,7 +37,6 @@ type VcdPlatform struct {
 	vcdVars      map[string]string
 	caches       *platform.Caches
 	Creds        *VcdConfigParams
-	Client       *govcd.VCDClient
 	TestMode     bool
 	Verbose      bool
 }
@@ -67,14 +67,6 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	v.Verbose = v.GetVcdVerbose()
 	v.InitData(ctx, caches)
 
-	if v.Client == nil {
-		client, err := v.GetClient(ctx, v.Creds)
-		if err != nil {
-			return fmt.Errorf("InitProvider Unable to create Vcd Client: %s\n", err.Error())
-		}
-		v.Client = client
-	}
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "Discover resources for", "Org", v.Creds.Org)
 	err := v.ImportDataFromInfra(ctx)
 	if err != nil {
@@ -97,14 +89,6 @@ func (v *VcdPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 func (v *VcdPlatform) ImportDataFromInfra(ctx context.Context) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra")
-	if v.Client == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Obtain vcd client")
-		client, err := v.GetClient(ctx, v.Creds)
-		if err != nil {
-			return fmt.Errorf("Unable to create Vcd Client %s\n", err.Error())
-		}
-		v.Client = client
-	}
 	err := v.GetPlatformResources(ctx)
 	if err != nil {
 		return fmt.Errorf("Error retrieving Platform Resources: %s", err.Error())
@@ -117,8 +101,12 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 	var resources *vmlayer.PlatformResources
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo ")
 
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	resources.CollectTime, _ = gogotypes.TimestampProto(time.Now())
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -135,10 +123,14 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 
 func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {
 
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 	// VM, Subnet and SecGrp are the current potential values of Type
 	// The only one we have so far is VMs, (subnets soon, and secGrps eventually)
 	if resourceType == vmlayer.ResourceTypeVM {
-		vm, err := v.FindVMByName(ctx, resourceName)
+		vm, err := v.FindVMByName(ctx, resourceName, vcdClient)
 		if err != nil {
 			return "", fmt.Errorf("resource %s not found", resourceName)
 		}
@@ -173,38 +165,20 @@ func (v VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, se
 }
 
 // Retrieve our top level Org object
-func (v *VcdPlatform) GetOrg(ctx context.Context) (*govcd.Org, error) {
-	var err error
-	org := &govcd.Org{}
-	cli := v.Client
-	org, err = cli.GetOrgByName(v.Creds.Org)
+func (v *VcdPlatform) GetOrg(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Org, error) {
+	org, err := vcdClient.GetOrgByName(v.Creds.Org)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg failed get new client", "Org", v.Creds.Org, "err", err)
-		// Perhaps we've lost our client, try and get it again
-		if v.Client != nil {
-			err := v.Client.Disconnect()
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg GetClient disconnnect (info) failed", "err", err)
-		}
-
-		client, err := v.GetClient(ctx, v.Creds)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetOrg GetClient failed", "err", err)
-			return nil, fmt.Errorf("Unable to create Vcd Client: %s\n", err.Error())
-		}
-		v.Client = client
-		org, err = cli.GetOrgByName(v.Creds.Org)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetOrgByName failed", "org", v.Creds.Org, "err", err)
-			return nil, fmt.Errorf("GetOrgByName error %s", err.Error())
-		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetOrgByName failed", "org", v.Creds.Org, "err", err)
+		return nil, fmt.Errorf("GetOrgByName error %s", err.Error())
 	}
 	return org, nil
 }
 
 // Retrieve our refreshed vdc object
-func (v *VcdPlatform) GetVdc(ctx context.Context) (*govcd.Vdc, error) {
+func (v *VcdPlatform) GetVdc(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Vdc, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc")
 
-	org, err := v.GetOrg(ctx)
+	org, err := v.GetOrg(ctx, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVdc GetOrg return error", "vdc", v.Creds.VDC, "org", v.Creds.Org, "err", err)
 		return nil, err
@@ -230,10 +204,15 @@ func (v *VcdPlatform) GetConsoleUrl(ctx context.Context, serverName string) (str
 
 func (v *VcdPlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile, "folder", folder)
+
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	// first delete anything that may be there for this image
 	v.DeleteImage(ctx, folder, imageFile)
 	// .ova's are the unit of upload to our catalog (but could be an ovf + vmdk)
-	cat, err := v.GetCatalog(ctx, v.GetCatalogName())
+	cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 	if err != nil {
 		return err
 	}
@@ -282,7 +261,11 @@ func (v *VcdPlatform) IdSanitize(name string) string {
 
 func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
 
-	vm, err := v.FindVMByName(ctx, serverName)
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", serverName)
 		return nil, err
@@ -316,11 +299,11 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 
 // Return current vapps in map keyed by external net IP
 // Combine the two such rnts use netType
-func (v *VcdPlatform) GetAllVAppsForVdc(ctx context.Context) (VAppMap, error) {
+func (v *VcdPlatform) GetAllVAppsForVdc(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
 
 	vappMap := make(VAppMap)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return vappMap, err
 	}
@@ -353,10 +336,10 @@ func (v *VcdPlatform) GetAllVAppsForVdc(ctx context.Context) (VAppMap, error) {
 
 }
 
-func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context) (VMMap, error) {
+func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context, vcdClient *govcd.VCDClient) (VMMap, error) {
 	vmMap := make(VMMap)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return vmMap, err
 	}
@@ -365,7 +348,7 @@ func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context) (VMMap, erro
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
 			if res.Type == "application/vnd.vmware.vcloud.vm+xml" {
-				vm, err := v.FindVMByName(ctx, res.Name)
+				vm, err := v.FindVMByName(ctx, res.Name, vcdClient)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsForVdcByIntAddr FindVMByName error", "vm", res.Name, "error", err)
 					return vmMap, err
@@ -401,10 +384,10 @@ func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context) (VMMap, erro
 	return vmMap, nil
 }
 
-func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context) (VAppMap, error) {
+func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
 
 	vappMap := make(VAppMap)
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return vappMap, err
 	}

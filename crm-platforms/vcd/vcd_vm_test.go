@@ -5,19 +5,22 @@ import (
 	"flag"
 	"fmt"
 
+	"net/http"
+	"testing"
+
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"net/http"
-	"testing"
 )
 
 // Init a copy of our platform for test
 // Available to, and used by all the other unit tests
 var tv VcdPlatform
+
+var testVcdClient *govcd.VCDClient
 
 // cmd line arg vars available to all tests
 var vmName = flag.String("vm", "default-vm-name", "Name of vm")
@@ -50,31 +53,35 @@ func InitVcdTestEnv() (bool, context.Context, error) {
 		// Tests don't need vault etc
 		tv.PopulateOrgLoginCredsFromEnv(ctx)
 
+		var err error
 		//fmt.Printf("\tMaps made, GetClient\n")
-		client, err := tv.GetClient(ctx, tv.Creds)
+		testVcdClient, err = tv.GetClient(ctx, tv.Creds)
 		if err != nil {
 			return live, ctx, fmt.Errorf("Unable to create Vcd Client %s\n", err.Error())
 		}
-		tv.Client = client
 		err = tv.ImportDataFromInfra(ctx)
 		if err != nil {
+			testVcdClient.Disconnect()
 			return live, ctx, fmt.Errorf("ImportDataFromInfra failed: %s", err.Error())
 		}
-
 		fmt.Printf("TestEnvInit live Complete\n")
 
 	} else {
 		// anything other than a manual run providing "true" for flag "live" results
 		// in canned data for unit tests.
-		client, err := GetDummyClient(ctx)
-		tv.Client = client
+		var err error
+		testVcdClient, err = GetDummyClient(ctx)
+		if err != nil {
+			return live, ctx, err
+		}
 		err = importTestData(ctx)
 		if err != nil {
+			testVcdClient.Disconnect()
 			fmt.Printf("Error initiaizing test data: %s\n", err.Error())
 		}
 		fmt.Printf("TestEnvInit dead Complete\n")
 	}
-
+	ctx = context.WithValue(ctx, VCDClientCtxKey, testVcdClient)
 	return live, ctx, nil
 }
 
@@ -93,9 +100,10 @@ func GetDummyClient(ctx context.Context) (*govcd.VCDClient, error) {
 func TestShowVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
-		vapp, err := tv.FindVApp(ctx, *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
 		if err != nil {
 			fmt.Printf("vapp %s not found\n", *vappName)
 			return
@@ -114,6 +122,8 @@ func TestShowVM(t *testing.T) {
 func TestVMMetrics(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
+
 	if live {
 		fmt.Printf("TestVMMetric Start\n")
 
@@ -145,6 +155,7 @@ func TestAddVMNetwork(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("TestAddVMNetwork Start\n")
 
@@ -156,7 +167,7 @@ func TestAddVMNetwork(t *testing.T) {
 		// We wish to determine if we can add a new nic/newtwork to an existing VM if it's powered On or
 		// if it must be off first.
 		powerState := true // powered on
-		err = testAttachPortToServer(t, ctx, serverName, subnetName, PortName, ipAddr, powerState)
+		err = testAttachPortToServer(t, ctx, serverName, subnetName, PortName, ipAddr, powerState, testVcdClient)
 		if err != nil {
 			fmt.Printf("Error AttachPOrtToServer  serverName %s , ipAddr %s  err %s", serverName, ipAddr, err.Error())
 			return
@@ -183,7 +194,7 @@ func getAvailableVMs(ctx context.Context) ([]*types.QueryResultVMRecordType, err
 
 	var filter types.VmQueryFilter = types.VmQueryFilterAll
 
-	vmRecs, err := tv.Client.Client.QueryVmList(filter)
+	vmRecs, err := testVcdClient.Client.QueryVmList(filter)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to Query available VMs err: %s", err.Error())
 	}
@@ -194,14 +205,16 @@ func TestVM(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
+
 	if live {
 		// You need an AdminOrg object if you want to get at OrgSettings.
-		org, err := tv.GetOrg(ctx)
+		org, err := tv.GetOrg(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetOrg failed: %s\n", err.Error())
 			return
 		}
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return
@@ -209,9 +222,7 @@ func TestVM(t *testing.T) {
 
 		fmt.Printf("TestVM-VMQuota: %d NicQuota %d\n", vdc.Vdc.VMQuota, vdc.Vdc.NicQuota)
 
-		cli := tv.Client
-
-		adminOrg, err := govcd.GetAdminOrgByName(cli, org.Org.Name)
+		adminOrg, err := govcd.GetAdminOrgByName(testVcdClient, org.Org.Name)
 		if err != nil {
 			fmt.Printf("Error retrieving AdminOrg: %s\n", err.Error())
 		} else {
@@ -219,7 +230,7 @@ func TestVM(t *testing.T) {
 			fmt.Printf("TestVM-I-Org DeployedVMQuota: %d CanPublishCats: %t StoredVMQuota: %d \n",
 				generalSettings.DeployedVMQuota, generalSettings.CanPublishCatalogs, generalSettings.StoredVMQuota)
 		}
-		fmt.Printf("cli current Api version: %s\n", cli.Client.APIVersion)
+		fmt.Printf("cli current Api version: %s\n", testVcdClient.Client.APIVersion)
 
 		// look for any available VMs?
 		vmRecords, err := getAvailableVMs(ctx)
@@ -255,8 +266,9 @@ func TestVM(t *testing.T) {
 func TestRMVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
-		vm, err := tv.FindVMByName(ctx, *vmName)
+		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient)
 		if err != nil {
 			fmt.Printf("VM %s not found\n", *vmName)
 			return
@@ -298,10 +310,11 @@ func TestRMVM(t *testing.T) {
 func TestVMDisk(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("\nTestVMDisk Live: \n")
-		vapp, err := tv.FindVApp(ctx, *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
 		if err != nil {
 			fmt.Printf("Unable to find %s\n", *vappName)
 			return
@@ -358,7 +371,7 @@ func testDetachPortFromServer(t *testing.T, ctx context.Context, serverName, sub
 }
 
 // Action type can be create, update, delete.
-func testAttachPortToServer(t *testing.T, ctx context.Context, serverName, subnetName, portName, ipaddr string, powerState bool) error {
+func testAttachPortToServer(t *testing.T, ctx context.Context, serverName, subnetName, portName, ipaddr string, powerState bool, vcdClient *govcd.VCDClient) error {
 
 	fmt.Printf("testAttachPortToServer name: %s\n", serverName)
 	detail, err := tv.GetServerDetail(ctx, serverName)
@@ -368,7 +381,7 @@ func testAttachPortToServer(t *testing.T, ctx context.Context, serverName, subne
 	}
 	fmt.Printf("details of %s : %+v\n", serverName, detail)
 	// but this is not enough, we need the govcd.VM object for serverName, but we know it eixsts.
-	vm, err := tv.FindVMByName(ctx, serverName)
+	vm, err := tv.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
 		fmt.Printf("FindVM failed err: %s\n", err.Error())
 		return err
@@ -398,7 +411,7 @@ func testVMMetrics(t *testing.T, ctx context.Context, vmname string, poweron boo
 	// if so, we should fetch the HREF and see what it has for us
 	// This will probably never work until govcd grows support for nsx-t.
 	// Ok, the ExecuteRequest on the "down"
-	vm, err := tv.FindVMByName(ctx, vmname)
+	vm, err := tv.FindVMByName(ctx, vmname, testVcdClient)
 	if err != nil {
 		return fmt.Errorf("Error finding vm  %s  err: %s\n", *vmName, err.Error())
 	}
@@ -446,7 +459,7 @@ func testVMMetrics(t *testing.T, ctx context.Context, vmname string, poweron boo
 	// ok, so if we know the link we can try and fetch it using
 	var buffer [5000]byte
 	if appType != "" && link != nil {
-		response, err := tv.Client.Client.ExecuteRequest(link.HREF, http.MethodGet, "", "error GET retriving metrics link: %s", nil, buffer)
+		response, err := testVcdClient.Client.ExecuteRequest(link.HREF, http.MethodGet, "", "error GET retriving metrics link: %s", nil, buffer)
 		// This POST needs a prolog with the selection criteria
 		//response, err := tv.Client.Client.ExecuteRequest(link.HREF, http.MethodPost, "", "error POST retriving metrics link: %s", nil, buffer)
 
@@ -473,6 +486,7 @@ func testVMMetrics(t *testing.T, ctx context.Context, vmname string, poweron boo
 func TestServerGroupResources(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("looking for a group/vm named: %s\n", *grpName)
@@ -498,6 +512,7 @@ func TestServerGroupResources(t *testing.T) {
 func TestCheckServerReady(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		var client ssh.Client
@@ -510,10 +525,11 @@ func TestCheckServerReady(t *testing.T) {
 func TestGetExtAddrOfVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("TestGetExtAddrOfVM vmName %s netName %s\n", *vmName, *netName)
-		vm, err := tv.FindVMByName(ctx, *vmName)
+		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient)
 		if err != nil {
 			fmt.Printf("Error finding vm named: %s err: %s \n", *vmName, err.Error())
 			return

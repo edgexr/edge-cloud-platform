@@ -11,10 +11,10 @@ import (
 // vapptemplate related operations
 
 // Return requested vdc template
-func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string) (*govcd.VAppTemplate, error) {
+func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Find template", "Name", tmplName)
-	tmpls, err := v.GetAllVdcTemplates(ctx)
+	tmpls, err := v.GetAllVdcTemplates(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -30,15 +30,14 @@ func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string) (*govcd
 }
 
 // Return all templates found as vdc resources from MEX_CATALOG
-func (v *VcdPlatform) GetAllVdcTemplates(ctx context.Context) ([]*govcd.VAppTemplate, error) {
+func (v *VcdPlatform) GetAllVdcTemplates(ctx context.Context, vcdClient *govcd.VCDClient) ([]*govcd.VAppTemplate, error) {
 
 	var tmpls []*govcd.VAppTemplate
-	org, err := v.GetOrg(ctx)
+	org, err := v.GetOrg(ctx, vcdClient)
 	if err != nil {
 		return tmpls, err
 	}
-
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return tmpls, err
 	}

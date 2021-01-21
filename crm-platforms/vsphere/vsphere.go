@@ -53,6 +53,10 @@ func (v *VSpherePlatform) InitProvider(ctx context.Context, caches *platform.Cac
 	return nil
 }
 
+func (v *VSpherePlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
+	return ctx, nil
+}
+
 func (v *VSpherePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo ")
 	var err error

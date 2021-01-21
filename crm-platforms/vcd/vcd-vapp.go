@@ -13,26 +13,28 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// VmHardwareVersion of 14 means vsphere 6.7
+var VmHardwareVersion = 14
+
 // Compose a new vapp from the given template, using vmgrp orch params
 // Creates one or more vms.
-func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTemplate, vmgp *vmlayer.VMGroupOrchestrationParams, description string, updateCallback edgeproto.CacheUpdateCallback) (*govcd.VApp, error) {
+func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTemplate, vmgp *vmlayer.VMGroupOrchestrationParams, description string, vcdClient *govcd.VCDClient, updateCallback edgeproto.CacheUpdateCallback) (*govcd.VApp, error) {
 
 	var vapp *govcd.VApp
 	var err error
 
 	numVMs := len(vmgp.VMs)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
-
 	storRef := types.Reference{}
 	// Nil ref wins default storage policy
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp", "name", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
 
 	vappName := vmgp.GroupName + "-vapp"
-	vapp, err = v.FindVApp(ctx, vappName)
+	vapp, err = v.FindVApp(ctx, vappName, vcdClient)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp vapp alredy exists", "name", vmgp.GroupName, "vapp", vapp)
 		return vapp, nil
@@ -49,9 +51,11 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
 
 	// MEX_EXT_NET
-	vdcNet, err := v.GetExtNetwork(ctx)
+	vdcNet, err := v.GetExtNetwork(ctx, vcdClient)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve our external network", "name", vmgp.GroupName, "vapp", vapp, "err", err)
+		netName := v.GetExtNetworkName()
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve our external network", "name", vmgp.GroupName, "netname", netName, "vapp", vapp, "err", err)
+		return nil, fmt.Errorf("Error getting external network: %s -  %v", netName, err)
 	}
 	networks := []*types.OrgVDCNetwork{}
 	networks = append(networks, vdcNet.OrgVDCNetwork)
@@ -84,11 +88,12 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		return nil, err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "Compose Vapp succefully", "VApp", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
-	// 10.0 if we retrieved the template from the catalog, we can compose, but the validation of the vm
-	// is in question seems to be missing vmspec.MemoryResourceMb.Configured
-	err = v.validateVMSpecSection(ctx, *vapp)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Compose Vapp successfully", "VApp", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
 
+	err = v.validateVMSpecSection(ctx, *vapp)
+	if err != nil {
+		return nil, err
+	}
 	// ensure we have a clean slate
 	task, err = vapp.RemoveAllNetworks()
 	if err != nil {
@@ -101,7 +106,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 
 	// Get the VApp network in place, all vapps need an external network at least
-	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp)
+	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
@@ -183,7 +188,7 @@ func (v *VcdPlatform) LogVappVMsStatus(ctx context.Context, vapp *govcd.VApp) {
 	}
 }
 
-func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp) error {
+func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClient *govcd.VCDClient) error {
 
 	// are we being asked to delete vm or vapp (do we ever get asked to delete a single VM?)
 	vappName := vapp.VApp.Name
@@ -192,7 +197,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp) error {
 
 	// First, does this guy even exist?
 	// If not, ok, its deleted
-	vapp, err := v.FindVApp(ctx, vappName)
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vapp not found return success", "vapp", vappName)
 		return nil
@@ -226,9 +231,10 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp) error {
 	return nil
 }
 
-func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string) (*govcd.VApp, error) {
+func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string, vcdClient *govcd.VCDClient) (*govcd.VApp, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FindVApp", "vappName", vappName)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -410,8 +416,10 @@ func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp
 	}
 	vmSpec := vm.VM.VmSpecSection
 	if vmSpec.MemoryResourceMb == nil {
+		// TODO: figure this out
+		log.SpanLog(ctx, log.DebugLevelInfra, "Warning: validateVMSpecSection missing MemoryResourceMb")
 		mresMB := &types.MemoryResourceMb{
-			Configured: 4096,
+			Configured: int64(vmlayer.MINIMUM_RAM_SIZE),
 		}
 		vmSpec.MemoryResourceMb = mresMB
 		_, err := vm.UpdateVmSpecSection(vmSpec, "update missing MB")

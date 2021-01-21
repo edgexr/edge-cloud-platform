@@ -2,9 +2,10 @@ package vcd
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"testing"
 )
 
 // Relevant types.go:
@@ -13,12 +14,12 @@ import (
 func TestMeta(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
-
+	defer testVcdClient.Disconnect()
 	if live {
 
 		fmt.Printf("TestMeta:")
 
-		vapp, err := tv.FindVApp(ctx, *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
 		require.Nil(t, err, "FindVApp")
 
 		vm, err := vapp.GetVMByName(*vmName, false)

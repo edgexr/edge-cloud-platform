@@ -262,6 +262,12 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return nil
 	}
 
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+
 	err = v.SetupPlatformVM(ctx, accessApi, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
 		return err
@@ -452,6 +458,12 @@ func (v *VMPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgep
 }
 
 func (v *VMPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	var err error
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	return v.VMProvider.GatherCloudletInfo(ctx, info)
 }
 

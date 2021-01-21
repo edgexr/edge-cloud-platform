@@ -2,10 +2,13 @@ package vcd
 
 import (
 	"fmt"
+
 	"github.com/stretchr/testify/require"
+
 	//"github.com/vmware/go-vcloud-director/v2/govcd"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"testing"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Relevant types.go:
@@ -36,6 +39,7 @@ func TestProdSec(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("TestProdSec:")
 
@@ -54,7 +58,7 @@ func TestProdSec(t *testing.T) {
 		// and then go to the vm's productSection to update the runtime info which  you want to pass int"
 		// Uh huh... sure buddy, we'll see
 		//
-		vapp, err := tv.FindVApp(ctx, *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
 		if err != nil {
 			fmt.Printf("%s not found\n", *vappName)
 			return

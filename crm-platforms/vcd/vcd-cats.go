@@ -12,9 +12,9 @@ import (
 // catalog releated functionality
 
 const uploadChunkSize = 12 * 1024 // MB
-func (v *VcdPlatform) GetCatalog(ctx context.Context, catName string) (*govcd.Catalog, error) {
+func (v *VcdPlatform) GetCatalog(ctx context.Context, catName string, vcdClient *govcd.VCDClient) (*govcd.Catalog, error) {
 
-	org, err := v.GetOrg(ctx)
+	org, err := v.GetOrg(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -30,14 +30,14 @@ func (v *VcdPlatform) GetCatalog(ctx context.Context, catName string) (*govcd.Ca
 }
 
 // generic upload in cats_test
-func (v *VcdPlatform) UploadOvaFile(ctx context.Context, tmplName string) error {
+func (v *VcdPlatform) UploadOvaFile(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) error {
 
 	baseurl := "" // ovaLocation
 	tname := tmplName
 	url := baseurl + "/tmplName" + "ova"
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "upload ova from", "URI", url, "tmpl", tname)
-	cat, err := v.GetCatalog(ctx, v.GetCatalogName())
+	cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 	if err != nil {
 		return err
 	}
@@ -54,8 +54,8 @@ func (v *VcdPlatform) UploadOvaFile(ctx context.Context, tmplName string) error 
 	return err
 }
 
-func (v *VcdPlatform) DeleteTemplate(ctx context.Context, name string) error {
-	cat, err := v.GetCatalog(ctx, v.GetCatalogName())
+func (v *VcdPlatform) DeleteTemplate(ctx context.Context, name string, vcdClient *govcd.VCDClient) error {
+	cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 	if err != nil {
 		return err
 	}

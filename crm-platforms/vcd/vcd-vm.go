@@ -20,11 +20,12 @@ var vmsCreateLock sync.Mutex
 // VM related operations
 
 // Just the vapp name and serverName
-func (v *VcdPlatform) FindVM(ctx context.Context, serverName, vappName string) (*govcd.VM, error) {
+func (v *VcdPlatform) FindVM(ctx context.Context, serverName, vappName string, vcdClient *govcd.VCDClient) (*govcd.VM, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FindVM", "serverName", serverName, "vappName", vappName)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetVdc Failed - %v", err)
 	}
 	vmRec, err := vdc.QueryVM(vappName, serverName)
 	if err != nil {
@@ -39,14 +40,15 @@ func (v *VcdPlatform) FindVM(ctx context.Context, serverName, vappName string) (
 }
 
 // If all you have is the serverName (vmName)
-func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string) (*govcd.VM, error) {
+func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdClient *govcd.VCDClient) (*govcd.VM, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName", "serverName", serverName)
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetVdc Failed - %v", err)
 	}
-
 	vm := &govcd.VM{}
+
 	vappRefList := vdc.GetVappList()
 	for _, vappRef := range vappRefList {
 
@@ -89,7 +91,7 @@ func (v *VcdPlatform) IsDhcpEnabled(ctx context.Context, net *govcd.OrgVDCNetwor
 	return false
 }
 
-func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate, error) {
+func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
 
 	// Prefer an envVar, fall back to property
 	tmplName := v.GetTemplateName()
@@ -99,11 +101,11 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate
 			return nil, fmt.Errorf("VDCTEMPLATE not set")
 		}
 	}
-	tmpl, err := v.FindTemplate(ctx, tmplName)
+	tmpl, err := v.FindTemplate(ctx, tmplName, vcdClient)
 	if err != nil {
 		// Not found as a vdc.Resource, try direct from our catalog
 		log.SpanLog(ctx, log.DebugLevelInfra, "Template not vdc.Resource, Try fetch from catalog", "template", tmplName)
-		cat, err := v.GetCatalog(ctx, v.GetCatalogName())
+		cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed retrieving catalog", "cat", v.GetCatalogName())
 			return nil, fmt.Errorf("Template invalid")
@@ -154,15 +156,19 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context) (*govcd.VAppTemplate
 func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs", "grpName", vmgp.GroupName)
 
+	// TODO: we need a more granular lock
 	vmsCreateLock.Lock()
 	defer vmsCreateLock.Unlock()
 
-	vdc, err := v.GetVdc(ctx)
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
 	if err != nil {
 		return err
 	}
-
-	tmpl, err := v.RetrieveTemplate(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
+	tmpl, err := v.RetrieveTemplate(ctx, vcdClient)
 	if err != nil {
 		return err
 	}
@@ -172,7 +178,7 @@ func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	vmName := vmgp.VMs[0].Name
 	description := "vapp for " + vmgp.GroupName
 
-	_, err = v.CreateVApp(ctx, tmpl, vmgp, description, updateCallback)
+	_, err = v.CreateVApp(ctx, tmpl, vmgp, description, vcdClient, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -350,15 +356,14 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 	vmSpecSec.NumCpus = TakeIntPointer(int(flavor.Vcpus))
 	vmSpecSec.MemoryResourceMb.Configured = int64(flavor.Ram)
 
-	//hostName := vmparams.HostName
-
 	desc := fmt.Sprintf("Update flavor: %s", flavorName)
 	_, err = vm.UpdateVmSpecSection(vmSpecSec, desc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM UpdateVmSpecSection failed", "vm", vm.VM.Name, "err", err)
-
 		return err
 	}
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM done", "vm", vm.VM.Name, "flavor", flavor)
 
 	err = v.AddMetadataToVM(ctx, vm, vmparams)
 	if err != nil {
@@ -441,20 +446,22 @@ func (v *VcdPlatform) DeleteVM(ctx context.Context, vm *govcd.VM) error {
 func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs", "vmGroupName", vmGroupName)
-	// resolve vmGroupName, to a single vm or a clusterName
 
-	// if vmGroupName is the Vapp, we're removing the entire cloudlet
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
 	vappName := vmGroupName + "-vapp"
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs check", "vappName", vappName)
-	vapp, err := v.FindVApp(ctx, vappName)
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
 
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs deleting", "VApp", vappName)
-		err := v.DeleteVapp(ctx, vapp)
+		err := v.DeleteVapp(ctx, vapp, vcdClient)
 		return err
 	}
 
-	vm, err := v.FindVM(ctx, vmGroupName, vappName)
+	vm, err := v.FindVM(ctx, vmGroupName, vappName, vcdClient)
 	if err == nil {
 		return v.DeleteVM(ctx, vm)
 	}
@@ -467,13 +474,18 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 	metrics := vmlayer.VMMetrics{}
 	var err error
 
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetVcdClientFromContext failed %v", err)
+	}
+
 	vmName := cloudcommon.GetAppFQN(&key.AppKey)
 	if vmName == "" {
 		return nil, fmt.Errorf("GetAppFQN failed to return vmName for AppInst %s\n", key.AppKey.Name)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats for", "vm", vmName)
 
-	vm, err = v.FindVMByName(ctx, vmName)
+	vm, err = v.FindVMByName(ctx, vmName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats vm not found", "vnname", vmName)
 		return nil, err
@@ -510,9 +522,12 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 
 // always sync.
 func (v *VcdPlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
-	vm := &govcd.VM{}
-	var err error
-	vm, err = v.FindVMByName(ctx, serverName)
+
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("GetVcdClientFromContext failed %v", err)
+	}
+	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
 		return err
 	}
@@ -622,8 +637,13 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 // Should always be a vapp/cluster/group name
 func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error) {
 	resources := &edgeproto.InfraResources{}
+
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	// xxx need ContainerInfo as well
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}

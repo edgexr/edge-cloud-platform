@@ -6,11 +6,12 @@ import (
 	"os"
 	"testing"
 
+	"net/url"
+
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"net/url"
 )
 
 // This is our object we'll store nacent Vapps in ?
@@ -28,7 +29,8 @@ type MexVapp struct {
 func TestDiscover(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
-	org, err := tv.GetOrg(ctx)
+	defer testVcdClient.Disconnect()
+	org, err := tv.GetOrg(ctx, testVcdClient)
 	if err != nil {
 		fmt.Printf("Error GetOrg: %s\n", err.Error())
 		return
@@ -46,6 +48,8 @@ func TestVCD(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
 	if live {
 		m_vapp := populateMexVappConfig(t, ctx, "mexcloudname")
 

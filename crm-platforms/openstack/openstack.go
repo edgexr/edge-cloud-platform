@@ -31,6 +31,10 @@ func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.C
 	return nil
 }
 
+func (a *OpenstackPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
+	return ctx, nil
+}
+
 func (o *OpenstackPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	o.caches = caches
 }
