@@ -15,12 +15,13 @@ import (
 func TestDumpVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("TestDumpVAppNetworks...")
 		vappName := "mex-cldlet3.gddt.mobiledgex.net-vapp"
 		//vappName := "mex-vmware-vcd.gddt.mobiledgex.net-vapp"
-		vapp, err := tv.FindVApp(ctx, vappName)
+		vapp, err := tv.FindVApp(ctx, vappName, testVcdClient)
 		if err != nil {
 			fmt.Printf("%s not found\n", vappName)
 			return
@@ -46,6 +47,7 @@ func TestRMVApp(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("testRMVappVApp")
@@ -65,6 +67,7 @@ func TestRMVApp(t *testing.T) {
 func TestMexVApp(t *testing.T) {
 	live, _, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
 		fmt.Printf("testCreateVM...")
@@ -199,9 +202,10 @@ func GetVirtHwItem(t *testing.T, ctx context.Context) types.VirtualHardwareItem 
 func TestShowVApp(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("TestShowVApp-Start show vapp named %s\n", *vappName)
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc failed: %s", err.Error())
 			return
@@ -228,9 +232,10 @@ func TestRawVApp(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc ailed: %s\n", err.Error())
 			return
@@ -247,7 +252,7 @@ func TestRawVApp(t *testing.T) {
 		govcd.ShowVapp(*vapp.VApp)
 
 		// Retrive our template, we need the HREF of it's VM
-		tmpl, err := tv.FindTemplate(ctx, *tmplName)
+		tmpl, err := tv.FindTemplate(ctx, *tmplName, testVcdClient)
 		require.Nil(t, err, "FindTemplate")
 		childvm := tmpl.VAppTemplate.Children.VM[0]
 		// 3) and a new vm w/template and VmGeneralParams (Change the vm name)
@@ -399,8 +404,7 @@ func testCreateVAppChild() (*types.VAppTemplate, error) {
 // from scratch vs  using an existing template.
 //
 func testPopulateVappTmpl(t *testing.T, ctx context.Context, tmplName string) *govcd.VAppTemplate {
-	cli := tv.Client.Client
-	tmpl := govcd.NewVAppTemplate(&cli)
+	tmpl := govcd.NewVAppTemplate(&testVcdClient.Client)
 
 	fmt.Printf("PopuldateVappTemplate, must have VAppTemplateChildren !- nil and networks not nil\n")
 
@@ -471,7 +475,7 @@ func createInternalNetwork(t *testing.T, ctx context.Context, vapp *govcd.VApp) 
 //
 func testDeleteVApp(t *testing.T, ctx context.Context, name string) error {
 
-	vdc, err := tv.GetVdc(ctx)
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
 	if err != nil {
 		fmt.Printf("GetVdc failed: %s\n", err.Error())
 		return err
@@ -602,9 +606,10 @@ func TestExtAddrVApp(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 
 	if live {
-		vapp, err := tv.FindVApp(ctx, *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
 		require.Nil(t, err, "FindVapp")
 		fmt.Printf("TestVApp-Start create vapp named %s in vdc %s \n", *vappName, *vdcName)
 

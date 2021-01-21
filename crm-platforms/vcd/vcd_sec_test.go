@@ -47,9 +47,10 @@ type EdgeFirewallRule struct {
 func TestFirewall(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc error %s\n", err.Error())
 			return

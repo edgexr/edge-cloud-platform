@@ -15,9 +15,10 @@ import (
 func TestCats(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("TestCats-I-tv init done\n")
-		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName())
+		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
 		if err != nil {
 			fmt.Printf("GetCatalog faled: %s\n", err.Error())
 			return
@@ -30,10 +31,10 @@ func TestCats(t *testing.T) {
 func TestRMTmpl(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
-
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("Test Remove template %s from cat", *tmplName)
-		err := tv.DeleteTemplate(ctx, *tmplName)
+		err := tv.DeleteTemplate(ctx, *tmplName, testVcdClient)
 		if err != nil {
 			fmt.Printf("TestRMTmpl delete %s returned %s\n", *tmplName, err.Error())
 		}
@@ -48,6 +49,7 @@ func TestRMTmpl(t *testing.T) {
 func TestUploadOva(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("Live OVA  upload test\n")
 		err = testOvaUpload(t, ctx)
@@ -62,6 +64,7 @@ func TestGetTmplByHref(t *testing.T) {
 
 	live, _, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		//		fmt.Printf("Get by href org: %s href %s\n",
 	}
@@ -77,8 +80,9 @@ func TestGetTemplates(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return
@@ -114,7 +118,7 @@ func testOvaUpload(t *testing.T, ctx context.Context) error {
 	tname := "mobiledgex-v4.1.3-vcd"
 	fmt.Printf("testMediaUpload-I-attempt uploading: %s naming it %s \n", url, tname)
 
-	cat, err := tv.GetCatalog(ctx, tv.GetCatalogName())
+	cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
 	if err != nil {
 		fmt.Printf("GetCatalog faled: %s\n", err.Error())
 		return err
@@ -141,15 +145,16 @@ func TestCatItemTmpl(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	templateName := ""
 	if live {
 		catname := ""
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return
 		}
-		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName())
+		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
 		if err != nil {
 			fmt.Printf("GetCatalog faled: %s\n", err.Error())
 			return
@@ -281,7 +286,7 @@ func TestCatItemTmpl(t *testing.T) {
 		stdTmp := tv.GetTemplateName()
 		// now fetch the darn template, and compare contents
 		// first look for it as a vdc.resource which if found we know works
-		tmpl, err := tv.RetrieveTemplate(ctx) // this might not work now in TestMode
+		tmpl, err := tv.RetrieveTemplate(ctx, testVcdClient) // this might not work now in TestMode
 
 		if err != nil {
 			fmt.Printf("Std tmpl %s not found in vdc: %s\n", stdTmp, vdc.Vdc.Name)
@@ -301,21 +306,22 @@ func TestImportVMTmpl(t *testing.T) {
 
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
 	if live {
 		fmt.Printf("TestImport tmpl %s\n", *tmplName)
 		// we want to take a item (vcloud.vm+xml) and instanciate it to be a vdc.resource full vcloud.vapptemplate+xml type
-		vdc, err := tv.GetVdc(ctx)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
 			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return
 		}
-		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName())
+		cat, err := tv.GetCatalog(ctx, tv.GetCatalogName(), testVcdClient)
 		if err != nil {
 			fmt.Printf("GetCatalog faled: %s\n", err.Error())
 			return
 		}
 
-		templateVmQueryRecs, err := tv.Client.Client.QueryVmList(types.VmQueryFilterOnlyTemplates)
+		templateVmQueryRecs, err := testVcdClient.Client.QueryVmList(types.VmQueryFilterOnlyTemplates)
 
 		qr := &types.QueryResultVMRecordType{}
 		for _, qr = range templateVmQueryRecs {

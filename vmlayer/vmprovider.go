@@ -64,6 +64,7 @@ type VMProvider interface {
 	ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error
 	GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error)
 	ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error
+	InitOperationContext(ctx context.Context, operationStage OperationInitStage) (context.Context, error)
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -148,6 +149,14 @@ const (
 	ProviderInitPlatformStart            ProviderInitStage = "PlatformStart"
 	ProviderInitDeleteCloudlet           ProviderInitStage = "DeleteCloudlet"
 	ProviderInitGetVmSpec                ProviderInitStage = "GetVmSpec"
+)
+
+// OperationInitStage is used to perform any common functions needed when starting and finishing an operation on the provider
+type OperationInitStage string
+
+const (
+	OperationInitStart    OperationInitStage = "OperationStart"
+	OperationInitComplete OperationInitStage = "OperationComplete"
 )
 
 type StringSanitizer func(value string) string
@@ -326,6 +335,12 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if err := v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStart, updateCallback); err != nil {
 		return err
 	}
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+
 	if err := v.ConfigureCloudletSecurityRules(ctx); err != nil {
 		return err
 	}
@@ -431,6 +446,13 @@ func (v *VMPlatform) SyncControllerCache(ctx context.Context, caches *platform.C
 
 func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResources, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletInfraResources")
+
+	var err error
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return nil, err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	var resources edgeproto.InfraResources
 	platResources, err := v.VMProvider.GetServerGroupResources(ctx, v.GetPlatformVMName(&v.VMProperties.CommonPf.PlatformConfig.NodeMgr.MyNode.Key.CloudletKey))
 	if err == nil {
@@ -449,6 +471,14 @@ func (v *VMPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.
 
 func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterInfraResources")
+
+	var err error
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return nil, err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+
 	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterKey))
 	return v.VMProvider.GetServerGroupResources(ctx, clusterName)
 }

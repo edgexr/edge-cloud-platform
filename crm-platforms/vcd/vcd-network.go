@@ -21,9 +21,9 @@ func (v *VcdPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
 	}, nil
 }
 
-func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context) (string, error) {
+func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context, vcdClient *govcd.VCDClient) (string, error) {
 
-	extNet, err := v.GetExtNetwork(ctx)
+	extNet, err := v.GetExtNetwork(ctx, vcdClient)
 	if err != nil {
 		return "", err
 	}
@@ -38,12 +38,12 @@ func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context) (string, err
 }
 
 // fetch the OrgVDCNetwork referenced by MEX_EXT_NET our Primary external network
-func (v *VcdPlatform) GetExtNetwork(ctx context.Context) (*govcd.OrgVDCNetwork, error) {
+func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.OrgVDCNetwork, error) {
 
 	// infra propert from env
 	netName := v.GetExtNetworkName()
 
-	vdc, err := v.GetVdc(ctx)
+	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,11 @@ func (v *VcdPlatform) GetGatewayForOrgVDCNetwork(ctx context.Context, network *t
 // Return the IP address of the external Gateway
 func (v *VcdPlatform) GetExternalGateway(ctx context.Context, extNetname string) (string, error) {
 
-	vdcNet, err := v.GetExtNetwork(ctx)
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	vdcNet, err := v.GetExtNetwork(ctx, vcdClient)
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +106,7 @@ func (v *VcdPlatform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolicy {
 	return vmlayer.AttachPortDuringCreate
 }
 
-func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp vmlayer.VMGroupOrchestrationParams) (string, error) {
+func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp vmlayer.VMGroupOrchestrationParams, vcdClient *govcd.VCDClient) (string, error) {
 	ports := vmgp.Ports
 	nextCidr := ""
 	numPorts := len(ports)
@@ -119,7 +123,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 
 			desiredNetConfig := &types.NetworkConnectionSection{}
 			desiredNetConfig.PrimaryNetworkConnectionIndex = 1
-			extAddr, err := v.GetNextExtAddrForVdcNet(ctx)
+			extAddr, err := v.GetNextExtAddrForVdcNet(ctx, vcdClient)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp GetNextExtAddr failed", "err", err)
 				return "", err
@@ -130,7 +134,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 			}
 			conIdx := 1
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "IP", extAddr, "ConIdx", conIdx)
-			_, err = v.AddVappNetwork(ctx, vapp)
+			_, err = v.AddVappNetwork(ctx, vapp, vcdClient)
 
 			desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
 				&types.NetworkConnection{
@@ -158,7 +162,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 		// Create isolated subnet for this vapp/clusterInst (Not OrgVDCNetwork)
 		if port.NetworkType == vmlayer.NetTypeInternal && !intAdded {
 			var err error
-			nextCidr, err = v.GetNextInternalSubnet(ctx, vapp.VApp.Name)
+			nextCidr, err = v.GetNextInternalSubnet(ctx, vapp.VApp.Name, vcdClient)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp next internal net failed: ", "GroupName", vmgp.GroupName, "err", err)
 				return "", err
@@ -193,7 +197,13 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
 	// shared LBs are asked to grow a new internal network
 	vappName := serverName + v.GetVappServerSuffix()
-	vapp, err := v.FindVApp(ctx, vappName)
+
+	vcdClient, err := v.GetVcdClientFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer server not found", "vapp", vappName, "for server", serverName)
 		return err
@@ -210,7 +220,7 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer adding", "subnetName", subnetName, "portName", portName, "server", serverName, "vapp", vappName)
 
 		// Get the next available internal subnet
-		nextCidr, err := v.GetNextInternalSubnet(ctx, vappName)
+		nextCidr, err := v.GetNextInternalSubnet(ctx, vappName, vcdClient)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer  Get next internal net failed: ", "err", err)
 			return err
@@ -420,9 +430,9 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 	return netName, nil
 }
 
-func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp) (*types.NetworkConfigSection, error) {
+func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdClient *govcd.VCDClient) (*types.NetworkConfigSection, error) {
 
-	orgNet, err := v.GetExtNetwork(ctx)
+	orgNet, err := v.GetExtNetwork(ctx, vcdClient)
 	if err != nil {
 		return nil, err
 	}
@@ -552,9 +562,9 @@ func (v *VcdPlatform) GetAddrOfVapp(ctx context.Context, vapp *govcd.VApp, netNa
 	return "", fmt.Errorf("Not Found")
 }
 
-func (v *VcdPlatform) GetNextExtAddrForVdcNet(ctx context.Context) (string, error) {
+func (v *VcdPlatform) GetNextExtAddrForVdcNet(ctx context.Context, vcdClient *govcd.VCDClient) (string, error) {
 	// for all Vapps
-	vdcnet, err := v.GetExtNetwork(ctx)
+	vdcnet, err := v.GetExtNetwork(ctx, vcdClient)
 	if err != nil {
 		return "", err
 	}
@@ -567,7 +577,7 @@ func (v *VcdPlatform) GetNextExtAddrForVdcNet(ctx context.Context) (string, erro
 	if v.Verbose {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetNextExtAddr", "start", s, "end", e, "curAddr", curAddr, "network", netName)
 	}
-	vappMap, err := v.GetAllVAppsForVdc(ctx)
+	vappMap, err := v.GetAllVAppsForVdc(ctx, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetNextExtAddr return", "curAddr", curAddr)
 		return curAddr, err
@@ -603,7 +613,7 @@ func (v *VcdPlatform) GetNextExtAddrForVdcNet(ctx context.Context) (string, erro
 }
 
 // Given our scheme for networks 10.101.X.0/24 return the next available Isolated network CIDR
-func (v *VcdPlatform) GetNextInternalSubnet(ctx context.Context, vappName string) (string, error) {
+func (v *VcdPlatform) GetNextInternalSubnet(ctx context.Context, vappName string, vcdClient *govcd.VCDClient) (string, error) {
 
 	var MAX_CIDRS = 255 // These are internal /24 subnets so 255, not that we'll have that many clusters / cloudlet
 
@@ -614,7 +624,7 @@ func (v *VcdPlatform) GetNextInternalSubnet(ctx context.Context, vappName string
 	// All VApps map, it's available
 	curAddr := startAddr
 
-	vappMap, err := v.GetAllVAppsForVdcByIntAddr(ctx)
+	vappMap, err := v.GetAllVAppsForVdcByIntAddr(ctx, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetNextExtAddr return", "curAddr", curAddr)
 		return curAddr, err

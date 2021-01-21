@@ -3,15 +3,22 @@ package vcd
 import (
 	"context"
 	"fmt"
-	"github.com/mobiledgex/edge-cloud/log"
 	"net/url"
 	"os"
+	"strings"
 
+	"github.com/mobiledgex/edge-cloud/log"
+
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
+
+var VCDClientCtxKey = "VCDClientCtxKey"
+
+var NoVCDClientInContext = "No VCD Client in Context"
 
 // vcd security related operations
 
@@ -148,12 +155,7 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		}
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "Credentails", creds)
-
-	if v.Client != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetClient client exists  ", "client", v.Client)
-		return v.Client, nil
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User)
 
 	u, err := url.ParseRequestURI(creds.Href)
 	if err != nil {
@@ -192,9 +194,8 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 			vcdClient.Client.APIVersion = "34.0"
 		}
 	*/
-	v.Client = vcdClient
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient connected", "API Version", v.Client.Client.APIVersion)
-
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient connected", "API Version", vcdClient.Client.APIVersion)
+	// setup the client in the context
 	return vcdClient, nil
 
 }
@@ -204,4 +205,56 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules tbi")
 	return nil
+}
+
+func (v *VcdPlatform) GetVcdClientFromContext(ctx context.Context) (*govcd.VCDClient, error) {
+	vcdClient, found := ctx.Value(VCDClientCtxKey).(*govcd.VCDClient)
+	if !found {
+		return nil, fmt.Errorf(NoVCDClientInContext)
+	}
+	return vcdClient, nil
+}
+
+func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitOperationContext", "operationStage", operationStage)
+
+	if operationStage == vmlayer.OperationInitStart {
+		// getClient will setup the client within the context.  First ensure it is not already set, which
+		// indicates an error because we don't want it to be setup twice as it may get cleaned up erroneously.
+		// So we look for the client and expect a NoVCDClientInContext error
+		vcdClient, err := v.GetVcdClientFromContext(ctx)
+		if err == nil {
+			// this indicates we called InitOperationContext with OperationInitStart twice before OperationInitComplete
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitOperationContext VCDClient is already in context")
+			// generate warning for the purpose of a traceback
+			log.WarnLog("InitOperationContext VCDClient is already in context")
+			return ctx, fmt.Errorf("VCDClient is already in context")
+		}
+		if !strings.Contains(err.Error(), NoVCDClientInContext) {
+			return ctx, fmt.Errorf("Unexpected error looking for VCDClient in context: %v", err)
+		}
+		// now get a new client
+		vcdClient, err = v.GetClient(ctx, v.Creds)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to initialize vcdClient", "err", err)
+			return ctx, err
+		} else {
+			ctx = context.WithValue(ctx, VCDClientCtxKey, vcdClient)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Updated context with client", "APIVersion", vcdClient.Client.APIVersion, "key", VCDClientCtxKey)
+			return ctx, nil
+		}
+	} else {
+		vcdClient, err := v.GetVcdClientFromContext(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to find vcdClient in context", "err", err, "ctx", fmt.Sprintf("%+v", ctx))
+			return ctx, err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Disconnecting vcdClient")
+		err = vcdClient.Disconnect()
+		if err != nil {
+			// err here happens all the time but has no impact
+			log.SpanLog(ctx, log.DebugLevelInfra, "Disconnect vcdClient", "err", err)
+		}
+		return ctx, err
+	}
 }
