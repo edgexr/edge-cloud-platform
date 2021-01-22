@@ -534,7 +534,7 @@ func (v *VcdPlatform) GetAddrOfVM(ctx context.Context, vm *govcd.VM, netName str
 // Returns the first addr on the given network.
 func (v *VcdPlatform) GetAddrOfVapp(ctx context.Context, vapp *govcd.VApp, netName string) (string, error) {
 
-	if vapp == nil {
+	if vapp == nil || vapp.VApp == nil || vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
 		return "", fmt.Errorf("Invalid Arg")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp", "vapp", vapp.VApp.Name, "network", netName)

@@ -62,7 +62,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	networks := []*types.OrgVDCNetwork{}
 	networks = append(networks, vdcNet.OrgVDCNetwork)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vapp with regen UUID", "name", vappName, "vmRole", vmRole, "vmType", vmType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole, "vmType", vmType)
 
 	description = description + vcdProviderVersion
 	task, err := vdc.ComposeVApp(networks, *vappTmpl, storRef, vappName, description, true)
