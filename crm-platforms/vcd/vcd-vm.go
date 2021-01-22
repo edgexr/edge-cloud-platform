@@ -3,6 +3,8 @@ package vcd
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -160,9 +162,10 @@ func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	vmsCreateLock.Lock()
 	defer vmsCreateLock.Unlock()
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -221,7 +224,7 @@ func (v *VcdPlatform) updateVmDisk(vm *govcd.VM, size int64) error {
 }
 
 // For each vm spec defined in vmgp, add a new VM to vapp with those applicable attributes.  Returns a map of VMs added
-func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string) (map[string]*govcd.VM, error) {
+func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string, vcdClient *govcd.VCDClient) (map[string]*govcd.VM, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName)
 
 	vmsAdded := make(map[string]*govcd.VM)
@@ -255,7 +258,7 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 		vm, err = vapp.GetVMByName(vmName, true)
 		if err != nil && vm == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add", "vmName", vmName, "vmRole", vmRole, "vmType", vmType)
-			task, err := vapp.AddNewVM(vmparams.Name, *tmpl, ncs, true)
+			task, err := v.addNewVMRegenUuid(vapp, vmparams.Name, *tmpl, ncs, vcdClient)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "create add vm failed", "err", err)
 				return nil, err
@@ -447,9 +450,10 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs", "vmGroupName", vmGroupName)
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
 	}
 	vappName := vmGroupName + "-vapp"
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs check", "vappName", vappName)
@@ -474,9 +478,10 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 	metrics := vmlayer.VMMetrics{}
 	var err error
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("GetVcdClientFromContext failed %v", err)
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext, err)
 	}
 
 	vmName := cloudcommon.GetAppFQN(&key.AppKey)
@@ -523,9 +528,10 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 // always sync.
 func (v *VcdPlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return fmt.Errorf("GetVcdClientFromContext failed %v", err)
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
 	}
 	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
@@ -638,9 +644,10 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error) {
 	resources := &edgeproto.InfraResources{}
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return nil, err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
 	// xxx need ContainerInfo as well
 	vdc, err := v.GetVdc(ctx, vcdClient)
@@ -770,4 +777,67 @@ func (v *VcdPlatform) powerOnVmsAndForceCustomization(ctx context.Context, vms m
 		}
 	}
 	return nil
+}
+
+// addNewVMRegenUuid is mostly cloned from govcd.addNewVMW, except it sets RegenerateBiosUuid
+func (v *VcdPlatform) addNewVMRegenUuid(vapp *govcd.VApp, name string, vappTemplate govcd.VAppTemplate, network *types.NetworkConnectionSection, vcdClient *govcd.VCDClient) (govcd.Task, error) {
+
+	if vappTemplate == (govcd.VAppTemplate{}) || vappTemplate.VAppTemplate == nil {
+		return govcd.Task{}, fmt.Errorf("vApp Template can not be empty")
+	}
+
+	templateHref := vappTemplate.VAppTemplate.HREF
+	if vappTemplate.VAppTemplate.Children != nil && len(vappTemplate.VAppTemplate.Children.VM) != 0 {
+		templateHref = vappTemplate.VAppTemplate.Children.VM[0].HREF
+	}
+
+	// Status 8 means The object is resolved and powered off.
+	// https://vdc-repo.vmware.com/vmwb-repository/dcr-public/94b8bd8d-74ff-4fe3-b7a4-41ae31516ed7/1b42f3b5-8b31-4279-8b3f-547f6c7c5aa8/doc/GUID-843BE3AD-5EF6-4442-B864-BCAE44A51867.html
+	if vappTemplate.VAppTemplate.Status != 8 {
+		return govcd.Task{}, fmt.Errorf("vApp Template shape is not ok (status: %d)", vappTemplate.VAppTemplate.Status)
+	}
+
+	// Validate network config only if it was supplied
+	if network != nil && network.NetworkConnection != nil {
+		for _, nic := range network.NetworkConnection {
+			if nic.Network == "" {
+				return govcd.Task{}, fmt.Errorf("missing mandatory attribute Network: %s", nic.Network)
+			}
+			if nic.IPAddressAllocationMode == "" {
+				return govcd.Task{}, fmt.Errorf("missing mandatory attribute IPAddressAllocationMode: %s", nic.IPAddressAllocationMode)
+			}
+		}
+	}
+
+	vAppComposition := &types.ReComposeVAppParams{
+		Ovf:         types.XMLNamespaceOVF,
+		Xsi:         types.XMLNamespaceXSI,
+		Xmlns:       types.XMLNamespaceVCloud,
+		Deploy:      false,
+		Name:        vapp.VApp.Name,
+		PowerOn:     false,
+		Description: vapp.VApp.Description,
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: templateHref,
+				Name: name,
+			},
+			InstantiationParams: &types.InstantiationParams{}, // network config is injected below
+			VMGeneralParams: &types.VMGeneralParams{
+				RegenerateBiosUuid: true, // fix k8s duplicate weave mac address
+			},
+		},
+		AllEULAsAccepted: true,
+	}
+	// Inject network config
+	vAppComposition.SourcedItem.InstantiationParams.NetworkConnectionSection = network
+
+	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/action/recomposeVApp"
+
+	// Return the task
+	return vcdClient.Client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition,
+		vcdClient.Client.GetSpecificApiVersionOnCondition(">= 33.0", "33.0"))
+
 }

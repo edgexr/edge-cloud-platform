@@ -101,9 +101,10 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 	var resources *vmlayer.PlatformResources
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo ")
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return nil, err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
 	resources.CollectTime, _ = gogotypes.TimestampProto(time.Now())
 	vdc, err := v.GetVdc(ctx, vcdClient)
@@ -123,9 +124,10 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 
 func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return "", err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return "", fmt.Errorf(NoVCDClientInContext)
 	}
 	// VM, Subnet and SecGrp are the current potential values of Type
 	// The only one we have so far is VMs, (subnets soon, and secGrps eventually)
@@ -205,9 +207,10 @@ func (v *VcdPlatform) GetConsoleUrl(ctx context.Context, serverName string) (str
 func (v *VcdPlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile, "folder", folder)
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
 	}
 	// first delete anything that may be there for this image
 	v.DeleteImage(ctx, folder, imageFile)
@@ -261,9 +264,10 @@ func (v *VcdPlatform) IdSanitize(name string) string {
 
 func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
 
-	vcdClient, err := v.GetVcdClientFromContext(ctx)
-	if err != nil {
-		return nil, err
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
 	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
