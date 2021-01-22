@@ -174,7 +174,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			return err
 		}
 	}
-
 	v.VMProperties.Domain = VMDomainPlatform
 	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
 	err = v.InitProps(ctx, pc)
@@ -229,6 +228,11 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if err != nil {
 		return err
 	}
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 
 	chefAttributes, err := v.GetChefPlatformAttributes(ctx, cloudlet, pfConfig)
 	if err != nil {
@@ -261,12 +265,6 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		// Return, as end-user will setup the platform VM
 		return nil
 	}
-
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
-	if err != nil {
-		return err
-	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 
 	err = v.SetupPlatformVM(ctx, accessApi, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
@@ -387,6 +385,12 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	v.Caches = caches
 	v.VMProvider.InitProvider(ctx, caches, ProviderInitDeleteCloudlet, updateCallback)
+
+	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	if err != nil {
+		return err
+	}
+	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 
 	chefClient := v.VMProperties.GetChefClient()
 	if chefClient == nil {

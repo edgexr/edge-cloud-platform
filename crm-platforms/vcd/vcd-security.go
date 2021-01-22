@@ -153,6 +153,11 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		}
 	}
 
+	if creds == nil {
+		// usually indicates we called GetClient before InitProvider
+		return nil, fmt.Errorf("nil creds passed to GetClient")
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User)
 
 	u, err := url.ParseRequestURI(creds.Href)
