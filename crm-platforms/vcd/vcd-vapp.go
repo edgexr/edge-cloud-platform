@@ -31,6 +31,8 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 	storRef := types.Reference{}
 	// Nil ref wins default storage policy
+	updateCallback(edgeproto.UpdateTask, "Creating vApp")
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp", "name", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
 
 	vappName := vmgp.GroupName + "-vapp"
@@ -60,7 +62,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	networks := []*types.OrgVDCNetwork{}
 	networks = append(networks, vdcNet.OrgVDCNetwork)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vapp", "name", vappName, "vmRole", vmRole, "vmType", vmType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vapp with regen UUID", "name", vappName, "vmRole", vmRole, "vmType", vmType)
 
 	description = description + vcdProviderVersion
 	task, err := vdc.ComposeVApp(networks, *vappTmpl, storRef, vappName, description, true)
@@ -105,6 +107,8 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "task completion failed", "VAppName", vmgp.GroupName, "error", err)
 	}
 
+	updateCallback(edgeproto.UpdateTask, "Updating vApp Ports")
+
 	// Get the VApp network in place, all vapps need an external network at least
 	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, vcdClient)
 	if err != nil {
@@ -126,14 +130,17 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 
 	if numVMs > 1 {
+		updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
+
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName)
-		vmsAdded, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr)
+		vmsAdded, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr, vcdClient)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
 			return nil, err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VMs added", "GroupName", vmgp.GroupName)
 		// poweron and customize
+		updateCallback(edgeproto.UpdateTask, "Powering on VMs")
 		err = v.powerOnVmsAndForceCustomization(ctx, vmsAdded)
 		if err != nil {
 			return nil, err
@@ -308,6 +315,7 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	if vmparams.Role == vmlayer.RoleNode { // k8s-node
 		log.SpanLog(ctx, log.DebugLevelInfra, "Have k8s-node find masterIP ", "vm", vm.VM.Name)
 		vapp, err := vm.GetParentVApp()
+
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Could not GetParentVapp for", "vm", vm.VM.Name, "err", err)
 			return nil, err
