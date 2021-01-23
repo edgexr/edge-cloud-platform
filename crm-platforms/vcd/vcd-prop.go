@@ -85,7 +85,7 @@ func (v *VcdPlatform) GetVcdVerbose() bool {
 			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (v *VcdPlatform) GetVCDIP() string {

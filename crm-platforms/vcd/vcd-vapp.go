@@ -416,6 +416,26 @@ func (v *VcdPlatform) GetVMFromVAppByIdx(ctx context.Context, vapp *govcd.VApp, 
 	return vm, nil
 }
 
+// Given a groupName / vappName, return all of its vm membership as a VMMap
+func (v *VcdPlatform) GetAllVMsInVApp(ctx context.Context, vapp *govcd.VApp) (VMMap, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsInVApp", "Vapp", vapp.VApp.Name)
+	vmMap := make(VMMap)
+	if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsInVApp empty Vapp has no vms", "Vapp", vapp.VApp.Name)
+		return vmMap, fmt.Errorf("Empty Vapp %s encountered", vapp.VApp.Name)
+	}
+	var err error
+	for _, child := range vapp.VApp.Children.VM {
+		vm, err := vapp.GetVMByName(child.Name, true)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsInVApp child vm not found ", "Vapp", vapp.VApp.Name, "vm", child.Name, "err", err)
+			return vmMap, err
+		}
+		vmMap[vm.VM.Name] = vm
+	}
+	return vmMap, err
+}
+
 func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp) error {
 
 	vm, err := v.GetVMFromVAppByIdx(ctx, &vapp, 0)

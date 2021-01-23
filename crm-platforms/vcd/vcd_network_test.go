@@ -84,6 +84,64 @@ func TestGetVappAddr(t *testing.T) {
 	}
 }
 
+// -vapp
+func TestGetVappNetworks(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	if live {
+		fmt.Printf("TestGetVappNetworks for %s\n", *vappName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		if err != nil {
+			fmt.Printf("vapp %s not found err %s\n", *vappName, err.Error())
+			return
+		}
+		ncs, err := vapp.GetNetworkConnectionSection()
+		if err != nil {
+			fmt.Printf("Error getting netconnectsec vapp %s not found err %s\n", *vappName, err.Error())
+			return
+		}
+		numNets := len(ncs.NetworkConnection)
+		fmt.Printf("vapp %s has %d network connections \n", *vappName, numNets)
+
+		for n, nc := range ncs.NetworkConnection {
+			fmt.Printf("vapp %s net %d ==> name: %s addr: %s\n", *vappName, n, nc.Network, nc.IPAddress)
+		}
+	}
+}
+
+// -vapp -vm
+func TestGetVMNetworks(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	if live {
+		fmt.Printf("TestVMNetworks for %s\n", *vmName)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		if err != nil {
+			fmt.Printf("vapp %s not found err %s\n", *vappName, err.Error())
+			return
+		}
+		vm, err := tv.FindVMInVApp(ctx, *vmName, *vapp)
+		if err != nil {
+			fmt.Printf("error findingVMInVApp(%s) err  %s\n", *vmName, err.Error())
+			return
+		}
+
+		ncs, err := vm.GetNetworkConnectionSection()
+		if err != nil {
+			fmt.Printf("Error getting netconnectsec vapp %s not found err %s\n", *vmName, err.Error())
+			return
+		}
+		numNets := len(ncs.NetworkConnection)
+		fmt.Printf("vm %s has %d network connections \n", *vmName, numNets)
+
+		for n, nc := range ncs.NetworkConnection {
+			fmt.Printf("vapp %s :: vm %s net %d ==> name: %s addr: %s\n", *vappName, *vmName, n, nc.Network, nc.IPAddress)
+		}
+	}
+}
+
 func TestGetVMAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
