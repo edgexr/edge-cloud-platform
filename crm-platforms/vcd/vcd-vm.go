@@ -224,10 +224,10 @@ func (v *VcdPlatform) updateVmDisk(vm *govcd.VM, size int64) error {
 }
 
 // For each vm spec defined in vmgp, add a new VM to vapp with those applicable attributes.  Returns a map of VMs added
-func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string, vcdClient *govcd.VCDClient) (map[string]*govcd.VM, error) {
+func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, tmpl *govcd.VAppTemplate, nextCidr string, vcdClient *govcd.VCDClient) (VMMap, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName)
 
-	vmsAdded := make(map[string]*govcd.VM)
+	vmsAdded := make(VMMap)
 	if nextCidr == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp next cidr nil", "GroupName", vmgp.GroupName)
 		return nil, fmt.Errorf("IP range exhaused")
@@ -340,6 +340,144 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 	return vmsAdded, nil
 }
 
+func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, vcdClient *govcd.VCDClient) (VMMap, error) {
+	vmMap := make(VMMap)
+	numExistingVMs := len(vapp.VApp.Children.VM)
+
+	tmpl, err := v.RetrieveTemplate(ctx, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVapp error retrieving vdc template", "err", err)
+		return vmMap, err
+	}
+	ports := vmgp.Ports
+	numVMs := len(vmgp.VMs)
+	netName := ports[0].SubnetId
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVapp", "network", netName, "vms", numVMs, "to existing vms", numExistingVMs)
+
+	// xxx keep an eye on this. Saw one instance of vapp losing all networks, but it's first born child remained sane. xxx
+	baseAddr, err := v.GetAddrOfVapp(ctx, vapp, netName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp GetAddrOfVapp", "vapp", vapp.VApp.Name, "netName", netName, "err", err)
+	}
+	cName := vapp.VApp.Children.VM[0].Name
+	cvm, err := vapp.GetVMByName(cName, true)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp get vapp.vm[0] failed", "vapp", vapp.VApp.Name, "vmname", cName, "err", err)
+		return vmMap, err
+	}
+	if baseAddr == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp WARN GetAddrOfVapp failed switching to vm", "vapp", vapp.VApp.Name, "vm", cName)
+	}
+	vmBaseAddr, err := v.GetAddrOfVM(ctx, cvm, netName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp GetAddrOfVM", "vmname", cName, "netName", netName, "err", err)
+	}
+	if baseAddr == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp vapp baseAddr empty using", "vmBaseAddr", vmBaseAddr)
+		baseAddr = vmBaseAddr
+	}
+
+	netConIdx := 0
+	for n, vmparams := range vmgp.VMs {
+		vmName := vmparams.Name
+		vmRole := vmparams.Role
+		vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
+		vm := &govcd.VM{}
+		ncs := &types.NetworkConnectionSection{}
+		// check to see if this vm is already present
+		vm, err := vapp.GetVMByName(vmName, true)
+		if err != nil && vm == nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp", "vmName", vmName, "vmRole", vmRole, "vmType", vmType)
+
+			// use new regen
+			task, err := v.addNewVMRegenUuid(vapp, vmName, *tmpl, ncs, vcdClient)
+			// task, err := vapp.AddNewVM(vmparams.Name, *tmpl, ncs, true)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "create add vm failed", "err", err)
+				return nil, err
+			}
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "wait add vm failed", "err", err)
+				return nil, err
+			}
+			// Make sure it's there
+			vm, err = vapp.GetVMByName(vmparams.Name, true)
+			if err != nil {
+				// internal error
+				return nil, err
+			}
+		}
+
+		lastOctet, err := Octet(ctx, baseAddr, 3)
+
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp Octet fail", "err", err)
+			return nil, err
+		}
+		if v.Verbose {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp last octet of baseAddr", "baseAddr", baseAddr, "last octet", lastOctet)
+		}
+		offset := 0
+		if lastOctet == 1 {
+			offset = 100
+		}
+
+		if v.Verbose {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp", "vapp", vapp.VApp.Name, "network", netName, "baseAddr", baseAddr, "existingsVMs", numExistingVMs, "n", n)
+		}
+
+		// Here we need to add numWorkerNodes to base
+		vmIp, err := IncrIP(ctx, baseAddr, (numExistingVMs+offset+n)-1)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", numExistingVMs+offset+n, "err", err)
+			return vmMap, err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVmsToExstingVAppp", "vm", vmName, "IP", vmIp)
+		ncs.PrimaryNetworkConnectionIndex = 0
+		// some unique key within the vapp
+		key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n+numExistingVMs)
+		vm.VM.OperationKey = key
+
+		ncs, err = vm.GetNetworkConnectionSection()
+		if err != nil {
+			return nil, err
+		}
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add connection", "net", netName, "ip", vmIp, "VM", vmName)
+
+		ncs.NetworkConnection = append(ncs.NetworkConnection,
+			&types.NetworkConnection{
+				Network:                 netName,
+				NetworkConnectionIndex:  netConIdx,
+				IPAddress:               vmIp,
+				IsConnected:             true,
+				IPAddressAllocationMode: types.IPAllocationModeManual,
+			})
+
+		err = vm.UpdateNetworkConnectionSection(ncs)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "error", err)
+			return nil, err
+		}
+
+		err = v.guestCustomization(ctx, *vm, vmparams)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
+			return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
+		}
+		err = v.updateVM(ctx, vm, vmparams)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
+			return nil, err
+		}
+
+		vmMap[vm.VM.Name] = vm
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp complete")
+	return vmMap, nil
+}
+
 // guestCustomization updates some fields in the customization section, including the host name
 func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "guestCustomization ", "VM", vm.VM.Name, "HostName", vmparams.HostName)
@@ -393,21 +531,109 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 	return err
 }
 
-// PI UpdateVMs
 // Add/remove VM from our VApp (group)
-//
 func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs TBI", "OrchParams", vmgp)
-	// convert each vmOrchParams into a *types.VmSpecSection and call updateVM for each vm
-	return nil
-}
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "OrchParams", vmgp)
 
-func (v *VcdPlatform) SyncVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncVMs TBI", "OrchParams", vmgp)
+	vappName := vmgp.GroupName + v.GetVappServerSuffix()
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "Vapp", vappName)
+
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
+	}
+
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs GroupName not found", "Vapp", vappName, "err", err)
+		return err
+	}
+
+	// 1 create a list of all vms in our current vmgp.GroupName (existing)
+	existingVms, err := v.GetAllVMsInVApp(ctx, vapp)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs GetAllVMsInVapp failed", "Vapp", vappName, "err", err)
+		return err
+	}
+	numExistingVMs := len(existingVms)
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs existing vms in", "Vapp", vappName, "vms", existingVms)
+
+	newVMs := vmgp.VMs
+	numNewVMs := len(newVMs)
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs existing vs new", "numExisting", numExistingVMs, "numNew", numNewVMs)
+
+	if numNewVMs > numExistingVMs {
+		newVMOrch := []vmlayer.VMOrchestrationParams{}
+		// Its an add of numNetVMs - numExistingVMs
+		numToAdd := numNewVMs - numExistingVMs
+		log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs add", "count", numToAdd)
+		updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
+		// now find which one is the new guy
+		// need a map of the existing (we have that) and run our newVMs list over the map creating a new list
+		// of vms to create. create a new list of vmgp.VMs to pass to AddVMsToExistngVApp
+		for _, vmSpec := range newVMs {
+			if _, found := existingVms[vmSpec.Name]; !found {
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs adding new", "vm", vmSpec.Name)
+				newVMOrch = append(newVMOrch, vmSpec)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs skip existing", "vm", vmSpec.Name)
+			}
+		}
+		newOrchLen := len(newVMOrch)
+		if newOrchLen != numToAdd {
+			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs Mismatch count", "numToAdd", numToAdd, "NewOrcLen", newOrchLen)
+		}
+		vmgp.VMs = newVMOrch
+		newVms, err := v.AddVMsToExistingVApp(ctx, vapp, vmgp, vcdClient)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "VAppName", vmgp.GroupName, "error", err)
+			return err
+		}
+		for vmName, vm := range newVms {
+			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs power on new", "vm", vmName)
+			task, err := vm.PowerOn()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs error power on", "vm", vmName, "error", err)
+				return err
+			}
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs error waiting power on", "vm", vmName, "error", err)
+				return err
+			}
+
+		}
+	} else if numExistingVMs > numNewVMs {
+		newVmMap := make(VMMap)
+		// delete whatever is in exsiting that is not in new
+		for _, newVmParams := range newVMs {
+			newVmMap[newVmParams.Name] = &govcd.VM{}
+		}
+		for _, existingVM := range existingVms {
+			if _, found := newVmMap[existingVM.VM.Name]; !found {
+				updateCallback(edgeproto.UpdateTask, "Removing VMs from vApp")
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs delete", "vm", existingVM.VM.Name, "VAppName", vappName, "error", err)
+				err := v.DeleteVM(ctx, existingVM)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs delete failed", "vm", existingVM.VM.Name, "err", err)
+					return err
+				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs deleted", "vm", existingVM.VM.Name, "vapp", vappName)
+			}
+		}
+	} else {
+		// ok, we're just updating some existing VMs then?
+		for _, vm := range newVMs {
+			// Trustpolicy and / or autoscale policy / skipcrmcleanupnfailre / crmoverride
+			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs modify existing", "vm", vm.Name)
+		}
+	}
 	return nil
 }
 
 func (v *VcdPlatform) DeleteVM(ctx context.Context, vm *govcd.VM) error {
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVM", "vmName", vm.VM.Name)
 
 	if vm == nil {
@@ -415,34 +641,37 @@ func (v *VcdPlatform) DeleteVM(ctx context.Context, vm *govcd.VM) error {
 	}
 	vapp, err := vm.GetParentVApp()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVM err obtaining ParentVapp", "vmName", vm.VM.Name, "err", err)
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVM", "vmName", vm.VM.Name, "from vapp", vapp.VApp.Name)
 
 	status, err := vm.GetStatus()
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVM error retrieving status", "vmName", vm.VM.Name, "err", err)
 		return err
 	}
-	if status == "POWERED_ON" {
-		task, err := vm.PowerOff()
-		if err != nil {
-			return err
-		}
-		err = task.WaitTaskCompletion()
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVM wait power off failed", "vmName", vm.VM.Name, "err", err)
-			return err
-		}
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVM vm state Undeploy", "vmName", vm.VM.Name, "status", status)
 
+	task, err := vm.Undeploy()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVM Undeploy failed ", "vmName", vm.VM.Name, "err", err)
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVm wait failed ", "vmName", vm.VM.Name, "err", err)
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVM power off Remove", "vmName", vm.VM.Name, "vapp", vapp.VApp.Name)
 	err = vapp.RemoveVM(*vm)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeletedVM error on Remove", "vmName", vm.VM.Name, "vapp", vapp.VApp.Name, "err", err)
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "VM Deleted", "vmName", vm.VM.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "VM Deleted", "vmName", vm.VM.Name, "vapp", vapp.VApp.Name)
 	return nil
-
 }
 
 // Delete All VMs in the resolution of vmGroupName
@@ -767,7 +996,7 @@ func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparam
 
 // powerOnVmsAndForceCustomization calls PowerOnAndForceCustomization on each VM provided.  Unfortunately
 // this needs to be done one at a time or it tends to fail
-func (v *VcdPlatform) powerOnVmsAndForceCustomization(ctx context.Context, vms map[string]*govcd.VM) error {
+func (v *VcdPlatform) powerOnVmsAndForceCustomization(ctx context.Context, vms VMMap) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "powerOnVmsAndForceCustomization")
 	for vmName, vm := range vms {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Powering on VM", "vmName", vmName)
