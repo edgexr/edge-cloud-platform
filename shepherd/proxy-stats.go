@@ -51,15 +51,16 @@ var envoyUnseen = "No recorded values"
 var envoyHistogramBuckets = []string{"P0", "P25", "P50", "P75", "P90", "P95", "P99", "P99.5", "P99.9", "P100"}
 
 type ProxyScrapePoint struct {
-	Key               edgeproto.AppInstKey
-	FailedChecksCount int
-	App               string
-	Cluster           string
-	ClusterOrg        string
-	TcpPorts          []int32
-	UdpPorts          []int32
-	Client            ssh.Client
-	ProxyContainer    string
+	Key                edgeproto.AppInstKey
+	FailedChecksCount  int
+	App                string
+	Cluster            string
+	ClusterOrg         string
+	TcpPorts           []int32
+	UdpPorts           []int32
+	LastConnectAttempt time.Time
+	Client             ssh.Client
+	ProxyContainer     string
 }
 
 func InitProxyScraper() {
@@ -104,6 +105,9 @@ func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (s
 // Init cluster client for a scrape point
 func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, clusterInst *edgeproto.ClusterInst, scrapePoint *ProxyScrapePoint) error {
 	var err error
+
+	// record last connection attempt
+	scrapePoint.LastConnectAttempt = time.Now()
 	if app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 		scrapePoint.Client, err = myPlatform.GetVmAppRootLbClient(ctx, &appInst.Key)
 		if err != nil {
@@ -279,8 +283,11 @@ func ProxyScraper(done chan bool) {
 			scrapePoints := copyMapValues()
 			for _, v := range scrapePoints {
 				if !clientReady(v) {
-					// Update this in the background
-					go updateProxyScrapeClient(v.Key)
+					// If we could not connect first, skip 5 intervals before trying to re-connect
+					if time.Since(v.LastConnectAttempt) > 6*settings.ShepherdMetricsCollectionInterval.TimeDuration() {
+						// Update this in the background
+						go updateProxyScrapeClient(v.Key)
+					}
 					// no need to actually collect metrics
 					continue
 				}
