@@ -496,6 +496,13 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 	vmSpecSec := vm.VM.VmSpecSection
 	vmSpecSec.NumCpus = TakeIntPointer(int(flavor.Vcpus))
 	vmSpecSec.MemoryResourceMb.Configured = int64(flavor.Ram)
+	if v.GetEnableVdcDiskResize() {
+		if len(vmSpecSec.DiskSection.DiskSettings) == 0 {
+			return fmt.Errorf("No disk settings in VM: %s", vm.VM.Name)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "resizing disk", "size(gb)", flavor.Disk)
+		vmSpecSec.DiskSection.DiskSettings[0].SizeMb = int64(flavor.Disk * 1024)
+	}
 
 	desc := fmt.Sprintf("Update flavor: %s", flavorName)
 	_, err = vm.UpdateVmSpecSection(vmSpecSec, desc)

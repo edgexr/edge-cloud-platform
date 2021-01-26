@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -45,6 +46,10 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "The uploaded ova template name",
 		Mandatory:   false,
 		// could be in the secret
+	},
+	"MEX_ENABLE_VCD_DISK_RESIZE": {
+		Description: "VM disks cloned from the VDC template will be resized based on flavor if set to \"true\".  Must be set to \"false\" if fast provisioning is enabled in the VDC or VM creation will fail.",
+		Value:       "true",
 	},
 }
 
@@ -119,6 +124,11 @@ func (v *VcdPlatform) GetPrimaryVdc() string {
 
 func (v *VcdPlatform) GetExtNetworkName() string {
 	return v.vcdVars["MEX_EXT_NETWORK"]
+}
+
+func (v *VcdPlatform) GetEnableVdcDiskResize() bool {
+	val := v.vcdVars["MEX_ENABLE_VCD_DISK_RESIZE"]
+	return strings.ToLower(val) == "true"
 }
 
 // Sort out the spelling VCD vs VDC template name in all the secrets. It's offically a vdc template.
