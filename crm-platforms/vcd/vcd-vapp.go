@@ -16,6 +16,8 @@ import (
 // VmHardwareVersion of 14 means vsphere 6.7
 var VmHardwareVersion = 14
 
+var ResolvedStateMaxWait = 4 * 60 // 4 mins
+
 // Compose a new vapp from the given template, using vmgrp orch params
 // Creates one or more vms.
 func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTemplate, vmgp *vmlayer.VMGroupOrchestrationParams, description string, vcdClient *govcd.VCDClient, updateCallback edgeproto.CacheUpdateCallback) (*govcd.VApp, error) {
@@ -52,16 +54,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	vmRole := vmparams.Role
 	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
 
-	// MEX_EXT_NET
-	vdcNet, err := v.GetExtNetwork(ctx, vcdClient)
-	if err != nil {
-		netName := v.GetExtNetworkName()
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve our external network", "name", vmgp.GroupName, "netname", netName, "vapp", vapp, "err", err)
-		return nil, fmt.Errorf("Error getting external network: %s -  %v", netName, err)
-	}
 	networks := []*types.OrgVDCNetwork{}
-	networks = append(networks, vdcNet.OrgVDCNetwork)
-
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole, "vmType", vmType)
 
 	description = description + vcdProviderVersion
@@ -83,7 +76,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		return nil, err
 	}
 	// wait before adding vms
-	err = vapp.BlockWhileStatus("UNRESOLVED", 120) // upto seconds
+	err = vapp.BlockWhileStatus("UNRESOLVED", ResolvedStateMaxWait) // upto seconds
 
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "wait for RESOLVED error", "VAppName", vmgp.GroupName, "error", err)

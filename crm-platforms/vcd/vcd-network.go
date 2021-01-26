@@ -124,26 +124,19 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 
 			desiredNetConfig := &types.NetworkConnectionSection{}
 			desiredNetConfig.PrimaryNetworkConnectionIndex = 1
-			extAddr, err := v.GetNextExtAddrForVdcNet(ctx, vcdClient)
+			conIdx := 1
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "ConIdx", conIdx)
+			_, err := v.AddVappNetwork(ctx, vapp, vcdClient)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp GetNextExtAddr failed", "err", err)
 				return "", err
 			}
-			if extAddr == "" {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp next ext net IP not found", "vapp", vmgp.GroupName)
-				return "", fmt.Errorf("next available ext net ip not found")
-			}
-			conIdx := 1
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "IP", extAddr, "ConIdx", conIdx)
-			_, err = v.AddVappNetwork(ctx, vapp, vcdClient)
 
 			desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
 				&types.NetworkConnection{
 					IsConnected:             true,
-					IPAddressAllocationMode: types.IPAllocationModeManual,
+					IPAddressAllocationMode: types.IPAllocationModePool,
 					Network:                 v.GetExtNetworkName(),
 					NetworkConnectionIndex:  conIdx,
-					IPAddress:               extAddr,
 				})
 
 			// metadata?
