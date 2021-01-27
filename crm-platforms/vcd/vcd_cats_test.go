@@ -283,7 +283,7 @@ func TestCatItemTmpl(t *testing.T) {
 			queryResultRec.Deployed,
 			queryResultRec.Published)
 
-		stdTmp := tv.GetTemplateName()
+		stdTmp := tv.GetTemplateNameFromProps()
 		// now fetch the darn template, and compare contents
 		// first look for it as a vdc.resource which if found we know works
 		tmpl, err := tv.RetrieveTemplate(ctx, testVcdClient) // this might not work now in TestMode

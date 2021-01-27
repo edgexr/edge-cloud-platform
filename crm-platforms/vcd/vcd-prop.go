@@ -17,39 +17,24 @@ import (
 // This is now an edgeproto object
 var VcdProps = map[string]*edgeproto.PropertyInfo{
 
-	"MEX_ORG": {
-		Description: "vCD Org for our tenant",
-		Value:       "vcd-org",
-	},
 	"MEX_CATALOG": {
 		Mandatory:   true,
 		Description: "VCD Org Catalog Name",
 	},
-	"MEX_EXTERNAL_IP_RANGES": {
-		Description: "Override natrual ext net range if more limited",
-		Mandatory:   false,
-	},
 	// We don't get a value for the edgegateway xxx
 	"MEX_EXTERNAL_NETWORK_EDGEGATEWAY": {
-		Mandatory: false,
-	},
-	"MEX_EXT_NETWORK": {
-		Description: "External OrgVDCNetwork to use",
-		Mandatory:   true,
-	},
-	"MEX_EXTERNAL_NETWORK_MASK": {
-		Name:        "External Network Mask",
-		Description: "External Network Mask",
-		Mandatory:   true,
+		Description: "currently unused",
 	},
 	"MEX_VDC_TEMPLATE": {
 		Description: "The uploaded ova template name",
-		Mandatory:   false,
-		// could be in the secret
 	},
 	"MEX_ENABLE_VCD_DISK_RESIZE": {
 		Description: "VM disks cloned from the VDC template will be resized based on flavor if set to \"true\".  Must be set to \"false\" if fast provisioning is enabled in the VDC or VM creation will fail.",
 		Value:       "true",
+	},
+	"VCDVerbose": {
+		Description: "Verbose logging for VCD",
+		Internal:    true,
 	},
 }
 
@@ -83,16 +68,7 @@ func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessA
 	return nil
 }
 
-func (v *VcdPlatform) GetVcdVerbose() bool {
-	if v.TestMode {
-		verbose := os.Getenv("VCDVerbose")
-		if verbose == "true" {
-			return true
-		}
-	}
-	return false
-}
-
+// access vars from the vault
 func (v *VcdPlatform) GetVCDIP() string {
 	return v.vcdVars["VCD_IP"]
 }
@@ -114,37 +90,37 @@ func (v *VcdPlatform) GetVDCName() string {
 func (v *VcdPlatform) GetVCDURL() string {
 	return v.vcdVars["VCD_URL"]
 }
-
-func (v *VcdPlatform) GetPrimaryVdc() string {
+func (v *VcdPlatform) GetVDCTemplateName() string {
 	if v.TestMode {
-		return os.Getenv("PRIMARY_VDC")
+		tmplName := os.Getenv("VDCTEMPLATE")
+		if tmplName != "" {
+			return tmplName
+		}
 	}
-	return v.vcdVars["PRIMARY_VDC"]
+	return v.vcdVars["VDCTEMPLATE"]
 }
 
 func (v *VcdPlatform) GetExtNetworkName() string {
 	return v.vcdVars["MEX_EXT_NETWORK"]
 }
 
-func (v *VcdPlatform) GetEnableVdcDiskResize() bool {
-	val := v.vcdVars["MEX_ENABLE_VCD_DISK_RESIZE"]
-	return strings.ToLower(val) == "true"
+// properties from envvars
+func (v *VcdPlatform) GetVcdVerbose() bool {
+	verbose, _ := v.vmProperties.CommonPf.Properties.GetValue("VCDVerbose")
+	if verbose == "true" {
+		return true
+	}
+	return false
 }
 
-// Sort out the spelling VCD vs VDC template name in all the secrets. It's offically a vdc template.
-func (v *VcdPlatform) GetVDCTemplateName() string {
-	if v.TestMode {
-		tmplName := os.Getenv("VCDTEMPLATE")
-		if tmplName != "" {
-			return tmplName
-		}
-	}
-	tmplName := v.vcdVars["VCDTEMPLATE"]
-	if tmplName != "" {
-		return tmplName
-	}
+func (v *VcdPlatform) GetCatalogName() string {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_CATALOG")
+	return val
+}
 
-	return v.vcdVars["VDCTEMPLATE"]
+func (v *VcdPlatform) GetEnableVcdDiskResize() bool {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_ENABLE_VCD_DISK_RESIZE")
+	return strings.ToLower(val) == "true"
 }
 
 // start fetching access  bits from vault
@@ -168,39 +144,7 @@ func (v *VcdPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]
 	return VcdProps, nil
 }
 
-func (v *VcdPlatform) GetExternalNetmask() string {
-
-	if v.vmProperties.Domain == vmlayer.VMDomainPlatform {
-		// check for optional management netmask
-		val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_MANAGEMENT_EXTERNAL_NETWORK_MASK")
-		if val != "" {
-			return val
-		}
-	}
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_EXTERNAL_NETWORK_MASK")
-	return val
-}
-
-func (v *VcdPlatform) GetInternalNetmask() string {
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_INTERNAL_NETWORK_MASK")
-	return val
-}
-
-func (v *VcdPlatform) GetCatalogName() string {
-	if v.TestMode {
-		val := os.Getenv("MEX_CATALOG")
-		return val
-	}
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_CATALOG")
-	return val
-}
-
-func (v *VcdPlatform) GetTemplateName() string {
-	if v.TestMode {
-		val := os.Getenv("MEX_VDC_TEMPLATE")
-		return val
-	}
-
+func (v *VcdPlatform) GetTemplateNameFromProps() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VDC_TEMPLATE")
 	return val
 }

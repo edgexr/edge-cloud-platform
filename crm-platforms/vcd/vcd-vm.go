@@ -96,7 +96,7 @@ func (v *VcdPlatform) IsDhcpEnabled(ctx context.Context, net *govcd.OrgVDCNetwor
 func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
 
 	// Prefer an envVar, fall back to property
-	tmplName := v.GetTemplateName()
+	tmplName := v.GetTemplateNameFromProps()
 	if tmplName == "" {
 		tmplName = v.GetVDCTemplateName()
 		if tmplName == "" {
@@ -188,8 +188,8 @@ func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	// Should exist
 	_, err = vdc.QueryVM(vappName, vmName)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs failed to find resulting ", "VM", vmName, "in VApp", vappName)
-		return err
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs failed to find resulting ", "VM", vmName, "in VApp", vappName, "err", err)
+		return fmt.Errorf("VM : %s not found in vApp: %s", vmName, vappName)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs  created", "vapp", vappName, "GroupName", vmgp.GroupName)
 
@@ -496,12 +496,33 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 	vmSpecSec := vm.VM.VmSpecSection
 	vmSpecSec.NumCpus = TakeIntPointer(int(flavor.Vcpus))
 	vmSpecSec.MemoryResourceMb.Configured = int64(flavor.Ram)
-	if v.GetEnableVdcDiskResize() {
+	if v.GetEnableVcdDiskResize() {
 		if len(vmSpecSec.DiskSection.DiskSettings) == 0 {
 			return fmt.Errorf("No disk settings in VM: %s", vm.VM.Name)
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "resizing disk", "size(gb)", flavor.Disk)
 		vmSpecSec.DiskSection.DiskSettings[0].SizeMb = int64(flavor.Disk * 1024)
+		log.SpanLog(ctx, log.DebugLevelInfra, "resizing disk", "size(gb)", flavor.Disk, "spec", vmSpecSec.DiskSection.DiskSettings[0])
+	}
+	// attach additional volume if specified
+	if len(vmparams.Volumes) > 0 {
+		firstDiskId, err := strconv.Atoi(vmSpecSec.DiskSection.DiskSettings[0].DiskId)
+		if err != nil {
+			return fmt.Errorf("Could not parse disk id for first disk")
+		}
+		// increment the disk id, which is some unpredictable number for use as the second id
+		newDiskId := fmt.Sprintf("%d", firstDiskId+1)
+		newDiskSettings := &types.DiskSettings{
+			SizeMb: int64(vmparams.Volumes[0].Size * 1024),
+			DiskId: newDiskId,
+			// use same settings as first disk
+			UnitNumber:      int(vmparams.Volumes[0].UnitNumber),
+			BusNumber:       vmSpecSec.DiskSection.DiskSettings[0].BusNumber,
+			AdapterType:     vmSpecSec.DiskSection.DiskSettings[0].AdapterType,
+			ThinProvisioned: vmSpecSec.DiskSection.DiskSettings[0].ThinProvisioned,
+			StorageProfile:  vmSpecSec.DiskSection.DiskSettings[0].StorageProfile,
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "adding volume to spec", "volume", vmparams.Volumes[0], "settings", newDiskSettings)
+		vmSpecSec.DiskSection.DiskSettings = append(vmSpecSec.DiskSection.DiskSettings, newDiskSettings)
 	}
 
 	desc := fmt.Sprintf("Update flavor: %s", flavorName)
