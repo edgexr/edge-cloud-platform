@@ -98,7 +98,7 @@ func (v *VcdPlatform) ImportDataFromInfra(ctx context.Context) error {
 
 func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
 
-	var resources *vmlayer.PlatformResources
+	var resources = vmlayer.PlatformResources{}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo ")
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
@@ -119,7 +119,7 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 		resources.MemMax = uint64(cap.Memory.Limit)
 		resources.MemUsed = uint64(cap.Memory.Used)
 	}
-	return resources, nil
+	return &resources, nil
 }
 
 func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {
