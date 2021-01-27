@@ -21,22 +21,6 @@ func (v *VcdPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
 	}, nil
 }
 
-func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context, vcdClient *govcd.VCDClient) (string, error) {
-
-	extNet, err := v.GetExtNetwork(ctx, vcdClient)
-	if err != nil {
-		return "", err
-	}
-	scope := extNet.OrgVDCNetwork.Configuration.IPScopes.IPScope[0]
-	mask := v.GetExternalNetmask()
-	addr := scope.Gateway + "/" + mask
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalIpNetworkCidr", "addr", addr)
-
-	return addr, nil
-
-}
-
 // fetch the OrgVDCNetwork referenced by MEX_EXT_NET our Primary external network
 func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.OrgVDCNetwork, error) {
 
