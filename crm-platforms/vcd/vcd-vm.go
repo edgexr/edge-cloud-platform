@@ -876,7 +876,7 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM) ([]vmlay
 			InternalAddr: connection.IPAddress,
 			PortName:     strconv.Itoa(connection.NetworkConnectionIndex),
 		}
-		if connection.Network != v.GetExtNetworkName() {
+		if connection.Network != v.vmProperties.GetCloudletExternalNetwork() {
 			// internal isolated net
 			servIP.PortName = vmName + "-" + connection.Network + "-port"
 			// servIP.PortName = connection.Network
@@ -911,7 +911,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	if err != nil {
 		return nil, err
 	}
-	extNetName := v.GetExtNetworkName()
+	extNetName := v.vmProperties.GetCloudletExternalNetwork()
 
 	vappName := name + "-vapp"
 	vapp, err := vdc.GetVAppByName(vappName, true)
@@ -957,7 +957,6 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 		}
 		ipAddr := edgeproto.IpAddr{}
 
-		//extAddr, err := v.GetExtAddrOfVM(ctx, vm, v.GetExtNetworkName())
 		// Find addr of vm for the given network
 		extAddr, err := v.GetAddrOfVM(ctx, vm, extNetName)
 		// It fine if some vm doesn't have an external net connection

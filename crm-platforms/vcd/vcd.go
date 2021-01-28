@@ -311,7 +311,7 @@ func (v *VcdPlatform) GetAllVAppsForVdc(ctx context.Context, vcdClient *govcd.VC
 	if err != nil {
 		return vappMap, err
 	}
-	netName := v.GetExtNetworkName()
+	netName := v.vmProperties.GetCloudletExternalNetwork()
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsForVcd by ext addr on ", "network", netName)
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
@@ -347,7 +347,7 @@ func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context, vcdClient *g
 	if err != nil {
 		return vmMap, err
 	}
-	netName := v.GetExtNetworkName()
+	netName := v.vmProperties.GetCloudletExternalNetwork()
 
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
@@ -396,7 +396,7 @@ func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient 
 		return vappMap, err
 	}
 
-	extNetName := v.GetExtNetworkName()
+	extNetName := v.vmProperties.GetCloudletExternalNetwork()
 
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
