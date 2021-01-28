@@ -100,10 +100,6 @@ func (v *VcdPlatform) GetVDCTemplateName() string {
 	return v.vcdVars["VDCTEMPLATE"]
 }
 
-func (v *VcdPlatform) GetExtNetworkName() string {
-	return v.vcdVars["MEX_EXT_NETWORK"]
-}
-
 // properties from envvars
 func (v *VcdPlatform) GetVcdVerbose() bool {
 	verbose, _ := v.vmProperties.CommonPf.Properties.GetValue("VCDVerbose")

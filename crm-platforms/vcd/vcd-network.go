@@ -25,7 +25,7 @@ func (v *VcdPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
 func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.OrgVDCNetwork, error) {
 
 	// infra propert from env
-	netName := v.GetExtNetworkName()
+	netName := v.vmProperties.GetCloudletExternalNetwork()
 
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -119,7 +119,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 				&types.NetworkConnection{
 					IsConnected:             true,
 					IPAddressAllocationMode: types.IPAllocationModePool,
-					Network:                 v.GetExtNetworkName(),
+					Network:                 v.vmProperties.GetCloudletExternalNetwork(),
 					NetworkConnectionIndex:  conIdx,
 				})
 
@@ -452,7 +452,7 @@ func (v *VcdPlatform) GetIntAddrsOfVM(ctx context.Context, vm *govcd.VM) ([]stri
 
 	nc := ncs.NetworkConnection
 	for _, n := range nc {
-		if n.Network != v.GetExtNetworkName() {
+		if n.Network != v.vmProperties.GetCloudletExternalNetwork() {
 			addrs = append(addrs, n.IPAddress)
 		}
 	}
