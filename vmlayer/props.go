@@ -166,6 +166,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "NTP Servers",
 		Description: "Optional comma separated list of NTP servers to override default of ntp.ubuntu.com",
 	},
+	"MEX_VM_APP_SUBNET_DHCP_ENABLED": {
+		Name:        "VM App subnet enable DHCP",
+		Description: "Enable DHCP for the subnet created for VM based applications (yes or no)",
+		Value:       "yes",
+	},
 }
 
 func GetSupportedRouterTypes() string {
@@ -359,6 +364,11 @@ func (vp *VMProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
 		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
 	}
 	return host, port
+}
+
+func (vp *VMProperties) GetVMAppSubnetDHCPEnabled() string {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED")
+	return value
 }
 
 func (vp *VMProperties) GetChefClient() *chef.Client {
