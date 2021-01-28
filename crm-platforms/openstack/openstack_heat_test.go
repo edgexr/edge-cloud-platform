@@ -59,6 +59,14 @@ var vms = []*vmlayer.VMRequestSpec{
 		ComputeAvailabilityZone: "nova1",
 		ConnectToSubnet:         subnetName,
 	},
+	{
+		Name:                    "app-vm",
+		Type:                    vmlayer.VMTypeAppVM,
+		FlavorName:              "m1.medium",
+		ImageName:               "mobiledgex-v9.9.9",
+		ComputeAvailabilityZone: "nova1",
+		ConnectToSubnet:         subnetName,
+	},
 }
 
 func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrchestrationParams, op *OpenstackPlatform) {
@@ -103,7 +111,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	keys, err := GetChefKeysFromOSResource(ctx, stackTemplate)
 	require.Nil(t, err)
-	require.Equal(t, 4, len(keys))
+	require.Equal(t, 5, len(keys))
 
 	for _, key := range keys {
 		require.True(t, strings.HasPrefix(key, "-----BEGIN RSA PRIVATE KEY-----"))
@@ -119,7 +127,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	vmsUserData, err := GetUserDataFromOSResource(ctx, stackTemplate)
 	require.Nil(t, err)
-	require.Equal(t, 4, len(vmsUserData))
+	require.Equal(t, 5, len(vmsUserData))
 	for vName, userData := range vmsUserData {
 		require.True(t, strings.HasPrefix(userData, "#cloud-config"))
 		genUserData, ok := genVMsUserData[vName]
@@ -214,6 +222,7 @@ func TestHeatTemplate(t *testing.T) {
 	require.Nil(t, err)
 	op.InitResourceReservations(ctx)
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK", "external-network-shared")
+	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "no")
 	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
 	// Add chef params
 	for _, vm := range vms {
@@ -236,6 +245,7 @@ func TestHeatTemplate(t *testing.T) {
 	require.Nil(t, err)
 	validateStack(ctx, t, vmgp1, &op)
 
+	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "yes")
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_NETWORK_SCHEME", "cidr=10.101.X.0/24,floatingipnet=public_internal,floatingipsubnet=subnetname,floatingipextnet=public")
 	vmgp2, err := vmp.GetVMGroupOrchestrationParamsFromVMSpec(ctx,
 		"openstack-fip-test",

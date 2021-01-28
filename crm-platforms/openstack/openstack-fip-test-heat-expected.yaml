@@ -75,6 +75,15 @@ resources:
                 - subnet: { get_resource: subnet-test }
                   ip_address:  10.101.0.102
             port_security_enabled: false
+    app-vm-subnet-test-port:
+        type: OS::Neutron::Port
+        properties:
+            name: app-vm-subnet-test-port
+            network: mex-k8s-net-1
+            fixed_ips:
+                - subnet: { get_resource: subnet-test }
+                  ip_address:  10.101.0.103
+            port_security_enabled: false
     testvmgroup-sg:
         type: OS::Neutron::SecurityGroup
         properties:
@@ -311,6 +320,52 @@ resources:
                 skipk8s: no
                 role: k8s-node
                 k8smaster: 10.101.0.10
+        
+    app-vm:
+        type: OS::Nova::Server
+        properties:
+            name: app-vm
+            networks:
+                - port: { get_resource: app-vm-subnet-test-port }
+            availability_zone: nova1
+            image: mobiledgex-v9.9.9 
+            flavor: m1.medium
+            config_drive: true
+            user_data_format: RAW
+            user_data: |
+                #cloud-config
+                chef:
+                  server_url: cheftestserver.mobiledgex.net/organizations/mobiledgex
+                  node_name: app-vm
+                  environment: ""
+                  validation_name: mobiledgex-validator
+                  validation_key: /etc/chef/client.pem
+                  validation_cert: |
+                          -----BEGIN RSA PRIVATE KEY-----
+                          NDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm
+                          -----END RSA PRIVATE KEY-----
+                bootcmd:
+                 - echo MOBILEDGEX CLOUD CONFIG START
+                 - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+                 - apt-get -y purge update-notifier-common ubuntu-release-upgrader-core landscape-common unattended-upgrades
+                 - echo "Removed APT and Ubuntu extra packages" | systemd-cat
+                 - cloud-init-per once ssh-users-ca echo "TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem" >> /etc/ssh/sshd_config
+                write_files:
+                  - path: /etc/ssh/trusted-user-ca-keys.pem
+                    content: ssh-rsa DUMMYTESTCACERT
+                    append: true
+                  - path:  /etc/systemd/resolved.conf
+                    content: |
+                       [Resolve]
+                       DNS=1.1.1.1
+                       FallbackDNS=1.0.0.1
+                chpasswd: { expire: False }
+                ssh_pwauth: False
+                timezone: UTC
+                runcmd:
+                 - systemctl restart systemd-resolved
+                 - echo MOBILEDGEX doing ifconfig
+                 - ifconfig -a
     rootlb-xyz-external-network-shared-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:

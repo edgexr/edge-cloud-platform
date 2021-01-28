@@ -672,12 +672,23 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
+	vmAppSubnet := false
+	for _, vm := range spec.VMs {
+		if vm.Type == VMTypeAppVM {
+			vmAppSubnet = true
+			break
+		}
+	}
+	dhcpEnabled := "no"
+	if vmAppSubnet && v.VMProperties.GetVMAppSubnetDHCPEnabled() != "no" {
+		dhcpEnabled = "yes"
+	}
 	if spec.NewSubnetName != "" {
 		newSubnet := SubnetOrchestrationParams{
 			Name:              spec.NewSubnetName,
 			Id:                v.VMProvider.IdSanitize(spec.NewSubnetName),
 			CIDR:              NextAvailableResource,
-			DHCPEnabled:       "yes",
+			DHCPEnabled:       dhcpEnabled,
 			DNSServers:        subnetDns,
 			NetworkName:       v.VMProperties.GetCloudletMexNetwork(),
 			SecurityGroupName: spec.NewSecgrpName,
