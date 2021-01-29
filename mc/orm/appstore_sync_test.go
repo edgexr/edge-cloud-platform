@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jarcoal/httpmock"
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -141,6 +142,7 @@ func TestAppStoreApi(t *testing.T) {
 		SkipVerifyEmail:         true,
 		LocalVault:              true,
 		UsageCheckpointInterval: "MONTH",
+		BillingPlatform:         billing.BillingTypeFake,
 	}
 
 	server, err := RunServer(&config)
