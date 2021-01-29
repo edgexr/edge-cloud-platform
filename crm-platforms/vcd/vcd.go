@@ -301,45 +301,6 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 
 }
 
-// Return current vapps in map keyed by external net IP
-// Combine the two such rnts use netType
-func (v *VcdPlatform) GetAllVAppsForVdc(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
-
-	vappMap := make(VAppMap)
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return vappMap, err
-	}
-	netName := v.vmProperties.GetCloudletExternalNetwork()
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsForVcd by ext addr on ", "network", netName)
-	for _, r := range vdc.Vdc.ResourceEntities {
-		for _, res := range r.ResourceEntity {
-			if res.Type == "application/vnd.vmware.vcloud.vApp+xml" {
-				vapp, err := vdc.GetVAppByName(res.Name, true)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "GetVappByName", "Vapp", res.Name, "error", err)
-					return vappMap, err
-				} else {
-					ip, err := v.GetAddrOfVapp(ctx, vapp, netName)
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVapps GetExtAddrOfVapp ", "vapp", vapp.VApp.Name, "error", err)
-						if strings.Contains(err.Error(), "Not Found") {
-							continue
-						}
-					}
-					if ip != "" {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByExtAddr add", "ip", ip, "vapp", res.Name)
-						vappMap[ip] = vapp
-					}
-				}
-			}
-		}
-	}
-	return vappMap, nil
-
-}
-
 func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context, vcdClient *govcd.VCDClient) (VMMap, error) {
 	vmMap := make(VMMap)
 

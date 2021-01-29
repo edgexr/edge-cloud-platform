@@ -12,22 +12,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// -vdc
-func TestNextExtAddr(t *testing.T) {
-	live, ctx, err := InitVcdTestEnv()
-	require.Nil(t, err, "InitVcdTestEnv")
-	defer testVcdClient.Disconnect()
-	if live {
-		nextAddr, err := tv.GetNextExtAddrForVdcNet(ctx, testVcdClient)
-		if err != nil {
-			fmt.Printf("Error getting next addr  : %s\n", err.Error())
-			return
-		}
-
-		fmt.Printf("Next ext-net Address: %s\n", nextAddr)
-	}
-}
-
 // -vapp
 func TestNextIntAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
@@ -41,27 +25,81 @@ func TestNextIntAddr(t *testing.T) {
 			fmt.Printf("Error getting next addr  : %s\n", err.Error())
 			return
 		}
-		/*
-			fmt.Printf("Next ext-net Address: %s\n", nextAddr)
-			cloud.Clusters[nextAddr] = &Cluster{}
-			nextAddr, err = tv.GetNextInternalNet(ctx)
-			if err != nil {
-				fmt.Printf("Error getting next addr  : %s\n", err.Error())
-				return
-			}
-			fmt.Printf("Next ext-net Address: %s\n", nextAddr)
-			delete(cloud.Clusters, "10.101.2.1")
-			nextAddr, err = tv.GetNextInternalNet(ctx)
-			if err != nil {
-				fmt.Printf("Error getting next addr  : %s\n", err.Error())
-				return
-			}
-		*/require.Equal(t, nextAddr, "10.101.2.1")
+		require.Equal(t, nextAddr, "10.101.2.1")
 
 	}
 }
 
-// -vapp -net Return the current external net
+func TestGetVdcNetworks(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
+	if live {
+		fmt.Printf("TestGetVdcNetworks...\n")
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
+		//types.QueryResultOrgVdcNetworkRecordType
+		qrecs, err := vdc.GetNetworkList()
+		if err != nil {
+			fmt.Printf("vdc.GetNetworkList failed: %s\n", err.Error())
+			return
+		}
+		for _, qr := range qrecs {
+			// linkType 0 = direct, 1 = routed, 2 = isolated
+			fmt.Printf("vdc %s network:\n\tName:  %s\n\tType: %s\n\tMask: %s\n\tLinkType %d\n\tConnectetdTo: %s\n\tDefaultGateway: %s\n\tIsShared: %t\n", vdc.Vdc.Name, qr.Name,
+				qr.Type, qr.Netmask, qr.LinkType, qr.ConnectedTo, qr.DefaultGateway, qr.IsShared)
+		}
+	}
+}
+
+func TestRMOrgVdcType2Networks(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
+	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
+		qrecs, err := vdc.GetNetworkList()
+		if err != nil {
+			fmt.Printf("vdc.GetNetworkList failed: %s\n", err.Error())
+			return
+		}
+		for _, qr := range qrecs {
+			// linkType 0 = direct, 1 = routed, 2 = isolated
+			fmt.Printf("vdc %s network:\n\tName:  %s\n\tType: %s\n\tMask: %s\n\tLinkType %d\n\tConnectetdTo: %s\n\tDefaultGateway: %s\n", vdc.Vdc.Name, qr.Name,
+				qr.Type, qr.Netmask, qr.LinkType, qr.ConnectedTo, qr.DefaultGateway)
+			if qr.LinkType == 2 {
+				fmt.Printf("Removing iso subnet %s\n", qr.Name)
+				orgvcdnet, err := vdc.GetOrgVdcNetworkByName(qr.Name, false)
+				if err != nil {
+					fmt.Printf("Error getting %s by name: %s\n", qr.Name, err.Error())
+					return
+				}
+				task, err := orgvcdnet.Delete()
+				if err != nil {
+					fmt.Printf("Error deleting  %s  %s\n", qr.Name, err.Error())
+				} else {
+					fmt.Printf("isolated network %s Deleted\n", qr.Name)
+					err = task.WaitTaskCompletion()
+					if err != nil {
+						fmt.Printf("error deleting network '%s' [task]: %s", qr.Name, err)
+						// continue with any others
+					}
+				}
+			}
+		}
+	}
+}
+
+// -vapp -net Return the current external net address
 func TestGetVappAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
@@ -73,7 +111,7 @@ func TestGetVappAddr(t *testing.T) {
 			fmt.Printf("Test error finding vapp %s\n", *vappName)
 			return
 		}
-
+		fmt.Printf("Ask GetAddrOfVapp vapp %s netname %s\n", *vappName, *netName)
 		addr, err := tv.GetAddrOfVapp(ctx, vapp, *netName)
 		if err != nil {
 			fmt.Printf("Test error from GetExtAddrOfVapp  %s = %s \n", *vappName, err.Error())
@@ -150,7 +188,7 @@ func TestGetVMAddr(t *testing.T) {
 	if live {
 		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient)
 		if err != nil {
-			fmt.Printf("error finding vm %s\n", *vappName)
+			fmt.Printf("error finding vm %s\n", *vmName)
 			return
 		}
 
@@ -198,7 +236,7 @@ func getAllVdcNetworks(ctx context.Context) (NetMap, error) {
 	return netMap, nil
 }
 
-func TestGetVdcNetworks(t *testing.T) {
+func TestGetVdcResourceNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
@@ -212,48 +250,15 @@ func TestGetVdcNetworks(t *testing.T) {
 		fmt.Printf("TestGetVdcNetworks\n")
 		netMap, err := getAllVdcNetworks(ctx)
 		if err != nil {
-			fmt.Printf("GetAllVdcNetworks failed: %s\n", err.Error())
+			fmt.Printf("getAllVdcNetworks failed: %s\n", err.Error())
 		}
 		if len(netMap) == 0 {
-			fmt.Printf("GetAllVdcNetworks return no networks\n")
+			fmt.Printf("getAllVdcNetworks return no networks\n")
 			return
 		}
 		for Name, net := range netMap {
 			fmt.Printf("Network %s:\n", Name)
 			govcd.ShowNetwork(*net.OrgVDCNetwork)
-		}
-	}
-}
-
-func TestNetAddrs(t *testing.T) {
-	live, ctx, err := InitVcdTestEnv()
-	require.Nil(t, err, "InitVcdTestEnv")
-	defer testVcdClient.Disconnect()
-
-	testaddr := "10.101.5.10"
-	N, err := Octet(ctx, testaddr, 2) // third octet)
-	require.Nil(t, err, "ThrirdOctet err")
-	require.Equal(t, 5, N, "ThirdOctet")
-
-	testaddr = "10.101.6.10/24"
-	N, err = Octet(ctx, testaddr, 2)
-	require.Nil(t, err, "ThrirdOctet err")
-	require.Equal(t, 6, N, "ThirdOctet")
-
-	if live {
-		_, err := tv.GetVdc(ctx, testVcdClient)
-		if err != nil {
-			fmt.Printf("Error from GetVdc : %s\n", err.Error())
-			return
-		}
-
-		// Expect our test begins with zero Cloudlets
-
-		// We ask for the first external address in our PrimaryNet range
-		_ /*CloudletAddr,*/, err = tv.GetNextExtAddrForVdcNet(ctx, testVcdClient)
-		if err != nil {
-			fmt.Printf("GetNextExternalAddrForVdcNet failed: %s\n", err.Error())
-			return
 		}
 	}
 }
@@ -265,15 +270,10 @@ func TestGetAllocatedIPs(t *testing.T) {
 	defer testVcdClient.Disconnect()
 
 	if live {
-		org, err := tv.GetOrg(ctx, testVcdClient)
-		if err != nil {
-			fmt.Printf("GetOrgs failed: %s\n", err.Error())
-			return
-		}
-		vdc, err := org.GetVdcByName(*vdcName)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 
 		if err != nil {
-			fmt.Printf("vdc %s not found in org %s\n", *vdcName, org.Org.Name)
+			fmt.Printf("vdc %s not found\n", *vdcName)
 			return
 		}
 		vdcnet, err := vdc.GetOrgVdcNetworkByName(*netName, false)
@@ -286,8 +286,11 @@ func TestGetAllocatedIPs(t *testing.T) {
 		addrs := &types.IPAddresses{}
 
 		IPScopes := vdcnet.OrgVDCNetwork.Configuration.IPScopes
-		for _, ipscope := range IPScopes.IPScope {
 
+		fmt.Printf("network %s has %d scopes\n", *netName, len(IPScopes.IPScope))
+
+		for _, ipscope := range IPScopes.IPScope {
+			// this is always emtpy for nsx-t does it run in packet?
 			addrs = ipscope.AllocatedIPAddresses
 			fmt.Printf("net %s addrs: ===>>%s<<===\n", *netName, addrs)
 
@@ -689,4 +692,107 @@ func testDeleteVAppNetwork(t *testing.T, ctx context.Context, vappName, networkN
 		return nil, err
 	}
 	return netConfig, nil
+}
+
+// -net -vapp
+// cidr is selected via current iso vdc networks
+
+func TestAddNextIsoSubnetToVapp(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	if live {
+		fmt.Printf("TestGetNExtIsoSubnetToVapp %s\n", *vappName)
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		if err != nil {
+			fmt.Printf("Error getvapp %s\n", err.Error())
+			return
+		}
+
+		nextCidr, err := tv.GetNextVdcIsoSubnet(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("Error from GetNextVdcIsoSubnet: %s\n", err.Error())
+			return
+		}
+		fmt.Printf("Next subnet avaiable: %s\n", nextCidr)
+
+		// The create now adds the org net to the given vapp
+		err = tv.CreateIsoVdcNetwork(ctx, vapp, *netName, nextCidr, testVcdClient)
+		if err != nil {
+			fmt.Printf("CreateIsoVdcNetwork failed: %s\n", err.Error())
+			return
+		}
+
+		// now turn around and get network by name
+		//
+		// We should be able to fetch it by name now.
+		newNetwork, err := vdc.GetOrgVdcNetworkByName(*netName, true)
+		if err != nil {
+			fmt.Printf("Failed to retrieve Orgvdcnetbyname: %s error: %s\n", *netName, err.Error())
+			return
+		}
+
+		fmt.Printf("Have new network %+v\n", newNetwork.OrgVDCNetwork)
+		// Add as a vapp net so our server vm can see it. Fenced here is false
+		// we want other clusters (vapps) connect to this vdc scoped network, but it's still an OrgVDCNetwork, not just a vapp network
+		// that could be fenced, and dedicated LBs use 10.101.1.1 anyway...
+
+		/* this is now done in the create iso call
+		vappNetSettings := &govcd.VappNetworkSettings{
+			Name:             *netName,
+			VappFenceEnabled: TakeBoolPointer(false),
+		}
+
+		netConfSec, err := vapp.AddOrgNetwork(vappNetSettings, newNetwork.OrgVDCNetwork, false)
+		if err != nil {
+			fmt.Printf("AddORgNetwork failed network %s  error: %s\n", *netName, err.Error())
+			return
+		}
+		fmt.Printf("Network Config Section from AddORgNetwork: %+v\n", netConfSec)
+		// now can we add a con section to this vapps first born vm?
+		*/
+
+		// Grab the first born child vm of this vapp (likely the only vm in cld that will become the shared LB
+		vmName := vapp.VApp.Children.VM[0].Name
+
+		vm, err := vapp.GetVMByName(vmName, true)
+		if err != nil {
+			fmt.Printf("failed to get vm of vapp error: %s\n", err.Error())
+			return
+		}
+		ncs, err := vm.GetNetworkConnectionSection()
+		if err != nil {
+			fmt.Printf("error: %s\n", err.Error())
+			return
+		}
+
+		curIdx, err := GetNextAvailConIdx(ctx, ncs)
+		if err != nil {
+			fmt.Printf("Aux test of GetNextAvailConIdx failed: %s\n", err.Error())
+		}
+
+		// conIdx, can we let it auto assign for the shared LB, no see above
+		// this is the cidr as we're the gateway
+		ncs.NetworkConnection = append(ncs.NetworkConnection,
+			&types.NetworkConnection{
+				Network:                 *netName,
+				NetworkConnectionIndex:  curIdx,
+				IPAddress:               nextCidr,
+				IsConnected:             true,
+				IPAddressAllocationMode: types.IPAllocationModeManual,
+			})
+
+		err = vm.UpdateNetworkConnectionSection(ncs)
+		if err != nil {
+			fmt.Printf("error %s \n", err.Error())
+			return
+		}
+		// that's it, so for each VM in some Vapp that wants a network to the shared root lb, that cluster/vapp will
+		// create a vapp network of it like this and add the vm's net connection section.
+	}
 }

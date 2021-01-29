@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -11,6 +12,69 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+func TestRMAllVAppFromVdc(t *testing.T) {
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
+	if live {
+		fmt.Printf("TestRAllVAppFromVdc\n")
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("Failed to get vdc %s\n", err.Error())
+			return
+		}
+		err = vdc.Refresh()
+		if err != nil {
+			fmt.Printf("Refresh failed%s\n", err.Error())
+			return
+		}
+		for _, resents := range vdc.Vdc.ResourceEntities {
+			for _, resent := range resents.ResourceEntity {
+				if resent.Type == "application/vnd.vmware.vcloud.vApp+xml" {
+					vappHREF, err := url.Parse(resent.HREF)
+					if err != nil {
+						fmt.Printf("Error url.parse %s\n", err.Error())
+						return
+					}
+					vapp, err := vdc.GetVAppByHref(vappHREF.String())
+					if err != nil {
+						fmt.Printf("error retrieving vapp with url: %s and with error %s", vappHREF.Path, err)
+						return
+					}
+					fmt.Printf("Found %s undeploy()\n", vapp.VApp.Name)
+					task, err := vapp.Undeploy()
+					if err != nil {
+						fmt.Printf("Undeploy failed %s\n", err.Error())
+						return
+					}
+
+					if task == (govcd.Task{}) {
+						continue
+					}
+					err = task.WaitTaskCompletion()
+					if err != nil {
+						fmt.Printf("Undeploy failed %s\n", err.Error())
+						return
+					}
+
+					task, err = vapp.Delete()
+					if err != nil {
+						fmt.Printf("error deleting vapp: %s", err.Error())
+						return
+					}
+					err = task.WaitTaskCompletion()
+					if err != nil {
+						fmt.Printf("couldn't finish removing vapp %s", err.Error())
+						return
+					}
+				}
+			}
+		}
+	}
+	return
+}
 
 func TestDumpVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
@@ -620,5 +684,31 @@ func TestExtAddrVApp(t *testing.T) {
 			return
 		}
 		fmt.Printf("Vapp %s has external address as %s\n", *vappName, addr)
+	}
+}
+
+func TestListAllVApps(t *testing.T) {
+
+	live, ctx, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+
+	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s", err.Error())
+			return
+		}
+
+		fmt.Printf("List all VApps in vdc\n")
+		resRefs := vdc.GetVappList()
+		if err != nil {
+			fmt.Printf("GetVappList failed: %s", err.Error())
+			return
+		}
+
+		for _, ref := range resRefs {
+			fmt.Printf("Vapp : %s\n", ref.Name)
+		}
 	}
 }

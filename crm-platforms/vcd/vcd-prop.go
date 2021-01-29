@@ -69,6 +69,7 @@ func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessA
 }
 
 // access vars from the vault
+
 func (v *VcdPlatform) GetVCDIP() string {
 	return v.vcdVars["VCD_IP"]
 }
