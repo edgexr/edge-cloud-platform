@@ -5,6 +5,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -34,6 +35,7 @@ func TestLDAPServer(t *testing.T) {
 		LDAPUsername:            "gitlab",
 		LDAPPassword:            "gitlab",
 		UsageCheckpointInterval: "MONTH",
+		BillingPlatform:         billing.BillingTypeFake,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

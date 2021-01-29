@@ -11,6 +11,7 @@ import (
 
 	"github.com/jarcoal/httpmock"
 	"github.com/mitchellh/mapstructure"
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
@@ -57,6 +58,7 @@ func TestController(t *testing.T) {
 		AlertMgrAddr:            testAlertMgrAddr,
 		AlertmgrResolveTimout:   3 * time.Minute,
 		UsageCheckpointInterval: "MONTH",
+		BillingPlatform:         billing.BillingTypeFake,
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
