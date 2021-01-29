@@ -78,8 +78,6 @@ func (v *VcdPlatform) FindVMInVApp(ctx context.Context, serverName string, vapp 
 
 }
 
-// We expect Objs.PrimaryNet supports DHCP, eventually
-//
 func (v *VcdPlatform) IsDhcpEnabled(ctx context.Context, net *govcd.OrgVDCNetwork) bool {
 	vdcnet := net.OrgVDCNetwork
 
@@ -228,18 +226,11 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName)
 
 	vmsAdded := make(VMMap)
-	if nextCidr == "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp next cidr nil", "GroupName", vmgp.GroupName)
-		return nil, fmt.Errorf("IP range exhaused")
-	}
 	var err error
 	numVMs := len(vmgp.VMs)
-	if numVMs < 2 {
-		return nil, fmt.Errorf("invalid VMGroupOrchParams for call")
-	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp numVMs ", "count", numVMs, "GroupName", vmgp.GroupName, "Internal IP", nextCidr)
 
-	lbvm := &govcd.VM{}
 	vmIp := ""
 	var a []string
 	baseAddr := ""
@@ -274,60 +265,82 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 				// internal error
 				return nil, err
 			}
-		}
-		// Consider nextwork assignement XXX revist for pf and cloudlet (no internal nets)
-		if vmparams.Role == vmlayer.RoleAgent {
-			lbvm = vm
-			vmIp = baseAddr
 		} else {
-			vmIp, err = IncrIP(ctx, baseAddr, 100+(n-1))
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp exists", "vmName", vmName, "vmRole", vmRole, "vmType", vmType)
+		}
+		if nextCidr != "" {
+			// Consider internal nextwork assignements,
+			sharedRootLB := v.haveSharedRootLB(ctx, *vmgp)
+
+			if vmparams.Role == vmlayer.RoleAgent {
+				// dedicated lb
+				vmIp = baseAddr
+				log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB", "vm", vm.VM.Name, "gateway", baseAddr)
+			} else {
+				if sharedRootLB {
+					log.SpanLog(ctx, log.DebugLevelInfra, "SharedLB", "vm", vm.VM.Name, "gateway", baseAddr)
+					vmIp, err = IncrIP(ctx, baseAddr, 101+(n-1))
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
+						return nil, err
+					}
+
+					ncs.PrimaryNetworkConnectionIndex = 0
+				} else {
+					log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated", "vm", vm.VM.Name, "gateway", baseAddr)
+					// a single node docker cluster will need .101 here for e
+					vmIp, err = IncrIP(ctx, baseAddr, 100+(n-1))
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
+						return nil, err
+					}
+				}
+			}
+			// some unique key within the vapp
+			key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n)
+			vm.VM.OperationKey = key
+
+			ncs, err = vm.GetNetworkConnectionSection()
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkConnectionSection failed", "err", err)
 				return nil, err
 			}
-			ncs.PrimaryNetworkConnectionIndex = 0
-		}
-		// some unique key within the vapp
-		key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n)
-		vm.VM.OperationKey = key
 
-		ncs, err = vm.GetNetworkConnectionSection()
-		if err != nil {
-			return nil, err
-		}
+			internalNetName := ""
+			ports := vmgp.Ports
+			for _, port := range ports {
+				if port.NetworkType == vmlayer.NetTypeInternal {
+					internalNetName = port.SubnetId
+					break
+				}
+			}
+			if internalNetName != "" {
 
-		internalNetName := ""
-		ports := vmgp.Ports
-		for _, port := range ports {
-			if port.NetworkType == vmlayer.NetTypeInternal {
-				internalNetName = port.SubnetId
-				break
+				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add connection", "net", internalNetName, "ip", vmIp, "VM", vmName)
+
+				ncs.NetworkConnection = append(ncs.NetworkConnection,
+					&types.NetworkConnection{
+						Network:                 internalNetName,
+						NetworkConnectionIndex:  netConIdx,
+						IPAddress:               vmIp,
+						IsConnected:             true,
+						IPAddressAllocationMode: types.IPAllocationModeManual,
+					})
+
+				err = vm.UpdateNetworkConnectionSection(ncs)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
+					return nil, err
+				}
 			}
 		}
-		if internalNetName != "" {
-
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add connection", "net", internalNetName, "ip", vmIp, "VM", vmName)
-
-			ncs.NetworkConnection = append(ncs.NetworkConnection,
-				&types.NetworkConnection{
-					Network:                 internalNetName,
-					NetworkConnectionIndex:  netConIdx,
-					IPAddress:               vmIp,
-					IsConnected:             true,
-					IPAddressAllocationMode: types.IPAllocationModeManual,
-				})
-
-			err = vm.UpdateNetworkConnectionSection(ncs)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", lbvm.VM.Name, "error", err)
-				return nil, err
-			}
-		}
+		// finish vmUpdates
 		err = v.guestCustomization(ctx, *vm, vmparams)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
 			return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
 		}
+
 		err = v.updateVM(ctx, vm, vmparams)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
@@ -917,7 +930,6 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	vapp, err := vdc.GetVAppByName(vappName, true)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResource vapp not found  ", "Name", name)
-
 		// XXX if this is our pf cloudlet Vapp, and we're running crm locally, recover this error
 		if strings.Contains(name, "-pf") {
 			return resources, nil
@@ -942,6 +954,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 		}
 		flavor := ""
 		role := ""
+
 		for _, md := range metadata.MetadataEntry {
 			if md.Key == "FlavorName" {
 				flavor = md.TypedValue.Value
@@ -950,6 +963,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 				role = md.TypedValue.Value
 			}
 		}
+
 		vminfo := edgeproto.VmInfo{
 			Name:        vm.VM.Name,
 			InfraFlavor: flavor,
@@ -958,6 +972,8 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 		ipAddr := edgeproto.IpAddr{}
 
 		// Find addr of vm for the given network
+
+		// get from meta data now xxx
 		extAddr, err := v.GetAddrOfVM(ctx, vm, extNetName)
 		// It fine if some vm doesn't have an external net connection
 		if err != nil {

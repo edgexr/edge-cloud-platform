@@ -111,47 +111,33 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp nextCidr for vapp internal net", "Cidr", nextCidr, "vmRole", vmRole, "vmType", vmType)
 
 	vmtmplName := vapp.VApp.Children.VM[0].Name
-	vm, err := vapp.GetVMByName(vmtmplName, false)
+	_, err = vapp.GetVMByName(vmtmplName, false)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve", "VM", vmtmplName)
 		return nil, err
 	}
-	err = v.updateVM(ctx, vm, vmparams)
+
+	updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName, "count", numVMs)
+
+	vmsAdded, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr, vcdClient)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VMs added", "GroupName", vmgp.GroupName)
+	// poweron and customize
+	updateCallback(edgeproto.UpdateTask, "Powering on VMs")
+	err = v.powerOnVmsAndForceCustomization(ctx, vmsAdded)
+	if err != nil {
 		return nil, err
 	}
 
-	if numVMs > 1 {
-		updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
-
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName)
-		vmsAdded, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr, vcdClient)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
-			return nil, err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VMs added", "GroupName", vmgp.GroupName)
-		// poweron and customize
-		updateCallback(edgeproto.UpdateTask, "Powering on VMs")
-		err = v.powerOnVmsAndForceCustomization(ctx, vmsAdded)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if v.Verbose {
-			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VApp no extra VMs added", "GroupName", vmgp.GroupName)
-		}
-	}
 	if v.Verbose {
 		// govcd.ShowVapp(*vapp.VApp) its... quite large
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed Powering On", "Vapp", vappName)
-	err = v.refreshVappNets(ctx, vapp)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "refreshVappNets failed", "err", err)
-		return nil, err
-	}
+
 	task, err = vapp.PowerOn()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "power on  failed ", "VAppName", vapp.VApp.Name, "err", err)
@@ -201,6 +187,40 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vapp not found return success", "vapp", vappName)
 		return nil
+	}
+
+	// handle deletion of an iso orgvdcnet of the client of a shared LB
+	// DetachPortFromServer has already been called, and can't delete the network
+	// because it's still in use, possibly by this vapp (shared clusterInst)
+
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp err getting vdc", "vapp", vappName, "err", err)
+		return err
+	}
+	// If GetVappIsoNetwork actually fails (GetNetworkList() unlikely)
+	// don't fail the delete cluster operation here.
+	netName, err := v.GetVappIsoNetwork(ctx, vdc, vapp)
+	// if one of these is an isolated orgvdcnetwork
+	if err == nil && netName != "" {
+		task, err := vapp.RemoveAllNetworks()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveAllNetworks failed ", "err", err)
+		} else {
+			err = task.WaitTaskCompletion()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task for RemoveAllNetworks failed", "error", err)
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp removing iosNetworks", "vapp", vappName)
+		err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists failed ", "vapp", vappName, "netName", netName, "err", err)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists success", "netName", netName)
+		}
+	} else if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring ", "vapp", vappName, "netName", netName, "err", err)
 	}
 
 	status, err := vapp.GetStatus()
@@ -377,25 +397,6 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	return psl, nil
 }
 
-func (v *VcdPlatform) refreshVappNets(ctx context.Context, vapp *govcd.VApp) error {
-	vmname := vapp.VApp.Children.VM[0].Name
-	vm, err := vapp.GetVMByName(vmname, true)
-	if err != nil {
-		return err
-	}
-	//InternalNetConfigSec := &types.NetworkConfigSection{}
-	ncs, err := vm.GetNetworkConnectionSection()
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "refreshVapp", "Vapp", vapp.VApp.Name, "vmName", vmname)
-	err = vm.UpdateNetworkConnectionSection(ncs)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (v *VcdPlatform) GetVMFromVAppByIdx(ctx context.Context, vapp *govcd.VApp, idx int) (*govcd.VM, error) {
 
 	if vapp.VApp.Children == nil {
@@ -448,6 +449,5 @@ func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp
 			log.SpanLog(ctx, log.DebugLevelInfra, "validateVMSpecSecion err updating spec section", "vm", vm.VM.Name, "err", err)
 		}
 	}
-	// what else will we find missing in 10.0? No problems in 10.1
 	return nil
 }
