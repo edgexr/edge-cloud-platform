@@ -2,6 +2,7 @@ package orm
 
 import (
 	fmt "fmt"
+	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
@@ -105,6 +106,12 @@ func CreateAlertReceiver(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Both slack URL and slack channel must be specified"),
 				nil)
 		}
+		// make sure channel has "#" as a prefix
+		// this allows channel to be specified without # on the api
+		if !strings.HasPrefix(in.SlackChannel, "#") {
+			in.SlackChannel = "#" + in.SlackChannel
+		}
+
 		err = AlertManagerServer.CreateReceiver(ctx, &in)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create a receiver", "err", err)
