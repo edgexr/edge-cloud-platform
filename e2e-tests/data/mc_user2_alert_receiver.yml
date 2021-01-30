@@ -18,7 +18,7 @@ alertreceivers:
 - name: emailSlackReceiver
   type: slack
   severity: error
-  slackchannel: "#alerts"
+  slackchannel: "alerts"
   slackwebhook: "http://host.docker.internal:9100/slack/webhook"
   appinst:
     appkey:
