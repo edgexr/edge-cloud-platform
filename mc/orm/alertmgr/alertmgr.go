@@ -149,7 +149,7 @@ func isInternalAlert(alert *edgeproto.Alert) bool {
 }
 
 func isLabelInternal(label string) bool {
-	if label == "instance" {
+	if label == "instance" || label == "job" {
 		return true
 	}
 	return false
