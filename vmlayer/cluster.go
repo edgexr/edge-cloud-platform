@@ -83,11 +83,14 @@ func ParseClusterNodePrefix(name string) (bool, uint32) {
 
 func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -270,11 +273,14 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst, "lbName", lbName)
 
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	//find the flavor and check the disk size
 	for _, flavor := range v.FlavorList {
@@ -394,11 +400,14 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 
 func (v *VMPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 	return v.deleteCluster(ctx, lbName, clusterInst, updateCallback)

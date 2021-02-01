@@ -219,7 +219,7 @@ func (v *VcdPlatform) GetVcdClientFromContext(ctx context.Context) *govcd.VCDCli
 	return vcdClient
 }
 
-func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
+func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, vmlayer.OperationInitResult, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitOperationContext", "operationStage", operationStage)
 
 	if operationStage == vmlayer.OperationInitStart {
@@ -228,35 +228,36 @@ func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage v
 		// So we look for the client and expect a NoVCDClientInContext error
 		vcdClient := v.GetVcdClientFromContext(ctx)
 		if vcdClient != nil {
-			// this indicates we called InitOperationContext with OperationInitStart twice before OperationInitComplete
+			// This indicates we called InitOperationContext with OperationInitStart twice before OperationInitComplete
+			// which is unavoidable in some flows
 			log.SpanLog(ctx, log.DebugLevelInfra, "InitOperationContext VCDClient is already in context")
-			// generate warning for the purpose of a traceback
-			log.WarnLog("InitOperationContext VCDClient is already in context")
-			return ctx, fmt.Errorf("VCDClient is already in context")
+			return ctx, vmlayer.OperationAlreadyInitialized, nil
 		}
 		// now get a new client
 		var err error
 		vcdClient, err = v.GetClient(ctx, v.Creds)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to initialize vcdClient", "err", err)
-			return ctx, err
+			return ctx, vmlayer.OperationInitFailed, err
 		} else {
 			ctx = context.WithValue(ctx, VCDClientCtxKey, vcdClient)
 			log.SpanLog(ctx, log.DebugLevelInfra, "Updated context with client", "APIVersion", vcdClient.Client.APIVersion, "key", VCDClientCtxKey)
-			return ctx, nil
+			return ctx, vmlayer.OperationNewlyInitialized, nil
 		}
 	} else {
 		vcdClient := v.GetVcdClientFromContext(ctx)
 		if vcdClient == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext, "ctx", fmt.Sprintf("%+v", ctx))
-			return ctx, fmt.Errorf(NoVCDClientInContext)
+			return ctx, vmlayer.OperationInitFailed, fmt.Errorf(NoVCDClientInContext)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Disconnecting vcdClient")
 		err := vcdClient.Disconnect()
 		if err != nil {
 			// err here happens all the time but has no impact
-			log.SpanLog(ctx, log.DebugLevelInfra, "Disconnect vcdClient", "err", err)
+			if v.Verbose {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Disconnect vcdClient", "err", err)
+			}
 		}
-		return ctx, err
+		return ctx, vmlayer.OperationNewlyInitialized, err
 	}
 }

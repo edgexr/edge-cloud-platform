@@ -59,8 +59,8 @@ func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Cach
 	return nil
 }
 
-func (v *VMPoolPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
-	return ctx, nil
+func (v *VMPoolPlatform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, vmlayer.OperationInitResult, error) {
+	return ctx, vmlayer.OperationNewlyInitialized, nil
 }
 
 func (o *VMPoolPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
