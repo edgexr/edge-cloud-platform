@@ -148,11 +148,14 @@ func seedDockerSecrets(ctx context.Context, client ssh.Client, clusterInst *edge
 func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
@@ -425,11 +428,14 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		return fmt.Errorf("Chef client is not initialized")
 	}
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
 		fallthrough
@@ -588,11 +594,14 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	masterIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
 	if err != nil {

@@ -76,6 +76,6 @@ func (a *AwsEc2Platform) InitData(ctx context.Context, caches *platform.Caches) 
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: &a.VMProperties.CommonPf.Properties}
 }
 
-func (a *AwsEc2Platform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, error) {
-	return ctx, nil
+func (a *AwsEc2Platform) InitOperationContext(ctx context.Context, operationStage vmlayer.OperationInitStage) (context.Context, vmlayer.OperationInitResult, error) {
+	return ctx, vmlayer.OperationNewlyInitialized, nil
 }

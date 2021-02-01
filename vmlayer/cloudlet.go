@@ -228,11 +228,14 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if err != nil {
 		return err
 	}
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	chefAttributes, err := v.GetChefPlatformAttributes(ctx, cloudlet, pfConfig)
 	if err != nil {
@@ -386,11 +389,14 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	v.Caches = caches
 	v.VMProvider.InitProvider(ctx, caches, ProviderInitDeleteCloudlet, updateCallback)
 
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 
 	chefClient := v.VMProperties.GetChefClient()
 	if chefClient == nil {
@@ -463,11 +469,14 @@ func (v *VMPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgep
 
 func (v *VMPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	var err error
-	ctx, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
+	var result OperationInitResult
+	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
 		return err
 	}
-	defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	if result == OperationNewlyInitialized {
+		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
+	}
 	return v.VMProvider.GatherCloudletInfo(ctx, info)
 }
 
