@@ -71,6 +71,7 @@ regiondata:
       updatevmpooltimeout: 20m0s
       dmeapimetricscollectioninterval: 1s
       persistentconnectionmetricscollectioninterval: 1s
+      influxdbmetricsretention: 672h0m0s
       cleanupreservableautoclusteridletime: 30m
     flavors:
     - key:
@@ -114,7 +115,11 @@ regiondata:
       updatevmpooltimeout: 20m0s
       dmeapimetricscollectioninterval: 1s
       persistentconnectionmetricscollectioninterval: 1s
+<<<<<<< HEAD
+      influxdbmetricsretention: 672h0m0s
+=======
       cleanupreservableautoclusteridletime: 30m
+>>>>>>> master
     flavors:
     - key:
         name: x1.tiny
