@@ -87,6 +87,8 @@ func parseFirewallRules(ctx context.Context, ruleString string) ([]FirewallRule,
 			}
 			key := kvs[0]
 			val := kvs[1]
+			key = strings.TrimSpace(key)
+
 			switch key {
 			case "protocol":
 				firewallRule.Protocol = val

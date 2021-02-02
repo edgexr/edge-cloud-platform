@@ -30,14 +30,14 @@ func TestDiscover(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	org, err := tv.GetOrg(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("Error GetOrg: %s\n", err.Error())
-		return
-	}
-
 	if live {
-		fmt.Printf("Org %s id: %s\n", org.Org.Name, org.Org.ID)
+		org, err := tv.GetOrg(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("Error GetOrg: %s\n", err.Error())
+			return
+		}
+		vcd, err := tv.GetVdc(ctx, testVcdClient)
+		fmt.Printf("Org:\n\tName: %s\n\tid: %s\n\tVcd: %s\n\tHref: %s\n", org.Org.Name, org.Org.ID, vcd.Vdc.Name, tv.Creds.Href)
 	} else {
 		return
 	}

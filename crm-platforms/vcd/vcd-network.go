@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -396,6 +397,17 @@ func Octet(ctx context.Context, a string, n int) (int, error) {
 		return 0, fmt.Errorf("Ip %s Not a v4 address", ip)
 	}
 	return int(ip[n]), nil
+}
+
+func MaskToCidr(addr string) (string, error) {
+
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return "", fmt.Errorf("ip %s not valid", ip)
+	}
+	c, _ := net.IPMask(ip.To4()).Size()
+	cidr := strconv.Itoa(c)
+	return cidr, nil
 }
 
 const MaxSubnetsPerSharedLB = 254
