@@ -44,7 +44,7 @@ func TestVmStats(t *testing.T) {
 			AppKey: edgeproto.AppKey{
 				Name: "TestVM",
 			},
-			ClusterInstKey: testClusterInstKey,
+			ClusterInstKey: *testClusterInstKey.Virtual(""),
 		},
 	}
 

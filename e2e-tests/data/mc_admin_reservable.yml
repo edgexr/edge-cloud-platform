@@ -25,7 +25,7 @@ regiondata:
       flavor:
         name: x1.small
       deployment: docker
-      ipaccess: IpAccessShared
+      ipaccess: IpAccessDedicated
       reservable: true
     - key:
         clusterkey:

@@ -9,7 +9,7 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: Reservable2
+            name: autocluster-autoprov
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2

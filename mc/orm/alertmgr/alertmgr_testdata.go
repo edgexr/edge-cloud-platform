@@ -76,7 +76,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 				Organization: "testAppOrg",
 				Version:      "v1.0",
 			},
-			ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
 					Name: "testCluster",
 				},
@@ -101,7 +101,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 				Organization: "testAppOrg",
 				Version:      "v1.0",
 			},
-			ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
 					Name: "testCluster",
 				},
@@ -126,7 +126,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 				Organization: "testAppOrg",
 				Version:      "v1.0",
 			},
-			ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
 					Name: "testCluster",
 				},
@@ -145,7 +145,7 @@ var testAlertReceivers = []ormapi.AlertReceiver{
 		User:     testUsers[0],
 		Email:    "testuser1@testorg.net",
 		AppInst: edgeproto.AppInstKey{
-			ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
 				ClusterKey: edgeproto.ClusterKey{
 					Name: "testCluster",
 				},

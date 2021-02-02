@@ -101,11 +101,24 @@ var ShowClusterInstCmd = &cli.Command{
 	StreamOut:    true,
 }
 
+var DeleteIdleReservableClusterInstsCmd = &cli.Command{
+	Use:          "DeleteIdleReservableClusterInsts",
+	RequiredArgs: "region " + strings.Join(IdleReservableClusterInstsRequiredArgs, " "),
+	OptionalArgs: strings.Join(IdleReservableClusterInstsOptionalArgs, " "),
+	AliasArgs:    strings.Join(IdleReservableClusterInstsAliasArgs, " "),
+	SpecialArgs:  &IdleReservableClusterInstsSpecialArgs,
+	Comments:     addRegionComment(IdleReservableClusterInstsComments),
+	ReqData:      &ormapi.RegionIdleReservableClusterInsts{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRest("/auth/ctrl/DeleteIdleReservableClusterInsts"),
+}
+
 var ClusterInstApiCmds = []*cli.Command{
 	CreateClusterInstCmd,
 	DeleteClusterInstCmd,
 	UpdateClusterInstCmd,
 	ShowClusterInstCmd,
+	DeleteIdleReservableClusterInstsCmd,
 }
 
 var UpdateClusterInstRequiredArgs = []string{
@@ -119,6 +132,8 @@ var UpdateClusterInstOptionalArgs = []string{
 	"numnodes",
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
+	"reservationendedat.seconds",
+	"reservationendedat.nanos",
 }
 var ClusterInstKeyRequiredArgs = []string{}
 var ClusterInstKeyOptionalArgs = []string{
@@ -158,6 +173,8 @@ var ClusterInstOptionalArgs = []string{
 	"reservable",
 	"sharedvolumesize",
 	"skipcrmcleanuponfailure",
+	"reservationendedat.seconds",
+	"reservationendedat.nanos",
 }
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
@@ -208,6 +225,8 @@ var ClusterInstAliasArgs = []string{
 	"createdat.nanos=clusterinst.createdat.nanos",
 	"updatedat.seconds=clusterinst.updatedat.seconds",
 	"updatedat.nanos=clusterinst.updatedat.nanos",
+	"reservationendedat.seconds=clusterinst.reservationendedat.seconds",
+	"reservationendedat.nanos=clusterinst.reservationendedat.nanos",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -252,6 +271,17 @@ var ClusterInstSpecialArgs = map[string]string{
 	"clusterinst.fields":      "StringArray",
 	"clusterinst.status.msgs": "StringArray",
 }
+var IdleReservableClusterInstsRequiredArgs = []string{}
+var IdleReservableClusterInstsOptionalArgs = []string{
+	"idletime",
+}
+var IdleReservableClusterInstsAliasArgs = []string{
+	"idletime=idlereservableclusterinsts.idletime",
+}
+var IdleReservableClusterInstsComments = map[string]string{
+	"idletime": "Idle time (duration)",
+}
+var IdleReservableClusterInstsSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{
 	"key.clusterkey.name",
 	"key.cloudletkey.organization",

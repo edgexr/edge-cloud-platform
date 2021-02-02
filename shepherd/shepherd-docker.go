@@ -112,13 +112,8 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 		containers[containerStat.Container] = &containerStat
 	}
 
-	// Walk AppInstCache with a filter and add appName
-	filter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			ClusterInstKey: c.key,
-		},
-	}
-	err = AppInstCache.Show(&filter, func(obj *edgeproto.AppInst) error {
+	// find apps on this cluster and add appName
+	AppInstCache.GetForRealClusterInstKey(&c.key, func(obj *edgeproto.AppInst) {
 		var cData *ContainerStats
 		var found bool
 
@@ -132,7 +127,6 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 
 			}
 		}
-		return nil
 	})
 	// Keep track of those containers not associated with any App, just in case
 	for _, container := range containers {

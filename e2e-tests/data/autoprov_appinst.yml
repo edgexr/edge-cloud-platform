@@ -9,11 +9,7 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: Reservable2
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-2
-          organization: MobiledgeX
+            name: autocluster-autoprov
     - key:
         appkey:
           organization: AcmeAppCo
@@ -21,8 +17,4 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: ReservableD
-          cloudletkey:
-            organization: dmuus
-            name: dmuus-cloud-1
-          organization: MobiledgeX
+            name: autocluster-autoprov

@@ -134,7 +134,7 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 				Organization: fmt.Sprintf("%v", value[2]),
 				Version:      fmt.Sprintf("%v", value[3]),
 			},
-			ClusterInstKey: edgeproto.ClusterInstKey{
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
 				Organization: fmt.Sprintf("%v", value[5]),
 				ClusterKey:   edgeproto.ClusterKey{Name: fmt.Sprintf("%v", value[4])},
 				CloudletKey: edgeproto.CloudletKey{

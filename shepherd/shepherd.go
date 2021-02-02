@@ -121,7 +121,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		return
 	} else if new.Key.AppKey.Name == MEXPrometheusAppName {
 		// check for prometheus
-		mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key.ClusterInstKey)
+		mapKey = k8smgmt.GetK8sNodeNameSuffix(new.ClusterInstKey())
 	} else {
 		return
 	}
@@ -132,7 +132,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
 		// get address of prometheus.
 		clusterInst := edgeproto.ClusterInst{}
-		found := ClusterInstCache.Get(&new.Key.ClusterInstKey, &clusterInst)
+		found := ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return

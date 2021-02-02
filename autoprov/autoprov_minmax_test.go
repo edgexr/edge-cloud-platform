@@ -37,6 +37,7 @@ func TestChoose(t *testing.T) {
 	cloudlets[1].Key.Name = "B"
 	cloudlets[2].Key.Name = "C"
 	potentialAppInsts := []edgeproto.AppInstKey{}
+	potentialCreate := []*potentialCreateSite{}
 	for _, cloudlet := range cloudlets {
 		policy.Cloudlets = append(policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{
@@ -47,8 +48,13 @@ func TestChoose(t *testing.T) {
 		aiKey.AppKey = app.Key
 		aiKey.ClusterInstKey.CloudletKey = cloudlet.Key
 		potentialAppInsts = append(potentialAppInsts, aiKey)
-
+		pc := &potentialCreateSite{
+			cloudletKey: cloudlet.Key,
+			hasFree:     0,
+		}
+		potentialCreate = append(potentialCreate, pc)
 	}
+
 	app.AutoProvPolicies = []string{policy.Key.Name}
 	// app stats
 	appStats := apAppStats{}
@@ -57,8 +63,13 @@ func TestChoose(t *testing.T) {
 
 	// the chooseCreate and chooseDelete functions may modify the passed in
 	// array so we need to clone it for testing.
-	clone := func(in []edgeproto.AppInstKey) []edgeproto.AppInstKey {
+	cloneA := func(in []edgeproto.AppInstKey) []edgeproto.AppInstKey {
 		out := make([]edgeproto.AppInstKey, len(in), len(in))
+		copy(out, in)
+		return out
+	}
+	clone := func(in []*potentialCreateSite) []*potentialCreateSite {
+		out := make([]*potentialCreateSite, len(in), len(in))
 		copy(out, in)
 		return out
 	}
@@ -69,57 +80,67 @@ func TestChoose(t *testing.T) {
 	// chooseCreate tests
 
 	// no stats, should return same list
-	results := appChecker.chooseCreate(ctx, clone(potentialAppInsts), 3)
-	require.Equal(t, potentialAppInsts, results)
+	results := appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	require.Equal(t, potentialCreate, results)
 
 	// no stats, should return same list (count greater than list)
-	results = appChecker.chooseCreate(ctx, clone(potentialAppInsts), 100)
-	require.Equal(t, potentialAppInsts, results)
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 100)
+	require.Equal(t, potentialCreate, results)
 
 	// no stats, should return same list (truncated)
-	results = appChecker.chooseCreate(ctx, clone(potentialAppInsts), 1)
-	require.Equal(t, potentialAppInsts[:1], results)
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 1)
+	require.Equal(t, potentialCreate[:1], results)
 
 	// zero stats
 	for _, cloudlet := range cloudlets {
 		appStats.cloudlets[cloudlet.Key] = &apCloudletStats{}
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialAppInsts), 2)
-	require.Equal(t, potentialAppInsts[:2], results)
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 2)
+	require.Equal(t, potentialCreate[:2], results)
 
 	// later cloudlets should be preferred
 	appStats.cloudlets[cloudlets[0].Key].count = 2
 	appStats.cloudlets[cloudlets[1].Key].count = 4
 	appStats.cloudlets[cloudlets[2].Key].count = 6
-	reverse := []edgeproto.AppInstKey{
-		potentialAppInsts[2],
-		potentialAppInsts[1],
-		potentialAppInsts[0],
+	reverse := []*potentialCreateSite{
+		potentialCreate[2],
+		potentialCreate[1],
+		potentialCreate[0],
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialAppInsts), 3)
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
 	require.Equal(t, reverse, results)
 
 	// change stats to change order
 	appStats.cloudlets[cloudlets[0].Key].count = 2
 	appStats.cloudlets[cloudlets[1].Key].count = 6
 	appStats.cloudlets[cloudlets[2].Key].count = 5
-	expected := []edgeproto.AppInstKey{
-		potentialAppInsts[1],
-		potentialAppInsts[2],
-		potentialAppInsts[0],
+	expected := []*potentialCreateSite{
+		potentialCreate[1],
+		potentialCreate[2],
+		potentialCreate[0],
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialAppInsts), 3)
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	require.Equal(t, expected, results)
+
+	// check that cloudlets with free reservable ClusterInsts are preferred
+	potentialCreate[2].hasFree = 1
+	expected = []*potentialCreateSite{
+		potentialCreate[2],
+		potentialCreate[1],
+		potentialCreate[0],
+	}
+	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
 	require.Equal(t, expected, results)
 
 	// chooseDelete tests
 
 	// should get same list
-	results = appChecker.chooseDelete(ctx, clone(potentialAppInsts), 3)
-	require.Equal(t, potentialAppInsts, results)
+	resultsA := appChecker.chooseDelete(ctx, cloneA(potentialAppInsts), 3)
+	require.Equal(t, potentialAppInsts, resultsA)
 
 	// should get truncated end of list
-	results = appChecker.chooseDelete(ctx, clone(potentialAppInsts), 2)
-	require.Equal(t, potentialAppInsts[1:], results)
+	resultsA = appChecker.chooseDelete(ctx, cloneA(potentialAppInsts), 2)
+	require.Equal(t, potentialAppInsts[1:], resultsA)
 }
 
 func TestAppChecker(t *testing.T) {
@@ -639,7 +660,7 @@ func (s *policyTest) getAppInsts(key *edgeproto.AppKey) []edgeproto.AppInst {
 	for ii, _ := range s.clusterInsts {
 		inst := edgeproto.AppInst{}
 		inst.Key.AppKey = *key
-		inst.Key.ClusterInstKey = s.clusterInsts[ii].Key
+		inst.Key.ClusterInstKey = *s.clusterInsts[ii].Key.Virtual(cloudcommon.AutoProvClusterName)
 		insts = append(insts, inst)
 	}
 	return insts

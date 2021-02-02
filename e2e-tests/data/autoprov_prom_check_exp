@@ -71,14 +71,14 @@ ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | 
   "discoveredLabels": {
     "__address__": "host.docker.internal:9091",
     "__meta_filepath": "/tmp/prom_targets.json",
-    "__metrics_path__": "/metrics/autoprovappd-ReservableD-AcmeAppCo-1.0",
+    "__metrics_path__": "/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
     "__scheme__": "http",
     "app": "autoprovappd",
     "apporg": "AcmeAppCo",
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "ReservableD",
+    "cluster": "autocluster-autoprov",
     "clusterorg": "MobiledgeX",
     "job": "MobiledgeX Monitoring"
   },
@@ -88,14 +88,14 @@ ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '.data.activeTargets[] | 
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "ReservableD",
+    "cluster": "autocluster-autoprov",
     "clusterorg": "MobiledgeX",
     "instance": "host.docker.internal:9091",
     "job": "MobiledgeX Monitoring"
   },
   "scrapePool": "MobiledgeX Monitoring",
-  "scrapeUrl": "http://host.docker.internal:9091/metrics/autoprovappd-ReservableD-AcmeAppCo-1.0",
-  "globalUrl": "http://host.docker.internal:9091/metrics/autoprovappd-ReservableD-AcmeAppCo-1.0",
+  "scrapeUrl": "http://host.docker.internal:9091/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
+  "globalUrl": "http://host.docker.internal:9091/metrics/autoprovappd-autocluster-autoprov-AcmeAppCo-1.0",
   "lastError": ""
 }
 

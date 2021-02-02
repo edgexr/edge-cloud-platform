@@ -55,3 +55,17 @@ type swaggerShowClusterInst struct {
 	// in: body
 	Body RegionClusterInst
 }
+
+// Request summary for DeleteIdleReservableClusterInsts
+// swagger:parameters DeleteIdleReservableClusterInsts
+type swaggerDeleteIdleReservableClusterInsts struct {
+	// in: body
+	Body RegionIdleReservableClusterInsts
+}
+
+type RegionIdleReservableClusterInsts struct {
+	// required: true
+	// Region name
+	Region                     string
+	IdleReservableClusterInsts edgeproto.IdleReservableClusterInsts
+}

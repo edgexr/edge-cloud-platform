@@ -55,7 +55,8 @@ func (p *AppInstWorker) sendMetrics() {
 	ctx := log.ContextWithSpan(context.Background(), span)
 	defer span.Finish()
 	key := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: p.appInstKey.ClusterInstKey,
+		// no real cluster name since these are VM apps
+		ClusterInstKey: *p.appInstKey.ClusterInstKey.Real(""),
 		Pod:            p.appInstKey.AppKey.Name,
 		App:            util.DNSSanitize(p.appInstKey.AppKey.Name),
 		Version:        util.DNSSanitize(p.appInstKey.AppKey.Version),

@@ -868,6 +868,10 @@ func (s *StreamDummyServer) ShowClusterInst(in *edgeproto.ClusterInst, server ed
 	return nil
 }
 
+func (s *StreamDummyServer) DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
+
 func (s *StreamDummyServer) CreateCloudletPool(ctx context.Context, in *edgeproto.CloudletPool) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }

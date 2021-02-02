@@ -163,7 +163,7 @@ func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, d
 	require.Equal(t, http.StatusOK, status)
 	// test with cluster org only
 	appInst := edgeproto.AppInstKey{
-		ClusterInstKey: edgeproto.ClusterInstKey{
+		ClusterInstKey: edgeproto.VirtualClusterInstKey{
 			Organization: devOrg,
 		},
 	}

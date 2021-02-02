@@ -58,9 +58,19 @@ func (s *Client) ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst
 	return outlist, status, err
 }
 
+func (s *Client) DeleteIdleReservableClusterInsts(uri, token string, in *ormapi.RegionIdleReservableClusterInsts) (*edgeproto.Result, int, error) {
+	out := edgeproto.Result{}
+	status, err := s.PostJson(uri+"/auth/ctrl/DeleteIdleReservableClusterInsts", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 type ClusterInstApiClient interface {
 	CreateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error)
 	DeleteClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error)
 	UpdateClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.Result, int, error)
 	ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst) ([]edgeproto.ClusterInst, int, error)
+	DeleteIdleReservableClusterInsts(uri, token string, in *ormapi.RegionIdleReservableClusterInsts) (*edgeproto.Result, int, error)
 }

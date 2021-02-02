@@ -7,7 +7,7 @@ ran: curl -s http://localhost:9092/api/v1/alerts | jq '.data.alerts[] | select(.
     "appver": "1.0",
     "cloudlet": "dmuus-cloud-1",
     "cloudletorg": "dmuus",
-    "cluster": "ReservableD",
+    "cluster": "autocluster-autoprov",
     "clusterorg": "MobiledgeX",
     "job": "MobiledgeX Monitoring"
   },

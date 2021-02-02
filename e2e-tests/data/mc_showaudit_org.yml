@@ -42,7 +42,7 @@
   status: 200
   starttime: "2020-11-17T22:26:26.298453+05:30"
   duration: 438.879ms
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":3,"num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null},"created_at":{},"updated_at":{}}}'
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":3,"num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}
@@ -70,7 +70,7 @@
   status: 200
   starttime: "2020-11-17T22:26:25.810722+05:30"
   duration: 479.812ms
-  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":1,"num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{}}}'
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":1,"num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
   response: |
     {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
     {"data":{"message":"Deleting"}}

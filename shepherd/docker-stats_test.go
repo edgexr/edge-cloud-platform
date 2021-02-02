@@ -124,7 +124,7 @@ func TestDockerStats(t *testing.T) {
 				Name:    "DockerApp2",
 				Version: "10",
 			},
-			ClusterInstKey: testClusterInstKey,
+			ClusterInstKey: *testClusterInstKey.Virtual(""),
 		},
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp2Container1", "DockerApp2Container2"},
