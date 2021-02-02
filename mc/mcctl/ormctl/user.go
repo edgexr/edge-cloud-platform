@@ -34,9 +34,9 @@ func GetUserCommand() *cobra.Command {
 		Run:          runRest("/auth/user/update"),
 	}, &cli.Command{
 		Use:          "show",
-		ReqData:      &ormapi.Organization{},
-		OptionalArgs: "orgname",
-		AliasArgs:    "orgname=name",
+		ReqData:      &ormapi.ShowUser{},
+		OptionalArgs: "name email emailverified familyname givenname nickname locked enabletotp orgname role",
+		AliasArgs:    "name=user.name email=user.email emailverified=user.emailverified familyname=user.familyname givenname=user.givenname nickname=user.nickname locked=user.locked enabletotp=user.enabletotp orgname=org",
 		ReplyData:    &[]ormapi.User{},
 		Run:          runRest("/auth/user/show"),
 	}, &cli.Command{

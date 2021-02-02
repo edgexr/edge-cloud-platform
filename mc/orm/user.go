@@ -538,54 +538,90 @@ func ShowUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	filter := ormapi.Organization{}
+	filter := ormapi.ShowUser{}
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&filter); err != nil {
 			return bindErr(c, err)
 		}
 	}
-	users := []ormapi.User{}
-	if err := authorized(ctx, claims.Username, filter.Name, ResourceUsers, ActionView); err != nil {
-		if filter.Name == "" && c.Request().ContentLength == 0 {
-			// user probably forgot to specify orgname
-			return c.JSON(http.StatusBadRequest, Msg("No organization name specified"))
-		}
+	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceUsers, ActionView)
+	if err != nil {
 		return err
 	}
-	// if filter ID is 0, show all users (super user only)
+	_, admin := authOrgs[""]
+	_, orgFound := authOrgs[filter.Org]
+	if filter.Org != "" && !admin && !orgFound {
+		// no perms for specified org
+		return echo.ErrForbidden
+	}
+
+	// prevent filtering user on sensitive data
+	filter.User.Passhash = ""
+	filter.User.Salt = ""
+	filter.User.Iter = 0
+	filter.User.PassCrackTimeSec = 0
+	filter.User.TOTPSharedKey = ""
+
+	// look for all users matching user filter
 	db := loggedDB(ctx)
-	if filter.Name == "" {
-		err = db.Find(&users).Error
-		if err != nil {
-			return setReply(c, dbErr(err), nil)
-		}
-	} else {
+	users := []ormapi.User{}
+	err = db.Where(&filter.User).Find(&users).Error
+	if err != nil {
+		return setReply(c, dbErr(err), nil)
+	}
+
+	if !admin || filter.Org != "" || filter.Role != "" {
+		// filter by specified org (or authorizedOrgs) or role
 		groupings, err := enforcer.GetGroupingPolicy()
 		if err != nil {
 			return dbErr(err)
 		}
+		allowedUsers := make(map[string]struct{}) // key is username
 		for _, grp := range groupings {
-			if len(grp) < 2 {
+			role := parseRole(grp)
+			if role == nil {
 				continue
 			}
-			orguser := strings.Split(grp[0], "::")
-			if len(orguser) > 1 && orguser[0] == filter.Name {
-				user := ormapi.User{}
-				user.Name = orguser[1]
-				err = db.Where(&user).First(&user).Error
-				if err != nil {
-					return setReply(c, dbErr(err), nil)
+
+			if filter.Org != "" && filter.Org != role.Org {
+				continue
+			}
+			if filter.Org == "" && !admin {
+				// filter by allowed orgs
+				if _, found := authOrgs[role.Org]; !found {
+					continue
 				}
-				users = append(users, user)
+			}
+			if filter.Role != "" && filter.Role != role.Role {
+				continue
+			}
+			allowedUsers[role.Username] = struct{}{}
+		}
+		filteredUsers := []ormapi.User{}
+		for _, user := range users {
+			if _, found := allowedUsers[user.Name]; found {
+				filteredUsers = append(filteredUsers, user)
 			}
 		}
+		users = filteredUsers
 	}
 	for ii, _ := range users {
-		// don't show auth/private info
+		// don't show auth info
 		users[ii].Passhash = ""
 		users[ii].TOTPSharedKey = ""
 		users[ii].Salt = ""
 		users[ii].Iter = 0
+		if !admin && users[ii].Name != claims.Username {
+			// don't expose private info to other users
+			users[ii].Email = ""
+			users[ii].EmailVerified = false
+			users[ii].Locked = false
+			users[ii].PassCrackTimeSec = 0
+			users[ii].EnableTOTP = false
+			users[ii].Metadata = ""
+			users[ii].CreatedAt = time.Time{}
+			users[ii].UpdatedAt = time.Time{}
+		}
 	}
 	return c.JSON(http.StatusOK, users)
 }

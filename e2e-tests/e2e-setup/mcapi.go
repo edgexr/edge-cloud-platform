@@ -105,7 +105,7 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		if !rc {
 			return false
 		}
-		users, status, err := mcClient.ShowUser(uri, token, &ormapi.Organization{})
+		users, status, err := mcClient.ShowUser(uri, token, &ormapi.ShowUser{})
 		checkMcErr("ShowUser", status, err, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
 		return rc

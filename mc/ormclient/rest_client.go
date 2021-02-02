@@ -69,7 +69,7 @@ func (s *Client) UpdateUser(uri, token string, createUserJSON string) (*ormapi.U
 	return &resp, st, err
 }
 
-func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error) {
+func (s *Client) ShowUser(uri, token string, org *ormapi.ShowUser) ([]ormapi.User, int, error) {
 	users := []ormapi.User{}
 	status, err := s.PostJson(uri+"/auth/user/show", token, org, &users)
 	return users, status, err
