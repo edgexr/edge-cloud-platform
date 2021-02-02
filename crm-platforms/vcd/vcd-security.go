@@ -104,37 +104,70 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromVault(ctx context.Context) error 
 	return nil
 }
 
+func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context, vcdClient *govcd.VCDClient) (string, error) {
+
+	extNet, err := v.GetExtNetwork(ctx, vcdClient)
+	if err != nil {
+		return "", err
+	}
+
+	scope := extNet.OrgVDCNetwork.Configuration.IPScopes.IPScope[0]
+	cidr, err := MaskToCidr(scope.Netmask)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalIpNetworkCidr error converting mask to cider", "cidr", cidr, "error", err)
+		return "", err
+	}
+	addr := scope.Gateway + "/" + cidr
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetExternalIpNetworkCidr", "addr", addr)
+
+	return addr, nil
+
+}
+
+// same as vsphere (common vmware utils?)
 func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, trustPolicy *edgeproto.TrustPolicy) error {
 
-	/*	Rework, ends up locking itself out of the host :
-		crmserver/main.go:285	Platform init fail	{"err": "unable to modify iptables rule: -P OUTPUT DROP,  - ssh dial fail to 172.70.71.10:22 - dial tcp 172.70.71.10:22: i/o timeout"}
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
+	// configure iptables based security
+	sshCidrsAllowed := []string{}
+	externalNet, err := v.GetExternalIpNetworkCidr(ctx, vcdClient)
+	if err != nil {
+		return err
+	}
 
-			log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB TBI", "rootLBName", rootLBName)
-			// configure iptables based security
-			sshCidrsAllowed := []string{}
-			externalNet, err := v.GetExternalIpNetworkCidr(ctx)
-			if err != nil {
-				return err
-			}
+	sshCidrsAllowed = append(sshCidrsAllowed, externalNet)
+	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, trustPolicy)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
+		return err
+	}
 
-			sshCidrsAllowed = append(sshCidrsAllowed, externalNet)
-			return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, trustPolicy)
-	*/
-	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB TBI", "rootLBName", rootLBName)
 	return nil
 }
 
+// same as vsphere
 func (v *VcdPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, serverName, label string, allowedCIDR string, ports []dme.AppPort) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
-
-	return nil
+	// this can be called during LB init so we need to ensure we can reach the server before trying iptables commands
+	err := vmlayer.WaitServerReady(ctx, v, client, serverName, vmlayer.MaxRootLBWait)
+	if err != nil {
+		return err
+	}
+	return vmlayer.AddIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }
 
+// same as vsphere
 func (v *VcdPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
 
-	return nil
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
+	return vmlayer.RemoveIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }
 
 func setVer(cli *govcd.VCDClient) error {

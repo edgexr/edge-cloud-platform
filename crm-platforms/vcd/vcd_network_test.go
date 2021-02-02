@@ -796,3 +796,21 @@ func TestAddNextIsoSubnetToVapp(t *testing.T) {
 		// create a vapp network of it like this and add the vm's net connection section.
 	}
 }
+
+func TestGetCidr(t *testing.T) {
+	_, _, err := InitVcdTestEnv()
+	require.Nil(t, err, "InitVcdTestEnv")
+	defer testVcdClient.Disconnect()
+	mask := "255.255.255.0"
+	cidr, _ := MaskToCidr(mask)
+	require.Equal(t, "24", cidr)
+
+	mask = "255.255.255.248"
+	cidr, _ = MaskToCidr(mask)
+	require.Equal(t, "29", cidr)
+
+	mask = "255.255.255.224"
+	cidr, _ = MaskToCidr(mask)
+	require.Equal(t, "27", cidr)
+
+}
