@@ -82,6 +82,20 @@ func goodPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, toke
 	require.Equal(t, http.StatusOK, status)
 }
 
+var _ = edgeproto.GetFields
+
+func badPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+	_, status, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+	_, status, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
 func badPermTestClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {

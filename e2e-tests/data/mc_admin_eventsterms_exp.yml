@@ -32,6 +32,8 @@
     - Cloudlet maintenance start
     - Cloudlet maintenance done
     - Cloudlet online
+    - Free ClusterInst reservation
+    - Reserve ClusterInst
     - cluster-svc create App
     - cluster-svc create AppInst
     - crm start
@@ -78,6 +80,7 @@
     - org
     - policy
     - policyorg
+    - realcluster
     - reason
     - region
     - remote-ip

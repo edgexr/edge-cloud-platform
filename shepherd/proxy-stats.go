@@ -186,10 +186,10 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		}
 
 		clusterInst := edgeproto.ClusterInst{}
-		found := ClusterInstCache.Get(&appInst.Key.ClusterInstKey, &clusterInst)
+		found := ClusterInstCache.Get(appInst.ClusterInstKey(), &clusterInst)
 		// lb vm apps continue anyway
 		if !found && !(app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER) {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for "+appInst.Key.AppKey.Name)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for AppInst", "AppInstKey", appInst.Key)
 			return ""
 		}
 		err := initClient(ctx, &app, appInst, &clusterInst, &scrapePoint)

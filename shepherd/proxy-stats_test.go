@@ -7,11 +7,12 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/testutil"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Test the types of appInstances that will create a scrapePoint
 func TestCollectProxyStats(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelMetrics)
 	ctx := setupLog()
 	defer log.FinishTracer()
 	myPlatform = &shepherd_unittest.Platform{}
@@ -40,7 +41,7 @@ func TestCollectProxyStats(t *testing.T) {
 		AppCache.Update(ctx, &testutil.AppData[ii], 0)
 	}
 	// Now test each entry in AppInstData
-	for ii, obj := range testutil.AppInstData {
+	for ii, obj := range testutil.CreatedAppInstData() {
 		// set mapped ports and state
 		app := edgeproto.App{}
 		found := AppCache.Get(&obj.Key.AppKey, &app)
@@ -58,28 +59,28 @@ func TestCollectProxyStats(t *testing.T) {
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 			// CollectProxyStats should return empty when running on the same
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 2:
 			// Same app, but different cloudlets - map entry is the same
 			target := CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 5:
 			// udp load-balancer
 			// dedicated helm access
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 		case 8:
 			// dedicated, no ports
 			target := CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 11:
 			// vm app being a lb
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 		}
 		AppInstCache.Update(ctx, &testutil.AppInstData[ii], 0)
 	}
@@ -102,28 +103,28 @@ func TestCollectProxyStats(t *testing.T) {
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 			// CollectProxyStats should return empty when running on the same
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 2:
 			// Same app, but different cloudlets - map entry is the same
 			target := CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 5:
 			// udp load-balancer
 			// dedicated helm access
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 		case 8:
 			// dedicated, no ports
 			target := CollectProxyStats(ctx, &obj)
-			assert.Empty(t, target)
+			require.Empty(t, target)
 		case 11:
 			// vm app behind lb
 			target := CollectProxyStats(ctx, &obj)
-			assert.NotEmpty(t, target)
+			require.NotEmpty(t, target)
 		}
 		AppInstCache.Delete(ctx, &testutil.AppInstData[ii], 0)
 	}
@@ -134,19 +135,19 @@ func TestCollectProxyStats(t *testing.T) {
 	app := edgeproto.App{}
 	found := AppCache.Get(&appInst.Key.AppKey, &app)
 	if !found {
-		assert.Fail(t, "Could not find app for appinst")
+		require.Fail(t, "Could not find app for appinst")
 	}
 	ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
 	appInst.MappedPorts = ports
 	appInst.State = edgeproto.TrackedState_READY
 	// scrape point should still be created
 	target := CollectProxyStats(ctx, &appInst)
-	assert.NotEmpty(t, target)
-	assert.Nil(t, ProxyMap[target].Client)
+	require.NotEmpty(t, target)
+	require.Nil(t, ProxyMap[target].Client)
 	// Set myPlatform to return client now and create appInst again
 	myPlatform = &shepherd_unittest.Platform{FailPlatformClient: false}
 	// Create scrape point again
 	target = CollectProxyStats(ctx, &appInst)
-	assert.NotEmpty(t, target)
-	assert.NotNil(t, ProxyMap[target].Client)
+	require.NotEmpty(t, target)
+	require.NotNil(t, ProxyMap[target].Client)
 }

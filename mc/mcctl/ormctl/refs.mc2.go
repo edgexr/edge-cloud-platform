@@ -88,6 +88,7 @@ var CloudletRefsOptionalArgs = []string{
 	"usedstaticips",
 	"optresusedmap:#.key",
 	"optresusedmap:#.value",
+	"reservedautoclusterids",
 }
 var CloudletRefsAliasArgs = []string{
 	"key.organization=cloudletrefs.key.organization",
@@ -102,16 +103,18 @@ var CloudletRefsAliasArgs = []string{
 	"usedstaticips=cloudletrefs.usedstaticips",
 	"optresusedmap:#.key=cloudletrefs.optresusedmap:#.key",
 	"optresusedmap:#.value=cloudletrefs.optresusedmap:#.value",
+	"reservedautoclusterids=cloudletrefs.reservedautoclusterids",
 }
 var CloudletRefsComments = map[string]string{
-	"key.organization": "Organization of the cloudlet site",
-	"key.name":         "Name of the cloudlet",
-	"clusters:#.name":  "Cluster name",
-	"usedram":          "Used RAM in MB",
-	"usedvcores":       "Used VCPU cores",
-	"useddisk":         "Used disk in GB",
-	"useddynamicips":   "Used dynamic IPs",
-	"usedstaticips":    "Used static IPs",
+	"key.organization":       "Organization of the cloudlet site",
+	"key.name":               "Name of the cloudlet",
+	"clusters:#.name":        "Cluster name",
+	"usedram":                "Used RAM in MB",
+	"usedvcores":             "Used VCPU cores",
+	"useddisk":               "Used disk in GB",
+	"useddynamicips":         "Used dynamic IPs",
+	"usedstaticips":          "Used static IPs",
+	"reservedautoclusterids": "Track reservable autoclusterinsts ids in use. This is a bitmap.",
 }
 var CloudletRefsSpecialArgs = map[string]string{}
 var ClusterRefsRequiredArgs = []string{

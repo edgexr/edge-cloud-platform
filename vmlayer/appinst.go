@@ -86,7 +86,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		orchVals.lbName = cloudcommon.GetVMAppFQDN(&appInst.Key, &appInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 		orchVals.externalServerName = orchVals.lbName
 		orchVals.newSubnetName = objName + "-subnet"
-		tags := v.GetChefClusterTags(&appInst.Key.ClusterInstKey, VMTypeRootLB)
+		tags := v.GetChefClusterTags(appInst.ClusterInstKey(), VMTypeRootLB)
 		lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, updateCallback)
 		if err != nil {
 			return &orchVals, err

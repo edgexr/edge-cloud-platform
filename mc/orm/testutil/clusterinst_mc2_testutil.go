@@ -93,6 +93,20 @@ func TestPermShowClusterInst(mcClient *ormclient.Client, uri, token, region, org
 	return TestShowClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestDeleteIdleReservableClusterInsts(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.IdleReservableClusterInsts, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionIdleReservableClusterInsts{}
+	dat.Region = region
+	dat.IdleReservableClusterInsts = *in
+	for _, fn := range modFuncs {
+		fn(&dat.IdleReservableClusterInsts)
+	}
+	return mcClient.DeleteIdleReservableClusterInsts(uri, token, dat)
+}
+func TestPermDeleteIdleReservableClusterInsts(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.IdleReservableClusterInsts{}
+	return TestDeleteIdleReservableClusterInsts(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func (s *TestClient) CreateClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionClusterInst{
 		Region:      s.Region,
@@ -135,6 +149,18 @@ func (s *TestClient) ShowClusterInst(ctx context.Context, in *edgeproto.ClusterI
 		ClusterInst: *in,
 	}
 	out, status, err := s.McClient.ShowClusterInst(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionIdleReservableClusterInsts{
+		Region:                     s.Region,
+		IdleReservableClusterInsts: *in,
+	}
+	out, status, err := s.McClient.DeleteIdleReservableClusterInsts(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

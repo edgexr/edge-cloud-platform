@@ -135,12 +135,11 @@ var CreateAppInstOptionalArgs = []string{
 	"cluster-org",
 	"flavor",
 	"crmoverride",
-	"autoclusteripaccess",
 	"configs:#.kind",
 	"configs:#.config",
-	"sharedvolumesize",
 	"healthcheck",
 	"privacypolicy",
+	"realclustername",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"app-org",
@@ -154,14 +153,13 @@ var DeleteAppInstOptionalArgs = []string{
 	"cluster-org",
 	"flavor",
 	"crmoverride",
-	"autoclusteripaccess",
 	"forceupdate",
 	"updatemultiple",
 	"configs:#.kind",
 	"configs:#.config",
-	"sharedvolumesize",
 	"healthcheck",
 	"privacypolicy",
+	"realclustername",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"app-org",
@@ -177,6 +175,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"forceupdate",
 	"updatemultiple",
 	"privacypolicy",
+	"realclustername",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"app-org",
@@ -193,6 +192,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"configs:#.config",
 	"privacypolicy",
 	"powerstate",
+	"realclustername",
 }
 
 var RequestAppInstLatencyCmd = &cli.Command{
@@ -211,6 +211,26 @@ var AppInstLatencyApiCmds = []*cli.Command{
 	RequestAppInstLatencyCmd,
 }
 
+var VirtualClusterInstKeyRequiredArgs = []string{}
+var VirtualClusterInstKeyOptionalArgs = []string{
+	"clusterkey.name",
+	"cloudletkey.organization",
+	"cloudletkey.name",
+	"organization",
+}
+var VirtualClusterInstKeyAliasArgs = []string{
+	"clusterkey.name=virtualclusterinstkey.clusterkey.name",
+	"cloudletkey.organization=virtualclusterinstkey.cloudletkey.organization",
+	"cloudletkey.name=virtualclusterinstkey.cloudletkey.name",
+	"organization=virtualclusterinstkey.organization",
+}
+var VirtualClusterInstKeyComments = map[string]string{
+	"clusterkey.name":          "Cluster name",
+	"cloudletkey.organization": "Organization of the cloudlet site",
+	"cloudletkey.name":         "Name of the cloudlet",
+	"organization":             "Name of Developer organization that this cluster belongs to",
+}
+var VirtualClusterInstKeySpecialArgs = map[string]string{}
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
 	"appkey.organization",
@@ -252,15 +272,14 @@ var AppInstOptionalArgs = []string{
 	"cluster-org",
 	"flavor",
 	"crmoverride",
-	"autoclusteripaccess",
 	"forceupdate",
 	"updatemultiple",
 	"configs:#.kind",
 	"configs:#.config",
-	"sharedvolumesize",
 	"healthcheck",
 	"privacypolicy",
 	"powerstate",
+	"realclustername",
 }
 var AppInstAliasArgs = []string{
 	"fields=appinst.fields",
@@ -308,7 +327,6 @@ var AppInstAliasArgs = []string{
 	"updatemultiple=appinst.updatemultiple",
 	"configs:#.kind=appinst.configs:#.kind",
 	"configs:#.config=appinst.configs:#.config",
-	"sharedvolumesize=appinst.sharedvolumesize",
 	"healthcheck=appinst.healthcheck",
 	"privacypolicy=appinst.privacypolicy",
 	"powerstate=appinst.powerstate",
@@ -318,6 +336,7 @@ var AppInstAliasArgs = []string{
 	"optres=appinst.optres",
 	"updatedat.seconds=appinst.updatedat.seconds",
 	"updatedat.nanos=appinst.updatedat.nanos",
+	"realclustername=appinst.realclustername",
 }
 var AppInstComments = map[string]string{
 	"fields":                         "Fields are used for the Update API to specify which fields to apply",
@@ -349,13 +368,12 @@ var AppInstComments = map[string]string{
 	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"runtimeinfo.containerids":       "List of container names",
-	"autoclusteripaccess":            "IpAccess for auto-clusters. Ignored otherwise., one of IpAccessUnknown, IpAccessDedicated, IpAccessShared",
+	"autoclusteripaccess":            "(Deprecated) IpAccess for auto-clusters. Ignored otherwise., one of IpAccessUnknown, IpAccessDedicated, IpAccessShared",
 	"revision":                       "Revision changes each time the App is updated.  Refreshing the App Instance will sync the revision with that of the App",
 	"forceupdate":                    "Force Appinst refresh even if revision number matches App revision number.",
 	"updatemultiple":                 "Allow multiple instances to be updated at once",
 	"configs:#.kind":                 "kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
 	"configs:#.config":               "config file contents or URI reference",
-	"sharedvolumesize":               "shared volume size when creating auto cluster",
 	"healthcheck":                    "Health Check status, one of HealthCheckUnknown, HealthCheckFailRootlbOffline, HealthCheckFailServerFail, HealthCheckOk",
 	"privacypolicy":                  "Optional privacy policy name",
 	"powerstate":                     "Power State of the AppInst, one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError",
@@ -363,6 +381,7 @@ var AppInstComments = map[string]string{
 	"availabilityzone":               "Optional Availability Zone if any",
 	"vmflavor":                       "OS node flavor to use",
 	"optres":                         "Optional Resources required by OS flavor if any",
+	"realclustername":                "Real ClusterInst name",
 }
 var AppInstSpecialArgs = map[string]string{
 	"appinst.errors":                   "StringArray",

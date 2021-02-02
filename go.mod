@@ -53,7 +53,7 @@ require (
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/spf13/cobra v0.0.4
 	github.com/stretchr/testify v1.6.1
-	github.com/test-go/testify v1.1.4 // indirect
+	github.com/test-go/testify v1.1.4
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
 	github.com/trustelem/zxcvbn v1.0.1
 	github.com/vmware/go-vcloud-director/v2 v2.10.0

@@ -51,7 +51,7 @@ var (
 	}
 	TestAppInstKey = edgeproto.AppInstKey{
 		AppKey:         TestAppKey,
-		ClusterInstKey: TestClusterInstKey,
+		ClusterInstKey: *TestClusterInstKey.Virtual(""),
 	}
 	TestAppInst = edgeproto.AppInst{
 		Key:         TestAppInstKey,

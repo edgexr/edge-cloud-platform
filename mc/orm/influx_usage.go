@@ -365,7 +365,7 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 						Version:      ver,
 						Organization: org,
 					},
-					ClusterInstKey: edgeproto.ClusterInstKey{
+					ClusterInstKey: edgeproto.VirtualClusterInstKey{
 						ClusterKey: edgeproto.ClusterKey{Name: cluster},
 						CloudletKey: edgeproto.CloudletKey{
 							Organization: cloudletorg,
@@ -416,7 +416,7 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 					Version:      ver,
 					Organization: apporg,
 				},
-				ClusterInstKey: edgeproto.ClusterInstKey{
+				ClusterInstKey: edgeproto.VirtualClusterInstKey{
 					ClusterKey: edgeproto.ClusterKey{Name: cluster},
 					CloudletKey: edgeproto.CloudletKey{
 						Organization: cloudletorg,

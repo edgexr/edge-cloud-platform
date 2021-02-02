@@ -226,7 +226,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	appInst := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
 			AppKey:         app.Key,
-			ClusterInstKey: rcinst.Key,
+			ClusterInstKey: *rcinst.Key.Virtual(cloudcommon.AutoProvClusterName),
 		},
 	}
 

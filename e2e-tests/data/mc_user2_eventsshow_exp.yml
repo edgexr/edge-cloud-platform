@@ -87,50 +87,44 @@
       status: "200"
       traceid: 44b06f07458463ce
       username: user2
-  - name: /api/v1/auth/ctrl/DeleteApp
-    org:
-    - AcmeAppCo
-    type: audit
-    timestamp: 2020-09-04T17:15:29.610307-07:00
-    mtags:
-      app: autoprovHA
-      apporg: AcmeAppCo
-      appver: "1.0"
-      duration: 237.310628ms
-      email: user2@email.com
-      hostname: Jon-Mex
-      lineno: orm/auditlog.go:199
-      method: POST
-      org: AcmeAppCo
-      region: local
-      remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
-      response: '{}'
-      spanid: 64077fc143d6f50f
-      status: "200"
-      traceid: 64077fc143d6f50f
-      username: user2
-  - name: AutoProv create AppInst
+  - name: Free ClusterInst reservation
     org:
     - AcmeAppCo
     type: event
     region: local
-    timestamp: 2020-09-09T11:23:48.885277-07:00
+    timestamp: 2021-01-27T23:46:20.985201-08:00
     mtags:
       app: autoprovHA
       apporg: AcmeAppCo
       appver: "1.0"
-      autoprovpolicy: autoprovHA
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable1
+      spanid: 4b37d6245c9ad68c
+      traceid: 6904103d6fed794c
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-01-27T23:46:20.758169-08:00
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
-      cluster: Reservable4
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
-      duration: 234.404956ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
-      reason: minmax
-      spanid: 420950ac49dfca91
-      traceid: 77505976da080249
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable4
+      spanid: 4b37d6245c9ad68c
+      traceid: 6904103d6fed794c
 - search:
     match:
       tags:
@@ -305,6 +299,44 @@
         cloudlet: dmuus-cloud-1
     limit: 3
   results:
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-01-27T23:46:20.985201-08:00
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable1
+      spanid: 4b37d6245c9ad68c
+      traceid: 6904103d6fed794c
+  - name: Reserve ClusterInst
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-01-27T23:46:14.752921-08:00
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable1
+      spanid: 7d2a760782b64664
+      traceid: 67c92dafc7864e9e
   - name: AutoProv create AppInst
     org:
     - AcmeAppCo
@@ -318,7 +350,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      cluster: Reservable1
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 334.814153ms
       hostname: Jon-Mex
@@ -326,48 +358,6 @@
       reason: minmax
       spanid: 5f2c99bf7b83b6a0
       traceid: 20c7c1f2a300135d
-  - name: AutoProv delete AppInst
-    org:
-    - AcmeAppCo
-    type: event
-    region: local
-    timestamp: 2020-09-04T17:15:25.086823-07:00
-    mtags:
-      app: autoprovappd
-      apporg: AcmeAppCo
-      appver: "1.0"
-      autoprovpolicy: ""
-      cloudlet: dmuus-cloud-1
-      cloudletorg: dmuus
-      cluster: ReservableD
-      clusterorg: MobiledgeX
-      duration: 78.325351ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
-      reason: demand
-      spanid: 278a4ce9975369e8
-      traceid: 10214038df4326d8
-  - name: AutoProv create AppInst
-    org:
-    - AcmeAppCo
-    type: event
-    region: local
-    timestamp: 2020-09-04T17:15:18.311282-07:00
-    mtags:
-      app: autoprovappd
-      apporg: AcmeAppCo
-      appver: "1.0"
-      autoprovpolicy: ""
-      cloudlet: dmuus-cloud-1
-      cloudletorg: dmuus
-      cluster: ReservableD
-      clusterorg: MobiledgeX
-      duration: 135.14941ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
-      reason: demand
-      spanid: 6b297d16ef0401ff
-      traceid: ad7c5bf3ef1badf
 - search:
     match:
       tags:
@@ -375,6 +365,44 @@
         cloudlet: dmuus-cloud-1
     limit: 3
   results:
+  - name: Free ClusterInst reservation
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-01-27T23:46:20.985201-08:00
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable1
+      spanid: 4b37d6245c9ad68c
+      traceid: 6904103d6fed794c
+  - name: Reserve ClusterInst
+    org:
+    - AcmeAppCo
+    type: event
+    region: local
+    timestamp: 2021-01-27T23:46:14.752921-08:00
+    mtags:
+      app: autoprovHA
+      apporg: AcmeAppCo
+      appver: "1.0"
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      cluster: autocluster-autoprov
+      clusterorg: MobiledgeX
+      hostname: Jon-Mex.lan
+      lineno: node/events.go:240
+      realcluster: Reservable1
+      spanid: 7d2a760782b64664
+      traceid: 67c92dafc7864e9e
   - name: AutoProv create AppInst
     org:
     - AcmeAppCo
@@ -388,7 +416,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: dmuus-cloud-1
       cloudletorg: dmuus
-      cluster: Reservable1
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 334.814153ms
       hostname: Jon-Mex
@@ -396,27 +424,6 @@
       reason: minmax
       spanid: 5f2c99bf7b83b6a0
       traceid: 20c7c1f2a300135d
-  - name: AutoProv create AppInst
-    org:
-    - AcmeAppCo
-    type: event
-    region: local
-    timestamp: 2020-09-04T17:15:07.561815-07:00
-    mtags:
-      app: autoprovHA
-      apporg: AcmeAppCo
-      appver: "1.0"
-      autoprovpolicy: autoprovHA
-      cloudlet: dmuus-cloud-1
-      cloudletorg: dmuus
-      cluster: Reservable1
-      clusterorg: MobiledgeX
-      duration: 305.749928ms
-      hostname: Jon-Mex
-      lineno: autoprov/autoprov_deploy.go:44
-      reason: minmax
-      spanid: 3d413e83fa20130e
-      traceid: 668c49ef5bff7d5e
 - search:
     match:
       tags:
@@ -537,7 +544,7 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
-      cluster: Reservable2
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 169.970063ms
       hostname: Jon-Mex
@@ -558,7 +565,7 @@
       autoprovpolicy: ""
       cloudlet: dmuus-cloud-2
       cloudletorg: dmuus
-      cluster: Reservable2
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 187.353273ms
       hostname: Jon-Mex
@@ -585,7 +592,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: gcp-cloud-5
       cloudletorg: gcp
-      cluster: Reservable4
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 317.624796ms
       hostname: Jon-Mex
@@ -606,7 +613,7 @@
       autoprovpolicy: autoprovHA
       cloudlet: azure-cloud-4
       cloudletorg: azure
-      cluster: Reservable3
+      cluster: autocluster-autoprov
       clusterorg: MobiledgeX
       duration: 275.444974ms
       hostname: Jon-Mex

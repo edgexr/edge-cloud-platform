@@ -9,7 +9,7 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: Reservable2
+            name: autocluster-autoprov
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-2
@@ -35,6 +35,7 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+      realclustername: Reservable2
     - key:
         appkey:
           organization: AcmeAppCo
@@ -42,7 +43,7 @@ regiondata:
           version: "1.0"
         clusterinstkey:
           clusterkey:
-            name: ReservableD
+            name: autocluster-autoprov
           cloudletkey:
             organization: dmuus
             name: dmuus-cloud-1
@@ -64,3 +65,4 @@ regiondata:
         nanos: 358952000
       powerstate: PowerOn
       vmflavor: x1.small
+      realclustername: ReservableD

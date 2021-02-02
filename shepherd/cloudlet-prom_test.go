@@ -132,7 +132,7 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 					Name:         fmt.Sprintf("App-%d", ii),
 					Organization: fmt.Sprintf("AppOrg-%d", ii),
 				},
-				ClusterInstKey: edgeproto.ClusterInstKey{
+				ClusterInstKey: edgeproto.VirtualClusterInstKey{
 					ClusterKey: edgeproto.ClusterKey{
 						Name: fmt.Sprintf("Cluster-%d", ii),
 					},
