@@ -53,10 +53,10 @@ func (s *Client) UpdateUser(uri, token string, createUserJSON string) (*ormapi.U
 	return &resp, st, err
 }
 
-func (s *Client) ShowUser(uri, token string, org *ormapi.Organization) ([]ormapi.User, int, error) {
+func (s *Client) ShowUser(uri, token string, filter *ormapi.ShowUser) ([]ormapi.User, int, error) {
 	args := []string{"user", "show"}
 	users := []ormapi.User{}
-	st, err := s.runObjs(uri, token, args, org, &users)
+	st, err := s.runObjs(uri, token, args, filter, &users)
 	return users, st, err
 }
 

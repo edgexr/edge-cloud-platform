@@ -218,6 +218,12 @@ type OrgCloudlet struct {
 	Org    string `form:"org" json:"org"`
 }
 
+type ShowUser struct {
+	User User   `json:",inline"`
+	Org  string `form:"org" json:"org"`
+	Role string `form:"role" json:"role"`
+}
+
 type UserLogin struct {
 	// User's name or email address
 	// required: true
