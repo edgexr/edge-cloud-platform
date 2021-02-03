@@ -314,7 +314,8 @@ regiondata:
                 - containerPort: 81
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
-      autoprovpolicy: autoprov1
+      autoprovpolicies:
+      - autoprov1
     - key:
         organization: AcmeAppCo
         name: autoprovappd
@@ -325,7 +326,8 @@ regiondata:
       defaultflavor:
         name: x1.small
       deployment: docker
-      autoprovpolicy: autoprov1
+      autoprovpolicies:
+      - autoprov1
       accesstype: AccessTypeLoadBalancer
     - key:
         organization: platos
@@ -669,7 +671,8 @@ regiondata:
                 - containerPort: 81
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
-      autoprovpolicy: autoprov1
+      autoprovpolicies:
+      - autoprov1
       accesstype: AccessTypeLoadBalancer
     - key:
         organization: platos

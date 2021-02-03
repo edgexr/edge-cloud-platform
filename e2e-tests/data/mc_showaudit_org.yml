@@ -98,7 +98,7 @@
   status: 200
   starttime: "2020-11-17T22:26:25.671886+05:30"
   duration: 68.831ms
-  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policy":"autoprov1","created_at":{},"updated_at":{}}}'
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":{},"updated_at":{}}}'
   response: '{}'
   traceid: 1127e7c6e848d9f2
   tags:

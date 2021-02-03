@@ -26,7 +26,7 @@ var _ = math.Inf
 func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	args := []string{"region", "CreateApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt", ",")
+	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -37,7 +37,7 @@ func (s *Client) CreateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.
 func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	args := []string{"region", "DeleteApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt", ",")
+	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -48,7 +48,7 @@ func (s *Client) DeleteApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.
 func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.Result, int, error) {
 	args := []string{"region", "UpdateApp"}
 	out := edgeproto.Result{}
-	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt", ",")
+	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err
@@ -59,7 +59,7 @@ func (s *Client) UpdateApp(uri, token string, in *ormapi.RegionApp) (*edgeproto.
 func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.App, int, error) {
 	args := []string{"region", "ShowApp"}
 	outlist := []edgeproto.App{}
-	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt", ",")
+	noconfig := strings.Split("DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy", ",")
 	ops := []runOp{
 		withIgnore(noconfig),
 	}
