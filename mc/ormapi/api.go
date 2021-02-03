@@ -219,7 +219,7 @@ type OrgCloudlet struct {
 }
 
 type ShowUser struct {
-	User User   `json:",inline"`
+	User `json:",inline"`
 	Org  string `form:"org" json:"org"`
 	Role string `form:"role" json:"role"`
 }
