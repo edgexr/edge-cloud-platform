@@ -1,4 +1,69 @@
 - labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    scope: Cloudlet
+    warning: More than 50% of RAM is used
+  annotations:
+    description: More than 50% of RAM is used
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1612415618
+    nanos: 184534000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    scope: Cloudlet
+    warning: More than 50% of vCPUs is used
+  annotations:
+    description: More than 50% of vCPUs is used
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1612415618
+    nanos: 184536000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    scope: Cloudlet
+    warning: More than 10% of External IPs is used
+  annotations:
+    description: More than 10% of External IPs is used
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1612415618
+    nanos: 184531000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    scope: Cloudlet
+    warning: '[Infra] More than 10% of External IPs is used'
+  annotations:
+    description: '[Infra] More than 10% of External IPs is used'
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1612415618
+    nanos: 184539000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    scope: Cloudlet
+    warning: '[Infra] More than 50% of RAM is used'
+  annotations:
+    description: '[Infra] More than 50% of RAM is used'
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1612415618
+    nanos: 184540000
+- labels:
     alertname: AppInstDown
     app: someapplication1
     apporg: AcmeAppCo
@@ -19,4 +84,3 @@
     seconds: 1596481173
     nanos: 399557679
   notifyid: 2
-

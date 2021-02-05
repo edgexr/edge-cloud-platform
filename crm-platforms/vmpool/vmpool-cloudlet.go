@@ -69,3 +69,20 @@ sudo bash /etc/mobiledgex/setup-chef.sh -s "%s" -n "%s"
 	manifest.AddItem("Save and execute the following script on the VM", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeBash, scriptText)
 	return manifest.ToString()
 }
+
+func (o *VMPoolPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+	return []edgeproto.InfraResource{}, nil
+}
+
+func (o *VMPoolPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
+}
+
+func (o *VMPoolPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+	resInfo := make(map[string]*edgeproto.InfraResource)
+	return resInfo
+}
+
+func (o *VMPoolPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}

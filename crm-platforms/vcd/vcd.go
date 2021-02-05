@@ -442,3 +442,20 @@ func (v *VcdPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edge
 	return fmt.Errorf("SaveCloudletAccessVars not implemented for vcd")
 
 }
+
+func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+	return []edgeproto.InfraResource{}, nil
+}
+
+func (v *VcdPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
+}
+
+func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+	resInfo := make(map[string]*edgeproto.InfraResource)
+	return resInfo
+}
+
+func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}

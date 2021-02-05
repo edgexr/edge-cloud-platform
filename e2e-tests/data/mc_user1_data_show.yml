@@ -70,6 +70,15 @@ regiondata:
       envvar:
         foo: bar
       containerversion: 2019-10-24
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10
+      defaultresourcealertthreshold: 80
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -82,6 +91,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-2
       containerversion: 2019-10-24
+      defaultresourcealertthreshold: 80
     - key:
         organization: azure
         name: azure-cloud-4
@@ -94,6 +104,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: azure-cloud-4
       containerversion: 2019-10-24
+      defaultresourcealertthreshold: 80
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -106,6 +117,7 @@ regiondata:
         name: DefaultPlatformFlavor
       physicalname: gcp-cloud-5
       containerversion: 2019-10-24
+      defaultresourcealertthreshold: 80
     - key:
         organization: enterprise
         name: enterprise-1
@@ -120,6 +132,7 @@ regiondata:
         name: x1.small
       physicalname: enterprise-1
       containerversion: 2019-10-24
+      defaultresourcealertthreshold: 80
       state: Ready
     flavors:
     - key:
@@ -144,165 +157,240 @@ regiondata:
       state: CloudletStateReady
       notifyid: 1
       controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: dmuus
         name: dmuus-cloud-2
       state: CloudletStateReady
       notifyid: 2
       controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: azure
         name: azure-cloud-4
       state: CloudletStateReady
       notifyid: 3
       controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: gcp
         name: gcp-cloud-5
       state: CloudletStateReady
       notifyid: 4
       controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: enterprise
         name: enterprise-1
       state: CloudletStateReady
       notifyid: 6
       controller: Jon-Mex@127.0.0.1:55001
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -385,99 +473,144 @@ regiondata:
       state: CloudletStateReady
       notifyid: 2
       controller: Jon-Mex@127.0.0.1:55011
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: dmuus
         name: dmuus-cloud-4
       state: CloudletStateReady
       notifyid: 3
       controller: Jon-Mex@127.0.0.1:55011
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     - key:
         organization: enterprise
         name: enterprise-2
       state: CloudletStateReady
       notifyid: 3
       controller: Jon-Mex@127.0.0.1:55011
-      osmaxram: 500
+      osmaxram: 40960
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
       - name: x1.small
-        vcpus: 10
-        ram: 101024
-        disk: 500
+        vcpus: 2
+        ram: 4096
+        disk: 40
       status:
         tasknumber: 3
         taskname: Gathering Cloudlet Info
       containerversion: "2019-10-24"
       controllercachereceived: true
-      resources:
-        vms:
+      resourcessnapshot:
+        platformvms:
         - name: fake-platform-vm
           type: platform
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.10
         - name: fake-rootlb-vm
           type: rootlb
           status: ACTIVE
-          infraflavor: m4.small
+          infraflavor: x1.small
           ipaddresses:
           - externalip: 10.101.100.11
+        info:
+        - name: RAM
+          value: 8192
+          inframaxvalue: 40960
+          units: MB
+        - name: vCPUs
+          value: 4
+          inframaxvalue: 50
+        - name: Disk
+          value: 80
+          inframaxvalue: 5000
+          units: GB
+        - name: External IPs
+          value: 1
+          inframaxvalue: 10
     cloudletpools:
     - key:
         organization: enterprise

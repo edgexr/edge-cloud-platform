@@ -101,6 +101,14 @@ regiondata:
         foo: bar
       containerversion: "2019-10-24"
       deployment: docker
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10
     - key:
         organization: dmuus
         name: dmuus-cloud-2

@@ -9,10 +9,23 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
+
+// Openstack resources
+var (
+	ResourceInstances   = "Instances"
+	ResourceFloatingIPs = "Floating IPs"
+)
+
+type OpenstackResources struct {
+	InstancesUsed   uint64
+	SecGrpsUsed     uint64
+	FloatingIPsUsed uint64
+}
 
 func (o *OpenstackPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Saving cloudlet access vars to vault", "cloudletName", cloudlet.Key.Name)
@@ -155,4 +168,144 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	stackCmd += fmt.Sprintf(" %s", stackName)
 	manifest.AddItem("Execute the following command to use manifest to setup the cloudlet", infracommon.ManifestTypeCommand, infracommon.ManifestSubTypeNone, stackCmd)
 	return manifest.ToString()
+}
+
+func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+	osLimits, err := o.OSGetAllLimits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ramUsed := uint64(0)
+	ramMax := uint64(0)
+	vcpusUsed := uint64(0)
+	vcpusMax := uint64(0)
+	diskUsed := uint64(0)
+	diskMax := uint64(0)
+	instancesUsed := uint64(0)
+	instancesMax := uint64(0)
+	fipsUsed := uint64(0)
+	fipsMax := uint64(0)
+	for _, l := range osLimits {
+		switch l.Name {
+		case "totalRAMUsed":
+			ramUsed = uint64(l.Value)
+		case "maxTotalRAMSize":
+			ramMax = uint64(l.Value)
+		case "totalCoresUsed":
+			vcpusUsed = uint64(l.Value)
+		case "maxTotalCores":
+			vcpusMax = uint64(l.Value)
+		case "totalGigabytesUsed":
+			diskUsed = uint64(l.Value)
+		case "maxTotalVolumeGigabytes":
+			diskMax = uint64(l.Value)
+		case "totalInstancesUsed":
+			instancesUsed = uint64(l.Value)
+		case "maxTotalInstances":
+			instancesMax = uint64(l.Value)
+		case "totalFloatingIpsUsed":
+			fipsUsed = uint64(l.Value)
+		case "maxTotalFloatingIps":
+			fipsMax = uint64(l.Value)
+		}
+	}
+	resInfo := []edgeproto.InfraResource{
+		edgeproto.InfraResource{
+			Name:          cloudcommon.ResourceRamMb,
+			Value:         ramUsed,
+			InfraMaxValue: ramMax,
+			Units:         cloudcommon.ResourceRamUnits,
+		},
+		edgeproto.InfraResource{
+			Name:          cloudcommon.ResourceVcpus,
+			Value:         vcpusUsed,
+			InfraMaxValue: vcpusMax,
+		},
+		edgeproto.InfraResource{
+			Name:          cloudcommon.ResourceDiskGb,
+			Value:         diskUsed,
+			InfraMaxValue: diskMax,
+			Units:         cloudcommon.ResourceDiskUnits,
+		},
+		edgeproto.InfraResource{
+			Name:          ResourceInstances,
+			Value:         instancesUsed,
+			InfraMaxValue: instancesMax,
+		},
+		edgeproto.InfraResource{
+			Name:          ResourceFloatingIPs,
+			Value:         fipsUsed,
+			InfraMaxValue: fipsMax,
+		},
+	}
+	return resInfo, nil
+}
+
+func (o *OpenstackPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{
+		Props: []edgeproto.InfraResource{
+			edgeproto.InfraResource{
+				Name:        ResourceInstances,
+				Description: "Limit on number of instances that can be provisioned",
+			},
+			edgeproto.InfraResource{
+				Name:        ResourceFloatingIPs,
+				Description: "Limit on number of floating IPs that can be created",
+			},
+		},
+	}, nil
+}
+
+func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *OpenstackResources {
+	floatingIp := false
+	if val, ok := cloudlet.EnvVar["MEX_NETWORK_SCHEME"]; ok {
+		if strings.Contains(val, "floatingip") {
+			floatingIp = true
+		}
+	}
+	var oRes OpenstackResources
+	for _, vmRes := range resources {
+		// Number of Instances = Number of resources
+		oRes.InstancesUsed += 1
+		if floatingIp && vmRes.Type == cloudcommon.VMTypeRootLB ||
+			(vmRes.Type == cloudcommon.VMTypeAppVM && vmRes.AppAccessType != edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER) {
+			// Number of floating IPs = NetworkScheme==FloatingIP && Number of external facing resources
+			oRes.FloatingIPsUsed += 1
+		}
+	}
+	return &oRes
+}
+
+// called by controller, make sure it doesn't make any calls to infra API
+func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+	// resource name -> resource units
+	cloudletRes := map[string]string{
+		ResourceInstances:   "",
+		ResourceFloatingIPs: "",
+	}
+	resInfo := make(map[string]*edgeproto.InfraResource)
+	for resName, resUnits := range cloudletRes {
+		resMax := uint64(0)
+		if infraRes, ok := infraResMap[resName]; ok {
+			resMax = infraRes.InfraMaxValue
+		}
+		resInfo[resName] = &edgeproto.InfraResource{
+			Name:          resName,
+			InfraMaxValue: resMax,
+			Units:         resUnits,
+		}
+	}
+
+	oRes := getOpenstackResources(cloudlet, vmResources)
+	resInfo[ResourceInstances].Value += oRes.InstancesUsed
+	resInfo[ResourceFloatingIPs].Value += oRes.FloatingIPsUsed
+	return resInfo
+}
+
+func (o *OpenstackPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	oRes := getOpenstackResources(cloudlet, resources)
+
+	resMetric.AddIntVal("instancesUsed", oRes.InstancesUsed)
+	resMetric.AddIntVal("floatingIpsUsed", oRes.FloatingIPsUsed)
+	return nil
 }

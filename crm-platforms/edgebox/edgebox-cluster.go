@@ -14,7 +14,7 @@ func (e *EdgeboxPlatform) UpdateClusterInst(ctx context.Context, clusterInst *ed
 	return fmt.Errorf("update not implemented")
 }
 
-func (e *EdgeboxPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResources, error) {
+func (e *EdgeboxPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
 	return e.generic.GetCloudletInfraResources(ctx)
 }
 

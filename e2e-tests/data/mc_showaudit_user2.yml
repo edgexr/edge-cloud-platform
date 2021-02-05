@@ -22,7 +22,7 @@
   status: 403
   starttime: "2021-01-04T18:52:45.406782+05:30"
   duration: 22.693ms
-  request: '{"Region":"locala","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{}}}'
+  request: '{"Region":"locala","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{},"resource_quotas":null}}'
   response: '{"message":"Forbidden"}'
   traceid: 1faacbbb1e096aae
   tags:
@@ -55,7 +55,7 @@
   status: 403
   starttime: "2021-01-04T18:52:45.173535+05:30"
   duration: 18.783ms
-  request: '{"Region":"local","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{}}}'
+  request: '{"Region":"local","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{},"resource_quotas":null}}'
   response: '{"message":"Forbidden"}'
   traceid: 570314dca40b1a6b
   tags:

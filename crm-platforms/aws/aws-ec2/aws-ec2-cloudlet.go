@@ -271,3 +271,20 @@ func (a *AwsEc2Platform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, 
 func (a *AwsEc2Platform) GetSessionTokens(ctx context.Context, vaultConfig *vault.Config, account string) (map[string]string, error) {
 	return a.awsGenPf.GetSessionTokens(ctx, vaultConfig, account)
 }
+
+func (a *AwsEc2Platform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+	return []edgeproto.InfraResource{}, nil
+}
+
+func (a *AwsEc2Platform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
+}
+
+func (a *AwsEc2Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+	resInfo := make(map[string]*edgeproto.InfraResource)
+	return resInfo
+}
+
+func (a *AwsEc2Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}

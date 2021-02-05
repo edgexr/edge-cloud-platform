@@ -92,6 +92,28 @@ func (s *Client) GetCloudletProps(uri, token string, in *ormapi.RegionCloudletPr
 	return &out, st, err
 }
 
+func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error) {
+	args := []string{"region", "GetCloudletResourceQuotaProps"}
+	out := edgeproto.CloudletResourceQuotaProps{}
+	noconfig := strings.Split("Properties", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}
+
+func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error) {
+	args := []string{"region", "GetCloudletResourceUsage"}
+	out := edgeproto.InfraResourcesSnapshot{}
+	noconfig := strings.Split("", ",")
+	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
+	if err != nil {
+		return nil, st, err
+	}
+	return &out, st, err
+}
+
 func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
 	args := []string{"region", "AddCloudletResMapping"}
 	out := edgeproto.Result{}

@@ -101,3 +101,20 @@ func (m *ManagedK8sPlatform) GetAccessData(ctx context.Context, cloudlet *edgepr
 	log.SpanLog(ctx, log.DebugLevelApi, "ManagedK8sPlatform GetAccessData", "dataType", dataType)
 	return m.Provider.GetAccessData(ctx, cloudlet, region, vaultConfig, dataType, arg)
 }
+
+// called by controller, make sure it doesn't make any calls to infra API
+func (m *ManagedK8sPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+	return nil
+}
+
+func (m *ManagedK8sPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}
+
+func (m *ManagedK8sPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
+	return &edgeproto.CloudletResourceQuotaProps{}, nil
+}
+
+func (m *ManagedK8sPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
+	return &edgeproto.Flavor{}, nil
+}

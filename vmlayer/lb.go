@@ -571,3 +571,12 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 	}
 	return rootLBClients, nil
 }
+
+func (v *VMPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
+	var rootlbFlavor edgeproto.Flavor
+	err := v.VMProperties.GetCloudletSharedRootLBFlavor(&rootlbFlavor)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get Shared RootLB Flavor: %v", err)
+	}
+	return &rootlbFlavor, nil
+}
