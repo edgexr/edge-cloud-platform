@@ -76,6 +76,24 @@ func (s *Client) GetCloudletProps(uri, token string, in *ormapi.RegionCloudletPr
 	return &out, status, err
 }
 
+func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error) {
+	out := edgeproto.CloudletResourceQuotaProps{}
+	status, err := s.PostJson(uri+"/auth/ctrl/GetCloudletResourceQuotaProps", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
+func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error) {
+	out := edgeproto.InfraResourcesSnapshot{}
+	status, err := s.PostJson(uri+"/auth/ctrl/GetCloudletResourceUsage", token, in, &out)
+	if err != nil {
+		return nil, status, err
+	}
+	return &out, status, err
+}
+
 func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
 	out := edgeproto.Result{}
 	status, err := s.PostJson(uri+"/auth/ctrl/AddCloudletResMapping", token, in, &out)
@@ -128,6 +146,8 @@ type CloudletApiClient interface {
 	ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]edgeproto.Cloudlet, int, error)
 	GetCloudletManifest(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.CloudletManifest, int, error)
 	GetCloudletProps(uri, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error)
+	GetCloudletResourceQuotaProps(uri, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error)
+	GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error)
 	AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error)

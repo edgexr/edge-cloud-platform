@@ -46,6 +46,14 @@ regiondata:
       platformtype: PlatformTypeFakeinfra
       envvar:
         foo: bar
+      resourcequotas:
+        - name: "RAM"
+          alertthreshold: 50
+        - name: "vCPUs"
+          value: 20
+          alertthreshold: 50
+        - name: "External IPs"
+          alertthreshold: 10
     - key:
         organization: dmuus
         name: dmuus-cloud-2

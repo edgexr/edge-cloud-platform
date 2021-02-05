@@ -112,6 +112,34 @@ func goodPermGetCloudletProps(t *testing.T, mcClient *ormclient.Client, uri, tok
 
 var _ = edgeproto.GetFields
 
+func badPermGetCloudletResourceQuotaProps(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) {
+	_, status, err := testutil.TestPermGetCloudletResourceQuotaProps(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermGetCloudletResourceQuotaProps(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) {
+	_, status, err := testutil.TestPermGetCloudletResourceQuotaProps(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermGetCloudletResourceUsage(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) {
+	_, status, err := testutil.TestPermGetCloudletResourceUsage(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func goodPermGetCloudletResourceUsage(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) {
+	_, status, err := testutil.TestPermGetCloudletResourceUsage(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
 func badPermAddCloudletResMapping(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResMap)) {
 	_, status, err := testutil.TestPermAddCloudletResMapping(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)

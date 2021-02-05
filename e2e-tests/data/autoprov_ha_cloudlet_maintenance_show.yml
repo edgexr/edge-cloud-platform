@@ -21,3 +21,11 @@ regiondata:
       containerversion: "2019-10-24"
       deployment: docker
       maintenancestate: UnderMaintenance
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 50
+      - name: vCPUs
+        value: 20
+        alertthreshold: 50
+      - name: External IPs
+        alertthreshold: 10

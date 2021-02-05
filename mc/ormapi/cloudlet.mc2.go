@@ -84,6 +84,34 @@ type RegionCloudletProps struct {
 	CloudletProps edgeproto.CloudletProps
 }
 
+// Request summary for GetCloudletResourceQuotaProps
+// swagger:parameters GetCloudletResourceQuotaProps
+type swaggerGetCloudletResourceQuotaProps struct {
+	// in: body
+	Body RegionCloudletResourceQuotaProps
+}
+
+type RegionCloudletResourceQuotaProps struct {
+	// required: true
+	// Region name
+	Region                     string
+	CloudletResourceQuotaProps edgeproto.CloudletResourceQuotaProps
+}
+
+// Request summary for GetCloudletResourceUsage
+// swagger:parameters GetCloudletResourceUsage
+type swaggerGetCloudletResourceUsage struct {
+	// in: body
+	Body RegionCloudletResourceUsage
+}
+
+type RegionCloudletResourceUsage struct {
+	// required: true
+	// Region name
+	Region                string
+	CloudletResourceUsage edgeproto.CloudletResourceUsage
+}
+
 // Request summary for AddCloudletResMapping
 // swagger:parameters AddCloudletResMapping
 type swaggerAddCloudletResMapping struct {
