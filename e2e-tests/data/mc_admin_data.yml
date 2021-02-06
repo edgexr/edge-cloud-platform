@@ -73,6 +73,7 @@ regiondata:
       persistentconnectionmetricscollectioninterval: 1s
       influxdbmetricsretention: 672h0m0s
       cleanupreservableautoclusteridletime: 30m
+      influxdbcloudletusagemetricsretention: 8760h0m0s
     flavors:
     - key:
         name: x1.tiny
@@ -117,6 +118,7 @@ regiondata:
       persistentconnectionmetricscollectioninterval: 1s
       influxdbmetricsretention: 672h0m0s
       cleanupreservableautoclusteridletime: 30m
+      influxdbcloudletusagemetricsretention: 8760h0m0s
     flavors:
     - key:
         name: x1.tiny

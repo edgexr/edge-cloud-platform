@@ -151,6 +151,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// DmeApiMetricsCollectionInterval: 23
 	// PersistentConnectionMetricsCollectionInterval: 24
 	// CleanupReservableAutoClusterIdletime: 25
+	// InfluxDbCloudletUsageMetricsRetention: 26
 	// ```
 	// Security:
 	//   Bearer:
