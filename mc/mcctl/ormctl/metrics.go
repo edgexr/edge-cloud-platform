@@ -38,6 +38,15 @@ func GetMetricsCommand() *cobra.Command {
 		ReplyData:    &ormapi.AllMetrics{},
 		Run:          runRest("/auth/metrics/cloudlet"),
 	}, &cli.Command{
+		Use:          "cloudletusage",
+		RequiredArgs: strings.Join(append([]string{"region"}, CloudletMetricRequiredArgs...), " "),
+		OptionalArgs: strings.Join(CloudletMetricOptionalArgs, " "),
+		AliasArgs:    strings.Join(CloudletMetricAliasArgs, " "),
+		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), CloudletUsageMetricComments),
+		ReqData:      &ormapi.RegionCloudletMetrics{},
+		ReplyData:    &ormapi.AllMetrics{},
+		Run:          runRest("/auth/metrics/cloudlet/usage"),
+	}, &cli.Command{
 		Use:          "client",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientMetricOptionalArgs, " "),
@@ -116,6 +125,7 @@ var CloudletMetricOptionalArgs = []string{
 	"last",
 	"starttime",
 	"endtime",
+	"platformtype",
 }
 
 var CloudletMetricAliasArgs = []string{
@@ -124,7 +134,13 @@ var CloudletMetricAliasArgs = []string{
 }
 
 var CloudletMetricComments = map[string]string{
-	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletSelectors, "\", \"") + "\"",
+	"selector":     "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletSelectors, "\", \"") + "\"",
+	"platformtype": "Type of the cloudlet platform",
+}
+
+var CloudletUsageMetricComments = map[string]string{
+	"selector":     "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletUsageSelectors, "\", \"") + "\"",
+	"platformtype": "Type of the cloudlet platform",
 }
 
 var ClientMetricRequiredArgs = []string{

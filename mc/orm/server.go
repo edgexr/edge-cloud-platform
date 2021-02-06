@@ -532,6 +532,18 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   404: notFound
 	auth.POST("/metrics/cloudlet", GetMetricsCommon)
 
+	// swagger:route POST /auth/metrics/cloudlet/usage OperatorMetrics CloudletUsageMetrics
+	// Cloudlet usage related metrics.
+	// Display cloudlet usage related metrics.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	auth.POST("/metrics/cloudlet/usage", GetMetricsCommon)
+
 	// swagger:route POST /auth/metrics/client DeveloperMetrics ClientMetrics
 	// Client related metrics.
 	// Display client related metrics.
@@ -661,6 +673,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	ws.GET("/metrics/app", GetMetricsCommon)
 	ws.GET("/metrics/cluster", GetMetricsCommon)
 	ws.GET("/metrics/cloudlet", GetMetricsCommon)
+	ws.GET("/metrics/cloudlet/usage", GetMetricsCommon)
 	ws.GET("/metrics/client", GetMetricsCommon)
 
 	if config.NotifySrvAddr != "" {

@@ -113,6 +113,7 @@ var SettingsOptionalArgs = []string{
 	"dmeapimetricscollectioninterval",
 	"persistentconnectionmetricscollectioninterval",
 	"cleanupreservableautoclusteridletime",
+	"influxdbcloudletusagemetricsretention",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -140,6 +141,7 @@ var SettingsAliasArgs = []string{
 	"dmeapimetricscollectioninterval=settings.dmeapimetricscollectioninterval",
 	"persistentconnectionmetricscollectioninterval=settings.persistentconnectionmetricscollectioninterval",
 	"cleanupreservableautoclusteridletime=settings.cleanupreservableautoclusteridletime",
+	"influxdbcloudletusagemetricsretention=settings.influxdbcloudletusagemetricsretention",
 }
 var SettingsComments = map[string]string{
 	"fields":                                        "Fields are used for the Update API to specify which fields to apply",
@@ -167,6 +169,7 @@ var SettingsComments = map[string]string{
 	"dmeapimetricscollectioninterval":               "Metrics collection interval for DME API counts (duration)",
 	"persistentconnectionmetricscollectioninterval": "Metrics collection interval for persistent connection (appinstlatency and gps locations) (duration)",
 	"cleanupreservableautoclusteridletime":          "Idle reservable ClusterInst clean up time",
+	"influxdbcloudletusagemetricsretention":         "Default influxDB cloudlet usage metrics retention policy (duration)",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",
