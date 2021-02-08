@@ -20,6 +20,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_vmprovider"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -356,6 +357,7 @@ func start() {
 		log.FatalLog(err.Error())
 	}
 	defer span.Finish()
+	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
 
 	if !nodeMgr.AccessKeyClient.IsEnabled() {
 		log.FatalLog("access key client is not enabled")

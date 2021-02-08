@@ -78,6 +78,7 @@ type VMPlatform struct {
 	VMProperties VMProperties
 	FlavorList   []*edgeproto.FlavorInfo
 	Caches       *platform.Caches
+	infracommon.CommonEmbedded
 }
 
 // VMMetrics contains stats and timestamp

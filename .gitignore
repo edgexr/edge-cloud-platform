@@ -90,3 +90,5 @@ mc/orm/testAlertMgrConfig.yml
 # terraform vars
 *.auto.tfvars
 *.auto.tfvars.json
+
+version/*

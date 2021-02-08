@@ -20,6 +20,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -28,7 +29,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/notify"
 	edgetls "github.com/mobiledgex/edge-cloud/tls"
 	"github.com/mobiledgex/edge-cloud/vault"
-	"github.com/mobiledgex/edge-cloud/version"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
 	"google.golang.org/grpc/status"
@@ -148,6 +148,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			server.Stop()
 		}
 	}()
+	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
 
 	if config.LocalVault {
 		vaultProc := process.Vault{
