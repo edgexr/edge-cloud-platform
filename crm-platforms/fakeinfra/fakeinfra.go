@@ -10,6 +10,7 @@ import (
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/fake"
@@ -137,4 +138,8 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 func (s *Platform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
 	return s.Platform.GetCloudletProps(ctx)
+}
+
+func (s *Platform) GetVersionProperties() map[string]string {
+	return version.InfraBuildProps("FakeInfra")
 }

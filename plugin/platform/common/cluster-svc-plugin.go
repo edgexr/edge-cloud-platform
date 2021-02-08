@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mobiledgex/edge-cloud-infra/autoprov/autorules"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -24,4 +25,8 @@ func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgepro
 	}
 	configs := []*edgeproto.ConfigFile{policyConfig}
 	return configs, nil
+}
+
+func (s *ClusterSvc) GetVersionProperties() map[string]string {
+	return version.InfraBuildProps("InfraClusterSvc")
 }

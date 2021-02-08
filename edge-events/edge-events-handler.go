@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	dmecommon "github.com/mobiledgex/edge-cloud/d-match-engine/dme-common"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -183,4 +184,8 @@ func createAppInstStateEvent(ctx context.Context, appInst *dmecommon.DmeAppInst,
 	}
 
 	return updateServerEdgeEvent
+}
+
+func (e *EdgeEventsHandlerPlugin) GetVersionProperties() map[string]string {
+	return version.InfraBuildProps("EdgeEvents")
 }

@@ -24,6 +24,7 @@ type EdgeboxPlatform struct {
 	generic       dind.Platform
 	NetworkScheme string
 	commonPf      infracommon.CommonPlatform
+	infracommon.CommonEmbedded
 }
 
 var edgeboxProps = map[string]*edgeproto.PropertyInfo{

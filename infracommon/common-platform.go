@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-chef/chef"
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -149,4 +150,10 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 		AccessApi:           accessApi,
 	}
 	return &platCfg
+}
+
+type CommonEmbedded struct{}
+
+func (c *CommonEmbedded) GetVersionProperties() map[string]string {
+	return version.InfraBuildProps("Platform")
 }

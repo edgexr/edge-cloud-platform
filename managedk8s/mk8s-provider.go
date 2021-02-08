@@ -38,6 +38,7 @@ type ManagedK8sPlatform struct {
 	Type     string
 	CommonPf infracommon.CommonPlatform
 	Provider ManagedK8sProvider
+	infracommon.CommonEmbedded
 }
 
 func (m *ManagedK8sPlatform) GetType() string {

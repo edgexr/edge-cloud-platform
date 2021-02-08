@@ -16,6 +16,10 @@ internal: build-internal install-internal
 dep:
 	dep ensure -vendor-only
 
+build-vers:
+	mkdir -p version
+	(cd version; ../../edge-cloud/version/version.sh "Infra")
+
 #
 # Local OS Target
 #
@@ -35,7 +39,7 @@ edge-cloud-version-set:
 	@echo "Setting edge-cloud repo branch/tag to $(EDGE_CLOUD_VERSION)"
 	git -C ../edge-cloud checkout $(EDGE_CLOUD_VERSION)
 
-build-internal:
+build-internal: build-vers
 	go install ./fixmod
 	fixmod -srcRepo ../edge-cloud -keep github.com/mobiledgex/edge-cloud
 	go install ./protoc-gen-mc2

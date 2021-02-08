@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -63,6 +64,7 @@ func start() error {
 	}
 	defer span.Finish()
 	vaultConfig = nodeMgr.VaultConfig
+	nodeMgr.UpdateNodeProps(ctx, version.InfraBuildProps("Infra"))
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonName(),
