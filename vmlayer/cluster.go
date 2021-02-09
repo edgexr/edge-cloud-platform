@@ -11,7 +11,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
+	proxycerts "github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy/certs"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -262,7 +262,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	}
 
 	if dedicatedRootLB {
-		proxy.RemoveDedicatedLB(ctx, rootLBName)
+		proxycerts.RemoveDedicatedLB(ctx, rootLBName)
 		DeleteServerIpFromCache(ctx, rootLBName)
 	}
 	return nil
@@ -392,7 +392,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		}
 	}
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		proxy.NewDedicatedLB(ctx, &clusterInst.Key.CloudletKey, rootLBName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+		proxycerts.NewDedicatedLB(ctx, &clusterInst.Key.CloudletKey, rootLBName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "created cluster")
 	return nil
