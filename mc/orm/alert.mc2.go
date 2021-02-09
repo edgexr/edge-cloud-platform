@@ -57,7 +57,8 @@ func ShowAlert(c echo.Context) error {
 }
 
 type ShowAlertAuthz interface {
-	Ok(obj *edgeproto.Alert) bool
+	Ok(obj *edgeproto.Alert) (bool, bool)
+	Filter(obj *edgeproto.Alert)
 }
 
 func ShowAlertStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Alert, cb func(res *edgeproto.Alert)) error {
@@ -95,8 +96,12 @@ func ShowAlertStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Aler
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res) {
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
 				continue
+			}
+			if filterOutput {
+				authz.Filter(res)
 			}
 		}
 		cb(res)

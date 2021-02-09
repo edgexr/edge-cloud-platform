@@ -217,11 +217,13 @@ func TestController(t *testing.T) {
 			Organization: org3,
 			Name:         org3,
 		},
+		EnvVar: map[string]string{"key1": "val1"},
 	}
 	ds.CloudletCache.Update(ctx, &org3Cloudlet, 0)
 	org3CloudletInfo := edgeproto.CloudletInfo{
 		Key: org3Cloudlet.Key,
 	}
+	org3CloudletInfo.ContainerVersion = "xyz"
 	ds.CloudletInfoCache.Update(ctx, &org3CloudletInfo, 0)
 	tc3 := &org3Cloudlet.Key
 
@@ -295,12 +297,16 @@ func TestController(t *testing.T) {
 	// No orgs have been restricted to cloudlet pools, and no cloudlets
 	// have been assigned to pools, so everyone should be able to see
 	// all cloudlets.
-	testShowOrgCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org1, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org2, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, org2, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, org3, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, org4, ccount)
+	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org1, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org2, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, OrgTypeDeveloper, ctrl.Region, org2, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, ccount, "")
+	// validate that only operator and admin user is able to see additional cloudlet details
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, org3)
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, org3)
+	testShowOrgCloudlet(t, mcClient, uri, tokenAd, OrgTypeAdmin, ctrl.Region, org3, ccount, org3)
 	// no permissions outside of own org for ShowOrgCloudlet
 	// (nothing to do with cloudlet pools, just checking API access)
 	badPermShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org2)
@@ -475,12 +481,12 @@ func TestController(t *testing.T) {
 	}
 
 	// tc3 should now be visible along with all other cloudlets
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org1, ccount)
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, "")
 	// tc3 should not be visible by other orgs
 	// (note count here is without tc3, except for org3 to which it belongs)
-	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, org2, count)
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, org3, ccount)
-	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, org4, count)
+	testShowOrgCloudlet(t, mcClient, uri, tokenDev2, OrgTypeDeveloper, ctrl.Region, org2, count, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper, OrgTypeOperator, ctrl.Region, org3, ccount, "")
+	testShowOrgCloudlet(t, mcClient, uri, tokenOper2, OrgTypeOperator, ctrl.Region, org4, count, "")
 
 	// tc3 should now be usable for org1
 	goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, dcnt)
@@ -761,7 +767,7 @@ func setClusterInstDev(dev string, insts []edgeproto.ClusterInst) {
 	}
 }
 
-func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int) {
+func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, orgType, region, org string, showcount int, matchOrg string) {
 	oc := ormapi.OrgCloudlet{}
 	oc.Region = region
 	oc.Org = org
@@ -769,10 +775,32 @@ func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Nil(t, err, "show org cloudlet")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, showcount, len(list))
+	if matchOrg != "" {
+		for _, cl := range list {
+			if orgType == OrgTypeDeveloper && org == matchOrg {
+				require.Equal(t, len(cl.EnvVar), 0, "user is not authorized to see additional cloudlet details")
+				continue
+			}
+			if org == cl.Key.Organization {
+				require.Greater(t, len(cl.EnvVar), 0, "user is authorized to see additional cloudlet details")
+			}
+		}
+	}
 	infolist, infostatus, err := mcClient.ShowOrgCloudletInfo(uri, token, &oc)
 	require.Nil(t, err, "show org cloudletinfo")
 	require.Equal(t, http.StatusOK, infostatus)
 	require.Equal(t, showcount, len(infolist))
+	if matchOrg != "" {
+		for _, clInfo := range infolist {
+			if orgType == OrgTypeDeveloper && org == matchOrg {
+				require.Empty(t, clInfo.ContainerVersion, "user is not authorized to see additional cloudlet info details")
+				continue
+			}
+			if org == clInfo.Key.Organization {
+				require.NotEmpty(t, clInfo.ContainerVersion, "user is authorized to see additional cloudlet info details")
+			}
+		}
+	}
 }
 
 func badPermTestOrgCloudletPool(t *testing.T, mcClient *ormclient.Client, uri, token string, op *ormapi.OrgCloudletPool) {

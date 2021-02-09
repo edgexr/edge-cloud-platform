@@ -301,7 +301,8 @@ func ShowTrustPolicy(c echo.Context) error {
 }
 
 type ShowTrustPolicyAuthz interface {
-	Ok(obj *edgeproto.TrustPolicy) bool
+	Ok(obj *edgeproto.TrustPolicy) (bool, bool)
+	Filter(obj *edgeproto.TrustPolicy)
 }
 
 func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.TrustPolicy)) error {
@@ -339,8 +340,12 @@ func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res) {
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
 				continue
+			}
+			if filterOutput {
+				authz.Filter(res)
 			}
 		}
 		cb(res)

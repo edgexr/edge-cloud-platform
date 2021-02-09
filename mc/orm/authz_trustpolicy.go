@@ -16,18 +16,22 @@ type AuthzTrustPolicy struct {
 	allowedTrustPolicies map[edgeproto.PolicyKey]struct{}
 }
 
-func (s *AuthzTrustPolicy) Ok(obj *edgeproto.TrustPolicy) bool {
+func (s *AuthzTrustPolicy) Ok(obj *edgeproto.TrustPolicy) (bool, bool) {
+	filterOutput := false
 	if s.authzCloudlet.allowAll {
-		return true
+		return true, filterOutput
 	}
 	if _, found := s.authzCloudlet.orgs[obj.Key.Organization]; found {
 		// operator has access to policies created by their org
-		return true
+		return true, filterOutput
 	}
 	if _, found := s.allowedTrustPolicies[obj.Key]; found {
-		return true
+		return true, filterOutput
 	}
-	return false
+	return false, filterOutput
+}
+
+func (s *AuthzTrustPolicy) Filter(obj *edgeproto.TrustPolicy) {
 }
 
 func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string) error {
@@ -38,7 +42,7 @@ func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string
 	}
 	// allow policies associated with cloudlets that the user can see
 	err := ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) {
-		if !s.authzCloudlet.Ok(cloudlet) || cloudlet.TrustPolicy == "" {
+		if authzOk, _ := s.authzCloudlet.Ok(cloudlet); !authzOk || cloudlet.TrustPolicy == "" {
 			return
 		}
 		key := edgeproto.PolicyKey{

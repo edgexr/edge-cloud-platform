@@ -257,7 +257,11 @@ func ShowOrgCloudlet(c echo.Context) error {
 	}
 	show := make([]*edgeproto.Cloudlet, 0)
 	err = ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) {
-		if authzCloudlet.Ok(cloudlet) {
+		authzOk, filterOutput := authzCloudlet.Ok(cloudlet)
+		if authzOk {
+			if filterOutput {
+				authzCloudlet.Filter(cloudlet)
+			}
 			show = append(show, cloudlet)
 		}
 	})
@@ -310,7 +314,19 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 		cloudlet := edgeproto.Cloudlet{
 			Key: CloudletInfo.Key,
 		}
-		if authzCloudlet.Ok(&cloudlet) {
+		authzOk, filterOutput := authzCloudlet.Ok(&cloudlet)
+		if authzOk {
+			if filterOutput {
+				output := *CloudletInfo
+				*CloudletInfo = edgeproto.CloudletInfo{}
+				CloudletInfo.Key = output.Key
+				CloudletInfo.State = output.State
+				CloudletInfo.Errors = output.Errors
+				CloudletInfo.Flavors = output.Flavors
+				CloudletInfo.MaintenanceState = output.MaintenanceState
+				CloudletInfo.TrustPolicyState = output.TrustPolicyState
+				CloudletInfo.ResourcesSnapshot = output.ResourcesSnapshot
+			}
 			show = append(show, CloudletInfo)
 		}
 	})
