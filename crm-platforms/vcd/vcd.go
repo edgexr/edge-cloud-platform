@@ -224,14 +224,6 @@ func (v *VcdPlatform) ImportImage(ctx context.Context, folder, imageFile string)
 	return nil
 }
 
-func (v *VcdPlatform) DeleteImage(ctx context.Context, folder, image string) error {
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage", "image", image)
-	// Fetch the folder-tmpl item and call item.Delete()
-	// TBI
-	return nil
-}
-
 // Assuming Vcd is more similar to Vsphere rather than vmPool or OpenStack
 // alphanumeric plus -_. first char must be alpha, <= 255 chars.
 func (v *VcdPlatform) NameSanitize(name string) string {
