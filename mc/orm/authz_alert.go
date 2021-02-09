@@ -26,12 +26,16 @@ func newShowAlertAuthz(ctx context.Context, region, username, resource, action s
 	return &authz, nil
 }
 
-func (s *AuthzAlert) Ok(obj *edgeproto.Alert) bool {
+func (s *AuthzAlert) Ok(obj *edgeproto.Alert) (bool, bool) {
+	filterOutput := false
 	if s.allowAll {
-		return true
+		return true, filterOutput
 	}
 
 	org := obj.Labels["apporg"]
 	_, found := s.orgs[org]
-	return found
+	return found, filterOutput
+}
+
+func (s *AuthzAlert) Filter(obj *edgeproto.Alert) {
 }

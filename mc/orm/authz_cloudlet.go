@@ -129,16 +129,22 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 // Ok may be called many times, once for each cloudlet in a show command,
 // so operates on the cached database data, rather than having to call into
 // the database/regional controller each time.
-func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
+func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) (bool, bool) {
+	filterOutput := false
 	if s.allowAll {
-		return true
+		return true, filterOutput
 	}
 	if _, found := s.orgs[obj.Key.Organization]; found {
 		// operator has access to cloudlets created by their org,
 		// regardless of whether that cloudlet belongs to
 		// developer pools or not.
-		return true
+		return true, filterOutput
 	}
+
+	// if user doesn't belong to operator role for this cloudlet and is not admin,
+	// then set filterOutput to true, so that operator data which is meant to be hidden
+	// is filtered for that user
+	filterOutput = true
 
 	// First determine if cloudlet is "public" or "private".
 	// "Public" cloudlets do not belong to any cloudlet pool.
@@ -147,11 +153,27 @@ func (s *AuthzCloudlet) Ok(obj *edgeproto.Cloudlet) bool {
 	if found {
 		// "Private" cloudlet, accessible if it belongs to one
 		// of our pools
-		return poolSide == myPool
+		return poolSide == myPool, filterOutput
 	} else {
 		// "Public" cloudlet, accessible by all
-		return true
+		return true, filterOutput
 	}
+}
+
+func (s *AuthzCloudlet) Filter(obj *edgeproto.Cloudlet) {
+	// filter cloudlet details not required for developer role
+	output := *obj
+	*obj = edgeproto.Cloudlet{}
+	obj.Key = output.Key
+	obj.Location = output.Location
+	obj.State = output.State
+	obj.IpSupport = output.IpSupport
+	obj.NumDynamicIps = output.NumDynamicIps
+	obj.MaintenanceState = output.MaintenanceState
+	obj.PlatformType = output.PlatformType
+	obj.ResTagMap = output.ResTagMap
+	obj.TrustPolicy = output.TrustPolicy
+	obj.TrustPolicyState = output.TrustPolicyState
 }
 
 func authzCreateClusterInst(ctx context.Context, region, username string, obj *edgeproto.ClusterInst, resource, action string) error {
@@ -166,7 +188,7 @@ func authzCreateClusterInst(ctx context.Context, region, username string, obj *e
 	cloudlet := edgeproto.Cloudlet{
 		Key: obj.Key.CloudletKey,
 	}
-	if !authzCloudlet.Ok(&cloudlet) {
+	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
 		return echo.ErrForbidden
 	}
 	return nil
@@ -181,7 +203,7 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	cloudlet := edgeproto.Cloudlet{
 		Key: obj.Key.ClusterInstKey.CloudletKey,
 	}
-	if !authzCloudlet.Ok(&cloudlet) {
+	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
 		return echo.ErrForbidden
 	}
 	// Enforce that target ClusterInst org is the same as AppInst org.
@@ -204,7 +226,7 @@ func authzCreateAutoProvPolicy(ctx context.Context, region, username string, obj
 		cloudlet := edgeproto.Cloudlet{
 			Key: apCloudlet.Key,
 		}
-		if !authzCloudlet.Ok(&cloudlet) {
+		if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
 		}
 	}
@@ -225,7 +247,7 @@ func authzAddAutoProvPolicyCloudlet(ctx context.Context, region, username string
 	cloudlet := edgeproto.Cloudlet{
 		Key: obj.CloudletKey,
 	}
-	if !authzCloudlet.Ok(&cloudlet) {
+	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
 	}
 	return nil

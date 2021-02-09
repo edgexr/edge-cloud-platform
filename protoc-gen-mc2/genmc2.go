@@ -526,7 +526,8 @@ func {{.MethodName}}(c echo.Context) error {
 
 {{- if and (not .SkipEnforce) (and .Show .CustomAuthz)}}
 type {{.MethodName}}Authz interface {
-	Ok(obj *edgeproto.{{.InName}}) bool
+	Ok(obj *edgeproto.{{.InName}}) (bool, bool)
+	Filter(obj *edgeproto.{{.InName}})
 }
 {{- end}}
 
@@ -612,9 +613,19 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 {{- if and .Show (not .SkipEnforce)}}
 		if !rc.skipAuthz {
 {{- if .CustomAuthz}}
+{{- if .Show }}
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
+{{- else }}
 			if !authz.Ok(res) {
+{{- end}}
 				continue
 			}
+{{- if .Show }}
+			if filterOutput {
+				authz.Filter(res)
+			}
+{{- end}}
 {{- else}}
 			if !authz.Ok({{.ShowOrg}}) {
 				continue

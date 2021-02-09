@@ -302,7 +302,8 @@ func ShowCloudlet(c echo.Context) error {
 }
 
 type ShowCloudletAuthz interface {
-	Ok(obj *edgeproto.Cloudlet) bool
+	Ok(obj *edgeproto.Cloudlet) (bool, bool)
+	Filter(obj *edgeproto.Cloudlet)
 }
 
 func ShowCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Cloudlet)) error {
@@ -340,8 +341,12 @@ func ShowCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.C
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res) {
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
 				continue
+			}
+			if filterOutput {
+				authz.Filter(res)
 			}
 		}
 		cb(res)

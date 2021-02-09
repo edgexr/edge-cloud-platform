@@ -48,11 +48,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51006
-      flavor:
-        name: x1.small
-      physicalname: enterprise-1
-      containerversion: 2019-10-24
     - key:
         organization: azure
         name: azure-cloud-4
@@ -62,12 +57,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51004
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: azure-cloud-4
-      containerversion: "2019-10-24"
-      deployment: docker
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -77,12 +66,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51005
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: gcp-cloud-5
-      containerversion: "2019-10-24"
-      deployment: docker
     - key:
         organization: dmuus
         name: dmuus-cloud-1
@@ -93,22 +76,6 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: PlatformTypeFakeinfra
-      notifysrvaddr: 127.0.0.1:51001
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: dmuus-cloud-1
-      envvar:
-        foo: bar
-      containerversion: "2019-10-24"
-      deployment: docker
-      resourcequotas:
-      - name: RAM
-        alertthreshold: 50
-      - name: vCPUs
-        value: 20
-        alertthreshold: 50
-      - name: External IPs
-        alertthreshold: 10
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -118,12 +85,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51002
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: dmuus-cloud-2
-      containerversion: "2019-10-24"
-      deployment: docker
     flavors:
     - key:
         name: x1.tiny
@@ -313,11 +274,6 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51016
-      flavor:
-        name: x1.small
-      physicalname: enterprise-2
-      containerversion: "2019-10-24"
     - key:
         organization: dmuus
         name: dmuus-cloud-3
@@ -328,11 +284,6 @@ regiondata:
       numdynamicips: 254
       state: Ready
       platformtype: PlatformTypeFake
-      notifysrvaddr: 127.0.0.1:51017
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: dmuus-cloud-3
-      containerversion: "2019-10-24"
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -342,8 +293,3 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
-      notifysrvaddr: 127.0.0.1:51018
-      flavor:
-        name: DefaultPlatformFlavor
-      physicalname: dmuus-cloud-4
-      containerversion: "2019-10-24"
