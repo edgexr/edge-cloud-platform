@@ -39,6 +39,7 @@ type VMProperties struct {
 	Upgrade                    bool
 	UseSecgrpForInternalSubnet bool
 	RequiresWhitelistOwnIp     bool
+	RunLbDhcpServerForVmApps   bool
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must

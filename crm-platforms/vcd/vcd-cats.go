@@ -29,29 +29,31 @@ func (v *VcdPlatform) GetCatalog(ctx context.Context, catName string, vcdClient 
 	return cat, nil
 }
 
-// generic upload in cats_test
-func (v *VcdPlatform) UploadOvaFile(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) error {
-
-	baseurl := "" // ovaLocation
-	tname := tmplName
-	url := baseurl + "/tmplName" + "ova"
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "upload ova from", "URI", url, "tmpl", tname)
+// UploadOvaFile uploads either an OVF or OVA
+func (v *VcdPlatform) UploadOvaFile(ctx context.Context, fileName, itemName, descr string, vcdClient *govcd.VCDClient) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "UploadOvaFile", "fileName", fileName, "itemName", itemName)
 	cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 	if err != nil {
 		return err
 	}
+	_, err = cat.GetCatalogItemByName(itemName, true)
+	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "OVA already in catalog", "itemName", itemName)
+		return nil
+	}
 	elapse_start := time.Now()
 	// 8*1024 MB chunk size for the download.
-	task, err := cat.UploadOvf(url, tname, "mex ova base template", uploadChunkSize)
+	task, err := cat.UploadOvf(fileName, itemName, descr, uploadChunkSize)
 	if err != nil {
-		return err
+		return fmt.Errorf("UploadOvf to catalog start failed: %v", err)
 	}
 	err = task.WaitTaskCompletion()
 	elapsed := time.Since(elapse_start).String()
-	log.SpanLog(ctx, log.DebugLevelInfra, "tmpl uploaded ", "template", tmplName, "elapsed time", elapsed)
-
-	return err
+	log.SpanLog(ctx, log.DebugLevelInfra, "OVA uploaded ", "itemName", itemName, "elapsed time", elapsed)
+	if err != nil {
+		return fmt.Errorf("UploadOvf to catalog task failed: %v", err)
+	}
+	return nil
 }
 
 func (v *VcdPlatform) DeleteTemplate(ctx context.Context, name string, vcdClient *govcd.VCDClient) error {

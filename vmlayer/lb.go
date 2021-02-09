@@ -73,28 +73,28 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 }
 
 // configureInternalInterfaceAndExternalForwarding sets up the new internal interface and then creates iptables rules to forward
-// traffic out the external interface
-func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *InterfaceActionsOp) error {
+// traffic out the external interface.  Returns the name of the internal interface
+func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *InterfaceActionsOp) (string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "configureInternalInterfaceAndExternalForwarding", "serverDetails", serverDetails, "internalPortName", internalPortName, "action", fmt.Sprintf("%+v", action))
 	internalIP, err := GetIPFromServerDetails(ctx, "", internalPortName, serverDetails)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if internalIP.MacAddress == "" {
-		return fmt.Errorf("No MAC address for internal interface: %s", internalPortName)
+		return "", fmt.Errorf("No MAC address for internal interface: %s", internalPortName)
 	}
 	externalIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetails)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if externalIP.MacAddress == "" {
-		return fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
+		return "", fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
 	}
 	err = WaitServerReady(ctx, v.VMProvider, client, serverDetails.Name, MaxRootLBWait)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "server not ready", "err", err)
-		return err
+		return "", err
 	}
 
 	// discover the interface names matching our macs
@@ -112,14 +112,14 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if externalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", externalIP.MacAddress)
 		if action.addInterface {
-			return fmt.Errorf("unable to find interface for external port mac: %s", externalIP.MacAddress)
+			return "", fmt.Errorf("unable to find interface for external port mac: %s", externalIP.MacAddress)
 		}
 		// keep going on delete
 	}
 	if internalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find internal interface via MAC", "mac", internalIP.MacAddress)
 		if action.addInterface {
-			return fmt.Errorf("unable to find interface for internal port mac: %s", internalIP.MacAddress)
+			return "", fmt.Errorf("unable to find interface for internal port mac: %s", internalIP.MacAddress)
 		}
 		// keep going on delete
 	}
@@ -144,7 +144,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		err = pc.WriteFile(client, filename, contents, "netconfig", pc.SudoOn)
 		// now create the file
 		if err != nil {
-			return fmt.Errorf("unable to write network config file: %s -- %v", filename, err)
+			return "", fmt.Errorf("unable to write network config file: %s -- %v", filename, err)
 		}
 
 		// now bring the new internal interface up.
@@ -160,7 +160,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 			out, err = client.Output(c)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to run", "cmd", c, "out", out, "err", err)
-				return fmt.Errorf("unable to run ip command: %s - %v", out, err)
+				return "", fmt.Errorf("unable to run ip command: %s - %v", out, err)
 			}
 		}
 
@@ -171,7 +171,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 			if strings.Contains(out, "No such file") {
 				log.SpanLog(ctx, log.DebugLevelInfra, "file already gone", "filename", filename)
 			} else {
-				return fmt.Errorf("Unexpected error removing network config file %s, %s -- %v", filename, out, err)
+				return "", fmt.Errorf("Unexpected error removing network config file %s, %s -- %v", filename, out, err)
 			}
 		}
 
@@ -187,7 +187,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		if action.addInterface || action.deleteInterface {
 			err = persistInterfaceName(ctx, client, internalIfname, internalIP.MacAddress, action)
 			if err != nil {
-				return nil
+				return "", nil
 			}
 		}
 		if action.createIptables || action.deleteIptables {
@@ -201,11 +201,11 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "persistInterfaceName and setupForwardingIptables skipped due to empty internalIfName")
 	}
-	return err
+	return internalIfname, err
 }
 
-// AttachAndEnableRootLBInterface attaches the interface and enables it in the OS
-func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, attachPort bool, subnetName, internalPortName, internalIPAddr string) error {
+// AttachAndEnableRootLBInterface attaches the interface and enables it in the OS.  Returns the internal interface name
+func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client ssh.Client, rootLBName string, attachPort bool, subnetName, internalPortName, internalIPAddr string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AttachAndEnableRootLBInterface", "rootLBName", rootLBName, "attachPort", attachPort, "subnetName", subnetName, "internalPortName", internalPortName)
 
 	if rootLBName == v.VMProperties.SharedRootLBName {
@@ -219,14 +219,14 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 		err := v.VMProvider.AttachPortToServer(ctx, rootLBName, subnetName, internalPortName, internalIPAddr, ActionCreate)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "fail to attach port", "err", err)
-			return err
+			return "", err
 		}
 	}
 	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 	if err != nil {
-		return err
+		return "", err
 	}
-	err = v.configureInternalInterfaceAndExternalForwarding(ctx, client, subnetName, internalPortName, sd, &action)
+	internalIfName, err := v.configureInternalInterfaceAndExternalForwarding(ctx, client, subnetName, internalPortName, sd, &action)
 	if err != nil {
 		if attachPort {
 			log.SpanLog(ctx, log.DebugLevelInfra, "fail to confgure internal interface, detaching port", "err", err)
@@ -235,9 +235,9 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 				log.SpanLog(ctx, log.DebugLevelInfra, "fail to detach port", "err", deterr)
 			}
 		}
-		return err
+		return "", err
 	}
-	return nil
+	return internalIfName, nil
 }
 
 func (v *VMPlatform) GetRootLBName(key *edgeproto.CloudletKey) string {
@@ -262,7 +262,7 @@ func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client
 		return err
 	}
 
-	err = v.configureInternalInterfaceAndExternalForwarding(ctx, client, subnetName, internalPortName, sd, &action)
+	_, err = v.configureInternalInterfaceAndExternalForwarding(ctx, client, subnetName, internalPortName, sd, &action)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error in configureInternalInterfaceAndExternalForwarding", "err", err)
 	}
