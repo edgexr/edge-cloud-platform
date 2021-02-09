@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -124,6 +125,18 @@ var vmAppOvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
 func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "imageInfo", imageInfo, "flavor", flavor)
 
+	filesToCleanup := []string{}
+	defer func() {
+		for _, file := range filesToCleanup {
+			log.SpanLog(ctx, log.DebugLevelInfra, "delete file", "file", file)
+			if delerr := infracommon.DeleteFile(file); delerr != nil {
+				if !os.IsNotExist(delerr) {
+					log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "file", file)
+				}
+			}
+		}
+	}()
+
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
@@ -139,6 +152,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "downloaded file", "fileWithPath", fileWithPath)
+	filesToCleanup = append(filesToCleanup, fileWithPath)
 
 	vmdkFile := fileWithPath
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
@@ -147,6 +161,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		if err != nil {
 			return err
 		}
+		filesToCleanup = append(filesToCleanup, vmdkFile)
 	}
 	filenameNoExtension := strings.TrimSuffix(vmdkFile, filepath.Ext(vmdkFile))
 	ovfFile := filenameNoExtension + ".ovf"
@@ -163,25 +178,8 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 	if err != nil {
 		return fmt.Errorf("unable to write OVF file %s: %s", ovfFile, err.Error())
 	}
+	filesToCleanup = append(filesToCleanup, ovfFile)
 	err = v.UploadOvaFile(ctx, ovfFile, imageInfo.LocalImageName, "VM App OVF", vcdClient)
-
-	defer func() {
-		// Stale file might be present if download fails/succeeds, delete it
-		if delerr := infracommon.DeleteFile(fileWithPath); delerr != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "fileWithPath", fileWithPath)
-		}
-		// delete the vmdk file if it was converted
-		if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
-			if delerr := infracommon.DeleteFile(vmdkFile); delerr != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "vmdkFile", vmdkFile)
-			}
-		}
-		// delete the ovf file
-		if delerr := infracommon.DeleteFile(ovfFile); delerr != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "ovfFile", ovfFile)
-		}
-	}()
-
 	if err != nil {
 		return fmt.Errorf("Upload OVA failed - %v", err)
 	}

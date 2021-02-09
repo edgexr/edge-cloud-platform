@@ -289,8 +289,7 @@ func makeMetaMap(ctx context.Context, mexmeta string) map[string]string {
 	if mexmeta != "" {
 		s := strings.Replace(mexmeta, "\n", ":", -1)
 		parts := strings.Split(s, ":")
-		len := len(parts)
-		for i := 0; i < len; i += 2 {
+		for i := 0; i < len(parts); i += 2 {
 			key := strings.TrimSpace(parts[i])
 			val := strings.TrimSpace(parts[i+1])
 			smap[key] = val
