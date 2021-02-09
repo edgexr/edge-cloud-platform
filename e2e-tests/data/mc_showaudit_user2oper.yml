@@ -47,6 +47,35 @@
   org: AcmeAppCo
   clientip: 127.0.0.1
   status: 200
+  starttime: "2021-02-08T13:41:41.202711-08:00"
+  duration: 803.881ms
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
+  response: |
+    {"data":{"message":"Creating new auto-cluster named reservable0 to deploy AppInst"}}
+    {"data":{"message":"Defaulting IpAccess to IpAccessShared for deployment kubernetes"}}
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"First Create Task"}}
+    {"data":{"message":"Second Create Task"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created ClusterInst successfully"}}
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"Creating App Inst"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created AppInst successfully"}}
+  traceid: 6ea2b2d7aaf812ec
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-2
+    cloudletorg: dmuus
+    cluster: autoclusterAcme
+    clusterorg: MobiledgeX
+- operationname: /api/v1/auth/ctrl/CreateAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
   starttime: "2020-11-18T14:14:07.357929+05:30"
   duration: 187.794ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
@@ -130,6 +159,35 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/CreateAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-08T13:39:14.046143-08:00"
+  duration: 1.043076s
+  request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
+  response: |
+    {"data":{"message":"Creating new auto-cluster named reservable0 to deploy AppInst"}}
+    {"data":{"message":"Defaulting IpAccess to IpAccessShared for deployment kubernetes"}}
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"First Create Task"}}
+    {"data":{"message":"Second Create Task"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created ClusterInst successfully"}}
+    {"data":{"message":"Creating"}}
+    {"data":{"message":"Creating App Inst"}}
+    {"data":{"message":"Ready"}}
+    {"data":{"message":"Created AppInst successfully"}}
+  traceid: 26eef3d63afaf3c1
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-2
+    cloudletorg: dmuus
+    cluster: autoclusterAcme
+    clusterorg: MobiledgeX
 - operationname: /api/v1/auth/ctrl/CreateAppInst
   username: user2
   org: AcmeAppCo

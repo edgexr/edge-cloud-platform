@@ -27,6 +27,7 @@
     - /api/v1/login
     - /ws/api/v1/auth/ctrl/RunCommand
     - /ws/api/v1/auth/ctrl/ShowLogs
+    - AutoCluster create
     - AutoProv create AppInst
     - AutoProv delete AppInst
     - Cloudlet maintenance start

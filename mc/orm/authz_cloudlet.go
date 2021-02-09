@@ -4,9 +4,11 @@ import (
 	"context"
 	fmt "fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -206,11 +208,16 @@ func authzCreateAppInst(ctx context.Context, region, username string, obj *edgep
 	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
 		return echo.ErrForbidden
 	}
-	// Enforce that target ClusterInst org is the same as AppInst org.
-	// This prevents Developers from using reservable ClusterInsts directly.
-	// Only auto-provisioning service (which goes direct to controller API)
-	// can instantiate AppInsts with mismatched orgs.
-	if !authzCloudlet.admin && obj.Key.ClusterInstKey.Organization != "" && obj.Key.ClusterInstKey.Organization != obj.Key.AppKey.Organization {
+	// Developers can't create AppInsts on other developer's ClusterInsts,
+	// except for autoclusters where ClusterInst org is MobiledgeX.
+	autocluster := false
+	if strings.HasPrefix(obj.Key.ClusterInstKey.ClusterKey.Name, cloudcommon.AutoClusterPrefix) {
+		if obj.Key.ClusterInstKey.Organization != cloudcommon.OrganizationMobiledgeX {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("Autocluster AppInst's ClusterInst organization must be %s", cloudcommon.OrganizationMobiledgeX))
+		}
+		autocluster = true
+	}
+	if !authzCloudlet.admin && !autocluster && obj.Key.ClusterInstKey.Organization != "" && obj.Key.ClusterInstKey.Organization != obj.Key.AppKey.Organization {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("AppInst organization must match ClusterInst organization"))
 	}
 	return nil
