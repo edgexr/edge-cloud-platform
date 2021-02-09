@@ -136,6 +136,20 @@ regiondata:
           organization: AcmeAppCo
       flavor:
         name: x1.small
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterAcme
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      flavor:
+        name: x1.small
 
     autoscalepolicies:
     - key:

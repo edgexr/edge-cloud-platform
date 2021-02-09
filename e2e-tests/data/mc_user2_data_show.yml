@@ -433,6 +433,44 @@ regiondata:
       runtimeinfo:
         containerids:
         - appOnClusterNode0
+    - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterAcme
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 35
+        longitude: -95
+      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      liveness: LivenessStatic
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 80
+        publicport: 10000
+        fqdnprefix: someapplication110-tcp.
+      - proto: LProtoTcp
+        internalport: 443
+        publicport: 10001
+        fqdnprefix: someapplication110-tcp.
+      - proto: LProtoUdp
+        internalport: 10002
+        publicport: 10000
+        fqdnprefix: someapplication110-udp.
+      flavor:
+        name: x1.small
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - appOnClusterNode0
+      powerstate: PowerOn
+      realclustername: reservable0
 
     autoprovpolicies:
     - key:
@@ -464,6 +502,8 @@ regiondata:
         ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-1"},"organization":"AcmeAppCo"}}'
         : 1
         ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"AcmeAppCo"}}'
+        : 1
+        ? '{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}}'
         : 1
     - key:
         organization: AcmeAppCo

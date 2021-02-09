@@ -37,6 +37,30 @@ regiondata:
       - message: Ready
       - message: Created AppInst successfully
     - key:
+        appkey:
+          organization: AcmeAppCo
+          name: someapplication1
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autoclusterAcme
+          cloudletkey:
+            organization: dmuus
+            name: dmuus-cloud-2
+          organization: MobiledgeX
+      msgs:
+      - message: Creating new auto-cluster named reservable0 to deploy AppInst
+      - message: Defaulting IpAccess to IpAccessShared for deployment kubernetes
+      - message: Creating
+      - message: First Create Task
+      - message: Second Create Task
+      - message: Ready
+      - message: Created ClusterInst successfully
+      - message: Creating
+      - message: Creating App Inst
+      - message: Ready
+      - message: Created AppInst successfully
+    - key:
         clusterinstkey:
           clusterkey:
             name: SmallCluster

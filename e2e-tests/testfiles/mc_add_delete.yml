@@ -59,11 +59,6 @@ tests:
     yaml2: '{{datadir2}}/mc_user1_data_show.yml'
     filetype: mcdata
 
-- name: admin creates reservable clusterinst on user1 cloudlet
-  actions: [mcapi-create]
-  apifile: '{{datadir2}}/mc_admin_reservable.yml'
-  curuserfile: '{{datadir2}}/mc_admin.yml'
-
 - name: user2 creates apps; verify it is there
   actions: [mcapi-create, mcapi-show]
   apifile: '{{datadir2}}/mc_user2_data.yml'
@@ -81,6 +76,11 @@ tests:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_user2_data_stream.yml'
     filetype: mcstream
+
+- name: admin creates reservable clusterinst on user1 cloudlet
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_admin_reservable.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
 
 - name: enterprise user3 creates apps; verify it is there
   actions: [mcapi-create, mcapi-show]
