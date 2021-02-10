@@ -66,5 +66,3 @@ regiondata:
       nummasters: 1
       numnodes: 1
       reservable: true
-    idlereservableclusterinsts:
-      idletime: 0
