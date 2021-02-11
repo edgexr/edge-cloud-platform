@@ -1,6 +1,10 @@
 package orm
 
-import "context"
+import (
+	"context"
+
+	"github.com/labstack/echo"
+)
 
 type AuthzShow struct {
 	allowedOrgs map[string]struct{}
@@ -11,6 +15,10 @@ func newShowAuthz(ctx context.Context, region, username, resource, action string
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
 		return nil, err
+	}
+	if len(orgs) == 0 {
+		// no access to any orgs for given resource/action
+		return nil, echo.ErrForbidden
 	}
 	authz := AuthzShow{
 		allowedOrgs: orgs,
