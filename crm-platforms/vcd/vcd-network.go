@@ -113,8 +113,8 @@ func (v *VcdPlatform) haveSharedRootLB(ctx context.Context, vmgp vmlayer.VMGroup
 var netLock sync.Mutex
 
 func (v *VcdPlatform) createNextSharedLBSubnet(ctx context.Context, vapp *govcd.VApp, port vmlayer.PortOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback, vcdClient *govcd.VCDClient) error {
-	// shared lbs need individual orgvcd ioslated networks, must be unique.
-	// take the lock that is releaesd after the network has been added to the sharedLB's VApp
+	// shared lbs need individual orgvcd isolated networks, must be unique.
+	// take the lock that is released after the network has been added to the sharedLB's VApp
 	log.SpanLog(ctx, log.DebugLevelInfra, "createNextSharedLBSubnet", "vapp", vapp.VApp.Name)
 
 	netLock.Lock()
