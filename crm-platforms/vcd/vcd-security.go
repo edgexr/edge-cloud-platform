@@ -129,7 +129,7 @@ func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context, vcdClient *g
 
 // same as vsphere (common vmware utils?)
 func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, trustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB ", "rootLBName", rootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	iptblStart := time.Now()
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
