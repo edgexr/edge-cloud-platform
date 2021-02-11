@@ -168,13 +168,13 @@ func TestController(t *testing.T) {
 
 	// additional users don't have access to orgs yet
 	badPermTestApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
-	badPermTestShowApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	badPermShowApp(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 
 	badPermTestAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, nil)
-	badPermTestShowAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	badPermShowAppInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 
 	badPermTestClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1, nil)
-	badPermTestShowClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
+	badPermShowClusterInst(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
 
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org1)
 	badPermTestMetrics(t, mcClient, uri, tokenDev3, ctrl.Region, org1)
@@ -324,22 +324,22 @@ func TestController(t *testing.T) {
 
 	// make sure operator cannot create apps, appinsts, clusters, etc
 	badPermTestApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)
-	badPermTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	badPermShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, tc3)
-	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	badPermShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, tc3)
-	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	badPermShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestApp(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
-	badPermTestShowApp(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
+	badPermShowApp(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	badPermTestAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1, tc3)
-	badPermTestShowAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
+	badPermShowAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	badPermTestClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1, tc3)
-	badPermTestShowClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
+	badPermShowClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	// make sure developer cannot create cloudlet (but they can see all of them)
 	badPermTestCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org3)
@@ -437,9 +437,8 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(poollist))
 	poollist, status, err = mcClient.ShowCloudletPool(uri, tokenDev, &pool)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(poollist))
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
 
 	// associate cloudletpool with org, allows org1 to see cloudlets in pool
 	op1 := ormapi.OrgCloudletPool{
@@ -1155,7 +1154,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	// current apikey doesn't allow user to manage app resource
 	badPermTestApp(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name)
 	badPermTestAppInst(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, &tc)
-	badPermTestShowAppInst(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name)
+	badPermShowAppInst(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name)
 	badPermTestClusterInst(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, &tc)
 
 	// user should not be able to manage the resources it is not allowed to

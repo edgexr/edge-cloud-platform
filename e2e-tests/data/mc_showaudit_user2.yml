@@ -16,72 +16,6 @@
   request: '{"Name":"user2","Email":"user2@email.com","EmailVerified":false,"Passhash":"","Salt":"","Iter":0,"FamilyName":"","GivenName":"","Picture":"","Nickname":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z","Locked":false,"PassCrackTimeSec":0,"EnableTOTP":false,"TOTPSharedKey":"","Metadata":"","verify":{"email":"","operatingsystem":"","browser":"","callbackurl":"","clientip":""}}'
   response: '{"Message":"user created","TOTPSharedKey":"","TOTPQRImage":null}'
   traceid: 24625321e53de041
-- operationname: /api/v1/auth/ctrl/ShowCloudlet
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2021-01-04T18:52:45.406782+05:30"
-  duration: 22.693ms
-  request: '{"Region":"locala","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{},"resource_quotas":null}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 1faacbbb1e096aae
-  tags:
-    cloudlet: ""
-    cloudletorg: ""
-- operationname: /api/v1/auth/ctrl/ShowTrustPolicy
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2021-01-04T18:52:45.380103+05:30"
-  duration: 22.594ms
-  request: '{"Region":"locala","TrustPolicy":{"key":{},"outbound_security_rules":null}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 2e86d947a2399539
-  tags:
-    policy: ""
-    policyorg: ""
-- operationname: /api/v1/auth/ctrl/ShowSettings
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2020-03-18T14:06:20.216288-07:00"
-  duration: 671µs
-  request: '{"Region":"locala","Settings":{}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 33f2e0e8baa458b5
-- operationname: /api/v1/auth/ctrl/ShowCloudlet
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2021-01-04T18:52:45.173535+05:30"
-  duration: 18.783ms
-  request: '{"Region":"local","Cloudlet":{"key":{},"location":{},"time_limits":{},"status":{},"flavor":{},"config":{},"infra_config":{},"created_at":{},"updated_at":{},"resource_quotas":null}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 570314dca40b1a6b
-  tags:
-    cloudlet: ""
-    cloudletorg: ""
-- operationname: /api/v1/auth/ctrl/ShowTrustPolicy
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2021-01-04T18:52:45.146452+05:30"
-  duration: 22.141ms
-  request: '{"Region":"local","TrustPolicy":{"key":{},"outbound_security_rules":null}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 39eee5242bd5c852
-  tags:
-    policy: ""
-    policyorg: ""
-- operationname: /api/v1/auth/ctrl/ShowSettings
-  username: user2
-  clientip: 127.0.0.1
-  status: 403
-  starttime: "2020-01-16T16:24:05.019808-08:00"
-  duration: 578µs
-  request: '{"Region":"local","Settings":{}}'
-  response: '{"message":"Forbidden"}'
-  traceid: 6d8e25359c7c2d2d
 - operationname: /api/v1/login
   username: user2
   clientip: 127.0.0.1
@@ -149,3 +83,127 @@
   tags:
     policy: scale1
     policyorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteClusterInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:53.486112+05:30"
+  duration: 558.604ms
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":3,"num_masters":1,"num_nodes":1,"status":{},"resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
+  response: |
+    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted ClusterInst successfully"}}
+  traceid: 6f2774fcff15f68b
+  tags:
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteClusterInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:52.94094+05:30"
+  duration: 536.967ms
+  request: '{"Region":"locala","ClusterInst":{"key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-3"},"organization":"AcmeAppCo"},"flavor":{"name":"x1.small"},"ip_access":1,"num_masters":1,"num_nodes":1,"status":{},"auto_scale_policy":"scale1","resources":{"vms":null},"created_at":{},"updated_at":{},"reservation_ended_at":{}}}'
+  response: |
+    {"data":{"message":"Autodeleting AppInst MEXPrometheusAppName"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted ClusterInst successfully"}}
+  traceid: 02f258206fd55963
+  tags:
+    cloudlet: dmuus-cloud-3
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  org: platos
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:52.805455+05:30"
+  duration: 130.043ms
+  request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","created_at":{},"updated_at":{}}}'
+  response: '{}'
+  traceid: 482ec67b592ceb06
+  tags:
+    app: platosEnablingLayer
+    apporg: platos
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:52.698593+05:30"
+  duration: 101.213ms
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"autoprovapp","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:81","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprov1"],"created_at":{},"updated_at":{}}}'
+  response: '{}'
+  traceid: 506a126c237e5a63
+  tags:
+    app: autoprovapp
+    apporg: AcmeAppCo
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/DeleteApp
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:52.590559+05:30"
+  duration: 102.574ms
+  request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+    PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
+    PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1","created_at":{},"updated_at":{}}}'
+  response: '{}'
+  traceid: 27a0241311b6035d
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+- operationname: /api/v1/auth/ctrl/DeleteAppInst
+  username: user2
+  org: AcmeAppCo
+  clientip: 127.0.0.1
+  status: 200
+  starttime: "2021-02-10T12:05:52.349687+05:30"
+  duration: 235.139ms
+  request: '{"Region":"locala","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"SmallCluster"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-4"},"organization":"AcmeAppCo"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
+  response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
+    {"data":{"message":"Deleted AppInst successfully"}}
+  traceid: 6279c7e49050b25f
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-4
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
