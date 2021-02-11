@@ -107,7 +107,7 @@ func (v *VcdPlatform) GetVcdVerbose() bool {
 	if verbose == "true" {
 		return true
 	}
-	return false
+	return true
 }
 
 func (v *VcdPlatform) GetCatalogName() string {

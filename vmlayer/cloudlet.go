@@ -288,14 +288,18 @@ func (v *VMPlatform) getChefRunStatus(ctx context.Context, chefClient *chef.Clie
 	updateCallback(edgeproto.UpdateTask, "Waiting for run lists to be executed on Platform VM")
 	timeout := time.After(20 * time.Minute)
 	tick := time.Tick(5 * time.Second)
+	runListTime := time.Now()
+
 	for {
 		var statusInfo []chefmgmt.ChefStatusInfo
 		select {
 		case <-timeout:
+			log.SpanLog(ctx, log.DebugLevelInfra, "getChefRunStatus timeout", "cloudletName", cloudlet.Key.Name)
 			return fmt.Errorf("timed out waiting for platform VM to connect to Chef Server")
 		case <-tick:
 			statusInfo, err = chefmgmt.ChefClientRunStatus(ctx, chefClient, clientName)
 			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "getChefRunStatus ChefClientRunStatus error", "cloudletName", cloudlet.Key.Name, "error", err)
 				return err
 			}
 		}
@@ -310,7 +314,7 @@ func (v *VMPlatform) getChefRunStatus(ctx context.Context, chefClient *chef.Clie
 			break
 		}
 	}
-
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Wait run list complete time: %s", infracommon.FormatDuration(time.Since(runListTime), 2)))
 	return nil
 }
 
