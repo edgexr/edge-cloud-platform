@@ -26,7 +26,7 @@ func (v *VSpherePlatform) RemoveWhitelistSecurityRules(ctx context.Context, clie
 	return vmlayer.RemoveIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }
 
-func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, TrustPolicy *edgeproto.TrustPolicy) error {
+func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
 	// allow our external vsphere network

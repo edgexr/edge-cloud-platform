@@ -140,3 +140,24 @@ func GetReqErr(reqBody io.ReadCloser) error {
 func combineErrors(e *ErrorResp) {
 	e.Errors = append(e.Errors, e.Error)
 }
+
+// round the given field denoted by digIdx, we mostly want seconds
+// rounded to two digits
+func FormatDuration(dur time.Duration, digIdx int) string {
+
+	var divisors = []time.Duration{
+		time.Duration(1),
+		time.Duration(10),
+		time.Duration(100),
+		time.Duration(1000),
+	}
+	switch {
+	case dur > time.Second:
+		dur = dur.Round(time.Second / divisors[digIdx])
+	case dur > time.Millisecond:
+		dur = dur.Round(time.Millisecond / divisors[digIdx])
+	case dur > time.Microsecond:
+		dur = dur.Round(time.Millisecond / divisors[digIdx])
+	}
+	return dur.String()
+}

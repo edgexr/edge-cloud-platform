@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -33,6 +35,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 	storRef := types.Reference{}
 	// Nil ref wins default storage policy
+	createStart := time.Now()
 	updateCallback(edgeproto.UpdateTask, "Creating vApp")
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp", "name", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
@@ -58,6 +61,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose vApp", "name", vappName, "vmRole", vmRole, "vmType", vmType)
 
 	description = description + vcdProviderVersion
+	composeStart := time.Now()
 	task, err := vdc.ComposeVApp(networks, *vappTmpl, storRef, vappName, description, true)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp compose failed", "error", err)
@@ -75,6 +79,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "can't retrieve composed vapp", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
 	}
+
 	// wait before adding vms
 	err = vapp.BlockWhileStatus("UNRESOLVED", ResolvedStateMaxWait) // upto seconds
 
@@ -82,15 +87,17 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "wait for RESOLVED error", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
 	}
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "Compose Vapp successfully", "VApp", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
+	elapsedCompose := time.Since(composeStart).String()
+	log.SpanLog(ctx, log.DebugLevelInfra, "Compose Vapp successfully", "VApp", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name, "time", elapsedCompose)
 
 	err = v.validateVMSpecSection(ctx, *vapp)
 	if err != nil {
 		return nil, err
 	}
-	// ensure we have a clean slate
+	// ensure we have a clean slate  xxx needed? speed up fodder potentially
+
 	task, err = vapp.RemoveAllNetworks()
+
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "remove networks failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
@@ -101,9 +108,9 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Updating vApp Ports")
-
+	updatePortsStart := time.Now()
 	// Get the VApp network in place, all vapps need an external network at least
-	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, vcdClient)
+	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, updateCallback, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
@@ -116,9 +123,14 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp failed to retrieve", "VM", vmtmplName)
 		return nil, err
 	}
+	if v.Verbose {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Update vApp Ports time %s",
+			infracommon.FormatDuration(time.Since(updatePortsStart), 2)))
+	}
 
 	updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName, "count", numVMs)
+	addVMStart := time.Now()
 
 	vmsToCustomize, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr, vdc, vcdClient, updateCallback)
 	if err != nil {
@@ -127,17 +139,25 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed VMs added", "GroupName", vmgp.GroupName)
 	// poweron and customize
+	if v.Verbose {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Add VMs to VApp time %s",
+			infracommon.FormatDuration(time.Since(addVMStart), 2)))
+	}
 	updateCallback(edgeproto.UpdateTask, "Powering on VMs")
+	powerOnStart := time.Now()
 	err = v.powerOnVmsAndForceCustomization(ctx, vmsToCustomize)
 	if err != nil {
 		return nil, err
 	}
 
 	if v.Verbose {
-		// govcd.ShowVapp(*vapp.VApp) its... quite large
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("VM PowerOn time %s",
+			infracommon.FormatDuration(time.Since(powerOnStart), 2)))
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed Powering On", "Vapp", vappName)
+	vappPowerOnStart := time.Now()
 	updateCallback(edgeproto.UpdateTask, "Powering on Vapp")
+
 	task, err = vapp.PowerOn()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "power on failed ", "VAppName", vapp.VApp.Name, "err", err)
@@ -148,12 +168,18 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		log.SpanLog(ctx, log.DebugLevelInfra, "wait power on failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
 	}
-	vapp.Refresh()
+	if v.Verbose {
+		msg := fmt.Sprintf("%s %s", "vapp power on  time ", infracommon.FormatDuration(time.Since(vappPowerOnStart), 2))
+		updateCallback(edgeproto.UpdateTask, msg)
+	}
 
 	if v.Verbose {
 		v.LogVappVMsStatus(ctx, vapp)
 	}
-
+	if v.Verbose {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s %s", "CreateVMs  time ",
+			infracommon.FormatDuration(time.Since(createStart), 2)))
+	}
 	return vapp, nil
 }
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -17,10 +17,10 @@ func TestNextIntAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	var updateCallback edgeproto.CacheUpdateCallback
 	if live {
 		// vappName is just logging here
-		nextAddr, err := tv.GetNextInternalSubnet(ctx, *vappName, testVcdClient)
+		nextAddr, err := tv.GetNextInternalSubnet(ctx, *vappName, updateCallback, testVcdClient)
 		if err != nil {
 			fmt.Printf("Error getting next addr  : %s\n", err.Error())
 			return

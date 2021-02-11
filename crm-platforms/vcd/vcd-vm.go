@@ -7,8 +7,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -16,8 +17,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
-
-var vmsCreateLock sync.Mutex
 
 // VM related operations
 
@@ -155,10 +154,6 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCD
 
 func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVMs", "grpName", vmgp.GroupName)
-
-	// TODO: we need a more granular lock
-	vmsCreateLock.Lock()
-	defer vmsCreateLock.Unlock()
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
@@ -598,8 +593,9 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 
 // Add/remove VM from our VApp (group)
 func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "OrchParams", vmgp)
 
+	updateTime := time.Now()
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "OrchParams", vmgp)
 	vappName := vmgp.GroupName + v.GetVappServerSuffix()
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs", "Vapp", vappName)
 
@@ -669,8 +665,13 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 			}
 
 		}
+		if v.Verbose {
+			msg := fmt.Sprintf("Added %d VMs to vApp time %s", len(newVms), infracommon.FormatDuration(time.Since(updateTime), 2))
+			updateCallback(edgeproto.UpdateTask, msg)
+		}
 	} else if numExistingVMs > numNewVMs {
 		newVmMap := make(VMMap)
+		rmcnt := 0
 		// delete whatever is in exsiting that is not in new
 		for _, newVmParams := range newVMs {
 			newVmMap[newVmParams.Name] = &govcd.VM{}
@@ -684,9 +685,15 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 					log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs delete failed", "vm", existingVM.VM.Name, "err", err)
 					return err
 				}
+				rmcnt++
 				log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs deleted", "vm", existingVM.VM.Name, "vapp", vappName)
 			}
 		}
+		if v.Verbose {
+			msg := fmt.Sprintf("Removed  %d  VMs time %s", rmcnt, infracommon.FormatDuration(time.Since(updateTime), 2))
+			updateCallback(edgeproto.UpdateTask, msg)
+		}
+
 	} else {
 		// ok, we're just updating some existing VMs then?
 		for _, vm := range newVMs {
@@ -1022,8 +1029,9 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 // Store attrs of vm for crmrestarts and resource fetching
 func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
 
+	addStart := time.Now()
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddMetadataToVm", "vm", vm.VM.Name)
 	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
-	// why no async for vms?
 	task, err := vm.AddMetadata("vmType", vmType)
 	if err != nil {
 		return err
@@ -1032,7 +1040,6 @@ func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparam
 	if err != nil {
 		return err
 	}
-
 	task, err = vm.AddMetadata("FlavorName", vmparams.FlavorName)
 	if err != nil {
 		return err
@@ -1050,11 +1057,7 @@ func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparam
 	if err != nil {
 		return err
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddMetadataToVm", "vm", vm.VM.Name, "time", time.Since(addStart).String())
 	return nil
 }
 
