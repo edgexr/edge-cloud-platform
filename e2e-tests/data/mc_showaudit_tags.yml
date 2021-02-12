@@ -87,6 +87,11 @@
   duration: 325.992ms
   request: '{"Region":"local","AppInst":{"key":{"app_key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autoclusterAcme"},"cloudlet_key":{"organization":"dmuus","name":"dmuus-cloud-2"},"organization":"MobiledgeX"}},"cloudlet_loc":{},"mapped_ports":null,"flavor":{"name":"x1.small"},"runtime_info":{},"created_at":{},"status":{},"updated_at":{}}}'
   response: |
+    {"data":{"message":"Deleting"}}
+    {"data":{"message":"First Delete Task"}}
+    {"data":{"message":"Second Delete Task"}}
+    {"data":{"message":"DeleteDone"}}
+    {"data":{"message":"NotPresent"}}
     {"data":{"message":"Deleted AppInst successfully"}}
   traceid: 1bfbe8c0b9a5a4f7
   tags:
