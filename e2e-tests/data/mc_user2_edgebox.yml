@@ -31,9 +31,9 @@ regiondata:
           name: localtest
         organization: DevOrg
       flavor:
-        name: x1.medium
+        name: x1.tiny
       nummasters: 1
-      numnodes: 3
+      numnodes: 1
       autoscalepolicy: scale1
     apps:
     - key:
@@ -44,7 +44,7 @@ regiondata:
       imagetype: ImageTypeDocker
       accessports: tcp:7777
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       cluster:
         name: AppCluster
       deployment: kubernetes
@@ -59,7 +59,7 @@ regiondata:
       accessports: tcp:8008
       skiphcports: tcp:8008
       defaultflavor:
-        name: x1.small
+        name: x1.tiny
       cluster:
         name: AppCluster
       deployment: kubernetes
@@ -106,7 +106,7 @@ regiondata:
         organization: DevOrg
         name: scale1
       minnodes: 1
-      maxnodes: 3
+      maxnodes: 2
       scaleupcputhresh: 85
       scaledowncputhresh: 50
       triggertimesec: 60
