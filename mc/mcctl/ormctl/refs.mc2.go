@@ -122,9 +122,6 @@ var CloudletRefsRequiredArgs = []string{
 	"key.name",
 }
 var CloudletRefsOptionalArgs = []string{
-	"usedram",
-	"usedvcores",
-	"useddisk",
 	"rootlbports:#.key",
 	"rootlbports:#.value",
 	"useddynamicips",
@@ -143,9 +140,6 @@ var CloudletRefsOptionalArgs = []string{
 var CloudletRefsAliasArgs = []string{
 	"key.organization=cloudletrefs.key.organization",
 	"key.name=cloudletrefs.key.name",
-	"usedram=cloudletrefs.usedram",
-	"usedvcores=cloudletrefs.usedvcores",
-	"useddisk=cloudletrefs.useddisk",
 	"rootlbports:#.key=cloudletrefs.rootlbports:#.key",
 	"rootlbports:#.value=cloudletrefs.rootlbports:#.value",
 	"useddynamicips=cloudletrefs.useddynamicips",
@@ -164,9 +158,6 @@ var CloudletRefsAliasArgs = []string{
 var CloudletRefsComments = map[string]string{
 	"key.organization":                            "Organization of the cloudlet site",
 	"key.name":                                    "Name of the cloudlet",
-	"usedram":                                     "Used RAM in MB",
-	"usedvcores":                                  "Used VCPU cores",
-	"useddisk":                                    "Used disk in GB",
 	"useddynamicips":                              "Used dynamic IPs",
 	"usedstaticips":                               "Used static IPs",
 	"reservedautoclusterids":                      "Track reservable autoclusterinsts ids in use. This is a bitmap.",

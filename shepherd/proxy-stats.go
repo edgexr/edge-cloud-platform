@@ -12,6 +12,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/dockermgmt"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -76,8 +77,9 @@ func StartProxyScraper(done chan bool) {
 
 // Figure out envoy proxy container name
 func getProxyContainerName(ctx context.Context, scrapePoint ProxyScrapePoint) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelMetrics, "getProxyContainerName", "type", myPlatform.GetType())
-	if myPlatform.GetType() == "fake" {
+	pfType := pf.GetType(*platformName)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "getProxyContainerName", "type", pfType)
+	if pfType == "fake" {
 		return "fakeEnvoy", nil
 	}
 	container := proxy.GetEnvoyContainerName(scrapePoint.App)

@@ -26,10 +26,6 @@ type Platform struct {
 	mux    sync.Mutex
 }
 
-func (s *Platform) GetType() string {
-	return "fakeinfra"
-}
-
 func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	s.envoys = make(map[edgeproto.AppInstKey]*exec.Cmd)
 	return s.Platform.Init(ctx, platformConfig, caches, updateCallback)

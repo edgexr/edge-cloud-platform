@@ -30,10 +30,6 @@ type ShepherdPlatform struct {
 	appDNSRoot      string
 }
 
-func (s *ShepherdPlatform) GetType() string {
-	return s.VMPlatform.Type
-}
-
 func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
 	s.platformConfig = pc
 	s.appDNSRoot = pc.AppDNSRoot

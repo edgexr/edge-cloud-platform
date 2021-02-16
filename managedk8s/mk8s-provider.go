@@ -27,12 +27,6 @@ type ManagedK8sProvider interface {
 	GetAccessData(ctx context.Context, cloudlet *edgeproto.Cloudlet, region string, vaultConfig *vault.Config, dataType string, arg []byte) (map[string]string, error)
 }
 
-const (
-	ManagedK8sProviderAzure string = "azure"
-	ManagedK8sProviderGCP   string = "gcp"
-	ManagedK8sProviderAWS   string = "aws"
-)
-
 // ManagedK8sPlatform contains info needed by all Managed Kubernetes Providers
 type ManagedK8sPlatform struct {
 	Type     string
@@ -41,12 +35,8 @@ type ManagedK8sPlatform struct {
 	infracommon.CommonEmbedded
 }
 
-func (m *ManagedK8sPlatform) GetType() string {
-	return m.Type
-}
-
 func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", m.GetType())
+	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", m.Type)
 	props, err := m.Provider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
@@ -104,7 +94,7 @@ func (m *ManagedK8sPlatform) GetAccessData(ctx context.Context, cloudlet *edgepr
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (m *ManagedK8sPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+func (m *ManagedK8sPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	return nil
 }
 

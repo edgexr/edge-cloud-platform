@@ -35,10 +35,6 @@ var edgeboxProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
-func (e *EdgeboxPlatform) GetType() string {
-	return "edgebox"
-}
-
 func (e *EdgeboxPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	err := e.generic.Init(ctx, platformConfig, caches, updateCallback)
 	// Set the test Mode based on what is in PlatformConfig

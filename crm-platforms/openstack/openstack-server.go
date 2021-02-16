@@ -399,10 +399,13 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 			InfraFlavor: svr.Flavor,
 		}
 		for _, sip := range sd.Addresses {
-			vmip := edgeproto.IpAddr{
-				ExternalIp: sip.ExternalAddr,
-			}
-			if sip.InternalAddr != "" && sip.InternalAddr != sip.ExternalAddr {
+			vmip := edgeproto.IpAddr{}
+			if sip.Network == o.VMProperties.GetCloudletExternalNetwork() {
+				vmip.ExternalIp = sip.ExternalAddr
+				if sip.InternalAddr != "" && sip.InternalAddr != sip.ExternalAddr {
+					vmip.InternalIp = sip.InternalAddr
+				}
+			} else {
 				vmip.InternalIp = sip.InternalAddr
 			}
 			vmInfo.Ipaddresses = append(vmInfo.Ipaddresses, vmip)

@@ -30,10 +30,6 @@ type Platform struct {
 	// TODO - add Prometheus/nginx strings here EDGECLOUD-1252
 }
 
-func (s *Platform) GetType() string {
-	return "unit test"
-}
-
 func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
 	return nil
 }
