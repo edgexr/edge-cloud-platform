@@ -125,7 +125,6 @@ var CloudletMetricOptionalArgs = []string{
 	"last",
 	"starttime",
 	"endtime",
-	"platformtype",
 }
 
 var CloudletMetricAliasArgs = []string{
@@ -134,13 +133,11 @@ var CloudletMetricAliasArgs = []string{
 }
 
 var CloudletMetricComments = map[string]string{
-	"selector":     "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletSelectors, "\", \"") + "\"",
-	"platformtype": "Type of the cloudlet platform",
+	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletSelectors, "\", \"") + "\"",
 }
 
 var CloudletUsageMetricComments = map[string]string{
-	"selector":     "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletUsageSelectors, "\", \"") + "\"",
-	"platformtype": "Type of the cloudlet platform",
+	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.CloudletUsageSelectors, "\", \"") + "\"",
 }
 
 var ClientMetricRequiredArgs = []string{

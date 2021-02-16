@@ -21,53 +21,54 @@ import (
 
 func GetPlatform(plat string) (platform.Platform, error) {
 	var outPlatform platform.Platform
+	pfType := platform.GetType(plat)
 	switch plat {
 	case "PLATFORM_TYPE_OPENSTACK":
 		openstackProvider := openstack.OpenstackPlatform{}
 		outPlatform = &vmlayer.VMPlatform{
-			Type:       vmlayer.VMProviderOpenstack,
+			Type:       pfType,
 			VMProvider: &openstackProvider,
 		}
 	case "PLATFORM_TYPE_VSPHERE":
 		vsphereProvider := vsphere.VSpherePlatform{}
 		outPlatform = &vmlayer.VMPlatform{
-			Type:       vmlayer.VMProviderVSphere,
+			Type:       pfType,
 			VMProvider: &vsphereProvider,
 		}
 	case "PLATFORM_TYPE_VM_POOL":
 		vmpoolProvider := vmpool.VMPoolPlatform{}
 		outPlatform = &vmlayer.VMPlatform{
-			Type:       vmlayer.VMProviderVMPool,
+			Type:       pfType,
 			VMProvider: &vmpoolProvider,
 		}
 	case "PLATFORM_TYPE_VCD":
 		vcdProvider := vcd.VcdPlatform{}
 		outPlatform = &vmlayer.VMPlatform{
-			Type:       vmlayer.VMProviderVCD,
+			Type:       pfType,
 			VMProvider: &vcdProvider,
 		}
 	case "PLATFORM_TYPE_AWS_EC2":
 		awsVMProvider := awsec2.AwsEc2Platform{}
 		outPlatform = &vmlayer.VMPlatform{
-			Type:       vmlayer.VMProviderAwsEc2,
+			Type:       pfType,
 			VMProvider: &awsVMProvider,
 		}
 	case "PLATFORM_TYPE_AZURE":
 		azureProvider := &azure.AzurePlatform{}
 		outPlatform = &managedk8s.ManagedK8sPlatform{
-			Type:     managedk8s.ManagedK8sProviderAzure,
+			Type:     pfType,
 			Provider: azureProvider,
 		}
 	case "PLATFORM_TYPE_GCP":
 		gcpProvider := &gcp.GCPPlatform{}
 		outPlatform = &managedk8s.ManagedK8sPlatform{
-			Type:     managedk8s.ManagedK8sProviderGCP,
+			Type:     pfType,
 			Provider: gcpProvider,
 		}
 	case "PLATFORM_TYPE_AWS_EKS":
 		awsProvider := &awseks.AwsEksPlatform{}
 		outPlatform = &managedk8s.ManagedK8sPlatform{
-			Type:     managedk8s.ManagedK8sProviderAWS,
+			Type:     pfType,
 			Provider: awsProvider,
 		}
 	case "PLATFORM_TYPE_EDGEBOX":

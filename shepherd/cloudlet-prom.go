@@ -18,6 +18,7 @@ import (
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/prommgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -207,7 +208,7 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		request := fmt.Sprintf("docker exec %s curl -s -S http://127.0.0.1:%d/stats/prometheus", target.ProxyContainer, cloudcommon.ProxyMetricsPort)
-		if myPlatform.GetType() == "fake" {
+		if pf.GetType(*platformName) == "fake" {
 			sock := "/tmp/envoy_" + app + ".sock"
 			request = fmt.Sprintf("curl -s --unix-socket %s http:/sock/stats/prometheus", sock)
 		}

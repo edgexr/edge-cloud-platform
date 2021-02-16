@@ -12,8 +12,10 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/influxsup"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -383,11 +385,11 @@ func CloudletMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 }
 
 // Query is a template with a specific set of if/else
-func CloudletUsageMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
+func CloudletUsageMetricsQuery(obj *ormapi.RegionCloudletMetrics, platformTypes map[string]struct{}) string {
 	arg := influxQueryArgs{
 		//Selector:     getFields(obj.Selector, CLOUDLETUSAGE),
 		Selector:     "*",
-		Measurement:  getCloudletUsageMeasurementString(obj.Selector, obj.PlatformType),
+		Measurement:  getCloudletUsageMeasurementString(obj.Selector, platformTypes),
 		CloudletName: obj.Cloudlet.Name,
 		CloudletOrg:  obj.Cloudlet.Organization,
 		Last:         obj.Last,
@@ -487,7 +489,7 @@ func getMeasurementString(selector, measurementType string) string {
 	return prefix + strings.Join(measurements, "\",\""+prefix)
 }
 
-func getCloudletUsageMeasurementString(selector, platformType string) string {
+func getCloudletUsageMeasurementString(selector string, platformTypes map[string]struct{}) string {
 	measurements := []string{}
 	selectors := CloudletUsageSelectors
 	if selector != "*" {
@@ -495,9 +497,11 @@ func getCloudletUsageMeasurementString(selector, platformType string) string {
 	}
 	for _, cSelector := range selectors {
 		if cSelector == "resourceusage" {
-			measurements = append(measurements, fmt.Sprintf("%s-resource-usage", platformType))
+			for pfType, _ := range platformTypes {
+				measurements = append(measurements, cloudcommon.GetCloudletResourceUsageMeasurement(pfType))
+			}
 		} else if selector == "flavorusage" {
-			measurements = append(measurements, "cloudlet-flavor-usage")
+			measurements = append(measurements, cloudcommon.CloudletFlavorUsageMeasurement)
 		} else {
 			measurements = append(measurements, cSelector)
 		}
@@ -685,15 +689,28 @@ func GetMetricsCommon(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
 		}
 		// Platform type is required for cloudlet resource usage
-		if in.PlatformType == "" && in.Selector == "resourceusage" {
-			return setReply(c, fmt.Errorf("Platform type is required"), nil)
+		platformTypes := make(map[string]struct{})
+		if in.Selector == "resourceusage" {
+			rc := &RegionContext{}
+			rc.username = claims.Username
+			rc.region = in.Region
+			obj := edgeproto.Cloudlet{
+				Key: in.Cloudlet,
+			}
+			err = ShowCloudletStream(ctx, rc, &obj, func(res *edgeproto.Cloudlet) {
+				pfType := pf.GetType(res.PlatformType.String())
+				platformTypes[pfType] = struct{}{}
+			})
+			if err != nil {
+				return err
+			}
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
 			return setReply(c, err, nil)
 		}
-		cmd = CloudletUsageMetricsQuery(&in)
+		cmd = CloudletUsageMetricsQuery(&in, platformTypes)
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {

@@ -156,7 +156,7 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	manifest.AddItem("Download the manifest template", infracommon.ManifestTypeCode, infracommon.ManifestSubTypeYaml, templateText)
 
 	// heat create commands
-	stackName := vmgp.GroupName + "-pf"
+	stackName := vmgp.GroupName
 	stackCmd := fmt.Sprintf("openstack stack create -t %s.yml", vmgp.GroupName)
 	stackParams := []string{}
 	for _, fIP := range vmgp.FloatingIPs {
@@ -277,19 +277,19 @@ func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.V
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
+func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
 		ResourceInstances:   "",
 		ResourceFloatingIPs: "",
 	}
-	resInfo := make(map[string]*edgeproto.InfraResource)
+	resInfo := make(map[string]edgeproto.InfraResource)
 	for resName, resUnits := range cloudletRes {
 		resMax := uint64(0)
 		if infraRes, ok := infraResMap[resName]; ok {
 			resMax = infraRes.InfraMaxValue
 		}
-		resInfo[resName] = &edgeproto.InfraResource{
+		resInfo[resName] = edgeproto.InfraResource{
 			Name:          resName,
 			InfraMaxValue: resMax,
 			Units:         resUnits,
@@ -297,8 +297,16 @@ func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, c
 	}
 
 	oRes := getOpenstackResources(cloudlet, vmResources)
-	resInfo[ResourceInstances].Value += oRes.InstancesUsed
-	resInfo[ResourceFloatingIPs].Value += oRes.FloatingIPsUsed
+	outInfo, ok := resInfo[ResourceInstances]
+	if ok {
+		outInfo.Value += oRes.InstancesUsed
+		resInfo[ResourceInstances] = outInfo
+	}
+	outInfo, ok = resInfo[ResourceFloatingIPs]
+	if ok {
+		outInfo.Value += oRes.FloatingIPsUsed
+		resInfo[ResourceFloatingIPs] = outInfo
+	}
 	return resInfo
 }
 

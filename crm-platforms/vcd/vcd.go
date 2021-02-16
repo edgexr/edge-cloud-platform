@@ -55,10 +55,6 @@ type VAppMap map[string]*govcd.VApp
 type VMMap map[string]*govcd.VM
 type NetMap map[string]*govcd.OrgVDCNetwork
 
-func (v *VcdPlatform) GetType() string {
-	return "vcd"
-}
-
 func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	v.Verbose = true
@@ -443,8 +439,8 @@ func (v *VcdPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgep
 	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
-func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
-	resInfo := make(map[string]*edgeproto.InfraResource)
+func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo
 }
 

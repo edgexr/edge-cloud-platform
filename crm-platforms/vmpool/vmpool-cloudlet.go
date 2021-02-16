@@ -78,8 +78,8 @@ func (o *VMPoolPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*ed
 	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
-func (o *VMPoolPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
-	resInfo := make(map[string]*edgeproto.InfraResource)
+func (o *VMPoolPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo
 }
 

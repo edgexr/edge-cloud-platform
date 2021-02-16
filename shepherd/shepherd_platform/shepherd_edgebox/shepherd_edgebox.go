@@ -22,10 +22,6 @@ type Platform struct {
 	SharedClient ssh.Client
 }
 
-func (s *Platform) GetType() string {
-	return "edgebox"
-}
-
 func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
 	s.SharedClient, _ = s.pf.GetNodePlatformClient(ctx, nil)
 	return nil

@@ -15,10 +15,6 @@ type Platform struct {
 	promStarted bool
 }
 
-func (s *Platform) GetType() string {
-	return "fake"
-}
-
 func (s *Platform) Init(ctx context.Context, pfConfig *platform.PlatformConfig) error {
 	return nil
 }

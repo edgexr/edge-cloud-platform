@@ -219,8 +219,8 @@ func (s *VSpherePlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*e
 	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
-func (s *VSpherePlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]*edgeproto.InfraResource) map[string]*edgeproto.InfraResource {
-	resInfo := make(map[string]*edgeproto.InfraResource)
+func (s *VSpherePlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo
 }
 

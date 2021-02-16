@@ -21,10 +21,6 @@ type VMPoolPlatform struct {
 	FlavorList   []*edgeproto.FlavorInfo
 }
 
-func (o *VMPoolPlatform) GetType() string {
-	return "vmpool"
-}
-
 func (o *VMPoolPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	o.VMProperties = vmProperties
 }

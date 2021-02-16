@@ -39,10 +39,6 @@ func (a *AwsEc2Platform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolic
 	return vmlayer.AttachPortAfterCreate
 }
 
-func (a *AwsEc2Platform) GetType() string {
-	return "awsec2"
-}
-
 func (a *AwsEc2Platform) GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error) {
 	return a.awsGenPf.GetProviderSpecificProps(ctx)
 }
