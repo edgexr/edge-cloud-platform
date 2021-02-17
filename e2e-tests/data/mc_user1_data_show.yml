@@ -161,6 +161,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -198,7 +202,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -209,6 +213,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -246,7 +254,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: azure
         name: azure-cloud-4
@@ -257,6 +265,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -294,7 +306,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -305,6 +317,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -342,7 +358,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: enterprise
         name: enterprise-1
@@ -353,6 +369,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -390,7 +410,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -477,6 +497,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -514,7 +538,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -525,6 +549,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -562,7 +590,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     - key:
         organization: enterprise
         name: enterprise-2
@@ -573,6 +601,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 2
         ram: 4096
@@ -610,7 +642,7 @@ regiondata:
           units: GB
         - name: External IPs
           value: 1
-          inframaxvalue: 10
+          inframaxvalue: 30
     cloudletpools:
     - key:
         organization: enterprise

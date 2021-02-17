@@ -55,6 +55,10 @@ regiondata:
       osmaxvcores: 50
       osmaxvolgb: 5000
       flavors:
+      - name: x1.tiny
+        vcpus: 1
+        ram: 1024
+        disk: 20
       - name: x1.small
         vcpus: 10
         ram: 101024
