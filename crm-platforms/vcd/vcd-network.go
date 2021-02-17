@@ -153,7 +153,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 
 			desiredNetConfig := &types.NetworkConnectionSection{}
 			desiredNetConfig.PrimaryNetworkConnectionIndex = 1
-			conIdx := 1 // GetNextAvailConIdx xxx
+			conIdx := 1
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "ConIdx", conIdx)
 			_, err := v.AddVappNetwork(ctx, vapp, vcdClient)
 
@@ -431,16 +431,22 @@ func MaskToCidr(addr string) (string, error) {
 
 const MaxSubnetsPerSharedLB = 254
 
-// Pretty sure vcd would fail before hitting this limit.
 func GetNextAvailConIdx(ctx context.Context, ncs *types.NetworkConnectionSection) (int, error) {
 	// return first unused conIdx for a vapp or vm
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetNextAvailConIdx", "ncs", ncs)
 	conIdMap := make(map[int]*types.NetworkConnection)
 	for _, nc := range ncs.NetworkConnection {
+		// Before we add this idx as inuse, does this entry actually point at a connection?
+		if nc.Network == "" || nc.IPAddress == "" || nc.IsConnected == false {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetNextAvailConIdx skip available empty", "ConIdx", nc.NetworkConnectionIndex, "IP", nc.IPAddress, "isConnected", nc.IsConnected)
+			continue
+		}
 		conIdMap[nc.NetworkConnectionIndex] = nc
 	}
 	curIdx := 0
 	for curIdx = 0; curIdx < MaxSubnetsPerSharedLB; curIdx++ {
 		if _, found := conIdMap[curIdx]; !found {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetNextAvailConIdx returns", "conIdx", curIdx)
 			return curIdx, nil
 		}
 	}
