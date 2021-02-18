@@ -197,7 +197,7 @@ func (v *VcdPlatform) GetPlatformResources(ctx context.Context) error {
 }
 
 func (v *VcdPlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {
-	return v.Creds.Href, nil
+	return "", fmt.Errorf("VM Console not supported for VCD")
 }
 
 func (v *VcdPlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
