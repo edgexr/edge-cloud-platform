@@ -223,7 +223,7 @@ func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMP
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
+		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudletAnalytics, ActionView)
 		if err != nil {
 			return err
 		}
