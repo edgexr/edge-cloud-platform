@@ -60,12 +60,12 @@ func GetMetricsCommand() *cobra.Command {
 }
 
 var AppMetricRequiredArgs = []string{
-	"app-org",
 	"selector",
 }
 
 var AppMetricOptionalArgs = []string{
 	"appname",
+	"app-org",
 	"appvers",
 	"cluster",
 	"cluster-org",
@@ -91,12 +91,12 @@ var AppMetricComments = map[string]string{
 }
 
 var ClusterMetricRequiredArgs = []string{
-	"cluster-org",
 	"selector",
 }
 
 var ClusterMetricOptionalArgs = []string{
 	"cluster",
+	"cluster-org",
 	"cloudlet-org",
 	"cloudlet",
 	"last",

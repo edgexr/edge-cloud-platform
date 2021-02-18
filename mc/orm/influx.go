@@ -45,6 +45,7 @@ type influxQueryArgs struct {
 	ApiCallerOrg   string
 	CloudletOrg    string
 	ClusterOrg     string
+	AppOrg         string
 	Method         string
 	CellId         string
 	StartTime      string
@@ -239,6 +240,7 @@ const (
 var devInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
+	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
 	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
@@ -248,6 +250,7 @@ var devInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
 	`{{if .DeploymentType}} AND deployment = '{{.DeploymentType}}'{{end}}` +
+	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
 	` order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
 var operatorInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
@@ -341,33 +344,45 @@ func ClientMetricsQuery(obj *ormapi.RegionClientMetrics) string {
 }
 
 // Query is a template with a specific set of if/else
-func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics) string {
+func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, cloudletList []string) string {
 	arg := influxQueryArgs{
 		Selector:     getFields(obj.Selector, APPINST),
 		Measurement:  getMeasurementString(obj.Selector, APPINST),
 		AppInstName:  util.DNSSanitize(obj.AppInst.AppKey.Name),
 		AppVersion:   util.DNSSanitize(obj.AppInst.AppKey.Version),
-		OrgField:     "apporg",
-		ApiCallerOrg: obj.AppInst.AppKey.Organization,
-		CloudletName: obj.AppInst.ClusterInstKey.CloudletKey.Name,
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
-		CloudletOrg:  obj.AppInst.ClusterInstKey.CloudletKey.Organization,
+		CloudletList: generateCloudletList(cloudletList),
 		Last:         obj.Last,
+	}
+	if obj.AppInst.AppKey.Organization != "" {
+		arg.OrgField = "apporg"
+		arg.ApiCallerOrg = obj.AppInst.AppKey.Organization
+		arg.CloudletOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
+	} else {
+		arg.OrgField = "cloudletorg"
+		arg.ApiCallerOrg = obj.AppInst.ClusterInstKey.CloudletKey.Organization
+		arg.AppOrg = obj.AppInst.AppKey.Organization
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
 
 // Query is a template with a specific set of if/else
-func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics) string {
+func ClusterMetricsQuery(obj *ormapi.RegionClusterInstMetrics, cloudletList []string) string {
 	arg := influxQueryArgs{
 		Selector:     getFields(obj.Selector, CLUSTER),
 		Measurement:  getMeasurementString(obj.Selector, CLUSTER),
-		CloudletName: obj.ClusterInst.CloudletKey.Name,
 		ClusterName:  obj.ClusterInst.ClusterKey.Name,
-		OrgField:     "clusterorg",
-		ApiCallerOrg: obj.ClusterInst.Organization,
-		CloudletOrg:  obj.ClusterInst.CloudletKey.Organization,
+		CloudletList: generateCloudletList(cloudletList),
 		Last:         obj.Last,
+	}
+	if obj.ClusterInst.Organization != "" {
+		arg.OrgField = "clusterorg"
+		arg.ApiCallerOrg = obj.ClusterInst.Organization
+		arg.CloudletOrg = obj.ClusterInst.CloudletKey.Organization
+	} else {
+		arg.OrgField = "cloudletorg"
+		arg.ApiCallerOrg = obj.ClusterInst.CloudletKey.Organization
+		arg.ClusterOrg = obj.ClusterInst.Organization
 	}
 	return fillTimeAndGetCmd(&arg, devInfluxDBTemplate, &obj.StartTime, &obj.EndTime)
 }
@@ -599,21 +614,15 @@ func GetMetricsCommon(c echo.Context) error {
 		if !success {
 			return err
 		}
-		// Developer name has to be specified
-		if in.AppInst.AppKey.Organization == "" {
-			return setReply(c, fmt.Errorf("App details must be present"), nil)
-		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.Organization
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.AppInst.AppKey.Organization, ResourceAppAnalytics, in.AppInst.ClusterInstKey.CloudletKey)
+		if err != nil {
+			return setReply(c, err, nil)
+		}
 		if err = validateSelectorString(in.Selector, APPINST); err != nil {
 			return setReply(c, err, nil)
 		}
-		cmd = AppInstMetricsQuery(&in)
-
-		// Check the developer against who is logged in
-		if err := authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
-		}
+		cmd = AppInstMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		in := ormapi.RegionClusterInstMetrics{}
 		success, err := ReadConn(c, &in)
@@ -625,16 +634,14 @@ func GetMetricsCommon(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
 		}
 		rc.region = in.Region
-		org = in.ClusterInst.Organization
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.ClusterInst.Organization, ResourceClusterAnalytics, in.ClusterInst.CloudletKey)
+		if err != nil {
+			return setReply(c, err, nil)
+		}
 		if err = validateSelectorString(in.Selector, CLUSTER); err != nil {
 			return setReply(c, err, nil)
 		}
-		cmd = ClusterMetricsQuery(&in)
-
-		// Check the developer against who is logged in
-		if err := authorized(ctx, rc.claims.Username, org, ResourceClusterAnalytics, ActionView); err != nil {
-			return err
-		}
+		cmd = ClusterMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		in := ormapi.RegionCloudletMetrics{}
 		success, err := ReadConn(c, &in)
@@ -739,4 +746,83 @@ func checkForTimeError(errStr string) string {
 		return fmt.Sprintf("%s into RFC3339 format failed. Example: \"%s\"", strings.Split(errStr, " as")[0], refTime)
 	}
 	return errStr
+}
+
+func checkPermissionsAndGetCloudletList(ctx context.Context, claims *UserClaims, region, devOrg, devResource string, cloudletKey edgeproto.CloudletKey) ([]string, error) {
+	regionRc := &RegionContext{}
+	regionRc.username = claims.Username
+	regionRc.region = region
+	cloudletList := []string{}
+	// get all associated orgs
+	if devOrg == "" && cloudletKey.Organization == "" {
+		return []string{}, fmt.Errorf("Must provide either App organization or Cloudlet organization")
+	}
+	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, devResource, ActionView)
+	if err != nil {
+		return []string{}, err
+	}
+	_, devOrgPermOk := authDevOrgs[devOrg]
+	if _, found := authDevOrgs[""]; found {
+		// admin
+		devOrgPermOk = true
+	}
+	authOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceCloudletAnalytics, ActionView)
+	if err != nil {
+		return []string{}, err
+	}
+	_, operOrgPermOk := authOperOrgs[cloudletKey.Organization]
+	if _, found := authOperOrgs[""]; found {
+		// admin
+		operOrgPermOk = true
+	}
+	if !devOrgPermOk && !operOrgPermOk {
+		// no perms for specified orgs, or they forgot to specify an org that
+		// they have perms to (since there are two choices)
+		if devOrg == "" && len(authDevOrgs) > 0 {
+			// developer but didn't specify App org
+			orgField := "App"
+			if devResource == ResourceClusterAnalytics {
+				orgField = "Cluster"
+			}
+			return []string{}, fmt.Errorf("Developers please specify the %s Organization", orgField)
+		} else if cloudletKey.Organization == "" && len(authOperOrgs) > 0 {
+			return []string{}, fmt.Errorf("Operators please specify the Cloudlet Organization")
+		} else {
+			return []string{}, echo.ErrForbidden
+		}
+	}
+
+	if cloudletKey.Name != "" {
+		cloudletList = []string{cloudletKey.Name}
+	}
+	// only grab the cloudletpools if no specific cloudlet was mentioned
+	getPools := false
+	if operOrgPermOk && len(cloudletList) == 0 {
+		getPools = true
+		// operator specified an apporg. If it is an org the user is a part of then just show everything tied to that org
+		// if the user is not part of the org, then only show the metrics of the org inside the operator's cloudletpools
+		if devOrgPermOk {
+			getPools = false
+		}
+	}
+	if getPools {
+		cloudletpoolQuery := edgeproto.CloudletPool{Key: edgeproto.CloudletPoolKey{Organization: cloudletKey.Organization}}
+		cloudletPools, err := ShowCloudletPoolObj(ctx, regionRc, &cloudletpoolQuery)
+		if err != nil {
+			return []string{}, err
+		}
+		for _, pool := range cloudletPools {
+			for _, cloudlet := range pool.Cloudlets {
+				cloudletList = append(cloudletList, cloudlet)
+			}
+		}
+	} else if len(cloudletList) == 1 {
+		//make sure the cloudlet is in a pool
+		if operOrgPermOk && !devOrgPermOk {
+			if !allRegionCaches.InPool(region, cloudletKey) {
+				return []string{}, fmt.Errorf("Operators must specify a cloudlet in a cloudletPool")
+			}
+		}
+	}
+	return cloudletList, nil
 }
