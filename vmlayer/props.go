@@ -3,30 +3,15 @@ package vmlayer
 import (
 	"context"
 	"fmt"
-	"net"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/go-chef/chef"
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/log"
 )
-
-type CloudletSSHKey struct {
-	PublicKey       string
-	SignedPublicKey string
-	PrivateKey      string
-	Mux             sync.Mutex
-	RefreshTrigger  chan bool
-
-	// Below is used to upgrade old VMs to new Vault based SSH
-	MEXPrivateKey    string
-	UseMEXPrivateKey bool
-}
 
 type VMProperties struct {
 	CommonPf                   infracommon.CommonPlatform
@@ -35,7 +20,6 @@ type VMProperties struct {
 	PlatformSecgrpName         string
 	CloudletSecgrpName         string
 	IptablesBasedFirewall      bool
-	sshKey                     CloudletSSHKey
 	Upgrade                    bool
 	UseSecgrpForInternalSubnet bool
 	RequiresWhitelistOwnIp     bool
@@ -133,10 +117,6 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: GetSupportedRouterTypes(),
 		Value:       NoExternalRouter,
 	},
-	"MEX_CRM_GATEWAY_ADDR": {
-		Name:        "CRM Gateway Address",
-		Description: "Required if infra API endpoint is completely isolated from external network",
-	},
 	"MEX_SUBNET_DNS": {
 		Name:        "DNS Override for Subnet",
 		Description: "Set to NONE to use no DNS entry for new subnets.  Otherwise subnet DNS is set to MEX_DNS",
@@ -149,7 +129,7 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_EGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Egress",
 		Description: "Firewall rule to whitelist egress traffic",
-		Value:       "protocol=tcp,portrange=443,remotecidr=0.0.0.0/0;protocol=udp,portrange=53,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
+		Value:       "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
 	},
 	"MEX_CLOUDLET_FIREWALL_WHITELIST_INGRESS": {
 		Name:        "Cloudlet Firewall Whitelist Ingress",
@@ -349,22 +329,6 @@ func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst
 		lbName = cloudcommon.GetDedicatedLBFQDN(vp.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, vp.CommonPf.PlatformConfig.AppDNSRoot)
 	}
 	return lbName
-}
-
-func (vp *VMProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
-	gw, _ := vp.CommonPf.Properties.GetValue("MEX_CRM_GATEWAY_ADDR")
-	if gw == "" {
-		return "", 0
-	}
-	host, portstr, err := net.SplitHostPort(gw)
-	if err != nil {
-		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR format")
-	}
-	port, err := strconv.Atoi(portstr)
-	if err != nil {
-		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
-	}
-	return host, port
 }
 
 func (vp *VMProperties) GetVMAppSubnetDHCPEnabled() string {

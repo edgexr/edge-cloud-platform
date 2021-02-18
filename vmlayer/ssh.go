@@ -3,136 +3,19 @@ package vmlayer
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
-	"github.com/tmc/scp"
 )
-
-var CloudletSSHKeyRefreshInterval = 24 * time.Hour
 
 type VMAccess struct {
 	Name   string
 	Client ssh.Client
 	Role   VMRole
-}
-
-func (v *VMPlatform) SetCloudletSignedSSHKey(ctx context.Context, accessApi platform.AccessApi) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Sign cloudlet public key from Vault")
-
-	signedKey, err := accessApi.SignSSHKey(ctx, v.VMProperties.sshKey.PublicKey)
-	if err != nil {
-		return err
-	}
-
-	v.VMProperties.sshKey.Mux.Lock()
-	defer v.VMProperties.sshKey.Mux.Unlock()
-	v.VMProperties.sshKey.SignedPublicKey = signedKey
-
-	return nil
-}
-
-func (v *VMPlatform) triggerRefreshCloudletSSHKeys() {
-	select {
-	case v.VMProperties.sshKey.RefreshTrigger <- true:
-	default:
-	}
-}
-
-func (v *VMPlatform) RefreshCloudletSSHKeys(accessApi platform.AccessApi) {
-	interval := CloudletSSHKeyRefreshInterval
-	for {
-		select {
-		case <-time.After(interval):
-		case <-v.VMProperties.sshKey.RefreshTrigger:
-		}
-		span := log.StartSpan(log.DebugLevelInfra, "refresh Cloudlet SSH Key")
-		ctx := log.ContextWithSpan(context.Background(), span)
-		err := v.SetCloudletSignedSSHKey(ctx, accessApi)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "refresh cloudlet ssh key failure", "err", err)
-			// retry again soon
-			interval = time.Hour
-		} else {
-			interval = CloudletSSHKeyRefreshInterval
-		}
-		span.Finish()
-	}
-}
-
-func (v *VMPlatform) InitCloudletSSHKeys(ctx context.Context, accessApi platform.AccessApi) error {
-	// Generate Cloudlet SSH Keys
-	cloudletPubKey, cloudletPrivKey, err := ssh.GenKeyPair()
-	if err != nil {
-		return fmt.Errorf("failed to generate cloudlet SSH key pair: %v", err)
-	}
-	v.VMProperties.sshKey.PublicKey = cloudletPubKey
-	v.VMProperties.sshKey.PrivateKey = cloudletPrivKey
-	err = v.SetCloudletSignedSSHKey(ctx, accessApi)
-	if err != nil {
-		return err
-	}
-	v.VMProperties.sshKey.RefreshTrigger = make(chan bool, 1)
-	return nil
-}
-
-//GetSSHClientFromIPAddr returns ssh client handle for the given IP.
-func (vp *VMProperties) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...pc.SSHClientOp) (ssh.Client, error) {
-	opts := pc.SSHOptions{Timeout: infracommon.DefaultConnectTimeout, User: infracommon.SSHUser}
-	opts.Apply(ops)
-	var client ssh.Client
-	var err error
-
-	if vp.sshKey.PrivateKey == "" {
-		return nil, fmt.Errorf("missing cloudlet private key")
-	}
-	if vp.sshKey.SignedPublicKey == "" {
-		return nil, fmt.Errorf("missing cloudlet signed public Key")
-	}
-
-	vp.sshKey.Mux.Lock()
-	auth := ssh.Auth{
-		KeyPairs: []ssh.KeyPair{
-			ssh.KeyPair{
-				PublicRawKey:  []byte(vp.sshKey.SignedPublicKey),
-				PrivateRawKey: []byte(vp.sshKey.PrivateKey),
-			},
-		},
-	}
-	vp.sshKey.Mux.Unlock()
-
-	if vp.sshKey.UseMEXPrivateKey {
-		auth = ssh.Auth{RawKeys: [][]byte{
-			[]byte(vp.sshKey.MEXPrivateKey),
-		}}
-	}
-
-	gwhost, gwport := vp.GetCloudletCRMGatewayIPAndPort()
-	if gwhost != "" {
-		// start the client to GW and add the addr as next hop
-		client, err = ssh.NewNativeClient(opts.User, infracommon.ClientVersion, gwhost, gwport, &auth, opts.Timeout, nil)
-		if err != nil {
-			return nil, err
-		}
-		client, err = client.AddHop(ipaddr, 22)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		var err error
-		client, err = ssh.NewNativeClient(infracommon.SSHUser, infracommon.ClientVersion, ipaddr, 22, &auth, opts.Timeout, nil)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get ssh client for addr %s, %v", ipaddr, err)
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Created SSH Client", "ipaddr", ipaddr, "gwhost", gwhost, "timeout", opts.Timeout)
-	return client, nil
 }
 
 func (v *VMPlatform) GetSSHClientForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
@@ -150,22 +33,7 @@ func (v *VMPlatform) GetSSHClientForServer(ctx context.Context, serverName, netw
 		return nil, err
 	}
 	externalAddr := serverIp.ExternalAddr
-
-	return v.VMProperties.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
-}
-
-func SCPFilePath(sshClient ssh.Client, srcPath, dstPath string) error {
-	client, ok := sshClient.(*ssh.NativeClient)
-	if !ok {
-		return fmt.Errorf("unable to cast client to native client")
-	}
-	session, sessionInfo, err := client.Session(client.DefaultClientConfig.Timeout)
-	if err != nil {
-		return err
-	}
-	defer sessionInfo.CloseAll()
-	err = scp.CopyPath(srcPath, dstPath, session)
-	return err
+	return v.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, externalAddr, ops...)
 }
 
 func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Caches) ([]VMAccess, error) {
@@ -413,7 +281,7 @@ func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, accessApi pla
 		return nil, fmt.Errorf("failed to get vault ssh cert: %v", err)
 	}
 	// Set SSH client to use mex private key
-	v.VMProperties.sshKey.UseMEXPrivateKey = true
+	v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = true
 	fixVMs, err := v.GetAllCloudletVMs(ctx, caches)
 	if err != nil {
 		return nil, err
@@ -441,7 +309,7 @@ func (v *VMPlatform) UpgradeFuncHandleSSHKeys(ctx context.Context, accessApi pla
 
 	// Validate VMs with new vault SSH fix
 	// Set SSH client to use vault signed Keys
-	v.VMProperties.sshKey.UseMEXPrivateKey = false
+	v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = false
 	fixVMs, err = v.GetAllCloudletVMs(ctx, caches)
 	if err != nil {
 		return nil, err

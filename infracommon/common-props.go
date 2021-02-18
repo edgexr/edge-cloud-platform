@@ -3,13 +3,27 @@ package infracommon
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
+	"strconv"
 	"sync"
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
+
+type CloudletSSHKey struct {
+	PublicKey       string
+	SignedPublicKey string
+	PrivateKey      string
+	Mux             sync.Mutex
+	RefreshTrigger  chan bool
+
+	// Below is used to upgrade old VMs to new Vault based SSH
+	MEXPrivateKey    string
+	UseMEXPrivateKey bool
+}
 
 // Default CloudletVM/Registry paths should only be used for local testing.
 // Ansible should always specify the correct ones to the controller.
@@ -39,6 +53,26 @@ var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 		Description: "If set to true, the resource tracker is not installed to save time. For test only",
 		Internal:    true,
 	},
+	"MEX_CRM_GATEWAY_ADDR": {
+		Name:        "CRM Gateway Address",
+		Description: "Required if infra API endpoint is completely isolated from external network",
+	},
+}
+
+func (ip *InfraProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
+	gw, _ := ip.GetValue("MEX_CRM_GATEWAY_ADDR")
+	if gw == "" {
+		return "", 0
+	}
+	host, portstr, err := net.SplitHostPort(gw)
+	if err != nil {
+		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR format")
+	}
+	port, err := strconv.Atoi(portstr)
+	if err != nil {
+		log.FatalLog("Error in MEX_CRM_GATEWAY_ADDR port format")
+	}
+	return host, port
 }
 
 func GetVaultCloudletCommonPath(filePath string) string {

@@ -476,7 +476,7 @@ func CopyResourceTracker(client ssh.Client) error {
 	if err != nil {
 		return err
 	}
-	err = SCPFilePath(client, path, "/tmp/resource-tracker")
+	err = infracommon.SCPFilePath(client, path, "/tmp/resource-tracker")
 	if err != nil {
 		return err
 	}

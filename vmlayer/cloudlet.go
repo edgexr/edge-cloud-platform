@@ -169,7 +169,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	log.SpanLog(ctx, log.DebugLevelInfra, "Creating cloudlet", "cloudletName", cloudlet.Key.Name)
 
 	if !pfConfig.TestMode {
-		err = v.InitCloudletSSHKeys(ctx, accessApi)
+		err = v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, accessApi)
 		if err != nil {
 			return err
 		}
@@ -361,7 +361,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	updateCallback(edgeproto.UpdateTask, "Deleting cloudlet")
 
 	if !pfConfig.TestMode {
-		err := v.InitCloudletSSHKeys(ctx, accessApi)
+		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, accessApi)
 		if err != nil {
 			return err
 		}
