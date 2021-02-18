@@ -13,18 +13,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
-type CloudletSSHKey struct {
-	PublicKey       string
-	SignedPublicKey string
-	PrivateKey      string
-	Mux             sync.Mutex
-	RefreshTrigger  chan bool
-
-	// Below is used to upgrade old VMs to new Vault based SSH
-	MEXPrivateKey    string
-	UseMEXPrivateKey bool
-}
-
 // Default CloudletVM/Registry paths should only be used for local testing.
 // Ansible should always specify the correct ones to the controller.
 // These are not used if running the CRM manually, because these are only

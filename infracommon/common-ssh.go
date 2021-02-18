@@ -3,6 +3,7 @@ package infracommon
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -11,6 +12,18 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/tmc/scp"
 )
+
+type CloudletSSHKey struct {
+	PublicKey       string
+	SignedPublicKey string
+	PrivateKey      string
+	Mux             sync.Mutex
+	RefreshTrigger  chan bool
+
+	// Below is used to upgrade old VMs to new Vault based SSH
+	MEXPrivateKey    string
+	UseMEXPrivateKey bool
+}
 
 var CloudletSSHKeyRefreshInterval = 24 * time.Hour
 
@@ -23,7 +36,7 @@ func SetCloudletSignedSSHKey(ctx context.Context, accessApi platform.AccessApi, 
 	}
 
 	sshKey.Mux.Lock()
-	sshKey.Mux.Unlock()
+	defer sshKey.Mux.Unlock()
 	sshKey.SignedPublicKey = signedKey
 
 	return nil
