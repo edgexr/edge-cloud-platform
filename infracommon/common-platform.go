@@ -25,6 +25,7 @@ type CommonPlatform struct {
 	ChefClient        *chef.Client
 	ChefServerPath    string
 	DeploymentTag     string
+	SshKey            CloudletSSHKey
 }
 
 // Package level test mode variable

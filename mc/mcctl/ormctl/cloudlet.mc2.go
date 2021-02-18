@@ -743,7 +743,7 @@ var CloudletComments = map[string]string{
 	"state":                               "Current state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"crmoverride":                         "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"deploymentlocal":                     "Deploy cloudlet services locally",
-	"platformtype":                        "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd",
+	"platformtype":                        "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeAnthos",
 	"notifysrvaddr":                       "Address for the CRM notify listener to run on",
 	"flavor.name":                         "Flavor name",
 	"physicalname":                        "Physical infrastructure cloudlet name",
@@ -878,7 +878,7 @@ var CloudletPropsAliasArgs = []string{
 	"properties:#.value.internal=cloudletprops.properties:#.value.internal",
 }
 var CloudletPropsComments = map[string]string{
-	"platformtype":                   "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd",
+	"platformtype":                   "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeAnthos",
 	"properties:#.value.name":        "Name of the property",
 	"properties:#.value.description": "Description of the property",
 	"properties:#.value.value":       "Default value of the property",
@@ -909,7 +909,7 @@ var CloudletResourceQuotaPropsAliasArgs = []string{
 	"props:#.alertthreshold=cloudletresourcequotaprops.props:#.alertthreshold",
 }
 var CloudletResourceQuotaPropsComments = map[string]string{
-	"platformtype":           "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd",
+	"platformtype":           "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeAnthos",
 	"props:#.name":           "Resource name",
 	"props:#.value":          "Resource value",
 	"props:#.inframaxvalue":  "Resource infra max value",

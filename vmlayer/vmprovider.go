@@ -306,7 +306,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
 	nodeMgr.Debug.AddDebugFunc("crmrefreshsshkeys",
 		func(ctx context.Context, req *edgeproto.DebugRequest) string {
-			v.triggerRefreshCloudletSSHKeys()
+			infracommon.TriggerRefreshCloudletSSHKeys(&v.VMProperties.CommonPf.SshKey)
 			return "triggered refresh"
 		})
 
@@ -334,12 +334,12 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	v.VMProperties.Domain = VMDomainCompute
 
 	if !platformConfig.TestMode {
-		err := v.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
+		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
 		if err != nil {
 			return err
 		}
 
-		go v.RefreshCloudletSSHKeys(platformConfig.AccessApi)
+		go v.VMProperties.CommonPf.RefreshCloudletSSHKeys(platformConfig.AccessApi)
 	}
 
 	if err := v.InitProps(ctx, platformConfig); err != nil {
@@ -392,13 +392,13 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		if err != nil {
 			return err
 		}
-		v.VMProperties.sshKey.MEXPrivateKey = mexKey.PrivateKey
+		v.VMProperties.CommonPf.SshKey.MEXPrivateKey = mexKey.PrivateKey
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade shared rootlb to use vault SSH")
 
 		// Upgrade Shared RootLB to use Vault SSH
 		// Set SSH client to use mex private key
-		v.VMProperties.sshKey.UseMEXPrivateKey = true
+		v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = true
 		sharedRootLBClient, err := v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			return err
@@ -411,7 +411,7 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		ExecuteUpgradeScript(ctx, v.VMProperties.SharedRootLBName, sharedRootLBClient, upgradeScript)
 		// Verify if shared rootlb is reachable using vault SSH
 		// Set SSH client to use vault signed Keys
-		v.VMProperties.sshKey.UseMEXPrivateKey = false
+		v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = false
 		sharedRootLBClient, err = v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			return err

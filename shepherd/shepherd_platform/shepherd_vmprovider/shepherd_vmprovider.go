@@ -5,11 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -34,12 +33,12 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	s.platformConfig = pc
 	s.appDNSRoot = pc.AppDNSRoot
 
-	err := s.VMPlatform.InitCloudletSSHKeys(ctx, pc.AccessApi)
+	err := s.VMPlatform.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, pc.AccessApi)
 	if err != nil {
 		return err
 	}
 
-	go s.VMPlatform.RefreshCloudletSSHKeys(pc.AccessApi)
+	go s.VMPlatform.VMProperties.CommonPf.RefreshCloudletSSHKeys(pc.AccessApi)
 
 	if err = s.VMPlatform.InitProps(ctx, pc); err != nil {
 		return err

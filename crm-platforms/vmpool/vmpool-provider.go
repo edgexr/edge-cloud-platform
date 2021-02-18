@@ -13,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
+
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
@@ -174,7 +175,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 				return err
 			}
 		} else {
-			client, err = o.VMProperties.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
+			client, err = o.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
 			if err != nil {
 				return fmt.Errorf("can't get ssh client for %s %v", vm.NetInfo.ExternalIp, err)
 			}
@@ -401,7 +402,7 @@ func (o *VMPoolPlatform) GetAccessClient(ctx context.Context) (ssh.Client, error
 		return nil, fmt.Errorf("unable to find any VM with external IP")
 	}
 
-	accessClient, err := o.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
+	accessClient, err := o.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, accessIP)
 	if err != nil {
 		return nil, fmt.Errorf("can't get ssh client for %s %v", accessIP, err)
 	}
@@ -420,7 +421,7 @@ func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[st
 	for _, vm := range markedVMs {
 		var client ssh.Client
 		if vm.NetInfo.ExternalIp != "" {
-			client, err = o.VMProperties.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
+			client, err = o.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
 		} else if vm.NetInfo.InternalIp != "" {
 			client, err = accessClient.AddHop(vm.NetInfo.InternalIp, 22)
 		}
@@ -625,7 +626,8 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 	if accessIP == "" {
 		return fmt.Errorf("At least one VM should have access to external network")
 	}
-	accessClient, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, accessIP)
+
+	accessClient, err := s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, accessIP)
 	if err != nil {
 		return fmt.Errorf("can't get ssh client for %s, %v", accessIP, err)
 	}
@@ -637,7 +639,7 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 		wg.Add(1)
 		go func(accessClientIn ssh.Client, accessIPIn string, vmIn *edgeproto.VM, wg *sync.WaitGroup) {
 			if vmIn.NetInfo.ExternalIp != "" {
-				client, err := s.VMProperties.GetSSHClientFromIPAddr(ctx, vmIn.NetInfo.ExternalIp)
+				client, err := s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vmIn.NetInfo.ExternalIp)
 				if err != nil {
 					wgError <- fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vmIn.Name, vmIn.NetInfo.ExternalIp, err)
 					return
