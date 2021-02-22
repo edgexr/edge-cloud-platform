@@ -45,6 +45,10 @@ const (
 	VMDomainAny      VMDomain = "any" // used for matching only
 )
 
+func (v *VMPlatform) IsCloudletServicesLocal() bool {
+	return false
+}
+
 func (v *VMPlatform) GetSanitizedCloudletName(key *edgeproto.CloudletKey) string {
 	// Form platform VM name based on cloudletKey
 	return v.VMProvider.NameSanitize(key.Name + "-" + key.Organization)

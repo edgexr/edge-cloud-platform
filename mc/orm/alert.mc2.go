@@ -609,6 +609,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ResourceQuotasValue: 39.2
 	// ResourceQuotasAlertThreshold: 39.3
 	// DefaultResourceAlertThreshold: 40
+	// HostController: 41
 	// ```
 	// Security:
 	//   Bearer:

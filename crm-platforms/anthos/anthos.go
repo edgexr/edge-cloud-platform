@@ -29,6 +29,10 @@ var RootLBFlavor = edgeproto.Flavor{
 	Disk:  uint64(40),
 }
 
+func (a *AnthosPlatform) IsCloudletServicesLocal() bool {
+	return false
+}
+
 func (a *AnthosPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init")
 
