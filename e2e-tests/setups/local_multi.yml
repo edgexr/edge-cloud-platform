@@ -95,7 +95,7 @@ controllers:
   testmode: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
-  usevaultcerts: true
+  usevaultpki: true
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -116,7 +116,7 @@ controllers:
   testmode: true
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
-  usevaultcerts: true
+  usevaultpki: true
   edgeturnaddr: "127.0.0.1:8080"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -138,7 +138,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
-  usevaultcerts: true
+  usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -161,7 +161,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
-  usevaultcerts: true
+  usevaultpki: true
   edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
@@ -178,7 +178,7 @@ clustersvcs:
   ctrladdrs: "127.0.0.1:55001"
   vaultaddr: "http://127.0.0.1:8200"
   pluginrequired: true
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -189,7 +189,7 @@ clustersvcs:
   notifyaddrs: "127.0.0.1:37001,127.0.0.1:37002"
   ctrladdrs: "127.0.0.1:55002"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -201,7 +201,7 @@ clustersvcs:
   ctrladdrs: "127.0.0.1:55011"
   vaultaddr: "http://127.0.0.1:8200"
   pluginrequired: true
-  usevaultcerts: true
+  usevaultpki: true
   region: locala
   hostname: "127.0.0.1"
   deploymenttag: dev
@@ -213,7 +213,7 @@ clustersvcs:
   notifyaddrs: "127.0.0.1:37011,127.0.0.1:37012"
   ctrladdrs: "127.0.0.1:55012"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   region: locala
   hostname: "127.0.0.1"
   deploymenttag: dev
@@ -231,7 +231,7 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-1"}'
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -249,7 +249,7 @@ dmes:
   carrier: GDDT
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-2"}'
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -268,7 +268,7 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-3"}'
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -287,7 +287,7 @@ dmes:
   cloudletkey: '{"organization":"dmuus","name":"dmuus-cloud-4"}'
   vaultaddr: "http://127.0.0.1:8200"
   region: locala
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -301,7 +301,7 @@ mcs:
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9389"
   notifysrvaddr: "127.0.0.1:52001"
@@ -320,7 +320,7 @@ mcs:
   addr: "127.0.0.1:9901"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9390"
   notifysrvaddr: "127.0.0.1:52002"
@@ -376,7 +376,7 @@ autoprovs:
   ctrladdrs: "127.0.0.1:55001"
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8086"
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -389,7 +389,7 @@ autoprovs:
   vaultaddr: "http://127.0.0.1:8200"
   influxaddr: "http://127.0.0.1:8087"
   region: locala
-  usevaultcerts: true
+  usevaultpki: true
   hostname: "127.0.0.1"
   deploymenttag: dev
   envvars:
@@ -411,7 +411,7 @@ notifyroots:
 - name: notifyroot
   hostname: "127.0.0.1"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   deploymenttag: dev
 
 edgeturns:
@@ -419,7 +419,7 @@ edgeturns:
   region: local
   hostname: "127.0.0.1"
   testmode: true
-  usevaultcerts: true
+  usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8080"
   proxyaddr: "127.0.0.1:8443"
@@ -429,7 +429,7 @@ edgeturns:
   region: locala
   hostname: "127.0.0.1"
   testmode: true
-  usevaultcerts: true
+  usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
   listenaddr: "127.0.0.1:8081"
   proxyaddr: "127.0.0.1:9443"

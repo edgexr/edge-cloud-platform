@@ -566,8 +566,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigCleanupMode: 21.11
 	// ConfigRegion: 21.12
 	// ConfigCommercialCerts: 21.13
-	// ConfigUseVaultCerts: 21.14
-	// ConfigUseVaultCas: 21.15
+	// ConfigUseVaultPki: 21.14
 	// ConfigAppDnsRoot: 21.16
 	// ConfigChefServerPath: 21.17
 	// ConfigChefClientInterval: 21.18

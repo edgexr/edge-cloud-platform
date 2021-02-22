@@ -15,8 +15,7 @@ type MC struct {
 	LdapAddr                string
 	NotifySrvAddr           string
 	ConsoleProxyAddr        string
-	UseVaultCAs             bool
-	UseVaultCerts           bool
+	UseVaultPki             bool
 	AlertResolveTimeout     string
 	BillingPlatform         string
 	UsageCollectionInterval string
@@ -44,8 +43,7 @@ type Shepherd struct {
 	MetricsAddr    string
 	PhysicalName   string
 	CloudletKey    string
-	UseVaultCAs    bool
-	UseVaultCerts  bool
+	UseVaultPki    bool
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 	Span           string
@@ -63,8 +61,7 @@ type AutoProv struct {
 	VaultAddr      string
 	InfluxAddr     string
 	Region         string
-	UseVaultCAs    bool
-	UseVaultCerts  bool
+	UseVaultPki    bool
 	TLS            process.TLSCerts
 	cmd            *exec.Cmd
 }
