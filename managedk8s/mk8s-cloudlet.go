@@ -16,6 +16,10 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
+func (m *ManagedK8sPlatform) IsCloudletServicesLocal() bool {
+	return false
+}
+
 func (m *ManagedK8sPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SaveCloudletAccessVars", "cloudletName", cloudlet.Key.Name)
 	return nil

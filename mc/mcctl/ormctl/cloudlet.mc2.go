@@ -718,6 +718,7 @@ var CloudletAliasArgs = []string{
 	"resourcequotas:#.value=cloudlet.resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold=cloudlet.resourcequotas:#.alertthreshold",
 	"defaultresourcealertthreshold=cloudlet.defaultresourcealertthreshold",
+	"hostcontroller=cloudlet.hostcontroller",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -790,6 +791,7 @@ var CloudletComments = map[string]string{
 	"resourcequotas:#.value":              "Quota value of the resource",
 	"resourcequotas:#.alertthreshold":     "Generate alert when more than threshold percentage of resource is used",
 	"defaultresourcealertthreshold":       "Default resource alert threshold percentage",
+	"hostcontroller":                      "Addr of the controller hosting the cloudlet services if it is running locally",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":    "StringToString",

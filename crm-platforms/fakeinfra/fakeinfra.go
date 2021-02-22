@@ -31,6 +31,10 @@ func (s *Platform) Init(ctx context.Context, platformConfig *platform.PlatformCo
 	return s.Platform.Init(ctx, platformConfig, caches, updateCallback)
 }
 
+func (s *Platform) IsCloudletServicesLocal() bool {
+	return s.Platform.IsCloudletServicesLocal()
+}
+
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	err := s.Platform.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, caches, accessApi, updateCallback)
 	if err != nil {

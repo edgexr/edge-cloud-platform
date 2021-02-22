@@ -264,6 +264,10 @@ func (s *TestClient) ShowCloudlet(ctx context.Context, in *edgeproto.Cloudlet) (
 	return out, err
 }
 
+func (s *TestClient) PlatformDeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error) {
+	return nil, nil
+}
+
 func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
 	inR := &ormapi.RegionCloudletKey{
 		Region:      s.Region,
