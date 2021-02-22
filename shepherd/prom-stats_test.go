@@ -378,5 +378,5 @@ func TestPromStats(t *testing.T) {
 	}
 	// Check null handling for Marshal functions
 	assert.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
-	assert.Nil(t, MarshalAppMetrics(&testAppKey, nil), "Nil metrics should marshal into a nil")
+	assert.Nil(t, MarshalAppMetrics(&testAppKey, nil, ""), "Nil metrics should marshal into a nil")
 }
