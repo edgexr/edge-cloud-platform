@@ -53,6 +53,9 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	var imageInfo infracommon.ImageInfo
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 	imageInfo.LocalImageName = imageName + "-" + md5Sum
+	if v.VMProperties.AppendFlavorToVmAppImage {
+		imageInfo.LocalImageName = imageInfo.LocalImageName + "-" + appInst.Flavor.Name
+	}
 	imageInfo.Md5sum = md5Sum
 	imageInfo.SourceImageTime = sourceImageTime
 	if err != nil {
@@ -538,10 +541,12 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 		_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 		localImageName := imgName + "-" + md5Sum
-
+		if v.VMProperties.AppendFlavorToVmAppImage {
+			localImageName = localImageName + "-" + appInst.Flavor.Name
+		}
 		err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "imgName", imgName)
+			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "localImageName", localImageName)
 		}
 		if appInst.Uri != "" {
 			fqdn := appInst.Uri

@@ -27,6 +27,7 @@ func (v *VSpherePlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
 	vmProperties.IptablesBasedFirewall = true
 	vmProperties.RunLbDhcpServerForVmApps = true
+	vmProperties.AppendFlavorToVmAppImage = true
 }
 
 func (v *VSpherePlatform) InitData(ctx context.Context, caches *platform.Caches) {

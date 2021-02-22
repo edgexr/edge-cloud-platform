@@ -11,7 +11,7 @@ import (
 
 // catalog releated functionality
 
-const uploadChunkSize = 12 * 1024 // MB
+const uploadChunkSize = 10 * 1024 * 1024 // 10 MB
 func (v *VcdPlatform) GetCatalog(ctx context.Context, catName string, vcdClient *govcd.VCDClient) (*govcd.Catalog, error) {
 
 	org, err := v.GetOrg(ctx, vcdClient)
