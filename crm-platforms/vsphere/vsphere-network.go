@@ -140,6 +140,6 @@ func (v *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additi
 	return fmt.Errorf("Additional networks not supported in vSphere cloudlets")
 }
 
-func (v *VSpherePlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VSpherePlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }

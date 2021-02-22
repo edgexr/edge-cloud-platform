@@ -356,7 +356,7 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
 	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
 	egressRestricted := TrustPolicy.Key.Name != ""
-	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, edgeproto.DummyUpdateCallback)
+	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, ActionUpdate, edgeproto.DummyUpdateCallback)
 }
 
 func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -423,6 +423,11 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
 		err = v.VMProvider.DeleteVMs(ctx, rootLBName)
+		if err != nil {
+			return fmt.Errorf("DeleteCloudlet error: %v", err)
+		}
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Cloudlet Security Rules %s", rootLBName))
+		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, ActionDelete, edgeproto.DummyUpdateCallback)
 		if err != nil {
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}

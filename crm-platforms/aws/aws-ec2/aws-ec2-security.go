@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -238,6 +239,6 @@ func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, err
 	return a.awsGenPf.GetUserAccountIdFromArn(ctx, iamResult.User.Arn)
 }
 
-func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
