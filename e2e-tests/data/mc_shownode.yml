@@ -1,11 +1,11 @@
 nodes:
 - key:
     type: notifyroot
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
 
 - key:
     type: mc
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:
@@ -13,7 +13,7 @@ nodes:
     InfraBuildMaster:
 - key:
     type: mc
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:
@@ -24,12 +24,12 @@ nodes:
     type: controller
     region: local
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
 - key:
     type: controller
     region: local
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     FakeInfraBuildAuthor:
     FakeInfraBuildDate:
@@ -39,12 +39,12 @@ nodes:
     type: controller
     region: locala
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
 - key:
     type: controller
     region: locala
   containerversion: "2019-10-24"
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
 
 - key:
     type: dme
@@ -52,7 +52,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     EdgeEventsBuildAuthor:
     EdgeEventsBuildDate:
@@ -68,7 +68,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-2
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     EdgeEventsBuildAuthor:
     EdgeEventsBuildDate:
@@ -84,7 +84,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-3
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     EdgeEventsBuildAuthor:
     EdgeEventsBuildDate:
@@ -100,7 +100,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-4
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     EdgeEventsBuildAuthor:
     EdgeEventsBuildDate:
@@ -118,7 +118,7 @@ nodes:
       organization: enterprise
       name: enterprise-1
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: local
@@ -126,7 +126,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-1
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
   properties:
     FakeInfraBuildAuthor:
     FakeInfraBuildDate:
@@ -139,7 +139,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-2
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: local
@@ -147,7 +147,7 @@ nodes:
       organization: azure
       name: azure-cloud-4
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: local
@@ -155,7 +155,7 @@ nodes:
       organization: gcp
       name: gcp-cloud-5
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 
 - key:
     type: crm
@@ -164,7 +164,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-3
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: locala
@@ -172,7 +172,7 @@ nodes:
       organization: dmuus
       name: dmuus-cloud-4
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 - key:
     type: crm
     region: locala
@@ -180,7 +180,7 @@ nodes:
       organization: enterprise
       name: enterprise-2
   containerversion: "2019-10-24"
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
 
 - key:
     type: shepherd
@@ -188,7 +188,7 @@ nodes:
     cloudletkey:
       organization: dmuus
       name: dmuus-cloud-1
-  internalpki: useAccessKey,useVaultCAs,useVaultCerts
+  internalpki: useAccessKey,UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:
@@ -198,7 +198,7 @@ nodes:
 - key:
     type: cluster-svc
     region: local
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraClusterSvcBuildAuthor:
     InfraClusterSvcBuildDate:
@@ -207,7 +207,7 @@ nodes:
 - key:
     type: cluster-svc
     region: local
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraClusterSvcBuildAuthor:
     InfraClusterSvcBuildDate:
@@ -216,7 +216,7 @@ nodes:
 - key:
     type: cluster-svc
     region: locala
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraClusterSvcBuildAuthor:
     InfraClusterSvcBuildDate:
@@ -225,7 +225,7 @@ nodes:
 - key:
     type: cluster-svc
     region: locala
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraClusterSvcBuildAuthor:
     InfraClusterSvcBuildDate:
@@ -235,7 +235,7 @@ nodes:
 - key:
     type: autoprov
     region: local
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:
@@ -244,7 +244,7 @@ nodes:
 - key:
     type: autoprov
     region: locala
-  internalpki: useVaultCAs,useVaultCerts
+  internalpki: UseVaultPki
   properties:
     InfraBuildAuthor:
     InfraBuildDate:

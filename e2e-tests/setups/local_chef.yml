@@ -35,7 +35,7 @@ controllers:
   apiaddr: "0.0.0.0:55001"
   httpaddr: "0.0.0.0:36001"
   notifyaddr: "127.0.0.1:37001"
-  usevaultcerts: true
+  usevaultpki: true
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   vaultaddr: "http://127.0.0.1:8200"
@@ -49,7 +49,7 @@ mcs:
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
   notifysrvaddr: "127.0.0.1:52001"
   hostname: "127.0.0.1"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
@@ -69,7 +69,7 @@ notifyroots:
 - name: notifyroot
   hostname: "127.0.0.1"
   vaultaddr: "http://127.0.0.1:8200"
-  usevaultcerts: true
+  usevaultpki: true
 
 alertmanagers:
 - name: alertmanager

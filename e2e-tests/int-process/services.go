@@ -75,8 +75,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	vaultAddr := ""
 	span := ""
 	region := ""
-	useVaultCAs := false
-	useVaultCerts := false
+	useVaultPki := false
 	appDNSRoot := ""
 	deploymentTag := ""
 	chefServerPath := ""
@@ -92,8 +91,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		tlsCAFile = pfConfig.TlsCaFile
 		span = pfConfig.Span
 		region = pfConfig.Region
-		useVaultCAs = pfConfig.UseVaultCas
-		useVaultCerts = pfConfig.UseVaultCerts
+		useVaultPki = pfConfig.UseVaultPki
 		appDNSRoot = pfConfig.AppDnsRoot
 		deploymentTag = pfConfig.DeploymentTag
 		chefServerPath = pfConfig.ChefServerPath
@@ -123,8 +121,7 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		PhysicalName:   cloudlet.PhysicalName,
 		Span:           span,
 		Region:         region,
-		UseVaultCAs:    useVaultCAs,
-		UseVaultCerts:  useVaultCerts,
+		UseVaultPki:    useVaultPki,
 		AppDNSRoot:     appDNSRoot,
 		DeploymentTag:  deploymentTag,
 		ChefServerPath: chefServerPath,
