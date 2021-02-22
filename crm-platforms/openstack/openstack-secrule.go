@@ -238,42 +238,46 @@ func (s *OpenstackPlatform) GetSecurityGroupIDForProject(ctx context.Context, gr
 
 // PrepareCloudletSecurityGroup creates the cloudlet group if it does not exist and ensures
 // that the remote-group rules are present to allow platform components to communicate
-func (o *OpenstackPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (o *OpenstackPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	grpName := o.VMProperties.CloudletSecgrpName
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "CloudletSecgrpName", grpName, "egressRestricted", egressRestricted)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "CloudletSecgrpName", grpName, "action", action, "egressRestricted", egressRestricted)
 
-	err := o.CreateOrUpdateCloudletSecgrpStack(ctx, egressRestricted, TrustPolicy, updateCallback)
-	if err != nil {
-		return err
-	}
-	cloudletGrpId, err := o.GetSecurityGroupIDForName(ctx, grpName)
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Creating remote-group rules from cloudlet grp to itself", "cloudletGrpId", cloudletGrpId)
-
-	// Add cloudlet group rules to itself and to the platform secrgrp if one exists
-	directions := []string{"ingress", "egress"}
-	remoteGroups := []string{cloudletGrpId}
-
-	platGrpId, err := o.GetSecurityGroupIDForName(ctx, o.VMProperties.PlatformSecgrpName)
-	if err != nil {
-		if strings.Contains(err.Error(), SecgrpDoesNotExist) {
-			// this should only happen if CreateCloudlet was not used to onboard and the CRM was created manually
-			log.SpanLog(ctx, log.DebugLevelInfra, "Platform group does not exist", "platform group", o.VMProperties.PlatformSecgrpName)
-		} else {
+	if action == vmlayer.ActionCreate || action == vmlayer.ActionUpdate {
+		err := o.CreateOrUpdateCloudletSecgrpStack(ctx, egressRestricted, TrustPolicy, updateCallback)
+		if err != nil {
 			return err
 		}
-	} else {
-		remoteGroups = append(remoteGroups, platGrpId)
-	}
-	for _, remote := range remoteGroups {
-		for _, dir := range directions {
-			err = o.AddSecurityRulesForRemoteGroup(ctx, cloudletGrpId, remote, "any", dir)
-			if err != nil {
+		cloudletGrpId, err := o.GetSecurityGroupIDForName(ctx, grpName)
+		if err != nil {
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Creating remote-group rules from cloudlet grp to itself", "cloudletGrpId", cloudletGrpId)
+
+		// Add cloudlet group rules to itself and to the platform secrgrp if one exists
+		directions := []string{"ingress", "egress"}
+		remoteGroups := []string{cloudletGrpId}
+
+		platGrpId, err := o.GetSecurityGroupIDForName(ctx, o.VMProperties.PlatformSecgrpName)
+		if err != nil {
+			if strings.Contains(err.Error(), SecgrpDoesNotExist) {
+				// this should only happen if CreateCloudlet was not used to onboard and the CRM was created manually
+				log.SpanLog(ctx, log.DebugLevelInfra, "Platform group does not exist", "platform group", o.VMProperties.PlatformSecgrpName)
+			} else {
 				return err
 			}
+		} else {
+			remoteGroups = append(remoteGroups, platGrpId)
 		}
+		for _, remote := range remoteGroups {
+			for _, dir := range directions {
+				err = o.AddSecurityRulesForRemoteGroup(ctx, cloudletGrpId, remote, "any", dir)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		return o.DeleteCloudletSecgrpStack(ctx, updateCallback)
 	}
 	return nil
 }
@@ -340,4 +344,10 @@ func (o *OpenstackPlatform) CreateOrUpdateCloudletSecgrpStack(ctx context.Contex
 		}
 	}
 	return nil
+}
+
+func (o *OpenstackPlatform) DeleteCloudletSecgrpStack(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
+	grpName := o.VMProperties.CloudletSecgrpName
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudletSecgrpStack", "grpName", grpName)
+	return o.deleteHeatStack(ctx, grpName)
 }

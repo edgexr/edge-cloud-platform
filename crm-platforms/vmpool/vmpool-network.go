@@ -20,6 +20,6 @@ func (o *VMPoolPlatform) ValidateAdditionalNetworks(ctx context.Context, additio
 	return fmt.Errorf("Additional networks not supported in VMPool cloudlets")
 }
 
-func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }

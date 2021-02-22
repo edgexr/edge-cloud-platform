@@ -86,7 +86,7 @@ func (v *VMPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, clien
 	return nil
 }
 
-func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context) error {
+func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action ActionType) error {
 	// update security groups based on a configured privacy policy or none
 	privPolName := v.VMProperties.CommonPf.PlatformConfig.TrustPolicy
 	var privPol *edgeproto.TrustPolicy
@@ -102,5 +102,5 @@ func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context) error {
 		// use an empty policy
 		privPol = &edgeproto.TrustPolicy{}
 	}
-	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, privPol, edgeproto.DummyUpdateCallback)
+	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, privPol, action, edgeproto.DummyUpdateCallback)
 }
