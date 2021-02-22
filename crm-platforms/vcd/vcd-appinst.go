@@ -17,6 +17,7 @@ import (
 
 type VmAppOvfParams struct {
 	ImageBaseFileName string
+	DiskSizeInBytes   string
 }
 
 var vmAppOvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
@@ -26,7 +27,7 @@ var vmAppOvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
   </References>
   <DiskSection>
     <Info>List of the virtual disks</Info>
-    <Disk ovf:capacityAllocationUnits="byte" ovf:format="http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized" ovf:diskId="vmdisk1" ovf:capacity="21474836480" ovf:fileRef="file1"/>
+    <Disk ovf:capacityAllocationUnits="byte" ovf:format="http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized" ovf:diskId="vmdisk1" ovf:capacity="{{.DiskSizeInBytes}}" ovf:fileRef="file1"/>
   </DiskSection>
   <VirtualSystem ovf:id="{{.ImageBaseFileName}}">
     <Info>A Virtual system</Info>
@@ -142,7 +143,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
-	f, err := v.GetFlavor(ctx, flavor)
+	appFlavor, err := v.GetFlavor(ctx, flavor)
 	if err != nil {
 		return err
 	}
@@ -157,7 +158,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 	vmdkFile := fileWithPath
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
 		updateCallback(edgeproto.UpdateTask, "Converting Image to VMDK")
-		vmdkFile, err = v.ConvertQcowToVmdk(ctx, fileWithPath, f.Disk)
+		vmdkFile, err = v.ConvertQcowToVmdk(ctx, fileWithPath, appFlavor.Disk)
 		if err != nil {
 			return err
 		}
@@ -165,9 +166,11 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 	}
 	filenameNoExtension := strings.TrimSuffix(vmdkFile, filepath.Ext(vmdkFile))
 	ovfFile := filenameNoExtension + ".ovf"
+
 	imageFileBaseName := filepath.Base(filenameNoExtension)
 	ovfParams := VmAppOvfParams{
 		ImageBaseFileName: imageFileBaseName,
+		DiskSizeInBytes:   fmt.Sprintf("%d", appFlavor.Disk*1024*1024*1024),
 	}
 	ovfBuf, err := vmlayer.ExecTemplate("vmwareOvf", vmAppOvfTemplate, ovfParams)
 	if err != nil {
@@ -179,6 +182,8 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		return fmt.Errorf("unable to write OVF file %s: %s", ovfFile, err.Error())
 	}
 	filesToCleanup = append(filesToCleanup, ovfFile)
+
+	updateCallback(edgeproto.UpdateTask, "Uploading OVF")
 	err = v.UploadOvaFile(ctx, ovfFile, imageInfo.LocalImageName, "VM App OVF", vcdClient)
 	if err != nil {
 		return fmt.Errorf("Upload OVA failed - %v", err)

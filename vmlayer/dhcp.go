@@ -80,7 +80,7 @@ func (v *VMPlatform) StartDhcpServerForVmApp(ctx context.Context, client ssh.Cli
 	log.SpanLog(ctx, log.DebugLevelInfra, "DHCP Config params set", "dhcpConfigParams", dhcpConfigParams)
 
 	// install DHCP on the LB
-	cmd := fmt.Sprintf("sudo apt install isc-dhcp-server -y")
+	cmd := fmt.Sprintf("sudo apt-get install isc-dhcp-server -y")
 	if out, err := client.Output(cmd); err != nil {
 		return fmt.Errorf("failed to install isc-dhcp-server: %s, %v", out, err)
 	}
