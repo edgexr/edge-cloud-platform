@@ -71,7 +71,7 @@ func (p *AppInstWorker) sendMetrics() {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "metrics for app", "key", key, "metrics", stat)
 	appMetrics := MarshalAppMetrics(&key, &stat, "")
 	for _, metric := range appMetrics {
-		p.send(ctx, metric)
+		p.send(context.Background(), metric)
 	}
 }
 

@@ -117,12 +117,12 @@ func (p *ClusterWorker) RunNotify() {
 					"AppInst key", key, "stats", stat)
 				appMetrics := MarshalAppMetrics(&key, stat, p.reservedBy)
 				for _, metric := range appMetrics {
-					p.send(ctx, metric)
+					p.send(context.Background(), metric)
 				}
 			}
 			clusterMetrics := p.MarshalClusterMetrics(clusterStats)
 			for _, metric := range clusterMetrics {
-				p.send(ctx, metric)
+				p.send(context.Background(), metric)
 			}
 
 			clusterAlerts := p.clusterStat.GetAlerts(actx)
@@ -155,7 +155,11 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 		metric.AddTag("app", key.App)
 		metric.AddTag("ver", key.Version)
 		//TODO: this should be changed when we have the actual app key
-		metric.AddTag("apporg", key.ClusterInstKey.Organization)
+		if reservedBy != "" {
+			metric.AddTag("apporg", reservedBy)
+		} else {
+			metric.AddTag("apporg", clusterInstKey.Organization)
+		}
 	}
 	return &metric
 }
