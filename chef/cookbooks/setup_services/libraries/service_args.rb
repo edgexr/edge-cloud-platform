@@ -26,6 +26,8 @@ class Chef
       # Hash of:
       #   Key = arg name
       #   Value = arg type (false means flag type)
+      # NOTE:
+      #   Please update chef/cookbooks/setup_services/attributes/default.rb, if argsmap is updated below
       argsmap = {
         "cloudletKey" => true,
         "notifyAddrs" => true,
@@ -56,6 +58,8 @@ class Chef
       # Hash of:
       #   Key = arg name
       #   Value = arg type (false means flag type)
+      # NOTE:
+      #   Please update chef/cookbooks/setup_services/attributes/default.rb, if argsmap is updated below
       argsmap = {
         "cloudletKey" => true,
         "notifyAddrs" => true,
