@@ -22,4 +22,10 @@ services.each { |service|
     Chef::Log.info("Setting accessApiAddr attribute var for #{service} to #{accessApiAddr}...")
     node.normal[service]['args']['accessApiAddr'] = accessApiAddr
   end
+
+  # Set useVaultPki attribute for all the services
+  unless node.normal[service]['args'].any? { |s| s.include?('useVaultPki') }
+    Chef::Log.info("Setting useVaultPki flag for #{service}...")
+    node.normal[service]['args']['useVaultPki'] = ""
+  end
 }
