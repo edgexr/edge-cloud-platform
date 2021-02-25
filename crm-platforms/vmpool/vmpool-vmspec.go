@@ -16,6 +16,9 @@ func getFlavorBasedVM(ctx context.Context, vmList []edgeproto.VM, vmSpec *edgepr
 	cli := edgeproto.CloudletInfo{}
 	cli.Flavors = []*edgeproto.FlavorInfo{}
 	for _, newVM := range vmList {
+		if newVM.Flavor == nil {
+			continue
+		}
 		cli.Flavors = append(cli.Flavors, newVM.Flavor)
 	}
 	vmFlavorSpec, err := vmspec.GetVMSpec(ctx, vmSpec.Flavor, cli, nil)
