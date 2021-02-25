@@ -48,12 +48,11 @@ func (s *VMPoolPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.Flavor
 	for _, vm := range s.caches.VMPool.Vms {
 		var client ssh.Client
 		if vm.NetInfo.ExternalIp != "" {
-			client, err = s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, accessIP)
+			client, err = s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
 			if err != nil {
 				return nil, fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vm.Name, vm.NetInfo.ExternalIp, err)
 			}
 		} else if vm.NetInfo.InternalIp != "" {
-
 			client, err = accessClient.AddHop(vm.NetInfo.InternalIp, 22)
 			if err != nil {
 				return nil, fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vm.Name, vm.NetInfo.InternalIp, err)
