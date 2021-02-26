@@ -158,7 +158,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 	vmdkFile := fileWithPath
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
 		updateCallback(edgeproto.UpdateTask, "Converting Image to VMDK")
-		vmdkFile, err = v.ConvertQcowToVmdk(ctx, fileWithPath, appFlavor.Disk)
+		vmdkFile, err = vmlayer.ConvertQcowToVmdk(ctx, fileWithPath, appFlavor.Disk)
 		if err != nil {
 			return err
 		}
