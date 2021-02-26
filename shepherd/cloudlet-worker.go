@@ -33,7 +33,7 @@ func CloudletScraper(done chan bool) {
 			} else {
 				metrics := MarshalCloudletMetrics(&cloudletStats)
 				for _, metric := range metrics {
-					MetricSender.Update(ctx, metric)
+					MetricSender.Update(context.Background(), metric)
 				}
 			}
 			span.Finish()
