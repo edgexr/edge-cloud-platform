@@ -306,7 +306,7 @@ func ProxyScraper(done chan bool) {
 					influxData := MarshallTcpProxyMetric(v, metrics)
 					influxData = append(influxData, MarshallUdpProxyMetric(v, metrics)...)
 					for _, datapoint := range influxData {
-						MetricSender.Update(ctx, datapoint)
+						MetricSender.Update(context.Background(), datapoint)
 					}
 				}
 				span.Finish()
