@@ -42,7 +42,7 @@ func (v *VSpherePlatform) CreateImageFromUrl(ctx context.Context, imageName, ima
 		}
 	}()
 
-	vmdkFile, err := v.ConvertQcowToVmdk(ctx, filePath, vmlayer.MINIMUM_DISK_SIZE)
+	vmdkFile, err := vmlayer.ConvertQcowToVmdk(ctx, filePath, vmlayer.MINIMUM_DISK_SIZE)
 	if err != nil {
 		return err
 	}
