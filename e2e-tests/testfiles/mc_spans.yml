@@ -1,0 +1,9 @@
+tests:
+- name: check show spans
+  actions: [mcapi-spansshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  apifile: '{{datadir2}}/mc_spansshow.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_spansshow_exp.yml'
+    filetype: mcspans

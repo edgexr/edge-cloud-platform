@@ -1,55 +1,104 @@
 - terms:
     names:
-    - /api/v1/auth/ctrl/CreateApp
-    - /api/v1/auth/ctrl/CreateAppInst
-    - /api/v1/auth/ctrl/CreateAutoProvPolicy
-    - /api/v1/auth/ctrl/CreateAutoScalePolicy
-    - /api/v1/auth/ctrl/CreateClusterInst
-    - /api/v1/auth/ctrl/DeleteApp
-    - /api/v1/auth/ctrl/DeleteAppInst
-    - /api/v1/auth/ctrl/DeleteAutoProvPolicy
-    - /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
-    - /api/v1/auth/org/create
-    - /api/v1/auth/org/delete
-    - /ws/api/v1/auth/ctrl/RunCommand
-    - /ws/api/v1/auth/ctrl/ShowLogs
-    - AutoCluster create
-    - AutoProv create AppInst
-    - AutoProv delete AppInst
-    - Free ClusterInst reservation
-    - Reserve ClusterInst
+    - key: Reserve ClusterInst
+      count: 13
+    - key: AutoProv create AppInst
+      count: 12
+    - key: Free ClusterInst reservation
+      count: 12
+    - key: /api/v1/auth/ctrl/CreateApp
+      count: 9
+    - key: /api/v1/auth/ctrl/CreateAppInst
+      count: 5
+    - key: AutoProv delete AppInst
+      count: 5
+    - key: /api/v1/auth/ctrl/CreateAutoProvPolicy
+      count: 4
+    - key: /api/v1/auth/ctrl/CreateClusterInst
+      count: 4
+    - key: /api/v1/auth/ctrl/CreateAutoScalePolicy
+      count: 2
+    - key: /api/v1/auth/ctrl/DeleteApp
+      count: 2
+    - key: /api/v1/auth/ctrl/DeleteAppInst
+      count: 2
+    - key: /api/v1/auth/ctrl/DeleteAutoProvPolicy
+      count: 2
+    - key: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
+      count: 2
+    - key: /api/v1/auth/org/create
+      count: 2
+    - key: /api/v1/auth/org/delete
+      count: 2
+    - key: /api/v1/auth/ctrl/RunCommand
+      count: 1
+    - key: /api/v1/auth/ctrl/ShowLogs
+      count: 1
+    - key: AutoCluster create
+      count: 1
     orgs:
-    - AcmeAppCo
-    - platos
+    - key: AcmeAppCo
+      count: 77
+    - key: platos
+      count: 4
     types:
-    - audit
-    - event
+    - key: event
+      count: 43
+    - key: audit
+      count: 38
     regions:
-    - local
+    - key: local
+      count: 43
     tagkeys:
-    - app
-    - apporg
-    - appver
-    - autoprovpolicy
-    - cloudlet
-    - cloudletorg
-    - cluster
-    - clusterorg
-    - duration
-    - email
-    - hostname
-    - lineno
-    - method
-    - org
-    - policy
-    - policyorg
-    - realcluster
-    - reason
-    - region
-    - remote-ip
-    - request
-    - response
-    - spanid
-    - status
-    - traceid
-    - username
+    - key: hostname
+      count: 81
+    - key: lineno
+      count: 81
+    - key: spanid
+      count: 81
+    - key: traceid
+      count: 81
+    - key: app
+      count: 61
+    - key: apporg
+      count: 61
+    - key: appver
+      count: 61
+    - key: duration
+      count: 56
+    - key: cloudlet
+      count: 54
+    - key: cloudletorg
+      count: 54
+    - key: cluster
+      count: 54
+    - key: clusterorg
+      count: 54
+    - key: email
+      count: 38
+    - key: method
+      count: 38
+    - key: org
+      count: 38
+    - key: remote-ip
+      count: 38
+    - key: request
+      count: 38
+    - key: response
+      count: 38
+    - key: status
+      count: 38
+    - key: username
+      count: 38
+    - key: region
+      count: 34
+    - key: realcluster
+      count: 25
+    - key: autoprovpolicy
+      count: 17
+    - key: reason
+      count: 17
+    - key: policy
+      count: 10
+    - key: policyorg
+      count: 10

@@ -19,6 +19,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 
 type Client struct {
@@ -277,6 +278,24 @@ func (s *Client) FindEvents(uri, token string, query *node.EventSearch) ([]node.
 func (s *Client) EventTerms(uri, token string, query *node.EventSearch) (*node.EventTerms, int, error) {
 	resp := node.EventTerms{}
 	status, err := s.PostJson(uri+"/auth/events/terms", token, query, &resp)
+	return &resp, status, err
+}
+
+func (s *Client) ShowSpans(uri, token string, query *node.SpanSearch) ([]node.SpanOutCondensed, int, error) {
+	resp := []node.SpanOutCondensed{}
+	status, err := s.PostJson(uri+"/auth/spans/show", token, query, &resp)
+	return resp, status, err
+}
+
+func (s *Client) ShowSpansVerbose(uri, token string, query *node.SpanSearch) ([]dbmodel.Span, int, error) {
+	resp := []dbmodel.Span{}
+	status, err := s.PostJson(uri+"/auth/spans/showverbose", token, query, &resp)
+	return resp, status, err
+}
+
+func (s *Client) SpanTerms(uri, token string, query *node.SpanSearch) (*node.SpanTerms, int, error) {
+	resp := node.SpanTerms{}
+	status, err := s.PostJson(uri+"/auth/spans/terms", token, query, &resp)
 	return &resp, status, err
 }
 

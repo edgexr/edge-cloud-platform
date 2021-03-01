@@ -90,3 +90,60 @@ func EventTerms(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, *terms)
 }
+
+func SpanTerms(c echo.Context) error {
+	params, err := getSpanSearchParams(c)
+	if err != nil {
+		return err
+	}
+	out, err := nodeMgr.SpanTerms(GetContext(c), params)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+	}
+	return c.JSON(http.StatusOK, out)
+}
+
+func ShowSpans(c echo.Context) error {
+	params, err := getSpanSearchParams(c)
+	if err != nil {
+		return err
+	}
+	out, err := nodeMgr.ShowSpansCondensed(GetContext(c), params)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+	}
+	return c.JSON(http.StatusOK, out)
+}
+
+func ShowSpansVerbose(c echo.Context) error {
+	params, err := getSpanSearchParams(c)
+	if err != nil {
+		return err
+	}
+	out, err := nodeMgr.ShowSpans(GetContext(c), params)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+	}
+	return c.JSON(http.StatusOK, out)
+}
+
+func getSpanSearchParams(c echo.Context) (*node.SpanSearch, error) {
+	claims, err := getClaims(c)
+	if err != nil {
+		return nil, err
+	}
+	ctx := GetContext(c)
+
+	search := node.SpanSearch{}
+	if err := c.Bind(&search); err != nil {
+		return nil, bindErr(c, err)
+	}
+	if err := search.TimeRange.Resolve(48 * time.Hour); err != nil {
+		return nil, c.JSON(http.StatusBadRequest, MsgErr(err))
+	}
+	// admin only
+	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
+		return nil, err
+	}
+	return &search, nil
+}

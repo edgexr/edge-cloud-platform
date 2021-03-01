@@ -2,6 +2,23 @@
 description: run auto-prov test. Assumes edge-cloud objects already present
 
 tests:
+  - name: set autodeployinterval setting fast for testing
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: check autodeploy settings
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_settings_exp.yml'
+      filetype: mcdata
+
+  - name: sleep, allow time for dme to update from settings (its asynchronous)
+    actions: [sleep=2]
+
   - name: find cloudlet for auto-prov app (3 intervals of 3 counts each)
     apifile: "{{datadir2}}/find_cloudlet_ap.yml"
     actions: [dmeapi-findcloudlet]
@@ -12,6 +29,7 @@ tests:
 
   - name: sleep, allow extra time for auto-prov to create AppInst
     actions: [sleep=1]
+
   - name: check that AppInsts were auto-provisioned
     actions: [mcapi-showfiltered]
     apifile: '{{datadir2}}/autoprov_appinst.yml'
@@ -84,6 +102,20 @@ tests:
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/autoprov_appinst_empty.yml'
+      filetype: mcdata
+
+  - name: restore autodeployinterval setting
+    actions: [mcapi-update]
+    apifile: '{{datadir2}}/autoprov_settings_restore.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+
+  - name: check autodeploy settings
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/autoprov_settings.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/autoprov_settings_restored_exp.yml'
       filetype: mcdata
 
   - name: create auto-prov HA app and policy, will trigger auto-deployment

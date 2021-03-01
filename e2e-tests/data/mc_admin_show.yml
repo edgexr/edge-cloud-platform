@@ -77,7 +77,7 @@ regiondata:
       shepherdalertevaluationinterval: 1s
       shepherdhealthcheckretries: 3
       shepherdhealthcheckinterval: 5s
-      autodeployintervalsec: 1
+      autodeployintervalsec: 300
       autodeployoffsetsec: 0.3
       autodeploymaxintervals: 10
       createappinsttimeout: 3s

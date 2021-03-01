@@ -596,6 +596,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   404: notFound
 	auth.POST("/events/terms", EventTerms)
 
+	auth.POST("/spans/terms", SpanTerms)
+	auth.POST("/spans/show", ShowSpans)
+	auth.POST("/spans/showverbose", ShowSpansVerbose)
+
 	// swagger:route POST /auth/usage/app DeveloperUsage AppUsage
 	// App Usage
 	// Display app usage.
