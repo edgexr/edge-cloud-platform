@@ -369,6 +369,11 @@ elasticsearchs:
 jaegers:
 - name: jaeger-e2e
   hostname: "127.0.0.1"
+  links:
+  - elasticsearch-e2e:elasticsearch
+  dockerenvvars:
+    ES_SERVER_URLS: http://elasticsearch:9200
+    SPAN_STORAGE_TYPE: elasticsearch
 
 autoprovs:
 - name: autoprov1

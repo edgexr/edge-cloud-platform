@@ -1,0 +1,5 @@
+regiondata:
+- region: local
+  appdata:
+    settings:
+      autodeployintervalsec: 300

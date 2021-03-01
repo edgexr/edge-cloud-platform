@@ -1,0 +1,4 @@
+description: set end time for span search to give ES enough time to index documents
+tests:
+- name: set spans search end time
+  actions: [mcapi-spansendtime]

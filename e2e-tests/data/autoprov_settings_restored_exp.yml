@@ -1,0 +1,29 @@
+regiondata:
+- region: local
+  appdata:
+    settings:
+      shepherdmetricscollectioninterval: 1s
+      shepherdalertevaluationinterval: 1s
+      shepherdhealthcheckretries: 3
+      shepherdhealthcheckinterval: 5s
+      autodeployintervalsec: 300
+      autodeployoffsetsec: 0.3
+      autodeploymaxintervals: 10
+      createappinsttimeout: 3s
+      updateappinsttimeout: 2s
+      deleteappinsttimeout: 2s
+      createclusterinsttimeout: 3s
+      updateclusterinsttimeout: 2s
+      deleteclusterinsttimeout: 2s
+      masternodeflavor: x1.small
+      loadbalancermaxportrange: 100
+      maxtrackeddmeclients: 100
+      chefclientinterval: 10m0s
+      influxdbmetricsretention: 672h0m0s
+      cloudletmaintenancetimeout: 2s
+      updatevmpooltimeout: 20m0s
+      updatetrustpolicytimeout: 5s
+      dmeapimetricscollectioninterval: 1s
+      persistentconnectionmetricscollectioninterval: 1s
+      cleanupreservableautoclusteridletime: 30m0s
+      influxdbcloudletusagemetricsretention: 8760h0m0s

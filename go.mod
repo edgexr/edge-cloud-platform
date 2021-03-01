@@ -23,13 +23,12 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
-	github.com/gorilla/mux v1.7.0
+	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.1
 	github.com/hashicorp/go-plugin v1.0.1 // indirect
-	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/influxdata/influxdb v1.7.7
-	github.com/jaegertracing/jaeger v1.13.1
+	github.com/jaegertracing/jaeger v1.21.0
 	github.com/jarcoal/httpmock v1.0.6
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jpillora/backoff v1.0.0 // indirect
@@ -41,6 +40,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/mobiledgex/edge-cloud v1.0.1
 	github.com/mobiledgex/golang-ssh v0.0.10
+	github.com/mobiledgex/jaeger v1.13.1
 	github.com/mobiledgex/yaml/v2 v2.2.5
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/nmcclain/asn1-ber v0.0.0-20170104154839-2661553a0484
@@ -48,10 +48,10 @@ require (
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/otp v1.2.1-0.20191009055518-468c2dd2b58d
-	github.com/prometheus/common v0.9.1
+	github.com/prometheus/common v0.10.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/shirou/gopsutil v2.20.4+incompatible
-	github.com/spf13/cobra v0.0.4
+	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.6.1
 	github.com/test-go/testify v1.1.4
 	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
@@ -60,7 +60,7 @@ require (
 	github.com/xanzy/go-gitlab v0.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
-	google.golang.org/grpc v1.27.1
+	google.golang.org/grpc v1.29.1
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.3.0
 	gortc.io/stun v1.21.0
@@ -125,8 +125,6 @@ replace github.com/fatih/structs => github.com/fatih/structs v1.1.0
 
 replace github.com/go-ldap/ldap => github.com/go-ldap/ldap v3.0.2+incompatible
 
-replace github.com/gocql/gocql => github.com/gocql/gocql v0.0.0-20190402132108-0e1d5de854df
-
 replace github.com/gogo/gateway => github.com/gogo/gateway v1.0.0
 
 replace github.com/gogo/googleapis => github.com/gogo/googleapis v1.1.0
@@ -147,9 +145,9 @@ replace github.com/gorilla/websocket => github.com/gorilla/websocket v1.4.1
 
 replace github.com/gotestyourself/gotestyourself => github.com/gotestyourself/gotestyourself v2.2.0+incompatible
 
-replace github.com/grpc-ecosystem/go-grpc-middleware => github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4
+replace github.com/grpc-ecosystem/go-grpc-middleware => github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 
-replace github.com/grpc-ecosystem/grpc-gateway => github.com/grpc-ecosystem/grpc-gateway v1.14.1
+replace github.com/grpc-ecosystem/grpc-gateway => github.com/grpc-ecosystem/grpc-gateway v1.14.5
 
 replace github.com/hashicorp/vault => github.com/hashicorp/vault v1.4.2
 
@@ -173,7 +171,7 @@ replace github.com/patrickmn/go-cache => github.com/patrickmn/go-cache v2.1.0+in
 
 replace github.com/spaolacci/murmur3 => github.com/spaolacci/murmur3 v1.1.0
 
-replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.4
+replace github.com/spf13/cobra => github.com/spf13/cobra v0.0.5
 
 replace github.com/spf13/pflag => github.com/spf13/pflag v1.0.5
 
@@ -181,13 +179,13 @@ replace github.com/stretchr/testify => github.com/stretchr/testify v1.6.1
 
 replace github.com/tmc/grpc-websocket-proxy => github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 
-replace go.uber.org/zap => go.uber.org/zap v1.13.0
+replace go.uber.org/zap => go.uber.org/zap v1.16.0
 
 replace golang.org/x/crypto => golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20200305110556-506484158171
 
-replace google.golang.org/grpc => google.golang.org/grpc v1.27.1
+replace google.golang.org/grpc => google.golang.org/grpc v1.29.1
 
 replace gopkg.in/asn1-ber.v1 => gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d
 
@@ -207,15 +205,9 @@ replace k8s.io/client-go => k8s.io/client-go v0.17.3
 
 replace github.com/mobiledgex/yaml/v2 => github.com/mobiledgex/yaml/v2 v2.2.5
 
-replace github.com/kr/pty => github.com/kr/pty v1.1.5
-
 replace github.com/opentracing/opentracing-go => github.com/opentracing/opentracing-go v1.1.0
 
-replace github.com/uber/jaeger-client-go => github.com/uber/jaeger-client-go v2.16.1-0.20190705220040-402bec9e6ead+incompatible
-
-replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.0.0+incompatible
-
-replace github.com/coreos/go-systemd => github.com/coreos/go-systemd v0.0.0-20181012123002-c6f51f82210d
+replace github.com/uber/jaeger-client-go => github.com/uber/jaeger-client-go v2.23.1+incompatible
 
 replace github.com/denisenkom/go-mssqldb => github.com/denisenkom/go-mssqldb v0.0.0-20190905012053-7920e8ef8898
 
@@ -223,7 +215,7 @@ replace github.com/google/go-github => github.com/google/go-github v17.0.0+incom
 
 replace github.com/google/go-querystring => github.com/google/go-querystring v1.0.0
 
-replace github.com/prometheus/common => github.com/prometheus/common v0.9.1
+replace github.com/prometheus/common => github.com/prometheus/common v0.10.0
 
 replace github.com/uber-go/atomic => github.com/uber-go/atomic v1.4.0
 
@@ -294,3 +286,7 @@ replace github.com/go-chef/chef => github.com/go-chef/chef v0.23.1
 replace github.com/hashicorp/vault/api => github.com/hashicorp/vault/api v1.0.5-0.20200317185738-82f498082f02
 
 replace github.com/cloudflare/cloudflare-go => github.com/cloudflare/cloudflare-go v0.13.4
+
+replace github.com/jaegertracing/jaeger => github.com/jaegertracing/jaeger v1.21.0
+
+replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.4.0+incompatible

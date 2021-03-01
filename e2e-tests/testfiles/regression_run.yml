@@ -3,6 +3,10 @@ tests:
   - includefile: deploy_start.yml
   - includefile: mc_add_delete.yml
     loops: 2
+  - includefile: mc_spans_setendtime.yml
+  - includefile: mc_spans.yml
+  - includefile: mc_spans.yml
+    mods: [cli]
   - includefile: mc_audit_setup.yml
   - includefile: mc_audit.yml
   - includefile: mc_audit.yml

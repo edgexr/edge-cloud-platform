@@ -1,0 +1,23 @@
+- limit: 1
+  match:
+    operations:
+    - notify-recv edgeproto.CloudletInfo
+    logvalues:
+    - "*dmuus-cloud-1*"
+    services:
+    - autoprov
+- limit: 1
+  match:
+    operations:
+    - FindCloudlet
+    logvalues:
+    - "*dmuus-cloud-1*"
+    - autoprovapp
+- limit: 1
+  match:
+    operations:
+    - UpgradeAccessKey
+    logvalues:
+    - "*dmuus-cloud-2*"
+    logmsgs:
+    - verified access key

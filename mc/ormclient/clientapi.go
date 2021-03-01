@@ -4,6 +4,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 
 type Api interface {
@@ -53,6 +54,10 @@ type Api interface {
 	ShowEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error)
 	FindEvents(uri, token string, query *node.EventSearch) ([]node.EventData, int, error)
 	EventTerms(uri, token string, query *node.EventSearch) (*node.EventTerms, int, error)
+
+	ShowSpans(uri, token string, query *node.SpanSearch) ([]node.SpanOutCondensed, int, error)
+	ShowSpansVerbose(uri, token string, query *node.SpanSearch) ([]dbmodel.Span, int, error)
+	SpanTerms(uri, token string, query *node.SpanSearch) (*node.SpanTerms, int, error)
 
 	ShowAppUsage(uri, token string, query *ormapi.RegionAppInstUsage) (*ormapi.AllMetrics, int, error)
 	ShowClusterUsage(uri, token string, query *ormapi.RegionClusterInstUsage) (*ormapi.AllMetrics, int, error)

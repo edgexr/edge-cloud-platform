@@ -19,6 +19,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/setup-env/e2e-tests/e2eapi"
 	setupmex "github.com/mobiledgex/edge-cloud/setup-env/setup-mex"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
 )
 
 var Deployment DeploymentData
@@ -102,6 +103,21 @@ type EventSearch struct {
 type EventTerms struct {
 	Search node.EventSearch
 	Terms  *node.EventTerms
+}
+
+type SpanSearch struct {
+	Search  node.SpanSearch
+	Results []node.SpanOutCondensed
+}
+
+type SpanSearchVerbose struct {
+	Search  node.SpanSearch
+	Results []dbmodel.Span
+}
+
+type SpanTerms struct {
+	Search node.SpanSearch
+	Terms  *node.SpanTerms
 }
 
 // metrics that e2e currently tests for

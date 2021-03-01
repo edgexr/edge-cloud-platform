@@ -62,6 +62,8 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 		return runMcConfig(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if strings.HasPrefix(api, "events") {
 		return runMcEvents(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
+	} else if strings.HasPrefix(api, "spans") {
+		return runMcSpans(api, uri, apiFile, curUserFile, outputDir, mods, vars, retry)
 	} else if api == "runcommand" {
 		return runMcExec(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	} else if api == "showlogs" {
@@ -903,6 +905,122 @@ func runMcEvents(api, uri, apiFile, curUserFile, outputDir string, mods []string
 			resp, status, err := mcClient.EventTerms(uri, token, &q)
 			checkMcErr("EventTerms", status, err, &rc)
 			results = append(results, EventTerms{
+				Search: q,
+				Terms:  resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	default:
+		log.Printf("invalid mcapi action %s\n", api)
+		return false
+	}
+	*retry = true
+	return rc
+}
+
+var spansEndTimeFile = "spans-endtime"
+
+func runMcSpans(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars map[string]string, retry *bool) bool {
+	log.Printf("Running %s MC spans APIs for %s %v\n", api, apiFile, mods)
+
+	if api == "spansendtime" {
+		// It takes time for ES in docker on Mac to index
+		// new spans for search. Instead of waiting, we set an end
+		// time early in the test suite and then run a check at the
+		// end of the test suite. This should leave enough time
+		// in between for ES to finish indexing.
+		fname := getTokenFile(spansEndTimeFile, outputDir)
+		err := ioutil.WriteFile(fname, []byte(time.Now().Format(time.RFC3339Nano)), 0644)
+		if err != nil {
+			log.Printf("Write spans end time file %s failed, %v\n", fname, err)
+			return false
+		}
+		return true
+	}
+
+	if apiFile == "" {
+		log.Println("Error: Cannot run MC spans APIs without API file")
+		return false
+	}
+
+	rc := true
+	users := readUsersFiles(curUserFile, vars)
+	if len(users) == 0 {
+		log.Printf("no user to run MC spans api\n")
+		return false
+	}
+	fname := getTokenFile(users[0].Name, outputDir)
+	out, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("Read token file %s failed, %v\n", fname, err)
+		return false
+	}
+	token := string(out)
+
+	fname = getTokenFile(spansEndTimeFile, outputDir)
+	out, err = ioutil.ReadFile(fname)
+	if err != nil {
+		log.Printf("Read file %s failed, %v\n", fname, err)
+		return false
+	}
+	endtime, err := time.Parse(time.RFC3339Nano, string(out))
+	if err != nil {
+		log.Printf("parse spans end time %s failed, %v\n", string(out), err)
+		return false
+	}
+
+	query := []node.SpanSearch{}
+	err = util.ReadYamlFile(apiFile, &query, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		if !util.IsYamlOk(err, "spans") {
+			fmt.Fprintf(os.Stderr, "error in unmarshal for file %s\n", apiFile)
+			os.Exit(1)
+		}
+	}
+	switch api {
+	case "spansshow":
+		var results []SpanSearch
+		for _, q := range query {
+			if q.TimeRange.EndTime.IsZero() {
+				q.TimeRange.EndTime = endtime
+			}
+			resp, status, err := mcClient.ShowSpans(uri, token, &q)
+			checkMcErr("ShowSpans", status, err, &rc)
+			results = append(results, SpanSearch{
+				Search:  q,
+				Results: resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	case "spansshowverbose":
+		var results []SpanSearchVerbose
+		for _, q := range query {
+			if q.TimeRange.EndTime.IsZero() {
+				q.TimeRange.EndTime = endtime
+			}
+			resp, status, err := mcClient.ShowSpansVerbose(uri, token, &q)
+			checkMcErr("ShowSpansVerbose", status, err, &rc)
+			results = append(results, SpanSearchVerbose{
+				Search:  q,
+				Results: resp,
+			})
+		}
+		util.PrintToYamlFile("show-commands.yml", outputDir, results, true)
+	case "spansterms":
+		// There are no tests for span terms in e2e because the
+		// span results varies from run-to-run. This may be because of
+		// dropped spans or timing causing certain things to happen,
+		// but it makes it impossible to get a consistent result from
+		// the terms query. It would probably take a decent amount of
+		// effort to make sure the results are consistent.
+		var results []SpanTerms
+		for _, q := range query {
+			if q.TimeRange.EndTime.IsZero() {
+				q.TimeRange.EndTime = endtime
+			}
+			resp, status, err := mcClient.SpanTerms(uri, token, &q)
+			checkMcErr("SpanTerms", status, err, &rc)
+			results = append(results, SpanTerms{
 				Search: q,
 				Terms:  resp,
 			})
