@@ -2,7 +2,6 @@ package edgebox
 
 import (
 	"context"
-	"fmt"
 	"net"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -104,7 +103,14 @@ func (e *EdgeboxPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgepr
 }
 
 func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("Update not supported for dind")
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
+
+	err := e.generic.UpdateAppInst(ctx, clusterInst, app, appInst, updateCallback)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error updating appinst", "error", err)
+		return err
+	}
+	return nil
 }
 
 func (e *EdgeboxPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
