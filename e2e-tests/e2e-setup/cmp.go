@@ -339,13 +339,13 @@ func cmpFilterEventData(data []EventSearch) {
 			// because the json generated from cli comes
 			// from a map, and from api comes from a struct,
 			// and end up being formatted differently.
-			delete(event.Mtags, "duration")
-			delete(event.Mtags, "traceid")
-			delete(event.Mtags, "spanid")
-			delete(event.Mtags, "hostname")
-			delete(event.Mtags, "lineno")
-			delete(event.Mtags, "request")
-			delete(event.Mtags, "response")
+			ignoreMapStringVal(event.Mtags, "duration")
+			ignoreMapStringVal(event.Mtags, "traceid")
+			ignoreMapStringVal(event.Mtags, "spanid")
+			ignoreMapStringVal(event.Mtags, "hostname")
+			ignoreMapStringVal(event.Mtags, "lineno")
+			ignoreMapStringVal(event.Mtags, "request")
+			ignoreMapStringVal(event.Mtags, "response")
 		}
 	}
 }
@@ -354,18 +354,35 @@ func cmpFilterSpans(data []SpanSearch) {
 	for ii := 0; ii < len(data); ii++ {
 		for jj := 0; jj < len(data[ii].Results); jj++ {
 			out := data[ii].Results[jj]
+			ignoreMapVal(out.Tags, "client")
+			ignoreMapVal(out.Tags, "lineno")
+			ignoreMapVal(out.Tags, "peer")
 			for _, log := range out.Logs {
 				// remove values that change each run
-				delete(log.KeyValues, "modRev")
-				delete(log.KeyValues, "peer")
-				delete(log.KeyValues, "peerAddr")
-				delete(log.KeyValues, "cookie")
-				delete(log.KeyValues, "expires")
-				delete(log.KeyValues, "resp")
-				delete(log.KeyValues, "rev")
-				delete(log.KeyValues, "autoProvStats")
+				ignoreMapVal(log.KeyValues, "modRev")
+				ignoreMapVal(log.KeyValues, "peer")
+				ignoreMapVal(log.KeyValues, "peerAddr")
+				ignoreMapVal(log.KeyValues, "cookie")
+				ignoreMapVal(log.KeyValues, "expires")
+				ignoreMapVal(log.KeyValues, "resp")
+				ignoreMapVal(log.KeyValues, "rev")
+				ignoreMapVal(log.KeyValues, "autoProvStats")
 			}
 		}
+	}
+}
+
+// This nils out map value so we can check that keys match
+// between expected and actual, but ignore the actual values
+// since the values may change or be inconsistent.
+func ignoreMapVal(m map[string]interface{}, key string) {
+	if _, found := m[key]; found {
+		m[key] = nil
+	}
+}
+func ignoreMapStringVal(m map[string]string, key string) {
+	if _, found := m[key]; found {
+		m[key] = ""
 	}
 }
 
