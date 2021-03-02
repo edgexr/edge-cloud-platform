@@ -17,6 +17,14 @@
     starttime: 2021-02-24T18:08:58.720029-08:00
     duration: 173µs
     hostname: Jon-Mex.lan
+    tags:
+      action: DELETE
+      cliserv: client
+      cloudlet: dmuus-cloud-1
+      cloudletorg: dmuus
+      lineno: notify/notify_sendrecv.go:330
+      objtype: CloudletInfo
+      peer: 127.0.0.1:37002
     logs:
     - msg: client recv CloudletInfo
       timestamp: 2021-02-24T18:08:58.720111-08:00
@@ -54,6 +62,8 @@
     starttime: 2021-02-24T18:07:33.61253-08:00
     duration: 617µs
     hostname: Jon-Mex.lan
+    tags:
+      lineno: log/spangrpc.go:37
     logs:
     - msg: verified cookie
       timestamp: 2021-02-24T18:07:33.612671-08:00
@@ -164,6 +174,9 @@
     starttime: 2021-02-24T18:06:39.479755-08:00
     duration: 16.06ms
     hostname: Jon-Mex.lan
+    tags:
+      client: 127.0.0.1:60620
+      lineno: log/spangrpc.go:37
     logs:
     - msg: stream requiring access key
       timestamp: 2021-02-24T18:06:39.479832-08:00

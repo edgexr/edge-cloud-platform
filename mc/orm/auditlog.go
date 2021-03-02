@@ -239,7 +239,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 				}
 			}
 			for k, v := range log.GetTags(span) {
-				if k == "level" || k == "error" || k == "sampler.type" {
+				if k == "level" || k == "error" || log.IgnoreSpanTag(k) {
 					continue
 				}
 				// handle only string values
