@@ -188,7 +188,7 @@ func (a *AwsEc2Platform) WhitelistSecurityRules(ctx context.Context, client ssh.
 	return a.addOrDeleteSecurityRule(ctx, secGrpName, allowedCIDR, ports, SecurityGroupRuleCreate)
 }
 
-func (a *AwsEc2Platform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label, allowedCIDR string, ports []dme.AppPort) error {
+func (a *AwsEc2Platform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
 	return a.addOrDeleteSecurityRule(ctx, secGrpName, allowedCIDR, ports, SecurityGroupRuleRevoke)
 }

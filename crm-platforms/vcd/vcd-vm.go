@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -666,7 +665,7 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 
 		}
 		if v.Verbose {
-			msg := fmt.Sprintf("Added %d VMs to vApp time %s", len(newVms), infracommon.FormatDuration(time.Since(updateTime), 2))
+			msg := fmt.Sprintf("Added %d VMs to vApp time %s", len(newVms), cloudcommon.FormatDuration(time.Since(updateTime), 2))
 			updateCallback(edgeproto.UpdateTask, msg)
 		}
 	} else if numExistingVMs > numNewVMs {
@@ -690,7 +689,7 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 			}
 		}
 		if v.Verbose {
-			msg := fmt.Sprintf("Removed  %d  VMs time %s", rmcnt, infracommon.FormatDuration(time.Since(updateTime), 2))
+			msg := fmt.Sprintf("Removed  %d  VMs time %s", rmcnt, cloudcommon.FormatDuration(time.Since(updateTime), 2))
 			updateCallback(edgeproto.UpdateTask, msg)
 		}
 

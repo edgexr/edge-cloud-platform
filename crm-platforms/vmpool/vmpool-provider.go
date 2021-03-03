@@ -151,14 +151,14 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 	}
 
 	vmRoles := make(map[string]vmlayer.VMRole)
-	vmChefParams := make(map[string]*chefmgmt.VMChefParams)
+	ServerChefParams := make(map[string]*chefmgmt.ServerChefParams)
 	vmAccessKeys := make(map[string]string)
 	for _, vm := range orchVMs {
 		vmRoles[vm.Name] = vm.Role
-		vmChefParams[vm.Name] = vm.CloudConfigParams.ChefParams
+		ServerChefParams[vm.Name] = vm.CloudConfigParams.ChefParams
 		vmAccessKeys[vm.Name] = vm.CloudConfigParams.AccessKey
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "chefParams", vmChefParams)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Fetch VM info", "vmRoles", vmRoles, "chefParams", ServerChefParams)
 
 	// Setup Cluster Nodes
 	masterAddr := ""
@@ -210,7 +210,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		}
 
 		// Setup Chef
-		chefParams, ok := vmChefParams[vm.InternalName]
+		chefParams, ok := ServerChefParams[vm.InternalName]
 		if ok && chefParams != nil {
 			// Setup chef client key
 			log.SpanLog(ctx, log.DebugLevelInfra, "Setting up chef-client", "vm", vm.Name)

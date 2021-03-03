@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -150,7 +150,7 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 		return err
 	}
 	if v.Verbose {
-		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setup Root LB time %s", infracommon.FormatDuration(time.Since(iptblStart), 2)))
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setup Root LB time %s", cloudcommon.FormatDuration(time.Since(iptblStart), 2)))
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB complete", "rootLBName", rootLBName, "time", time.Since(iptblStart).String())
 	return nil
@@ -169,7 +169,7 @@ func (v *VcdPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Cli
 }
 
 // same as vsphere
-func (v *VcdPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error {
+func (v *VcdPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label string, allowedCIDR string, ports []dme.AppPort) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
 	return vmlayer.RemoveIngressIptablesRules(ctx, client, label, allowedCIDR, ports)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -30,37 +29,7 @@ func (v *VSpherePlatform) GetExternalIpRanges() ([]string, error) {
 	} else {
 		log.DebugLog(log.DebugLevelInfra, "Using MEX_MANAGEMENT_EXTERNAL_IP_RANGES", "extIPs", extIPs)
 	}
-	var rc []string
-	if extIPs == "" {
-		return rc, fmt.Errorf("No external IPs assigned")
-	}
-	ipRanges := strings.Split(extIPs, ",")
-	for _, ipRange := range ipRanges {
-		ranges := strings.Split(ipRange, "-")
-		if len(ranges) != 2 {
-			return rc, fmt.Errorf("IP range must be in format startcidr-endcidr: %s", ipRange)
-		}
-		startCidr := ranges[0]
-		endCidr := ranges[1]
-
-		ipStart, ipnetStart, err := net.ParseCIDR(startCidr)
-		if err != nil {
-			return rc, fmt.Errorf("cannot parse start cidr: %v", err)
-		}
-		ipEnd, ipnetEnd, err := net.ParseCIDR(endCidr)
-		if err != nil {
-			return rc, fmt.Errorf("cannot parse end cidr: %v", err)
-		}
-		if ipnetStart.String() != ipnetEnd.String() {
-			return rc, fmt.Errorf("start and end network address must match: %s neq %s", ipnetStart, ipnetEnd)
-		}
-		for ip := ipStart.Mask(ipnetStart.Mask); ipnetStart.Contains(ip); infracommon.IncrIP(ip) {
-			if string(ipStart.To16()) <= string(ip.To16()) && string(ipEnd.To16()) >= string(ip.To16()) {
-				rc = append(rc, ip.String())
-			}
-		}
-	}
-	return rc, nil
+	return infracommon.ParseIpRanges(extIPs)
 }
 
 func (v *VSpherePlatform) GetFreeExternalIP(ctx context.Context) (string, error) {

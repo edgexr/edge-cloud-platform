@@ -84,11 +84,11 @@ func (v *VMPlatform) StartDhcpServerForVmApp(ctx context.Context, client ssh.Cli
 	if out, err := client.Output(cmd); err != nil {
 		return fmt.Errorf("failed to install isc-dhcp-server: %s, %v", out, err)
 	}
-	dhcpdBuf, err := ExecTemplate("DhcpdConfig", dhcpdConfig, dhcpConfigParams)
+	dhcpdBuf, err := infracommon.ExecTemplate("DhcpdConfig", dhcpdConfig, dhcpConfigParams)
 	if err != nil {
 		return err
 	}
-	iscDhcpBuf, err := ExecTemplate("IscDhcp", iscDhcpConfig, dhcpConfigParams)
+	iscDhcpBuf, err := infracommon.ExecTemplate("IscDhcp", iscDhcpConfig, dhcpConfigParams)
 	if err != nil {
 		return err
 	}

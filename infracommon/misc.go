@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -168,4 +169,49 @@ func FormatDuration(dur time.Duration, digIdx int) string {
 		dur = dur.Round(time.Microsecond / divisors[digIdx])
 	}
 	return dur.String()
+}
+
+// ParseIpRanges takes a list of comma-separated IP ranges such as
+// 139.178.83.27/29-139.178.83.30/29,139.178.87.10/29-139.178.87.14/29 and returns a slice of all the IP addresses
+func ParseIpRanges(ipranges string) ([]string, error) {
+	var rc []string
+	if ipranges == "" {
+		return rc, fmt.Errorf("ip range is empty")
+	}
+	ipRanges := strings.Split(ipranges, ",")
+	for _, ipRange := range ipRanges {
+		ranges := strings.Split(ipRange, "-")
+		if len(ranges) != 2 {
+			return rc, fmt.Errorf("IP range must be in format startcidr-endcidr: %s", ipRange)
+		}
+		startCidr := ranges[0]
+		endCidr := ranges[1]
+
+		ipStart, ipnetStart, err := net.ParseCIDR(startCidr)
+		if err != nil {
+			return rc, fmt.Errorf("cannot parse start cidr: %v", err)
+		}
+		ipEnd, ipnetEnd, err := net.ParseCIDR(endCidr)
+		if err != nil {
+			return rc, fmt.Errorf("cannot parse end cidr: %v", err)
+		}
+		if ipnetStart.String() != ipnetEnd.String() {
+			return rc, fmt.Errorf("start and end network address must match: %s neq %s", ipnetStart, ipnetEnd)
+		}
+		for ip := ipStart.Mask(ipnetStart.Mask); ipnetStart.Contains(ip); IncrIP(ip) {
+			if string(ipStart.To16()) <= string(ip.To16()) && string(ipEnd.To16()) >= string(ip.To16()) {
+				rc = append(rc, ip.String())
+			}
+		}
+	}
+	return rc, nil
+}
+
+func GetDockerCrtFile(crtFilePath string) (string, error) {
+	_, crtFile := filepath.Split(crtFilePath)
+	ext := filepath.Ext(crtFile)
+	if ext == "" {
+		return "", fmt.Errorf("invalid tls cert file name: %s", crtFile)
+	}
+	return "/root/tls/" + crtFile, nil
 }

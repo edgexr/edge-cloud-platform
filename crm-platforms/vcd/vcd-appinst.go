@@ -172,7 +172,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		ImageBaseFileName: imageFileBaseName,
 		DiskSizeInBytes:   fmt.Sprintf("%d", appFlavor.Disk*1024*1024*1024),
 	}
-	ovfBuf, err := vmlayer.ExecTemplate("vmwareOvf", vmAppOvfTemplate, ovfParams)
+	ovfBuf, err := infracommon.ExecTemplate("vmwareOvf", vmAppOvfTemplate, ovfParams)
 	if err != nil {
 		return err
 	}

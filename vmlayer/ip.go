@@ -134,10 +134,6 @@ func ParseNetSpec(ctx context.Context, netSpec string) (*NetSpecInfo, error) {
 	return ni, nil
 }
 
-func GetAllowedClientCIDR() string {
-	return RemoteCidrAll
-}
-
 // serverIsNetplanEnabled checks for the existence of netplan, in which case there are no ifcfg files.  The current
 // baseimage uses netplan, but CRM can still run on older rootLBs.
 func ServerIsNetplanEnabled(ctx context.Context, client ssh.Client) bool {

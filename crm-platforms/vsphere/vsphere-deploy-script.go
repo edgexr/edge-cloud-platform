@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -155,7 +156,7 @@ func (v *VSpherePlatform) GetRemoteDeployScript(ctx context.Context, vmgp *vmlay
 		Gateway:        gw,
 	}
 
-	buf, err := vmlayer.ExecTemplate(vmgp.GroupName, deployScriptTemplate, scriptParams)
+	buf, err := infracommon.ExecTemplate(vmgp.GroupName, deployScriptTemplate, scriptParams)
 	if err != nil {
 		return "", err
 	}

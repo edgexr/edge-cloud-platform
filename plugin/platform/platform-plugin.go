@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/anthos"
 	awsec2 "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-ec2"
 	awseks "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-eks"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/azure"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
+	k8sbm "github.com/mobiledgex/edge-cloud-infra/crm-platforms/k8s-baremetal"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vcd"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
@@ -76,8 +76,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &edgebox.EdgeboxPlatform{}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		outPlatform = &fakeinfra.Platform{}
-	case "PLATFORM_TYPE_ANTHOS":
-		outPlatform = &anthos.AnthosPlatform{}
+	case "PLATFORM_TYPE_K8S_BARE_METAL":
+		outPlatform = &k8sbm.K8sBareMetalPlatform{}
 	default:
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}

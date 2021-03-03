@@ -14,7 +14,6 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/proxy"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -312,7 +311,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	chefAttributes := make(map[string]interface{})
 	chefAttributes["tags"] = tags
 	clientName := v.GetChefClientName(rootLbName)
-	chefParams := v.GetVMChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
+	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
 	return v.GetVMRequestSpec(ctx,
 		VMTypeRootLB,
@@ -364,7 +363,7 @@ func (v *VMPlatform) CreateRootLB(
 	}
 	var vms []*VMRequestSpec
 	vms = append(vms, vmreq)
-	_, err = v.OrchestrateVMsFromVMSpec(ctx, rootLBName, vms, action, updateCallback, WithNewSecurityGroup(GetServerSecurityGroupName(rootLBName)))
+	_, err = v.OrchestrateVMsFromVMSpec(ctx, rootLBName, vms, action, updateCallback, WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(rootLBName)))
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating RootLB VM", "name", rootLBName, "error", err)
 		return err
@@ -398,7 +397,7 @@ func (v *VMPlatform) SetupRootLB(
 	// setup SSH access to cloudlet for CRM.  Since we are getting the external IP here, this will only work
 	// when CRM accessed via public internet.
 	log.SpanLog(ctx, log.DebugLevelInfra, "setup rootLBName group for SSH access")
-	groupName := GetServerSecurityGroupName(rootLBName)
+	groupName := infracommon.GetServerSecurityGroupName(rootLBName)
 	client, err := v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithUser(infracommon.SSHUser), pc.WithCachedIp(true))
 	if err != nil {
 		return err
@@ -456,7 +455,7 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("failed to AddRouteToServer %v", err)
 	}
-	err = v.VMProvider.WhitelistSecurityRules(ctx, client, GetServerSecurityGroupName(rootLBName), rootLBName, "rootlb-ports", GetAllowedClientCIDR(), RootLBPorts)
+	err = v.VMProvider.WhitelistSecurityRules(ctx, client, infracommon.GetServerSecurityGroupName(rootLBName), rootLBName, "rootlb-ports", infracommon.GetAllowedClientCIDR(), RootLBPorts)
 	if err != nil {
 		return fmt.Errorf("failed to WhitelistSecurityRules %v", err)
 	}
@@ -467,7 +466,7 @@ func (v *VMPlatform) SetupRootLB(
 	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLBName)
 
 	// perform provider specific prep of the rootLB
-	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, GetServerSecurityGroupName(rootLBName), TrustPolicy, updateCallback)
+	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, infracommon.GetServerSecurityGroupName(rootLBName), TrustPolicy, updateCallback)
 }
 
 // This function copies resource-tracker from crm to rootLb - we need this to provide docker metrics
@@ -490,17 +489,6 @@ func CopyResourceTracker(client ssh.Client) error {
 	cmd = fmt.Sprintf("sudo chmod a+rx /usr/local/bin/resource-tracker")
 	_, err = client.Output(cmd)
 	return err
-}
-
-func (v *VMPlatform) DeleteProxySecurityGroupRules(ctx context.Context, client ssh.Client, proxyName string, secGrpName string, label string, ports []dme.AppPort, app *edgeproto.App, serverName string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteProxySecurityGroupRules", "proxyName", proxyName, "ports", ports)
-
-	err := proxy.DeleteNginxProxy(ctx, client, proxyName)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete proxy", "proxyName", proxyName, "error", err)
-	}
-	allowedClientCIDR := GetAllowedClientCIDR()
-	return v.VMProvider.RemoveWhitelistSecurityRules(ctx, client, secGrpName, label, allowedClientCIDR, ports)
 }
 
 func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {

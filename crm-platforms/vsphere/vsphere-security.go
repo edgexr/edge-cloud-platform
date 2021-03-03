@@ -21,7 +21,7 @@ func (v *VSpherePlatform) WhitelistSecurityRules(ctx context.Context, client ssh
 	return vmlayer.AddIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }
 
-func (v *VSpherePlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error {
+func (v *VSpherePlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label string, allowedCIDR string, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
 	return vmlayer.RemoveIngressIptablesRules(ctx, client, label, allowedCIDR, ports)
 }

@@ -41,8 +41,8 @@ type VMProvider interface {
 	AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action ActionType) error
 	DetachPortFromServer(ctx context.Context, serverName, subnetName, portName string) error
 	PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, TrustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error
-	WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName string, serverName, label, allowedCIDR string, ports []dme.AppPort) error
-	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label string, allowedCIDR string, ports []dme.AppPort) error
+	WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, serverName, label, allowedCIDR string, ports []dme.AppPort) error
+	RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, serverName, label string, allowedCIDR string, ports []dme.AppPort) error
 	GetResourceID(ctx context.Context, resourceType ResourceType, resourceName string) (string, error)
 	GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string, stage ProviderInitStage) error
@@ -298,7 +298,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	}
 	v.VMProvider.SetVMProperties(&v.VMProperties)
 	v.VMProperties.SharedRootLBName = v.GetRootLBName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
-	v.VMProperties.PlatformSecgrpName = GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))
+	v.VMProperties.PlatformSecgrpName = infracommon.GetServerSecurityGroupName(v.GetPlatformVMName(v.VMProperties.CommonPf.PlatformConfig.CloudletKey))
 	v.VMProperties.CloudletSecgrpName = v.getCloudletSecurityGroupName()
 	return nil
 }

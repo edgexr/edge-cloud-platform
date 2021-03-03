@@ -3,7 +3,6 @@ package infracommon
 import (
 	"context"
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -175,33 +174,4 @@ func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smg
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "patched externalIPs on service", "service", servicename, "externalIPs", ipaddr)
 	return nil
-}
-
-func LookupDNS(name string) (string, error) {
-	ips, err := net.LookupIP(name)
-	if err != nil {
-		return "", fmt.Errorf("DNS lookup error, %s, %v", name, err)
-	}
-	if len(ips) == 0 {
-		return "", fmt.Errorf("no DNS records, %s", name)
-	}
-	for _, ip := range ips {
-		return ip.String(), nil //XXX return only first one
-	}
-	return "", fmt.Errorf("no IP in DNS record for %s", name)
-}
-
-func WaitforDNSRegistration(ctx context.Context, name string) error {
-	var ipa string
-	var err error
-
-	for i := 0; i < 100; i++ {
-		ipa, err = LookupDNS(name)
-		if err == nil && ipa != "" {
-			return nil
-		}
-		time.Sleep(dnsRegisterRetryDelay)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "DNS lookup timed out", "name", name)
-	return fmt.Errorf("error, timed out while looking up DNS for name %s", name)
 }
