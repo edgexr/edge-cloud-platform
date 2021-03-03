@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -161,10 +162,10 @@ func (s *OpenstackPlatform) DeleteSecurityGroupRule(ctx context.Context, ruleID 
 	return nil
 }
 
-func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label, allowedCIDR string, ports []dme.AppPort) error {
+func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "ports", ports)
 
-	allowedClientCIDR := vmlayer.GetAllowedClientCIDR()
+	allowedClientCIDR := infracommon.GetAllowedClientCIDR()
 	rules, err := o.ListSecurityGroupRules(ctx, secGrpName)
 	if err != nil {
 		return err
@@ -299,7 +300,7 @@ func (o *OpenstackPlatform) CreateOrUpdateCloudletSecgrpStack(ctx context.Contex
 	} else {
 		grpExists = true
 	}
-	vmgp, err := vmlayer.GetVMGroupOrchestrationParamsFromTrustPolicy(ctx, o.VMProperties.CloudletSecgrpName, TrustPolicy, egressRestricted, vmlayer.SecGrpWithAccessPorts("tcp:22", vmlayer.RemoteCidrAll))
+	vmgp, err := vmlayer.GetVMGroupOrchestrationParamsFromTrustPolicy(ctx, o.VMProperties.CloudletSecgrpName, TrustPolicy, egressRestricted, vmlayer.SecGrpWithAccessPorts("tcp:22", infracommon.RemoteCidrAll))
 	if err != nil {
 		return err
 	}

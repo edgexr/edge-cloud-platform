@@ -275,7 +275,7 @@ func (o *OpenstackPlatform) createOrUpdateHeatStackFromTemplate(ctx context.Cont
 	} else {
 		updateCallback(edgeproto.UpdateTask, "Updating Heat Stack for "+stackName)
 	}
-	buf, err := vmlayer.ExecTemplate(stackName, templateString, templateData)
+	buf, err := infracommon.ExecTemplate(stackName, templateString, templateData)
 	if err != nil {
 		return err
 	}

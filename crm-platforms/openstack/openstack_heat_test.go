@@ -226,7 +226,7 @@ func TestHeatTemplate(t *testing.T) {
 	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
 	// Add chef params
 	for _, vm := range vms {
-		vm.ChefParams = &chefmgmt.VMChefParams{
+		vm.ChefParams = &chefmgmt.ServerChefParams{
 			NodeName:   vm.Name,
 			ServerPath: "cheftestserver.mobiledgex.net/organizations/mobiledgex",
 			ClientKey:  "-----BEGIN RSA PRIVATE KEY-----\nNDFGHJKLJHGHJKJNHJNBHJNBGYUJNBGHJNBGSZiO/8i6ERbmqPopV8GWC5VjxlZm\n-----END RSA PRIVATE KEY-----",
@@ -237,7 +237,7 @@ func TestHeatTemplate(t *testing.T) {
 		"openstack-test",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
-		vmlayer.WithAccessPorts("tcp:7777,udp:8888", vmlayer.RemoteCidrAll),
+		vmlayer.WithAccessPorts("tcp:7777,udp:8888", infracommon.RemoteCidrAll),
 		vmlayer.WithNewSubnet(subnetName),
 	)
 
@@ -251,7 +251,7 @@ func TestHeatTemplate(t *testing.T) {
 		"openstack-fip-test",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
-		vmlayer.WithAccessPorts("tcp:7777,udp:8888", vmlayer.RemoteCidrAll),
+		vmlayer.WithAccessPorts("tcp:7777,udp:8888", infracommon.RemoteCidrAll),
 		vmlayer.WithNewSubnet(subnetName),
 		vmlayer.WithSkipInfraSpecificCheck(true),
 	)

@@ -72,6 +72,7 @@ func (cp *CommonPlatform) RefreshCloudletSSHKeys(accessApi platform.AccessApi) {
 
 func (cp *CommonPlatform) InitCloudletSSHKeys(ctx context.Context, accessApi platform.AccessApi) error {
 	// Generate Cloudlet SSH Keys
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitCloudletSSHKeys")
 	cloudletPubKey, cloudletPrivKey, err := ssh.GenKeyPair()
 	if err != nil {
 		return fmt.Errorf("failed to generate cloudlet SSH key pair: %v", err)

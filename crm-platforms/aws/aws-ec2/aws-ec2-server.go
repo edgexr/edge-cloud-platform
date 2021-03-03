@@ -150,7 +150,7 @@ func (a *AwsEc2Platform) AttachPortToServer(ctx context.Context, serverName, sub
 		return err
 	}
 
-	secGrpName := vmlayer.GetServerSecurityGroupName(serverName)
+	secGrpName := infracommon.GetServerSecurityGroupName(serverName)
 	sgrp, err := a.GetSecurityGroup(ctx, secGrpName, vpc.VpcId)
 	if err != nil {
 		return err

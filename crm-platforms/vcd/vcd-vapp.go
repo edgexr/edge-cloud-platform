@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
@@ -125,7 +125,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 	if v.Verbose {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Update vApp Ports time %s",
-			infracommon.FormatDuration(time.Since(updatePortsStart), 2)))
+			cloudcommon.FormatDuration(time.Since(updatePortsStart), 2)))
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Adding VMs to vApp")
@@ -141,7 +141,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	// poweron and customize
 	if v.Verbose {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Add VMs to VApp time %s",
-			infracommon.FormatDuration(time.Since(addVMStart), 2)))
+			cloudcommon.FormatDuration(time.Since(addVMStart), 2)))
 	}
 	updateCallback(edgeproto.UpdateTask, "Powering on VMs")
 	powerOnStart := time.Now()
@@ -152,7 +152,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 
 	if v.Verbose {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("VM PowerOn time %s",
-			infracommon.FormatDuration(time.Since(powerOnStart), 2)))
+			cloudcommon.FormatDuration(time.Since(powerOnStart), 2)))
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed Powering On", "Vapp", vappName)
 	vappPowerOnStart := time.Now()
@@ -169,7 +169,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 		return nil, err
 	}
 	if v.Verbose {
-		msg := fmt.Sprintf("%s %s", "vapp power on  time ", infracommon.FormatDuration(time.Since(vappPowerOnStart), 2))
+		msg := fmt.Sprintf("%s %s", "vapp power on  time ", cloudcommon.FormatDuration(time.Since(vappPowerOnStart), 2))
 		updateCallback(edgeproto.UpdateTask, msg)
 	}
 
@@ -178,7 +178,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 	if v.Verbose {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s %s", "CreateVMs  time ",
-			infracommon.FormatDuration(time.Since(createStart), 2)))
+			cloudcommon.FormatDuration(time.Since(createStart), 2)))
 	}
 	return vapp, nil
 }

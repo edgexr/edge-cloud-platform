@@ -1,4 +1,4 @@
-package vmlayer
+package infracommon
 
 import (
 	"bytes"

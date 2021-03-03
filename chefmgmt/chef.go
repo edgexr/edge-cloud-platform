@@ -4,6 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
+
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/util"
 
 	"github.com/go-chef/chef"
 	"github.com/mitchellh/mapstructure"
@@ -19,13 +26,28 @@ const (
 	DefaultChefServerPath = "https://chef.mobiledgex.net/organizations/mobiledgex"
 )
 
+const (
+	// Platform services
+	ServiceTypeCRM                = "crmserver"
+	ServiceTypeShepherd           = "shepherd"
+	ServiceTypeCloudletPrometheus = intprocess.PrometheusContainer
+	K8sMasterNodeCount            = 1
+	K8sWorkerNodeCount            = 2
+)
+
+var PlatformServices = []string{
+	ServiceTypeCRM,
+	ServiceTypeShepherd,
+	ServiceTypeCloudletPrometheus,
+}
+
 var ValidDockerArgs = map[string]string{
 	"label":   "list",
 	"publish": "string",
 	"volume":  "list",
 }
 
-type VMChefParams struct {
+type ServerChefParams struct {
 	NodeName    string
 	ServerPath  string
 	ClientKey   string
@@ -60,6 +82,11 @@ type ChefRunStatus struct {
 type ChefStatusInfo struct {
 	Message string
 	Failed  bool
+}
+
+type ChefApiAccess struct {
+	ApiEndpoint string
+	ApiGateway  string
 }
 
 const (
@@ -196,7 +223,7 @@ func ChefClientRunStatus(ctx context.Context, client *chef.Client, clientName st
 	return statusInfo, nil
 }
 
-func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *VMChefParams) (string, error) {
+func ChefClientCreate(ctx context.Context, client *chef.Client, chefParams *ServerChefParams) (string, error) {
 	if chefParams == nil {
 		return "", fmt.Errorf("unable to get chef params")
 	}
@@ -347,4 +374,158 @@ func ChefPolicyGroupList(ctx context.Context, client *chef.Client) ([]string, er
 		policyGroups = append(policyGroups, groupName)
 	}
 	return policyGroups, nil
+}
+
+func GetChefRunStatus(ctx context.Context, chefClient *chef.Client, clientName string, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+	// Fetch chef run list status
+	var err error
+	updateCallback(edgeproto.UpdateTask, "Waiting for run lists to be executed on Platform Server")
+	timeout := time.After(20 * time.Minute)
+	tick := time.Tick(5 * time.Second)
+	runListTime := time.Now()
+
+	for {
+		var statusInfo []ChefStatusInfo
+		select {
+		case <-timeout:
+			log.SpanLog(ctx, log.DebugLevelInfra, "getChefRunStatus timeout", "cloudletName", cloudlet.Key.Name)
+			return fmt.Errorf("timed out waiting for platform Server to connect to Chef Server")
+		case <-tick:
+			statusInfo, err = ChefClientRunStatus(ctx, chefClient, clientName)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "getChefRunStatus ChefClientRunStatus error", "cloudletName", cloudlet.Key.Name, "error", err)
+				return err
+			}
+		}
+		if len(statusInfo) > 0 {
+			updateCallback(edgeproto.UpdateTask, "Performed following actions:")
+			for _, info := range statusInfo {
+				if info.Failed {
+					return fmt.Errorf(info.Message)
+				}
+				updateCallback(edgeproto.UpdateStep, info.Message)
+			}
+			break
+		}
+	}
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Wait run list complete time: %s", cloudcommon.FormatDuration(time.Since(runListTime), 2)))
+	return nil
+}
+
+func GetChefCloudletTags(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string) []string {
+	return []string{
+		"deploytag/" + pfConfig.DeploymentTag,
+		"region/" + pfConfig.Region,
+		"cloudlet/" + cloudlet.Key.Name,
+		"cloudletorg/" + cloudlet.Key.Organization,
+		"vmtype/" + serverType,
+	}
+}
+
+func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string) (map[string]interface{}, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefCloudletAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key)
+
+	chefAttributes := make(map[string]interface{})
+
+	if cloudlet.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		chefAttributes["k8sNodeCount"] = K8sMasterNodeCount + K8sWorkerNodeCount
+	}
+	chefAttributes["edgeCloudImage"] = pfConfig.ContainerRegistryPath
+	chefAttributes["edgeCloudVersion"] = cloudlet.ContainerVersion
+	if cloudlet.OverridePolicyContainerVersion {
+		chefAttributes["edgeCloudVersionOverride"] = cloudlet.ContainerVersion
+	}
+	chefAttributes["notifyAddrs"] = pfConfig.NotifyCtrlAddrs
+
+	chefAttributes["tags"] = GetChefCloudletTags(cloudlet, pfConfig, serverType)
+
+	// Use default address if port is 0, as we'll have single
+	// CRM instance here, hence there will be no port conflict
+	if cloudlet.NotifySrvAddr == "127.0.0.1:0" {
+		cloudlet.NotifySrvAddr = ""
+	}
+
+	for _, serviceType := range PlatformServices {
+		serviceObj := make(map[string]interface{})
+		var serviceCmdArgs []string
+		var dockerArgs []string
+		var envVars *map[string]string
+		var err error
+		switch serviceType {
+		case ServiceTypeShepherd:
+			serviceCmdArgs, envVars, err = intprocess.GetShepherdCmdArgs(cloudlet, pfConfig)
+			if err != nil {
+				return nil, err
+			}
+		case ServiceTypeCRM:
+			// Set container version to be empty, as it will be
+			// present in edge-cloud image itself
+			containerVersion := cloudlet.ContainerVersion
+			cloudlet.ContainerVersion = ""
+			serviceCmdArgs, envVars, err = cloudcommon.GetCRMCmdArgs(cloudlet, pfConfig)
+			if err != nil {
+				return nil, err
+			}
+			cloudlet.ContainerVersion = containerVersion
+		case ServiceTypeCloudletPrometheus:
+			// set image path for Promtheus
+			serviceCmdArgs = intprocess.GetCloudletPrometheusCmdArgs()
+			// docker args for prometheus
+			dockerArgs = intprocess.GetCloudletPrometheusDockerArgs(cloudlet, intprocess.GetCloudletPrometheusConfigHostFilePath())
+			// env vars for promtheeus is empty for now
+			envVars = &map[string]string{}
+
+			chefAttributes["prometheusImage"] = intprocess.PrometheusImagePath
+			chefAttributes["prometheusVersion"] = intprocess.PrometheusImageVersion
+		default:
+			return nil, fmt.Errorf("invalid service type: %s, valid service types are [%v]", serviceType, PlatformServices)
+		}
+		chefArgs := GetChefArgs(serviceCmdArgs)
+		serviceObj["args"] = chefArgs
+		chefDockerArgs := GetChefDockerArgs(dockerArgs)
+		for k, v := range chefDockerArgs {
+			serviceObj[k] = v
+		}
+		if envVars != nil {
+			envVarArr := []string{}
+			for k, v := range *envVars {
+				envVar := fmt.Sprintf("%s=%s", k, v)
+				envVarArr = append(envVarArr, envVar)
+			}
+			serviceObj["env"] = envVarArr
+		}
+		chefAttributes[serviceType] = serviceObj
+	}
+	return chefAttributes, nil
+}
+
+func GetChefPlatformAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, serverType string, apiAccess *ChefApiAccess) (map[string]interface{}, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetChefPlatformAttributes", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
+
+	chefAttributes, err := GetChefCloudletAttributes(ctx, cloudlet, pfConfig, serverType)
+	if err != nil {
+		return nil, err
+	}
+
+	if apiAccess.ApiEndpoint != "" {
+		urlObj, err := util.ImagePathParse(apiAccess.ApiEndpoint)
+		if err != nil {
+			return nil, err
+		}
+		hostname := strings.Split(urlObj.Host, ":")
+		if len(hostname) != 2 {
+			return nil, fmt.Errorf("invalid api endpoint addr: %s", apiAccess.ApiEndpoint)
+		}
+		// API Endpoint address might have hostname in it, hence resolve the addr
+		endpointIp, err := cloudcommon.LookupDNS(hostname[0])
+		if err != nil {
+			return nil, err
+		}
+		chefAttributes["infraApiAddr"] = endpointIp
+		chefAttributes["infraApiPort"] = hostname[1]
+		if apiAccess.ApiGateway != "" {
+			chefAttributes["infraApiGw"] = apiAccess.ApiGateway
+		}
+	}
+	return chefAttributes, nil
 }

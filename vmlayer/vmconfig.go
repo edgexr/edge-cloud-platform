@@ -2,6 +2,8 @@ package vmlayer
 
 import (
 	"fmt"
+
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 )
 
 var VmCloudConfig = `#cloud-config
@@ -100,7 +102,7 @@ runcmd:
 - ` + command
 	} else {
 		rc = VmCloudConfig
-		buf, err := ExecTemplate(name, VmCloudConfig, cloudConfigParams)
+		buf, err := infracommon.ExecTemplate(name, VmCloudConfig, cloudConfigParams)
 		if err != nil {
 			return "", fmt.Errorf("failed to generate template from cloud config params %v, err %v", cloudConfigParams, err)
 		}

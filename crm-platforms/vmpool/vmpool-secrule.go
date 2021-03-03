@@ -8,7 +8,7 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-func (o *VMPoolPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, label, allowedCIDR string, ports []dme.AppPort) error {
+func (o *VMPoolPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules not supported")
 	return nil
 }

@@ -138,7 +138,7 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	}
 
 	// generate the heat template
-	buf, err := vmlayer.ExecTemplate(name, VmGroupTemplate, vmgp)
+	buf, err := infracommon.ExecTemplate(name, VmGroupTemplate, vmgp)
 	if err != nil {
 		return "", err
 	}
