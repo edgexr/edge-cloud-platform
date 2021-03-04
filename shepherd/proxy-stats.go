@@ -628,7 +628,7 @@ func MarshallTcpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.
 		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
 		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
 		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
-		metric.AddTag("port", strconv.Itoa(int(port)))
+		metric.AddIntVal("port", uint64(port))
 
 		metric.AddIntVal("active", data.EnvoyTcpStats[port].ActiveConn)
 		metric.AddIntVal("accepts", data.EnvoyTcpStats[port].Accepts)
@@ -658,7 +658,7 @@ func MarshallUdpProxyMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.
 		metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
 		metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
 		metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
-		metric.AddTag("port", strconv.Itoa(int(port)))
+		metric.AddIntVal("port", uint64(port))
 
 		metric.AddIntVal("bytesSent", data.EnvoyUdpStats[port].SentBytes)
 		metric.AddIntVal("bytesRecvd", data.EnvoyUdpStats[port].RecvBytes)
@@ -686,7 +686,6 @@ func MarshallNginxMetric(scrapePoint ProxyScrapePoint, data *shepherd_common.Pro
 	metric.AddTag("apporg", scrapePoint.Key.AppKey.Organization)
 	metric.AddTag("app", util.DNSSanitize(scrapePoint.Key.AppKey.Name))
 	metric.AddTag("ver", util.DNSSanitize(scrapePoint.Key.AppKey.Version))
-	metric.AddTag("port", "") //nginx doesnt support stats per port
 
 	metric.AddIntVal("active", data.ActiveConn)
 	metric.AddIntVal("accepts", data.Accepts)

@@ -151,7 +151,7 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 		metric.AddTag("clusterorg", clusterInstKey.Organization)
 	}
 	if key != nil {
-		metric.AddTag("pod", key.Pod)
+		metric.AddStringVal("pod", key.Pod)
 		metric.AddTag("app", key.App)
 		metric.AddTag("ver", key.Version)
 		//TODO: this should be changed when we have the actual app key
