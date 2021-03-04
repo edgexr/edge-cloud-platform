@@ -163,7 +163,7 @@ func (v *VMPlatform) GetChefPlatformApiAccess(ctx context.Context, cloudlet *edg
 		return nil, err
 	}
 	chefApi.ApiEndpoint = apiAddr
-	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
+	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS && apiAddr != "" {
 		gatewayAddr, err := v.VMProvider.GetExternalGateway(ctx, v.VMProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch gateway IP for external network: %s, %v",
