@@ -82,10 +82,12 @@ func (s *AutoProvAggr) Start() {
 
 func (s *AutoProvAggr) Stop() {
 	s.mux.Lock()
-	defer s.mux.Unlock()
 	close(s.stop)
+	s.mux.Unlock()
 	s.waitGroup.Wait()
+	s.mux.Lock()
 	s.stop = nil
+	s.mux.Unlock()
 }
 
 func (s *AutoProvAggr) UpdateSettings(ctx context.Context, intervalSec, offsetSec float64) {
