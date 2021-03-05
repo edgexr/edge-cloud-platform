@@ -280,6 +280,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				return err
 			}
+			proxycerts.NewDedicatedLB(ctx, &appInst.Key.ClusterInstKey.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 			// clusterInst is empty but that is ok here
 			names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 			if err != nil {
@@ -329,8 +330,6 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "External router in use, no internal interface for rootlb")
 			}
-			proxycerts.NewDedicatedLB(ctx, &appInst.Key.ClusterInstKey.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-			// DNS entry is already added while setting up RootLB
 			return nil
 		}
 		updateCallback(edgeproto.UpdateTask, "Adding DNS Entry")
