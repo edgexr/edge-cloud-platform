@@ -437,6 +437,9 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 			if !s.cloudletOnline(&apCloudlet.Key) {
 				continue
 			}
+			if retryTracker.hasFailure(ctx, app.Key, apCloudlet.Key) {
+				continue
+			}
 			pt := &potentialCreateSite{
 				cloudletKey: apCloudlet.Key,
 			}

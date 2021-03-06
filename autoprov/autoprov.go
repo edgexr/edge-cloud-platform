@@ -33,6 +33,7 @@ var notifyClient *notify.Client
 var vaultConfig *vault.Config
 var autoProvAggr *AutoProvAggr
 var minMaxChecker *MinMaxChecker
+var retryTracker *RetryTracker
 var settings edgeproto.Settings
 var nodeMgr node.NodeMgr
 
@@ -76,6 +77,7 @@ func start() error {
 	dialOpts = tls.GetGrpcDialOption(clientTlsConfig)
 
 	cacheData.init()
+	retryTracker = newRetryTracker()
 	autoProvAggr = NewAutoProvAggr(settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec, &cacheData)
 	minMaxChecker = newMinMaxChecker(&cacheData)
 	cacheData.alertCache.AddUpdatedCb(alertChanged)

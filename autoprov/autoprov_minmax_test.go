@@ -161,6 +161,7 @@ func TestAppChecker(t *testing.T) {
 	testDialOpt = grpc.WithInsecure()
 
 	minmax := newMinMaxChecker(&cacheData)
+	retryTracker = newRetryTracker()
 	// run iterations manually, otherwise the cache update loop causes
 	// checkApp to be run multiple times, and without the Controller code
 	// to block invalid creates/deletes, we end up with incorrect states.
@@ -599,6 +600,60 @@ func TestAppChecker(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		require.Fail(t, "timeout waiting for AutoProvInfo")
 	}
+
+	// Bug4217: ETCD spike issue, autoprov service continuously
+	//          creates & deletes app on CRM failure
+	pt3Max := uint32(2)
+	pt3 := makePolicyTest("policy3", pt3Max, &cacheData)
+	pt3.updatePolicy(ctx)
+	pt3.updateClusterInsts(ctx)
+	appRetry := edgeproto.App{}
+	appRetry.Key.Name = "appRetry"
+	// add policy to app
+	appRetry.AutoProvPolicies = append(appRetry.AutoProvPolicies, pt3.policy.Key.Name)
+	cacheData.appCache.Update(ctx, &appRetry, 0)
+	refs = edgeproto.AppInstRefs{}
+	refs.Key = appRetry.Key
+	refs.Insts = make(map[string]uint32)
+	cacheData.appInstRefsCache.Update(ctx, &refs, 0)
+	// no AppInsts to start
+	require.Equal(t, 0, dc.appInstCache.GetCount())
+	// test retry
+	dc.failCreate = true
+	pt3.policy.MinActiveInstances = 1
+	pt3.policy.MaxInstances = 1
+	pt3.updatePolicy(ctx)
+	minmax.CheckApp(ctx, appRetry.Key)
+	insts = pt3.getAppInsts(&appRetry.Key)
+	// appinst create should fail on first cloudlet
+	err = waitForRetryAppInsts(ctx, insts[0].Key, true)
+	require.Nil(t, err)
+	err = dc.waitForAppInsts(ctx, 0)
+	require.Nil(t, err)
+	// if app check is triggered now, it should skip first cloudlet,
+	// and create it on the second cloudlet.
+	dc.failCreate = false
+	minmax.CheckApp(ctx, appRetry.Key)
+	err = dc.waitForAppInsts(ctx, 1)
+	require.Nil(t, err)
+	require.True(t, dc.appInstCache.HasKey(&insts[1].Key))
+	// clear out retry
+	retryTracker.doRetry(ctx, minmax)
+	err = waitForRetryAppInsts(ctx, insts[0].Key, false)
+	require.Nil(t, err)
+
+	// reset back to 0
+	pt3.policy.MinActiveInstances = 0
+	pt3.policy.MaxInstances = 0
+	pt3.updatePolicy(ctx)
+	pt3.deleteAppInsts(ctx, dc, &appRetry.Key)
+	minmax.CheckApp(ctx, appRetry.Key)
+	err = dc.waitForAppInsts(ctx, 0)
+	require.Nil(t, err)
+
+	pt3.policy.MinActiveInstances = 1
+	pt3.policy.MaxInstances = 1
+	pt3.updatePolicy(ctx)
 }
 
 type policyTest struct {
