@@ -43,6 +43,9 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 		// was successful.
 		nodeMgr.TimedEvent(ctx, eventName, inst.Key.AppKey.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
 	}
+	if reason == cloudcommon.AutoProvReasonMinMax {
+		retryTracker.registerDeployResult(ctx, inst.Key, err)
+	}
 	return err
 }
 
