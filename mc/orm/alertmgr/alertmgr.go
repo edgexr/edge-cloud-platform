@@ -247,7 +247,7 @@ func (s *AlertMgrServer) AddAlerts(ctx context.Context, alerts ...*edgeproto.Ale
 }
 
 func getAlertmgrReceiverName(receiver *ormapi.AlertReceiver) string {
-	return receiver.Name + "-" + receiver.User + "-" + receiver.Severity + "-" + receiver.Type
+	return receiver.Name + "::" + receiver.User + "::" + receiver.Severity + "::" + receiver.Type
 }
 
 func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]string {
@@ -308,8 +308,8 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 	var rec alertmanager_config.Receiver
 
 	// sanity - certain characters should not be part of the receiver name
-	if strings.ContainsAny(receiver.Name, "-:") {
-		return fmt.Errorf("Receiver name cannot contain dashes(\"-\"), or colons(\":\")")
+	if strings.ContainsAny(receiver.Name, ":") {
+		return fmt.Errorf("Receiver name cannot contain colons(\":\")")
 	}
 	// get a labelset from the receiver
 	routeMatchLabels := getRouteMatchLabelsFromAlertReceiver(receiver)
@@ -393,8 +393,8 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 
 func (s *AlertMgrServer) DeleteReceiver(ctx context.Context, receiver *ormapi.AlertReceiver) error {
 	// sanity - certain characters should not be part of the receiver name
-	if strings.ContainsAny(receiver.Name, "-:") {
-		return fmt.Errorf("Receiver name cannot contain dashes(\"-\"), or colons(\":\")")
+	if strings.ContainsAny(receiver.Name, ":") {
+		return fmt.Errorf("Receiver name cannot contain colons(\":\")")
 	}
 
 	// We create one entry per receiver, to make it simpler
@@ -409,7 +409,7 @@ func (s *AlertMgrServer) DeleteReceiver(ctx context.Context, receiver *ormapi.Al
 
 func getAlertReceiverFromName(name string) (*ormapi.AlertReceiver, error) {
 	receiver := ormapi.AlertReceiver{}
-	vals := strings.Split(name, "-")
+	vals := strings.Split(name, "::")
 	if len(vals) != 4 {
 		return nil, fmt.Errorf("Unable to parse receiver name: %s", name)
 	}

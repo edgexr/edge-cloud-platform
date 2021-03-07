@@ -121,7 +121,7 @@ SOFTWARE.
 {{ end }}
 
 {{ define "common.title" -}}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }}{{ if .CommonLabels.app }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}{{ else if .CommonLabels.cloudlet}} Cloudlet: {{.CommonLabels.cloudlet}}{{ end }}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^::]*)::.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }}{{ if .CommonLabels.app }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}{{ else if .CommonLabels.cloudlet}} Cloudlet: {{.CommonLabels.cloudlet}}{{ end }}
 {{ end }}
 
 {{ define "email.text" }}
@@ -137,7 +137,7 @@ MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}
 {{ end }}
 
 {{ define "slack.fallback" -}}
-[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^-]*)-.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}} | {{template "console.link" .}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Alert for {{ reReplaceAll "([^::]*)::.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}} | {{template "console.link" .}}
 {{ end }}
 
 {{ define "slack.text" }}
