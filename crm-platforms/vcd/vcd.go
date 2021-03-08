@@ -74,6 +74,16 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	if err != nil {
 		return err
 	}
+
+	if stage == vmlayer.ProviderInitPlatformStart {
+		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableRuntimeLeases", "stage", stage)
+		overrideLeaseDisable := v.GetLeaseOverride()
+		err := v.DisableOrgRuntimeLease(ctx, overrideLeaseDisable)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableOrgRuntimeLease failed", "stage", stage, "override", overrideLeaseDisable, "error", err)
+			return err
+		}
+	}
 	return nil
 }
 
@@ -445,5 +455,51 @@ func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudle
 }
 
 func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+	return nil
+}
+func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool) error {
+	var err error
+	log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease", "override", override)
+
+	vcdClient := v.GetVcdClientFromContext(ctx)
+
+	if vcdClient == nil {
+		// Too early for context
+		vcdClient, err = v.GetClient(ctx, v.Creds)
+		if err != nil {
+			return fmt.Errorf(NoVCDClientInContext)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Obtained client directly continuing")
+	}
+
+	org, err := v.GetOrg(ctx, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease failed to retrive org", "error", err)
+		return err
+	}
+	adminOrg, err := govcd.GetAdminOrgByName(vcdClient, org.Org.Name)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease failed to retrive adminOrg", "error", err)
+		if override {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease failed to retrive adminOrg override on continuing with Org leases per VCD provider", "error", err)
+			return nil
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease failed to retrive adminOrg override off:  fatal", "error", err)
+			return err
+		}
+	}
+	adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds = TakeIntPointer(0)
+	task, err := adminOrg.Update()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease org.Update failed", "error", err)
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease wait org.Update failed", "error", err)
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease disabled lease", "settings",
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings)
 	return nil
 }
