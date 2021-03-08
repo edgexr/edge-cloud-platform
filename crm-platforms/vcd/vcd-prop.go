@@ -36,6 +36,12 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Verbose logging for VCD",
 		Internal:    true,
 	},
+	// Use this when we don't have OrgAdmin rights and can not disable Org lease settings
+	// but still wish to run. Leases will enforced by VCD.
+	"VCD_OVERRIDE_LEASE_DISABLE": {
+		Description: "Accept Org runtime lease values for VCD if unable to disable",
+		Internal:    true,
+	},
 }
 
 func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
@@ -144,4 +150,19 @@ func (v *VcdPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]
 func (v *VcdPlatform) GetTemplateNameFromProps() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VDC_TEMPLATE")
 	return val
+}
+func (v *VcdPlatform) GetLeaseOverride() bool {
+	if v.TestMode {
+		or := os.Getenv("VCD_OVERRIDE_LEASE_DISABLE")
+		if or == "true" {
+			return true
+		}
+		return false
+	}
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_OVERRIDE_LEASE_DISABLE")
+	if val == "true" {
+		return true
+	} else {
+		return false
+	}
 }
