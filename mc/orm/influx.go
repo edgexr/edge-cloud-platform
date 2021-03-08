@@ -709,7 +709,10 @@ func GetMetricsCommon(c echo.Context) error {
 				platformTypes[pfType] = struct{}{}
 			})
 			if err != nil {
-				return err
+				return setReply(c, err, nil)
+			}
+			if len(platformTypes) == 0 {
+				return setReply(c, nil, nil)
 			}
 		}
 		rc.region = in.Region
