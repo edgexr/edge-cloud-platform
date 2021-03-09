@@ -72,7 +72,7 @@ func (k *K8sBareMetalPlatform) GetCloudletProps(ctx context.Context) (*edgeproto
 func (k *K8sBareMetalPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletResourceQuotaProps")
 	return &edgeproto.CloudletResourceQuotaProps{
-		Props: []edgeproto.InfraResource{
+		Properties: []edgeproto.InfraResource{
 			edgeproto.InfraResource{
 				Name:        ResourceExternalIps,
 				Description: "Limit on external IPs available",

@@ -243,7 +243,7 @@ func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) (
 
 func (o *OpenstackPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
 	return &edgeproto.CloudletResourceQuotaProps{
-		Props: []edgeproto.InfraResource{
+		Properties: []edgeproto.InfraResource{
 			edgeproto.InfraResource{
 				Name:        ResourceInstances,
 				Description: "Limit on number of instances that can be provisioned",

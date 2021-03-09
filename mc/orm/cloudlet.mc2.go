@@ -430,6 +430,7 @@ func GetCloudletProps(c echo.Context) error {
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
+	span.SetTag("org", in.CloudletProps.Organization)
 	resp, err := GetCloudletPropsObj(ctx, rc, &in.CloudletProps)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -442,8 +443,8 @@ func GetCloudletProps(c echo.Context) error {
 func GetCloudletPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, "",
-			ResourceCloudlets, ActionView); err != nil {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudletAnalytics, ActionView); err != nil {
 			return nil, err
 		}
 	}
@@ -478,6 +479,7 @@ func GetCloudletResourceQuotaProps(c echo.Context) error {
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
+	span.SetTag("org", in.CloudletResourceQuotaProps.Organization)
 	resp, err := GetCloudletResourceQuotaPropsObj(ctx, rc, &in.CloudletResourceQuotaProps)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -490,8 +492,8 @@ func GetCloudletResourceQuotaProps(c echo.Context) error {
 func GetCloudletResourceQuotaPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, "",
-			ResourceCloudlets, ActionView); err != nil {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudletAnalytics, ActionView); err != nil {
 			return nil, err
 		}
 	}
@@ -537,14 +539,11 @@ func GetCloudletResourceUsage(c echo.Context) error {
 	return setReply(c, err, resp)
 }
 
-func GetCloudletResourceUsageObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, error) {
+func GetCloudletResourceUsageObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForGetCloudletResourceUsage(); err != nil {
-		return nil, err
-	}
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage); err != nil {
+			ResourceCloudlets, ActionView); err != nil {
 			return nil, err
 		}
 	}
