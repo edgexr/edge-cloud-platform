@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -33,6 +34,10 @@ func (s *AuthzAlert) Ok(obj *edgeproto.Alert) (bool, bool) {
 	}
 
 	org := obj.Labels["apporg"]
+	alertScope := obj.Labels["scope"]
+	if alertScope == cloudcommon.AlertScopeCloudlet {
+		org = obj.Labels["cloudletorg"]
+	}
 	_, found := s.orgs[org]
 	return found, filterOutput
 }

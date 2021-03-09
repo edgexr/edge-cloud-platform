@@ -85,8 +85,8 @@ func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.Reg
 	return &out, status, err
 }
 
-func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error) {
-	out := edgeproto.InfraResourcesSnapshot{}
+func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.CloudletResourceUsage, int, error) {
+	out := edgeproto.CloudletResourceUsage{}
 	status, err := s.PostJson(uri+"/auth/ctrl/GetCloudletResourceUsage", token, in, &out)
 	if err != nil {
 		return nil, status, err
@@ -147,7 +147,7 @@ type CloudletApiClient interface {
 	GetCloudletManifest(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.CloudletManifest, int, error)
 	GetCloudletProps(uri, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error)
 	GetCloudletResourceQuotaProps(uri, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error)
-	GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error)
+	GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.CloudletResourceUsage, int, error)
 	AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error)
 	FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error)

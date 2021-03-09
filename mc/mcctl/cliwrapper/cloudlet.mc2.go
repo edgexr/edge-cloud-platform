@@ -103,10 +103,10 @@ func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.Reg
 	return &out, st, err
 }
 
-func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, int, error) {
+func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.CloudletResourceUsage, int, error) {
 	args := []string{"region", "GetCloudletResourceUsage"}
-	out := edgeproto.InfraResourcesSnapshot{}
-	noconfig := strings.Split("", ",")
+	out := edgeproto.CloudletResourceUsage{}
+	noconfig := strings.Split("Info", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
 	if err != nil {
 		return nil, st, err

@@ -109,6 +109,7 @@ func TestGetCloudletProps(mcClient *ormclient.Client, uri, token, region string,
 }
 func TestPermGetCloudletProps(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
 	in := &edgeproto.CloudletProps{}
+	in.Organization = org
 	return TestGetCloudletProps(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -123,10 +124,11 @@ func TestGetCloudletResourceQuotaProps(mcClient *ormclient.Client, uri, token, r
 }
 func TestPermGetCloudletResourceQuotaProps(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) (*edgeproto.CloudletResourceQuotaProps, int, error) {
 	in := &edgeproto.CloudletResourceQuotaProps{}
+	in.Organization = org
 	return TestGetCloudletResourceQuotaProps(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResourceUsage, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.InfraResourcesSnapshot, int, error) {
+func TestGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResourceUsage, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
 	dat := &ormapi.RegionCloudletResourceUsage{}
 	dat.Region = region
 	dat.CloudletResourceUsage = *in
@@ -135,7 +137,7 @@ func TestGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region
 	}
 	return mcClient.GetCloudletResourceUsage(uri, token, dat)
 }
-func TestPermGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.InfraResourcesSnapshot, int, error) {
+func TestPermGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
 	in := &edgeproto.CloudletResourceUsage{}
 	in.Key.Organization = org
 	return TestGetCloudletResourceUsage(mcClient, uri, token, region, in, modFuncs...)
@@ -352,7 +354,7 @@ func (s *TestClient) GetCloudletResourceQuotaProps(ctx context.Context, in *edge
 	return out, err
 }
 
-func (s *TestClient) GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.InfraResourcesSnapshot, error) {
+func (s *TestClient) GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	inR := &ormapi.RegionCloudletResourceUsage{
 		Region:                s.Region,
 		CloudletResourceUsage: *in,

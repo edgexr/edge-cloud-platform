@@ -139,13 +139,13 @@ var GetCloudletResourceQuotaPropsCmd = &cli.Command{
 
 var GetCloudletResourceUsageCmd = &cli.Command{
 	Use:          "GetCloudletResourceUsage",
-	RequiredArgs: "region " + strings.Join(CloudletResourceUsageRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletResourceUsageOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(GetCloudletResourceUsageRequiredArgs, " "),
+	OptionalArgs: strings.Join(GetCloudletResourceUsageOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResourceUsageAliasArgs, " "),
 	SpecialArgs:  &CloudletResourceUsageSpecialArgs,
 	Comments:     addRegionComment(CloudletResourceUsageComments),
 	ReqData:      &ormapi.RegionCloudletResourceUsage{},
-	ReplyData:    &edgeproto.InfraResourcesSnapshot{},
+	ReplyData:    &edgeproto.CloudletResourceUsage{},
 	Run:          runRest("/auth/ctrl/GetCloudletResourceUsage"),
 }
 
@@ -372,18 +372,21 @@ var ShowCloudletOptionalArgs = []string{
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
 }
-var GetCloudletPropsOptionalArgs = []string{}
+var GetCloudletPropsOptionalArgs = []string{
+	"organization",
+}
 var GetCloudletResourceQuotaPropsRequiredArgs = []string{
 	"platformtype",
 }
 var GetCloudletResourceQuotaPropsOptionalArgs = []string{
-	"props:#.name",
-	"props:#.value",
-	"props:#.inframaxvalue",
-	"props:#.quotamaxvalue",
-	"props:#.description",
-	"props:#.units",
-	"props:#.alertthreshold",
+	"organization",
+}
+var GetCloudletResourceUsageRequiredArgs = []string{
+	"cloudlet-org",
+	"cloudlet",
+}
+var GetCloudletResourceUsageOptionalArgs = []string{
+	"infrausage",
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
@@ -863,6 +866,7 @@ var CloudletPropsOptionalArgs = []string{
 	"properties:#.value.secret",
 	"properties:#.value.mandatory",
 	"properties:#.value.internal",
+	"organization",
 }
 var CloudletPropsAliasArgs = []string{
 	"platformtype=cloudletprops.platformtype",
@@ -873,6 +877,7 @@ var CloudletPropsAliasArgs = []string{
 	"properties:#.value.secret=cloudletprops.properties:#.value.secret",
 	"properties:#.value.mandatory=cloudletprops.properties:#.value.mandatory",
 	"properties:#.value.internal=cloudletprops.properties:#.value.internal",
+	"organization=cloudletprops.organization",
 }
 var CloudletPropsComments = map[string]string{
 	"platformtype":                   "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeK8SBareMetal, PlatformTypeKind",
@@ -882,38 +887,42 @@ var CloudletPropsComments = map[string]string{
 	"properties:#.value.secret":      "Is the property a secret value, will be hidden",
 	"properties:#.value.mandatory":   "Is the property mandatory",
 	"properties:#.value.internal":    "Is the property internal, not to be set by Operator",
+	"organization":                   "Organization",
 }
 var CloudletPropsSpecialArgs = map[string]string{}
 var CloudletResourceQuotaPropsRequiredArgs = []string{}
 var CloudletResourceQuotaPropsOptionalArgs = []string{
 	"platformtype",
-	"props:#.name",
-	"props:#.value",
-	"props:#.inframaxvalue",
-	"props:#.quotamaxvalue",
-	"props:#.description",
-	"props:#.units",
-	"props:#.alertthreshold",
+	"properties:#.name",
+	"properties:#.value",
+	"properties:#.inframaxvalue",
+	"properties:#.quotamaxvalue",
+	"properties:#.description",
+	"properties:#.units",
+	"properties:#.alertthreshold",
+	"organization",
 }
 var CloudletResourceQuotaPropsAliasArgs = []string{
 	"platformtype=cloudletresourcequotaprops.platformtype",
-	"props:#.name=cloudletresourcequotaprops.props:#.name",
-	"props:#.value=cloudletresourcequotaprops.props:#.value",
-	"props:#.inframaxvalue=cloudletresourcequotaprops.props:#.inframaxvalue",
-	"props:#.quotamaxvalue=cloudletresourcequotaprops.props:#.quotamaxvalue",
-	"props:#.description=cloudletresourcequotaprops.props:#.description",
-	"props:#.units=cloudletresourcequotaprops.props:#.units",
-	"props:#.alertthreshold=cloudletresourcequotaprops.props:#.alertthreshold",
+	"properties:#.name=cloudletresourcequotaprops.properties:#.name",
+	"properties:#.value=cloudletresourcequotaprops.properties:#.value",
+	"properties:#.inframaxvalue=cloudletresourcequotaprops.properties:#.inframaxvalue",
+	"properties:#.quotamaxvalue=cloudletresourcequotaprops.properties:#.quotamaxvalue",
+	"properties:#.description=cloudletresourcequotaprops.properties:#.description",
+	"properties:#.units=cloudletresourcequotaprops.properties:#.units",
+	"properties:#.alertthreshold=cloudletresourcequotaprops.properties:#.alertthreshold",
+	"organization=cloudletresourcequotaprops.organization",
 }
 var CloudletResourceQuotaPropsComments = map[string]string{
-	"platformtype":           "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeK8SBareMetal, PlatformTypeKind",
-	"props:#.name":           "Resource name",
-	"props:#.value":          "Resource value",
-	"props:#.inframaxvalue":  "Resource infra max value",
-	"props:#.quotamaxvalue":  "Resource quota max value",
-	"props:#.description":    "Resource description",
-	"props:#.units":          "Resource units",
-	"props:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"platformtype":                "Platform type, one of PlatformTypeFake, PlatformTypeDind, PlatformTypeOpenstack, PlatformTypeAzure, PlatformTypeGcp, PlatformTypeEdgebox, PlatformTypeFakeinfra, PlatformTypeVsphere, PlatformTypeAwsEks, PlatformTypeVmPool, PlatformTypeAwsEc2, PlatformTypeVcd, PlatformTypeK8SBareMetal, PlatformTypeKind",
+	"properties:#.name":           "Resource name",
+	"properties:#.value":          "Resource value",
+	"properties:#.inframaxvalue":  "Resource infra max value",
+	"properties:#.quotamaxvalue":  "Resource quota max value",
+	"properties:#.description":    "Resource description",
+	"properties:#.units":          "Resource units",
+	"properties:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"organization":                "Organization",
 }
 var CloudletResourceQuotaPropsSpecialArgs = map[string]string{}
 var CloudletResourceUsageRequiredArgs = []string{
@@ -922,16 +931,37 @@ var CloudletResourceUsageRequiredArgs = []string{
 }
 var CloudletResourceUsageOptionalArgs = []string{
 	"infrausage",
+	"info:#.name",
+	"info:#.value",
+	"info:#.inframaxvalue",
+	"info:#.quotamaxvalue",
+	"info:#.description",
+	"info:#.units",
+	"info:#.alertthreshold",
 }
 var CloudletResourceUsageAliasArgs = []string{
 	"cloudlet-org=cloudletresourceusage.key.organization",
 	"cloudlet=cloudletresourceusage.key.name",
 	"infrausage=cloudletresourceusage.infrausage",
+	"info:#.name=cloudletresourceusage.info:#.name",
+	"info:#.value=cloudletresourceusage.info:#.value",
+	"info:#.inframaxvalue=cloudletresourceusage.info:#.inframaxvalue",
+	"info:#.quotamaxvalue=cloudletresourceusage.info:#.quotamaxvalue",
+	"info:#.description=cloudletresourceusage.info:#.description",
+	"info:#.units=cloudletresourceusage.info:#.units",
+	"info:#.alertthreshold=cloudletresourceusage.info:#.alertthreshold",
 }
 var CloudletResourceUsageComments = map[string]string{
-	"cloudlet-org": "Organization of the cloudlet site",
-	"cloudlet":     "Name of the cloudlet",
-	"infrausage":   "Show Infra based usage",
+	"cloudlet-org":          "Organization of the cloudlet site",
+	"cloudlet":              "Name of the cloudlet",
+	"infrausage":            "Show Infra based usage",
+	"info:#.name":           "Resource name",
+	"info:#.value":          "Resource value",
+	"info:#.inframaxvalue":  "Resource infra max value",
+	"info:#.quotamaxvalue":  "Resource quota max value",
+	"info:#.description":    "Resource description",
+	"info:#.units":          "Resource units",
+	"info:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 }
 var CloudletResourceUsageSpecialArgs = map[string]string{}
 var FlavorInfoRequiredArgs = []string{}
