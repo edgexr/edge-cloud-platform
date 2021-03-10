@@ -19,6 +19,7 @@ const DefaultAlertmanagerConfigT = `global:
   smtp_auth_identity: "{{.User}}"
   smtp_auth_password: "{{.Token}}"
   {{if .Tls}}smtp_require_tls: {{.Tls}}{{end}}
+  {{if .PagerDutyUrl}}pagerduty_url: {{.PagerDutyUrl}}{{end}}
 templates:
   - '/etc/alertmanager/templates/alertmanager.tmpl'
 route:
@@ -46,10 +47,15 @@ var alertmanagerConfigSlackTitleLink = `{{ template "console.link" . }}`
 
 var alertmanagerConfigSlackIcon = "https://www.mobiledgex.com/img/logo.svg"
 
+var alertmanagerConfigPagerDutyClient = "MobiledgeX Monitoring"
+
+var PagerDutyIntegrationKeyLen = 32
+
 const (
-	AlertReceiverTypeEmail    = "email"
-	AlertReceiverTypeSlack    = "slack"
-	AlertMgrSlackWebhookToken = "<hidden>"
+	AlertReceiverTypeEmail     = "email"
+	AlertReceiverTypeSlack     = "slack"
+	AlertReceiverTypePagerDuty = "pagerduty"
+	AlertMgrDisplayHidden      = "<hidden>"
 )
 
 const (

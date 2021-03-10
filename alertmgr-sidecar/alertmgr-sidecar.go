@@ -30,6 +30,7 @@ func getConfigInfo() (*alertmgr.AlertmgrInitInfo, error) {
 		Port:           os.Getenv("ALERTMANAGER_SMTP_SERVER_PORT"),
 		Tls:            os.Getenv("ALERTMANAGER_SMTP_SERVER_TLS"),
 		ResolveTimeout: os.Getenv("ALERTMANAGER_RESOLVE_TIMEOUT"),
+		PagerDutyUrl:   os.Getenv("ALERTMANAGER_PAGERDUTY_URL"),
 	}
 	// if smtp server and username are not set, environment is invalid
 	if initInfo.Smtp == "" || initInfo.Email == "" {

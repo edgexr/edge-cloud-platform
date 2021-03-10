@@ -88,6 +88,16 @@ tests:
       yaml2: '{{datadir2}}/slackdata_alert_firing.yml'
       filetype: slackdata
 
+  - name: verify that pagerduty event about an alert was sent
+    actions: [pagerduty-check]
+    apifile: '{{datadir2}}/slack_server_name.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/pagerdutydata_alert_firing.yml'
+      filetype: pagerdutydata
+
   - name: set healthy backend servers to 1
     actions: [cmds]
     apifile: "{{datadir2}}/alert_appinstup"
@@ -120,6 +130,16 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/slackdata_alert_resolved.yml'
       filetype: slackdata
+
+  - name: verify that pagerduty event about an alert resolution was sent
+    actions: [pagerduty-check]
+    apifile: '{{datadir2}}/slack_server_name.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/pagerdutydata_alert_resolved.yml'
+      filetype: pagerdutydata
 
   - name: admin deletes an alert receiver
     actions: [mcapi-delete]
@@ -157,6 +177,13 @@ tests:
       yaml1: '{{outputdir}}/show-commands.yml'
       yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: slackdata
+
+  - name: delete all pagerduty events and verify that the channel is empty
+    actions: [pagerduty-deleteall, pagerduty-check]
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: pagerdutydata
 
   - name: cloudlet alert created by the operator user
     actions: [mcapi-create]
