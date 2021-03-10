@@ -12,3 +12,20 @@ alertreceivers:
         organization: dmuus
         name: dmuus-cloud-1
       organization: AcmeAppCo
+- name: pagerdutyAppAlertReceiver
+  type: pagerduty
+  severity: error
+  region: local
+  pagerdutyintegrationkey: "01234567890123456789012345678901"
+  appinst:
+    appkey:
+      organization: AcmeAppCo
+      name: someapplication1
+      version: "1.0"
+    clusterinstkey:
+      clusterkey:
+        name: SmallCluster
+      cloudletkey:
+        organization: dmuus
+        name: dmuus-cloud-1
+      organization: AcmeAppCo

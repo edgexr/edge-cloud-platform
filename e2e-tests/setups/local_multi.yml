@@ -468,6 +468,7 @@ alertmanagersidecars:
     # maildev does not support STARTTLS protocol, so disable encryption for local testing
     ALERTMANAGER_SMTP_SERVER_TLS: false
     ALERTMANAGER_RESOLVE_TIMEOUT: "{{alertmgrresolvetimeout}}"
+    ALERTMANAGER_PAGERDUTY_URL: "http://host.docker.internal:9100/pagerduty/event"
 
 maildevs:
 - name: maildev

@@ -51,6 +51,7 @@ type AlertmgrInitInfo struct {
 	Port           string
 	Tls            string
 	ResolveTimeout string
+	PagerDutyUrl   string
 }
 
 type SidecarServer struct {

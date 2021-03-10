@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"text/template"
 
 	e2esetup "github.com/mobiledgex/edge-cloud-infra/e2e-tests/e2e-setup"
@@ -92,6 +93,7 @@ var port = flag.Int("port", 9100, "Port to export metrics on")
 var statsPath = flag.String("promStatsPath", "", "Path to stats to export")
 
 var SlackMessages []e2esetup.TestSlackMsg
+var PagerDutyEvents []e2esetup.TestPagerDutyEvent
 
 func main() {
 	flag.Parse()
@@ -113,6 +115,10 @@ func main() {
 	http.HandleFunc(e2esetup.SlackWebhookApi, slackWebhookHandler)
 	http.HandleFunc(e2esetup.ListSlackMessagesApi, showSlackMessages)
 	http.HandleFunc(e2esetup.DeleteAllSlackMessagesApi, deleteSlackMessages)
+	http.HandleFunc(e2esetup.PagerDutyApi, slackWebhookHandler)
+	http.HandleFunc(e2esetup.ListPagerDutyMessagesApi, showPagerDutyEvents)
+	http.HandleFunc(e2esetup.DeleteAllPagerDutyEventsApi, deletePagerDutyEvents)
+
 	http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 }
 
@@ -144,13 +150,25 @@ func slackWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "decoding failed", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Got a request to send a slack message method: %s\n, body:%s", r.Method, string(body))
-	slackMsg := e2esetup.TestSlackMsg{}
-	err = json.Unmarshal(body, &slackMsg)
-	if err != nil {
-		log.Printf("slack message unmarshal error: %v body:<%s>\n", err, string(body))
-	} else {
-		SlackMessages = append(SlackMessages, slackMsg)
+	if strings.HasSuffix(r.URL.Path, e2esetup.SlackWebhookApi) {
+		log.Printf("Got a request to send a slack message method: %s\n, body:%s", r.Method, string(body))
+		slackMsg := e2esetup.TestSlackMsg{}
+		err = json.Unmarshal(body, &slackMsg)
+		if err != nil {
+			log.Printf("slack message unmarshal error: %v body:<%s>\n", err, string(body))
+		} else {
+			SlackMessages = append(SlackMessages, slackMsg)
+		}
+	} else if strings.HasSuffix(r.URL.Path, e2esetup.PagerDutyApi) {
+		log.Printf("Got a request to send a pager duty event: %s\n, body:%s", r.Method, string(body))
+		event := e2esetup.TestPagerDutyEvent{}
+		err = json.Unmarshal(body, &event)
+		if err != nil {
+			log.Printf("slack message unmarshal error: %v body:<%s>\n", err, string(body))
+		} else {
+			PagerDutyEvents = append(PagerDutyEvents, event)
+		}
+
 	}
 }
 
@@ -176,4 +194,28 @@ func deleteSlackMessages(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
 	}
 	SlackMessages = nil
+}
+
+func showPagerDutyEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+	}
+	// marshal data and send it back
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(w).Encode(PagerDutyEvents)
+	if err != nil {
+		log.Printf("Failed to marshal pagerduty events: %s, events:<%v>\n",
+			err.Error(), PagerDutyEvents)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	return
+}
+
+func deletePagerDutyEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Unsupported method", http.StatusMethodNotAllowed)
+	}
+	PagerDutyEvents = nil
 }
