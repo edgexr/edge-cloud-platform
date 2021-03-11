@@ -142,7 +142,9 @@ func isInternalAlert(alert *edgeproto.Alert) bool {
 	if !ok {
 		return true
 	}
-	if name == cloudcommon.AlertAppInstDown || name == cloudcommon.AlertCloudletDown {
+	if name == cloudcommon.AlertAppInstDown ||
+		name == cloudcommon.AlertCloudletDown ||
+		name == cloudcommon.AlertCloudletResourceUsage {
 		return false
 	}
 	return true
