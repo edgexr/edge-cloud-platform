@@ -114,6 +114,8 @@ var SettingsOptionalArgs = []string{
 	"persistentconnectionmetricscollectioninterval",
 	"cleanupreservableautoclusteridletime",
 	"influxdbcloudletusagemetricsretention",
+	"createcloudlettimeout",
+	"updatecloudlettimeout",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -142,6 +144,8 @@ var SettingsAliasArgs = []string{
 	"persistentconnectionmetricscollectioninterval=settings.persistentconnectionmetricscollectioninterval",
 	"cleanupreservableautoclusteridletime=settings.cleanupreservableautoclusteridletime",
 	"influxdbcloudletusagemetricsretention=settings.influxdbcloudletusagemetricsretention",
+	"createcloudlettimeout=settings.createcloudlettimeout",
+	"updatecloudlettimeout=settings.updatecloudlettimeout",
 }
 var SettingsComments = map[string]string{
 	"fields":                                        "Fields are used for the Update API to specify which fields to apply",
@@ -170,6 +174,8 @@ var SettingsComments = map[string]string{
 	"persistentconnectionmetricscollectioninterval": "Metrics collection interval for persistent connection (appinstlatency and gps locations) (duration)",
 	"cleanupreservableautoclusteridletime":          "Idle reservable ClusterInst clean up time",
 	"influxdbcloudletusagemetricsretention":         "Default influxDB cloudlet usage metrics retention policy (duration)",
+	"createcloudlettimeout":                         "Create Cloudlet timeout (duration)",
+	"updatecloudlettimeout":                         "Update Cloudlet timeout (duration)",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",
