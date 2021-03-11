@@ -827,5 +827,8 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, claims *UserClaims,
 			}
 		}
 	}
+	if operOrgPermOk && !devOrgPermOk && len(cloudletList) == 0 {
+		return []string{}, fmt.Errorf("No non-empty CloudletPools to show")
+	}
 	return cloudletList, nil
 }
