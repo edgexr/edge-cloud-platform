@@ -78,10 +78,12 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	if stage == vmlayer.ProviderInitPlatformStart {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableRuntimeLeases", "stage", stage)
 		overrideLeaseDisable := v.GetLeaseOverride()
-		err := v.DisableOrgRuntimeLease(ctx, overrideLeaseDisable)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableOrgRuntimeLease failed", "stage", stage, "override", overrideLeaseDisable, "error", err)
-			return err
+		if !overrideLeaseDisable {
+			err := v.DisableOrgRuntimeLease(ctx, overrideLeaseDisable)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableOrgRuntimeLease failed", "stage", stage, "override", overrideLeaseDisable, "error", err)
+				return err
+			}
 		}
 	}
 	return nil
