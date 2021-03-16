@@ -519,6 +519,9 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 
 	flavorName := vmparams.FlavorName
 	flavor, err := v.GetFlavor(ctx, flavorName)
+	if err != nil {
+		return fmt.Errorf("Error getting flavor: %s - %v", flavorName, err)
+	}
 	vmSpecSec := vm.VM.VmSpecSection
 	vmSpecSec.NumCpus = TakeIntPointer(int(flavor.Vcpus))
 	vmSpecSec.MemoryResourceMb.Configured = int64(flavor.Ram)
