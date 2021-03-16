@@ -1078,6 +1078,7 @@ var CloudletInfoOptionalArgs = []string{
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.clusterkey.name",
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.organization",
 	"trustpolicystate",
+	"compatibilityversion",
 }
 var CloudletInfoAliasArgs = []string{
 	"fields=cloudletinfo.fields",
@@ -1136,6 +1137,7 @@ var CloudletInfoAliasArgs = []string{
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.clusterkey.name=cloudletinfo.resourcessnapshot.vmappinsts:#.clusterinstkey.clusterkey.name",
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.organization=cloudletinfo.resourcessnapshot.vmappinsts:#.clusterinstkey.organization",
 	"trustpolicystate=cloudletinfo.trustpolicystate",
+	"compatibilityversion=cloudletinfo.compatibilityversion",
 }
 var CloudletInfoComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -1183,7 +1185,8 @@ var CloudletInfoComments = map[string]string{
 	"resourcessnapshot.vmappinsts:#.appkey.version":                 "App version",
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.clusterkey.name": "Cluster name",
 	"resourcessnapshot.vmappinsts:#.clusterinstkey.organization":    "Name of Developer organization that this cluster belongs to",
-	"trustpolicystate": "Trust Policy State, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"trustpolicystate":     "Trust Policy State, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"compatibilityversion": "Version for compatibility tracking",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"cloudletinfo.errors":            "StringArray",
