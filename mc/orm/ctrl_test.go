@@ -385,11 +385,25 @@ func TestController(t *testing.T) {
 		// developers can't create AppInsts on other developemar's ClusterInsts
 		appinst := edgeproto.AppInst{}
 		appinst.Key.AppKey.Organization = org1
-		appinst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		appinst.Key.ClusterInstKey.Organization = org2
 		_, status, err := ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
 		require.NotNil(t, err)
-		require.Contains(t, err.Error(), "AppInst organization must match ClusterInst organization")
-		// but admin can
+		require.Contains(t, err.Error(), "Forbidden")
+		// developers can create against MobiledgeX ClusterInsts
+		// (reservable or multitenant).
+		appinst.Key.AppKey.Organization = org1
+		appinst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		_, status, err = ormtestutil.TestDeleteAppInst(mcClient, uri, tokenDev, ctrl.Region, &appinst)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		// Only admin can create MobiledgeX sidecar apps, since other
+		// developers won't have App rbac perms for org MobiledgeX.
+		testCreateOrg(t, mcClient, uri, tokenAd, OrgTypeDeveloper, cloudcommon.OrganizationMobiledgeX)
+		appinst.Key.AppKey.Organization = cloudcommon.OrganizationMobiledgeX
+		appinst.Key.ClusterInstKey.Organization = org2
 		_, status, err = ormtestutil.TestCreateAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
