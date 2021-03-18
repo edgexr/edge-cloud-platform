@@ -77,6 +77,29 @@ tests:
     yaml2: '{{datadir2}}/mc_user2_data_stream.yml'
     filetype: mcstream
 
+- includefile: stream_edgeevent.yml
+
+- name: sleep, allow time for metrics to collect
+  actions: [sleep=2]
+
+- name: Check client app metrics
+  actions: [mcapi-showclientappmetrics]
+  apifile: '{{datadir2}}/mc_metrics_targets.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_clientappmetrics_show.yml'
+    filetype: mcmetrics
+
+- name: Check client cloudlet metrics
+  actions: [mcapi-showclientcloudletmetrics]
+  apifile: '{{datadir2}}/mc_metrics_targets.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_clientcloudletmetrics_show.yml'
+    filetype: mcmetrics
+
 - name: admin creates reservable clusterinst on user1 cloudlet
   actions: [mcapi-create]
   apifile: '{{datadir2}}/mc_admin_reservable.yml'

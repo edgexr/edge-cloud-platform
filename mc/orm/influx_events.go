@@ -163,7 +163,7 @@ func GetEventsCommon(c echo.Context) error {
 		return setReply(c, echo.ErrNotFound, nil)
 	}
 
-	err = influxStream(ctx, rc, cloudcommon.EventsDbName, cmd, func(res interface{}) {
+	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, cmd, func(res interface{}) {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		WriteStream(c, &payload)

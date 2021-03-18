@@ -5,13 +5,21 @@ registerclientrequest:
   authtoken: "GENTOKEN:authtoken_private.pem"
   cellid: 1234
 findcloudletrequest:
-  carriername: 31026
+  carriername: dmuus
   gpslocation:
     latitude: 31.00
     longitude: -91.00
   cellid: 1234
+  deviceinfo:
+    datanetworktype: 5G
+    deviceos: Android
+    devicemodel: "SM-G920F"
 clientedgeevent:
   eventtype: EVENT_INIT_CONNECTION
   gpslocation:
     latitude: 31.00
     longitude: -91.00
+  deviceinfo:
+    datanetworktype: 5G
+    deviceos: Android
+    devicemodel: "SM-G920F"

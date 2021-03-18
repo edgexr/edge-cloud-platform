@@ -83,7 +83,7 @@ var appInstDataColumns = []string{
 	"note",
 }
 
-var usageInfluDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+var usageInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
 	` WHERE time >='{{.StartTime}}'` +
 	` AND time <= '{{.EndTime}}'` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
@@ -110,7 +110,7 @@ var usageTypeCluster = "cluster-usage"
 var usageTypeAppInst = "appinst-usage"
 
 func init() {
-	usageInfluxDBTemplate = template.Must(template.New("influxquery").Parse(usageInfluDBT))
+	usageInfluxDBTemplate = template.Must(template.New("influxquery").Parse(usageInfluxDBT))
 }
 
 func checkUsageCheckpointInterval() error {
@@ -595,7 +595,7 @@ func checkInfluxOutput(resp *client.Response, measurement string) (bool, error) 
 
 func GetEventAndCheckpoint(ctx context.Context, rc *InfluxDBContext, eventCmd, checkpointCmd string) (*client.Response, *client.Response, error) {
 	var eventResponse, checkpointResponse *client.Response
-	err := influxStream(ctx, rc, cloudcommon.EventsDbName, eventCmd, func(res interface{}) {
+	err := influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, eventCmd, func(res interface{}) {
 		resp, ok := res.([]client.Result)
 		if ok {
 			eventResponse = &client.Response{Results: resp}
@@ -604,7 +604,7 @@ func GetEventAndCheckpoint(ctx context.Context, rc *InfluxDBContext, eventCmd, c
 	if err != nil {
 		return nil, nil, err
 	}
-	err = influxStream(ctx, rc, cloudcommon.EventsDbName, checkpointCmd, func(res interface{}) {
+	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, checkpointCmd, func(res interface{}) {
 		resp, ok := res.([]client.Result)
 		if ok {
 			checkpointResponse = &client.Response{Results: resp}

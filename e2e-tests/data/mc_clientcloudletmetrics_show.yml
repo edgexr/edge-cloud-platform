@@ -1,0 +1,30 @@
+- name: latency-metric
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    devicecarrier: dmuus
+    locationtile: 2-1713,5065
+  values:
+    0s: 4
+    5ms: 1
+    10ms: 0
+    25ms: 0
+    50ms: 0
+    100ms: 0
+    avg: 3.3768000000000002
+    max: 5.33
+    min: 1.12
+    numsamples: 5
+    signalstrength: 0
+    stddev: 1.6512211238958883
+    variance: 2.7265312
+- name: device-metric
+  tags:
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    devicecarrier: dmuus
+    devicemodel: SM-G920F
+    deviceos: Android
+    locationtile: 2-1713,5065
+  values:
+    numsessions: 1

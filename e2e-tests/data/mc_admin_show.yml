@@ -93,6 +93,12 @@ regiondata:
       maxtrackeddmeclients: 100
       chefclientinterval: 10m
       cloudletmaintenancetimeout: 2s
+      locationtilesidelengthkm: 2
+      edgeeventsmetricscollectioninterval: 1s
+      influxdbedgeeventsmetricsretention: 672h0m0s
+      influxdbdownsampledmetricsretention: 672h0m0s
+      edgeeventsmetricscontinuousqueriescollectionintervals:
+      - interval: 2s
     cloudlets:
     - key:
         organization: dmuus

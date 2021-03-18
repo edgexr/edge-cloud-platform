@@ -1,11 +1,6 @@
 description: StreamEdgeEvent persistent connection tests
 
 tests:
-
-- name: Add provisioning
-  apifile: "{{datadir}}/appdata.yml"
-  actions: [ctrlapi-create]
-
 - name: Send initial edge event to start persistent connection
   apifile: "{{datadir2}}/edgeevent-req.yml"
   actions: [dmeapi-edgeeventinit]
@@ -29,7 +24,3 @@ tests:
     yaml1: "{{outputdir}}/edgeeventnewcloudlet.yml"
     yaml2: "{{datadir2}}/edgeevent-newcloudlet-response.yml"
     filetype: streamedgeevent
-
-- name: Delete provisioning
-  apifile: "{{datadir}}/appdata.yml"
-  actions: [ctrlapi-delete]
