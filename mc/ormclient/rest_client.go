@@ -141,17 +141,37 @@ func (s *Client) RemoveChildOrg(uri, token string, bOrg *ormapi.BillingOrganizat
 	return s.PostJson(uri+"/auth/billingorg/removechild", token, bOrg, nil)
 }
 
-func (s *Client) CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	return s.PostJson(uri+"/auth/orgcloudletpool/create", token, op, nil)
+func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/create", token, op, nil)
 }
 
-func (s *Client) DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	return s.PostJson(uri+"/auth/orgcloudletpool/delete", token, op, nil)
+func (s *Client) DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/delete", token, op, nil)
 }
 
-func (s *Client) ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessInvitation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
 	ops := []ormapi.OrgCloudletPool{}
-	status, err := s.PostJson(uri+"/auth/orgcloudletpool/show", token, nil, &ops)
+	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/show", token, filter, &ops)
+	return ops, status, err
+}
+
+func (s *Client) CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/create", token, op, nil)
+}
+
+func (s *Client) DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/delete", token, op, nil)
+}
+
+func (s *Client) ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	ops := []ormapi.OrgCloudletPool{}
+	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/show", token, filter, &ops)
+	return ops, status, err
+}
+
+func (s *Client) ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	ops := []ormapi.OrgCloudletPool{}
+	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessgranted/show", token, filter, &ops)
 	return ops, status, err
 }
 

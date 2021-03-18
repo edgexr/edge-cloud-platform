@@ -84,6 +84,8 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 	if err != nil {
 		return err
 	}
+	ops = getAccessGranted(ops)
+
 	mypools := make(map[edgeproto.CloudletPoolKey]struct{})
 	for _, op := range ops {
 		if _, found := orgs[op.Org]; !found {

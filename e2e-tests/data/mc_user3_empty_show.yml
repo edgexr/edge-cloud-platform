@@ -35,6 +35,15 @@ roles:
 - org: user3org
   username: user3
   role: DeveloperManager
+cloudletpoolaccessinvitations:
+- org: user3org
+  region: local
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
+- org: user3org
+  region: locala
+  cloudletpool: enterprise-pool
+  cloudletpoolorg: enterprise
 regiondata:
 - region: local
   appdata:
@@ -73,15 +82,6 @@ regiondata:
       location:
         latitude: 36
         longitude: -95
-      ipsupport: IpSupportDynamic
-      numdynamicips: 254
-      state: Ready
-    - key:
-        organization: enterprise
-        name: enterprise-1
-      location:
-        latitude: 31
-        longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready
@@ -126,15 +126,6 @@ regiondata:
       location:
         latitude: 36
         longitude: -96
-      ipsupport: IpSupportDynamic
-      numdynamicips: 254
-      state: Ready
-    - key:
-        organization: enterprise
-        name: enterprise-2
-      location:
-        latitude: 31
-        longitude: -91
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       state: Ready

@@ -434,15 +434,18 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	checkMcErr("ShowBillingOrgs", status, err, rc)
 	roles, status, err := mcClient.ShowUserRole(uri, token)
 	checkMcErr("ShowRoles", status, err, rc)
-	ocs, status, err := mcClient.ShowOrgCloudletPool(uri, token)
-	checkMcErr("ShowOrgCloudletPools", status, err, rc)
+	invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, &ormapi.OrgCloudletPool{})
+	checkMcErr("ShowCloudletPoolAccessInvitations", status, err, rc)
+	confirms, status, err := mcClient.ShowCloudletPoolAccessConfirmation(uri, token, &ormapi.OrgCloudletPool{})
+	checkMcErr("ShowCloudletPoolAccessConfirmations", status, err, rc)
 
 	showData := &ormapi.AllData{
-		Controllers:      ctrls,
-		Orgs:             orgs,
-		BillingOrgs:      bOrgs,
-		Roles:            roles,
-		OrgCloudletPools: ocs,
+		Controllers:                     ctrls,
+		Orgs:                            orgs,
+		BillingOrgs:                     bOrgs,
+		Roles:                           roles,
+		CloudletPoolAccessInvitations:   invites,
+		CloudletPoolAccessConfirmations: confirms,
 	}
 	for _, ctrl := range ctrls {
 		client := testutil.TestClient{
@@ -506,7 +509,7 @@ func getRegionAppDataFromMap(regionDataMap interface{}) map[string]interface{} {
 	return appData
 }
 
-func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string) *edgetestutil.AllDataOut {
+func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string, apicb edgetestutil.RunAllDataApiCallback) *edgetestutil.AllDataOut {
 	appDataMap := getRegionAppDataFromMap(rdMap)
 	client := testutil.TestClient{
 		Region:   rd.Region,
@@ -523,11 +526,11 @@ func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi
 	case "add":
 		fallthrough
 	case "update":
-		edgetestutil.RunAllDataApis(run, &rd.AppData, appDataMap, output)
+		edgetestutil.RunAllDataApis(run, &rd.AppData, appDataMap, output, apicb)
 	case "remove":
 		fallthrough
 	case "delete":
-		edgetestutil.RunAllDataReverseApis(run, &rd.AppData, appDataMap, output)
+		edgetestutil.RunAllDataReverseApis(run, &rd.AppData, appDataMap, output, apicb)
 	}
 	run.CheckErrs(fmt.Sprintf("%s region %s", mode, rd.Region), tag)
 	return output
@@ -550,14 +553,46 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		st, err := mcClient.AddUserRole(uri, token, &role)
 		outMcErr(output, fmt.Sprintf("AddUserRole[%d]", ii), st, err)
 	}
+	// CloudletPoolAccess must be run after regional CloudletPools, because
+	// they require the CloudletPools to exist, but before
+	// AppInst/ClusterInst since they affect the RBAC for them.
+	// We use a callback to intersperse their create in between the regional
+	// data creates.
+	// We also need to handle the case where there's no regional data,
+	// so the callback func is not called.
+	regions := getRegionsForCb(data)
+	apiRegionCb := func(done, region string) {
+		// this is done after cloudletpools are created
+		if done == "cloudletpools" {
+			for ii, oc := range data.CloudletPoolAccessInvitations {
+				if oc.Region != region {
+					continue
+				}
+				st, err := mcClient.CreateCloudletPoolAccessInvitation(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("CreateCloudletPoolAccessInvitation[%d]", ii), st, err)
+			}
+			for ii, oc := range data.CloudletPoolAccessConfirmations {
+				if oc.Region != region {
+					continue
+				}
+				st, err := mcClient.CreateCloudletPoolAccessConfirmation(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("CreateCloudletPoolAccessConfirmation[%d]", ii), st, err)
+			}
+		}
+		delete(regions, region)
+	}
 	for ii, rd := range data.RegionData {
+		apicb := func(done string) {
+			apiRegionCb(done, rd.Region)
+		}
 		rdm := getRegionDataMap(dataMap, ii)
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "create")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "create", apicb)
 		output.RegionData = append(output.RegionData, *rdout)
 	}
-	for ii, oc := range data.OrgCloudletPools {
-		st, err := mcClient.CreateOrgCloudletPool(uri, token, &oc)
-		outMcErr(output, fmt.Sprintf("CreateOrgCloudletPool[%d]", ii), st, err)
+	for region, _ := range regions {
+		// process MC data that was waiting on regional apis, but where
+		// no regional data was present so no regional apis where called.
+		apiRegionCb("cloudletpools", region)
 	}
 	for ii, ar := range data.AlertReceivers {
 		st, err := mcClient.CreateAlertReceiver(uri, token, &ar)
@@ -566,14 +601,43 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 }
 
 func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
-	for ii, oc := range data.OrgCloudletPools {
-		st, err := mcClient.DeleteOrgCloudletPool(uri, token, &oc)
-		outMcErr(output, fmt.Sprintf("DeleteOrgCloudletPool[%d]", ii), st, err)
+	for ii, ar := range data.AlertReceivers {
+		st, err := mcClient.DeleteAlertReceiver(uri, token, &ar)
+		outMcErr(output, fmt.Sprintf("DeleteAlertReceiver[%d]", ii), st, err)
+	}
+	// see comments in createMcData
+	regions := getRegionsForCb(data)
+	apiRegionCb := func(next, region string) {
+		// these must be done before CloudletPools
+		if next == "cloudletpools" {
+			for ii, oc := range data.CloudletPoolAccessConfirmations {
+				if oc.Region != region {
+					continue
+				}
+				st, err := mcClient.DeleteCloudletPoolAccessConfirmation(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("DeleteCloudletPoolAccessConfirmation[%d]", ii), st, err)
+			}
+			for ii, oc := range data.CloudletPoolAccessInvitations {
+				if oc.Region != region {
+					continue
+				}
+				st, err := mcClient.DeleteCloudletPoolAccessInvitation(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("DeleteCloudletPoolAccessInvitation[%d]", ii), st, err)
+			}
+		}
+		delete(regions, region)
 	}
 	for ii, rd := range data.RegionData {
+		apicb := func(next string) {
+			apiRegionCb(next, rd.Region)
+		}
 		rdm := getRegionDataMap(dataMap, ii)
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "delete")
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, "delete", apicb)
 		output.RegionData = append(output.RegionData, *rdout)
+	}
+	for region, _ := range regions {
+		// unused callbacks
+		apiRegionCb("cloudletpools", region)
 	}
 	for ii, bOrg := range data.BillingOrgs {
 		st, err := mcClient.DeleteBillingOrg(uri, token, &bOrg)
@@ -591,18 +655,25 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		st, err := mcClient.DeleteController(uri, token, &ctrl)
 		outMcErr(output, fmt.Sprintf("DeleteController[%d]", ii), st, err)
 	}
-	for ii, ar := range data.AlertReceivers {
-		st, err := mcClient.DeleteAlertReceiver(uri, token, &ar)
-		outMcErr(output, fmt.Sprintf("DeleteAlertReceiver[%d]", ii), st, err)
-	}
 }
 
 func updateMcData(mode, uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
 	for ii, rd := range data.RegionData {
 		rdm := getRegionDataMap(dataMap, ii)
-		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, mode)
+		rdout := runRegionDataApi(mcClient, uri, token, tag, &rd, rdm, rc, mode, edgetestutil.NoApiCallback)
 		output.RegionData = append(output.RegionData, *rdout)
 	}
+}
+
+func getRegionsForCb(data *ormapi.AllData) map[string]struct{} {
+	regions := make(map[string]struct{})
+	for _, oc := range data.CloudletPoolAccessInvitations {
+		regions[oc.Region] = struct{}{}
+	}
+	for _, oc := range data.CloudletPoolAccessConfirmations {
+		regions[oc.Region] = struct{}{}
+	}
+	return regions
 }
 
 func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {

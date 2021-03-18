@@ -5,20 +5,44 @@ import (
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (s *Client) CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"orgcloudletpool", "create"}
+func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolaccess", "createinvitation"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
-func (s *Client) DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"orgcloudletpool", "delete"}
+func (s *Client) DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolaccess", "deleteinvitation"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
-func (s *Client) ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"orgcloudletpool", "show"}
+func (s *Client) ShowCloudletPoolAccessInvitation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	args := []string{"cloudletpoolaccess", "showinvitation"}
 	ops := []ormapi.OrgCloudletPool{}
-	st, err := s.runObjs(uri, token, args, nil, &ops)
+	st, err := s.runObjs(uri, token, args, filter, &ops)
+	return ops, st, err
+}
+
+func (s *Client) CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolaccess", "createconfirmation"}
+	return s.runObjs(uri, token, args, op, nil)
+}
+
+func (s *Client) DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolaccess", "deleteconfirmation"}
+	return s.runObjs(uri, token, args, op, nil)
+}
+
+func (s *Client) ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	args := []string{"cloudletpoolaccess", "showconfirmation"}
+	ops := []ormapi.OrgCloudletPool{}
+	st, err := s.runObjs(uri, token, args, filter, &ops)
+	return ops, st, err
+}
+
+func (s *Client) ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	args := []string{"cloudletpoolaccess", "showgranted"}
+	ops := []ormapi.OrgCloudletPool{}
+	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err
 }
 

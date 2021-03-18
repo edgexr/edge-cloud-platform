@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -26,27 +28,54 @@ func InitOrgCloudletPool(ctx context.Context) error {
 		}
 	}
 	cmd := fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
-	return db.Exec(cmd).Error
-}
-
-func CreateOrgCloudletPool(c echo.Context) error {
-	claims, err := getClaims(c)
+	err := db.Exec(cmd).Error
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
-	op := ormapi.OrgCloudletPool{}
-	if err := c.Bind(&op); err != nil {
-		return bindErr(c, err)
-	}
-	span := log.SpanFromContext(ctx)
-	span.SetTag("org", op.Org)
 
-	err = CreateOrgCloudletPoolObj(ctx, claims, &op)
-	return setReply(c, err, Msg("Organization CloudletPool created"))
+	err = upgradeOrgCloudletPoolType(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormapi.OrgCloudletPool) error {
+func upgradeOrgCloudletPoolType(ctx context.Context) error {
+	db := loggedDB(ctx)
+
+	// Upgrade function for the new Type column.
+	// Previous OrgCloudletPools without the Type field were created
+	// solely by the operator to grant access, and only one needed to exist.
+	// New OrgCloudletPools have a Type field to allow for separate
+	// objects created by the operator and developer, to allow for
+	// mutual consent only when both exist.
+	// Convert the old single object into dual objects.
+	old := make([]ormapi.OrgCloudletPool, 0)
+	err := db.Where("type = ?", "").Find(&old).Error
+	if err != nil {
+		return err
+	}
+	for _, op := range old {
+		op.Type = ormapi.CloudletPoolAccessInvitation
+		err = db.FirstOrCreate(&op, &op).Error
+		if err != nil {
+			return err
+		}
+		op.Type = ormapi.CloudletPoolAccessConfirmation
+		err = db.FirstOrCreate(&op, &op).Error
+		if err != nil {
+			return err
+		}
+		op.Type = ""
+		err = deleteOrgCloudletPool(ctx, &op)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateOrgCloudletPool(op *ormapi.OrgCloudletPool) error {
 	if op.Org == "" {
 		return fmt.Errorf("Organization name not specified")
 	}
@@ -59,10 +88,10 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 	if op.CloudletPoolOrg == "" {
 		return fmt.Errorf("CloudletPool organization not specified")
 	}
+	return nil
+}
 
-	if err := authorized(ctx, claims.Username, op.CloudletPoolOrg, ResourceCloudletPools, ActionManage, withRequiresOrg(op.CloudletPoolOrg)); err != nil {
-		return err
-	}
+func createOrgCloudletPool(ctx context.Context, op *ormapi.OrgCloudletPool) error {
 	found, err := hasCloudletPool(ctx, op.Region, op.CloudletPool, op.CloudletPoolOrg)
 	if err != nil {
 		return err
@@ -84,7 +113,7 @@ func CreateOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormap
 			return fmt.Errorf("Specified CloudletPoolOrg %s does not exist", op.CloudletPoolOrg)
 		}
 		if strings.Contains(err.Error(), "duplicate key value violates unique") {
-			return fmt.Errorf("OrgCloudletPool org %s, region %s, pool %s poolorg %s already exists", op.Org, op.Region, op.CloudletPool, op.CloudletPoolOrg)
+			return fmt.Errorf("CloudletPool %s for org %s, region %s, pool %s poolorg %s already exists", op.Type, op.Org, op.Region, op.CloudletPool, op.CloudletPoolOrg)
 		}
 		return dbErr(err)
 	}
@@ -127,90 +156,24 @@ func hasCloudletPool(ctx context.Context, region, pool, org string) (bool, error
 	return found, nil
 }
 
-func DeleteOrgCloudletPool(c echo.Context) error {
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	ctx := GetContext(c)
-	op := ormapi.OrgCloudletPool{}
-	if err := c.Bind(&op); err != nil {
-		return bindErr(c, err)
-	}
-	span := log.SpanFromContext(ctx)
-	span.SetTag("org", op.Org)
-
-	err = DeleteOrgCloudletPoolObj(ctx, claims, &op)
-	return setReply(c, err, Msg("organization cloudletpool deleted"))
-}
-
-func DeleteOrgCloudletPoolObj(ctx context.Context, claims *UserClaims, op *ormapi.OrgCloudletPool) error {
-	if op.Org == "" {
-		return fmt.Errorf("Organization name not specified")
-	}
-	if op.Region == "" {
-		return fmt.Errorf("Region not specified")
-	}
-	if op.CloudletPool == "" {
-		return fmt.Errorf("CloudletPool not specified")
-	}
-
-	if err := authorized(ctx, claims.Username, op.CloudletPoolOrg, ResourceCloudletPools, ActionManage); err != nil {
-		// check for empty org here to allow admins to delete old
-		// orgcloudletpools that do not have CloudletPoolOrg.
-		if err == echo.ErrForbidden && op.CloudletPoolOrg == "" {
-			return fmt.Errorf("CloudletPool organization not specified")
-		}
-		return err
-	}
+func deleteOrgCloudletPool(ctx context.Context, op *ormapi.OrgCloudletPool) error {
 	db := loggedDB(ctx)
+
 	// can't use db.Delete as we're not using primary key
 	// see http://jinzhu.me/gorm/crud.html#delete
 	args := []interface{}{
-		"org = ? and region = ? and cloudlet_pool = ? and cloudlet_pool_org = ?",
+		"org = ? and region = ? and cloudlet_pool = ? and cloudlet_pool_org = ? and type = ?",
 		op.Org,
 		op.Region,
 		op.CloudletPool,
 		op.CloudletPoolOrg,
+		op.Type,
 	}
 	err := db.Delete(op, args...).Error
 	if err != nil {
 		return dbErr(err)
 	}
 	return nil
-}
-
-func ShowOrgCloudletPool(c echo.Context) error {
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	ctx := GetContext(c)
-
-	ops, err := ShowOrgCloudletPoolObj(ctx, claims.Username)
-	return setReply(c, err, ops)
-}
-
-func ShowOrgCloudletPoolObj(ctx context.Context, username string) ([]ormapi.OrgCloudletPool, error) {
-	ops := []ormapi.OrgCloudletPool{}
-	db := loggedDB(ctx)
-	err := db.Find(&ops).Error
-	if err != nil {
-		return nil, dbErr(err)
-	}
-	authz, err := newShowAuthz(ctx, "", username, ResourceCloudletPools, ActionView)
-	if err != nil {
-		return nil, err
-	}
-
-	retops := []ormapi.OrgCloudletPool{}
-	for _, op := range ops {
-		if !authz.Ok(op.CloudletPoolOrg) {
-			continue
-		}
-		retops = append(retops, op)
-	}
-	return retops, nil
 }
 
 // Used by UI to show cloudlets for the current organization
@@ -331,4 +294,168 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 		}
 	})
 	return setReply(c, err, show)
+}
+
+// Operators invite Developers to their CloudletPool
+func CreateCloudletPoolAccessInvitation(c echo.Context) error {
+	return createDeleteCloudletPoolAccess(c, cloudcommon.Create, ormapi.CloudletPoolAccessInvitation)
+}
+
+func DeleteCloudletPoolAccessInvitation(c echo.Context) error {
+	return createDeleteCloudletPoolAccess(c, cloudcommon.Delete, ormapi.CloudletPoolAccessInvitation)
+}
+
+func ShowCloudletPoolAccessInvitation(c echo.Context) error {
+	return showCloudletPoolAccess(c, ormapi.CloudletPoolAccessInvitation)
+}
+
+// Developers confirm Operator invitations
+func CreateCloudletPoolAccessConfirmation(c echo.Context) error {
+	return createDeleteCloudletPoolAccess(c, cloudcommon.Create, ormapi.CloudletPoolAccessConfirmation)
+}
+
+func DeleteCloudletPoolAccessConfirmation(c echo.Context) error {
+	return createDeleteCloudletPoolAccess(c, cloudcommon.Delete, ormapi.CloudletPoolAccessConfirmation)
+}
+
+func ShowCloudletPoolAccessConfirmation(c echo.Context) error {
+	return showCloudletPoolAccess(c, ormapi.CloudletPoolAccessConfirmation)
+}
+
+// Show access granted
+func ShowCloudletPoolAccessGranted(c echo.Context) error {
+	return showCloudletPoolAccess(c, "")
+}
+
+func createDeleteCloudletPoolAccess(c echo.Context, action cloudcommon.Action, typ string) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+
+	in := ormapi.OrgCloudletPool{}
+	if err := c.Bind(&in); err != nil {
+		return bindErr(c, err)
+	}
+	if err := validateOrgCloudletPool(&in); err != nil {
+		return err
+	}
+	span := log.SpanFromContext(ctx)
+
+	if typ == ormapi.CloudletPoolAccessInvitation {
+		// make sure caller is authorized for operator org
+		span.SetTag("org", in.CloudletPoolOrg)
+		if err := authorized(ctx, claims.Username, in.CloudletPoolOrg, ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	} else if typ == ormapi.CloudletPoolAccessConfirmation {
+		// make sure caller is authorized for developer org
+		span.SetTag("org", in.Org)
+		if err := authorized(ctx, claims.Username, in.Org, ResourceUsers, ActionManage); err != nil {
+			return err
+		}
+		// make sure invitation exists for create
+		if action == cloudcommon.Create {
+			lookup := in
+			lookup.Type = ormapi.CloudletPoolAccessInvitation
+			db := loggedDB(ctx)
+			res := db.Where(&lookup).Find(&lookup)
+			if res.RecordNotFound() {
+				return c.JSON(http.StatusBadRequest, Msg("No invitation for specified cloudlet pool access"))
+			}
+			if res.Error != nil {
+				return dbErr(res.Error)
+			}
+		}
+	} else {
+		return fmt.Errorf("Internal error: invalid type")
+	}
+
+	in.Type = typ
+	msg := ""
+	if action == cloudcommon.Create {
+		err = createOrgCloudletPool(ctx, &in)
+		msg = fmt.Sprintf("%s created", typ)
+	} else if action == cloudcommon.Delete {
+		err = deleteOrgCloudletPool(ctx, &in)
+		msg = fmt.Sprintf("%s deleted", typ)
+	} else {
+		return fmt.Errorf("Internal error: invalid action")
+	}
+	if err == nil {
+		// TODO: trigger email or slack to notify other party
+	}
+	return setReply(c, err, Msg(msg))
+}
+
+func showCloudletPoolAccess(c echo.Context, typ string) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+
+	filter := ormapi.OrgCloudletPool{}
+	if err := c.Bind(&filter); err != nil {
+		return bindErr(c, err)
+	}
+	// note that gorm only filters on non-nil fields, so if typ is ""
+	// it is effectively ignored for filtering on the where query.
+	filter.Type = typ
+
+	authz, err := newAuthzOrgCloudletPool(ctx, filter.Region, claims.Username)
+	if err != nil {
+		return err
+	}
+
+	ops := []ormapi.OrgCloudletPool{}
+	db := loggedDB(ctx)
+	err = db.Where(&filter).Find(&ops).Error
+	if err != nil {
+		return dbErr(err)
+	}
+
+	retops := []ormapi.OrgCloudletPool{}
+	for _, op := range ops {
+		if !authz.Ok(&op) {
+			continue
+		}
+		if filter.Type != "" {
+			// hide type as it is an internal-only field
+			op.Type = ""
+		}
+		retops = append(retops, op)
+	}
+	if filter.Type == "" {
+		// reduce invitations and confirmations to single granted
+		retops = getAccessGranted(retops)
+	}
+	return setReply(c, nil, retops)
+
+}
+
+func getAccessGranted(ops []ormapi.OrgCloudletPool) []ormapi.OrgCloudletPool {
+	tracker := make(map[ormapi.OrgCloudletPool]int)
+	granted := make([]ormapi.OrgCloudletPool, 0)
+	for _, op := range ops {
+		lookup := op
+		lookup.Type = ""
+		val := tracker[lookup]
+		if op.Type == ormapi.CloudletPoolAccessInvitation {
+			val |= 0x1
+		} else if op.Type == ormapi.CloudletPoolAccessConfirmation {
+			val |= 0x2
+		} else {
+			continue
+		}
+		// can never hit 3 more than once because you can't have
+		// duplicate entries because the unique key is based on all
+		// the fields.
+		if val == 3 {
+			granted = append(granted, lookup)
+		}
+		tracker[lookup] = val
+	}
+	return granted
 }
