@@ -247,7 +247,15 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			} else {
 				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
 				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, rootLBName, cloudcommon.IPAddrAllInterfaces, masterIP.ExternalAddr, ops, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
+				wlParams := infracommon.WhiteListParams{
+					SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+					ServerName:  rootLBName,
+					Label:       infracommon.GetAppWhitelistRulesLabel(app),
+					AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+					Ports:       appInst.MappedPorts,
+					DestIP:      infracommon.DestIPUnspecified,
+				}
+				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, cloudcommon.IPAddrAllInterfaces, masterIP.ExternalAddr, ops, proxy.WithDockerPublishPorts(), proxy.WithDockerNetwork(""))
 			}
 		}
 
@@ -299,7 +307,15 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			}
 			updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules")
 			ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: false, AddSecurityRules: false}
-			err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, orchVals.externalServerName, cloudcommon.IPAddrAllInterfaces, vmIP.ExternalAddr, ops, proxyOps...)
+			wlParams := infracommon.WhiteListParams{
+				SecGrpName:  infracommon.GetServerSecurityGroupName(orchVals.externalServerName),
+				ServerName:  orchVals.externalServerName,
+				Label:       infracommon.GetAppWhitelistRulesLabel(app),
+				AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+				Ports:       appInst.MappedPorts,
+				DestIP:      infracommon.DestIPUnspecified,
+			}
+			err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, cloudcommon.IPAddrAllInterfaces, vmIP.ExternalAddr, ops, proxyOps...)
 			if err != nil {
 				return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 			}
@@ -424,7 +440,15 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			listenIP = rootLBIPaddr.InternalAddr
 		}
 		ops := infracommon.ProxyDnsSecOpts{AddProxy: addproxy, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-		err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, rootLBClient, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, rootLBName, listenIP, backendIP, ops, proxyOps...)
+		wlParams := infracommon.WhiteListParams{
+			SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+			ServerName:  rootLBName,
+			Label:       infracommon.GetAppWhitelistRulesLabel(app),
+			AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+			Ports:       appInst.MappedPorts,
+			DestIP:      infracommon.DestIPUnspecified,
+		}
+		err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, rootLBClient, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, listenIP, backendIP, ops, proxyOps...)
 		if err != nil {
 			return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 		}
@@ -476,8 +500,15 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			if strings.Contains(err.Error(), ServerDoesNotExistError) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
-				secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
-				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, infracommon.GetAppWhitelistRulesLabel(app), appInst.MappedPorts, app, rootLBName, v.VMProvider.RemoveWhitelistSecurityRules)
+				wlParams := infracommon.WhiteListParams{
+					SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+					ServerName:  rootLBName,
+					Label:       infracommon.GetAppWhitelistRulesLabel(app),
+					AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+					Ports:       appInst.MappedPorts,
+					DestIP:      infracommon.DestIPUnspecified,
+				}
+				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
 				return nil
 			}
 			return err
@@ -496,8 +527,15 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
 
 		// Clean up security rules and proxy if app is external
-		secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
-		if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), secGrp, infracommon.GetAppWhitelistRulesLabel(app), appInst.MappedPorts, app, rootLBName, v.VMProvider.RemoveWhitelistSecurityRules); err != nil {
+		wlParams := infracommon.WhiteListParams{
+			SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+			ServerName:  rootLBName,
+			Label:       infracommon.GetAppWhitelistRulesLabel(app),
+			AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+			Ports:       appInst.MappedPorts,
+			DestIP:      infracommon.DestIPUnspecified,
+		}
+		if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 		}
 		if !app.InternalPorts {
@@ -575,8 +613,15 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			if strings.Contains(err.Error(), ServerDoesNotExistError) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cluster is gone, allow app deletion")
-				secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
-				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), secGrp, infracommon.GetAppWhitelistRulesLabel(app), appInst.MappedPorts, app, rootLBName, v.VMProvider.RemoveWhitelistSecurityRules)
+				wlParams := infracommon.WhiteListParams{
+					SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+					ServerName:  rootLBName,
+					Label:       infracommon.GetAppWhitelistRulesLabel(app),
+					AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+					Ports:       appInst.MappedPorts,
+					DestIP:      infracommon.DestIPUnspecified,
+				}
+				v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, dockermgmt.GetContainerName(&app.Key), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams)
 				return nil
 			}
 			return err
@@ -591,9 +636,16 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 		name := dockermgmt.GetContainerName(&app.Key)
 		if !app.InternalPorts {
-			secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
 			//  the proxy does not yet exist for docker, but it eventually will.  Secgrp rules should be deleted in either case
-			if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, name, secGrp, infracommon.GetAppWhitelistRulesLabel(app), appInst.MappedPorts, app, rootLBName, v.VMProvider.RemoveWhitelistSecurityRules); err != nil {
+			wlParams := infracommon.WhiteListParams{
+				SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+				ServerName:  rootLBName,
+				Label:       infracommon.GetAppWhitelistRulesLabel(app),
+				AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+				Ports:       appInst.MappedPorts,
+				DestIP:      infracommon.DestIPUnspecified,
+			}
+			if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, rootLBClient, name, v.VMProvider.RemoveWhitelistSecurityRules, &wlParams); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", name, "rootlb", rootLBName, "error", err)
 			}
 		}

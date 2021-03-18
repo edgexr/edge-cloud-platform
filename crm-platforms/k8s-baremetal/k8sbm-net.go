@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
 )
@@ -117,15 +117,15 @@ func (k *K8sBareMetalPlatform) AssignFreeLbIp(ctx context.Context, client ssh.Cl
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error adding internal ip", "ip", internalIp, "devName", intDevName, "label", newSecondaryInternalDev, "out", out, "err", err)
 		return "", "", "", fmt.Errorf("Error assigning new internal IP: %s - %v", out, err)
 	}
-	return newSecondaryInternalDev, freeExternalIp, internalIp, nil
+	return newSecondaryExternalDev, freeExternalIp, internalIp, nil
 }
 
-func (k *K8sBareMetalPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules not implemented yet")
-	return nil
+func (k *K8sBareMetalPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "wlParams", wlParams)
+	return infracommon.AddIngressIptablesRules(ctx, client, wlParams.Label, wlParams.AllowedCIDR, wlParams.DestIP, wlParams.Ports)
 }
 
-func (k *K8sBareMetalPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, grpName, server, label, allowedCidr string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules not implemented yet")
-	return nil
+func (k *K8sBareMetalPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "wlParams", wlParams)
+	return infracommon.RemoveIngressIptablesRules(ctx, client, wlParams.Label, wlParams.AllowedCIDR, wlParams.DestIP, wlParams.Ports)
 }

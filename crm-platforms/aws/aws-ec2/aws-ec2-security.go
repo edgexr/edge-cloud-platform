@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -183,14 +184,14 @@ func (a *AwsEc2Platform) DeleteSecurityGroup(ctx context.Context, groupId, vpcId
 	return nil
 }
 
-func (a *AwsEc2Platform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "secGrpName", secGrpName, "label", label, "allowedCIDR", allowedCIDR, "ports", ports)
-	return a.addOrDeleteSecurityRule(ctx, secGrpName, allowedCIDR, ports, SecurityGroupRuleCreate)
+func (a *AwsEc2Platform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "wlParams", wlParams)
+	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR, wlParams.Ports, SecurityGroupRuleCreate)
 }
 
-func (a *AwsEc2Platform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "allowedCIDR", allowedCIDR, "ports", ports)
-	return a.addOrDeleteSecurityRule(ctx, secGrpName, allowedCIDR, ports, SecurityGroupRuleRevoke)
+func (a *AwsEc2Platform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "client", client)
+	return a.addOrDeleteSecurityRule(ctx, wlParams.SecGrpName, wlParams.AllowedCIDR, wlParams.Ports, SecurityGroupRuleRevoke)
 }
 
 // AllowIntraVpcTraffic creates a rule to allow traffic within the VPC
