@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -411,6 +410,21 @@ type potentialCreateSite struct {
 	hasFree     HasItType
 }
 
+type potentialCreateSites struct {
+	sites []*potentialCreateSite
+	next  int
+	mux   sync.Mutex
+}
+
+func (s *potentialCreateSites) getNext() *potentialCreateSite {
+	var site *potentialCreateSite
+	if s.next < len(s.sites) {
+		site = s.sites[s.next]
+		s.next++
+	}
+	return site
+}
+
 func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname string, prevPolicyCloudlets map[edgeproto.CloudletKey]struct{}) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "checkPolicy", "app", s.appKey, "policy", pname)
 	policy := edgeproto.AutoProvPolicy{}
@@ -480,41 +494,69 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 	}
 
 	// Check min
-	createSites := s.chooseCreate(ctx, potentialCreate, int(policy.MinActiveInstances)-onlineCount)
-	if len(createSites) < int(policy.MinActiveInstances)-onlineCount {
+	needCreateCount := int(policy.MinActiveInstances) - onlineCount
+	potentialCreate = s.sortPotentialCreate(ctx, potentialCreate)
+	if len(potentialCreate) < needCreateCount {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Not enough potential Cloudlets to meet min constraint", "App", s.appKey, "policy", pname, "min", policy.MinActiveInstances)
 		str := fmt.Sprintf("Not enough potential cloudlets to deploy to for App %s to meet policy %s min constraint %d", s.appKey.GetKeyString(), pname, policy.MinActiveInstances)
 		for _, req := range s.failoverReqs {
 			req.addError(str)
 		}
 	}
-	for _, site := range createSites {
-		inst := edgeproto.AppInst{}
-		inst.Key.AppKey = app.Key
-		inst.Key.ClusterInstKey.CloudletKey = site.cloudletKey
-		inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoProvClusterName
-		inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
-
+	createSites := potentialCreateSites{
+		sites: potentialCreate,
+	}
+	// Spawn the same number of threads as the number of AppInsts we need
+	// to create. Each thread will try to create a single AppInst.
+	// If a create fails, it will retry with the next best potential
+	// cloudlet in the list. This will continue until each thread has
+	// created a single AppInst, or we've run out of sites to try.
+	// These could potentially overlap with a retry of this App,
+	// but that's ok for create since the Controller will prevent
+	// extra creates to meet the min.
+	log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov create min workers", "needCreateCount", needCreateCount, "numPotential", len(potentialCreate))
+	for ii := 0; ii < needCreateCount && ii < len(potentialCreate); ii++ {
 		for _, req := range s.failoverReqs {
 			req.waitApiCalls.Add(1)
 		}
-		go func() {
-			err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
-			if err == nil {
-				str := fmt.Sprintf("Created AppInst %s to meet policy %s min constraint %d", inst.Key.GetKeyString(), pname, policy.MinActiveInstances)
-				for _, req := range s.failoverReqs {
-					req.addCompleted(str)
+		go func(workerNum int) {
+			span, ctx := log.ChildSpan(ctx, log.DebugLevelMetrics, "auto-prov create for min worker")
+			defer span.Finish()
+			log.SetTags(span, s.appKey.GetTags())
+			for attempt := 0; ; attempt++ {
+				site := createSites.getNext()
+				if site == nil {
+					break
 				}
-			} else if !strings.Contains(err.Error(), "Create to satisfy min already met, ignoring") {
-				str := fmt.Sprintf("Failed to create AppInst %s to meet policy %s min constraint %d: %s", inst.Key.GetKeyString(), pname, policy.MinActiveInstances, err)
-				for _, req := range s.failoverReqs {
-					req.addError(str)
+				log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov create min worker", "workerNum", workerNum, "attempt", attempt)
+				inst := edgeproto.AppInst{}
+				inst.Key.AppKey = app.Key
+				inst.Key.ClusterInstKey.CloudletKey = site.cloudletKey
+				inst.Key.ClusterInstKey.ClusterKey.Name = cloudcommon.AutoProvClusterName
+				inst.Key.ClusterInstKey.Organization = cloudcommon.OrganizationMobiledgeX
+				err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
+				if err == nil {
+					str := fmt.Sprintf("Created AppInst %s to meet policy %s min constraint %d", inst.Key.GetKeyString(), pname, policy.MinActiveInstances)
+					for _, req := range s.failoverReqs {
+						req.addCompleted(str)
+					}
+				} else if ignoreDeployError(inst.Key, err) {
+					err = nil
+				} else {
+					str := fmt.Sprintf("Failed to create AppInst %s to meet policy %s min constraint %d: %s", inst.Key.GetKeyString(), pname, policy.MinActiveInstances, err)
+					for _, req := range s.failoverReqs {
+						req.addError(str)
+					}
 				}
+				if err == nil {
+					break
+				}
+				attempt++
 			}
 			for _, req := range s.failoverReqs {
 				req.waitApiCalls.Done()
 			}
-		}()
+		}(ii)
 	}
 }
 
@@ -534,12 +576,9 @@ func (s *AppChecker) chooseDelete(ctx context.Context, potential []edgeproto.App
 	return potential[len(potential)-count : len(potential)]
 }
 
-func (s *AppChecker) chooseCreate(ctx context.Context, potential []*potentialCreateSite, count int) []*potentialCreateSite {
-	if count <= 0 {
-		return []*potentialCreateSite{}
-	}
-	if count >= len(potential) {
-		count = len(potential)
+func (s *AppChecker) sortPotentialCreate(ctx context.Context, potential []*potentialCreateSite) []*potentialCreateSite {
+	if len(potential) <= 1 {
+		return potential
 	}
 
 	autoProvAggr.mux.Lock()
@@ -574,7 +613,7 @@ func (s *AppChecker) chooseCreate(ctx context.Context, potential []*potentialCre
 		log.SpanLog(ctx, log.DebugLevelMetrics, "chooseCreate stats", "cloudlet1", ckey1, "cloudlet2", ckey2, "incr1", incr1, "incr2", incr2)
 		return incr1 > incr2
 	})
-	return potential[:count]
+	return potential
 }
 
 func (s *AppChecker) appInstOnline(key *edgeproto.AppInstKey) bool {
