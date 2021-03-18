@@ -57,12 +57,16 @@ type DummyController struct {
 	lis              *bufconn.Listener
 	failCreate       bool
 	failDelete       bool
+	failCreateInsts  map[edgeproto.AppInstKey]struct{}
+	failDeleteInsts  map[edgeproto.AppInstKey]struct{}
 }
 
 func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *edgeproto.AppInstRefsCache) *DummyController {
 	d := DummyController{}
 	d.appInstCache = appInstCache
 	d.appInstRefsCache = appInstRefsCache
+	d.failCreateInsts = make(map[edgeproto.AppInstKey]struct{})
+	d.failDeleteInsts = make(map[edgeproto.AppInstKey]struct{})
 	d.serv = grpc.NewServer(
 		grpc.UnaryInterceptor(cloudcommon.AuditUnaryInterceptor),
 		grpc.StreamInterceptor(cloudcommon.AuditStreamInterceptor))
@@ -106,6 +110,9 @@ func (s *DummyController) CreateAppInst(in *edgeproto.AppInst, server edgeproto.
 	if s.failCreate {
 		return fmt.Errorf("Some error")
 	}
+	if _, found := s.failCreateInsts[in.Key]; found {
+		return fmt.Errorf("Some error")
+	}
 	s.updateAppInst(server.Context(), in)
 	return nil
 }
@@ -117,6 +124,9 @@ func (s *DummyController) UpdateAppInst(in *edgeproto.AppInst, server edgeproto.
 
 func (s *DummyController) DeleteAppInst(in *edgeproto.AppInst, server edgeproto.AppInstApi_DeleteAppInstServer) error {
 	if s.failDelete {
+		return fmt.Errorf("Some error")
+	}
+	if _, found := s.failDeleteInsts[in.Key]; found {
 		return fmt.Errorf("Some error")
 	}
 	s.deleteAppInst(server.Context(), in)

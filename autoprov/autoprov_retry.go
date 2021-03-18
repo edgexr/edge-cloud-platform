@@ -5,12 +5,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 type RetryTracker struct {
-	// failures key is AppInstKey without Cluster info.
 	allFailures map[edgeproto.AppInstKey]struct{}
 	mux         sync.Mutex
 }
@@ -22,28 +22,25 @@ func newRetryTracker() *RetryTracker {
 }
 
 func (s *RetryTracker) registerDeployResult(ctx context.Context, key edgeproto.AppInstKey, err error) {
-	existsErr := key.ExistsError()
-
+	lookup := key
 	// tracking is cluster agnostic. We assume any failures are
 	// caused by the App config, or an issue with the Cloudlet, and
 	// nothing specific to autoclusters, whose configuration is
 	// derived from the App.
-	key.ClusterInstKey.Organization = ""
-	key.ClusterInstKey.ClusterKey.Name = ""
+	lookup.ClusterInstKey.Organization = ""
+	lookup.ClusterInstKey.ClusterKey.Name = ""
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if err == nil ||
-		strings.Contains(err.Error(), existsErr.Error()) ||
-		strings.Contains(err.Error(), "already met, ignoring") ||
-		strings.Contains(err.Error(), "AppInst against App which is being deleted") {
-		delete(s.allFailures, key)
+	if ignoreDeployError(key, err) {
+		// remove any existing failure status
+		delete(s.allFailures, lookup)
 		return
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "Failed to deploy appInst, track it as part of retryTracker", "key", key, "err", err)
 	// track new failure
-	s.allFailures[key] = struct{}{}
+	s.allFailures[lookup] = struct{}{}
 	// Because the retry interval (the aggr thread interval) is so long
 	// (default 5 minutes) we don't bother with any back-off from
 	// multiple consecutive failures.
@@ -75,4 +72,16 @@ func (s *RetryTracker) hasFailure(ctx context.Context, appKey edgeproto.AppKey, 
 	defer s.mux.Unlock()
 	_, found := s.allFailures[key]
 	return found
+}
+
+func ignoreDeployError(key edgeproto.AppInstKey, err error) bool {
+	if err == nil {
+		return true
+	}
+	if strings.Contains(err.Error(), key.ExistsError().Error()) ||
+		strings.Contains(err.Error(), cloudcommon.AutoProvMinAlreadyMetError.Error()) ||
+		strings.Contains(err.Error(), "AppInst against App which is being deleted") {
+		return true
+	}
+	return false
 }

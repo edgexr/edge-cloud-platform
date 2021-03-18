@@ -61,7 +61,7 @@ func TestChoose(t *testing.T) {
 	appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
 	autoProvAggr.allStats[app.Key] = &appStats
 
-	// the chooseCreate and chooseDelete functions may modify the passed in
+	// the sortPotentialCreate and chooseDelete functions may modify the passed in
 	// array so we need to clone it for testing.
 	cloneA := func(in []edgeproto.AppInstKey) []edgeproto.AppInstKey {
 		out := make([]edgeproto.AppInstKey, len(in), len(in))
@@ -77,26 +77,18 @@ func TestChoose(t *testing.T) {
 	// checker
 	appChecker := newAppChecker(&cacheData, app.Key, nil)
 
-	// chooseCreate tests
+	// sortPotentialCreate tests
 
 	// no stats, should return same list
-	results := appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	results := appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
 	require.Equal(t, potentialCreate, results)
-
-	// no stats, should return same list (count greater than list)
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 100)
-	require.Equal(t, potentialCreate, results)
-
-	// no stats, should return same list (truncated)
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 1)
-	require.Equal(t, potentialCreate[:1], results)
 
 	// zero stats
 	for _, cloudlet := range cloudlets {
 		appStats.cloudlets[cloudlet.Key] = &apCloudletStats{}
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 2)
-	require.Equal(t, potentialCreate[:2], results)
+	results = appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
+	require.Equal(t, potentialCreate, results)
 
 	// later cloudlets should be preferred
 	appStats.cloudlets[cloudlets[0].Key].count = 2
@@ -107,7 +99,7 @@ func TestChoose(t *testing.T) {
 		potentialCreate[1],
 		potentialCreate[0],
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	results = appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
 	require.Equal(t, reverse, results)
 
 	// change stats to change order
@@ -119,7 +111,7 @@ func TestChoose(t *testing.T) {
 		potentialCreate[2],
 		potentialCreate[0],
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	results = appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
 	require.Equal(t, expected, results)
 
 	// check that cloudlets with free reservable ClusterInsts are preferred
@@ -129,7 +121,7 @@ func TestChoose(t *testing.T) {
 		potentialCreate[1],
 		potentialCreate[0],
 	}
-	results = appChecker.chooseCreate(ctx, clone(potentialCreate), 3)
+	results = appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
 	require.Equal(t, expected, results)
 
 	// chooseDelete tests
@@ -618,29 +610,45 @@ func TestAppChecker(t *testing.T) {
 	cacheData.appInstRefsCache.Update(ctx, &refs, 0)
 	// no AppInsts to start
 	require.Equal(t, 0, dc.appInstCache.GetCount())
-	// test retry
-	dc.failCreate = true
+	// test blacklisting by causing inst[0] create to fail
+	insts = pt3.getAppInsts(&appRetry.Key)
+	dc.failCreateInsts[insts[0].Key] = struct{}{}
 	pt3.policy.MinActiveInstances = 1
 	pt3.policy.MaxInstances = 1
 	pt3.updatePolicy(ctx)
 	minmax.CheckApp(ctx, appRetry.Key)
-	insts = pt3.getAppInsts(&appRetry.Key)
-	// appinst create should fail on first cloudlet
+	// appinst create should fail on first cloudlet, and it should be marked,
+	// but minmax will run create on next best potential cloudlet (inst[1])
 	err = waitForRetryAppInsts(ctx, insts[0].Key, true)
 	require.Nil(t, err)
+	err = dc.waitForAppInsts(ctx, 1)
+	require.Nil(t, err)
+	require.True(t, dc.appInstCache.HasKey(&insts[1].Key))
+	// delete all instances
+	pt3.deleteAppInsts(ctx, dc, &appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
-	// if app check is triggered now, it should skip first cloudlet,
-	// and create it on the second cloudlet.
-	dc.failCreate = false
+	// clear artificial failure mode
+	delete(dc.failCreateInsts, insts[0].Key)
+	// re-run, cloudlet[0] is blacklisted so will not be used
+	// even though we've removed the artificial failure.
 	minmax.CheckApp(ctx, appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
 	require.True(t, dc.appInstCache.HasKey(&insts[1].Key))
+	// delete all instances
+	pt3.deleteAppInsts(ctx, dc, &appRetry.Key)
+	err = dc.waitForAppInsts(ctx, 0)
+	require.Nil(t, err)
 	// clear out retry
 	retryTracker.doRetry(ctx, minmax)
 	err = waitForRetryAppInsts(ctx, insts[0].Key, false)
 	require.Nil(t, err)
+	// with retry cleared, minmax will attempt to create on inst[0] again
+	minmax.CheckApp(ctx, appRetry.Key)
+	err = dc.waitForAppInsts(ctx, 1)
+	require.Nil(t, err)
+	require.True(t, dc.appInstCache.HasKey(&insts[0].Key))
 
 	// reset back to 0
 	pt3.policy.MinActiveInstances = 0
@@ -650,10 +658,6 @@ func TestAppChecker(t *testing.T) {
 	minmax.CheckApp(ctx, appRetry.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
-
-	pt3.policy.MinActiveInstances = 1
-	pt3.policy.MaxInstances = 1
-	pt3.updatePolicy(ctx)
 }
 
 type policyTest struct {
