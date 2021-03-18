@@ -2,7 +2,12 @@
 description: run Alert and Alertmanager tests. Assumes edge-cloud objects already present
 
 tests:
-  - name: verify that no appinst alerts are present, only cloudlet alerts
+  - name: disable resource quotas alerts by setting max threshold value
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: verify that no appinst alerts are present
     actions: [mcapi-showalerts]
     apifile: '{{datadir2}}/show_local_region.yml'
     curuserfile: '{{datadir2}}/mc_admin.yml'
@@ -10,7 +15,7 @@ tests:
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_cloudletalerts_only.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcalerts
 
   - name: verify that no emails about alerts are present
@@ -110,7 +115,7 @@ tests:
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_cloudletalerts_only.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcalerts
 
   - name: verify that email notification about an alert resolution was sent
@@ -233,8 +238,38 @@ tests:
     retryintervalsec: 0.5
     compareyaml:
       yaml1: '{{outputdir}}/show-commands.yml'
-      yaml2: '{{datadir2}}/mc_cloudletalerts_only_skip_dmuus_cloud_1.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
       filetype: mcalerts
+
+  - name: enable resource quotas alerts
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_cloudlet_resource_quotas.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
+  - name: check cloudlet alert
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/dmuus-1_cloudlet_resource_alert_show.yml'
+      filetype: mcalerts
+
+  - name: verify that email notification about the cloudlet alert was sent
+    actions: [email-check]
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/emaildata_cloudlet_resource_alert_firing.yml'
+      filetype: emaildata
+
+  - name: disable resource quotas alerts by setting max threshold value
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
 
   - name: verify that email notification about the cloudlet alert resolution was sent
     actions: [email-check]
