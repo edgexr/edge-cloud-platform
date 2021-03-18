@@ -35,17 +35,10 @@ var udevRulesFile = "/etc/udev/rules.d/70-persistent-net.rules"
 
 var sharedRootLBPortLock sync.Mutex
 
-type InterfaceActionsOp struct {
-	addInterface    bool
-	deleteInterface bool
-	createIptables  bool
-	deleteIptables  bool
-}
-
 var RootLBPorts = []dme.AppPort{}
 
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
-func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac string, action *InterfaceActionsOp) error {
+func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac string, action *infracommon.InterfaceActionsOp) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "persistInterfaceName", "ifName", ifName, "mac", mac, "action", action)
 	newFileContents := ""
 
@@ -64,7 +57,7 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 		}
 	}
 	newRule := fmt.Sprintf("SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"%s\", NAME=\"%s\"", mac, ifName)
-	if action.addInterface {
+	if action.AddInterface {
 		newFileContents = newFileContents + newRule + "\n"
 	}
 	// preexisting or not, write it
@@ -73,7 +66,7 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 
 // configureInternalInterfaceAndExternalForwarding sets up the new internal interface and then creates iptables rules to forward
 // traffic out the external interface.  Returns the name of the internal interface
-func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *InterfaceActionsOp) (string, error) {
+func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *infracommon.InterfaceActionsOp) (string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "configureInternalInterfaceAndExternalForwarding", "serverDetails", serverDetails, "internalPortName", internalPortName, "action", fmt.Sprintf("%+v", action))
 	internalIP, err := GetIPFromServerDetails(ctx, "", internalPortName, serverDetails)
@@ -110,21 +103,21 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 
 	if externalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", externalIP.MacAddress)
-		if action.addInterface {
+		if action.AddInterface {
 			return "", fmt.Errorf("unable to find interface for external port mac: %s", externalIP.MacAddress)
 		}
 		// keep going on delete
 	}
 	if internalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find internal interface via MAC", "mac", internalIP.MacAddress)
-		if action.addInterface {
+		if action.AddInterface {
 			return "", fmt.Errorf("unable to find interface for internal port mac: %s", internalIP.MacAddress)
 		}
 		// keep going on delete
 	}
 	netplanEnabled := ServerIsNetplanEnabled(ctx, client)
 	filename, fileMatch, contents := GetNetworkFileDetailsForIP(ctx, internalPortName, internalIfname, internalIP.InternalAddr, netplanEnabled)
-	if action.addInterface {
+	if action.AddInterface {
 		// cleanup any interfaces files that may be sitting around with our new interface, perhaps from some old failure
 		cmd := fmt.Sprintf("grep -l ' %s ' %s", fileMatch, internalIfname)
 		out, err = client.Output(cmd)
@@ -163,7 +156,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 			}
 		}
 
-	} else if action.deleteInterface {
+	} else if action.DeleteInterface {
 		cmd := fmt.Sprintf("sudo rm %s", filename)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -183,13 +176,13 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	}
 	// we can get here on some error cases in which the ifname were not found
 	if internalIfname != "" {
-		if action.addInterface || action.deleteInterface {
+		if action.AddInterface || action.DeleteInterface {
 			err = persistInterfaceName(ctx, client, internalIfname, internalIP.MacAddress, action)
 			if err != nil {
 				return "", nil
 			}
 		}
-		if action.createIptables || action.deleteIptables {
+		if action.CreateIptables || action.DeleteIptables {
 			if externalIfname != "" {
 				err = v.setupForwardingIptables(ctx, client, externalIfname, internalIfname, action)
 				if err != nil {
@@ -211,10 +204,10 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 		sharedRootLBPortLock.Lock()
 		defer sharedRootLBPortLock.Unlock()
 	}
-	var action InterfaceActionsOp
-	action.createIptables = true
+	var action infracommon.InterfaceActionsOp
+	action.CreateIptables = true
 	if attachPort {
-		action.addInterface = true
+		action.AddInterface = true
 		err := v.VMProvider.AttachPortToServer(ctx, rootLBName, subnetName, internalPortName, internalIPAddr, ActionCreate)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "fail to attach port", "err", err)
@@ -252,9 +245,9 @@ func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client
 		defer sharedRootLBPortLock.Unlock()
 	}
 
-	var action InterfaceActionsOp
-	action.deleteIptables = true
-	action.deleteInterface = true
+	var action infracommon.InterfaceActionsOp
+	action.DeleteIptables = true
+	action.DeleteInterface = true
 
 	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 	if err != nil {
@@ -413,15 +406,28 @@ func (v *VMPlatform) SetupRootLB(
 			PublicPort: 22,
 			Proto:      dme.LProto_L_PROTO_TCP,
 		}}
-		myCidr := myIp + "/32"
-		err = v.VMProvider.WhitelistSecurityRules(ctx, client, groupName, rootLBName, "rootlb-ssh", myCidr, sshPort)
+		wlParams := infracommon.WhiteListParams{
+			ServerName:  rootLBName,
+			SecGrpName:  groupName,
+			Label:       "rootlb-ssh",
+			AllowedCIDR: myIp + "/32",
+			Ports:       sshPort,
+		}
+		err = v.VMProvider.WhitelistSecurityRules(ctx, client, &wlParams)
 		if err != nil {
 			return err
 		}
 		if v.VMProperties.RequiresWhitelistOwnIp {
 			for _, a := range sd.Addresses {
-				extCidr := a.ExternalAddr + "/32"
-				err = v.VMProvider.WhitelistSecurityRules(ctx, client, groupName, rootLBName, "own-externalip-ssh", extCidr, sshPort)
+
+				wlParams = infracommon.WhiteListParams{
+					ServerName:  rootLBName,
+					SecGrpName:  groupName,
+					Label:       "own-externalip-ssh",
+					AllowedCIDR: a.ExternalAddr + "/32",
+					Ports:       sshPort,
+				}
+				err = v.VMProvider.WhitelistSecurityRules(ctx, client, &wlParams)
 				if err != nil {
 					return err
 				}
@@ -455,7 +461,14 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("failed to AddRouteToServer %v", err)
 	}
-	err = v.VMProvider.WhitelistSecurityRules(ctx, client, infracommon.GetServerSecurityGroupName(rootLBName), rootLBName, "rootlb-ports", infracommon.GetAllowedClientCIDR(), RootLBPorts)
+	wlParams := infracommon.WhiteListParams{
+		ServerName:  rootLBName,
+		SecGrpName:  groupName,
+		Label:       "rootlb-ports",
+		AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+		Ports:       RootLBPorts,
+	}
+	err = v.VMProvider.WhitelistSecurityRules(ctx, client, &wlParams)
 	if err != nil {
 		return fmt.Errorf("failed to WhitelistSecurityRules %v", err)
 	}

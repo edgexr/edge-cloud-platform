@@ -15,6 +15,8 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
+var k8sControlHostNodeType = "k8sbmcontrolhost"
+
 type K8sBareMetalPlatform struct {
 	commonPf           infracommon.CommonPlatform
 	caches             *platform.Caches
@@ -64,7 +66,7 @@ func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platfor
 		go k.commonPf.RefreshCloudletSSHKeys(platformConfig.AccessApi)
 	}
 
-	client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: platformConfig.CloudletKey.String(), Type: "k8sbmcontrolhost"})
+	client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: platformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 	if err != nil {
 		return err
 	}
@@ -112,14 +114,9 @@ func (k *K8sBareMetalPlatform) GetClusterInfraResources(ctx context.Context, clu
 	return &resources, nil
 }
 
-// TODO
-func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
-	return &edgeproto.AppInstRuntime{}, nil
-}
-
-// GetClusterPlatformClient is not needed presently for bare metal
 func (k *K8sBareMetalPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	return nil, fmt.Errorf("GetClusterPlatformClient not supported")
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterPlatformClient")
+	return k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: k.commonPf.PlatformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 }
 
 func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
@@ -134,11 +131,6 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 // TODO
 func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return []edgeproto.CloudletMgmtNode{}, nil
-}
-
-// TODO
-func (k *K8sBareMetalPlatform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
-	return "", fmt.Errorf("GetContainerCommand TODO")
 }
 
 func (k *K8sBareMetalPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {

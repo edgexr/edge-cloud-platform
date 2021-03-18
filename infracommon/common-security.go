@@ -16,7 +16,16 @@ import (
 	ssh "github.com/mobiledgex/golang-ssh"
 )
 
-type WhiteListFunc func(ctx context.Context, client ssh.Client, secGrpName string, serverName, label, allowedCIDR string, ports []dme.AppPort) error
+type WhiteListParams struct {
+	SecGrpName  string
+	ServerName  string
+	Label       string
+	AllowedCIDR string
+	DestIP      string
+	Ports       []dme.AppPort
+}
+
+type WhiteListFunc func(ctx context.Context, client ssh.Client, wlParams *WhiteListParams) error
 
 type ProxyDnsSecOpts struct {
 	AddProxy              bool
@@ -27,6 +36,8 @@ type ProxyDnsSecOpts struct {
 
 const RemoteCidrAll = "0.0.0.0/0"
 const RemoteCidrNone = "0.0.0.0/32"
+
+const DestIPUnspecified = ""
 
 func GetAllowedClientCIDR() string {
 	return RemoteCidrAll
@@ -42,14 +53,14 @@ func GetServerSecurityGroupName(serverName string) string {
 }
 
 // AddProxySecurityRulesAndPatchDNS Adds security rules and dns records in parallel
-func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, whiteListAdd WhiteListFunc, rootLBName, listenIP, backendIP string, ops ProxyDnsSecOpts, proxyops ...proxy.Op) error {
+func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, getDnsSvcAction GetDnsSvcActionFunc, whiteListAdd WhiteListFunc, wlParams *WhiteListParams, listenIP, backendIP string, ops ProxyDnsSecOpts, proxyops ...proxy.Op) error {
 	secchan := make(chan string)
 	dnschan := make(chan string)
 	proxychan := make(chan string)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "rootLBName", rootLBName, "listenIP", listenIP, "backendIP", backendIP, "ops", ops)
-	if len(appInst.MappedPorts) == 0 {
-		log.SpanLog(ctx, log.DebugLevelInfra, "no ports for application, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddProxySecurityRulesAndPatchDNS", "appname", kubeNames.AppName, "listenIP", listenIP, "backendIP", backendIP, "wlParams", wlParams, "ops", ops)
+	if len(wlParams.Ports) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "no ports specified, no DNS, LB or Security rules needed", "appname", kubeNames.AppName)
 		return nil
 	}
 	configs := append(app.Configs, appInst.Configs...)
@@ -76,7 +87,8 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 	}()
 	go func() {
 		if ops.AddSecurityRules {
-			err := whiteListAdd(ctx, client, GetServerSecurityGroupName(rootLBName), rootLBName, GetAppWhitelistRulesLabel(app), GetAllowedClientCIDR(), appInst.MappedPorts)
+			wlParams.AllowedCIDR = GetAllowedClientCIDR()
+			err := whiteListAdd(ctx, client, wlParams)
 			if err == nil {
 				secchan <- ""
 			} else {
@@ -108,13 +120,12 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 	return nil
 }
 
-func (c *CommonPlatform) DeleteProxySecurityGroupRules(ctx context.Context, client ssh.Client, proxyName string, secGrpName string, label string, ports []dme.AppPort, app *edgeproto.App, serverName string, whiteListDel WhiteListFunc) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteProxySecurityGroupRules", "proxyName", proxyName, "ports", ports)
+func (c *CommonPlatform) DeleteProxySecurityGroupRules(ctx context.Context, client ssh.Client, proxyName string, whiteListDel WhiteListFunc, wlParams *WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteProxySecurityGroupRules", "proxyName", proxyName, "wlParams", wlParams)
 
 	err := proxy.DeleteNginxProxy(ctx, client, proxyName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete proxy", "proxyName", proxyName, "error", err)
 	}
-	allowedClientCIDR := GetAllowedClientCIDR()
-	return whiteListDel(ctx, client, secGrpName, serverName, label, allowedClientCIDR, ports)
+	return whiteListDel(ctx, client, wlParams)
 }

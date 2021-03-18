@@ -9,7 +9,6 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
-	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -162,15 +161,15 @@ func (s *OpenstackPlatform) DeleteSecurityGroupRule(ctx context.Context, ruleID 
 	return nil
 }
 
-func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, secGrpName, server, label, allowedCIDR string, ports []dme.AppPort) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "secGrpName", secGrpName, "ports", ports)
+func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveWhitelistSecurityRules", "wlParams", wlParams)
 
 	allowedClientCIDR := infracommon.GetAllowedClientCIDR()
-	rules, err := o.ListSecurityGroupRules(ctx, secGrpName)
+	rules, err := o.ListSecurityGroupRules(ctx, wlParams.SecGrpName)
 	if err != nil {
 		return err
 	}
-	for _, port := range ports {
+	for _, port := range wlParams.Ports {
 		portString := fmt.Sprintf("%d:%d", port.PublicPort, port.PublicPort)
 		if port.EndPort != 0 {
 			portString = fmt.Sprintf("%d:%d", port.PublicPort, port.EndPort)
@@ -190,11 +189,11 @@ func (o *OpenstackPlatform) RemoveWhitelistSecurityRules(ctx context.Context, cl
 	return nil
 }
 
-func (o *OpenstackPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, grpName, server, label, allowedCidr string, ports []dme.AppPort) error {
+func (o *OpenstackPlatform) WhitelistSecurityRules(ctx context.Context, client ssh.Client, wlParams *infracommon.WhiteListParams) error {
 	// open the firewall for internal traffic
-	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "grpName", grpName, "allowedCidr", allowedCidr, "ports", ports)
+	log.SpanLog(ctx, log.DebugLevelInfra, "WhitelistSecurityRules", "wlParams", wlParams)
 
-	for _, p := range ports {
+	for _, p := range wlParams.Ports {
 		portStr := fmt.Sprintf("%d", p.PublicPort)
 		if p.EndPort != 0 {
 			portStr = fmt.Sprintf("%d:%d", p.PublicPort, p.EndPort)
@@ -203,7 +202,7 @@ func (o *OpenstackPlatform) WhitelistSecurityRules(ctx context.Context, client s
 		if err != nil {
 			return err
 		}
-		if err := o.AddSecurityRuleCIDR(ctx, allowedCidr, proto, grpName, portStr); err != nil {
+		if err := o.AddSecurityRuleCIDR(ctx, wlParams.AllowedCIDR, proto, wlParams.SecGrpName, portStr); err != nil {
 			return err
 		}
 	}
