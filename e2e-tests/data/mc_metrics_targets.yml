@@ -18,3 +18,7 @@ clusterinstkey:
     organization: dmuus
     name: dmuus-cloud-1
   organization: AcmeAppCo
+
+cloudletkey:
+  organization: dmuus
+  name: dmuus-cloud-1

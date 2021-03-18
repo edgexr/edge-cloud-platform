@@ -1,7 +1,7 @@
 eventtype: EventCloudletUpdate
 newcloudlet:
   status: FindFound
-  fqdn: smallcluster.dmuus-cloud-2.dmuus.mobiledgex.net
+  fqdn: dmuus-cloud-2.dmuus.mobiledgex.net
   ports:
   - proto: LProtoTcp
     internalport: 80
@@ -15,16 +15,6 @@ newcloudlet:
     internalport: 10002
     publicport: 10002
     fqdnprefix: someapplication110-udp.
-  - proto: LProtoTcp
-    internalport: 81
-    publicport: 81
-    fqdnprefix: someapplication110-tcp.
-    tls: true
-  - proto: LProtoTcp
-    internalport: 444
-    publicport: 444
-    fqdnprefix: someapplication110-tcp.
-    tls: true
   cloudletlocation:
     latitude: 35
     longitude: -95

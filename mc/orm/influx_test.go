@@ -72,7 +72,7 @@ func testPermShowClientMetrics(mcClient *ormclient.Client, uri, token, region, o
 	dat.Region = region
 	dat.Selector = selector
 	dat.AppInst = *in
-	status, err := mcClient.PostJsonStreamOut(uri+"/auth/metrics/client", token, dat, &out, func() {
+	status, err := mcClient.PostJsonStreamOut(uri+"/auth/metrics/clientapiusage", token, dat, &out, func() {
 		data = append(data, out)
 	})
 	return data, status, err

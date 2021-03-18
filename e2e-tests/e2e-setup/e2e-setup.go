@@ -144,10 +144,25 @@ var TagValues = map[string]struct{}{
 	"apporg":      struct{}{},
 	"clusterorg":  struct{}{},
 	"cloudletorg": struct{}{},
+	"method":      struct{}{},
 	// special event tags
 	"event":  struct{}{},
 	"status": struct{}{},
 	"flavor": struct{}{},
+	// edgeevents metrics tags
+	"deviceos":       struct{}{},
+	"devicemodel":    struct{}{},
+	"locationtile":   struct{}{},
+	"devicecarrier":  struct{}{},
+	"signalstrength": struct{}{},
+}
+
+// methods for dme-api metric
+var ApiMethods = []string{
+	"FindCloudlet",
+	"PlatformFindCloudlet",
+	"RegisterClient",
+	"VerifyLocation",
 }
 
 var apiAddrsUpdated = false

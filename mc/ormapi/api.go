@@ -394,15 +394,16 @@ type RegionClusterInstMetrics struct {
 }
 
 type RegionCloudletMetrics struct {
-	Region    string
-	Cloudlet  edgeproto.CloudletKey
-	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	Region       string
+	Cloudlet     edgeproto.CloudletKey
+	Selector     string
+	PlatformType string
+	StartTime    time.Time `json:",omitempty"`
+	EndTime      time.Time `json:",omitempty"`
+	Last         int       `json:",omitempty"`
 }
 
-type RegionClientMetrics struct {
+type RegionClientApiUsageMetrics struct {
 	Region    string
 	AppInst   edgeproto.AppInstKey
 	Method    string `json:",omitempty"`
@@ -411,6 +412,38 @@ type RegionClientMetrics struct {
 	StartTime time.Time `json:",omitempty"`
 	EndTime   time.Time `json:",omitempty"`
 	Last      int       `json:",omitempty"`
+}
+
+type RegionClientAppUsageMetrics struct {
+	Region          string
+	AppInst         edgeproto.AppInstKey
+	Selector        string
+	RawData         bool      `json:",omitempty"`
+	DeviceCarrier   string    `json:",omitempty"`
+	DataNetworkType string    `json:",omitempty"`
+	DeviceModel     string    `json:",omitempty"`
+	DeviceOs        string    `json:",omitempty"`
+	SignalStrength  string    `json:",omitempty"`
+	LocationTile    string    `json:",omitempty"`
+	StartTime       time.Time `json:",omitempty"`
+	EndTime         time.Time `json:",omitempty"`
+	Last            int       `json:",omitempty"`
+}
+
+type RegionClientCloudletUsageMetrics struct {
+	Region          string
+	Cloudlet        edgeproto.CloudletKey
+	Selector        string
+	RawData         bool      `json:",omitempty"`
+	DeviceCarrier   string    `json:",omitempty"`
+	DataNetworkType string    `json:",omitempty"`
+	DeviceModel     string    `json:",omitempty"`
+	DeviceOs        string    `json:",omitempty"`
+	SignalStrength  string    `json:",omitempty"`
+	LocationTile    string    `json:",omitempty"`
+	StartTime       time.Time `json:",omitempty"`
+	EndTime         time.Time `json:",omitempty"`
+	Last            int       `json:",omitempty"`
 }
 
 type RegionAppInstEvents struct {

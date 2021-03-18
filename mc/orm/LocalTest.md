@@ -513,7 +513,7 @@ http --auth-type=jwt --auth=$WORKER1TOKEN POST 127.0.0.1:9900/api/v1/auth/metric
 http --verify=false --auth-type=jwt --auth=$WORKER1TOKEN POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"mexdev"},"name":"localtest"},"selector":"utilization","last":2}'
 http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"mexdev"},"name":"localtest"},"selector":"network","last":2}'
 http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/cloudlet <<< '{"region":"local","cloudlet":{"operator_key":{"name":"GDDT"},"name":"lev-fairview"},"selector":"ipusage","last":2}'
-http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/client <<< '{"region":"local","appinst":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"}},"method":"FindCloudlet","cellid":1234,"selector":"api","last":2}'
+http --verify=false --auth-type=jwt --auth=$SUPERPASS POST https://127.0.0.1:9900/api/v1/auth/metrics/clientapiusage <<< '{"region":"local","appinst":{"app_key":{"developer_key":{"name":"AcmeAppCo"},"name":"someapplication1","version":"1.0"}},"method":"FindCloudlet","cellid":1234,"selector":"api","last":2}'
 ```
 
 Change your password:

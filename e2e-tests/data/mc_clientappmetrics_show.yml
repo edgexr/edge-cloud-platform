@@ -1,0 +1,67 @@
+- name: dme-api
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    method: FindCloudlet
+  values:
+    0s: 1
+    5ms: 0
+    100ms: 0
+    10ms: 0
+    25ms: 0
+    50ms: 0
+    errs: 0
+    reqs: 1
+- name: dme-api
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    method: RegisterClient
+  values:
+    0s: 1
+    5ms: 0
+    100ms: 0
+    10ms: 0
+    25ms: 0
+    50ms: 0
+    errs: 0
+    reqs: 1
+- name: latency-metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    locationtile: 2-1713,5065
+  values:
+    0s: 4
+    5ms: 1
+    10ms: 0
+    25ms: 0
+    50ms: 0
+    100ms: 0
+    avg: 3.3768000000000002
+    max: 5.33
+    min: 1.12
+    numsamples: 5
+    signalstrength: 0
+    stddev: 1.6512211238958883
+    variance: 2.7265312
+- name: device-metric
+  tags:
+    app: someapplication1
+    apporg: AcmeAppCo
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    devicemodel: SM-G920F
+    deviceos: Android
+  values:
+    numsessions: 1

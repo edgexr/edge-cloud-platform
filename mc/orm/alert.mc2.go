@@ -154,11 +154,16 @@ func addControllerApis(method string, group *echo.Group) {
 	// UpdateVmPoolTimeout: 21
 	// UpdateTrustPolicyTimeout: 22
 	// DmeApiMetricsCollectionInterval: 23
-	// PersistentConnectionMetricsCollectionInterval: 24
+	// EdgeEventsMetricsCollectionInterval: 24
 	// CleanupReservableAutoClusterIdletime: 25
 	// InfluxDbCloudletUsageMetricsRetention: 26
 	// CreateCloudletTimeout: 27
 	// UpdateCloudletTimeout: 28
+	// LocationTileSideLengthKm: 29
+	// EdgeEventsMetricsContinuousQueriesCollectionIntervals: 30
+	// EdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval: 30.1
+	// InfluxDbDownsampledMetricsRetention: 31
+	// InfluxDbEdgeEventsMetricsRetention: 32
 	// ```
 	// Security:
 	//   Bearer:

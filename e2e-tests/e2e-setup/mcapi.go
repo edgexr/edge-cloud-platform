@@ -233,6 +233,26 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if api == "showclientappmetrics" {
+		var showClientAppMetrics *ormapi.AllMetrics
+		targets := readMCMetricTargetsFile(apiFile, vars)
+		var parsedMetrics *[]MetricsCompare
+		showClientAppMetrics = showMcClientAppMetrics(uri, token, targets, &rc)
+		parsedMetrics = parseMetrics(showClientAppMetrics)
+		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		return rc
+	}
+
+	if api == "showclientcloudletmetrics" {
+		var showClientCloudletMetrics *ormapi.AllMetrics
+		targets := readMCMetricTargetsFile(apiFile, vars)
+		var parsedMetrics *[]MetricsCompare
+		showClientCloudletMetrics = showMcClientCloudletMetrics(uri, token, targets, &rc)
+		parsedMetrics = parseMetrics(showClientCloudletMetrics)
+		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		return rc
+	}
+
 	if apiFile == "" {
 		log.Println("Error: Cannot run MC data APIs without API file")
 		return false
@@ -697,6 +717,7 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 	appMetrics.Data = append(appMetrics.Data, clusterMetrics.Data...)
 	return appMetrics
 }
+
 func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
 	appQuery := ormapi.RegionAppInstEvents{
 		Region:  "local",
@@ -751,6 +772,59 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 		clusterMetric, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
 		checkMcErr("ShowCluster"+strings.Title(selector), status, err, rc)
 		allMetrics.Data = append(allMetrics.Data, clusterMetric.Data...)
+	}
+	return &allMetrics
+}
+
+func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
+	for _, method := range ApiMethods {
+		clientApiUsageQuery := ormapi.RegionClientApiUsageMetrics{
+			Region: "local",
+			AppInst: edgeproto.AppInstKey{
+				AppKey: targets.AppInstKey.AppKey,
+			},
+			Method: method,
+			Last:   1,
+		}
+		for _, selector := range orm.ClientApiUsageSelectors {
+			clientApiUsageQuery.Selector = selector
+			clientApiUsageMetric, status, err := mcClient.ShowClientApiUsageMetrics(uri, token, &clientApiUsageQuery)
+			checkMcErr("ShowClientApiUsage"+strings.Title(selector), status, err, rc)
+			allMetrics.Data = append(allMetrics.Data, clientApiUsageMetric.Data...)
+		}
+	}
+	clientAppUsageQuery := ormapi.RegionClientAppUsageMetrics{
+		Region:  "local",
+		AppInst: targets.AppInstKey,
+		RawData: true,
+		Last:    1,
+	}
+	for _, selector := range orm.ClientAppUsageSelectors {
+		if selector == "custom" {
+			continue
+		}
+		clientAppUsageQuery.Selector = selector
+		clientAppUsageMetric, status, err := mcClient.ShowClientAppUsageMetrics(uri, token, &clientAppUsageQuery)
+		checkMcErr("ShowClientAppUsage"+strings.Title(selector), status, err, rc)
+		allMetrics.Data = append(allMetrics.Data, clientAppUsageMetric.Data...)
+	}
+	return &allMetrics
+}
+
+func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
+	clientCloudletUsageQuery := ormapi.RegionClientCloudletUsageMetrics{
+		Region:   "local",
+		Cloudlet: targets.CloudletKey,
+		RawData:  true,
+		Last:     1,
+	}
+	for _, selector := range orm.ClientCloudletUsageSelectors {
+		clientCloudletUsageQuery.Selector = selector
+		clientCloudletUsageMetric, status, err := mcClient.ShowClientCloudletUsageMetrics(uri, token, &clientCloudletUsageQuery)
+		checkMcErr("ShowClientCloudletUsage"+strings.Title(selector), status, err, rc)
+		allMetrics.Data = append(allMetrics.Data, clientCloudletUsageMetric.Data...)
 	}
 	return &allMetrics
 }

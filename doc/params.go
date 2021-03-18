@@ -59,10 +59,22 @@ type swaggerCloudletMetrics struct {
 	Body ormapi.RegionCloudletMetrics
 }
 
-// swagger:parameters ClientMetrics
-type swaggerClientMetrics struct {
+// swagger:parameters ClientApiUsageMetrics
+type swaggerClientApiUsageMetrics struct {
 	// in: body
-	Body ormapi.RegionClientMetrics
+	Body ormapi.RegionClientApiUsageMetrics
+}
+
+// swagger:parameters ClientAppUsageMetrics
+type swaggerClientAppUsageMetrics struct {
+	// in: body
+	Body ormapi.RegionClientAppUsageMetrics
+}
+
+// swagger:parameters ClientCloudletUsageMetrics
+type swaggerClientCloudletUsageMetrics struct {
+	// in: body
+	Body ormapi.RegionClientCloudletUsageMetrics
 }
 
 // swagger:parameters AppUsage

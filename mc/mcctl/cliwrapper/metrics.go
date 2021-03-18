@@ -24,8 +24,22 @@ func (s *Client) ShowCloudletMetrics(uri, token string, query *ormapi.RegionClou
 	return &metrics, st, err
 }
 
-func (s *Client) ShowClientMetrics(uri, token string, query *ormapi.RegionClientMetrics) (*ormapi.AllMetrics, int, error) {
-	args := []string{"metrics", "client"}
+func (s *Client) ShowClientApiUsageMetrics(uri, token string, query *ormapi.RegionClientApiUsageMetrics) (*ormapi.AllMetrics, int, error) {
+	args := []string{"metrics", "clientapiusage"}
+	metrics := ormapi.AllMetrics{}
+	st, err := s.runObjs(uri, token, args, query, &metrics)
+	return &metrics, st, err
+}
+
+func (s *Client) ShowClientAppUsageMetrics(uri, token string, query *ormapi.RegionClientAppUsageMetrics) (*ormapi.AllMetrics, int, error) {
+	args := []string{"metrics", "clientappusage"}
+	metrics := ormapi.AllMetrics{}
+	st, err := s.runObjs(uri, token, args, query, &metrics)
+	return &metrics, st, err
+}
+
+func (s *Client) ShowClientCloudletUsageMetrics(uri, token string, query *ormapi.RegionClientCloudletUsageMetrics) (*ormapi.AllMetrics, int, error) {
+	args := []string{"metrics", "clientcloudletusage"}
 	metrics := ormapi.AllMetrics{}
 	st, err := s.runObjs(uri, token, args, query, &metrics)
 	return &metrics, st, err
