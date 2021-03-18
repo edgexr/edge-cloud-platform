@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 	"unicode"
 
-	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -63,14 +61,7 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	v.Verbose = v.GetVcdVerbose()
 	v.InitData(ctx, caches)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "Discover resources for", "Org", v.Creds.Org)
-	err := v.ImportDataFromInfra(ctx)
-	if err != nil {
-		return fmt.Errorf("ImportDataFromInfra failed: %s", err.Error())
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider Discovery Complete", "stage", stage)
-
-	err = v.SetProviderSpecificProps(ctx)
+	err := v.SetProviderSpecificProps(ctx)
 	if err != nil {
 		return err
 	}
@@ -92,42 +83,6 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 func (v *VcdPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitData caches set")
 	v.caches = caches
-}
-
-func (v *VcdPlatform) ImportDataFromInfra(ctx context.Context) error {
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "ImportDataFromInfra")
-	err := v.GetPlatformResources(ctx)
-	if err != nil {
-		return fmt.Errorf("Error retrieving Platform Resources: %s", err.Error())
-	}
-	return nil
-}
-
-func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
-
-	var resources = vmlayer.PlatformResources{}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo ")
-
-	vcdClient := v.GetVcdClientFromContext(ctx)
-	if vcdClient == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return nil, fmt.Errorf(NoVCDClientInContext)
-	}
-	resources.CollectTime, _ = gogotypes.TimestampProto(time.Now())
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, err
-	}
-
-	c_capacity := vdc.Vdc.ComputeCapacity
-	for _, cap := range c_capacity {
-		resources.VCpuMax = uint64(cap.CPU.Limit)
-		resources.VCpuUsed = uint64(cap.CPU.Used)
-		resources.MemMax = uint64(cap.Memory.Limit)
-		resources.MemUsed = uint64(cap.Memory.Used)
-	}
-	return &resources, nil
 }
 
 func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {
@@ -200,12 +155,6 @@ func (v *VcdPlatform) GetVdc(ctx context.Context, vcdClient *govcd.VCDClient) (*
 	}
 	return vdc, err
 
-}
-
-// return everything else,
-func (v *VcdPlatform) GetPlatformResources(ctx context.Context) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResources")
-	return nil
 }
 
 func (v *VcdPlatform) GetConsoleUrl(ctx context.Context, serverName string) (string, error) {
@@ -433,32 +382,10 @@ func (v *VcdPlatform) GetSessionTokens(ctx context.Context, vaultConfig *vault.C
 	return nil, fmt.Errorf("GetSessionTokens not supported in VcdPlatform")
 }
 
-// Return our current set of access vars
-// For what exactly?
-// where do I save it?
-//
 func (v *VcdPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessVarsIn map[string]string, pfConfig *edgeproto.PlatformConfig, vaultConfig *vault.Config, updateCallback edgeproto.CacheUpdateCallback) error {
-
 	return fmt.Errorf("SaveCloudletAccessVars not implemented for vcd")
-
 }
 
-func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
-	return []edgeproto.InfraResource{}, nil
-}
-
-func (v *VcdPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgeproto.CloudletResourceQuotaProps, error) {
-	return &edgeproto.CloudletResourceQuotaProps{}, nil
-}
-
-func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
-	resInfo := make(map[string]edgeproto.InfraResource)
-	return resInfo
-}
-
-func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
-	return nil
-}
 func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool) error {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease", "override", override)
