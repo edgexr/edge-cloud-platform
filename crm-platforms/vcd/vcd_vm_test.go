@@ -59,11 +59,6 @@ func InitVcdTestEnv() (bool, context.Context, error) {
 		if err != nil {
 			return live, ctx, fmt.Errorf("Unable to create Vcd Client %s\n", err.Error())
 		}
-		err = tv.ImportDataFromInfra(ctx)
-		if err != nil {
-			testVcdClient.Disconnect()
-			return live, ctx, fmt.Errorf("ImportDataFromInfra failed: %s", err.Error())
-		}
 		fmt.Printf("TestEnvInit live Complete\n")
 
 	} else {

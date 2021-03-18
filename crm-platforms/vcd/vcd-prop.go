@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -40,6 +41,10 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 	// but still wish to run. Leases will enforced by VCD.
 	"VCD_OVERRIDE_LEASE_DISABLE": {
 		Description: "Accept Org runtime lease values for VCD if unable to disable",
+		Internal:    true,
+	},
+	"VCD_OVERRIDE_VCPU_SPEED": {
+		Description: "Set value for vCPU Speed if unable to read from admin VCD",
 		Internal:    true,
 	},
 }
@@ -150,6 +155,18 @@ func (v *VcdPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]
 func (v *VcdPlatform) GetTemplateNameFromProps() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VDC_TEMPLATE")
 	return val
+}
+func (v *VcdPlatform) GetVcpuSpeedOverride(ctx context.Context) int64 {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_OVERRIDE_VCPU_SPEED")
+	if val == "" {
+		return 0
+	}
+	speed, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to convert VCD_OVERRIDE_VCPU_SPEED to int", "val", val, "err", err)
+		return 0
+	}
+	return speed
 }
 func (v *VcdPlatform) GetLeaseOverride() bool {
 	if v.TestMode {
