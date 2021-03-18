@@ -42,6 +42,10 @@
       count: 3
     - key: /api/v1/auth/billingorg/create
       count: 2
+    - key: /api/v1/auth/cloudletpoolaccessconfirmation/create
+      count: 2
+    - key: /api/v1/auth/cloudletpoolaccessinvitation/create
+      count: 2
     - key: /api/v1/auth/controller/create
       count: 2
     - key: /api/v1/auth/ctrl/CreateAutoScalePolicy
@@ -57,8 +61,6 @@
     - key: /api/v1/auth/ctrl/DeleteAutoProvPolicy
       count: 2
     - key: /api/v1/auth/ctrl/RemoveAutoProvPolicyCloudlet
-      count: 2
-    - key: /api/v1/auth/orgcloudletpool/create
       count: 2
     - key: Cloudlet maintenance done
       count: 2

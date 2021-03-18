@@ -68,9 +68,14 @@ type Api interface {
 	ShowConfig(uri, token string) (*ormapi.Config, int, error)
 	PublicConfig(uri string) (*ormapi.Config, int, error)
 
-	CreateOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
-	DeleteOrgCloudletPool(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
-	ShowOrgCloudletPool(uri, token string) ([]ormapi.OrgCloudletPool, int, error)
+	CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	ShowCloudletPoolAccessInvitation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error)
+	CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error)
+	ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error)
+	ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error)
+
 	ShowOrgCloudlet(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.Cloudlet, int, error)
 	ShowOrgCloudletInfo(uri, token string, in *ormapi.OrgCloudlet) ([]edgeproto.CloudletInfo, int, error)
 

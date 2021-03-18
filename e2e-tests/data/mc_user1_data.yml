@@ -20,7 +20,7 @@ orgs:
   phone: 123-123-1234
   adminusername: user1
 
-orgcloudletpools:
+cloudletpoolaccessinvitations:
 - org: user3org
   region: local
   cloudletpool: enterprise-pool

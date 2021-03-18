@@ -41,7 +41,7 @@ roles:
 - org: enterprise
   username: user1
   role: OperatorManager
-orgcloudletpools:
+cloudletpoolaccessinvitations:
 - org: user3org
   region: local
   cloudletpool: enterprise-pool
