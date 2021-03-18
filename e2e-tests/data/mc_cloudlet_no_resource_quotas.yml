@@ -1,0 +1,14 @@
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: dmuus-cloud-1
+      resourcequotas:
+      - name: RAM
+        alertthreshold: 100
+      - name: vCPUs
+        alertthreshold: 100
+      - name: External IPs
+        alertthreshold: 100
