@@ -45,9 +45,11 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 	if kubeNames.AppURI == "" {
 		return fmt.Errorf("URI not specified")
 	}
-	err := validateDomain(kubeNames.AppURI)
-	if err != nil {
-		return err
+	if !kubeNames.IsUriIPAddr {
+		err := validateDomain(kubeNames.AppURI)
+		if err != nil {
+			return err
+		}
 	}
 	svcs, err := GetServices(ctx, client, kubeNames)
 	if err != nil {

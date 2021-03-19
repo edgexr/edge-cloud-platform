@@ -423,6 +423,7 @@ var AppInstInfoOptionalArgs = []string{
 	"status.msgcount",
 	"status.msgs",
 	"powerstate",
+	"uri",
 }
 var AppInstInfoAliasArgs = []string{
 	"fields=appinstinfo.fields",
@@ -444,6 +445,7 @@ var AppInstInfoAliasArgs = []string{
 	"status.msgcount=appinstinfo.status.msgcount",
 	"status.msgs=appinstinfo.status.msgs",
 	"powerstate=appinstinfo.powerstate",
+	"uri=appinstinfo.uri",
 }
 var AppInstInfoComments = map[string]string{
 	"fields":                                      "Fields are used for the Update API to specify which fields to apply",
@@ -459,6 +461,7 @@ var AppInstInfoComments = map[string]string{
 	"errors":                                      "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
 	"runtimeinfo.containerids":                    "List of container names",
 	"powerstate":                                  "Power State of the AppInst, one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError",
+	"uri":                                         "Base FQDN for the App based on the cloudlet platform",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"appinstinfo.errors":                   "StringArray",

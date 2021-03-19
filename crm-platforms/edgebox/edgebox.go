@@ -49,15 +49,10 @@ func (e *EdgeboxPlatform) Init(ctx context.Context, platformConfig *platform.Pla
 		e.NetworkScheme != cloudcommon.NetworkSchemePublicIP {
 		return fmt.Errorf("Unsupported network scheme for DIND: %s", e.NetworkScheme)
 	}
-
-	fqdn := cloudcommon.GetRootLBFQDN(platformConfig.CloudletKey, platformConfig.AppDNSRoot)
-	ipaddr, err := e.GetDINDServiceIP(ctx)
+	// ensure service ip exists
+	_, err = e.GetDINDServiceIP(ctx)
 	if err != nil {
 		return fmt.Errorf("init cannot get service ip, %s", err.Error())
-	}
-	if err := e.commonPf.ActivateFQDNA(ctx, fqdn, ipaddr); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error in ActivateFQDNA", "err", err)
-		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "done init edgebox")
 	return nil
