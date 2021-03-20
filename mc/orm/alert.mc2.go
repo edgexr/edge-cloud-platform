@@ -164,6 +164,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// EdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval: 30.1
 	// InfluxDbDownsampledMetricsRetention: 31
 	// InfluxDbEdgeEventsMetricsRetention: 32
+	// AppinstClientCleanupInterval: 33
 	// ```
 	// Security:
 	//   Bearer:

@@ -75,6 +75,7 @@ regiondata:
       influxdbmetricsretention: 672h0m0s
       cleanupreservableautoclusteridletime: 30m
       influxdbcloudletusagemetricsretention: 8760h0m0s
+      appinstclientcleanupinterval: 24h
       locationtilesidelengthkm: 2
       edgeeventsmetricscollectioninterval: 1s
       influxdbedgeeventsmetricsretention: 672h0m0s
@@ -127,6 +128,7 @@ regiondata:
       influxdbmetricsretention: 672h0m0s
       cleanupreservableautoclusteridletime: 30m
       influxdbcloudletusagemetricsretention: 8760h0m0s
+      appinstclientcleanupinterval: 24h
       locationtilesidelengthkm: 2
       edgeeventsmetricscollectioninterval: 1s
       influxdbedgeeventsmetricsretention: 672h0m0s
