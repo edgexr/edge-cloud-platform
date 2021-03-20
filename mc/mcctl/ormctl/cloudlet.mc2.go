@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateCloudletCmd = &cli.Command{
-	Use:                  "CreateCloudlet",
+	Use:                  "create",
+	Short:                "Create Cloudlet. Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.",
 	RequiredArgs:         "region " + strings.Join(CreateCloudletRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CreateCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
@@ -39,7 +40,8 @@ var CreateCloudletCmd = &cli.Command{
 }
 
 var DeleteCloudletCmd = &cli.Command{
-	Use:                  "DeleteCloudlet",
+	Use:                  "delete",
+	Short:                "Delete Cloudlet. Removes the Cloudlet services where they are no longer managed from the Edge Controller.",
 	RequiredArgs:         "region " + strings.Join(DeleteCloudletRequiredArgs, " "),
 	OptionalArgs:         strings.Join(DeleteCloudletOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
@@ -53,7 +55,8 @@ var DeleteCloudletCmd = &cli.Command{
 }
 
 var UpdateCloudletCmd = &cli.Command{
-	Use:          "UpdateCloudlet",
+	Use:          "update",
+	Short:        "Update Cloudlet. Updates the Cloudlet configuration and manages the upgrade of Cloudlet services.",
 	RequiredArgs: "region " + strings.Join(UpdateCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(UpdateCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
@@ -89,7 +92,8 @@ func setUpdateCloudletFields(in map[string]interface{}) {
 }
 
 var ShowCloudletCmd = &cli.Command{
-	Use:          "ShowCloudlet",
+	Use:          "show",
+	Short:        "Show Cloudlets. Lists all the cloudlets managed from Edge Controller.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletRequiredArgs, CloudletOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
@@ -102,7 +106,8 @@ var ShowCloudletCmd = &cli.Command{
 }
 
 var GetCloudletManifestCmd = &cli.Command{
-	Use:          "GetCloudletManifest",
+	Use:          "getcloudletmanifest",
+	Short:        "Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
@@ -114,7 +119,8 @@ var GetCloudletManifestCmd = &cli.Command{
 }
 
 var GetCloudletPropsCmd = &cli.Command{
-	Use:          "GetCloudletProps",
+	Use:          "get",
+	Short:        "Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet",
 	RequiredArgs: "region " + strings.Join(GetCloudletPropsRequiredArgs, " "),
 	OptionalArgs: strings.Join(GetCloudletPropsOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPropsAliasArgs, " "),
@@ -126,7 +132,8 @@ var GetCloudletPropsCmd = &cli.Command{
 }
 
 var GetCloudletResourceQuotaPropsCmd = &cli.Command{
-	Use:          "GetCloudletResourceQuotaProps",
+	Use:          "get",
+	Short:        "Get Cloudlet Resource Quota Properties. Shows all the resource quota properties of the cloudlet",
 	RequiredArgs: "region " + strings.Join(GetCloudletResourceQuotaPropsRequiredArgs, " "),
 	OptionalArgs: strings.Join(GetCloudletResourceQuotaPropsOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResourceQuotaPropsAliasArgs, " "),
@@ -138,7 +145,8 @@ var GetCloudletResourceQuotaPropsCmd = &cli.Command{
 }
 
 var GetCloudletResourceUsageCmd = &cli.Command{
-	Use:          "GetCloudletResourceUsage",
+	Use:          "get",
+	Short:        "Get Cloudlet resource information. Shows cloudlet resources used and their limits",
 	RequiredArgs: "region " + strings.Join(GetCloudletResourceUsageRequiredArgs, " "),
 	OptionalArgs: strings.Join(GetCloudletResourceUsageOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResourceUsageAliasArgs, " "),
@@ -150,7 +158,8 @@ var GetCloudletResourceUsageCmd = &cli.Command{
 }
 
 var AddCloudletResMappingCmd = &cli.Command{
-	Use:          "AddCloudletResMapping",
+	Use:          "addcloudletresmapping",
+	Short:        "Add Optional Resource tag table",
 	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletResMapOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResMapAliasArgs, " "),
@@ -162,7 +171,8 @@ var AddCloudletResMappingCmd = &cli.Command{
 }
 
 var RemoveCloudletResMappingCmd = &cli.Command{
-	Use:          "RemoveCloudletResMapping",
+	Use:          "removecloudletresmapping",
+	Short:        "Add Optional Resource tag table",
 	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletResMapOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletResMapAliasArgs, " "),
@@ -174,7 +184,8 @@ var RemoveCloudletResMappingCmd = &cli.Command{
 }
 
 var FindFlavorMatchCmd = &cli.Command{
-	Use:          "FindFlavorMatch",
+	Use:          "find",
+	Short:        "Discover if flavor produces a matching platform flavor",
 	RequiredArgs: "region " + strings.Join(FlavorMatchRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorMatchOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorMatchAliasArgs, " "),
@@ -186,7 +197,8 @@ var FindFlavorMatchCmd = &cli.Command{
 }
 
 var RevokeAccessKeyCmd = &cli.Command{
-	Use:          "RevokeAccessKey",
+	Use:          "revokeaccesskey",
+	Short:        "Revoke crm access key",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
@@ -198,7 +210,8 @@ var RevokeAccessKeyCmd = &cli.Command{
 }
 
 var GenerateAccessKeyCmd = &cli.Command{
-	Use:          "GenerateAccessKey",
+	Use:          "generateaccesskey",
+	Short:        "Generate new crm access key",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
@@ -224,6 +237,8 @@ var CloudletApiCmds = []*cli.Command{
 	RevokeAccessKeyCmd,
 	GenerateAccessKeyCmd,
 }
+
+var CloudletApiCmdsGroup = cli.GenGroup("cloudlet", "Manage Cloudlets", CloudletApiCmds)
 
 var CreateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -390,7 +405,8 @@ var GetCloudletResourceUsageOptionalArgs = []string{
 }
 
 var ShowCloudletInfoCmd = &cli.Command{
-	Use:          "ShowCloudletInfo",
+	Use:          "show",
+	Short:        "Show CloudletInfos",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletInfoRequiredArgs, CloudletInfoOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
@@ -403,7 +419,8 @@ var ShowCloudletInfoCmd = &cli.Command{
 }
 
 var InjectCloudletInfoCmd = &cli.Command{
-	Use:          "InjectCloudletInfo",
+	Use:          "inject",
+	Short:        "Inject (create) a CloudletInfo for regression testing",
 	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletInfoOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
@@ -415,7 +432,8 @@ var InjectCloudletInfoCmd = &cli.Command{
 }
 
 var EvictCloudletInfoCmd = &cli.Command{
-	Use:          "EvictCloudletInfo",
+	Use:          "evict",
+	Short:        "Evict (delete) a CloudletInfo for regression testing",
 	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletInfoOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
@@ -431,6 +449,8 @@ var CloudletInfoApiCmds = []*cli.Command{
 	InjectCloudletInfoCmd,
 	EvictCloudletInfoCmd,
 }
+
+var CloudletInfoApiCmdsGroup = cli.GenGroup("cloudletinfo", "Manage CloudletInfos", CloudletInfoApiCmds)
 
 var CloudletKeyRequiredArgs = []string{}
 var CloudletKeyOptionalArgs = []string{

@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateFlavor(uri, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
-	args := []string{"region", "CreateFlavor"}
+	args := []string{"flavor", "create"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -34,7 +34,7 @@ func (s *Client) CreateFlavor(uri, token string, in *ormapi.RegionFlavor) (*edge
 }
 
 func (s *Client) DeleteFlavor(uri, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
-	args := []string{"region", "DeleteFlavor"}
+	args := []string{"flavor", "delete"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -45,7 +45,7 @@ func (s *Client) DeleteFlavor(uri, token string, in *ormapi.RegionFlavor) (*edge
 }
 
 func (s *Client) UpdateFlavor(uri, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
-	args := []string{"region", "UpdateFlavor"}
+	args := []string{"flavor", "update"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -56,7 +56,7 @@ func (s *Client) UpdateFlavor(uri, token string, in *ormapi.RegionFlavor) (*edge
 }
 
 func (s *Client) ShowFlavor(uri, token string, in *ormapi.RegionFlavor) ([]edgeproto.Flavor, int, error) {
-	args := []string{"region", "ShowFlavor"}
+	args := []string{"flavor", "show"}
 	outlist := []edgeproto.Flavor{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -67,7 +67,7 @@ func (s *Client) ShowFlavor(uri, token string, in *ormapi.RegionFlavor) ([]edgep
 }
 
 func (s *Client) AddFlavorRes(uri, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
-	args := []string{"region", "AddFlavorRes"}
+	args := []string{"flavor", "addflavorres"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -78,7 +78,7 @@ func (s *Client) AddFlavorRes(uri, token string, in *ormapi.RegionFlavor) (*edge
 }
 
 func (s *Client) RemoveFlavorRes(uri, token string, in *ormapi.RegionFlavor) (*edgeproto.Result, int, error) {
-	args := []string{"region", "RemoveFlavorRes"}
+	args := []string{"flavor", "removeflavorres"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

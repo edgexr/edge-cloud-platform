@@ -24,7 +24,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) InjectDevice(uri, token string, in *ormapi.RegionDevice) (*edgeproto.Result, int, error) {
-	args := []string{"region", "InjectDevice"}
+	args := []string{"device", "inject"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -35,7 +35,7 @@ func (s *Client) InjectDevice(uri, token string, in *ormapi.RegionDevice) (*edge
 }
 
 func (s *Client) ShowDevice(uri, token string, in *ormapi.RegionDevice) ([]edgeproto.Device, int, error) {
-	args := []string{"region", "ShowDevice"}
+	args := []string{"device", "show"}
 	outlist := []edgeproto.Device{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -46,7 +46,7 @@ func (s *Client) ShowDevice(uri, token string, in *ormapi.RegionDevice) ([]edgep
 }
 
 func (s *Client) EvictDevice(uri, token string, in *ormapi.RegionDevice) (*edgeproto.Result, int, error) {
-	args := []string{"region", "EvictDevice"}
+	args := []string{"device", "evict"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -57,7 +57,7 @@ func (s *Client) EvictDevice(uri, token string, in *ormapi.RegionDevice) (*edgep
 }
 
 func (s *Client) ShowDeviceReport(uri, token string, in *ormapi.RegionDeviceReport) ([]edgeproto.Device, int, error) {
-	args := []string{"region", "ShowDeviceReport"}
+	args := []string{"device", "show"}
 	outlist := []edgeproto.Device{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

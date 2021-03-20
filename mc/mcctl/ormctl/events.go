@@ -12,6 +12,7 @@ import (
 func GetEventsCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "show",
+		Short:        "Show events and audit events",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
 		AliasArgs:    strings.Join(EventsAliasArgs, " "),
 		Comments:     addRegionComment(EventsComments),
@@ -21,6 +22,7 @@ func GetEventsCommand() *cobra.Command {
 		Run:          runRest("/auth/events/show"),
 	}, &cli.Command{
 		Use:          "showold",
+		Short:        "Show events and audit events (for old events format)",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
 		AliasArgs:    strings.Join(EventsAliasArgs, " "),
 		Comments:     addRegionComment(EventsComments),
@@ -30,6 +32,7 @@ func GetEventsCommand() *cobra.Command {
 		Run:          runRest("/auth/events/show"),
 	}, &cli.Command{
 		Use:          "find",
+		Short:        "Find events and audit events, results sorted by relevance",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
 		AliasArgs:    strings.Join(EventsAliasArgs, " "),
 		Comments:     addRegionComment(EventsComments),
@@ -39,6 +42,7 @@ func GetEventsCommand() *cobra.Command {
 		Run:          runRest("/auth/events/find"),
 	}, &cli.Command{
 		Use:          "terms",
+		Short:        "Show aggregated events terms",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
 		AliasArgs:    strings.Join(EventsAliasArgs, " "),
 		Comments:     addRegionComment(EventsComments),
@@ -46,8 +50,14 @@ func GetEventsCommand() *cobra.Command {
 		ReqData:      &node.EventSearch{},
 		ReplyData:    &node.EventTerms{},
 		Run:          runRest("/auth/events/terms"),
-	}, &cli.Command{
-		Use:          "spanterms",
+	}}
+	return cli.GenGroup("events", "Search events and audit events", cmds)
+}
+
+func GetSpansCommand() *cobra.Command {
+	cmds := []*cli.Command{&cli.Command{
+		Use:          "terms",
+		Short:        "Show aggregated spans terms",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
 		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
 		Comments:     addRegionComment(ShowSpansComments),
@@ -56,7 +66,8 @@ func GetEventsCommand() *cobra.Command {
 		ReplyData:    &node.SpanTerms{},
 		Run:          runRest("/auth/spans/terms"),
 	}, &cli.Command{
-		Use:          "showspans",
+		Use:          "show",
+		Short:        "Search spans",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
 		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
 		Comments:     addRegionComment(ShowSpansComments),
@@ -65,7 +76,8 @@ func GetEventsCommand() *cobra.Command {
 		ReplyData:    &[]node.SpanOutCondensed{},
 		Run:          runRest("/auth/spans/show"),
 	}, &cli.Command{
-		Use:          "showspansverbose",
+		Use:          "showverbose",
+		Short:        "Search spans, output raw format",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
 		AliasArgs:    strings.Join(ShowSpansAliasArgs, " "),
 		Comments:     addRegionComment(ShowSpansComments),
@@ -74,7 +86,7 @@ func GetEventsCommand() *cobra.Command {
 		ReplyData:    &[]dbmodel.Span{},
 		Run:          runRest("/auth/spans/showverbose"),
 	}}
-	return cli.GenGroup("events", "view or find events", cmds)
+	return cli.GenGroup("spans", "Search spans", cmds)
 }
 
 var EventsOptionalArgs = []string{

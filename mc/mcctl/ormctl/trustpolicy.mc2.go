@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateTrustPolicyCmd = &cli.Command{
-	Use:                  "CreateTrustPolicy",
+	Use:                  "create",
+	Short:                "Create a Trust Policy",
 	RequiredArgs:         "region " + strings.Join(TrustPolicyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(TrustPolicyOptionalArgs, " "),
 	AliasArgs:            strings.Join(TrustPolicyAliasArgs, " "),
@@ -38,7 +39,8 @@ var CreateTrustPolicyCmd = &cli.Command{
 }
 
 var DeleteTrustPolicyCmd = &cli.Command{
-	Use:                  "DeleteTrustPolicy",
+	Use:                  "delete",
+	Short:                "Delete a Trust policy",
 	RequiredArgs:         "region " + strings.Join(TrustPolicyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(TrustPolicyOptionalArgs, " "),
 	AliasArgs:            strings.Join(TrustPolicyAliasArgs, " "),
@@ -52,7 +54,8 @@ var DeleteTrustPolicyCmd = &cli.Command{
 }
 
 var UpdateTrustPolicyCmd = &cli.Command{
-	Use:          "UpdateTrustPolicy",
+	Use:          "update",
+	Short:        "Update a Trust policy",
 	RequiredArgs: "region " + strings.Join(TrustPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(TrustPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(TrustPolicyAliasArgs, " "),
@@ -88,7 +91,8 @@ func setUpdateTrustPolicyFields(in map[string]interface{}) {
 }
 
 var ShowTrustPolicyCmd = &cli.Command{
-	Use:          "ShowTrustPolicy",
+	Use:          "show",
+	Short:        "Show Trust Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(TrustPolicyRequiredArgs, TrustPolicyOptionalArgs...), " "),
 	AliasArgs:    strings.Join(TrustPolicyAliasArgs, " "),
@@ -106,6 +110,8 @@ var TrustPolicyApiCmds = []*cli.Command{
 	UpdateTrustPolicyCmd,
 	ShowTrustPolicyCmd,
 }
+
+var TrustPolicyApiCmdsGroup = cli.GenGroup("trustpolicy", "Manage TrustPolicys", TrustPolicyApiCmds)
 
 var SecurityRuleRequiredArgs = []string{}
 var SecurityRuleOptionalArgs = []string{

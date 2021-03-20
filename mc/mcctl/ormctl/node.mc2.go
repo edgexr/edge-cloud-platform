@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var ShowNodeCmd = &cli.Command{
-	Use:          "ShowNode",
+	Use:          "show",
+	Short:        "Show all Nodes connected to all Controllers",
 	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
 	AliasArgs:    strings.Join(NodeAliasArgs, " "),
 	SpecialArgs:  &NodeSpecialArgs,
@@ -38,6 +39,8 @@ var ShowNodeCmd = &cli.Command{
 var NodeApiCmds = []*cli.Command{
 	ShowNodeCmd,
 }
+
+var NodeApiCmdsGroup = cli.GenGroup("node", "Manage Nodes", NodeApiCmds)
 
 var NodeKeyRequiredArgs = []string{}
 var NodeKeyOptionalArgs = []string{

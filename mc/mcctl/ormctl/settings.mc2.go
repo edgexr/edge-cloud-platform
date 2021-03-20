@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var UpdateSettingsCmd = &cli.Command{
-	Use:          "UpdateSettings",
+	Use:          "update",
+	Short:        "Update settings",
 	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
@@ -58,7 +59,8 @@ func setUpdateSettingsFields(in map[string]interface{}) {
 }
 
 var ResetSettingsCmd = &cli.Command{
-	Use:          "ResetSettings",
+	Use:          "reset",
+	Short:        "Reset all settings to their defaults",
 	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
@@ -70,7 +72,8 @@ var ResetSettingsCmd = &cli.Command{
 }
 
 var ShowSettingsCmd = &cli.Command{
-	Use:          "ShowSettings",
+	Use:          "show",
+	Short:        "Show settings",
 	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
 	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
@@ -86,6 +89,8 @@ var SettingsApiCmds = []*cli.Command{
 	ResetSettingsCmd,
 	ShowSettingsCmd,
 }
+
+var SettingsApiCmdsGroup = cli.GenGroup("settings", "Manage Settingss", SettingsApiCmds)
 
 var SettingsRequiredArgs = []string{}
 var SettingsOptionalArgs = []string{

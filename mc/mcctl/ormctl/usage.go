@@ -11,6 +11,7 @@ import (
 func GetUsageCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "app",
+		Short:        "View App usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, AppUsageRequiredArgs...), " "),
 		OptionalArgs: strings.Join(AppUsageOptionalArgs, " "),
 		AliasArgs:    strings.Join(AppUsageAliasArgs, " "),
@@ -20,6 +21,7 @@ func GetUsageCommand() *cobra.Command {
 		Run:          runRest("/auth/usage/app"),
 	}, &cli.Command{
 		Use:          "cluster",
+		Short:        "View ClusterInst usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClusterUsageRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClusterUsageOptionalArgs, " "),
 		AliasArgs:    strings.Join(ClusterUsageAliasArgs, " "),
@@ -29,6 +31,7 @@ func GetUsageCommand() *cobra.Command {
 		Run:          runRest("/auth/usage/cluster"),
 	}, &cli.Command{
 		Use:          "cloudletpool",
+		Short:        "View CloudletPool usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolUsageRequiredArgs...), " "),
 		AliasArgs:    strings.Join(CloudletPoolUsageAliasArgs, " "),
 		Comments:     addRegionComment(CloudletPoolUsageComments),
@@ -36,7 +39,7 @@ func GetUsageCommand() *cobra.Command {
 		ReplyData:    &ormapi.AllMetrics{},
 		Run:          runRest("/auth/usage/cloudletpool"),
 	}}
-	return cli.GenGroup("usage", "view usage ", cmds)
+	return cli.GenGroup("usage", "View App, Cluster, etc usage ", cmds)
 }
 
 var AppUsageRequiredArgs = []string{

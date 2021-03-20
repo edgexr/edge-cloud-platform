@@ -23,7 +23,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var RunCommandCmd = &cli.Command{
-	Use:          "RunCommand",
+	Use:          "runcommand",
+	Short:        "Run a Command or Shell on a container",
 	RequiredArgs: "region " + strings.Join(RunCommandRequiredArgs, " "),
 	OptionalArgs: strings.Join(RunCommandOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
@@ -35,7 +36,8 @@ var RunCommandCmd = &cli.Command{
 }
 
 var RunConsoleCmd = &cli.Command{
-	Use:          "RunConsole",
+	Use:          "runconsole",
+	Short:        "Run console on a VM",
 	RequiredArgs: "region " + strings.Join(RunConsoleRequiredArgs, " "),
 	OptionalArgs: strings.Join(RunConsoleOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
@@ -47,7 +49,8 @@ var RunConsoleCmd = &cli.Command{
 }
 
 var ShowLogsCmd = &cli.Command{
-	Use:          "ShowLogs",
+	Use:          "showlogs",
+	Short:        "View logs for AppInst",
 	RequiredArgs: "region " + strings.Join(ShowLogsRequiredArgs, " "),
 	OptionalArgs: strings.Join(ShowLogsOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
@@ -59,7 +62,8 @@ var ShowLogsCmd = &cli.Command{
 }
 
 var AccessCloudletCmd = &cli.Command{
-	Use:          "AccessCloudlet",
+	Use:          "accesscloudlet",
+	Short:        "Access Cloudlet VM",
 	RequiredArgs: "region " + strings.Join(AccessCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AccessCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
@@ -76,6 +80,8 @@ var ExecApiCmds = []*cli.Command{
 	ShowLogsCmd,
 	AccessCloudletCmd,
 }
+
+var ExecApiCmdsGroup = cli.GenGroup("exec", "Manage Execs", ExecApiCmds)
 
 var RunCommandRequiredArgs = []string{
 	"app-org",

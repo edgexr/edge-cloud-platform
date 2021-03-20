@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var InjectDeviceCmd = &cli.Command{
-	Use:          "InjectDevice",
+	Use:          "inject",
+	Short:        "Inject a device",
 	RequiredArgs: "region " + strings.Join(DeviceRequiredArgs, " "),
 	OptionalArgs: strings.Join(DeviceOptionalArgs, " "),
 	AliasArgs:    strings.Join(DeviceAliasArgs, " "),
@@ -37,7 +38,8 @@ var InjectDeviceCmd = &cli.Command{
 }
 
 var ShowDeviceCmd = &cli.Command{
-	Use:          "ShowDevice",
+	Use:          "show",
+	Short:        "Show devices",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(DeviceRequiredArgs, DeviceOptionalArgs...), " "),
 	AliasArgs:    strings.Join(DeviceAliasArgs, " "),
@@ -50,7 +52,8 @@ var ShowDeviceCmd = &cli.Command{
 }
 
 var EvictDeviceCmd = &cli.Command{
-	Use:          "EvictDevice",
+	Use:          "evict",
+	Short:        "Evict a device",
 	RequiredArgs: "region " + strings.Join(DeviceRequiredArgs, " "),
 	OptionalArgs: strings.Join(DeviceOptionalArgs, " "),
 	AliasArgs:    strings.Join(DeviceAliasArgs, " "),
@@ -62,7 +65,8 @@ var EvictDeviceCmd = &cli.Command{
 }
 
 var ShowDeviceReportCmd = &cli.Command{
-	Use:          "ShowDeviceReport",
+	Use:          "show",
+	Short:        "Device Reports API.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(DeviceReportRequiredArgs, DeviceReportOptionalArgs...), " "),
 	AliasArgs:    strings.Join(DeviceReportAliasArgs, " "),
@@ -80,6 +84,8 @@ var DeviceApiCmds = []*cli.Command{
 	EvictDeviceCmd,
 	ShowDeviceReportCmd,
 }
+
+var DeviceApiCmdsGroup = cli.GenGroup("device", "Manage Devices", DeviceApiCmds)
 
 var DeviceReportRequiredArgs = []string{
 	"key.uniqueidtype",

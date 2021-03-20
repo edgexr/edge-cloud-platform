@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) ShowNode(uri, token string, in *ormapi.RegionNode) ([]edgeproto.Node, int, error) {
-	args := []string{"region", "ShowNode"}
+	args := []string{"node", "show"}
 	outlist := []edgeproto.Node{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

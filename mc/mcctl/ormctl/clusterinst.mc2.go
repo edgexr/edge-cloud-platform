@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateClusterInstCmd = &cli.Command{
-	Use:                  "CreateClusterInst",
+	Use:                  "create",
+	Short:                "Create Cluster Instance. Creates an instance of a Cluster on a Cloudlet, defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of compute resources on a Cloudlet on which AppInsts are deployed.",
 	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
@@ -39,7 +40,8 @@ var CreateClusterInstCmd = &cli.Command{
 }
 
 var DeleteClusterInstCmd = &cli.Command{
-	Use:                  "DeleteClusterInst",
+	Use:                  "delete",
+	Short:                "Delete Cluster Instance. Deletes an instance of a Cluster deployed on a Cloudlet.",
 	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(ClusterInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
@@ -53,7 +55,8 @@ var DeleteClusterInstCmd = &cli.Command{
 }
 
 var UpdateClusterInstCmd = &cli.Command{
-	Use:          "UpdateClusterInst",
+	Use:          "update",
+	Short:        "Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.",
 	RequiredArgs: "region " + strings.Join(UpdateClusterInstRequiredArgs, " "),
 	OptionalArgs: strings.Join(UpdateClusterInstOptionalArgs, " "),
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
@@ -89,7 +92,8 @@ func setUpdateClusterInstFields(in map[string]interface{}) {
 }
 
 var ShowClusterInstCmd = &cli.Command{
-	Use:          "ShowClusterInst",
+	Use:          "show",
+	Short:        "Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ClusterInstRequiredArgs, ClusterInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
@@ -102,7 +106,8 @@ var ShowClusterInstCmd = &cli.Command{
 }
 
 var DeleteIdleReservableClusterInstsCmd = &cli.Command{
-	Use:          "DeleteIdleReservableClusterInsts",
+	Use:          "delete",
+	Short:        "Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.",
 	RequiredArgs: "region " + strings.Join(IdleReservableClusterInstsRequiredArgs, " "),
 	OptionalArgs: strings.Join(IdleReservableClusterInstsOptionalArgs, " "),
 	AliasArgs:    strings.Join(IdleReservableClusterInstsAliasArgs, " "),
@@ -120,6 +125,8 @@ var ClusterInstApiCmds = []*cli.Command{
 	ShowClusterInstCmd,
 	DeleteIdleReservableClusterInstsCmd,
 }
+
+var ClusterInstApiCmdsGroup = cli.GenGroup("clusterinst", "Manage ClusterInsts", ClusterInstApiCmds)
 
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",

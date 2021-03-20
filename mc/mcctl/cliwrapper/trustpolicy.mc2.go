@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateTrustPolicy(uri, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "CreateTrustPolicy"}
+	args := []string{"trustpolicy", "create"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -35,7 +35,7 @@ func (s *Client) CreateTrustPolicy(uri, token string, in *ormapi.RegionTrustPoli
 }
 
 func (s *Client) DeleteTrustPolicy(uri, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "DeleteTrustPolicy"}
+	args := []string{"trustpolicy", "delete"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -47,7 +47,7 @@ func (s *Client) DeleteTrustPolicy(uri, token string, in *ormapi.RegionTrustPoli
 }
 
 func (s *Client) UpdateTrustPolicy(uri, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "UpdateTrustPolicy"}
+	args := []string{"trustpolicy", "update"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -59,7 +59,7 @@ func (s *Client) UpdateTrustPolicy(uri, token string, in *ormapi.RegionTrustPoli
 }
 
 func (s *Client) ShowTrustPolicy(uri, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.TrustPolicy, int, error) {
-	args := []string{"region", "ShowTrustPolicy"}
+	args := []string{"trustpolicy", "show"}
 	outlist := []edgeproto.TrustPolicy{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

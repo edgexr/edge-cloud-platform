@@ -22,7 +22,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) ShowCloudletRefs(uri, token string, in *ormapi.RegionCloudletRefs) ([]edgeproto.CloudletRefs, int, error) {
-	args := []string{"region", "ShowCloudletRefs"}
+	args := []string{"cloudletrefs", "show"}
 	outlist := []edgeproto.CloudletRefs{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -33,7 +33,7 @@ func (s *Client) ShowCloudletRefs(uri, token string, in *ormapi.RegionCloudletRe
 }
 
 func (s *Client) ShowClusterRefs(uri, token string, in *ormapi.RegionClusterRefs) ([]edgeproto.ClusterRefs, int, error) {
-	args := []string{"region", "ShowClusterRefs"}
+	args := []string{"clusterrefs", "show"}
 	outlist := []edgeproto.ClusterRefs{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -44,7 +44,7 @@ func (s *Client) ShowClusterRefs(uri, token string, in *ormapi.RegionClusterRefs
 }
 
 func (s *Client) ShowAppInstRefs(uri, token string, in *ormapi.RegionAppInstRefs) ([]edgeproto.AppInstRefs, int, error) {
-	args := []string{"region", "ShowAppInstRefs"}
+	args := []string{"appinstrefs", "show"}
 	outlist := []edgeproto.AppInstRefs{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

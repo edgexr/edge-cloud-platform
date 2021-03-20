@@ -11,6 +11,7 @@ import (
 func GetBillingEventsCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "app",
+		Short:        "View App billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, AppEventRequiredArgs...), " "),
 		OptionalArgs: strings.Join(AppEventOptionalArgs, " "),
 		AliasArgs:    strings.Join(AppEventAliasArgs, " "),
@@ -20,6 +21,7 @@ func GetBillingEventsCommand() *cobra.Command {
 		Run:          runRest("/auth/events/app"),
 	}, &cli.Command{
 		Use:          "cluster",
+		Short:        "View ClusterInst billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClusterEventRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClusterEventOptionalArgs, " "),
 		AliasArgs:    strings.Join(ClusterEventAliasArgs, " "),
@@ -29,6 +31,7 @@ func GetBillingEventsCommand() *cobra.Command {
 		Run:          runRest("/auth/events/cluster"),
 	}, &cli.Command{
 		Use:          "cloudlet",
+		Short:        "View Cloudlet billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletEventRequiredArgs...), " "),
 		OptionalArgs: strings.Join(CloudletEventOptionalArgs, " "),
 		AliasArgs:    strings.Join(CloudletEventAliasArgs, " "),
@@ -37,7 +40,7 @@ func GetBillingEventsCommand() *cobra.Command {
 		ReplyData:    &ormapi.AllMetrics{},
 		Run:          runRest("/auth/events/cloudlet"),
 	}}
-	return cli.GenGroup("billingevents", "view billing events ", cmds)
+	return cli.GenGroup("billingevents", "View billing events ", cmds)
 }
 
 var AppEventRequiredArgs = []string{

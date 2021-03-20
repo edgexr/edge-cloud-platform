@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,13 +15,14 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var AuditId uint64
+
+var TokenStringRegex = regexp.MustCompile(`"token":"(.*?)"`)
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) (nexterr error) {
@@ -172,17 +174,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			// for all responses, if it has a jwt token
 			// remove it before logging
 			if strings.Contains(string(resBody), "token") {
-				ms := cloudcommon.QuotedStringRegex.FindAllStringSubmatch(string(resBody), -1)
-				if ms != nil {
-					ss := make([]string, len(ms))
-					for i, m := range ms {
-						ss[i] = m[1]
-					}
-					if ss[1] != "" {
-						result := strings.Replace(string(resBody), ss[1], "", len(ss[1]))
-						response = result
-					}
-				}
+				response = string(TokenStringRegex.ReplaceAll(resBody, []byte(`"token":""`)))
 			} else if strings.Contains(string(resBody), "TOTP") {
 				resp := ormapi.UserResponse{}
 				err := json.Unmarshal(resBody, &resp)

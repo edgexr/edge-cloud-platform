@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var ShowAlertCmd = &cli.Command{
-	Use:          "ShowAlert",
+	Use:          "show",
+	Short:        "Show alerts",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AlertRequiredArgs, AlertOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AlertAliasArgs, " "),
@@ -40,6 +41,8 @@ var ShowAlertCmd = &cli.Command{
 var AlertApiCmds = []*cli.Command{
 	ShowAlertCmd,
 }
+
+var AlertApiCmdsGroup = cli.GenGroup("alert", "Manage Alerts", AlertApiCmds)
 
 var AlertRequiredArgs = []string{}
 var AlertOptionalArgs = []string{

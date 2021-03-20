@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateOperatorCodeCmd = &cli.Command{
-	Use:          "CreateOperatorCode",
+	Use:          "create",
+	Short:        "Create Operator Code. Create a code for an Operator.",
 	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
 	OptionalArgs: strings.Join(OperatorCodeOptionalArgs, " "),
 	AliasArgs:    strings.Join(OperatorCodeAliasArgs, " "),
@@ -36,7 +37,8 @@ var CreateOperatorCodeCmd = &cli.Command{
 }
 
 var DeleteOperatorCodeCmd = &cli.Command{
-	Use:          "DeleteOperatorCode",
+	Use:          "delete",
+	Short:        "Delete Operator Code. Delete a code for an Operator.",
 	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
 	OptionalArgs: strings.Join(OperatorCodeOptionalArgs, " "),
 	AliasArgs:    strings.Join(OperatorCodeAliasArgs, " "),
@@ -48,7 +50,8 @@ var DeleteOperatorCodeCmd = &cli.Command{
 }
 
 var ShowOperatorCodeCmd = &cli.Command{
-	Use:          "ShowOperatorCode",
+	Use:          "show",
+	Short:        "Show Operator Code. Show Codes for an Operator.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(OperatorCodeRequiredArgs, OperatorCodeOptionalArgs...), " "),
 	AliasArgs:    strings.Join(OperatorCodeAliasArgs, " "),
@@ -65,6 +68,8 @@ var OperatorCodeApiCmds = []*cli.Command{
 	DeleteOperatorCodeCmd,
 	ShowOperatorCodeCmd,
 }
+
+var OperatorCodeApiCmdsGroup = cli.GenGroup("operatorcode", "Manage OperatorCodes", OperatorCodeApiCmds)
 
 var OperatorCodeRequiredArgs = []string{}
 var OperatorCodeOptionalArgs = []string{

@@ -149,12 +149,13 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Msg("Email not verified yet"))
 	}
 
+	isAdmin, err := isUserAdmin(ctx, user.Name)
+	if err != nil {
+		return setReply(c, err, nil)
+	}
 	if login.Password != "" && user.PassCrackTimeSec == 0 {
 		calcPasswordStrength(ctx, &user, login.Password)
-		isAdmin, err := isUserAdmin(ctx, user.Name)
-		if err != nil {
-			return setReply(c, err, nil)
-		}
+		var err error
 		err = checkPasswordStrength(ctx, &user, nil, isAdmin)
 		if err != nil {
 			if isAdmin {
@@ -213,7 +214,11 @@ func Login(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
 	}
-	return c.JSON(http.StatusOK, M{"token": cookie})
+	ret := M{"token": cookie}
+	if isAdmin {
+		ret["admin"] = true
+	}
+	return c.JSON(http.StatusOK, ret)
 }
 
 func RefreshAuthCookie(c echo.Context) error {

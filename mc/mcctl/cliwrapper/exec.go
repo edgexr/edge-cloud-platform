@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Client) RunCommandOut(uri, token string, in *ormapi.RegionExecRequest) (string, error) {
-	args := []string{"region", "RunCommand"}
+	args := []string{"runcommand"}
 	var out string
 	noconfig := strings.Split("Offer,Answer,Err", ",")
 	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -15,7 +15,7 @@ func (s *Client) RunCommandOut(uri, token string, in *ormapi.RegionExecRequest) 
 }
 
 func (s *Client) ShowLogsOut(uri, token string, in *ormapi.RegionExecRequest) (string, error) {
-	args := []string{"region", "ShowLogs"}
+	args := []string{"showlogs"}
 	var out string
 	noconfig := strings.Split("Offer,Answer,Err", ",")
 	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -23,7 +23,7 @@ func (s *Client) ShowLogsOut(uri, token string, in *ormapi.RegionExecRequest) (s
 }
 
 func (s *Client) AccessCloudletOut(uri, token string, in *ormapi.RegionExecRequest) (string, error) {
-	args := []string{"region", "AccessCloudlet"}
+	args := []string{"accesscloudlet"}
 	var out string
 	noconfig := strings.Split("Offer,Answer,Err", ",")
 	_, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

@@ -24,7 +24,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) ShowAlert(uri, token string, in *ormapi.RegionAlert) ([]edgeproto.Alert, int, error) {
-	args := []string{"region", "ShowAlert"}
+	args := []string{"alert", "show"}
 	outlist := []edgeproto.Alert{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

@@ -28,6 +28,7 @@ var AlertReceiverAliasArgs = []string{
 func GetAlertReceiverCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
+		Short:        "Create an alert receiver",
 		RequiredArgs: strings.Join(AlertReceiverRequiredArgs, " "),
 		OptionalArgs: strings.Join(AlertReceiverOptionalArgs, " "),
 		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
@@ -36,6 +37,7 @@ func GetAlertReceiverCommand() *cobra.Command {
 		Run:          runRest("/auth/alertreceiver/create"),
 	}, &cli.Command{
 		Use:          "delete",
+		Short:        "Delete an alert receiver",
 		RequiredArgs: strings.Join(AlertReceiverRequiredArgs, " "),
 		OptionalArgs: strings.Join(AlertReceiverOptionalArgs, " "),
 		ReqData:      &ormapi.AlertReceiver{},
@@ -44,6 +46,7 @@ func GetAlertReceiverCommand() *cobra.Command {
 		Run:          runRest("/auth/alertreceiver/delete"),
 	}, &cli.Command{
 		Use:          "show",
+		Short:        "Show alert receivers",
 		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
 		Comments:     AlertReceiverArgsComments,
 		OptionalArgs: strings.Join(AlertReceiverOptionalArgs, " ") + " " + strings.Join(AlertReceiverRequiredArgs, " "),
@@ -51,7 +54,7 @@ func GetAlertReceiverCommand() *cobra.Command {
 		ReplyData:    &[]ormapi.AlertReceiver{},
 		Run:          runRest("/auth/alertreceiver/show"),
 	}}
-	return cli.GenGroup("alertreceiver", "manage alert receivers", cmds)
+	return cli.GenGroup("alertreceiver", "Manage alert receivers", cmds)
 }
 
 var AlertReceiverRequiredArgs = []string{
