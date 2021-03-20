@@ -366,6 +366,8 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 	case AlertReceiverTypePagerDuty:
 		pagerDutyCfg := alertmanager_config.PagerdutyConfig{
 			NotifierConfig: notifierCfg,
+			Description:    alertmanagerConfigPagerDutyDescription,
+			Details:        alertmanagerConfigPagerDutyDetails,
 			Client:         alertmanagerConfigPagerDutyClient,
 			ClientURL:      alertmanagerConfigSlackTitleLink,
 			Severity:       receiver.Severity,
