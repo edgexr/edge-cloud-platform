@@ -16,21 +16,25 @@ import (
 
 func GetRunCommandCmd() *cobra.Command {
 	RunCommandCmd.Run = runExecRequest("/auth/ctrl/RunCommand")
+	RunCommandCmd.Short = "Run commands on AppInst containers"
 	return RunCommandCmd.GenCmd()
 }
 
 func GetRunConsoleCmd() *cobra.Command {
 	RunConsoleCmd.Run = runExecRequest("/auth/ctrl/RunConsole")
+	RunConsoleCmd.Short = "Get console access on VM AppInsts"
 	return RunConsoleCmd.GenCmd()
 }
 
 func GetShowLogsCmd() *cobra.Command {
 	ShowLogsCmd.Run = runExecRequest("/auth/ctrl/ShowLogs")
+	ShowLogsCmd.Short = "Show container logs"
 	return ShowLogsCmd.GenCmd()
 }
 
 func GetAccessCloudletCmd() *cobra.Command {
 	AccessCloudletCmd.Run = runExecRequest("/auth/ctrl/AccessCloudlet")
+	AccessCloudletCmd.Short = "Access cloudlet platform shell"
 	return AccessCloudletCmd.GenCmd()
 }
 

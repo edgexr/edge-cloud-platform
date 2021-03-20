@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateAppCmd = &cli.Command{
-	Use:          "CreateApp",
+	Use:          "create",
+	Short:        "Create Application. Creates a definition for an application instance for Cloudlet deployment.",
 	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
@@ -37,7 +38,8 @@ var CreateAppCmd = &cli.Command{
 }
 
 var DeleteAppCmd = &cli.Command{
-	Use:          "DeleteApp",
+	Use:          "delete",
+	Short:        "Delete Application. Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.",
 	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
@@ -49,7 +51,8 @@ var DeleteAppCmd = &cli.Command{
 }
 
 var UpdateAppCmd = &cli.Command{
-	Use:          "UpdateApp",
+	Use:          "update",
+	Short:        "Update Application. Updates the definition of an Application instance.",
 	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
@@ -83,7 +86,8 @@ func setUpdateAppFields(in map[string]interface{}) {
 }
 
 var ShowAppCmd = &cli.Command{
-	Use:          "ShowApp",
+	Use:          "show",
+	Short:        "Show Applications. Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppRequiredArgs, AppOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
@@ -96,7 +100,8 @@ var ShowAppCmd = &cli.Command{
 }
 
 var AddAppAutoProvPolicyCmd = &cli.Command{
-	Use:          "AddAppAutoProvPolicy",
+	Use:          "add",
+	Short:        "Add an AutoProvPolicy to the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAutoProvPolicyAliasArgs, " "),
@@ -108,7 +113,8 @@ var AddAppAutoProvPolicyCmd = &cli.Command{
 }
 
 var RemoveAppAutoProvPolicyCmd = &cli.Command{
-	Use:          "RemoveAppAutoProvPolicy",
+	Use:          "remove",
+	Short:        "Remove an AutoProvPolicy from the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAutoProvPolicyAliasArgs, " "),
@@ -127,6 +133,8 @@ var AppApiCmds = []*cli.Command{
 	AddAppAutoProvPolicyCmd,
 	RemoveAppAutoProvPolicyCmd,
 }
+
+var AppApiCmdsGroup = cli.GenGroup("app", "Manage Apps", AppApiCmds)
 
 var RemoteConnectionRequiredArgs = []string{}
 var RemoteConnectionOptionalArgs = []string{

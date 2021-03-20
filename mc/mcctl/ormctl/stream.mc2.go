@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var StreamAppInstCmd = &cli.Command{
-	Use:                  "StreamAppInst",
+	Use:                  "streamappinst",
+	Short:                "Stream Application Instance current progress",
 	RequiredArgs:         "region " + strings.Join(AppInstKeyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(AppInstKeyOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstKeyAliasArgs, " "),
@@ -38,7 +39,8 @@ var StreamAppInstCmd = &cli.Command{
 }
 
 var StreamClusterInstCmd = &cli.Command{
-	Use:                  "StreamClusterInst",
+	Use:                  "streamclusterinst",
+	Short:                "Stream Cluster Instance current progress",
 	RequiredArgs:         "region " + strings.Join(ClusterInstKeyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(ClusterInstKeyOptionalArgs, " "),
 	AliasArgs:            strings.Join(ClusterInstKeyAliasArgs, " "),
@@ -52,7 +54,8 @@ var StreamClusterInstCmd = &cli.Command{
 }
 
 var StreamCloudletCmd = &cli.Command{
-	Use:                  "StreamCloudlet",
+	Use:                  "streamcloudlet",
+	Short:                "Stream Cloudlet current progress",
 	RequiredArgs:         "region " + strings.Join(CloudletKeyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CloudletKeyOptionalArgs, " "),
 	AliasArgs:            strings.Join(CloudletKeyAliasArgs, " "),
@@ -70,6 +73,8 @@ var StreamObjApiCmds = []*cli.Command{
 	StreamClusterInstCmd,
 	StreamCloudletCmd,
 }
+
+var StreamObjApiCmdsGroup = cli.GenGroup("streamobj", "Manage StreamObjs", StreamObjApiCmds)
 
 var StreamObjRequiredArgs = []string{
 	"key.appkey.organization",

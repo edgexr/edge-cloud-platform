@@ -6,41 +6,41 @@ import (
 )
 
 func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolaccess", "createinvitation"}
+	args := []string{"cloudletpoolinvitation", "create"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
 func (s *Client) DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolaccess", "deleteinvitation"}
+	args := []string{"cloudletpoolinvitation", "delete"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
 func (s *Client) ShowCloudletPoolAccessInvitation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"cloudletpoolaccess", "showinvitation"}
+	args := []string{"cloudletpoolinvitation", "show"}
 	ops := []ormapi.OrgCloudletPool{}
 	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err
 }
 
 func (s *Client) CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolaccess", "createconfirmation"}
+	args := []string{"cloudletpoolconfirmation", "create"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
 func (s *Client) DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolaccess", "deleteconfirmation"}
+	args := []string{"cloudletpoolconfirmation", "delete"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
 func (s *Client) ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"cloudletpoolaccess", "showconfirmation"}
+	args := []string{"cloudletpoolconfirmation", "show"}
 	ops := []ormapi.OrgCloudletPool{}
 	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err
 }
 
 func (s *Client) ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"cloudletpoolaccess", "showgranted"}
+	args := []string{"cloudletpoolconfirmation", "showgranted"}
 	ops := []ormapi.OrgCloudletPool{}
 	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err

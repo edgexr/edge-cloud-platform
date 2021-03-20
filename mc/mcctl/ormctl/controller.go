@@ -9,48 +9,22 @@ import (
 func GetControllerCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
+		Short:        "Register a new regional controller",
 		RequiredArgs: "region address",
 		OptionalArgs: "influxdb",
 		ReqData:      &ormapi.Controller{},
 		Run:          runRest("/auth/controller/create"),
 	}, &cli.Command{
 		Use:          "delete",
+		Short:        "Deregister a new regional controller",
 		RequiredArgs: "region",
 		ReqData:      &ormapi.Controller{},
 		Run:          runRest("/auth/controller/delete"),
 	}, &cli.Command{
 		Use:       "show",
+		Short:     "Show registered regional controllers",
 		ReplyData: &[]ormapi.Controller{},
 		Run:       runRest("/auth/controller/show"),
 	}}
-	return cli.GenGroup("controller", "register country controllers", cmds)
-}
-
-func GetRegionCommand() *cobra.Command {
-	cmds := []*cli.Command{}
-	cmds = append(cmds, FlavorApiCmds...)
-	cmds = append(cmds, OperatorCodeApiCmds...)
-	cmds = append(cmds, CloudletApiCmds...)
-	cmds = append(cmds, CloudletPoolApiCmds...)
-	cmds = append(cmds, CloudletInfoApiCmds...)
-	cmds = append(cmds, ClusterInstApiCmds...)
-	cmds = append(cmds, AppApiCmds...)
-	cmds = append(cmds, AppInstApiCmds...)
-	cmds = append(cmds, NodeApiCmds...)
-	cmds = append(cmds, AlertApiCmds...)
-	cmds = append(cmds, AutoScalePolicyApiCmds...)
-	cmds = append(cmds, AutoProvPolicyApiCmds...)
-	cmds = append(cmds, TrustPolicyApiCmds...)
-	cmds = append(cmds, SettingsApiCmds...)
-	cmds = append(cmds, ResTagTableApiCmds...)
-	cmds = append(cmds, AppInstClientApiCmds...)
-	cmds = append(cmds, DebugApiCmds...)
-	cmds = append(cmds, DeviceApiCmds...)
-	cmds = append(cmds, CloudletRefsApiCmds...)
-	cmds = append(cmds, ClusterRefsApiCmds...)
-	cmds = append(cmds, AppInstRefsApiCmds...)
-	cmds = append(cmds, StreamObjApiCmds...)
-	cmds = append(cmds, VMPoolApiCmds...)
-	cmds = append(cmds, AppInstLatencyApiCmds...)
-	return cli.GenGroup("region", "manage region data", cmds)
+	return cli.GenGroup("controller", "Register regional controllers", cmds)
 }

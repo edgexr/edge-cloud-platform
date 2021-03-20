@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
-	args := []string{"region", "CreateOperatorCode"}
+	args := []string{"operatorcode", "create"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -34,7 +34,7 @@ func (s *Client) CreateOperatorCode(uri, token string, in *ormapi.RegionOperator
 }
 
 func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) (*edgeproto.Result, int, error) {
-	args := []string{"region", "DeleteOperatorCode"}
+	args := []string{"operatorcode", "delete"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -45,7 +45,7 @@ func (s *Client) DeleteOperatorCode(uri, token string, in *ormapi.RegionOperator
 }
 
 func (s *Client) ShowOperatorCode(uri, token string, in *ormapi.RegionOperatorCode) ([]edgeproto.OperatorCode, int, error) {
-	args := []string{"region", "ShowOperatorCode"}
+	args := []string{"operatorcode", "show"}
 	outlist := []edgeproto.OperatorCode{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

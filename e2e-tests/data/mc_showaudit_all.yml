@@ -14,7 +14,7 @@
   starttime: "2019-09-26T15:30:00.485102-07:00"
   duration: 9.638ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 62109899f689ab0d
 - operationname: /api/v1/usercreate
   username: user2
@@ -32,7 +32,7 @@
   starttime: "2020-04-22T13:11:38.325946-07:00"
   duration: 9.133ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 15aae46d89a3ede0
 - operationname: /api/v1/auth/config/update
   username: mexadmin
@@ -49,7 +49,7 @@
   starttime: "2020-04-22T12:56:53.391151-07:00"
   duration: 9.715ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 710453eaedafa882
 - operationname: /api/v1/login
   username: mexadmin
@@ -58,7 +58,7 @@
   starttime: "2020-04-22T12:56:53.331889-07:00"
   duration: 10.607ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 6b95d86fc535352b
 - operationname: /api/v1/auth/config/reset
   username: mexadmin
@@ -74,7 +74,7 @@
   starttime: "2020-04-22T12:56:53.312403-07:00"
   duration: 9.806ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 626b3e5a5f60b4d
 - operationname: /api/v1/login
   username: mexadmin
@@ -83,5 +83,5 @@
   starttime: "2020-04-22T12:56:53.259193-07:00"
   duration: 9.524ms
   request: '{"username":"mexadmin","password":"","totp":"","apikeyid":"","apikey":""}'
-  response: '{"token":""}'
+  response: '{"admin":true,"token":""}'
   traceid: 3e7a229ff604f5cc

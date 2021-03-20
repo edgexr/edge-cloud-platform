@@ -24,7 +24,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
-	args := []string{"region", "CreateCloudletPool"}
+	args := []string{"cloudletpool", "create"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -35,7 +35,7 @@ func (s *Client) CreateCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 }
 
 func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
-	args := []string{"region", "DeleteCloudletPool"}
+	args := []string{"cloudletpool", "delete"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -46,7 +46,7 @@ func (s *Client) DeleteCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 }
 
 func (s *Client) UpdateCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) (*edgeproto.Result, int, error) {
-	args := []string{"region", "UpdateCloudletPool"}
+	args := []string{"cloudletpool", "update"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -57,7 +57,7 @@ func (s *Client) UpdateCloudletPool(uri, token string, in *ormapi.RegionCloudlet
 }
 
 func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPool) ([]edgeproto.CloudletPool, int, error) {
-	args := []string{"region", "ShowCloudletPool"}
+	args := []string{"cloudletpool", "show"}
 	outlist := []edgeproto.CloudletPool{}
 	noconfig := strings.Split("Members,CreatedAt,UpdatedAt", ",")
 	ops := []runOp{
@@ -68,7 +68,7 @@ func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPo
 }
 
 func (s *Client) AddCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
-	args := []string{"region", "AddCloudletPoolMember"}
+	args := []string{"cloudletpool", "add"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -79,7 +79,7 @@ func (s *Client) AddCloudletPoolMember(uri, token string, in *ormapi.RegionCloud
 }
 
 func (s *Client) RemoveCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
-	args := []string{"region", "RemoveCloudletPoolMember"}
+	args := []string{"cloudletpool", "remove"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

@@ -26,12 +26,14 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
 		}
-		if cli.SilenceUsage {
-			c.CobraCmd.SilenceUsage = true
-		}
 
 		in, err := c.ParseInput(args)
 		if err != nil {
+			if len(args) == 0 {
+				// Force print usage since no args specified,
+				// but obviously some are required.
+				c.PrintUsage = true
+			}
 			return err
 		}
 		opts := runRestOptions{}
@@ -145,6 +147,11 @@ func getTokenFile() string {
 	return home + "/.mctoken"
 }
 
+func GetAdminFile() string {
+	home := os.Getenv("HOME")
+	return home + "/.mcctl_admin"
+}
+
 func getUri() string {
 	if !strings.HasPrefix(Addr, "http") {
 		Addr = "http://" + Addr
@@ -180,4 +187,26 @@ func (o *runRestOptions) apply(opts []runRestOp) {
 	for _, opt := range opts {
 		opt(o)
 	}
+}
+
+// Convert the comments map to use the aliased args
+func aliasedComments(comments map[string]string, aliases []string) map[string]string {
+	lookup := map[string]string{}
+	aliasedComments := map[string]string{}
+	for _, alias := range aliases {
+		kv := strings.SplitN(alias, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		lookup[kv[1]] = kv[0]
+	}
+	for k, v := range comments {
+		if alias, found := lookup[k]; found {
+			delete(comments, k)
+			aliasedComments[alias] = v
+		} else {
+			aliasedComments[k] = v
+		}
+	}
+	return aliasedComments
 }

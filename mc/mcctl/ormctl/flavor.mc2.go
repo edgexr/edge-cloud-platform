@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateFlavorCmd = &cli.Command{
-	Use:          "CreateFlavor",
+	Use:          "create",
+	Short:        "Create a Flavor",
 	RequiredArgs: "region " + strings.Join(CreateFlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateFlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -36,7 +37,8 @@ var CreateFlavorCmd = &cli.Command{
 }
 
 var DeleteFlavorCmd = &cli.Command{
-	Use:          "DeleteFlavor",
+	Use:          "delete",
+	Short:        "Delete a Flavor",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -48,7 +50,8 @@ var DeleteFlavorCmd = &cli.Command{
 }
 
 var UpdateFlavorCmd = &cli.Command{
-	Use:          "UpdateFlavor",
+	Use:          "update",
+	Short:        "Update a Flavor",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -82,7 +85,8 @@ func setUpdateFlavorFields(in map[string]interface{}) {
 }
 
 var ShowFlavorCmd = &cli.Command{
-	Use:          "ShowFlavor",
+	Use:          "show",
+	Short:        "Show Flavors",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(FlavorRequiredArgs, FlavorOptionalArgs...), " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -95,7 +99,8 @@ var ShowFlavorCmd = &cli.Command{
 }
 
 var AddFlavorResCmd = &cli.Command{
-	Use:          "AddFlavorRes",
+	Use:          "addflavorres",
+	Short:        "Add Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -107,7 +112,8 @@ var AddFlavorResCmd = &cli.Command{
 }
 
 var RemoveFlavorResCmd = &cli.Command{
-	Use:          "RemoveFlavorRes",
+	Use:          "removeflavorres",
+	Short:        "Remove Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
@@ -126,6 +132,8 @@ var FlavorApiCmds = []*cli.Command{
 	AddFlavorResCmd,
 	RemoveFlavorResCmd,
 }
+
+var FlavorApiCmdsGroup = cli.GenGroup("flavor", "Manage Flavors", FlavorApiCmds)
 
 var CreateFlavorRequiredArgs = []string{
 	"name",

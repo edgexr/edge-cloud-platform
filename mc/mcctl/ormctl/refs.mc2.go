@@ -23,7 +23,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var ShowCloudletRefsCmd = &cli.Command{
-	Use:          "ShowCloudletRefs",
+	Use:          "show",
+	Short:        "Show CloudletRefs (debug only)",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(CloudletRefsRequiredArgs, CloudletRefsOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletRefsAliasArgs, " "),
@@ -39,8 +40,11 @@ var CloudletRefsApiCmds = []*cli.Command{
 	ShowCloudletRefsCmd,
 }
 
+var CloudletRefsApiCmdsGroup = cli.GenGroup("cloudletrefs", "Manage CloudletRefss", CloudletRefsApiCmds)
+
 var ShowClusterRefsCmd = &cli.Command{
-	Use:          "ShowClusterRefs",
+	Use:          "show",
+	Short:        "Show ClusterRefs (debug only)",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ClusterRefsRequiredArgs, ClusterRefsOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ClusterRefsAliasArgs, " "),
@@ -56,8 +60,11 @@ var ClusterRefsApiCmds = []*cli.Command{
 	ShowClusterRefsCmd,
 }
 
+var ClusterRefsApiCmdsGroup = cli.GenGroup("clusterrefs", "Manage ClusterRefss", ClusterRefsApiCmds)
+
 var ShowAppInstRefsCmd = &cli.Command{
-	Use:          "ShowAppInstRefs",
+	Use:          "show",
+	Short:        "Show AppInstRefs (debug only)",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppInstRefsRequiredArgs, AppInstRefsOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppInstRefsAliasArgs, " "),
@@ -72,6 +79,8 @@ var ShowAppInstRefsCmd = &cli.Command{
 var AppInstRefsApiCmds = []*cli.Command{
 	ShowAppInstRefsCmd,
 }
+
+var AppInstRefsApiCmdsGroup = cli.GenGroup("appinstrefs", "Manage AppInstRefss", AppInstRefsApiCmds)
 
 var VMResourceRequiredArgs = []string{
 	"key.clusterkey.name",

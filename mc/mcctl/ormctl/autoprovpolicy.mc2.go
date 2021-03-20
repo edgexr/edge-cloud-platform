@@ -26,7 +26,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateAutoProvPolicyCmd = &cli.Command{
-	Use:          "CreateAutoProvPolicy",
+	Use:          "create",
+	Short:        "Create an Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(CreateAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateAutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
@@ -38,7 +39,8 @@ var CreateAutoProvPolicyCmd = &cli.Command{
 }
 
 var DeleteAutoProvPolicyCmd = &cli.Command{
-	Use:          "DeleteAutoProvPolicy",
+	Use:          "delete",
+	Short:        "Delete an Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
@@ -50,7 +52,8 @@ var DeleteAutoProvPolicyCmd = &cli.Command{
 }
 
 var UpdateAutoProvPolicyCmd = &cli.Command{
-	Use:          "UpdateAutoProvPolicy",
+	Use:          "update",
+	Short:        "Update an Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
@@ -84,7 +87,8 @@ func setUpdateAutoProvPolicyFields(in map[string]interface{}) {
 }
 
 var ShowAutoProvPolicyCmd = &cli.Command{
-	Use:          "ShowAutoProvPolicy",
+	Use:          "show",
+	Short:        "Show Auto Provisioning Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AutoProvPolicyRequiredArgs, AutoProvPolicyOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
@@ -97,7 +101,8 @@ var ShowAutoProvPolicyCmd = &cli.Command{
 }
 
 var AddAutoProvPolicyCloudletCmd = &cli.Command{
-	Use:          "AddAutoProvPolicyCloudlet",
+	Use:          "add",
+	Short:        "Add a Cloudlet to the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyCloudletAliasArgs, " "),
@@ -109,7 +114,8 @@ var AddAutoProvPolicyCloudletCmd = &cli.Command{
 }
 
 var RemoveAutoProvPolicyCloudletCmd = &cli.Command{
-	Use:          "RemoveAutoProvPolicyCloudlet",
+	Use:          "remove",
+	Short:        "Remove a Cloudlet from the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoProvPolicyCloudletAliasArgs, " "),
@@ -128,6 +134,8 @@ var AutoProvPolicyApiCmds = []*cli.Command{
 	AddAutoProvPolicyCloudletCmd,
 	RemoveAutoProvPolicyCloudletCmd,
 }
+
+var AutoProvPolicyApiCmdsGroup = cli.GenGroup("autoprovpolicy", "Manage AutoProvPolicys", AutoProvPolicyApiCmds)
 
 var CreateAutoProvPolicyRequiredArgs = []string{
 	"app-org",

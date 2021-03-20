@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var ShowAppInstClientCmd = &cli.Command{
-	Use:                  "ShowAppInstClient",
+	Use:                  "showappinstclient",
+	Short:                "Show application instance clients.",
 	RequiredArgs:         "region " + strings.Join(AppInstClientKeyRequiredArgs, " "),
 	OptionalArgs:         strings.Join(AppInstClientKeyOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstClientKeyAliasArgs, " "),
@@ -41,6 +42,8 @@ var ShowAppInstClientCmd = &cli.Command{
 var AppInstClientApiCmds = []*cli.Command{
 	ShowAppInstClientCmd,
 }
+
+var AppInstClientApiCmdsGroup = cli.GenGroup("appinstclient", "Manage AppInstClients", AppInstClientApiCmds)
 
 var AppInstClientKeyRequiredArgs = []string{
 	"app-org",

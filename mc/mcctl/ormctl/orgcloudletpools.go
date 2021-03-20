@@ -7,54 +7,63 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func GetOrgCloudletPoolCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
-		Use:          "createinvitation",
+func GetCloudletPoolInvitationCommand() *cobra.Command {
+	cmds := []*cli.Command{{
+		Use:          "create",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessinvitation/create"),
-	}, &cli.Command{
-		Use:          "deleteinvitation",
+	}, {
+		Use:          "delete",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessinvitation/delete"),
-	}, &cli.Command{
-		Use:          "showinvitation",
+	}, {
+		Use:          "show",
 		OptionalArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessinvitation/show"),
-	}, &cli.Command{
-		Use:          "createconfirmation",
+	}, &grantedCommand,
+	}
+	return cli.GenGroup("cloudletpoolinvitation", "Manage CloudletPool invitations", cmds)
+}
+
+func GetCloudletPoolConfirmationCommand() *cobra.Command {
+	cmds := []*cli.Command{{
+		Use:          "create",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessconfirmation/create"),
-	}, &cli.Command{
-		Use:          "deleteconfirmation",
+	}, {
+		Use:          "delete",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessconfirmation/delete"),
-	}, &cli.Command{
-		Use:          "showconfirmation",
+	}, {
+		Use:          "show",
 		OptionalArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
 		Run:          runRest("/auth/cloudletpoolaccessconfirmation/show"),
-	}, &cli.Command{
-		Use:          "showgranted",
-		OptionalArgs: "org region cloudletpool cloudletpoolorg",
-		Comments:     OrgCloudletPoolComments,
-		ReqData:      &ormapi.OrgCloudletPool{},
-		ReplyData:    &[]ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessgranted/show"),
-	}}
-	return cli.GenGroup("cloudletpoolaccess", "manage CloudletPool access", cmds)
+	}, &grantedCommand,
+	}
+	return cli.GenGroup("cloudletpoolconfirmation", "Manage CloudletPool confirmations", cmds)
+}
+
+var grantedCommand = cli.Command{
+	Use:          "showgranted",
+	OptionalArgs: "org region cloudletpool cloudletpoolorg",
+	Comments:     OrgCloudletPoolComments,
+	ReqData:      &ormapi.OrgCloudletPool{},
+	ReplyData:    &[]ormapi.OrgCloudletPool{},
+	Run:          runRest("/auth/cloudletpoolaccessgranted/show"),
 }
 
 func GetOrgCloudletCommand() *cobra.Command {

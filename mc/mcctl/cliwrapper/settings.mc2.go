@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) UpdateSettings(uri, token string, in *ormapi.RegionSettings) (*edgeproto.Result, int, error) {
-	args := []string{"region", "UpdateSettings"}
+	args := []string{"settings", "update"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -34,7 +34,7 @@ func (s *Client) UpdateSettings(uri, token string, in *ormapi.RegionSettings) (*
 }
 
 func (s *Client) ResetSettings(uri, token string, in *ormapi.RegionSettings) (*edgeproto.Result, int, error) {
-	args := []string{"region", "ResetSettings"}
+	args := []string{"settings", "reset"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -45,7 +45,7 @@ func (s *Client) ResetSettings(uri, token string, in *ormapi.RegionSettings) (*e
 }
 
 func (s *Client) ShowSettings(uri, token string, in *ormapi.RegionSettings) (*edgeproto.Settings, int, error) {
-	args := []string{"region", "ShowSettings"}
+	args := []string{"settings", "show"}
 	out := edgeproto.Settings{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

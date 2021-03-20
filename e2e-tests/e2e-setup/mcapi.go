@@ -391,7 +391,7 @@ func loginCurUser(uri, curUserFile string, vars, sharedData map[string]string) (
 			log.Printf("failed to generate otp: %v, %s\n", sharedData, users[0].Name)
 		}
 	}
-	token, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
+	token, _, err := mcClient.DoLogin(uri, users[0].Name, users[0].Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
 	rc := true
 	checkMcErr("DoLogin", http.StatusOK, err, &rc)
 	return token, rc
@@ -907,7 +907,7 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 					log.Printf("failed to generate otp: %v, %s\n", sharedData, user.Name)
 				}
 			}
-			token, err := mcClient.DoLogin(uri, user.Name, user.Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
+			token, _, err := mcClient.DoLogin(uri, user.Name, user.Passhash, otp, orm.NoApiKeyId, orm.NoApiKey)
 			checkMcErr("DoLogin", http.StatusOK, err, &rc)
 			if err == nil && rc {
 				fname := getTokenFile(user.Name, outputDir)

@@ -8,7 +8,7 @@ import (
 )
 
 type Api interface {
-	DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, error)
+	DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, bool, error)
 
 	CreateUser(uri string, user *ormapi.User) (*ormapi.UserResponse, int, error)
 	DeleteUser(uri, token string, user *ormapi.User) (int, error)

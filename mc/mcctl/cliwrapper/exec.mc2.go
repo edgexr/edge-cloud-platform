@@ -22,7 +22,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
-	args := []string{"region", "RunCommand"}
+	args := []string{"exec", "runcommand"}
 	out := edgeproto.ExecRequest{}
 	noconfig := strings.Split("Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,AccessUrl,EdgeTurnAddr,Cmd.CloudletMgmtNode", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -33,7 +33,7 @@ func (s *Client) RunCommand(uri, token string, in *ormapi.RegionExecRequest) (*e
 }
 
 func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
-	args := []string{"region", "RunConsole"}
+	args := []string{"exec", "runconsole"}
 	out := edgeproto.ExecRequest{}
 	noconfig := strings.Split("Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Cmd,Console,ContainerId,AccessUrl,EdgeTurnAddr", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -44,7 +44,7 @@ func (s *Client) RunConsole(uri, token string, in *ormapi.RegionExecRequest) (*e
 }
 
 func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
-	args := []string{"region", "ShowLogs"}
+	args := []string{"exec", "showlogs"}
 	out := edgeproto.ExecRequest{}
 	noconfig := strings.Split("Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Cmd,Console,AccessUrl,EdgeTurnAddr", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -55,7 +55,7 @@ func (s *Client) ShowLogs(uri, token string, in *ormapi.RegionExecRequest) (*edg
 }
 
 func (s *Client) AccessCloudlet(uri, token string, in *ormapi.RegionExecRequest) (*edgeproto.ExecRequest, int, error) {
-	args := []string{"region", "AccessCloudlet"}
+	args := []string{"exec", "accesscloudlet"}
 	out := edgeproto.ExecRequest{}
 	noconfig := strings.Split("Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,ContainerId,AccessUrl,EdgeTurnAddr,AppInstKey.AppKey.Name,AppInstKey.AppKey.Version,AppInstKey.AppKey.Organization,AppInstKey.ClusterInstKey.ClusterKey.Name,AppInstKey.ClusterInstKey.Organization", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

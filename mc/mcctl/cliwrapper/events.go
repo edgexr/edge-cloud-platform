@@ -48,21 +48,21 @@ func (s *Client) EventTerms(uri, token string, query *node.EventSearch) (*node.E
 }
 
 func (s *Client) ShowSpans(uri, token string, query *node.SpanSearch) ([]node.SpanOutCondensed, int, error) {
-	args := []string{"events", "showspans"}
+	args := []string{"spans", "show"}
 	spans := []node.SpanOutCondensed{}
 	st, err := s.runObjs(uri, token, args, query, &spans)
 	return spans, st, err
 }
 
 func (s *Client) ShowSpansVerbose(uri, token string, query *node.SpanSearch) ([]dbmodel.Span, int, error) {
-	args := []string{"events", "showspansverbose"}
+	args := []string{"spans", "showverbose"}
 	spans := []dbmodel.Span{}
 	st, err := s.runObjs(uri, token, args, query, &spans)
 	return spans, st, err
 }
 
 func (s *Client) SpanTerms(uri, token string, query *node.SpanSearch) (*node.SpanTerms, int, error) {
-	args := []string{"events", "spanterms"}
+	args := []string{"spans", "terms"}
 	terms := node.SpanTerms{}
 	st, err := s.runObjs(uri, token, args, query, &terms)
 	return &terms, st, err

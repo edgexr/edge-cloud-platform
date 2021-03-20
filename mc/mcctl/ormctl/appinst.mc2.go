@@ -25,7 +25,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateAppInstCmd = &cli.Command{
-	Use:                  "CreateAppInst",
+	Use:                  "create",
+	Short:                "Create Application Instance. Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition.",
 	RequiredArgs:         "region " + strings.Join(CreateAppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(CreateAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
@@ -39,7 +40,8 @@ var CreateAppInstCmd = &cli.Command{
 }
 
 var DeleteAppInstCmd = &cli.Command{
-	Use:                  "DeleteAppInst",
+	Use:                  "delete",
+	Short:                "Delete Application Instance. Deletes an instance of the App from the Cloudlet.",
 	RequiredArgs:         "region " + strings.Join(DeleteAppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(DeleteAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
@@ -53,7 +55,8 @@ var DeleteAppInstCmd = &cli.Command{
 }
 
 var RefreshAppInstCmd = &cli.Command{
-	Use:                  "RefreshAppInst",
+	Use:                  "refresh",
+	Short:                "Refresh Application Instance. Restarts an App instance with new App settings or image.",
 	RequiredArgs:         "region " + strings.Join(RefreshAppInstRequiredArgs, " "),
 	OptionalArgs:         strings.Join(RefreshAppInstOptionalArgs, " "),
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
@@ -67,7 +70,8 @@ var RefreshAppInstCmd = &cli.Command{
 }
 
 var UpdateAppInstCmd = &cli.Command{
-	Use:          "UpdateAppInst",
+	Use:          "update",
+	Short:        "Update Application Instance. Updates an Application instance and then refreshes it.",
 	RequiredArgs: "region " + strings.Join(UpdateAppInstRequiredArgs, " "),
 	OptionalArgs: strings.Join(UpdateAppInstOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
@@ -103,7 +107,8 @@ func setUpdateAppInstFields(in map[string]interface{}) {
 }
 
 var ShowAppInstCmd = &cli.Command{
-	Use:          "ShowAppInst",
+	Use:          "show",
+	Short:        "Show Application Instances. Lists all the Application instances managed by the Edge Controller. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AppInstRequiredArgs, AppInstOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
@@ -122,6 +127,8 @@ var AppInstApiCmds = []*cli.Command{
 	UpdateAppInstCmd,
 	ShowAppInstCmd,
 }
+
+var AppInstApiCmdsGroup = cli.GenGroup("appinst", "Manage AppInsts", AppInstApiCmds)
 
 var CreateAppInstRequiredArgs = []string{
 	"app-org",
@@ -196,7 +203,8 @@ var UpdateAppInstOptionalArgs = []string{
 }
 
 var RequestAppInstLatencyCmd = &cli.Command{
-	Use:          "RequestAppInstLatency",
+	Use:          "request",
+	Short:        "Request Latency measurements for clients connected to AppInst",
 	RequiredArgs: strings.Join(AppInstLatencyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppInstLatencyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppInstLatencyAliasArgs, " "),
@@ -210,6 +218,8 @@ var RequestAppInstLatencyCmd = &cli.Command{
 var AppInstLatencyApiCmds = []*cli.Command{
 	RequestAppInstLatencyCmd,
 }
+
+var AppInstLatencyApiCmdsGroup = cli.GenGroup("appinstlatency", "Manage AppInstLatencys", AppInstLatencyApiCmds)
 
 var VirtualClusterInstKeyRequiredArgs = []string{}
 var VirtualClusterInstKeyOptionalArgs = []string{

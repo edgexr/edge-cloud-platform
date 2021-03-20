@@ -54,7 +54,7 @@ func TestLDAPServer(t *testing.T) {
 	mcClient := &ormclient.Client{}
 
 	// login as super user
-	tokenAd, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
+	tokenAd, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
 
 	// create new users & orgs

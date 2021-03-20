@@ -23,7 +23,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "StreamAppInst"}
+	args := []string{"streamobj", "streamappinst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -35,7 +35,7 @@ func (s *Client) StreamAppInst(uri, token string, in *ormapi.RegionAppInstKey) (
 }
 
 func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterInstKey) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "StreamClusterInst"}
+	args := []string{"streamobj", "streamclusterinst"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
@@ -47,7 +47,7 @@ func (s *Client) StreamClusterInst(uri, token string, in *ormapi.RegionClusterIn
 }
 
 func (s *Client) StreamCloudlet(uri, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Result, int, error) {
-	args := []string{"region", "StreamCloudlet"}
+	args := []string{"streamobj", "streamcloudlet"}
 	outlist := []edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{

@@ -26,7 +26,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateVMPoolCmd = &cli.Command{
-	Use:          "CreateVMPool",
+	Use:          "create",
+	Short:        "Create VMPool. Creates VM pool which will have VMs defined.",
 	RequiredArgs: "region " + strings.Join(CreateVMPoolRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateVMPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
@@ -38,7 +39,8 @@ var CreateVMPoolCmd = &cli.Command{
 }
 
 var DeleteVMPoolCmd = &cli.Command{
-	Use:          "DeleteVMPool",
+	Use:          "delete",
+	Short:        "Delete VMPool. Deletes VM pool given that none of VMs part of this pool is used.",
 	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
 	OptionalArgs: strings.Join(VMPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
@@ -50,7 +52,8 @@ var DeleteVMPoolCmd = &cli.Command{
 }
 
 var UpdateVMPoolCmd = &cli.Command{
-	Use:          "UpdateVMPool",
+	Use:          "update",
+	Short:        "Update VMPool. Updates a VM pools VMs.",
 	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
 	OptionalArgs: strings.Join(VMPoolOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
@@ -84,7 +87,8 @@ func setUpdateVMPoolFields(in map[string]interface{}) {
 }
 
 var ShowVMPoolCmd = &cli.Command{
-	Use:          "ShowVMPool",
+	Use:          "show",
+	Short:        "Show VMPools. Lists all the VMs part of the VM pool.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(VMPoolRequiredArgs, VMPoolOptionalArgs...), " "),
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
@@ -97,7 +101,8 @@ var ShowVMPoolCmd = &cli.Command{
 }
 
 var AddVMPoolMemberCmd = &cli.Command{
-	Use:          "AddVMPoolMember",
+	Use:          "add",
+	Short:        "Add VMPoolMember. Adds a VM to existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(AddVMPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(AddVMPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolMemberAliasArgs, " "),
@@ -109,7 +114,8 @@ var AddVMPoolMemberCmd = &cli.Command{
 }
 
 var RemoveVMPoolMemberCmd = &cli.Command{
-	Use:          "RemoveVMPoolMember",
+	Use:          "remove",
+	Short:        "Remove VMPoolMember. Removes a VM from existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(RemoveVMPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(RemoveVMPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(VMPoolMemberAliasArgs, " "),
@@ -128,6 +134,8 @@ var VMPoolApiCmds = []*cli.Command{
 	AddVMPoolMemberCmd,
 	RemoveVMPoolMemberCmd,
 }
+
+var VMPoolApiCmdsGroup = cli.GenGroup("vmpool", "Manage VMPools", VMPoolApiCmds)
 
 var CreateVMPoolRequiredArgs = []string{
 	"vmpool-org",

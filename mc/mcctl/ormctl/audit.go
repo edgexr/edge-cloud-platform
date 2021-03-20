@@ -34,7 +34,7 @@ func GetAuditCommand() *cobra.Command {
 		ReplyData: &[]string{},
 		Run:       runRest("/auth/audit/operations"),
 	}}
-	return cli.GenGroup("audit", "show audit logs", cmds)
+	return cli.GenGroup("audit", "Show audit logs", cmds)
 }
 
 var tagsComment = fmt.Sprintf("key=value tag, may be specified multiple times, key may include %s", strings.Join(edgeproto.AllKeyTags, ", "))

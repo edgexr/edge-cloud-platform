@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateResTagTableCmd = &cli.Command{
-	Use:          "CreateResTagTable",
+	Use:          "create",
+	Short:        "Create TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -36,7 +37,8 @@ var CreateResTagTableCmd = &cli.Command{
 }
 
 var DeleteResTagTableCmd = &cli.Command{
-	Use:          "DeleteResTagTable",
+	Use:          "delete",
+	Short:        "Delete TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -48,7 +50,8 @@ var DeleteResTagTableCmd = &cli.Command{
 }
 
 var UpdateResTagTableCmd = &cli.Command{
-	Use:          "UpdateResTagTable",
+	Use:          "update",
+	Short:        "Update TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -82,7 +85,8 @@ func setUpdateResTagTableFields(in map[string]interface{}) {
 }
 
 var ShowResTagTableCmd = &cli.Command{
-	Use:          "ShowResTagTable",
+	Use:          "show",
+	Short:        "Show TagTable",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(ResTagTableRequiredArgs, ResTagTableOptionalArgs...), " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -95,7 +99,8 @@ var ShowResTagTableCmd = &cli.Command{
 }
 
 var AddResTagCmd = &cli.Command{
-	Use:          "AddResTag",
+	Use:          "addrestag",
+	Short:        "Add new tag(s) to TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -107,7 +112,8 @@ var AddResTagCmd = &cli.Command{
 }
 
 var RemoveResTagCmd = &cli.Command{
-	Use:          "RemoveResTag",
+	Use:          "removerestag",
+	Short:        "Remove existing tag(s) from TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
@@ -119,7 +125,8 @@ var RemoveResTagCmd = &cli.Command{
 }
 
 var GetResTagTableCmd = &cli.Command{
-	Use:          "GetResTagTable",
+	Use:          "getrestagtable",
+	Short:        "Fetch a copy of the TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableKeyOptionalArgs, " "),
 	AliasArgs:    strings.Join(ResTagTableKeyAliasArgs, " "),
@@ -139,6 +146,8 @@ var ResTagTableApiCmds = []*cli.Command{
 	RemoveResTagCmd,
 	GetResTagTableCmd,
 }
+
+var ResTagTableApiCmdsGroup = cli.GenGroup("restagtable", "Manage ResTagTables", ResTagTableApiCmds)
 
 var ResTagTableKeyRequiredArgs = []string{}
 var ResTagTableKeyOptionalArgs = []string{

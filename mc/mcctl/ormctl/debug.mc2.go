@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var EnableDebugLevelsCmd = &cli.Command{
-	Use:          "EnableDebugLevels",
+	Use:          "enabledebuglevels",
+	Short:        "Enable debug log levels",
 	RequiredArgs: strings.Join(EnableDebugLevelsRequiredArgs, " "),
 	OptionalArgs: strings.Join(EnableDebugLevelsOptionalArgs, " "),
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
@@ -37,7 +38,8 @@ var EnableDebugLevelsCmd = &cli.Command{
 }
 
 var DisableDebugLevelsCmd = &cli.Command{
-	Use:          "DisableDebugLevels",
+	Use:          "disabledebuglevels",
+	Short:        "Disable debug log levels",
 	RequiredArgs: strings.Join(DisableDebugLevelsRequiredArgs, " "),
 	OptionalArgs: strings.Join(DisableDebugLevelsOptionalArgs, " "),
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
@@ -50,7 +52,8 @@ var DisableDebugLevelsCmd = &cli.Command{
 }
 
 var ShowDebugLevelsCmd = &cli.Command{
-	Use:          "ShowDebugLevels",
+	Use:          "showdebuglevels",
+	Short:        "Show debug log levels",
 	RequiredArgs: strings.Join(ShowDebugLevelsRequiredArgs, " "),
 	OptionalArgs: strings.Join(ShowDebugLevelsOptionalArgs, " "),
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
@@ -63,7 +66,8 @@ var ShowDebugLevelsCmd = &cli.Command{
 }
 
 var RunDebugCmd = &cli.Command{
-	Use:          "RunDebug",
+	Use:          "rundebug",
+	Short:        "Run debug command",
 	RequiredArgs: strings.Join(RunDebugRequiredArgs, " "),
 	OptionalArgs: strings.Join(RunDebugOptionalArgs, " "),
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
@@ -81,6 +85,8 @@ var DebugApiCmds = []*cli.Command{
 	ShowDebugLevelsCmd,
 	RunDebugCmd,
 }
+
+var DebugApiCmdsGroup = cli.GenGroup("debug", "Manage Debugs", DebugApiCmds)
 
 var EnableDebugLevelsRequiredArgs = []string{
 	"levels",

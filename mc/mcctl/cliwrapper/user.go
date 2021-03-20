@@ -2,12 +2,14 @@ package cliwrapper
 
 import (
 	fmt "fmt"
+	"os"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
-func (s *Client) DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, error) {
+func (s *Client) DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string, bool, error) {
 	args := []string{"login"}
 	if user != "" {
 		args = append(args, "username="+user)
@@ -24,11 +26,15 @@ func (s *Client) DoLogin(uri, user, pass, otp, apikeyid, apikey string) (string,
 	if apikey != "" {
 		args = append(args, "apikey="+apikey)
 	}
+	admin := false
 	out, err := s.run(uri, "", args)
 	if err != nil {
-		return "", fmt.Errorf("%s, %v", string(out), err)
+		return "", admin, fmt.Errorf("%s, %v", string(out), err)
 	}
-	return strings.TrimSpace(string(out)), err
+	if _, err := os.Stat(ormctl.GetAdminFile()); err == nil {
+		admin = true
+	}
+	return strings.TrimSpace(string(out)), admin, err
 }
 
 func (s *Client) CreateUser(uri string, user *ormapi.User) (*ormapi.UserResponse, int, error) {

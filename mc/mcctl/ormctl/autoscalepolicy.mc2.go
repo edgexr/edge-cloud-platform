@@ -24,7 +24,8 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var CreateAutoScalePolicyCmd = &cli.Command{
-	Use:          "CreateAutoScalePolicy",
+	Use:          "create",
+	Short:        "Create an Auto Scale Policy",
 	RequiredArgs: "region " + strings.Join(CreateAutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(CreateAutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
@@ -36,7 +37,8 @@ var CreateAutoScalePolicyCmd = &cli.Command{
 }
 
 var DeleteAutoScalePolicyCmd = &cli.Command{
-	Use:          "DeleteAutoScalePolicy",
+	Use:          "delete",
+	Short:        "Delete an Auto Scale Policy",
 	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
@@ -48,7 +50,8 @@ var DeleteAutoScalePolicyCmd = &cli.Command{
 }
 
 var UpdateAutoScalePolicyCmd = &cli.Command{
-	Use:          "UpdateAutoScalePolicy",
+	Use:          "update",
+	Short:        "Update an Auto Scale Policy",
 	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
@@ -82,7 +85,8 @@ func setUpdateAutoScalePolicyFields(in map[string]interface{}) {
 }
 
 var ShowAutoScalePolicyCmd = &cli.Command{
-	Use:          "ShowAutoScalePolicy",
+	Use:          "show",
+	Short:        "Show Auto Scale Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(AutoScalePolicyRequiredArgs, AutoScalePolicyOptionalArgs...), " "),
 	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
@@ -100,6 +104,8 @@ var AutoScalePolicyApiCmds = []*cli.Command{
 	UpdateAutoScalePolicyCmd,
 	ShowAutoScalePolicyCmd,
 }
+
+var AutoScalePolicyApiCmdsGroup = cli.GenGroup("autoscalepolicy", "Manage AutoScalePolicys", AutoScalePolicyApiCmds)
 
 var CreateAutoScalePolicyRequiredArgs = []string{
 	"cluster-org",
