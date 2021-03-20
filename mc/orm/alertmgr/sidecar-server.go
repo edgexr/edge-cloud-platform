@@ -245,6 +245,7 @@ func (s *SidecarServer) alertReceiver(w http.ResponseWriter, req *http.Request) 
 				return
 			}
 		}
+		log.SpanLog(ctx, log.DebugLevelInfo, "Adding alert receiver", "receiver", receiverConfig.Receiver, "route", receiverConfig.Route)
 		config.Receivers = append(config.Receivers, &receiverConfig.Receiver)
 		config.Route.Routes = append(config.Route.Routes, &receiverConfig.Route)
 	case http.MethodDelete:

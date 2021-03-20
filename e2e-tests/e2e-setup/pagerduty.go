@@ -26,6 +26,7 @@ type TestPagerDutyEvent struct {
 		Source        string `json:"source"`
 		Severity      string `json:"severity"`
 		CustomDetails struct {
+			Alerts      string `json:"alerts"`
 			Firing      string `json:"firing"`
 			NumFiring   string `json:"num_firing"`
 			NumResolved string `json:"num_resolved"`
