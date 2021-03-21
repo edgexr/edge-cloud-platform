@@ -1,8 +1,7 @@
 - channel: '#alerts'
   username: AlertManager
   attachments:
-  - title: |
-      [FIRING:1] Alert for emailSlackReceiver: AppInstDown Application: someapplication1 Version: 1.0
+  - title: '[FIRING:1] Alert for emailSlackReceiver: AppInstDown Application: someapplication1 Version: 1.0'
     titlelink: |
       https://console.mobiledgex.net
     text: "\n*Alert:* AppInstDown\n\n*Description:* Application server port is not responding\n\n*Details:*\n
