@@ -122,11 +122,11 @@ SOFTWARE.
 
 {{ define "common.title" -}}
 Alert for {{ reReplaceAll "([^::]*)::.*" "${1}" .Receiver}}: {{.CommonLabels.alertname }}{{ if .CommonLabels.app }} Application: {{.CommonLabels.app}} Version: {{.CommonLabels.appver}}{{ else if .CommonLabels.cloudlet}} Cloudlet: {{.CommonLabels.cloudlet}}{{ end }}
-{{ end }}
+{{- end }}
 
 {{ define "status.title" -}}
 [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ template "common.title" . }}
-{{ end }}
+{{- end }}
 
 
 {{ define "email.text" }}

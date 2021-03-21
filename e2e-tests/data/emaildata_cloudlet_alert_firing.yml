@@ -2,7 +2,6 @@
     \ cloudlet=dmuus-cloud-1\n\n  cloudletorg=dmuus\n\n  region=local\n\n  scope=Cloudlet\n\n\n
     \ [1] Firing\n\n\n"
   headers:
-    subject: |
-      [FIRING:1] Alert for emailCloudletAlertReceiver: CloudletDown Cloudlet: dmuus-cloud-1
+    subject: '[FIRING:1] Alert for emailCloudletAlertReceiver: CloudletDown Cloudlet: dmuus-cloud-1'
     to: ops@mobiledgex.net
     from: alerts@mobiledgex.com

@@ -4,8 +4,7 @@
     \ region=local\n\n  scope=Application\n\n  status=HealthCheckFailServerFail\n\n\n
     \ [1] Firing\n\n\n"
   headers:
-    subject: |
-      [FIRING:1] Alert for emailAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0
+    subject: '[FIRING:1] Alert for emailAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0'
     to: ops@mobiledgex.net
     from: alerts@mobiledgex.com
 - text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=AppInstDown\n\n  app=someapplication1\n\n
@@ -14,7 +13,6 @@
     \ region=local\n\n  scope=Application\n\n  status=HealthCheckFailServerFail\n\n\n
     \ [1] Firing\n\n\n"
   headers:
-    subject: |
-      [FIRING:1] Alert for emailClusterAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0
+    subject: '[FIRING:1] Alert for emailClusterAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0'
     to: cluster-ops@mobiledgex.net
     from: alerts@mobiledgex.com

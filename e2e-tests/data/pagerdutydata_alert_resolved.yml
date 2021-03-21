@@ -1,8 +1,7 @@
 - routingkey: "01234567890123456789012345678901"
   eventaction: trigger
   payload:
-    summary: |
-      Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0
+    summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0'
     source: MobiledgeX Monitoring
     severity: error
     customdetails:
@@ -27,8 +26,7 @@
 - routingkey: "01234567890123456789012345678901"
   eventaction: resolve
   payload:
-    summary: |
-      Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0
+    summary: 'Alert for pagerdutyAppAlertReceiver: AppInstDown Application: someapplication1 Version: 1.0'
     source: MobiledgeX Monitoring
     severity: error
     customdetails:
