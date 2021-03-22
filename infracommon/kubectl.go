@@ -17,10 +17,16 @@ import (
 )
 
 // getSecretAuth returns secretName, dockerServer, auth, error
-func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.RegistryAuthApi) (string, string, *cloudcommon.RegistryAuth, error) {
-	auth, err := authApi.GetRegistryAuth(ctx, imagePath)
-	if err != nil {
-		return "", "", nil, err
+func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.RegistryAuthApi, existingCreds *cloudcommon.RegistryAuth) (string, string, *cloudcommon.RegistryAuth, error) {
+	var err error
+	var auth *cloudcommon.RegistryAuth
+	if existingCreds == nil {
+		auth, err = authApi.GetRegistryAuth(ctx, imagePath)
+		if err != nil {
+			return "", "", nil, err
+		}
+	} else {
+		auth = existingCreds
 	}
 	if auth == nil || auth.AuthType == cloudcommon.NoAuth {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry")
@@ -42,9 +48,9 @@ func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.Re
 	return secretName, dockerServer, auth, nil
 }
 
-func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames) error {
+func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, _, auth, err := getSecretAuth(ctx, imagePath, authApi)
+	secretName, _, auth, err := getSecretAuth(ctx, imagePath, authApi, existingCreds)
 	if err != nil {
 		return err
 	}
@@ -63,10 +69,10 @@ func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	return nil
 }
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, authApi)
+	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, authApi, existingCreds)
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 
 	updateCallback(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
-		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.CommonPf.PlatformConfig.AccessApi, names)
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.CommonPf.PlatformConfig.AccessApi, names, nil)
 		if err != nil {
 			return err
 		}
