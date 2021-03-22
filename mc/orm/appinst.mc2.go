@@ -474,7 +474,7 @@ func RequestAppInstLatencyObj(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connectController(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
