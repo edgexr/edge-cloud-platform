@@ -56,6 +56,7 @@ var workerMap map[string]*ClusterWorker
 var workerMapMutex *sync.Mutex
 var vmAppWorkerMap map[string]*AppInstWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
+var FlavorCache edgeproto.FlavorCache
 var AppInstCache edgeproto.AppInstCache
 var ClusterInstCache edgeproto.ClusterInstCache
 var AppCache edgeproto.AppCache
@@ -396,6 +397,7 @@ func start() {
 	}
 
 	// register shepherd to receive appinst and clusterinst notifications from crm
+	edgeproto.InitFlavorCache(&FlavorCache)
 	edgeproto.InitAppInstCache(&AppInstCache)
 	AppInstCache.SetUpdatedCb(appInstCb)
 	AppInstCache.SetDeletedCb(appInstDeletedCb)
@@ -421,6 +423,7 @@ func start() {
 	notifyClient.RegisterRecvSettingsCache(&SettingsCache)
 	notifyClient.RegisterRecvVMPoolCache(&VMPoolCache)
 	notifyClient.RegisterRecvVMPoolInfoCache(&VMPoolInfoCache)
+	notifyClient.RegisterRecvFlavorCache(&FlavorCache)
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
