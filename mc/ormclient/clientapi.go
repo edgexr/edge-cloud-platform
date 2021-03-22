@@ -1,6 +1,7 @@
 package ormclient
 
 import (
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -32,6 +33,7 @@ type Api interface {
 	ShowBillingOrg(uri, token string) ([]ormapi.BillingOrganization, int, error)
 	AddChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
 	RemoveChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+	GetInvoice(uri, token string, req *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error)
 
 	AddUserRole(uri, token string, role *ormapi.Role) (int, error)
 	RemoveUserRole(uri, token string, role *ormapi.Role) (int, error)

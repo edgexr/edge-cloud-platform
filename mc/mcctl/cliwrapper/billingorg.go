@@ -2,6 +2,8 @@ package cliwrapper
 
 import "github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 
+import "github.com/mobiledgex/edge-cloud-infra/billing"
+
 func (s *Client) CreateBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error) {
 	args := []string{"billingorg", "create"}
 	return s.runObjs(uri, token, args, org, nil)
@@ -32,4 +34,11 @@ func (s *Client) ShowBillingOrg(uri, token string) ([]ormapi.BillingOrganization
 	orgs := []ormapi.BillingOrganization{}
 	st, err := s.runObjs(uri, token, args, nil, &orgs)
 	return orgs, st, err
+}
+
+func (s *Client) GetInvoice(uri, token string, req *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error) {
+	args := []string{"billingorg", "getinvoice"}
+	data := []billing.InvoiceData{}
+	st, err := s.runObjs(uri, token, args, req, &data)
+	return data, st, err
 }

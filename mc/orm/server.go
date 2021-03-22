@@ -471,6 +471,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   403: forbidden
 	//   404: notFound
 	auth.POST("/billingorg/delete", DeleteBillingOrg)
+	auth.POST("/billingorg/invoice", GetInvoice)
 
 	auth.POST("/controller/create", CreateController)
 	auth.POST("/controller/delete", DeleteController)

@@ -126,6 +126,12 @@ type CreateBillingOrganization struct {
 	Payment    billing.PaymentMethod
 }
 
+type InvoiceRequest struct {
+	Name      string `json:",omitempty"`
+	StartDate string `json:",omitempty"`
+	EndDate   string `json:",omitempty"`
+}
+
 type BillingOrganization struct {
 	// BillingOrganization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen
 	// required: true

@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/mitchellh/mapstructure"
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -149,6 +150,12 @@ func (s *Client) RemoveChildOrg(uri, token string, bOrg *ormapi.BillingOrganizat
 
 func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
 	return s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/create", token, op, nil)
+}
+
+func (s *Client) GetInvoice(uri, token string, req *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error) {
+	invoice := []billing.InvoiceData{}
+	status, err := s.PostJson(uri+"/auth/billingorg/invoice", token, req, &invoice)
+	return invoice, status, err
 }
 
 func (s *Client) DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {

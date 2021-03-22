@@ -70,3 +70,7 @@ func (bs *BillingService) RemoveChild(ctx context.Context, parent, child *billin
 func (bs *BillingService) RecordUsage(ctx context.Context, account *billing.AccountInfo, usageRecords []billing.UsageRecord) error {
 	return nil
 }
+
+func (bs *BillingService) GetInvoice(ctx context.Context, account *billing.AccountInfo, startDate, endDate string) ([]billing.InvoiceData, error) {
+	return nil, nil
+}
