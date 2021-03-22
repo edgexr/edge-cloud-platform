@@ -39,7 +39,7 @@ var testDockerResults = []string{`{
 	  "raw": "21.21MiB / 2.1GiB",
 	  "percent": "2.1%"
 	},
-	"cpu": "2.1%",
+	"cpu": "4.2%",
 	"io": {
 	  "network": "21B / 21KB",
 	  "block": "21B / 21B"
@@ -51,7 +51,7 @@ var testDockerResults = []string{`{
 	  "raw": "22.22MiB / 2.2GiB",
 	  "percent": "2.2%"
 	},
-	"cpu": "2.2%",
+	"cpu": "4.4%",
 	"io": {
 	  "network": "22B / 22KB",
 	  "block": "2B / 2B"
@@ -118,6 +118,11 @@ func TestDockerStats(t *testing.T) {
 		Key:        testClusterInstKey,
 		Deployment: cloudcommon.DeploymentTypeDocker,
 	}
+	testFlavorKey1 := edgeproto.FlavorKey{Name: "testFlavor1"}
+	testFlavor1 := edgeproto.Flavor{
+		Key:   testFlavorKey1,
+		Vcpus: 2,
+	}
 	testAppInstDocker2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
 			AppKey: edgeproto.AppKey{
@@ -129,6 +134,7 @@ func TestDockerStats(t *testing.T) {
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp2Container1", "DockerApp2Container2"},
 		},
+		Flavor: testFlavorKey1,
 	}
 
 	// Remove all the empty space from docker test data, as that's how it gets returned by docker stats
@@ -146,6 +152,8 @@ func TestDockerStats(t *testing.T) {
 		DockerPsSizeData:     testMultiContainerDiskData,
 	}
 	edgeproto.InitAppInstCache(&AppInstCache)
+	edgeproto.InitFlavorCache(&FlavorCache)
+	FlavorCache.Update(ctx, &testFlavor1, 0)
 	AppInstCache.Update(ctx, &testAppInstDocker2, 0)
 	testDockerStats, err := NewClusterWorker(ctx, "", time.Second*1, nil, &testClusterInst, &platform)
 	assert.Nil(t, err, "Get a patform client for unit test cloudlet")
@@ -174,6 +182,7 @@ func TestDockerStats(t *testing.T) {
 	// Check PodStats - should be a sum of DockerApp2Container1 and DockerApp2Container2
 	assert.True(t, found, "Container DockerApp2 is not found")
 	if found {
+		//divide these cpu numbers by 2 since the flavor has 2 cpus
 		assert.Equal(t, float64(2.1)+float64(2.2), stat.Cpu)
 		assert.Equal(t, uint64(22240296+23299358), stat.Mem)
 		assert.Equal(t, uint64(2*1024*1024+3*1024*1024*1024), stat.Disk)
