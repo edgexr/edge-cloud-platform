@@ -54,7 +54,7 @@ var ClientApiUsageFields = []string{
 }
 
 var ApiFields = []string{
-	"\"id\"",
+	"\"dmeId\"",
 	"\"cellID\"",
 	"\"method\"",
 	"\"foundCloudlet\"",
