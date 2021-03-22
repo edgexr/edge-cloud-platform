@@ -205,7 +205,7 @@ var UpdateAppInstOptionalArgs = []string{
 var RequestAppInstLatencyCmd = &cli.Command{
 	Use:          "request",
 	Short:        "Request Latency measurements for clients connected to AppInst",
-	RequiredArgs: strings.Join(AppInstLatencyRequiredArgs, " "),
+	RequiredArgs: "region " + strings.Join(AppInstLatencyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppInstLatencyOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppInstLatencyAliasArgs, " "),
 	SpecialArgs:  &AppInstLatencySpecialArgs,
