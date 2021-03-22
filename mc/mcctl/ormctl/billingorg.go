@@ -3,6 +3,7 @@ package ormctl
 import (
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
@@ -55,6 +56,13 @@ func GetBillingOrgCommand() *cobra.Command {
 		Comments:  ormapi.BillingOrganizationComments,
 		ReplyData: &[]ormapi.BillingOrganization{},
 		Run:       runRest("/auth/billingorg/show"),
+	}, &cli.Command{
+		Use:          "getinvoice",
+		RequiredArgs: "name",
+		OptionalArgs: "startdate enddate",
+		ReqData:      &ormapi.InvoiceRequest{},
+		ReplyData:    &[]billing.InvoiceData{},
+		Run:          runRest("/auth/billingorg/invoice"),
 	}}
 	return cli.GenGroup("billingorg", "Manage billing organizations", cmds)
 }

@@ -790,3 +790,26 @@ func billingEnabled(ctx context.Context) bool {
 	}
 	return config.BillingEnable
 }
+
+func GetInvoice(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+	req := ormapi.InvoiceRequest{}
+	if err := c.Bind(&req); err != nil {
+		return bindErr(c, err)
+	}
+	span := log.SpanFromContext(ctx)
+	span.SetTag("invoice", req.Name)
+	if err := authorized(ctx, claims.Username, req.Name, ResourceBilling, ActionView); err != nil {
+		return err
+	}
+	acc, err := GetAccountObj(ctx, req.Name)
+	if err != nil {
+		return err
+	}
+	invoice, err := serverConfig.BillingService.GetInvoice(ctx, acc, req.StartDate, req.EndDate)
+	return setReply(c, err, invoice)
+}

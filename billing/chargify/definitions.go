@@ -197,3 +197,170 @@ type PaymentProfile struct {
 	CardType        string `json:"card_type,omitempty"`
 	Id              int    `json:"id,omitempty"`
 }
+
+// This is essentially billing.InvoiceData uncensored
+/* Commented out for now as billing.InvoiceData is currently the same as this and is used in chargify.GetInvoice. However if we decide
+to change our public facing invoice data setup in the future then we'll need to use these definitions and manually convert them over.
+type Invoice struct {
+	Uid                        string          `json:"uid,omitempty"`
+	SiteId                     int             `json:"site_id,omitempty"`
+	CustomerId                 int             `json:"customer_id,omitempty"`
+	SubscriptionId             int             `json:"subscription_id,omitempty"`
+	Number                     string          `json:"number,omitempty"`
+	SequenceNumber             int             `json:"sequence_number,omitempty"`
+	IssueDate                  string          `json:"issue_date,omitempty"`
+	DueDate                    string          `json:"due_date,omitempty"`
+	PaidDate                   string          `json:"paid_date,omitempty"`
+	Status                     string          `json:"status_omitempty"`
+	CollectionMethod           string          `json:"collection_method,omitempty"`
+	PaymentInstructions        string          `json:"payment_instructions,omitempty"`
+	Currency                   string          `json:"currency,omitempty"`
+	ConsolidationLevel         string          `json:"consolidation_level,omitempty"`
+	ParentInvoiceUid           string          `json:"parent_invoice_uid,omitempty"`
+	ParentInvoiceNumber        int             `json:"parent_invoice_number,omitempty"`
+	GroupPrimarySubscriptionId int             `json:"group_primary_subscription_id,omitempty"`
+	ProductName                string          `json:"product_name,omitempty"`
+	ProductFamilyName          string          `json:"product_family_name,omitempty"`
+	Seller                     Seller          `json:"seller,omitempty"`
+	Customer                   Customer        `json:"Customer,omitempty"`
+	Memo                       string          `json:"memo,omitempty"`
+	BillingAddress             Address         `json:"billing_address,omitempty"`
+	ShippingAddress            Address         `json:"shipping_address,omitempty"`
+	SubtotalAmount             string          `json:"subtotal_amount,omitempty"`
+	DiscountAmount             string          `json:"discount_amount,omitempty"`
+	TaxAmount                  string          `json:"tax_amount,omitempty"`
+	CreditAmount               string          `json:"credit_amount,omitempty"`
+	RefundAmount               string          `json:"refund_amount,omitempty"`
+	PaidAmount                 string          `json:"paid_amount,omitempty"`
+	DueAmount                  string          `json:"due_amount,omitempty"`
+	LineItems                  []LineItems     `json:"line_items,omitempty"`
+	Discounts                  []Discounts     `json:"discounts,omitempty"`
+	Taxes                      []Taxes         `json:"taxes,omitempty"`
+	Credits                    []Credits       `json:"credits,omitempty"`
+	Refunds                    []Refunds       `json:"refunds,omitempty"`
+	Payments                   []Payments      `json:"payments,omitempty"`
+	CustomFields               []CustomFields  `json:"custom_fields,omitempty"`
+	PublicUrl                  string          `json:"public_url,omitempty"`
+	PreviousBalanceData        PrevBalanceData `json:"previous_balance_data,omitempty"`
+}
+
+type Address struct {
+	Street  string `json:"street,omitempty"`
+	Line2   string `json:"line2,omitempty"`
+	City    string `json:"city,omitempty"`
+	State   string `json:"state,omitempty"`
+	Zip     string `json:"zip,omitempty"`
+	Country string `json:"country,omitempty"`
+}
+
+type Seller struct {
+	Name    string  `json:"name,omitempty"`
+	Address Address `json:"address,omitempty"`
+	Phone   string  `json:"phone,omitempty"`
+}
+
+type LineItems struct {
+	Uid                 string `json:"uid,omitempty"`
+	Title               string `json:"title,omitempty"`
+	Description         string `json:"description,omitempty"`
+	Quantity            string `json:"quantity,omitempty"`
+	UnitPrice           string `json:"unit_price,omitempty"`
+	SubtotalAmount      string `json:"subtotal_amount,omitempty"`
+	DiscountAmount      string `json:"discount_amount,omitempty"`
+	TaxAmount           string `json:"tax_amount,omitempty"`
+	TotalAmount         string `json:"total_amount,omitempty"`
+	TieredUnitPrice     bool   `json:"tiered_unit_price,omitempty"`
+	PeriodRangeStart    string `json:"period_range_start,omitempty"`
+	PeriodRangeEnd      string `json:"period_range_end,omitempty"`
+	ProductId           int    `json:"product_id,omitempty"`
+	ProductVersion      int    `json:"product_version,omitempty"`
+	ComponentId         int    `json:"component_id,omitempty"`
+	PricePointId        int    `json:"price_point_id,omitempty"`
+	ProductPricePointId int    `json:"product_price_point_id,omitempty"`
+}
+
+type Discounts struct {
+	Uid                string               `json:"uid,omitempty"`
+	Title              string               `json:"title,omitempty"`
+	Code               string               `json:"code,omitempty"`
+	SourceType         string               `json:"source_type,omitempty"`
+	SourceId           int                  `json:"source_id,omitempty"`
+	DiscountType       string               `json:"discount_type,omitempty"`
+	Percentage         string               `json:"percentage,omitempty"`
+	EligibleAmount     string               `json:"eligible_amount,omitempty"`
+	DiscountAmount     string               `json:"discount_amount,omitempty"`
+	LineItemsBreakouts []LineItemsBreakouts `json:"line_items_breakouts,omitempty"`
+}
+
+type LineItemsBreakouts struct {
+	Uid            string `json:"uid,omitempty"`
+	EligibleAmount string `json:"eligible_amount,omitempty"`
+	DiscountAmount string `json:"discount_amount,omitempty"`
+}
+
+type Taxes struct {
+	Uid                string               `json:"uid,omitempty"`
+	Title              string               `json:"title,omitempty"`
+	SourceType         string               `json:"source_type,omitempty"`
+	SourceId           int                  `json:"source_id,omitempty"`
+	Percentage         string               `json:"percentage,omitempty"`
+	TaxableAmount      string               `json:"taxable_amount,omitempty"`
+	TaxAmount          string               `json:"tax_amount,omitempty"`
+	LineItemsBreakouts []LineItemsBreakouts `json:"line_items_breakouts,omitempty"`
+}
+
+type Credits struct {
+	Uid              string `json:"uid,omitempty"`
+	CreditNoteNumber string `json:"credit_note_number,omitempty"`
+	CreditNoteUid    string `json:"credit_note_uid,omitempty"`
+	TransactionTime  string `json:"transaction_time,omitempty"`
+	Memo             string `json:"memo,omitempty"`
+	OriginalAmount   string `json:"original_amount,omitempty"`
+	AppliedAmount    string `json:"applied_amount,omitempty"`
+}
+
+type Refunds struct {
+	TransactionId        int    `json:"transaction_id,omitempty"`
+	PaymentId            int    `json:"payment_id,omitempty"`
+	Memo                 string `json:"memo,omitempty"`
+	OriginalAmount       string `json:"original_amount,omitempty"`
+	AppliedAmount        string `json:"applied_amount,omitempty"`
+	GatewayTransactionId string `json:"gateway_transaction_id,omitempty"`
+}
+
+type Payments struct {
+	TransactionTime string `json:"transaction_time,omitempty"`
+	Memo            string `json:"memo,omitempty"`
+	OriginalAmount  string `json:"original_amount,omitempty"`
+	AppliedAmount   string `json:"applied_amount,omitempty"`
+	PaymentMethod   []struct {
+		Details          string `json:"details,omitempty"`
+		Kind             string `json:"kind,omitempty"`
+		Memo             string `json:"memo,omitempty"`
+		Type             string `json:"type,omitempty"`
+		CardBrand        string `json:"card_brand,omitempty"`
+		CardExpiration   string `json:"card_expiration,omitempty"`
+		LastFour         string `json:"last_four,omitempty"`
+		MaskedCardNumber string `json:"masked_card_number,omitempty"`
+	} `json:"payment_method,omitempty"`
+	TransactionId        int    `json:"transaction_id,omitempty"`
+	Prepayment           bool   `json:"prepayment,omitempty"`
+	GatewayTransactionId string `json:"gateway_transaction_id,omitempty"`
+}
+
+type CustomFields struct {
+	Name      string `json:"name,omitempty"`
+	Value     string `json:"value,omitempty"`
+	OwnerId   int    `json:"owner_id,omitempty"`
+	OwnerType string `json:"owner_type,omitempty"`
+}
+
+type PrevBalanceData struct {
+	CaptureDate string `json:"capture_date,omitempty"`
+	Invoices    []struct {
+		Uid               string `json:"uid,omitempty"`
+		Number            string `json:"number,omitempty"`
+		OutstandingAmount string `json:"outstanding_amount,omitempty"`
+	} `json:"invoices,omitempty"`
+}
+*/
