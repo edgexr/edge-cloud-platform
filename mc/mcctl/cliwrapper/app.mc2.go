@@ -68,7 +68,7 @@ func (s *Client) ShowApp(uri, token string, in *ormapi.RegionApp) ([]edgeproto.A
 }
 
 func (s *Client) AddAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
-	args := []string{"app", "add"}
+	args := []string{"app", "addautoprovpolicy"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -79,7 +79,7 @@ func (s *Client) AddAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAut
 }
 
 func (s *Client) RemoveAppAutoProvPolicy(uri, token string, in *ormapi.RegionAppAutoProvPolicy) (*edgeproto.Result, int, error) {
-	args := []string{"app", "remove"}
+	args := []string{"app", "removeautoprovpolicy"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

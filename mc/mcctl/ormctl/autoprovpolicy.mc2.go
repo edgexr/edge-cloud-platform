@@ -101,7 +101,7 @@ var ShowAutoProvPolicyCmd = &cli.Command{
 }
 
 var AddAutoProvPolicyCloudletCmd = &cli.Command{
-	Use:          "add",
+	Use:          "addcloudlet",
 	Short:        "Add a Cloudlet to the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),
@@ -114,7 +114,7 @@ var AddAutoProvPolicyCloudletCmd = &cli.Command{
 }
 
 var RemoveAutoProvPolicyCloudletCmd = &cli.Command{
-	Use:          "remove",
+	Use:          "removecloudlet",
 	Short:        "Remove a Cloudlet from the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
 	OptionalArgs: strings.Join(AutoProvPolicyCloudletOptionalArgs, " "),

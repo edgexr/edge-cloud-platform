@@ -100,7 +100,7 @@ var ShowCloudletPoolCmd = &cli.Command{
 }
 
 var AddCloudletPoolMemberCmd = &cli.Command{
-	Use:          "add",
+	Use:          "addmember",
 	Short:        "Add a Cloudlet to a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),
@@ -113,7 +113,7 @@ var AddCloudletPoolMemberCmd = &cli.Command{
 }
 
 var RemoveCloudletPoolMemberCmd = &cli.Command{
-	Use:          "remove",
+	Use:          "removemember",
 	Short:        "Remove a Cloudlet from a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),

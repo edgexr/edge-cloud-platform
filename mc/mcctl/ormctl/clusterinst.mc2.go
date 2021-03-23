@@ -106,7 +106,7 @@ var ShowClusterInstCmd = &cli.Command{
 }
 
 var DeleteIdleReservableClusterInstsCmd = &cli.Command{
-	Use:          "delete",
+	Use:          "deleteidlereservables",
 	Short:        "Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.",
 	RequiredArgs: "region " + strings.Join(IdleReservableClusterInstsRequiredArgs, " "),
 	OptionalArgs: strings.Join(IdleReservableClusterInstsOptionalArgs, " "),

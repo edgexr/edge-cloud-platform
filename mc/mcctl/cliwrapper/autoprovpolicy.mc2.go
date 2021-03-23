@@ -69,7 +69,7 @@ func (s *Client) ShowAutoProvPolicy(uri, token string, in *ormapi.RegionAutoProv
 }
 
 func (s *Client) AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
-	args := []string{"autoprovpolicy", "add"}
+	args := []string{"autoprovpolicy", "addcloudlet"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -80,7 +80,7 @@ func (s *Client) AddAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionA
 }
 
 func (s *Client) RemoveAutoProvPolicyCloudlet(uri, token string, in *ormapi.RegionAutoProvPolicyCloudlet) (*edgeproto.Result, int, error) {
-	args := []string{"autoprovpolicy", "remove"}
+	args := []string{"autoprovpolicy", "removecloudlet"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

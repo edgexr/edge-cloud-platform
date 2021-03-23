@@ -89,7 +89,7 @@ func (s *Client) RemoveResTag(uri, token string, in *ormapi.RegionResTagTable) (
 }
 
 func (s *Client) GetResTagTable(uri, token string, in *ormapi.RegionResTagTableKey) (*edgeproto.ResTagTable, int, error) {
-	args := []string{"restagtable", "getrestagtable"}
+	args := []string{"restagtable", "get"}
 	out := edgeproto.ResTagTable{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

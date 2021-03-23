@@ -100,7 +100,7 @@ var ShowAppCmd = &cli.Command{
 }
 
 var AddAppAutoProvPolicyCmd = &cli.Command{
-	Use:          "add",
+	Use:          "addautoprovpolicy",
 	Short:        "Add an AutoProvPolicy to the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),
@@ -113,7 +113,7 @@ var AddAppAutoProvPolicyCmd = &cli.Command{
 }
 
 var RemoveAppAutoProvPolicyCmd = &cli.Command{
-	Use:          "remove",
+	Use:          "removeautoprovpolicy",
 	Short:        "Remove an AutoProvPolicy from the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
 	OptionalArgs: strings.Join(AppAutoProvPolicyOptionalArgs, " "),

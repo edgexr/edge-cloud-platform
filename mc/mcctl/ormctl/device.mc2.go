@@ -65,7 +65,7 @@ var EvictDeviceCmd = &cli.Command{
 }
 
 var ShowDeviceReportCmd = &cli.Command{
-	Use:          "show",
+	Use:          "showreport",
 	Short:        "Device Reports API.",
 	RequiredArgs: "region",
 	OptionalArgs: strings.Join(append(DeviceReportRequiredArgs, DeviceReportOptionalArgs...), " "),
