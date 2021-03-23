@@ -40,7 +40,7 @@ var CloudletRefsApiCmds = []*cli.Command{
 	ShowCloudletRefsCmd,
 }
 
-var CloudletRefsApiCmdsGroup = cli.GenGroup("cloudletrefs", "Manage CloudletRefss", CloudletRefsApiCmds)
+var CloudletRefsApiCmdsGroup = cli.GenGroup("cloudletrefs", "Manage CloudletRefs", CloudletRefsApiCmds)
 
 var ShowClusterRefsCmd = &cli.Command{
 	Use:          "show",
@@ -60,7 +60,7 @@ var ClusterRefsApiCmds = []*cli.Command{
 	ShowClusterRefsCmd,
 }
 
-var ClusterRefsApiCmdsGroup = cli.GenGroup("clusterrefs", "Manage ClusterRefss", ClusterRefsApiCmds)
+var ClusterRefsApiCmdsGroup = cli.GenGroup("clusterrefs", "Manage ClusterRefs", ClusterRefsApiCmds)
 
 var ShowAppInstRefsCmd = &cli.Command{
 	Use:          "show",
@@ -80,7 +80,7 @@ var AppInstRefsApiCmds = []*cli.Command{
 	ShowAppInstRefsCmd,
 }
 
-var AppInstRefsApiCmdsGroup = cli.GenGroup("appinstrefs", "Manage AppInstRefss", AppInstRefsApiCmds)
+var AppInstRefsApiCmdsGroup = cli.GenGroup("appinstrefs", "Manage AppInstRefs", AppInstRefsApiCmds)
 
 var VMResourceRequiredArgs = []string{
 	"key.clusterkey.name",
