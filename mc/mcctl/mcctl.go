@@ -15,6 +15,7 @@ const mcctl = "mcctl"
 var rootCmd = &cobra.Command{
 	Use:               mcctl,
 	PersistentPreRunE: ormctl.PreRunE,
+	RunE:              cli.GroupRunE,
 }
 
 func main() {
@@ -125,7 +126,7 @@ func main() {
 		printCommandGroup(out, "Other Commands", pad, otherCommands)
 
 		if cmd.HasAvailableLocalFlags() {
-			fmt.Fprint(out, "\nFlags:\n", cmd.LocalFlags().FlagUsages())
+			fmt.Fprint(out, "\nFlags:\n", cli.LocalFlagsUsageNoNewline(cmd))
 		}
 		return nil
 	}

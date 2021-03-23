@@ -26,13 +26,14 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
 		}
+		c.CobraCmd.SilenceUsage = true
 
 		in, err := c.ParseInput(args)
 		if err != nil {
 			if len(args) == 0 {
 				// Force print usage since no args specified,
 				// but obviously some are required.
-				c.PrintUsage = true
+				c.CobraCmd.SilenceUsage = false
 			}
 			return err
 		}
