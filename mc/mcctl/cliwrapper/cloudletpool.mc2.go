@@ -68,7 +68,7 @@ func (s *Client) ShowCloudletPool(uri, token string, in *ormapi.RegionCloudletPo
 }
 
 func (s *Client) AddCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
-	args := []string{"cloudletpool", "add"}
+	args := []string{"cloudletpool", "addmember"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -79,7 +79,7 @@ func (s *Client) AddCloudletPoolMember(uri, token string, in *ormapi.RegionCloud
 }
 
 func (s *Client) RemoveCloudletPoolMember(uri, token string, in *ormapi.RegionCloudletPoolMember) (*edgeproto.Result, int, error) {
-	args := []string{"cloudletpool", "remove"}
+	args := []string{"cloudletpool", "removemember"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

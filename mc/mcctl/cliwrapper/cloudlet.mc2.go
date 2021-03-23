@@ -71,7 +71,7 @@ func (s *Client) ShowCloudlet(uri, token string, in *ormapi.RegionCloudlet) ([]e
 }
 
 func (s *Client) GetCloudletManifest(uri, token string, in *ormapi.RegionCloudletKey) (*edgeproto.CloudletManifest, int, error) {
-	args := []string{"cloudlet", "getcloudletmanifest"}
+	args := []string{"cloudlet", "getmanifest"}
 	out := edgeproto.CloudletManifest{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -82,7 +82,7 @@ func (s *Client) GetCloudletManifest(uri, token string, in *ormapi.RegionCloudle
 }
 
 func (s *Client) GetCloudletProps(uri, token string, in *ormapi.RegionCloudletProps) (*edgeproto.CloudletProps, int, error) {
-	args := []string{"cloudlet", "get"}
+	args := []string{"cloudlet", "getprops"}
 	out := edgeproto.CloudletProps{}
 	noconfig := strings.Split("Properties", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -93,7 +93,7 @@ func (s *Client) GetCloudletProps(uri, token string, in *ormapi.RegionCloudletPr
 }
 
 func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.RegionCloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, int, error) {
-	args := []string{"cloudlet", "get"}
+	args := []string{"cloudlet", "getresourcequotaprops"}
 	out := edgeproto.CloudletResourceQuotaProps{}
 	noconfig := strings.Split("Properties", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -104,7 +104,7 @@ func (s *Client) GetCloudletResourceQuotaProps(uri, token string, in *ormapi.Reg
 }
 
 func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCloudletResourceUsage) (*edgeproto.CloudletResourceUsage, int, error) {
-	args := []string{"cloudlet", "get"}
+	args := []string{"cloudlet", "getresourceusage"}
 	out := edgeproto.CloudletResourceUsage{}
 	noconfig := strings.Split("Info", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -115,7 +115,7 @@ func (s *Client) GetCloudletResourceUsage(uri, token string, in *ormapi.RegionCl
 }
 
 func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
-	args := []string{"cloudlet", "addcloudletresmapping"}
+	args := []string{"cloudlet", "addresmapping"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -126,7 +126,7 @@ func (s *Client) AddCloudletResMapping(uri, token string, in *ormapi.RegionCloud
 }
 
 func (s *Client) RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCloudletResMap) (*edgeproto.Result, int, error) {
-	args := []string{"cloudlet", "removecloudletresmapping"}
+	args := []string{"cloudlet", "removeresmapping"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))
@@ -137,7 +137,7 @@ func (s *Client) RemoveCloudletResMapping(uri, token string, in *ormapi.RegionCl
 }
 
 func (s *Client) FindFlavorMatch(uri, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error) {
-	args := []string{"cloudlet", "find"}
+	args := []string{"cloudlet", "findflavormatch"}
 	out := edgeproto.FlavorMatch{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

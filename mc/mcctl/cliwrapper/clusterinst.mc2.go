@@ -71,7 +71,7 @@ func (s *Client) ShowClusterInst(uri, token string, in *ormapi.RegionClusterInst
 }
 
 func (s *Client) DeleteIdleReservableClusterInsts(uri, token string, in *ormapi.RegionIdleReservableClusterInsts) (*edgeproto.Result, int, error) {
-	args := []string{"clusterinst", "delete"}
+	args := []string{"clusterinst", "deleteidlereservables"}
 	out := edgeproto.Result{}
 	noconfig := strings.Split("", ",")
 	st, err := s.runObjs(uri, token, args, in, &out, withIgnore(noconfig))

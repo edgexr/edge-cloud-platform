@@ -116,6 +116,18 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	}
 }
 
+type ServiceProps struct {
+	cliusebase string
+	cliuses    map[string]string
+	path       []string
+}
+
+func (s *ServiceProps) Init(serviceNum int) {
+	s.cliuses = make(map[string]string)
+	// path: 6 is service type
+	s.path = []string{"6", strconv.Itoa(serviceNum)}
+}
+
 func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importEcho = false
 	g.importHttp = false
@@ -150,9 +162,9 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.P(gensupport.AutoGenComment)
 
 	for ii, service := range file.FileDescriptorProto.Service {
-		// path: 6 is service type
-		path := []string{"6", strconv.Itoa(ii)}
-		g.generateService(file, service, path)
+		serviceProps := ServiceProps{}
+		serviceProps.Init(ii)
+		g.generateService(file, service, &serviceProps)
 		if g.genclient {
 			g.generateClientInterface(service)
 		}
@@ -290,18 +302,18 @@ func (g *GenMC2) genSwaggerSpec(method *descriptor.MethodDescriptorProto, summar
 	g.P("//   404: notFound")
 }
 
-func (g *GenMC2) generateService(file *generator.FileDescriptor, service *descriptor.ServiceDescriptorProto, path []string) {
+func (g *GenMC2) generateService(file *generator.FileDescriptor, service *descriptor.ServiceDescriptorProto, serviceProps *ServiceProps) {
 	if len(service.Method) == 0 {
 		return
 	}
 	for ii, method := range service.Method {
 		// path: 2 is method type
-		methodPath := []string{"2", strconv.Itoa(ii)}
-		g.generateMethod(file, *service.Name, method, append(path, methodPath...))
+		methodPath := append(serviceProps.path, "2", strconv.Itoa(ii))
+		g.generateMethod(file, *service.Name, method, methodPath, serviceProps)
 	}
 }
 
-func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, method *descriptor.MethodDescriptorProto, path []string) {
+func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, method *descriptor.MethodDescriptorProto, methodPath []string, serviceProps *ServiceProps) {
 	api := GetMc2Api(method)
 	if api == "" {
 		return
@@ -376,8 +388,22 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 	if len(authops) > 0 {
 		args.AuthOps = ", " + strings.Join(authops, ", ")
 	}
-	cliuse := strings.TrimSuffix(*method.Name, inname)
-	args.CliUse = strings.ToLower(cliuse)
+	if g.genctl || g.gencliwrapper {
+		if serviceProps.cliusebase == "" {
+			serviceProps.cliusebase = inname
+		}
+		// Remove the base name from the commands to avoid redundancy.
+		cliuse := GetCliCmd(method)
+		if cliuse == "" {
+			cliuse = strings.Replace(*method.Name, serviceProps.cliusebase, "", 1)
+		}
+		cliuse = strings.ToLower(cliuse)
+		if conflict, found := serviceProps.cliuses[cliuse]; found {
+			g.Fail("Cli cmd name conflict between", cliuse, "(", *method.Name, ") and", cliuse, "(", conflict, "), please use protogen.cli_cmd option to avoid conflict")
+		}
+		serviceProps.cliuses[cliuse] = *method.Name
+		args.CliUse = cliuse
+	}
 
 	var tmpl *template.Template
 	if g.genapi {
@@ -398,7 +424,7 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		g.importOrmclient = true
 	} else if g.genctl {
 		tmpl = g.tmplMethodCtl
-		short := g.support.GetComments(file.GetName(), strings.Join(path, ","))
+		short := g.support.GetComments(file.GetName(), strings.Join(methodPath, ","))
 		args.CliShort = strings.TrimSpace(strings.Map(gensupport.RemoveNewLines, short))
 		if args.CliShort == "" {
 			g.Fail("method", *method.Name, "in file", file.GetName(), "needs a comment")
@@ -1089,6 +1115,10 @@ func GetMc2CustomAuthz(method *descriptor.MethodDescriptorProto) bool {
 
 func GetMc2ApiNotifyroot(method *descriptor.MethodDescriptorProto) bool {
 	return proto.GetBoolExtension(method.Options, protogen.E_Mc2ApiNotifyroot, false)
+}
+
+func GetCliCmd(method *descriptor.MethodDescriptorProto) string {
+	return gensupport.GetStringExtension(method.Options, protogen.E_CliCmd, "")
 }
 
 func GetMc2TargetCloudlet(message *descriptor.DescriptorProto) string {

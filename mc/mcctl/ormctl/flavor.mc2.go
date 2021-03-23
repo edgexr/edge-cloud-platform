@@ -99,7 +99,7 @@ var ShowFlavorCmd = &cli.Command{
 }
 
 var AddFlavorResCmd = &cli.Command{
-	Use:          "addflavorres",
+	Use:          "addres",
 	Short:        "Add Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
@@ -112,7 +112,7 @@ var AddFlavorResCmd = &cli.Command{
 }
 
 var RemoveFlavorResCmd = &cli.Command{
-	Use:          "removeflavorres",
+	Use:          "removeres",
 	Short:        "Remove Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
 	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),

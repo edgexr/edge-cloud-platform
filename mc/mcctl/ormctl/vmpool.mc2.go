@@ -101,7 +101,7 @@ var ShowVMPoolCmd = &cli.Command{
 }
 
 var AddVMPoolMemberCmd = &cli.Command{
-	Use:          "add",
+	Use:          "addmember",
 	Short:        "Add VMPoolMember. Adds a VM to existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(AddVMPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(AddVMPoolMemberOptionalArgs, " "),
@@ -114,7 +114,7 @@ var AddVMPoolMemberCmd = &cli.Command{
 }
 
 var RemoveVMPoolMemberCmd = &cli.Command{
-	Use:          "remove",
+	Use:          "removemember",
 	Short:        "Remove VMPoolMember. Removes a VM from existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(RemoveVMPoolMemberRequiredArgs, " "),
 	OptionalArgs: strings.Join(RemoveVMPoolMemberOptionalArgs, " "),

@@ -125,7 +125,7 @@ var RemoveResTagCmd = &cli.Command{
 }
 
 var GetResTagTableCmd = &cli.Command{
-	Use:          "getrestagtable",
+	Use:          "get",
 	Short:        "Fetch a copy of the TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableKeyRequiredArgs, " "),
 	OptionalArgs: strings.Join(ResTagTableKeyOptionalArgs, " "),

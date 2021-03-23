@@ -57,7 +57,7 @@ func (s *Client) EvictDevice(uri, token string, in *ormapi.RegionDevice) (*edgep
 }
 
 func (s *Client) ShowDeviceReport(uri, token string, in *ormapi.RegionDeviceReport) ([]edgeproto.Device, int, error) {
-	args := []string{"device", "show"}
+	args := []string{"device", "showreport"}
 	outlist := []edgeproto.Device{}
 	noconfig := strings.Split("", ",")
 	ops := []runOp{
