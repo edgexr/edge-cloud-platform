@@ -85,7 +85,7 @@ func TestCollectProxyStats(t *testing.T) {
 		AppInstCache.Update(ctx, &testutil.AppInstData[ii], 0)
 	}
 	// Test removal of each entry
-	for ii, obj := range testutil.AppInstData {
+	for ii, obj := range testutil.CreatedAppInstData() {
 		// set mapped ports and state
 		app := edgeproto.App{}
 		found := AppCache.Get(&obj.Key.AppKey, &app)
