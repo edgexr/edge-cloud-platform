@@ -1072,7 +1072,11 @@ func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
 	g.P()
 	serviceName := strings.TrimSuffix(*service.Name, "Api")
 	groupName := getCliGroup(*service.Name)
-	g.P("var ", service.Name, "CmdsGroup = cli.GenGroup(\"", groupName, "\", \"Manage ", serviceName, "s\", ", service.Name, "Cmds)")
+	plural := "s"
+	if strings.HasSuffix(serviceName, "s") {
+		plural = ""
+	}
+	g.P("var ", service.Name, "CmdsGroup = cli.GenGroup(\"", groupName, "\", \"Manage ", serviceName, plural, "\", ", service.Name, "Cmds)")
 	g.P()
 	for ii, method := range service.Method {
 		gensupport.GenerateMethodArgs(g.Generator, &g.support, method, true, ii)

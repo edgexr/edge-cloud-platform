@@ -90,7 +90,7 @@ var SettingsApiCmds = []*cli.Command{
 	ShowSettingsCmd,
 }
 
-var SettingsApiCmdsGroup = cli.GenGroup("settings", "Manage Settingss", SettingsApiCmds)
+var SettingsApiCmdsGroup = cli.GenGroup("settings", "Manage Settings", SettingsApiCmds)
 
 var SettingsRequiredArgs = []string{}
 var SettingsOptionalArgs = []string{

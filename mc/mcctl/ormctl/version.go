@@ -11,7 +11,7 @@ import (
 func GetVersionCmd() *cobra.Command {
 	cmd := cli.Command{
 		Use:   "version",
-		Short: "Version of mcctl cli utility.",
+		Short: "Version of mcctl cli utility",
 	}
 	cmd.Run = func(c *cli.Command, args []string) error {
 		fmt.Printf("buildmaster: %s\n", version.BuildMaster)
