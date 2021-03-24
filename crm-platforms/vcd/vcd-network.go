@@ -626,7 +626,7 @@ func (v *VcdPlatform) GetAddrOfVM(ctx context.Context, vm *govcd.VM, netName str
 		}
 	}
 
-	return "", fmt.Errorf("Not Found")
+	return "", fmt.Errorf("Addr Not Found on Net")
 }
 
 // Consider a GetAllSubnetsInVapp() []string err for shared lbs... XXX
@@ -642,31 +642,21 @@ func (v *VcdPlatform) GetAddrOfVapp(ctx context.Context, vapp *govcd.VApp, netNa
 		return "", err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp", "vapp", vapp.VApp.Name, "network", netName)
+	// *v.2.11.0 Changed spelling of type.VM
+	var vmChild *types.Vm
 
-	ncs, err := vapp.GetNetworkConnectionSection()
+	for _, vmChild = range vapp.VApp.Children.VM {
+		parts := strings.Split(vmChild.Name, ".")
+		if len(parts) > 1 {
+			break
+		}
+	}
+	vm, err := v.FindVMInVApp(ctx, vmChild.Name, *vapp)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp err retrieving NetConnection section", "vapp", vapp.VApp.Name, "network", netName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp failed to retrieve", "vm", vmChild.Name, "From Vapp", vapp.VApp.Name)
 		return "", err
 	}
-	numNets := len(ncs.NetworkConnection)
-	if v.Verbose {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp", "vapp", vapp.VApp.Name, "network", netName, "numNetworks", numNets)
-	}
-	for _, nc := range ncs.NetworkConnection {
-		if v.Verbose {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp consider", "vapp", vapp.VApp.Name, "nc.Network", nc.Network, "vs netName", netName)
-		}
-
-		if nc.Network == netName {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp", "Vapp", vapp.VApp.Name, "net", netName, "ip", nc.IPAddress)
-			return nc.IPAddress, nil
-		} else {
-			if v.Verbose {
-				log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVapp skipping ", "Vapp", vapp.VApp.Name, "network", nc.Network)
-			}
-		}
-	}
-	return "", fmt.Errorf("Not Found")
+	return v.GetAddrOfVM(ctx, vm, netName)
 }
 
 // Given our scheme for networks 10.101.X.0/24 return the next available Isolated network CIDR

@@ -6,6 +6,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -156,4 +157,23 @@ func TakeIntPointer(x int) *int {
 
 func TakeUint64Pointer(x uint64) *uint64 {
 	return &x
+}
+
+func (v *VcdPlatform) GetCloudletTrustPolicy(ctx context.Context) (*edgeproto.TrustPolicy, error) {
+
+	cldlet := edgeproto.Cloudlet{}
+	trustcache := v.caches.TrustPolicyCache
+	key := v.vmProperties.CommonPf.PlatformConfig.CloudletKey
+
+	if !v.caches.CloudletCache.Get(key, &cldlet) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy unable to retrieve cloudlet from cache", "cloudlet", cldlet.Key.Name, "cloudletOrg", key.Organization)
+		return nil, fmt.Errorf("Cloudlet Not Found")
+	}
+	tpol, err := crmutil.GetCloudletTrustPolicy(ctx, cldlet.TrustPolicy, key.Organization, trustcache)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy crmutil failed", "cloudlet", cldlet.Key.Name, "cloudletOrg", key.Organization, "error", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy fetched", "TrustPolicy", tpol.Key.Name, "cloudlet", cldlet.Key.Name)
+	return tpol, nil
 }

@@ -119,11 +119,17 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 		return err
 	}
 
-	// optionally add Privacy Policy
+	// optionally add/update/delete Trust Policy
 	allowEgressAll := false
 	if TrustPolicy != nil {
 		if len(TrustPolicy.OutboundSecurityRules) == 0 {
 			// a privacy policy with no rules means we need to open all egress traffic
+			log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB empty OutboundSecRules removeIfExist")
+			err := infracommon.RemoveTrustPolicyIfExists(ctx, client)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
+			}
+
 			allowEgressAll = true
 		}
 		for _, p := range TrustPolicy.OutboundSecurityRules {
@@ -140,6 +146,8 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 			}
 			ppRules.EgressRules = append(ppRules.EgressRules, egressRule)
 		}
+	} else {
+		infracommon.RemoveTrustPolicyIfExists(ctx, client)
 	}
 	if allowEgressAll {
 		allowAllEgressRule := infracommon.FirewallRule{
@@ -147,7 +155,7 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 		}
 		ppRules.EgressRules = append(ppRules.EgressRules, allowAllEgressRule)
 	}
-	err = infracommon.AddIptablesRules(ctx, client, "privacy-policy", &ppRules)
+	err = infracommon.AddIptablesRules(ctx, client, "trust-policy", &ppRules)
 	if err != nil {
 		return err
 	}
