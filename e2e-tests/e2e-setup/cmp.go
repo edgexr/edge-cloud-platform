@@ -227,7 +227,25 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 
 		y1 = a1
 		y2 = a2
+	} else if fileType == "mcapimetrics" {
+		var a1 []MetricsCompare
+		var a2 []MetricsCompare
 
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			return a1[i].Name < a1[j].Name
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			return a2[i].Name < a2[j].Name
+		})
+
+		cmpFilterApiMetricData(a1)
+		cmpFilterApiMetricData(a2)
+
+		y1 = a1
+		y2 = a2
 	} else if fileType == "emaildata" {
 		// sort email headers
 		var a1 []MailDevEmail
@@ -402,6 +420,20 @@ func cmpFilterSpans(data []SpanSearch) {
 	}
 }
 
+func cmpFilterApiMetricData(data []MetricsCompare) {
+	for ii := 0; ii < len(data); ii++ {
+		vals := data[ii].Values
+		ignoreMapFloatVal(vals, "0s")
+		ignoreMapFloatVal(vals, "5ms")
+		ignoreMapFloatVal(vals, "10ms")
+		ignoreMapFloatVal(vals, "25ms")
+		ignoreMapFloatVal(vals, "50ms")
+		ignoreMapFloatVal(vals, "100ms")
+		ignoreMapFloatVal(vals, "errs")
+		ignoreMapFloatVal(vals, "reqs")
+	}
+}
+
 // This nils out map value so we can check that keys match
 // between expected and actual, but ignore the actual values
 // since the values may change or be inconsistent.
@@ -413,6 +445,11 @@ func ignoreMapVal(m map[string]interface{}, key string) {
 func ignoreMapStringVal(m map[string]string, key string) {
 	if _, found := m[key]; found {
 		m[key] = ""
+	}
+}
+func ignoreMapFloatVal(m map[string]float64, key string) {
+	if _, found := m[key]; found {
+		m[key] = 0
 	}
 }
 
