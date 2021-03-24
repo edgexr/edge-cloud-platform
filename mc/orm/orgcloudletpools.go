@@ -339,7 +339,7 @@ func createDeleteCloudletPoolAccess(c echo.Context, action cloudcommon.Action, t
 		return bindErr(c, err)
 	}
 	if err := validateOrgCloudletPool(&in); err != nil {
-		return err
+		return setReply(c, err, nil)
 	}
 	span := log.SpanFromContext(ctx)
 
