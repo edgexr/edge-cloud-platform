@@ -1,0 +1,14 @@
+description: Send RegisterClient and FindCloudlet for dme-api stats
+
+tests:
+- name: RegisterClient
+  apifile: "{{datadir}}/register.yml"
+  actions: [dmeapi-register]
+
+- name: FindCloudlet
+  apifile: "{{datadir}}/find_cloudlet_app1.yml"
+  actions: [dmeapi-findcloudlet]
+  compareyaml:
+    yaml1: "{{outputdir}}/findcloudlet.yml"
+    yaml2: "{{datadir2}}/find_cloudlet_response.yml"
+    filetype: findcloudlet

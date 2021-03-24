@@ -233,6 +233,16 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if api == "showclientapimetrics" {
+		var showClientApiMetrics *ormapi.AllMetrics
+		targets := readMCMetricTargetsFile(apiFile, vars)
+		var parsedMetrics *[]MetricsCompare
+		showClientApiMetrics = showMcClientApiMetrics(uri, token, targets, &rc)
+		parsedMetrics = parseMetrics(showClientApiMetrics)
+		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		return rc
+	}
+
 	if api == "showclientappmetrics" {
 		var showClientAppMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
@@ -776,7 +786,7 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 	return &allMetrics
 }
 
-func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
 	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
 	for _, method := range ApiMethods {
 		clientApiUsageQuery := ormapi.RegionClientApiUsageMetrics{
@@ -794,6 +804,11 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 			allMetrics.Data = append(allMetrics.Data, clientApiUsageMetric.Data...)
 		}
 	}
+	return &allMetrics
+}
+
+func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
+	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
 	clientAppUsageQuery := ormapi.RegionClientAppUsageMetrics{
 		Region:  "local",
 		AppInst: targets.AppInstKey,
