@@ -9,6 +9,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -127,10 +128,18 @@ func (v *VcdPlatform) GetExternalIpNetworkCidr(ctx context.Context, vcdClient *g
 
 }
 
-// same as vsphere (common vmware utils?)
 func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, rootLBName string, secGrpName string, trustPolicy *edgeproto.TrustPolicy, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	iptblStart := time.Now()
+
+	// Check if we have any trust policy, and use it if so
+	tp, err := v.GetCloudletTrustPolicy(ctx)
+	if tp == nil || err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB no TrustPolicy")
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB have TrustPolicy")
+		trustPolicy = tp
+	}
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
@@ -237,11 +246,72 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 
 }
 
-// New
 func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules tbi")
+	errMap := make(map[string]error)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "egressRestricted", egressRestricted, "TrustPolicy", TrustPolicy, "action", action)
+	updateCallback(edgeproto.UpdateTask, "Configuring Cloudlet Security Rules for TrustPolicy")
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
+	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
+
+	if action == vmlayer.ActionCreate || action == vmlayer.ActionUpdate {
+		log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "action", action, "Cloudlet secgrp name", v.vmProperties.CloudletSecgrpName)
+		vmgp, err := vmlayer.GetVMGroupOrchestrationParamsFromTrustPolicy(ctx, v.vmProperties.CloudletSecgrpName, TrustPolicy, egressRestricted, vmlayer.SecGrpWithAccessPorts("tcp:22", infracommon.RemoteCidrAll))
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules GetVMGroupOrchestartionParmasFromTrustPolicy failed", "error", err)
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "action", action, "Cloudlet secgrp name", v.vmProperties.CloudletSecgrpName, "vmgp", vmgp)
+		vappRefList := vdc.GetVappList()
+		netName := v.vmProperties.GetCloudletExternalNetwork()
+		for _, vappRef := range vappRefList {
+			vapp, err := vdc.GetVAppByHref(vappRef.HREF)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules GetVAppByHref  failed", "error", err)
+				errMap[vappRef.Name] = err
+				continue
+			}
+			ip, err := v.GetAddrOfVapp(ctx, vapp, netName)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules GetAddrOfVapp  failed", "error", err)
+				continue
+			}
+			sshClient, err := v.vmProperties.CommonPf.GetSSHClientFromIPAddr(ctx, ip, pc.WithUser(infracommon.SSHUser), pc.WithCachedIp(true))
+			if err != nil {
+				errMap[vapp.VApp.Name] = err
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules GetSSHClientFromIPAddr failed", "error", err)
+				continue
+			}
+			var cidrs []string
+			log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules SetupIpTables for", "IP", ip, "sshClient", sshClient)
+			err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, cidrs, TrustPolicy)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules SetupIptablesRulesForRootLB  failed", "IP", ip, "sshClient", sshClient, "error", err)
+				errMap[vapp.VApp.Name] = err
+			}
+		}
+
+		if len(errMap) != 0 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules encontered errors:")
+			for n, e := range errMap {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules error", "server", n, "error", e)
+			}
+			return fmt.Errorf("Failure")
+		}
+	} else {
+		// action.delete comes from DeleteCloudlet, rules will go down with the vm
+		log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules action.delete noop")
+	}
+
 	return nil
+
 }
 
 // GetVcdClientFromContext returns a client object if one exists, otherwise nil
