@@ -502,10 +502,11 @@ type RegionClusterInstUsage struct {
 }
 
 type RegionCloudletPoolUsage struct {
-	Region       string
-	CloudletPool edgeproto.CloudletPoolKey
-	StartTime    time.Time `json:",omitempty"`
-	EndTime      time.Time `json:",omitempty"`
+	Region        string
+	CloudletPool  edgeproto.CloudletPoolKey
+	StartTime     time.Time `json:",omitempty"`
+	EndTime       time.Time `json:",omitempty"`
+	ShowNonVmApps bool      `json:",omitempty"`
 }
 
 type RegionCloudletPoolUsageRegister struct {

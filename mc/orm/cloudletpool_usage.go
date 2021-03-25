@@ -33,7 +33,9 @@ func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList [
 	} else if queryType == APPINST {
 		arg.Measurement = EVENT_APPINST
 		arg.Selector = strings.Join(append(AppFields, appUsageEventFields...), ",")
-		arg.DeploymentType = cloudcommon.DeploymentTypeVM
+		if !obj.ShowNonVmApps {
+			arg.DeploymentType = cloudcommon.DeploymentTypeVM
+		}
 	} else {
 		return ""
 	}
@@ -53,7 +55,9 @@ func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletL
 	} else if queryType == APPINST {
 		arg.Measurement = cloudcommon.AppInstCheckpoints
 		arg.Selector = strings.Join(AppCheckpointFields, ",")
-		arg.DeploymentType = cloudcommon.DeploymentTypeVM
+		if !obj.ShowNonVmApps {
+			arg.DeploymentType = cloudcommon.DeploymentTypeVM
+		}
 	} else {
 		return ""
 	}
@@ -117,7 +121,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Error calculating usage records: %v", err), nil)
 		}
 
-		// check VM appinsts
+		// check appinsts
 		eventCmd = cloudletPoolEventsQuery(&in, cloudletList, APPINST)
 		checkpointCmd = cloudletPoolCheckpointsQuery(&in, cloudletList, APPINST)
 		eventResp, checkResp, err = GetEventAndCheckpoint(ctx, rc, eventCmd, checkpointCmd)
