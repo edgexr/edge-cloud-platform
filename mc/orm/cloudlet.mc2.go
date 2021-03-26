@@ -65,8 +65,8 @@ func CreateCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto
 		return err
 	}
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+		if err := authzCreateCloudlet(ctx, rc.region, rc.username, obj,
+			ResourceCloudlets, ActionManage); err != nil {
 			return err
 		}
 	}

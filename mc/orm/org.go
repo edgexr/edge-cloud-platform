@@ -25,6 +25,13 @@ var OrgTypeAdmin = "admin"
 var OrgTypeDeveloper = "developer"
 var OrgTypeOperator = "operator"
 
+type UpdateType int
+
+const (
+	NormalUpdate UpdateType = iota
+	AdminUpdate
+)
+
 func CreateOrg(c echo.Context) error {
 	claims, err := getClaims(c)
 	if err != nil {
@@ -60,6 +67,7 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		role = RoleDeveloperManager
 	} else if org.Type == OrgTypeOperator {
 		role = RoleOperatorManager
+		org.EdgeboxOnly = true
 	} else {
 		return fmt.Errorf("Organization type must be %s, or %s", OrgTypeDeveloper, OrgTypeOperator)
 	}
@@ -206,6 +214,14 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 }
 
 func UpdateOrg(c echo.Context) error {
+	return updateOrg(c, NormalUpdate)
+}
+
+func RestrictedUpdateOrg(c echo.Context) error {
+	return updateOrg(c, AdminUpdate)
+}
+
+func updateOrg(c echo.Context, updateType UpdateType) error {
 	ctx := GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
@@ -237,9 +253,17 @@ func UpdateOrg(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(res.Error)))
 	}
 	oldType := org.Type
+	oldEdgeboxOnly := org.EdgeboxOnly
 
-	if err := authorized(ctx, claims.Username, in.Name, ResourceUsers, ActionManage); err != nil {
-		return err
+	if updateType == AdminUpdate {
+		// Only admin user allowed to update org data.
+		if err := authorized(ctx, claims.Username, "", ResourceUsers, ActionManage); err != nil {
+			return err
+		}
+	} else {
+		if err := authorized(ctx, claims.Username, in.Name, ResourceUsers, ActionManage); err != nil {
+			return err
+		}
 	}
 
 	// apply specified fields
@@ -249,6 +273,9 @@ func UpdateOrg(c echo.Context) error {
 	}
 	if org.Type != oldType {
 		return c.JSON(http.StatusBadRequest, Msg("Cannot change Organization type"))
+	}
+	if org.EdgeboxOnly != oldEdgeboxOnly && updateType != AdminUpdate {
+		return c.JSON(http.StatusBadRequest, Msg("Cannot update edgeboxonly field for Organization"))
 	}
 
 	err = db.Save(&org).Error
@@ -336,7 +363,7 @@ func orgExists(ctx context.Context, orgName string) (*ormapi.Organization, error
 	org := ormapi.Organization{}
 	res := db.Where(&lookup).First(&org)
 	if res.RecordNotFound() {
-		return nil, nil
+		return nil, fmt.Errorf("org %s not found", lookup.Name)
 	}
 	if res.Error != nil {
 		return nil, res.Error

@@ -27,10 +27,11 @@ var UserApiKeyComments = map[string]string{
 }
 
 var OrganizationComments = map[string]string{
-	"name":    `Organization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"type":    `Organization type: "developer" or "operator"`,
-	"address": `Organization address`,
-	"phone":   `Organization phone number`,
+	"name":        `Organization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"type":        `Organization type: "developer" or "operator"`,
+	"address":     `Organization address`,
+	"phone":       `Organization phone number`,
+	"edgeboxonly": `Edgebox only organization: true or false`,
 }
 
 var BillingOrganizationComments = map[string]string{

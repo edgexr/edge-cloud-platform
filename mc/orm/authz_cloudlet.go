@@ -65,7 +65,9 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 	}
 
 	if opts.requiresOrg != "" {
-		if err := checkRequiresOrg(ctx, opts.requiresOrg, s.admin); err != nil {
+		// edgeboxOnly check is not required for Show command
+		noEdgeboxOnly := false
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, s.admin, noEdgeboxOnly); err != nil {
 			return err
 		}
 	}
@@ -177,6 +179,14 @@ func (s *AuthzCloudlet) Filter(obj *edgeproto.Cloudlet) {
 	obj.ResTagMap = output.ResTagMap
 	obj.TrustPolicy = output.TrustPolicy
 	obj.TrustPolicyState = output.TrustPolicyState
+}
+
+func authzCreateCloudlet(ctx context.Context, region, username string, obj *edgeproto.Cloudlet, resource, action string) error {
+	ops := []authOp{withRequiresOrg(obj.Key.Organization)}
+	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX {
+		ops = append(ops, withNoEdgeboxOnly())
+	}
+	return authorized(ctx, username, obj.Key.Organization, ResourceCloudlets, ActionManage, ops...)
 }
 
 func authzCreateClusterInst(ctx context.Context, region, username string, obj *edgeproto.ClusterInst, resource, action string) error {

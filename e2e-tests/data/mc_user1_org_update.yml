@@ -1,0 +1,9 @@
+orgs:
+- name: dmuus
+  edgeboxonly: false
+- name: azure
+  edgeboxonly: false
+- name: gcp
+  edgeboxonly: false
+- name: enterprise
+  edgeboxonly: false
