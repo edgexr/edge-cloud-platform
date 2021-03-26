@@ -50,9 +50,19 @@ tests:
     yaml2: '{{datadir2}}/mc_admin_data.yml'
     filetype: mcdata
 
-- name: user1 creates operator/cloudlets; verify it is there
+- name: user1 creates operators
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_org_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: admin marks operator orgs an non-edgebox only
+  actions: [mcapi-restrictedupdateorg]
+  apifile: '{{datadir2}}/mc_user1_org_update.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: user1 creates cloudlets; verify it is there
   actions: [mcapi-create, mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_data.yml'
+  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'

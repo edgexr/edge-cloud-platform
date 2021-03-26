@@ -2,6 +2,7 @@ package e2esetup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -298,6 +299,34 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	case "stream":
 		dataOut := streamMcData(uri, token, tag, data, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
+	case "restrictedupdateorg":
+		val, ok := dataMap["orgs"]
+		if !ok {
+			fmt.Fprintf(os.Stderr, "mcapi: no orgs in %v\n", dataMap)
+			os.Exit(1)
+		}
+		arr, ok := val.([]interface{})
+		if !ok {
+			fmt.Fprintf(os.Stderr, "mcapi: orgs in map not []interface{}: %v\n", dataMap)
+			os.Exit(1)
+		}
+		output := &AllDataOut{}
+		for ii, orgIntf := range arr {
+			var orgMap map[string]interface{}
+			orgObj, err := json.Marshal(orgIntf)
+			if err != nil {
+				log.Printf("error in marshal org for %v: %v\n", orgIntf, err)
+				return false
+			}
+			err = json.Unmarshal(orgObj, &orgMap)
+			if err != nil {
+				log.Printf("error in unmarshal org for %s: %v\n", string(orgObj), err)
+				return false
+			}
+			st, err := mcClient.RestrictedUpdateOrg(uri, token, orgMap)
+			outMcErr(output, fmt.Sprintf("RestrictedUpdateOrg[%d]", ii), st, err)
+		}
+		errs = output.Errors
 	}
 	if tag != "expecterr" && errs != nil {
 		// no errors expected

@@ -234,14 +234,14 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 		return echo.ErrForbidden
 	}
 	if opts.requiresOrg != "" && !opts.showAudit {
-		if err := checkRequiresOrg(ctx, opts.requiresOrg, admin); err != nil {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, admin, opts.noEdgeboxOnly); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkRequiresOrg(ctx context.Context, org string, admin bool) error {
+func checkRequiresOrg(ctx context.Context, org string, admin, noEdgeboxOnly bool) error {
 	// make sure org actually exists, and is not in the
 	// process of being deleted.
 	lookup, err := orgExists(ctx, org)
@@ -262,12 +262,18 @@ func checkRequiresOrg(ctx context.Context, org string, admin bool) error {
 	if lookup.DeleteInProgress {
 		return echo.NewHTTPError(http.StatusBadRequest, "operation not allowed for org with delete in progress")
 	}
+
+	// make sure only edgebox cloudlets are created for edgebox org
+	if lookup.EdgeboxOnly && noEdgeboxOnly {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("only allowed to create EDGEBOX cloudlet on org %s", org))
+	}
 	return nil
 }
 
 type authOptions struct {
-	showAudit   bool
-	requiresOrg string
+	showAudit     bool
+	requiresOrg   string
+	noEdgeboxOnly bool
 }
 
 type authOp func(opts *authOptions)
@@ -278,4 +284,8 @@ func withShowAudit() authOp {
 
 func withRequiresOrg(org string) authOp {
 	return func(opts *authOptions) { opts.requiresOrg = org }
+}
+
+func withNoEdgeboxOnly() authOp {
+	return func(opts *authOptions) { opts.noEdgeboxOnly = true }
 }

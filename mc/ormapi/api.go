@@ -106,6 +106,8 @@ type Organization struct {
 	DeleteInProgress bool `json:",omitempty"`
 	// read only: true
 	Parent string `json:",omitempty"`
+	// read only: true
+	EdgeboxOnly bool `json:",omitempty"`
 }
 
 // used for CreateBillingOrg, so we can pass through payment details to the billing service without actually storing them

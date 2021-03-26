@@ -484,6 +484,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/config/show", ShowConfig)
 	auth.POST("/config/version", ShowVersion)
 	auth.POST("/restricted/user/update", RestrictedUserUpdate)
+	auth.POST("/restricted/org/update", RestrictedUpdateOrg)
 	auth.POST("/audit/showself", ShowAuditSelf)
 	auth.POST("/audit/showorg", ShowAuditOrg)
 	auth.POST("/audit/operations", GetAuditOperations)
