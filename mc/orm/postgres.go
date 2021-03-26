@@ -22,6 +22,7 @@ var retryInterval = 10 * time.Second
 var psqlInfo string
 var sqlListenerWorkers tasks.KeyWorkers
 var sqlPingInterval = 90 * time.Second
+var unitTest = false
 
 func InitSql(ctx context.Context, addr, username, password, dbname string) (*gorm.DB, error) {
 	hostport := strings.Split(addr, ":")
@@ -48,7 +49,7 @@ func InitSql(ctx context.Context, addr, username, password, dbname string) (*gor
 	return db, nil
 }
 
-func InitData(ctx context.Context, superuser, superpass string, pingInterval time.Duration, stop *bool, done chan struct{}) {
+func InitData(ctx context.Context, superuser, superpass string, pingInterval time.Duration, stop *bool, done chan error) {
 	if database == nil {
 		log.FatalLog("db not initialized")
 	}
@@ -68,27 +69,47 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			&ormapi.Controller{}, &ormapi.Config{}, &ormapi.OrgCloudletPool{}, &billing.AccountInfo{}, &ormapi.BillingOrganization{}, &ormapi.UserApiKey{}).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
+			if unitTest {
+				done <- err
+				return
+			}
 			continue
 		}
 		// create initial database data
 		err = InitRolePerms(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init roles", "err", err)
+			if unitTest {
+				done <- err
+				return
+			}
 			continue
 		}
 		err = InitAdmin(ctx, superuser, superpass)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init admin", "err", err)
+			if unitTest {
+				done <- err
+				return
+			}
 			continue
 		}
 		err = InitConfig(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init config", "err", err)
+			if unitTest {
+				done <- err
+				return
+			}
 			continue
 		}
 		err = InitOrgCloudletPool(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "init orgcloudletpool", "err", err)
+			if unitTest {
+				done <- err
+				return
+			}
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "init data done")
@@ -100,7 +121,7 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			database.DB().Ping()
 		}
 	}()
-	close(done)
+	done <- nil
 }
 
 // Unfortunately the logger interface used by gorm does not

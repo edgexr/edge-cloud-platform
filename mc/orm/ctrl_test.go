@@ -6,17 +6,21 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/jarcoal/httpmock"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud-infra/billing"
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/testutil"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -600,7 +604,6 @@ func TestController(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
-	testOrgCloudletPoolUpgrade(t, ctx)
 	testEdgeboxOnlyCloudletCreate(t, ctx, mcClient, uri, ctrl.Region)
 
 	// delete controller
@@ -1322,20 +1325,105 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	}
 }
 
-func testOrgCloudletPoolUpgrade(t *testing.T, ctx context.Context) {
-	// Test upgrading from single OrgCloudletPool with no type to
-	// dual OrgCloudletPool, one with type invitation, the other with
-	// type confirmation, which together grant access like the old
-	// single OrgCloudletPool did.
-	addNew := addNewTestOrgCloudletPool
+// This is the old version of OrgCloudletPool, before type got added
+type OrgCloudletPool struct {
+	// Developer Organization
+	Org string `gorm:"type:citext REFERENCES organizations(name)"`
+	// Region
+	Region string `gorm:"type:text REFERENCES controllers(region)"`
+	// Operator's CloudletPool name
+	CloudletPool string `gorm:"not null"`
+	// Operator's Organization
+	CloudletPoolOrg string `gorm:"type:citext REFERENCES organizations(name)"`
+}
 
-	data := []ormapi.OrgCloudletPool{}
+func TestUpgrade(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+	addr := "127.0.0.1:9999"
+
+	vaultServer, vaultConfig := vault.DummyServer()
+	defer vaultServer.Close()
+
+	// run dummy controller - this always returns success
+	// to all APIs directed to it, and does not actually
+	// create or delete objects. We are mocking it out
+	// so we can test rbac permissions.
+	dc := grpc.NewServer(
+		grpc.UnaryInterceptor(testutil.UnaryInterceptor),
+		grpc.StreamInterceptor(testutil.StreamInterceptor),
+	)
+	ctrlAddr := "127.0.0.1:9998"
+	lis, err := net.Listen("tcp", ctrlAddr)
+	require.Nil(t, err)
+	go func() {
+		dc.Serve(lis)
+	}()
+	defer dc.Stop()
+
+	unitTest = true
+	config := ServerConfig{
+		ServAddr:                addr,
+		SqlAddr:                 "127.0.0.1:5445",
+		RunLocal:                false, // using existing db
+		IgnoreEnv:               true,
+		SkipVerifyEmail:         true,
+		vaultConfig:             vaultConfig,
+		UsageCheckpointInterval: "MONTH",
+		BillingPlatform:         billing.BillingTypeFake,
+	}
+
+	// start postgres so we can prepopulate it with old data
+	sql := intprocess.Sql{
+		Common: process.Common{
+			Name: "sql1",
+		},
+		DataDir:  "./.postgres",
+		HttpAddr: config.SqlAddr,
+		Username: DefaultDBUser,
+		Dbname:   DefaultDBName,
+	}
+	_, err = os.Stat(sql.DataDir)
+	sql.InitDataDir()
+	err = sql.StartLocal("")
+	require.Nil(t, err, "local sql start")
+	defer sql.StopLocal()
+
+	initdb, err := InitSql(ctx, config.SqlAddr, DefaultDBUser, DefaultDBPass, DefaultDBName)
+	require.Nil(t, err, "init sql")
+	database = initdb
+
+	db := loggedDB(ctx)
+	err = db.AutoMigrate(&ormapi.Organization{}, &ormapi.Controller{}, &OrgCloudletPool{}).Error
+	require.Nil(t, err)
+	// set up unique constraint (old code for InitOrgCloudletPool)
+	scope := db.Unscoped().NewScope(&OrgCloudletPool{})
+	fields := []string{}
+	for _, field := range scope.GetModelStruct().StructFields {
+		if field.IsNormal {
+			fields = append(fields, scope.Quote(field.DBName))
+		}
+	}
+	cmd := fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
+	err = db.Exec(cmd).Error
+	require.Nil(t, err)
+	// add old data
+	ctrl := ormapi.Controller{
+		Region:  "USA",
+		Address: ctrlAddr,
+	}
+	err = db.Create(&ctrl).Error
+	require.Nil(t, err)
+
+	addOld := addOldTestOrgCloudletPool
+	data := []OrgCloudletPool{}
 	dataLen := 4
 	for ii := 0; ii < dataLen; ii++ {
-		addNew(&data, ii, "")
+		addOld(&data, ii)
 	}
 	// insert into db old format OrgCloudletPool with blank type
-	db := loggedDB(ctx)
 	for _, d := range data {
 		org := ormapi.Organization{}
 		// create dev org (must exist)
@@ -1351,44 +1439,36 @@ func testOrgCloudletPoolUpgrade(t *testing.T, ctx context.Context) {
 		require.Nil(t, err)
 	}
 	// check data
-	check := []ormapi.OrgCloudletPool{}
-	err := db.Find(&check).Error
+	check := []OrgCloudletPool{}
+	err = db.Find(&check).Error
 	require.Nil(t, err)
 	require.Equal(t, data, check)
-	// run upgrade function
-	err = upgradeOrgCloudletPoolType(ctx)
-	require.Nil(t, err)
-	// expected data
+
+	// ============================================================
+	// start the server, will run all the upgrade functions
+	// ============================================================
+	server, err := RunServer(&config)
+	require.Nil(t, err, "run server")
+	defer server.Stop()
+	enforcer.LogEnforce(true)
+	db = loggedDB(ctx)
+	// wait till mc is ready
+	err = server.WaitUntilReady()
+	require.Nil(t, err, "server online")
+
+	// expect that old OrgCloudletPool data has been converted
+	// to invitation/confirmation pairs.
+	addNew := addNewTestOrgCloudletPool
 	expected := []ormapi.OrgCloudletPool{}
 	for ii := 0; ii < dataLen; ii++ {
 		addNew(&expected, ii, ormapi.CloudletPoolAccessConfirmation)
 		addNew(&expected, ii, ormapi.CloudletPoolAccessInvitation)
 	}
 	// check upgraded data
-	check = []ormapi.OrgCloudletPool{}
-	err = db.Find(&check).Error
+	checkUpgraded := []ormapi.OrgCloudletPool{}
+	err = db.Find(&checkUpgraded).Error
 	require.Nil(t, err)
-	require.ElementsMatch(t, expected, check)
-	// clean up
-	for _, d := range data {
-		// delete orgcloudletpools
-		p := d
-		p.Type = ormapi.CloudletPoolAccessInvitation
-		err = db.Delete(&p).Error
-		require.Nil(t, err)
-		p.Type = ormapi.CloudletPoolAccessConfirmation
-		err = db.Delete(&p).Error
-		require.Nil(t, err)
-		// delete dev org
-		org := ormapi.Organization{}
-		org.Name = d.Org
-		err := db.Delete(&org).Error
-		require.Nil(t, err)
-		// delete oper org
-		org.Name = d.CloudletPoolOrg
-		err = db.Delete(&org).Error
-		require.Nil(t, err)
-	}
+	require.ElementsMatch(t, expected, checkUpgraded)
 }
 
 func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, region string) {
