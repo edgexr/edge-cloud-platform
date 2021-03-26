@@ -42,7 +42,7 @@ type Server struct {
 	echo         *echo.Echo
 	vault        *process.Vault
 	stopInitData bool
-	initDataDone chan struct{}
+	initDataDone chan error
 	initJWKDone  chan struct{}
 	notifyServer *notify.ServerMgr
 	notifyClient *notify.Client
@@ -90,7 +90,6 @@ var Superuser string
 
 var database *gorm.DB
 
-//var enforcer *casbin.SyncedEnforcer
 var enforcer *rbac.Enforcer
 var serverConfig *ServerConfig
 var gitlabClient *gitlab.Client
@@ -246,7 +245,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, fmt.Errorf("enforcer init failed, %v", err)
 	}
 
-	server.initDataDone = make(chan struct{}, 1)
+	server.initDataDone = make(chan error, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
@@ -780,7 +779,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	artifactorySync = ArtifactoryNewSync()
 
 	// gitlab/artifactory sync and alertmanager requires data to be initialized
-	<-server.initDataDone
+	err = <-server.initDataDone
+	if err != nil {
+		return nil, err
+	}
 	gitlabSync.Start()
 	artifactorySync.Start()
 	if AlertManagerServer != nil {
@@ -793,7 +795,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server.sqlListener = sqlListener
 	go func() {
 		err := server.sqlListener.Listen(sqlEventsChannel)
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "Listener has been closed") {
 			log.FatalLog("Failed to listen for sql events", "err", err)
 		}
 	}()
@@ -848,6 +850,7 @@ func (s *Server) Stop() {
 	}
 	if AlertManagerServer != nil {
 		AlertManagerServer.Stop()
+		AlertManagerServer = nil
 	}
 	nodeMgr.Finish()
 }

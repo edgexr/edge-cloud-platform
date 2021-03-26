@@ -19,6 +19,16 @@ func addNewTestOrgCloudletPool(data *[]ormapi.OrgCloudletPool, i int, typ string
 	*data = append(*data, op)
 }
 
+func addOldTestOrgCloudletPool(data *[]OrgCloudletPool, i int) {
+	op := OrgCloudletPool{
+		Org:             fmt.Sprintf("testocp-org%d", i),
+		Region:          "USA",
+		CloudletPool:    fmt.Sprintf("testocp-pool%d", i),
+		CloudletPoolOrg: fmt.Sprintf("testocp-poolorg%d", i),
+	}
+	*data = append(*data, op)
+}
+
 func TestGetAccessGranted(t *testing.T) {
 	addNew := addNewTestOrgCloudletPool
 
