@@ -27,6 +27,11 @@ func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.Re
 		}
 	} else {
 		auth = existingCreds
+		if auth.Username == "" || auth.Password == "" {
+			// no creds found, assume public registry
+			log.SpanLog(ctx, log.DebugLevelApi, "warning, no credentials found, assume public registry")
+			auth.AuthType = cloudcommon.NoAuth
+		}
 	}
 	if auth == nil || auth.AuthType == cloudcommon.NoAuth {
 		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry")

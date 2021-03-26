@@ -55,14 +55,6 @@ func (e *EdgeboxPlatform) Init(ctx context.Context, platformConfig *platform.Pla
 		return err
 	}
 
-	docker_user, docker_pass := e.GetEdgeboxDockerCreds()
-	if docker_user == "" {
-		return fmt.Errorf("Missing docker username, please set 'MEX_EDGEBOX_DOCKER_USER' env var")
-	}
-	if docker_pass == "" {
-		return fmt.Errorf("Missing docker password, please set 'MEX_EDGEBOX_DOCKER_PASS' env var")
-	}
-
 	e.NetworkScheme = e.GetEdgeboxNetworkScheme()
 	if e.NetworkScheme != cloudcommon.NetworkSchemePrivateIP &&
 		e.NetworkScheme != cloudcommon.NetworkSchemePublicIP {
