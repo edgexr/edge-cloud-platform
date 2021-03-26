@@ -632,56 +632,29 @@ func (s *VMPoolPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) erro
 		return fmt.Errorf("can't get ssh client for %s, %v", accessIP, err)
 	}
 
-	wgError := make(chan error)
-	wgDone := make(chan bool)
-	var wg sync.WaitGroup
 	for _, vm := range vms {
-		wg.Add(1)
-		go func(accessClientIn ssh.Client, accessIPIn string, vmIn *edgeproto.VM, wg *sync.WaitGroup) {
-			if vmIn.NetInfo.ExternalIp != "" {
-				client, err := s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vmIn.NetInfo.ExternalIp)
-				if err != nil {
-					wgError <- fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vmIn.Name, vmIn.NetInfo.ExternalIp, err)
-					return
-				}
-				out, err := client.Output("echo test")
-				if err != nil {
-					wgError <- fmt.Errorf("failed to verify if vm %s is accessible over external network: %s - %v", vmIn.Name, out, err)
-					return
-				}
+		if vm.NetInfo.ExternalIp != "" {
+			client, err := s.VMProperties.CommonPf.GetSSHClientFromIPAddr(ctx, vm.NetInfo.ExternalIp)
+			if err != nil {
+				return fmt.Errorf("failed to verify vm %s, can't get ssh client for %s, %v", vm.Name, vm.NetInfo.ExternalIp, err)
+			}
+			out, err := client.Output("echo test")
+			if err != nil {
+				return fmt.Errorf("failed to verify if vm %s is accessible over external network: %s - %v", vm.Name, out, err)
+			}
+		}
+
+		if vm.NetInfo.InternalIp != "" {
+			client, err := accessClient.AddHop(vm.NetInfo.InternalIp, 22)
+			if err != nil {
+				return err
 			}
 
-			if vmIn.NetInfo.InternalIp != "" {
-				client, err := accessClientIn.AddHop(vmIn.NetInfo.InternalIp, 22)
-				if err != nil {
-					wgError <- err
-					return
-				}
-
-				out, err := client.Output("echo test")
-				if err != nil {
-					wgError <- fmt.Errorf("failed to verify if vm %s is accessible over internal network from %s: %s - %v", vmIn.Name, accessIPIn, out, err)
-					return
-				}
+			out, err := client.Output("echo test")
+			if err != nil {
+				return fmt.Errorf("failed to verify if vm %s is accessible over internal network from %s: %s - %v", vm.Name, accessIP, out, err)
 			}
-			wg.Done()
-		}(accessClient, accessIP, &vm, &wg)
-	}
-
-	go func() {
-		wg.Wait()
-		close(wgDone)
-	}()
-
-	// Wait until either WaitGroup is done or an error is received through the channel
-	select {
-	case <-wgDone:
-		break
-	case err := <-wgError:
-		// note: do not close wgError, let gc clean it
-		return err
-	case <-time.After(AllVMAccessTimeout):
-		return fmt.Errorf("Timed out verifying VMs")
+		}
 	}
 
 	return nil
