@@ -1398,17 +1398,6 @@ func TestUpgrade(t *testing.T) {
 	db := loggedDB(ctx)
 	err = db.AutoMigrate(&ormapi.Organization{}, &ormapi.Controller{}, &OrgCloudletPool{}).Error
 	require.Nil(t, err)
-	// set up unique constraint (old code for InitOrgCloudletPool)
-	scope := db.Unscoped().NewScope(&OrgCloudletPool{})
-	fields := []string{}
-	for _, field := range scope.GetModelStruct().StructFields {
-		if field.IsNormal {
-			fields = append(fields, scope.Quote(field.DBName))
-		}
-	}
-	cmd := fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
-	err = db.Exec(cmd).Error
-	require.Nil(t, err)
 	// add old data
 	ctrl := ormapi.Controller{
 		Region:  "USA",
@@ -1419,12 +1408,13 @@ func TestUpgrade(t *testing.T) {
 
 	addOld := addOldTestOrgCloudletPool
 	data := []OrgCloudletPool{}
-	dataLen := 4
+	dataLen := 7
+	numReallyOldData := 3
 	for ii := 0; ii < dataLen; ii++ {
 		addOld(&data, ii)
 	}
 	// insert into db old format OrgCloudletPool with blank type
-	for _, d := range data {
+	for ii, d := range data {
 		org := ormapi.Organization{}
 		// create dev org (must exist)
 		org.Name = d.Org
@@ -1434,15 +1424,52 @@ func TestUpgrade(t *testing.T) {
 		org.Name = d.CloudletPoolOrg
 		err = db.Create(&org).Error
 		require.Nil(t, err)
+		// create org cloudlet pool
+		if ii < numReallyOldData {
+			// really old data, no cloudlet_pool_org
+			cmd := fmt.Sprintf("INSERT INTO org_cloudlet_pools (org, region, cloudlet_pool) VALUES ('%s', '%s', '%s')", d.Org, d.Region, d.CloudletPool)
+			err = db.Exec(cmd).Error
+			require.Nil(t, err)
+			data[ii].CloudletPoolOrg = ""
+			continue
+		}
 		// create old orgcloudletpool with empty type
 		err = db.Create(&d).Error
 		require.Nil(t, err)
 	}
+	// check that really old data has cloudlet_pool_org as null
+	cmd := fmt.Sprintf("SELECT * FROM org_cloudlet_pools WHERE cloudlet_pool_org IS NULL")
+	res := db.Raw(cmd)
+	require.Nil(t, res.Error)
+	rows, err := res.Rows()
+	require.Nil(t, err)
+	defer rows.Close()
+	checkNumReallyOld := 0
+	for rows.Next() {
+		checkNumReallyOld++
+	}
+	require.Equal(t, numReallyOldData, checkNumReallyOld)
+
 	// check data
 	check := []OrgCloudletPool{}
 	err = db.Find(&check).Error
 	require.Nil(t, err)
 	require.Equal(t, data, check)
+
+	// set up old unique constraint (old code for InitOrgCloudletPool)
+	scope := db.Unscoped().NewScope(&OrgCloudletPool{})
+	fields := []string{}
+	for _, field := range scope.GetModelStruct().StructFields {
+		if field.IsNormal {
+			fields = append(fields, scope.Quote(field.DBName))
+		}
+	}
+	cmd = fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
+	err = db.Exec(cmd).Error
+	require.Nil(t, err)
+	// add it again just to make sure it gets cleaned up
+	err = db.Exec(cmd).Error
+	require.Nil(t, err)
 
 	// ============================================================
 	// start the server, will run all the upgrade functions
@@ -1461,6 +1488,10 @@ func TestUpgrade(t *testing.T) {
 	addNew := addNewTestOrgCloudletPool
 	expected := []ormapi.OrgCloudletPool{}
 	for ii := 0; ii < dataLen; ii++ {
+		if ii < numReallyOldData {
+			// data was dropped
+			continue
+		}
 		addNew(&expected, ii, ormapi.CloudletPoolAccessConfirmation)
 		addNew(&expected, ii, ormapi.CloudletPoolAccessInvitation)
 	}
@@ -1469,6 +1500,46 @@ func TestUpgrade(t *testing.T) {
 	err = db.Find(&checkUpgraded).Error
 	require.Nil(t, err)
 	require.ElementsMatch(t, expected, checkUpgraded)
+
+	// check that upgrade functions are idempotent
+	err = InitOrgCloudletPool(ctx)
+	require.Nil(t, err)
+	err = InitOrgCloudletPool(ctx)
+	require.Nil(t, err)
+	// check data
+	checkUpgraded = []ormapi.OrgCloudletPool{}
+	err = db.Find(&checkUpgraded).Error
+	require.Nil(t, err)
+	require.ElementsMatch(t, expected, checkUpgraded)
+	// check constraints
+	cmd = fmt.Sprintf("SELECT indexdef FROM pg_indexes WHERE tablename = 'org_cloudlet_pools'")
+	res = db.Raw(cmd)
+	require.Nil(t, res.Error)
+	rows, err = res.Rows()
+	require.Nil(t, err)
+	defer rows.Close()
+	found := 0
+	foundExpected := false
+	for rows.Next() {
+		found++
+		indexdef := ""
+		rows.Scan(&indexdef)
+		if indexdef == "" {
+			continue
+		}
+		matches := tableUniqueConstraintRE.FindStringSubmatch(indexdef)
+		if len(matches) != 4 {
+			continue
+		}
+		if matches[1] == UniqueKey {
+			foundExpected = true
+		}
+		constraint := matches[3]
+		require.Equal(t, "org, region, cloudlet_pool, cloudlet_pool_org, type", constraint)
+	}
+	// should have only found the one expected rule
+	require.True(t, foundExpected)
+	require.Equal(t, 1, found)
 }
 
 func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, region string) {
