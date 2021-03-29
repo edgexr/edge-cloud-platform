@@ -285,9 +285,14 @@ tests:
   apifile: '{{datadir2}}/mc_admin_reservable.yml'
   curuserfile: '{{datadir2}}/mc_admin.yml'
 
-- name: user1 deletes operator/cloudlets; verify it is empty
+- name: user1 deletes cloudlets
   actions: [mcapi-delete, mcapi-show]
-  apifile: '{{datadir2}}/mc_user1_data.yml'
+  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: user1 deletes operator; verify it is empty
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_org_data.yml'
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
