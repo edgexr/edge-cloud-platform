@@ -17,6 +17,7 @@ import (
 )
 
 var tableUniqueConstraintRE = regexp.MustCompile("CREATE UNIQUE INDEX (.+?) ON (.+?) USING btree \\((.+?)\\)")
+var UniqueKey = "unique_key"
 
 func InitOrgCloudletPool(ctx context.Context) error {
 	db := loggedDB(ctx)
@@ -31,12 +32,7 @@ func InitOrgCloudletPool(ctx context.Context) error {
 			fields = append(fields, scope.Quote(field.DBName))
 		}
 	}
-	cmd := fmt.Sprintf("ALTER TABLE %s ADD UNIQUE (%s)", scope.QuotedTableName(), strings.Join(fields, ","))
-	err := db.Exec(cmd).Error
-	if err != nil {
-		return err
-	}
-	err = dropOtherUniqueConstraints(ctx, scope.TableName(), fields)
+	err := setUniqueConstraint(ctx, scope.TableName(), fields)
 	if err != nil {
 		return err
 	}
@@ -48,8 +44,13 @@ func InitOrgCloudletPool(ctx context.Context) error {
 	return nil
 }
 
-func dropOtherUniqueConstraints(ctx context.Context, tableName string, fields []string) error {
-	// Backwards compatibility: we need to drop the old unique constraint(s)
+func setUniqueConstraint(ctx context.Context, tableName string, fields []string) error {
+	// Sets a unique constraint on the table that sets the combination of
+	// the group of fields to define the unique key of the table.
+	// A single field can thus have duplicates, as long as the set of fields
+	// is not already in the table.
+	//
+	// For backwards compatibility we need to drop the old unique constraint(s)
 	// that may be there from previous versions for fewer or more fields.
 	// Unfortunately in older versions we never explicitly specified the
 	// name of the constraint, so postgres generated one for us. And that
@@ -75,6 +76,8 @@ func dropOtherUniqueConstraints(ctx context.Context, tableName string, fields []
 	}
 	keepConstraint := strings.Join(fields, ", ")
 	log.SpanLog(ctx, log.DebugLevelInfo, "Keep constraint", "constraint", keepConstraint)
+	constraintFound := false
+
 	for rows.Next() {
 		indexdef := ""
 		rows.Scan(&indexdef)
@@ -84,12 +87,14 @@ func dropOtherUniqueConstraints(ctx context.Context, tableName string, fields []
 		log.SpanLog(ctx, log.DebugLevelInfo, "Considering unique constraint", "constraint", indexdef)
 		matches := tableUniqueConstraintRE.FindStringSubmatch(indexdef)
 		if len(matches) != 4 {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Skipping constraint due to unmatched re", "indexdef", indexdef)
 			continue
 		}
 		key := matches[1]
 		constraint := matches[3]
-		if constraint == keepConstraint {
+		if key == UniqueKey && constraint == keepConstraint {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Keeping constraint", "key", key, "constraint", constraint)
+			constraintFound = true
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfo, "Dropping constraint", "key", key, "constraint", constraint)
@@ -99,6 +104,14 @@ func dropOtherUniqueConstraints(ctx context.Context, tableName string, fields []
 			return err
 		}
 	}
+	if !constraintFound {
+		cmd := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)", tableName, UniqueKey, keepConstraint)
+		err = db.Exec(cmd).Error
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -121,6 +134,10 @@ func upgradeOrgCloudletPoolType(ctx context.Context, tableName string) error {
 		if op.Type != "" {
 			continue
 		}
+		if op.CloudletPoolOrg == "" {
+			// unsupported, will delete
+			continue
+		}
 		op.Type = ormapi.CloudletPoolAccessInvitation
 		err = db.FirstOrCreate(&op, &op).Error
 		if err != nil {
@@ -138,6 +155,11 @@ func upgradeOrgCloudletPoolType(ctx context.Context, tableName string) error {
 	// instead of the empty string. And gorm doesn't have a good way to
 	// specify NULL instead of the empty string in db.Where() clauses.
 	cmd := fmt.Sprintf("DELETE FROM %s WHERE type IS NULL", tableName)
+	err = db.Exec(cmd).Error
+	if err != nil {
+		return err
+	}
+	cmd = fmt.Sprintf("DELETE FROM %s WHERE cloudlet_pool_org IS NULL", tableName)
 	err = db.Exec(cmd).Error
 	if err != nil {
 		return err

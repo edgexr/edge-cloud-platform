@@ -34,6 +34,8 @@
       count: 4
     - key: /api/v1/auth/ctrl/UpdateCloudlet
       count: 4
+    - key: /api/v1/auth/restricted/org/update
+      count: 4
     - key: AutoProv delete AppInst
       count: 4
     - key: cluster-svc create App
