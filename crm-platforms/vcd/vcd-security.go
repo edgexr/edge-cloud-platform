@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -14,12 +17,15 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 var VCDClientCtxKey = "VCDClientCtxKey"
 
 var NoVCDClientInContext = "No VCD Client in Context"
+
+var globalVCDClient *govcd.VCDClient
+var globalVCDClientLock sync.Mutex
+var globalVCDClientLastUpdateTime time.Time
 
 // vcd security related operations
 
@@ -29,12 +35,12 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromEnv(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PopulateOrgLoginCredsFromEnv")
 
 	creds := VcdConfigParams{
-		User:     os.Getenv("VCD_USER"),
-		Password: os.Getenv("VCD_PASSWORD"),
-		Org:      os.Getenv("VCD_ORG"),
-		Href:     os.Getenv("VCD_IP") + "/api",
-		VDC:      os.Getenv("VDC_NAME"),
-		Insecure: true,
+		User:      os.Getenv("VCD_USER"),
+		Password:  os.Getenv("VCD_PASSWORD"),
+		Org:       os.Getenv("VCD_ORG"),
+		VcdApiUrl: os.Getenv("VCD_URL"),
+		VDC:       os.Getenv("VDC_NAME"),
+		Insecure:  true,
 	}
 	if creds.User == "" {
 		return fmt.Errorf("User not defined")
@@ -45,8 +51,8 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromEnv(ctx context.Context) error {
 	if creds.Org == "" {
 		return fmt.Errorf("Org not defined")
 	}
-	if creds.Href == "" {
-		return fmt.Errorf("Href not defined")
+	if creds.VcdApiUrl == "" {
+		return fmt.Errorf("VcdApiUrl not defined")
 	}
 	if creds.VDC == "" {
 		return fmt.Errorf("missing VDC name")
@@ -67,24 +73,30 @@ func (v *VcdPlatform) GetVcdOrgName() string {
 func (v *VcdPlatform) GetVcdVdcName() string {
 	return v.Creds.VDC
 }
-func (v *VcdPlatform) GetVcdAddress() string {
 
-	return v.Creds.Href
-}
-
-// Create new option for our live unit tests to use this rather than env XXX
-func (v *VcdPlatform) PopulateOrgLoginCredsFromVault(ctx context.Context) error {
+func (v *VcdPlatform) PopulateOrgLoginCredsFromVcdVars(ctx context.Context) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "PopulateOrgLoginCredsFromVault")
 	creds := VcdConfigParams{
-		User:     v.GetVCDUser(),
-		Password: v.GetVCDPassword(),
-		Org:      v.GetVCDORG(),
-		Href:     v.GetVCDIP() + "/api",
-		VDC:      v.GetVDCName(),
-		Insecure: true,
+		User:                  v.GetVCDUser(),
+		Password:              v.GetVCDPassword(),
+		Org:                   v.GetVCDORG(),
+		VcdApiUrl:             v.GetVcdUrl(),
+		VDC:                   v.GetVDCName(),
+		OauthSgwUrl:           v.GetVcdOauthSgwUrl(),
+		OauthAgwUrl:           v.GetVcdOauthAgwUrl(),
+		OauthClientId:         v.GetVcdOauthClientId(),
+		OauthClientSecret:     v.GetVcdOauthClientSecret(),
+		ClientTlsCert:         v.GetVcdClientTlsCert(),
+		ClientTlsKey:          v.GetVcdClientTlsKey(),
+		ClientRefreshInterval: v.GetVcdClientRefreshInterval(ctx),
+		Insecure:              v.GetVcdInsecure(),
 	}
-
+	if creds.OauthSgwUrl != "" {
+		if creds.OauthAgwUrl == "" || creds.OauthClientId == "" || creds.OauthClientSecret == "" {
+			return fmt.Errorf("OauthAgwUrl is set but other OAUTH related parameter(s) are empty")
+		}
+	}
 	if creds.User == "" {
 		return fmt.Errorf("User not defined")
 	}
@@ -94,8 +106,8 @@ func (v *VcdPlatform) PopulateOrgLoginCredsFromVault(ctx context.Context) error 
 	if creds.Org == "" {
 		return fmt.Errorf("Org not defined")
 	}
-	if creds.Href == "" {
-		return fmt.Errorf("Href not defined")
+	if creds.VcdApiUrl == "" {
+		return fmt.Errorf("VCD Href not defined")
 	}
 	if creds.VDC == "" {
 		return fmt.Errorf("missing VDC name")
@@ -187,63 +199,68 @@ func setVer(cli *govcd.VCDClient) error {
 	return nil
 }
 
+// GetClient gets a new client object.  Copies are made of the global client object, which instantiates a new
+// http client but shares the access token
 func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (client *govcd.VCDClient, err error) {
-
+	apiUrl := creds.VcdApiUrl
+	if creds.OauthAgwUrl != "" {
+		apiUrl = creds.OauthAgwUrl
+	}
+	u, err := url.ParseRequestURI(apiUrl)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse request to org %s at %s err: %s", creds.Org, creds.VcdApiUrl, err)
+	}
 	if v.TestMode {
 		err := v.PopulateOrgLoginCredsFromEnv(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	if creds == nil {
 		// usually indicates we called GetClient before InitProvider
 		return nil, fmt.Errorf("nil creds passed to GetClient")
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User, "OauthSgwUrl", creds.OauthSgwUrl)
+	globalVCDClientLock.Lock()
+	defer globalVCDClientLock.Unlock()
 
-	u, err := url.ParseRequestURI(creds.Href)
+	tokenDuration := time.Since(globalVCDClientLastUpdateTime)
+	expired := (uint64(tokenDuration.Seconds()) >= creds.ClientRefreshInterval)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Check for token expired", "tokenDuration", tokenDuration, "ClientRefreshInterval", creds.ClientRefreshInterval, "exipred", expired)
+	if globalVCDClient == nil || expired {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Need to refresh client token")
+
+		globalVCDClient = govcd.NewVCDClient(*u, creds.Insecure,
+			govcd.WithOauthUrl(creds.OauthSgwUrl),
+			govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
+			govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "Created global client", "org", creds.Org, "OauthSgwUrl", creds.OauthSgwUrl)
+
+		if creds.OauthSgwUrl != "" {
+			_, err := globalVCDClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "err", err)
+				globalVCDClient = nil
+				return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
+			}
+		}
+		globalVCDClientLastUpdateTime = time.Now()
+	}
+	vcdClient, err := globalVCDClient.CopyClient()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse request to org %s at %s err: %s", creds.Org, creds.Href, err)
+		return nil, fmt.Errorf("CopyClient failed - %v", err)
 	}
-	vcdClient := govcd.NewVCDClient(*u, creds.Insecure)
-
-	if vcdClient.Client.VCDToken != "" {
-		_ = vcdClient.SetToken(creds.Org, govcd.AuthorizationHeader, creds.Token)
-	} else {
-		_, err := vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to login to org %s at %s err: %s", creds.Org, creds.Href, err)
-		}
-		//creds.Token = resp.Header[govcd.AuthorizationHeader]
+	// always refresh the vcd session token
+	_, err = vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to login to org", "org", creds.Org, "err", err)
+		globalVCDClient = nil
+		return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
 	}
-	// xxx revisit
-	// prefer the highest Api version found on the other end.
-	// vCD 10.0 == Api 33
-	// vCD 10.1 == Api 34
-	// The VMware vcd is 10.1 and highest is 34, but if we change it
-	// to say 33, we get ENF (entity not found) for our vdc <sigh>
-	// So find another way to set this API version. By default,
-	// vcdClient.Client.APIVersion == 31.0 which is a 9.5 version.
-
-	// Ok, checkout api_vcd.go, we'd need to adjust the loginURL
-	// to match the version change. NewVCDClient could be used with options
-	// but 10.1 supports 31.0, so until we care, we don't.
-	/*
-		if vcdClient.Client.APIVCDMaxVersionIs(">= 33.0") {
-			fmt.Printf("APIVCDMaxVersionIs of >= 33.0 is true")
-			vcdClient.Client.APIVersion = "33.0"
-		}
-		if vcdClient.Client.APIClientVersionIs("= 34.0") {
-			fmt.Printf("Talking with vCD v10.1 using API v 34.0\n")
-			vcdClient.Client.APIVersion = "34.0"
-		}
-	*/
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient connected", "API Version", vcdClient.Client.APIVersion)
-	// setup the client in the context
 	return vcdClient, nil
-
 }
 
 func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -349,19 +366,8 @@ func (v *VcdPlatform) InitOperationContext(ctx context.Context, operationStage v
 			return ctx, vmlayer.OperationNewlyInitialized, nil
 		}
 	} else {
-		vcdClient := v.GetVcdClientFromContext(ctx)
-		if vcdClient == nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext, "ctx", fmt.Sprintf("%+v", ctx))
-			return ctx, vmlayer.OperationInitFailed, fmt.Errorf(NoVCDClientInContext)
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Disconnecting vcdClient")
-		err := vcdClient.Disconnect()
-		if err != nil {
-			// err here happens all the time but has no impact
-			if v.Verbose {
-				log.SpanLog(ctx, log.DebugLevelInfra, "Disconnect vcdClient", "err", err)
-			}
-		}
-		return ctx, vmlayer.OperationNewlyInitialized, err
+		// because we re-use copies of the context, we do not try to disconnect the client.
+		// Disconnect generally does not work in VCD anyway
+		return ctx, vmlayer.OperationNewlyInitialized, nil
 	}
 }

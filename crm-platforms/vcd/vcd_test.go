@@ -37,7 +37,7 @@ func TestDiscover(t *testing.T) {
 			return
 		}
 		vcd, err := tv.GetVdc(ctx, testVcdClient)
-		fmt.Printf("Org:\n\tName: %s\n\tid: %s\n\tVcd: %s\n\tHref: %s\n", org.Org.Name, org.Org.ID, vcd.Vdc.Name, tv.Creds.Href)
+		fmt.Printf("Org:\n\tName: %s\n\tid: %s\n\tVcd: %s\n\tHref: %s\n", org.Org.Name, org.Org.ID, vcd.Vdc.Name, tv.Creds.VcdApiUrl)
 	} else {
 		return
 	}
@@ -155,12 +155,12 @@ func populateMexVappConfig(t *testing.T, ctx context.Context, cloudlet string) M
 	m_vapp := MexVapp{}
 
 	m_vapp.Config = VcdConfigParams{
-		User:     os.Getenv("VCD_USER"),
-		Password: os.Getenv("VCD_PASSWD"),
-		Org:      os.Getenv("VCD_ORG"),
-		Href:     fmt.Sprintf("https://%s/api", os.Getenv("VCD_IP")),
-		VDC:      os.Getenv("VCD_NAME"),
-		Insecure: true,
+		User:      os.Getenv("VCD_USER"),
+		Password:  os.Getenv("VCD_PASSWD"),
+		Org:       os.Getenv("VCD_ORG"),
+		VcdApiUrl: fmt.Sprintf("https://%s/api", os.Getenv("VCD_IP")),
+		VDC:       os.Getenv("VCD_NAME"),
+		Insecure:  true,
 	}
 	require.NotEqual(t, m_vapp.Config.User, "", "Missing $VDC_USER env var")
 	require.NotEqual(t, m_vapp.Config.User, "", "Missing $VDC_PASSWD env var")
@@ -276,18 +276,12 @@ func testOrgAuth(t *testing.T, config VcdConfigParams) (*govcd.VCDClient, error)
 	// for this test, we require
 	// env vars $VCD_USER, VCD_PASSWD, VCD_ORG, VCD_HREF VCD_NAME VCD_SECURE (T/F)
 
-	u, err := url.ParseRequestURI(config.Href)
+	u, err := url.ParseRequestURI(config.VcdApiUrl)
 	require.Nil(t, err, "ParseRequestURI")
 	vcdClient := govcd.NewVCDClient(*u, config.Insecure)
-
-	if vcdClient.Client.VCDToken != "" {
-		_ = vcdClient.SetToken(config.Org, govcd.AuthorizationHeader, config.Token)
-	} else {
-		resp, err := vcdClient.GetAuthResponse(config.User, config.Password, config.Org)
-		require.Nil(t, err, "GetAuthResponse")
-		fmt.Printf("Token: %s\n", resp.Header[govcd.AuthorizationHeader])
-	}
-
+	resp, err := vcdClient.GetAuthResponse(config.User, config.Password, config.Org)
+	require.Nil(t, err, "GetAuthResponse")
+	fmt.Printf("Token: %s\n", resp.Header[govcd.AuthorizationHeader])
 	return vcdClient, nil
 }
 

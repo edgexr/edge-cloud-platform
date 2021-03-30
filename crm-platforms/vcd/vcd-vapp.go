@@ -49,6 +49,9 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 
 	vmtmpl := &types.VAppTemplate{}
 	vmparams := vmlayer.VMOrchestrationParams{}
+	if vappTmpl.VAppTemplate.Children.VM == nil || len(vappTmpl.VAppTemplate.Children.VM) == 0 {
+		return nil, fmt.Errorf("No children in vapp template")
+	}
 	vmtmpl = vappTmpl.VAppTemplate.Children.VM[0]
 	vmparams = vmgp.VMs[0]
 	vmtmplVMName := vmtmpl.Name

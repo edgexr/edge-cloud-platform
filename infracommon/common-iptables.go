@@ -222,6 +222,7 @@ func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, labe
 // addIptablesRule adds a rule
 func addIptablesRule(ctx context.Context, client ssh.Client, direction string, label string, rule *FirewallRule, currentRules map[string]string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "addIptablesRule", "direction", direction, "label", label, "rule", rule)
+
 	entries := getIpTablesEntriesForRule(ctx, direction, label, rule)
 	for _, entry := range entries {
 		// we insert into the chain, but when searching, match -A
@@ -319,12 +320,12 @@ func AddDefaultIptablesRules(ctx context.Context, client ssh.Client) error {
 	// allow established sessions
 	conntrackInRule := FirewallRule{
 		RemoteCidr: "0.0.0.0/0",
-		Conntrack:  "ESTABLISHED,RELATED",
+		Conntrack:  "RELATED,ESTABLISHED",
 	}
 	rules.IngressRules = append(rules.IngressRules, conntrackInRule)
 	conntrackOutRule := FirewallRule{
 		RemoteCidr: "0.0.0.0/0",
-		Conntrack:  "ESTABLISHED,RELATED",
+		Conntrack:  "RELATED,ESTABLISHED",
 	}
 	rules.EgressRules = append(rules.EgressRules, conntrackOutRule)
 
