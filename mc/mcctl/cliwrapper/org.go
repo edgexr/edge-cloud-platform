@@ -25,6 +25,6 @@ func (s *Client) ShowOrg(uri, token string) ([]ormapi.Organization, int, error) 
 }
 
 func (s *Client) RestrictedUpdateOrg(uri, token string, org map[string]interface{}) (int, error) {
-	args := []string{"org", "restrictedupdateorg"}
+	args := []string{"restrictedorgupdate"}
 	return s.runObjs(uri, token, args, org, nil)
 }
