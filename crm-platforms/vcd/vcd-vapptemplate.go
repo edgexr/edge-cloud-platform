@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
+
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // vapptemplate related operations
@@ -27,6 +28,17 @@ func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string, vcdClie
 	}
 
 	return nil, fmt.Errorf("template %s not found", tmplName)
+}
+
+func (v *VcdPlatform) ImportTemplateFromUrl(ctx context.Context, name, templUrl string, catalog *govcd.Catalog) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTemplateFromUrl", "name", name, "templUrl", templUrl)
+	err := catalog.UploadOvfUrl(templUrl, name, name)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed UploadOvfUrl", "err", err)
+		return fmt.Errorf("Failed to upload from URL - %v", err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ImportTemplateFromUrl done")
+	return nil
 }
 
 // Return all templates found as vdc resources from MEX_CATALOG

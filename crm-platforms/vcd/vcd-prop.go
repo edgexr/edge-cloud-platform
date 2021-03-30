@@ -47,6 +47,10 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Set value for vCPU Speed if unable to read from admin VCD",
 		Internal:    true,
 	},
+	"MEX_TEMPLATE_URL": {
+		Description: "Optional HTTP URL to retrieve template",
+		Internal:    true,
+	},
 }
 
 func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
@@ -56,7 +60,6 @@ func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, reg
 func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessApi) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "vcd vars")
-
 	vars, err := accessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "vcd vars accessApi vars failed", "err", err)
@@ -69,20 +72,36 @@ func (v *VcdPlatform) GetVcdVars(ctx context.Context, accessApi platform.AccessA
 	if v.Verbose {
 		log.SpanLog(ctx, log.DebugLevelInfra, "vcd ", "Vars", v.vcdVars)
 	}
-	err = v.PopulateOrgLoginCredsFromVault(ctx)
+	err = v.PopulateOrgLoginCredsFromVcdVars(ctx)
 
 	if err != nil {
 		return err
 	}
-	v.vcdVars["VCD_URL"] = v.Creds.Href
-	log.SpanLog(ctx, log.DebugLevelInfra, "vcd ", "HREF", v.Creds.Href)
 	return nil
 }
 
 // access vars from the vault
 
-func (v *VcdPlatform) GetVCDIP() string {
-	return v.vcdVars["VCD_IP"]
+func (v *VcdPlatform) GetVcdUrl() string {
+	return v.vcdVars["VCD_URL"]
+}
+func (v *VcdPlatform) GetVcdOauthSgwUrl() string {
+	return v.vcdVars["VCD_OAUTH_SGW_URL"]
+}
+func (v *VcdPlatform) GetVcdOauthAgwUrl() string {
+	return v.vcdVars["VCD_OAUTH_AGW_URL"]
+}
+func (v *VcdPlatform) GetVcdOauthClientId() string {
+	return v.vcdVars["VCD_OAUTH_CLIENT_ID"]
+}
+func (v *VcdPlatform) GetVcdOauthClientSecret() string {
+	return v.vcdVars["VCD_OAUTH_CLIENT_SECRET"]
+}
+func (v *VcdPlatform) GetVcdClientTlsCert() string {
+	return v.vcdVars["VCD_CLIENT_TLS_CERT"]
+}
+func (v *VcdPlatform) GetVcdClientTlsKey() string {
+	return v.vcdVars["VCD_CLIENT_TLS_KEY"]
 }
 func (v *VcdPlatform) GetVCDUser() string {
 	return v.vcdVars["VCD_USER"]
@@ -110,6 +129,27 @@ func (v *VcdPlatform) GetVDCTemplateName() string {
 		}
 	}
 	return v.vcdVars["VDCTEMPLATE"]
+}
+func (v *VcdPlatform) GetVcdClientRefreshInterval(ctx context.Context) uint64 {
+	intervalStr := v.vcdVars["VCD_CLIENT_REFRESH_INTERVAL"]
+	if intervalStr == "" {
+		return DefaultClientRefreshInterval
+	}
+	interval, err := strconv.ParseUint(intervalStr, 10, 32)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Warning: unable to parse VCD_CLIENT_REFRESH_INTERVAL %s as int, using default", intervalStr)
+		return DefaultClientRefreshInterval
+	}
+	return interval
+}
+
+// GetVcdInsecure defaults to true unless explicitly set to false
+func (v *VcdPlatform) GetVcdInsecure() bool {
+	insecure := v.vcdVars["VCD_INSECURE"]
+	if strings.ToLower(insecure) == "false" {
+		return false
+	}
+	return true
 }
 
 // properties from envvars
@@ -182,4 +222,8 @@ func (v *VcdPlatform) GetLeaseOverride() bool {
 	} else {
 		return false
 	}
+}
+func (v *VcdPlatform) GetTemplateUrl() string {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_TEMPLATE_URL")
+	return val
 }

@@ -8,12 +8,13 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 
+	"github.com/vmware/go-vcloud-director/v2/govcd"
+
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 // Note regarding govcd SDK:
@@ -39,14 +40,22 @@ type VcdPlatform struct {
 	Verbose      bool
 }
 
+var DefaultClientRefreshInterval uint64 = 7 * 60 * 60 // 7 hours
+
 type VcdConfigParams struct {
-	User     string
-	Password string
-	Org      string
-	Href     string
-	VDC      string
-	Insecure bool
-	Token    string
+	User                  string
+	Password              string
+	Org                   string
+	VcdApiUrl             string
+	VDC                   string
+	Insecure              bool
+	OauthSgwUrl           string
+	OauthAgwUrl           string
+	OauthClientId         string
+	OauthClientSecret     string
+	ClientTlsKey          string
+	ClientTlsCert         string
+	ClientRefreshInterval uint64
 }
 
 type VAppMap map[string]*govcd.VApp
@@ -359,10 +368,9 @@ func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient 
 
 func (v *VcdPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 
-	ip := v.GetVCDIP() // {vcdVars["VCD_IP"]
-	apiUrl := ip + "/api"
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "Href", apiUrl)
-	return apiUrl, nil
+	url := v.GetVcdUrl()
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetApiEndpointAddr", "Href", url)
+	return url, nil
 }
 
 func (v *VcdPlatform) GetVappServerSuffix() string {
@@ -396,7 +404,7 @@ func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool)
 		// Too early for context
 		vcdClient, err = v.GetClient(ctx, v.Creds)
 		if err != nil {
-			return fmt.Errorf(NoVCDClientInContext)
+			return fmt.Errorf("Failed to get VCD Client: %v", err)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Obtained client directly continuing")
 	}

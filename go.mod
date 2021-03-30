@@ -60,7 +60,6 @@ require (
 	github.com/xanzy/go-gitlab v0.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
-	golang.org/x/tools v0.0.0-20200603131246-cc40288be839
 	google.golang.org/grpc v1.29.1
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/yaml.v2 v2.3.0
@@ -77,6 +76,8 @@ replace (
 	github.com/Sirupsen/logrus => github.com/Sirupsen/logrus v1.6.0
 	github.com/Sirupsen/logrus v1.6.0 => github.com/sirupsen/logrus v1.6.0
 )
+
+replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.1
 

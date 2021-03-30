@@ -106,39 +106,53 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCD
 		cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed retrieving catalog", "cat", v.GetCatalogName())
-			return nil, fmt.Errorf("Template invalid")
+			return nil, fmt.Errorf("Template invalid - failed retrieving catalog")
 		}
 
 		emptyItem := govcd.CatalogItem{}
 		catItem, err := cat.FindCatalogItem(tmplName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item failed", "err", err)
-			return nil, fmt.Errorf("Template invalid")
+			return nil, fmt.Errorf("Template invalid - find catalog item failed")
 		}
 		if catItem == emptyItem { // empty!
 			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item retured empty item")
-			return nil, fmt.Errorf("Template invalid")
-		} else {
-			tmpl, err := catItem.GetVAppTemplate()
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "catItem.GetVAppTemplate failed", "err", err)
-				return nil, fmt.Errorf("Template invalid")
-			}
-
-			if tmpl.VAppTemplate.Children == nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "template has no children")
-				return nil, fmt.Errorf("Template invalid")
+			url := v.GetTemplateUrl()
+			if url != "" {
+				err := v.ImportTemplateFromUrl(ctx, tmplName, url, cat)
+				if err != nil {
+					return nil, fmt.Errorf("Fail to import template from url: %s - %v", url, err)
+				}
+				cat.Refresh()
+				tmpl, err = v.FindTemplate(ctx, tmplName, vcdClient)
+				if err != nil {
+					return nil, fmt.Errorf("unable to find template after import - %v", err)
+				}
+				return tmpl, nil
 			} else {
-				// while this works for 10.1, it still does not for 10.0 so make this an error for now
-				//numChildren := len(tmpl.VAppTemplate.Children.VM)
-				//log.SpanLog(ctx, log.DebugLevelInfra, "template looks good from cat", "numChildren", numChildren)
-				//return &tmpl, nil
-				log.SpanLog(ctx, log.DebugLevelInfra, "template has children but marking invalid for 10.0")
-				// Remedy to persure, fill in VM's vmSpecSection for expected resources that seem missing.
-				return nil, fmt.Errorf("Template invalid")
+				return nil, fmt.Errorf("Template invalid - empty catalog item and no upload url specified")
 			}
 		}
+		tmpl, err := catItem.GetVAppTemplate()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "catItem.GetVAppTemplate failed", "err", err)
+			return nil, fmt.Errorf("Template invalid - GetVAppTemplate failed")
+		}
+
+		if tmpl.VAppTemplate.Children == nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "template has no children")
+			return nil, fmt.Errorf("Template invalid - template has no children")
+		} else {
+			// while this works for 10.1, it still does not for 10.0 so make this an error for now
+			//numChildren := len(tmpl.VAppTemplate.Children.VM)
+			//log.SpanLog(ctx, log.DebugLevelInfra, "template looks good from cat", "numChildren", numChildren)
+			//return &tmpl, nil
+			log.SpanLog(ctx, log.DebugLevelInfra, "template has children but marking invalid for 10.0")
+			// Remedy to persure, fill in VM's vmSpecSection for expected resources that seem missing.
+			return nil, fmt.Errorf("Template invalid - template has children but marking invalid for 10.0")
+		}
 	}
+
 	// The way we look for templates this should never trigger, but just in case
 	if tmpl.VAppTemplate.Children == nil {
 		// Wait, try once more
