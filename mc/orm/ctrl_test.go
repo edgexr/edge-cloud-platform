@@ -156,6 +156,10 @@ func TestController(t *testing.T) {
 	oper3, tokenOper3, _ := testCreateUser(t, mcClient, uri, "oper3")
 	oper4, tokenOper4, _ := testCreateUser(t, mcClient, uri, "oper4")
 
+	// admin allow non-edgebox cloudlets on operator orgs
+	setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, token, org3)
+	setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, token, org4)
+
 	// number of fake objects internally sent back by dummy server
 	ds.ShowDummyCount = 0
 
@@ -484,7 +488,7 @@ func TestController(t *testing.T) {
 	_, status, err = mcClient.DeleteCloudletPool(uri, tokenOper, &pool)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusBadRequest, status)
-	require.Contains(t, err.Error(), "because it is in use by OrgCloudletPool")
+	require.Contains(t, err.Error(), "because it is referenced by org1 invitation, org2 invitation")
 
 	// add tc3 to pool1, so it's accessible for org1
 	member := ormapi.RegionCloudletPoolMember{
@@ -813,6 +817,15 @@ func testCreateUserOrg(t *testing.T, mcClient *ormclient.Client, uri, name, orgT
 	return user, org, token
 }
 
+func setOperatorOrgNoEdgeboxOnly(t *testing.T, mcClient *ormclient.Client, uri, token, orgName string) {
+	orgReq := make(map[string]interface{})
+	orgReq["name"] = orgName
+	orgReq["edgeboxonly"] = false
+	status, err := mcClient.RestrictedUpdateOrg(uri, token, orgReq)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
 func testAddUserRole(t *testing.T, mcClient *ormclient.Client, uri, token, org, role, username string, success bool) {
 	roleArg := ormapi.Role{
 		Username: username,
@@ -1043,6 +1056,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	status, err = mcClient.CreateOrg(uri, token, &operOrg)
 	require.Nil(t, err, "create org")
 	require.Equal(t, http.StatusOK, status, "create org status")
+	setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, token, operOrg.Name)
 
 	// create user
 	user1, token1, _ := testCreateUser(t, mcClient, uri, "user1")
@@ -1580,12 +1594,7 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 	require.Nil(t, err)
 
 	// toggle edgebox org flag for operator org
-	orgReq := make(map[string]interface{})
-	orgReq["name"] = operOrg.Name
-	orgReq["edgeboxonly"] = false
-	status, err = mcClient.RestrictedUpdateOrg(uri, token, orgReq)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
+	setOperatorOrgNoEdgeboxOnly(t, mcClient, uri, token, operOrg.Name)
 
 	// cloudlet creation should work for other platforms as edgeboxonly flag is set to false
 	regCloudlet.Cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_FAKE

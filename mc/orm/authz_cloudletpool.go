@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -24,5 +25,9 @@ func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *
 	if res.RecordNotFound() || len(pools) == 0 {
 		return nil
 	}
-	return fmt.Errorf("Cannot delete CloudletPool region %s name %s because it is in use by OrgCloudletPool org %s", region, obj.Key.Name, pools[0].Org)
+	usedBy := make([]string, 0)
+	for _, pool := range pools {
+		usedBy = append(usedBy, fmt.Sprintf("%s %s", pool.Org, pool.Type))
+	}
+	return fmt.Errorf("Cannot delete CloudletPool region %s name %s because it is referenced by %s", region, obj.Key.Name, strings.Join(usedBy, ", "))
 }
