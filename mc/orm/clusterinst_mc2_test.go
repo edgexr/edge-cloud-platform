@@ -34,6 +34,12 @@ func badPermCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+	_, st, err := testutil.TestPermCreateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermCreateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
@@ -46,6 +52,12 @@ func badPermDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, tok
 	_, status, err := testutil.TestPermDeleteClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+	_, st, err := testutil.TestPermDeleteClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
@@ -62,6 +74,12 @@ func badPermUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+	_, st, err := testutil.TestPermUpdateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermUpdateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
@@ -76,6 +94,12 @@ func badPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterInst)) {
+	_, st, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -88,6 +112,12 @@ func badPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.C
 	_, status, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+	_, st, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {

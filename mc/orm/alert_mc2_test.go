@@ -34,6 +34,12 @@ func badPermShowAlert(t *testing.T, mcClient *ormclient.Client, uri, token, regi
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowAlert(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Alert)) {
+	_, st, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowAlert(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Alert)) {
 	_, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)

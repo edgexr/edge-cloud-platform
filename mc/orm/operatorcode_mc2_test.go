@@ -33,6 +33,12 @@ func badPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, to
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, st, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
 	_, status, err := testutil.TestPermCreateOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -47,6 +53,12 @@ func badPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, to
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, st, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermDeleteOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {
 	_, status, err := testutil.TestPermDeleteOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -59,6 +71,12 @@ func badPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, toke
 	_, status, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.OperatorCode)) {
+	_, st, err := testutil.TestPermShowOperatorCode(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowOperatorCode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.OperatorCode)) {

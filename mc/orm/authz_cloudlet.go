@@ -67,7 +67,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 	if opts.requiresOrg != "" {
 		// edgeboxOnly check is not required for Show command
 		noEdgeboxOnly := false
-		if err := checkRequiresOrg(ctx, opts.requiresOrg, s.admin, noEdgeboxOnly); err != nil {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, resource, s.admin, noEdgeboxOnly); err != nil {
 			return err
 		}
 	}

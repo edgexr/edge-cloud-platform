@@ -35,6 +35,12 @@ func badPermCreateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+	_, st, err := testutil.TestPermCreateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermCreateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -47,6 +53,12 @@ func badPermDeleteAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, 
 	_, status, err := testutil.TestPermDeleteAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+	_, st, err := testutil.TestPermDeleteAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
@@ -63,6 +75,12 @@ func badPermUpdateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+	_, st, err := testutil.TestPermUpdateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermUpdateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -75,6 +93,12 @@ func badPermShowAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, to
 	_, status, err := testutil.TestPermShowAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+	_, st, err := testutil.TestPermShowAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
@@ -91,6 +115,12 @@ func badPermAddAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Client, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badAddAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
+	_, st, err := testutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermAddAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
 	_, status, err := testutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -103,6 +133,12 @@ func badPermRemoveAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Clien
 	_, status, err := testutil.TestPermRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRemoveAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
+	_, st, err := testutil.TestPermRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermRemoveAutoProvPolicyCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {

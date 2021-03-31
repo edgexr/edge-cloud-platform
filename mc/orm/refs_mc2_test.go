@@ -32,6 +32,12 @@ func badPermShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, toke
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletRefs)) {
+	_, st, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
 	_, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -46,6 +52,12 @@ func badPermShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterRefs)) {
+	_, st, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
 	_, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -58,6 +70,12 @@ func badPermShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token
 	_, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstRefs)) {
+	_, st, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {

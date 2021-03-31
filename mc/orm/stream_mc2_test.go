@@ -33,6 +33,12 @@ func badPermStreamAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badStreamAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstKey)) {
+	_, st, err := testutil.TestPermStreamAppInst(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermStreamAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstKey)) {
 	_, status, err := testutil.TestPermStreamAppInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -47,6 +53,12 @@ func badPermStreamClusterInst(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badStreamClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterInstKey)) {
+	_, st, err := testutil.TestPermStreamClusterInst(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermStreamClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) {
 	_, status, err := testutil.TestPermStreamClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -59,6 +71,12 @@ func badPermStreamCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token,
 	_, status, err := testutil.TestPermStreamCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badStreamCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, st, err := testutil.TestPermStreamCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermStreamCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
