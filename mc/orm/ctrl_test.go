@@ -248,10 +248,23 @@ func TestController(t *testing.T) {
 	goodPermTestAppInst(t, mcClient, uri, tokenAd, ctrl.Region, org2, tc3, dcnt)
 	goodPermTestClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org1, tc3, dcnt)
 	goodPermTestClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org2, tc3, dcnt)
-	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
-	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
+	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org3, dcnt)
+	goodPermTestCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org4, dcnt)
 	goodPermTestAutoProvPolicy(t, mcClient, uri, tokenAd, ctrl.Region, org1, dcnt)
 	goodPermTestAutoProvPolicy(t, mcClient, uri, tokenAd, ctrl.Region, org2, dcnt)
+
+	// some create actions are restricted by org type, even for admin
+	sbr := http.StatusBadRequest
+	badCreateCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org1, sbr)
+	badCreateCloudlet(t, mcClient, uri, tokenAd, ctrl.Region, org2, sbr)
+	badCreateApp(t, mcClient, uri, tokenAd, ctrl.Region, org3, sbr)
+	badCreateApp(t, mcClient, uri, tokenAd, ctrl.Region, org4, sbr)
+	badCreateAppInst(t, mcClient, uri, tokenAd, ctrl.Region, org3, sbr, tc3)
+	badCreateAppInst(t, mcClient, uri, tokenAd, ctrl.Region, org4, sbr, tc3)
+	badCreateClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org3, sbr, tc3)
+	badCreateClusterInst(t, mcClient, uri, tokenAd, ctrl.Region, org4, sbr, tc3)
+	badCreateCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org1, sbr)
+	badCreateCloudletPool(t, mcClient, uri, tokenAd, ctrl.Region, org2, sbr)
 
 	// test non-existent org check
 	// (no check by admin because it returns a different error code)

@@ -33,6 +33,12 @@ func badPermCreateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermCreateFlavor(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermCreateFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -45,6 +51,12 @@ func badPermDeleteFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	_, status, err := testutil.TestPermDeleteFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermDeleteFlavor(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
@@ -61,6 +73,12 @@ func badPermUpdateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermUpdateFlavor(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermUpdateFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -73,6 +91,12 @@ func badPermShowFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 	_, status, err := testutil.TestPermShowFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermShowFlavor(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowFlavor(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
@@ -89,6 +113,12 @@ func badPermAddFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badAddFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermAddFlavorRes(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermAddFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermAddFlavorRes(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -101,6 +131,12 @@ func badPermRemoveFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token
 	_, status, err := testutil.TestPermRemoveFlavorRes(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRemoveFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Flavor)) {
+	_, st, err := testutil.TestPermRemoveFlavorRes(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermRemoveFlavorRes(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {

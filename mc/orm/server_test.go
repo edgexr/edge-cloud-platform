@@ -252,7 +252,7 @@ func TestServer(t *testing.T) {
 	// EC-31717: Test org exists func. Should be case sensitive, so looking
 	// for "devy" should fail (does not exist), and not hit a false
 	//  positive for org "DevY", which does exist.
-	err = checkRequiresOrg(ctx, "devy", false, false)
+	err = checkRequiresOrg(ctx, "devy", "", false, false)
 	require.NotNil(t, err, "devy should not exist")
 
 	// create new admin user

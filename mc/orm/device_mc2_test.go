@@ -34,6 +34,12 @@ func badPermInjectDevice(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badInjectDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Device)) {
+	_, st, err := testutil.TestPermInjectDevice(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermInjectDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
 	_, status, err := testutil.TestPermInjectDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -46,6 +52,12 @@ func badPermShowDevice(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 	_, status, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Device)) {
+	_, st, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
@@ -62,6 +74,12 @@ func badPermEvictDevice(t *testing.T, mcClient *ormclient.Client, uri, token, re
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badEvictDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Device)) {
+	_, st, err := testutil.TestPermEvictDevice(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermEvictDevice(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
 	_, status, err := testutil.TestPermEvictDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -74,6 +92,12 @@ func badPermShowDeviceReport(t *testing.T, mcClient *ormclient.Client, uri, toke
 	_, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowDeviceReport(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.DeviceReport)) {
+	_, st, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowDeviceReport(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DeviceReport)) {

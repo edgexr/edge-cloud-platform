@@ -32,6 +32,12 @@ func badPermRunCommand(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badRunCommand(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ExecRequest)) {
+	_, st, err := testutil.TestPermRunCommand(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermRunCommand(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermRunCommand(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -44,6 +50,12 @@ func badPermRunConsole(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 	_, status, err := testutil.TestPermRunConsole(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRunConsole(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ExecRequest)) {
+	_, st, err := testutil.TestPermRunConsole(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermRunConsole(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
@@ -60,6 +72,12 @@ func badPermShowLogs(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowLogs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ExecRequest)) {
+	_, st, err := testutil.TestPermShowLogs(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowLogs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermShowLogs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -72,6 +90,12 @@ func badPermAccessCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token,
 	_, status, err := testutil.TestPermAccessCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badAccessCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ExecRequest)) {
+	_, st, err := testutil.TestPermAccessCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermAccessCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {

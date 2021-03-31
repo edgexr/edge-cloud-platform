@@ -34,6 +34,12 @@ func badPermShowAppInstClient(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowAppInstClient(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstClientKey)) {
+	_, st, err := testutil.TestPermShowAppInstClient(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowAppInstClient(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) {
 	_, status, err := testutil.TestPermShowAppInstClient(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)

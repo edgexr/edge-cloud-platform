@@ -33,6 +33,12 @@ func badPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Node)) {
+	_, st, err := testutil.TestPermShowNode(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowNode(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Node)) {
 	_, status, err := testutil.TestPermShowNode(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)

@@ -233,15 +233,16 @@ func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) e
 	if !allow {
 		return echo.ErrForbidden
 	}
+
 	if opts.requiresOrg != "" && !opts.showAudit {
-		if err := checkRequiresOrg(ctx, opts.requiresOrg, admin, opts.noEdgeboxOnly); err != nil {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, obj, admin, opts.noEdgeboxOnly); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkRequiresOrg(ctx context.Context, org string, admin, noEdgeboxOnly bool) error {
+func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgeboxOnly bool) error {
 	// make sure org actually exists, and is not in the
 	// process of being deleted.
 	lookup, err := orgExists(ctx, org)
@@ -250,19 +251,24 @@ func checkRequiresOrg(ctx context.Context, org string, admin, noEdgeboxOnly bool
 		if !admin {
 			return echo.ErrForbidden
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("org %s lookup failed: %v", org, err))
-	}
-	if lookup == nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "org not found", "org", org)
-		if !admin {
-			return echo.ErrForbidden
+		if strings.Contains(err.Error(), "not found") {
+			return echo.NewHTTPError(http.StatusBadRequest, err)
 		}
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("org %s not found", org))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("org %s lookup failed: %v", org, err))
 	}
 	if lookup.DeleteInProgress {
 		return echo.NewHTTPError(http.StatusBadRequest, "operation not allowed for org with delete in progress")
 	}
-
+	// see if resource is only for a specific type of org
+	orgType := ""
+	if _, ok := DeveloperResourcesMap[resource]; ok {
+		orgType = OrgTypeDeveloper
+	} else if _, ok := OperatorResourcesMap[resource]; ok {
+		orgType = OrgTypeOperator
+	}
+	if orgType != "" && lookup.Type != orgType {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("operation only allowed for organizations of type %s", orgType))
+	}
 	// make sure only edgebox cloudlets are created for edgebox org
 	if lookup.EdgeboxOnly && noEdgeboxOnly {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("only allowed to create EDGEBOX cloudlet on org %s", org))

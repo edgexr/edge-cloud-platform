@@ -33,6 +33,12 @@ func badPermCreateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermCreateResTagTable(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermCreateResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -45,6 +51,12 @@ func badPermDeleteResTagTable(t *testing.T, mcClient *ormclient.Client, uri, tok
 	_, status, err := testutil.TestPermDeleteResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermDeleteResTagTable(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
@@ -61,6 +73,12 @@ func badPermUpdateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermUpdateResTagTable(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermUpdateResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -73,6 +91,12 @@ func badPermShowResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token
 	_, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
@@ -89,6 +113,12 @@ func badPermAddResTag(t *testing.T, mcClient *ormclient.Client, uri, token, regi
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badAddResTag(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermAddResTag(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermAddResTag(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermAddResTag(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -103,6 +133,12 @@ func badPermRemoveResTag(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badRemoveResTag(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	_, st, err := testutil.TestPermRemoveResTag(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermRemoveResTag(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermRemoveResTag(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -115,6 +151,12 @@ func badPermGetResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token,
 	_, status, err := testutil.TestPermGetResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badGetResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ResTagTableKey)) {
+	_, st, err := testutil.TestPermGetResTagTable(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermGetResTagTable(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTableKey)) {

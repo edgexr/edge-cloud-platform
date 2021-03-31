@@ -34,6 +34,12 @@ func badPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, st, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
@@ -46,6 +52,12 @@ func badPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, 
 	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, st, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
@@ -62,6 +74,12 @@ func badPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token,
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, st, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermRefreshAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
@@ -76,6 +94,12 @@ func badPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
+	_, st, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
@@ -88,6 +112,12 @@ func badPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, re
 	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInst)) {
+	_, st, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowAppInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInst)) {
@@ -169,6 +199,12 @@ func badPermRequestAppInstLatency(t *testing.T, mcClient *ormclient.Client, uri,
 	_, status, err := testutil.TestPermRequestAppInstLatency(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRequestAppInstLatency(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstLatency)) {
+	_, st, err := testutil.TestPermRequestAppInstLatency(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermRequestAppInstLatency(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstLatency)) {

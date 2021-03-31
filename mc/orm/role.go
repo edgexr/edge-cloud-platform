@@ -55,6 +55,8 @@ var OperatorResources = []string{
 	ResourceCloudletPools,
 	ResourceAlert,
 }
+var DeveloperResourcesMap map[string]struct{}
+var OperatorResourcesMap map[string]struct{}
 
 // built-in roles
 const RoleDeveloperManager = "DeveloperManager"
@@ -69,6 +71,17 @@ const RoleAdminViewer = "AdminViewer"
 const RoleBillingManager = "BillingManager"
 
 var AdminRoleID int64
+
+func init() {
+	DeveloperResourcesMap = make(map[string]struct{})
+	OperatorResourcesMap = make(map[string]struct{})
+	for _, res := range DeveloperResources {
+		DeveloperResourcesMap[res] = struct{}{}
+	}
+	for _, res := range OperatorResources {
+		OperatorResourcesMap[res] = struct{}{}
+	}
+}
 
 func InitRolePerms(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "init roleperms")

@@ -33,6 +33,12 @@ func badPermUpdateSettings(t *testing.T, mcClient *ormclient.Client, uri, token,
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Settings)) {
+	_, st, err := testutil.TestPermUpdateSettings(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {
 	_, status, err := testutil.TestPermUpdateSettings(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -47,6 +53,12 @@ func badPermResetSettings(t *testing.T, mcClient *ormclient.Client, uri, token, 
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badResetSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Settings)) {
+	_, st, err := testutil.TestPermResetSettings(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermResetSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {
 	_, status, err := testutil.TestPermResetSettings(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -59,6 +71,12 @@ func badPermShowSettings(t *testing.T, mcClient *ormclient.Client, uri, token, r
 	_, status, err := testutil.TestPermShowSettings(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Settings)) {
+	_, st, err := testutil.TestPermShowSettings(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowSettings(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {

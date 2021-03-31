@@ -739,6 +739,12 @@ func badPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func bad{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) {
+	_, st, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPerm{{.MethodName}}(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) {
 	_, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 	require.Nil(t, err)

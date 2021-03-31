@@ -33,6 +33,12 @@ func badPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, tok
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, st, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermEnableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -45,6 +51,12 @@ func badPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, to
 	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, st, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDisableDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
@@ -61,6 +73,12 @@ func badPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, st, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermShowDebugLevels(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -73,6 +91,12 @@ func badPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	_, st, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermRunDebug(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {

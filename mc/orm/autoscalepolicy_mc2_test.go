@@ -33,6 +33,12 @@ func badPermCreateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri,
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badCreateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	_, st, err := testutil.TestPermCreateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermCreateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermCreateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -45,6 +51,12 @@ func badPermDeleteAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri,
 	_, status, err := testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	_, st, err := testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermDeleteAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
@@ -61,6 +73,12 @@ func badPermUpdateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri,
 	require.Equal(t, http.StatusForbidden, status)
 }
 
+func badUpdateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	_, st, err := testutil.TestPermUpdateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
 func goodPermUpdateAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermUpdateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
@@ -73,6 +91,12 @@ func badPermShowAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, t
 	_, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	_, st, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
 }
 
 func goodPermShowAutoScalePolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
