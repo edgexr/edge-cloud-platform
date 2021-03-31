@@ -261,9 +261,12 @@ func deleteOrgCloudletPool(ctx context.Context, op *ormapi.OrgCloudletPool) erro
 		op.CloudletPoolOrg,
 		op.Type,
 	}
-	err := db.Delete(op, args...).Error
-	if err != nil {
-		return dbErr(err)
+	res := db.Delete(op, args...)
+	if res.Error != nil {
+		return dbErr(res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("%s not found", op.Type)
 	}
 	return nil
 }
