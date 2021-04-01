@@ -582,9 +582,13 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if v.VMProperties.AppendFlavorToVmAppImage {
 			localImageName = localImageName + "-" + appInst.Flavor.Name
 		}
-		err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "localImageName", localImageName)
+		if v.VMProperties.GetVMAppCleanupImageOnDelete() {
+			err = v.VMProvider.DeleteImage(ctx, cloudcommon.GetAppFQN(&app.Key), localImageName)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete image", "localImageName", localImageName)
+			}
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "skipping image cleanup due to MEX_VM_APP_IMAGE_CLEANUP_ON_DELETE setting")
 		}
 		if appInst.Uri != "" {
 			fqdn := appInst.Uri

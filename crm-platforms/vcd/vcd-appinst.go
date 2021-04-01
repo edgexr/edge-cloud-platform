@@ -127,6 +127,21 @@ var vmAppOvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
 func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "imageInfo", imageInfo, "flavor", flavor)
 
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return fmt.Errorf(NoVCDClientInContext)
+	}
+	_, err := v.FindTemplate(ctx, imageInfo.LocalImageName, vcdClient)
+	if err == nil {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Using existing image template: %s", imageInfo.LocalImageName))
+		return nil
+	}
+
+	if v.GetVcdOauthAgwUrl() != "" {
+		// uploading a VM app image thru the API GW is not possible
+		return fmt.Errorf("VM App images cannot be imported when using an API Gateway")
+	}
 	filesToCleanup := []string{}
 	defer func() {
 		for _, file := range filesToCleanup {
@@ -139,11 +154,6 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		}
 	}()
 
-	vcdClient := v.GetVcdClientFromContext(ctx)
-	if vcdClient == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
-	}
 	appFlavor, err := v.GetFlavor(ctx, flavor)
 	if err != nil {
 		return err

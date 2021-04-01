@@ -153,6 +153,11 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Enable DHCP for the subnet created for VM based applications (yes or no)",
 		Value:       "yes",
 	},
+	"MEX_VM_APP_IMAGE_CLEANUP_ON_DELETE": {
+		Name:        "VM App image cleanup on delete",
+		Description: "Delete image files when VM apps are deleted (yes or no)",
+		Value:       "yes",
+	},
 }
 
 func GetSupportedRouterTypes() string {
@@ -335,6 +340,11 @@ func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst
 func (vp *VMProperties) GetVMAppSubnetDHCPEnabled() string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED")
 	return value
+}
+
+func (vp *VMProperties) GetVMAppCleanupImageOnDelete() bool {
+	value, _ := vp.CommonPf.Properties.GetValue("MEX_VM_APP_IMAGE_CLEANUP_ON_DELETE")
+	return value == "yes"
 }
 
 func (vp *VMProperties) GetChefClient() *chef.Client {
