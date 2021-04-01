@@ -20,11 +20,13 @@ func TestNextIntAddr(t *testing.T) {
 	var updateCallback edgeproto.CacheUpdateCallback
 	if live {
 		// vappName is just logging here
-		nextAddr, err := tv.GetNextInternalSubnet(ctx, *vappName, updateCallback, testVcdClient)
+		nextAddr, reuse, err := tv.GetNextInternalSubnet(ctx, *vappName, updateCallback, testVcdClient)
 		if err != nil {
 			fmt.Printf("Error getting next addr  : %s\n", err.Error())
 			return
 		}
+		// reuse true if we've reused an existing iosnet found
+		fmt.Printf("reuse: %t\n", reuse)
 		require.Equal(t, nextAddr, "10.101.2.1")
 
 	}
@@ -722,7 +724,7 @@ func TestAddNextIsoSubnetToVapp(t *testing.T) {
 		fmt.Printf("Next subnet avaiable: %s\n", nextCidr)
 
 		// The create now adds the org net to the given vapp
-		err = tv.CreateIsoVdcNetwork(ctx, vapp, *netName, nextCidr, testVcdClient)
+		err = tv.CreateIsoVdcNetwork(ctx, vapp, *netName, nextCidr, testVcdClient, false)
 		if err != nil {
 			fmt.Printf("CreateIsoVdcNetwork failed: %s\n", err.Error())
 			return

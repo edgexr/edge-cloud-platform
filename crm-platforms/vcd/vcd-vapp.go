@@ -97,22 +97,9 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	if err != nil {
 		return nil, err
 	}
-	// ensure we have a clean slate  xxx needed? speed up fodder potentially
-
-	task, err = vapp.RemoveAllNetworks()
-
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "remove networks failed", "VAppName", vmgp.GroupName, "error", err)
-		return nil, err
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "task completion failed", "VAppName", vmgp.GroupName, "error", err)
-	}
-
 	updateCallback(edgeproto.UpdateTask, "Updating vApp Ports")
 	updatePortsStart := time.Now()
-	// Get the VApp network in place, all vapps need an external network at least
+	// Get the VApp network(s) in place.
 	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, updateCallback, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
@@ -227,11 +214,68 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp err getting vdc", "vapp", vappName, "err", err)
 		return err
 	}
-	// If GetVappIsoNetwork actually fails (GetNetworkList() unlikely)
+
+	vappStatus, err := vapp.GetStatus()
+	if err != nil {
+		return err
+	}
+	if vappStatus != "POWERED_OFF" {
+		task, err := vapp.Undeploy()
+		if err != nil {
+			return err
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeployed", "Vapp", vappName, "status", vappStatus)
+	}
+
+	// If GetVappIsoNetwork actually fails
 	// don't fail the delete cluster operation here.
 	netName, err := v.GetVappIsoNetwork(ctx, vdc, vapp)
 	// if one of these is an isolated orgvdcnetwork
 	if err == nil && netName != "" {
+		vms := vapp.VApp.Children.VM
+		for _, tvm := range vms {
+			vmName := tvm.Name
+			vm, err := vapp.GetVMByName(vmName, true)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vm not found", "vm", vmName, "for server", vappName)
+				return err
+			}
+			vmStatus, err := vm.GetStatus()
+			if err != nil {
+				return err
+			}
+			if vmStatus != "POWERED_OFF" {
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeploy/poweroff/delete", "vm", vmName)
+				task, err := vm.Undeploy()
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp unDeploy failed", "vm", vmName, "error", err)
+					return err
+				}
+				if err = task.WaitTaskCompletion(); err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait for undeploy failed", "vm", vmName, "error", err)
+					return err
+				}
+				task, err = vm.PowerOff()
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp PowerOff failed", "vm", vmName, "error", err)
+					return err
+				}
+				if err = task.WaitTaskCompletion(); err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait for PowerOff failed", "vm", vmName, "error", err)
+					return err
+				}
+
+				err = vm.Delete()
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp PowerOff failed", "vm", vmName, "error", err)
+					return err
+				}
+			}
+		}
 		task, err := vapp.RemoveAllNetworks()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveAllNetworks failed ", "err", err)
@@ -241,33 +285,34 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task for RemoveAllNetworks failed", "error", err)
 			}
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp removing iosNetworks", "vapp", vappName)
-		err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists failed ", "vapp", vappName, "netName", netName, "err", err)
+		vappNetSettings := govcd.VappNetworkSettings{}
+		orgNetwork := types.OrgVDCNetwork{}
+		_, _ = vapp.UpdateNetwork(&vappNetSettings, &orgNetwork)
+
+		if vdc.IsNsxv() {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName)
+			err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
+			if err != nil {
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists failed for", "netName", netName, "error", err)
+					return err
+				}
+			}
 		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists success", "netName", netName)
+			// place the network on the free list for resue. Should be an nsx-t backed vdc
+			orgvdcnetwork, err := vdc.GetOrgVdcNetworkByName(netName, false)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetOrgVdcNetworkByName failed for", "netName", netName)
+				return err
+			}
+			v.FreeIsoNets[netName] = orgvdcnetwork
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists nsx-t, add to free list for reuse", "vapp", vappName, "netName", netName, "err", err, "isNsxt?", vdc.IsNsxt())
+
 		}
 	} else if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring ", "vapp", vappName, "netName", netName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
 	}
 
-	status, err := vapp.GetStatus()
-	if err != nil {
-		return err
-	}
-
-	if status == "POWERED_ON" {
-		task, err := vapp.Undeploy()
-		if err != nil {
-			return err
-		}
-		err = task.WaitTaskCompletion()
-		if err != nil {
-			return err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeployed", "Vapp", vappName)
-	}
 	task, err := vapp.Delete()
 	if err != nil {
 		return err
