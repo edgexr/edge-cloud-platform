@@ -77,7 +77,7 @@ replace (
 	github.com/Sirupsen/logrus v1.6.0 => github.com/sirupsen/logrus v1.6.0
 )
 
-replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241
+replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.1
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.1
 

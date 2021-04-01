@@ -29,11 +29,6 @@ func (v *VSpherePlatform) PrepareRootLB(ctx context.Context, client ssh.Client, 
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
 	// allow our external vsphere network
-	sshCidrsAllowed := []string{}
-	externalNet, err := v.GetExternalIpNetworkCidr(ctx)
-	if err != nil {
-		return err
-	}
-	sshCidrsAllowed = append(sshCidrsAllowed, externalNet)
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 	return v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, TrustPolicy)
 }

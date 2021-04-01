@@ -348,6 +348,7 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	}
 	guestCustomSec.Enabled = TakeBoolPointer(true)
 	guestCustomSec.ComputerName = vmparams.HostName
+	guestCustomSec.AdminPasswordEnabled = TakeBoolPointer(false) // we have our own baseimage password
 	_, err = vm.SetGuestCustomizationSection(guestCustomSec)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)

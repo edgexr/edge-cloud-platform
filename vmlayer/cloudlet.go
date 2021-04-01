@@ -408,30 +408,31 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Cloudlet Security Rules %s", rootLBName))
 		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, ActionDelete, edgeproto.DummyUpdateCallback)
 		if err != nil {
-			return fmt.Errorf("DeleteCloudlet error: %v", err)
+			if v.VMProperties.IptablesBasedFirewall {
+				// iptables based security rules can fail on one clusterInst LB or other VM not responding
+				log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
+			} else {
+				return err
+			}
 		}
 	}
 
-	if err == nil {
-		nodes := v.GetPlatformNodes(cloudlet)
-		for _, nodeName := range nodes {
-			clientName := v.GetChefClientName(nodeName)
-			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting %s client from Chef Server", clientName))
-			err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
-			}
-		}
-
-		// Delete rootLB object from Chef Server
-		clientName := v.GetChefClientName(rootLBName)
+	nodes := v.GetPlatformNodes(cloudlet)
+	for _, nodeName := range nodes {
+		clientName := v.GetChefClientName(nodeName)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting %s client from Chef Server", clientName))
 		err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
 		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to fetch chef auth keys", "err", err)
+	}
+
+	// Delete rootLB object from Chef Server
+	clientName := v.GetChefClientName(rootLBName)
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting %s client from Chef Server", clientName))
+	err = chefmgmt.ChefClientDelete(ctx, chefClient, clientName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
 	}
 
 	// Not sure if it's safe to remove vars from Vault due to testing/virtual cloudlets,

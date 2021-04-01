@@ -600,6 +600,8 @@ github.com/mitchellh/reflectwalk v1.0.1/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx
 github.com/mjibson/esc v0.2.0/go.mod h1:9Hw9gxxfHulMF5OJKCyhYD7PzlSdhzXyaGEBRPH1OPs=
 github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241 h1:RSm6957vFVXbyaqiKC3V1dSpIJOS+mF1H6FK4YjnN0A=
 github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241/go.mod h1:czvTQZlB4/WsOsL7rMVCb+SYAPJhx/dYoS/Sk7rc/O0=
+github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.1 h1:nd623YPZD0Td/bMO5RG6cwb+TRiRi4YYQzmHVZcyyF0=
+github.com/mobiledgex/go-vcloud-director/v2 v2.11.0-241.1/go.mod h1:czvTQZlB4/WsOsL7rMVCb+SYAPJhx/dYoS/Sk7rc/O0=
 github.com/mobiledgex/golang-ssh v0.0.10 h1:GwcGZGAsKkC4XgIDQ15+XbDWkpGZM8tHbT/6YOYrCDo=
 github.com/mobiledgex/golang-ssh v0.0.10/go.mod h1:lOpuGpjEhPMO4gxtlLkeC04vN+pB1xmZsYeQZWg0mMI=
 github.com/mobiledgex/jaeger v1.13.1 h1:ccldpM70eSW7JLCKhv+cht4OVIdp/wjdioegeWOk4Zc=
