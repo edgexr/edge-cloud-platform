@@ -366,7 +366,13 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 	if err := v.ConfigureCloudletSecurityRules(ctx, ActionCreate); err != nil {
-		return err
+		if v.VMProperties.IptablesBasedFirewall {
+			// iptables based security rules can fail on one clusterInst LB, but we cannot treat
+			// this as a fatal error or it can cause the CRM to never initialize
+			log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
+		} else {
+			return err
+		}
 	}
 	// Set debug command to start crm upgrade
 	v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)

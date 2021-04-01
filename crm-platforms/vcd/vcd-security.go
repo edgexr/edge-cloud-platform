@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,11 +24,19 @@ var VCDClientCtxKey = "VCDClientCtxKey"
 
 var NoVCDClientInContext = "No VCD Client in Context"
 
-var globalVCDClient *govcd.VCDClient
-var globalVCDClientLock sync.Mutex
-var globalVCDClientLastUpdateTime time.Time
+type vcdClientInfo struct {
+	vcdClient      *govcd.VCDClient
+	lastUpdateTime time.Time
+}
+
+var cloudletClients map[edgeproto.CloudletKey]*vcdClientInfo
+var cloudletClientLock sync.Mutex
 
 // vcd security related operations
+
+func init() {
+	cloudletClients = make(map[edgeproto.CloudletKey]*vcdClientInfo)
+}
 
 // physicalname (vault key) not needed when  using insure env vars.
 func (v *VcdPlatform) PopulateOrgLoginCredsFromEnv(ctx context.Context) error {
@@ -159,12 +168,7 @@ func (v *VcdPlatform) PrepareRootLB(ctx context.Context, client ssh.Client, root
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB", "rootLBName", rootLBName)
 	// configure iptables based security
-	sshCidrsAllowed := []string{}
-	externalNet, err := v.GetExternalIpNetworkCidr(ctx, vcdClient)
-	if err != nil {
-		return err
-	}
-	sshCidrsAllowed = append(sshCidrsAllowed, externalNet)
+	sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 	err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, client, sshCidrsAllowed, trustPolicy)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "PrepareRootLB SetupIptableRulesForRootLB failed", "rootLBName", rootLBName, "err", err)
@@ -222,45 +226,55 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient", "user", creds.User, "OauthSgwUrl", creds.OauthSgwUrl)
-	globalVCDClientLock.Lock()
-	defer globalVCDClientLock.Unlock()
+	cloudletClientLock.Lock()
+	defer cloudletClientLock.Unlock()
 
-	tokenDuration := time.Since(globalVCDClientLastUpdateTime)
-	expired := (uint64(tokenDuration.Seconds()) >= creds.ClientRefreshInterval)
-	log.SpanLog(ctx, log.DebugLevelInfra, "Check for token expired", "tokenDuration", tokenDuration, "ClientRefreshInterval", creds.ClientRefreshInterval, "exipred", expired)
-	if globalVCDClient == nil || expired {
+	clientInfo, clientExists := cloudletClients[*v.vmProperties.CommonPf.PlatformConfig.CloudletKey]
+	clientExpired := false
+	if !clientExists {
+		log.SpanLog(ctx, log.DebugLevelInfra, "No global client yet exists for cloudlet", "CloudletKey", v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
+	} else {
+		tokenAge := time.Since(clientInfo.lastUpdateTime)
+		clientExpired := (uint64(tokenAge.Seconds()) >= creds.ClientRefreshInterval)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Check for token expired", "tokenAge", tokenAge, "ClientRefreshInterval", creds.ClientRefreshInterval, "clientExpired", clientExpired)
+	}
+
+	if !clientExists || clientExpired {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Need to refresh client token")
-
-		globalVCDClient = govcd.NewVCDClient(*u, creds.Insecure,
+		cloudletClient := govcd.NewVCDClient(*u, creds.Insecure,
 			govcd.WithOauthUrl(creds.OauthSgwUrl),
 			govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
 			govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
 
-		log.SpanLog(ctx, log.DebugLevelInfra, "Created global client", "org", creds.Org, "OauthSgwUrl", creds.OauthSgwUrl)
+		clientInfo = &vcdClientInfo{
+			vcdClient: cloudletClient,
+		}
+		cloudletClients[*v.vmProperties.CommonPf.PlatformConfig.CloudletKey] = clientInfo
+		log.SpanLog(ctx, log.DebugLevelInfra, "Created cloudlet client", "org", creds.Org, "OauthSgwUrl", creds.OauthSgwUrl)
 
 		if creds.OauthSgwUrl != "" {
-			_, err := globalVCDClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
+			_, err := cloudletClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "err", err)
-				globalVCDClient = nil
+				delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
 				return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
 			}
 		}
-		globalVCDClientLastUpdateTime = time.Now()
+		clientInfo.lastUpdateTime = time.Now()
 	}
-	vcdClient, err := globalVCDClient.CopyClient()
+	clientCopy, err := clientInfo.vcdClient.CopyClient()
 	if err != nil {
 		return nil, fmt.Errorf("CopyClient failed - %v", err)
 	}
 	// always refresh the vcd session token
-	_, err = vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
+	_, err = clientCopy.GetAuthResponse(creds.User, creds.Password, creds.Org)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to login to org", "org", creds.Org, "err", err)
-		globalVCDClient = nil
+		delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
 		return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient connected", "API Version", vcdClient.Client.APIVersion)
-	return vcdClient, nil
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClient connected", "API Version", clientCopy.Client.APIVersion)
+	return clientCopy, nil
 }
 
 func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -306,9 +320,9 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules GetSSHClientFromIPAddr failed", "error", err)
 				continue
 			}
-			var cidrs []string
+			sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 			log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules SetupIpTables for", "IP", ip, "sshClient", sshClient)
-			err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, cidrs, TrustPolicy)
+			err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, TrustPolicy)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules SetupIptablesRulesForRootLB  failed", "IP", ip, "sshClient", sshClient, "error", err)
 				errMap[vapp.VApp.Name] = err
@@ -320,7 +334,15 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 			for n, e := range errMap {
 				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules error", "server", n, "error", e)
 			}
-			return fmt.Errorf("Failure")
+			failedVms := []string{}
+			for k := range errMap {
+				failedVms = append(failedVms, k)
+			}
+			vmlist := strings.Join(failedVms, ",")
+			ckey := v.vmProperties.CommonPf.PlatformConfig.CloudletKey
+			// TODO: consider making this an Alert rather than an Event
+			v.vmProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to configure iptables security rules", ckey.Organization, ckey.GetTags(), nil, "vms", vmlist)
+			return fmt.Errorf("Failure in ConfigureCloudletSecurityRules for vms: %s", vmlist)
 		}
 	} else {
 		// action.delete comes from DeleteCloudlet, rules will go down with the vm
