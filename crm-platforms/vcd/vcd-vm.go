@@ -247,7 +247,6 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 		a = strings.Split(nextCidr, "/")
 		baseAddr = string(a[0])
 	}
-	netConIdx := 0
 	for n, vmparams := range vmgp.VMs {
 		vmName := vmparams.Name
 		vmRole := vmparams.Role
@@ -302,11 +301,9 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
 						return nil, err
 					}
-
-					ncs.PrimaryNetworkConnectionIndex = 0
 				} else {
 					log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated", "vm", vm.VM.Name, "gateway", baseAddr)
-					// a single node docker cluster will need .101 here for e
+					// a single node docker cluster will need .101 here
 					vmIp, err = IncrIP(ctx, baseAddr, 100+(n-1))
 					if err != nil {
 						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
@@ -324,11 +321,23 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 				return nil, err
 			}
 
+			ip, _ := v.GetAddrOfVM(ctx, vm, v.vmProperties.GetCloudletExternalNetwork())
+			if ip == "" {
+				ncs.PrimaryNetworkConnectionIndex = 1
+			} // else, it's already set to zero
+
 			internalNetName := ""
 			ports := vmgp.Ports
+			// Vapp private iso nets use SubnetId directly, while SharedLBs isolated networks shared by vapps
+			// used IsoNamesMapping.
 			for _, port := range ports {
 				if port.NetworkType == vmlayer.NetTypeInternal {
-					internalNetName = port.SubnetId
+
+					if sharedRootLB {
+						internalNetName = v.IsoNamesMap[port.SubnetId]
+					} else {
+						internalNetName = port.SubnetId
+					}
 					break
 				}
 			}
@@ -339,6 +348,11 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 					// VM apps may not have VMTools installed so use the generic E1000 adapter
 					networkAdapterType = "E1000"
 				}
+				netConIdx, err := GetNextAvailConIdx(ctx, ncs)
+				if err != nil {
+					// unlikely we've run out of connection ids
+					return nil, err
+				}
 				ncs.NetworkConnection = append(ncs.NetworkConnection,
 					&types.NetworkConnection{
 						Network:                 internalNetName,
@@ -348,12 +362,19 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 						IPAddressAllocationMode: types.IPAllocationModeManual,
 						NetworkAdapterType:      networkAdapterType,
 					})
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp adding connection", "net", internalNetName, "ip", vmIp, "VM", vmName, "networkAdapterType", networkAdapterType)
+				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp adding connection", "net", internalNetName, "ip", vmIp, "VM", vmName, "networkAdapterType", networkAdapterType, "conidx", netConIdx)
 				err = vm.UpdateNetworkConnectionSection(ncs)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
-					return nil, err
+					log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed SLEEP 30 and Retry operation", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
+					time.Sleep(30 * time.Second)
+					err = vm.UpdateNetworkConnectionSection(ncs)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
+						return nil, err
+					}
 				}
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp failed to find any internalNetName for", "vm", vm.VM.Name)
 			}
 		}
 		// finish vmUpdates
@@ -918,8 +939,12 @@ func (v *VcdPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
 }
 
-func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM) ([]vmlayer.ServerIP, error) {
+func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClient *govcd.VCDClient) ([]vmlayer.ServerIP, error) {
 
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return nil, fmt.Errorf("GetVdc Failed - %v", err)
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "vmname", vm.VM.Name)
 	var serverIPs []vmlayer.ServerIP
 	if vm == nil {
@@ -927,7 +952,9 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM) ([]vmlay
 	}
 	vmName := vm.VM.Name
 	//parentVapp, err := vm.GetParentVApp()
+
 	connections := vm.VM.NetworkConnectionSection.NetworkConnection
+
 	for _, connection := range connections {
 		servIP := vmlayer.ServerIP{
 			MacAddress:   connection.MACAddress,
@@ -938,13 +965,39 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM) ([]vmlay
 		}
 		if connection.Network != v.vmProperties.GetCloudletExternalNetwork() {
 			// internal isolated net
-			servIP.PortName = vmName + "-" + connection.Network + "-port"
-			// servIP.PortName = connection.Network
+			// two kinds, if type = 2 we need the subnetID name, not our internal netname.
+			// query recs have this
+			netType := 0
+			qrecs, err := vdc.GetNetworkList()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetNextVdcIsoSubnet GetNetworkList failed ", "err", err)
+				return serverIPs, err
+			}
+			for _, qr := range qrecs {
+				if qr.Name == connection.Network && qr.LinkType == 2 {
+					netType = 2
+					log.SpanLog(ctx, log.DebugLevelInfra, "GetVNAddresses ", "iso subnet", qr.Name)
+				}
+			}
+			if netType == 2 {
+				// These are iosorgvdc networks, (ioslated but shared by all VApp in this vdc (cloudlet))
+				// Find the key in IsoNamesMap that matches connection.Network, and use
+				// the value (subnetId) found to return.
+				for k, v := range v.IsoNamesMap {
+					log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses found type 2 network (iso) swap name", "from", connection.Network, "to", k)
+					if v == connection.Network {
+						servIP.PortName = vmName + "-" + k + "-port"
+						break
+					}
+				}
+			} else {
+				servIP.PortName = vmName + "-" + connection.Network + "-port"
+			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "servIP.PortName", servIP.PortName)
 		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses Added", "servIP.PortName", servIP.PortName)
 		serverIPs = append(serverIPs, servIP)
 	}
-
 	return serverIPs, nil
 }
 

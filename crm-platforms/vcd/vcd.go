@@ -38,6 +38,8 @@ type VcdPlatform struct {
 	Creds        *VcdConfigParams
 	TestMode     bool
 	Verbose      bool
+	FreeIsoNets  NetMap
+	IsoNamesMap  map[string]string
 }
 
 var DefaultClientRefreshInterval uint64 = 7 * 60 * 60 // 7 hours
@@ -68,6 +70,9 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for Vcd 1", "stage", stage)
 	v.Verbose = v.GetVcdVerbose()
+	v.IsoNamesMap = make(map[string]string)
+	v.FreeIsoNets = make(NetMap)
+
 	v.InitData(ctx, caches)
 
 	err := v.SetProviderSpecificProps(ctx)
@@ -76,6 +81,18 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	}
 
 	if stage == vmlayer.ProviderInitPlatformStart {
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider RebuildMaps", "stage", stage)
+		err := v.RebuildIsoNamesAndFreeMaps(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider Rebuild maps failed", "error", err)
+		}
+		if len(v.FreeIsoNets) == 0 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider FreeIsoNets empty")
+		}
+		if len(v.IsoNamesMap) == 0 {
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider IsoNamesMap empty")
+		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableRuntimeLeases", "stage", stage)
 		overrideLeaseDisable := v.GetLeaseOverride()
 		if !overrideLeaseDisable {
@@ -129,12 +146,12 @@ func (v VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, se
 	}
 	out := ""
 	if detail.Status == vmlayer.ServerActive {
-		//out, err = client.Output("systemctl status mobiledgex.service")
+		out, err = client.Output("systemctl status mobiledgex.service")
 		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status", "serverName", serverName, "out", out, "err", err)
 		return nil
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady Mobiledgex service status (recovered) ", "serverName", serverName, "out", out, "err", err)
-		return nil // fmt.Errorf("Server %s status: %s", serverName, detail.Status)
+		return fmt.Errorf("Server %s status: %s", serverName, detail.Status)
 	}
 }
 
@@ -248,7 +265,7 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 		detail.Status = vmStatus
 	}
 
-	addresses, err := v.GetVMAddresses(ctx, vm)
+	addresses, err := v.GetVMAddresses(ctx, vm, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail err getting VMAddresses for", "vmname", serverName, "err", err)
 		return nil, err

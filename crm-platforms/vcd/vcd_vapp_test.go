@@ -550,17 +550,16 @@ func testDeleteVApp(t *testing.T, ctx context.Context, name string) error {
 		fmt.Printf("testDestroyVApp-E-error Getting Vapp %s by name: %s\n", name, err.Error())
 		return err
 	}
-	status, err := vapp.GetStatus()
-	fmt.Printf("Vapp %s currently in state: %s\n", name, status)
+	vappStatus, err := vapp.GetStatus()
+	fmt.Printf("Vapp %s currently in state: %s\n", name, vappStatus)
 	if err != nil {
 		fmt.Printf("Error fetching status for vapp %s\n", name)
 		return err
 	}
-	// If the vapp is already powered off, it may be deleteled directy
-	// else, first undeploy
-	if status == "POWERED_ON" {
-		task, err := vapp.Undeploy()
 
+	if vappStatus != "POWERED_OFF" {
+		fmt.Printf("Vapp Status %s Undeploying vapp\n", vappStatus)
+		task, err := vapp.Undeploy()
 		if err != nil {
 			fmt.Printf("Error from vapp.Undploy the vapp  as : %s\n", err.Error())
 			return err
@@ -570,12 +569,48 @@ func testDeleteVApp(t *testing.T, ctx context.Context, name string) error {
 			fmt.Printf("Error waiting undeploy of the vapp first %s \n", name)
 			return err
 		}
-		fmt.Printf("vapp  undeployed...\n")
 	}
-	fmt.Printf("Call vapp.Delete()\n")
+	vappStatus, err = vapp.GetStatus()
+
+	fmt.Printf("vapp  status now %s \n", vappStatus)
+
+	// If the vapp is already powered off, it may be deleteled directy
+	// as long as the vms are all off
+	if vappStatus == "POWERED_OFF" {
+		// ensure all vms are off as well
+		for _, tvm := range vapp.VApp.Children.VM {
+			vm, err := vapp.GetVMByName(tvm.Name, true)
+			if err != nil {
+				fmt.Printf("Error GetVMByName  as : %s\n", err.Error())
+				return err
+			}
+
+			vmStatus, err := vm.GetStatus()
+			fmt.Printf("child vm %s status = %s\n", vm.VM.Name, vmStatus)
+			if vmStatus == "POWERED_ON" {
+				fmt.Printf("Powering off vm %s for vapp deletion\n", vm.VM.Name)
+				task, err := vm.PowerOff()
+				if err != nil {
+					fmt.Printf("Error from PowerOFf  vm %s  : %s\n", vm.VM.Name, err.Error())
+					return err
+				}
+
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					fmt.Printf("Error waiting for power off : %s\n", err.Error())
+					return err
+				}
+				vm.Undeploy()
+				vm.Delete()
+				fmt.Printf("VM should be off\n")
+			}
+		}
+
+	}
+	fmt.Printf("Calling vapp.Delete()\n")
 	task, err := vapp.Delete()
 	if err != nil {
-		fmt.Printf("vapp.Delete failed: %s\n current status: %s\n", err.Error(), status)
+		fmt.Printf("vapp.Delete failed: %s\n current status: %s\n", err.Error(), vappStatus)
 		return err
 	}
 	err = task.WaitTaskCompletion()

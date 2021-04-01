@@ -292,3 +292,5 @@ replace github.com/cloudflare/cloudflare-go => github.com/cloudflare/cloudflare-
 replace github.com/jaegertracing/jaeger => github.com/jaegertracing/jaeger v1.21.0
 
 replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.4.0+incompatible
+
+replace github.com/vmware/go-vcloud-director/v2 v2.11.0 => ../go-vcloud-director
