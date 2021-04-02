@@ -58,6 +58,7 @@ type VcdConfigParams struct {
 	ClientTlsKey          string
 	ClientTlsCert         string
 	ClientRefreshInterval uint64
+	TestToken             string
 }
 
 type VAppMap map[string]*govcd.VApp

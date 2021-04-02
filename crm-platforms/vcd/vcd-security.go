@@ -219,6 +219,24 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		if err != nil {
 			return nil, err
 		}
+		if creds == nil {
+			// usually indicates we called GetClient before InitProvider
+			return nil, fmt.Errorf("nil creds passed to GetClient")
+		}
+		u, err := url.ParseRequestURI(creds.VcdApiUrl)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse request to org %s at %s err: %s", creds.Org, creds.VcdApiUrl, err)
+		}
+		vcdClient := govcd.NewVCDClient(*u, creds.Insecure)
+		if vcdClient.Client.VCDToken != "" {
+			_ = vcdClient.SetToken(creds.Org, govcd.AuthorizationHeader, creds.TestToken)
+		} else {
+			_, err := vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to login to org %s at %s err: %s", creds.Org, creds.VcdApiUrl, err)
+			}
+		}
+		return vcdClient, nil
 	}
 	if creds == nil {
 		// usually indicates we called GetClient before InitProvider
