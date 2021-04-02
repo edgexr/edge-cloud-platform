@@ -162,6 +162,10 @@ func (v *VcdPlatform) GetVcdVerbose() bool {
 }
 
 func (v *VcdPlatform) GetCatalogName() string {
+	if v.TestMode {
+		return os.Getenv("MEX_CATALOG")
+	}
+
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_CATALOG")
 	return val
 }
