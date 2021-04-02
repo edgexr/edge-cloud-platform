@@ -166,13 +166,13 @@ var CloudletUsageMetricComments = map[string]string{
 }
 
 var ClientApiUsageMetricRequiredArgs = []string{
-	"app-org",
 	"selector",
 }
 
 var ClientApiUsageMetricOptionalArgs = []string{
 	"appname",
 	"appvers",
+	"app-org",
 	"cluster",
 	"cluster-org",
 	"cloudlet",
@@ -201,13 +201,13 @@ var ClientApiUsageMetricComments = map[string]string{
 }
 
 var ClientAppUsageMetricRequiredArgs = []string{
-	"app-org",
 	"selector",
 }
 
 var ClientAppUsageMetricOptionalArgs = []string{
 	"appname",
 	"appvers",
+	"app-org",
 	"cluster",
 	"cluster-org",
 	"cloudlet",
