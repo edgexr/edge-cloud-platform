@@ -616,10 +616,6 @@ func GetMetricsCommon(c echo.Context) error {
 		if !success {
 			return err
 		}
-		// Developer organization name has to be specified
-		if in.ClusterInst.Organization == "" {
-			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
-		}
 		rc.region = in.Region
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.ClusterInst.Organization, ResourceClusterAnalytics, in.ClusterInst.CloudletKey)
 		if err != nil {
@@ -658,22 +654,16 @@ func GetMetricsCommon(c echo.Context) error {
 		if !success {
 			return err
 		}
-		// Developer name has to be specified
-		if in.AppInst.AppKey.Organization == "" {
-			return setReply(c, fmt.Errorf("App details must be present"), nil)
-		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.Organization
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.AppInst.AppKey.Organization, ResourceAppAnalytics, in.AppInst.ClusterInstKey.CloudletKey)
+		if err != nil {
+			return setReply(c, err, nil)
+		}
 		if err = validateSelectorString(in.Selector, CLIENT_APIUSAGE); err != nil {
 			return setReply(c, err, nil)
 		}
-		cmd = ClientApiUsageMetricsQuery(&in)
+		cmd = ClientApiUsageMetricsQuery(&in, cloudletList)
 
-		// Check the developer against who is logged in
-		// Should the operators logged in be allowed to see the API usage of the apps on their cloudlets?
-		if err := authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
-		}
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet/usage") {
 		dbNames = append(dbNames, cloudcommon.CloudletResourceUsageDbName)
 		in := ormapi.RegionCloudletMetrics{}
@@ -728,21 +718,15 @@ func GetMetricsCommon(c echo.Context) error {
 		} else {
 			dbNames = append(dbNames, cloudcommon.DownsampledMetricsDbName)
 		}
-		// Developer org name has to be specified
-		if in.AppInst.AppKey.Organization == "" {
-			return setReply(c, fmt.Errorf("App details must be present"), nil)
-		}
 		rc.region = in.Region
-		org = in.AppInst.AppKey.Organization
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.AppInst.AppKey.Organization, ResourceAppAnalytics, in.AppInst.ClusterInstKey.CloudletKey)
+		if err != nil {
+			return setReply(c, err, nil)
+		}
 		if err = validateClientAppUsageMetricReq(&in, in.Selector); err != nil {
 			return setReply(c, err, nil)
 		}
-		cmd = ClientAppUsageMetricsQuery(&in)
-
-		// Check the developer against who is logged in
-		if err := authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
-		}
+		cmd = ClientAppUsageMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/clientcloudletusage") {
 		in := ormapi.RegionClientCloudletUsageMetrics{}
 		success, err := ReadConn(c, &in)
