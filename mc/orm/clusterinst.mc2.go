@@ -302,11 +302,16 @@ func ShowClusterInst(c echo.Context) error {
 	return nil
 }
 
+type ShowClusterInstAuthz interface {
+	Ok(obj *edgeproto.ClusterInst) (bool, bool)
+	Filter(obj *edgeproto.ClusterInst)
+}
+
 func ShowClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.ClusterInst)) error {
-	var authz *AuthzShow
+	var authz ShowClusterInstAuthz
 	var err error
 	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
+		authz, err = newShowClusterInstAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
 		if err != nil {
 			return err
 		}
@@ -337,8 +342,12 @@ func ShowClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
 				continue
+			}
+			if filterOutput {
+				authz.Filter(res)
 			}
 		}
 		cb(res)

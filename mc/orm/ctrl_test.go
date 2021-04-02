@@ -348,19 +348,27 @@ func TestController(t *testing.T) {
 	badPermShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, tc3)
-	badPermShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	// operator is allowed to see appinst/clusterinst part of cloudletpool,
+	// but will return empty list if no appinst/clusterinst is deployed on the pool cloudlets
+	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, tc3)
-	badPermShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	// operator is allowed to see appinst/clusterinst part of cloudletpool,
+	// but will return empty list if no appinst/clusterinst is deployed on the pool cloudlets
+	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	badPermTestApp(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 	badPermShowApp(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	badPermTestAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1, tc3)
-	badPermShowAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
+	// operator is allowed to see appinst/clusterinst part of cloudletpool,
+	// but will return empty list if no appinst/clusterinst is deployed on the pool cloudlets
+	badPermTestShowAppInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	badPermTestClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1, tc3)
-	badPermShowClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
+	// operator is allowed to see appinst/clusterinst part of cloudletpool,
+	// but will return empty list if no appinst/clusterinst is deployed on the pool cloudlets
+	badPermTestShowClusterInst(t, mcClient, uri, tokenOper2, ctrl.Region, org1)
 
 	// make sure developer cannot create cloudlet (but they can see all of them)
 	badPermTestCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org3)
@@ -535,6 +543,10 @@ func TestController(t *testing.T) {
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, tokenDev, op1)
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, tokenDev2, op2)
 
+	// operator should not be able to see AppInsts of developer part of pool1,
+	// but have not yet confirmed invitation
+	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+
 	// developer confirms invitation
 	status, err = mcClient.CreateCloudletPoolAccessConfirmation(uri, tokenDev, &op1)
 	require.Nil(t, err)
@@ -575,6 +587,22 @@ func TestController(t *testing.T) {
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenOper2, ctrl.Region, "", count)
 
+	// developer is able to create appinst/appinst on tc3 part of pool1
+	goodPermCreateAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
+	goodPermCreateClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
+	// operator should be able to see appInsts/clusterInsts of developer part of pool1
+	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 1)
+	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 1)
+	// developer deletes appinst/clusterinst
+	goodPermDeleteAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
+	goodPermDeleteClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
+	// operator should see empty appinsts/clusterinsts
+	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 0)
+	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 0)
+	// operator should not able able to access appinsts/clusterinsts of developer who has not confirmed invitation
+	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
+	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
+
 	// developer2 confirms invitation
 	status, err = mcClient.CreateCloudletPoolAccessConfirmation(uri, tokenDev2, &op2)
 	require.Nil(t, err)
@@ -583,6 +611,19 @@ func TestController(t *testing.T) {
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenOper, op1, op2)
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenDev, op1)
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenDev2, op2)
+
+	// developer2 is able to create appinst/clusterinst on tc3 part of pool1
+	goodPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	goodPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	// operator should be able to see appInsts/clusterinsts of developer2 part of pool1
+	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 1)
+	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 1)
+	// developer2 deletes appinst/clusterinst
+	goodPermDeleteAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	goodPermDeleteClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	// operator should see empty appinsts/clusterinsts
+	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 0)
+	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 0)
 
 	// operator remove invitation should disallow usage
 	status, err = mcClient.DeleteCloudletPoolAccessInvitation(uri, tokenOper, &op1)
