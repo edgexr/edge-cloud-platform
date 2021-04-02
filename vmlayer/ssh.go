@@ -123,7 +123,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 				cloudletVMs = append(cloudletVMs, VMAccess{
 					Name:   clusterNode,
 					Client: nodeClient,
-					Role:   RoleNode,
+					Role:   RoleK8sNode,
 				})
 			}
 
@@ -142,7 +142,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 			cloudletVMs = append(cloudletVMs, VMAccess{
 				Name:   dockerNode,
 				Client: dockerNodeClient,
-				Role:   RoleNode,
+				Role:   RoleDockerNode,
 			})
 		} // switch deloyment
 

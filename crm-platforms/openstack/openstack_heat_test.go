@@ -14,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/accessapi"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -25,7 +26,7 @@ var subnetName = "subnet-test"
 var vms = []*vmlayer.VMRequestSpec{
 	{
 		Name:                    "rootlb-xyz",
-		Type:                    vmlayer.VMTypeRootLB,
+		Type:                    cloudcommon.VMTypeRootLB,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -35,7 +36,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "master-xyz",
-		Type:                    vmlayer.VMTypeClusterMaster,
+		Type:                    cloudcommon.VMTypeClusterMaster,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -45,7 +46,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node1-xyz",
-		Type:                    vmlayer.VMTypeClusterNode,
+		Type:                    cloudcommon.VMTypeClusterK8sNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -53,7 +54,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "node2-xyz",
-		Type:                    vmlayer.VMTypeClusterNode,
+		Type:                    cloudcommon.VMTypeClusterK8sNode,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",
@@ -61,7 +62,7 @@ var vms = []*vmlayer.VMRequestSpec{
 	},
 	{
 		Name:                    "app-vm",
-		Type:                    vmlayer.VMTypeAppVM,
+		Type:                    cloudcommon.VMTypeAppVM,
 		FlavorName:              "m1.medium",
 		ImageName:               "mobiledgex-v9.9.9",
 		ComputeAvailabilityZone: "nova1",

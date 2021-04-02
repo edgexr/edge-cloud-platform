@@ -307,7 +307,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
 	return v.GetVMRequestSpec(ctx,
-		VMTypeRootLB,
+		cloudcommon.VMTypeRootLB,
 		rootLbName,
 		vmspec.FlavorName,
 		imageName,
@@ -322,7 +322,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 func (v *VMPlatform) GetVMSpecForRootLBPorts(ctx context.Context, rootLbName string, subnet string) (*VMRequestSpec, error) {
 	rootlb, err := v.GetVMRequestSpec(
 		ctx,
-		VMTypeRootLB,
+		cloudcommon.VMTypeRootLB,
 		rootLbName,
 		"dummyflavor",
 		"dummyimage",
@@ -510,7 +510,7 @@ func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
 		"region/" + platformConfig.Region,
 		"cloudlet/" + platformConfig.CloudletKey.Name,
 		"cloudletorg/" + platformConfig.CloudletKey.Organization,
-		"vmtype/" + string(VMTypeRootLB),
+		"vmtype/" + cloudcommon.VMTypeRootLB,
 	}
 }
 
