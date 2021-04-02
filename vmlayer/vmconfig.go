@@ -120,7 +120,7 @@ func GetVMMetaData(role VMRole, masterIP string, formatter VmConfigDataFormatter
 		return ""
 	}
 	skipk8s := SkipK8sYes
-	if role == RoleMaster || role == RoleNode {
+	if role == RoleMaster || role == RoleK8sNode {
 		skipk8s = SkipK8sNo
 	}
 	str = `skipk8s: ` + string(skipk8s) + `

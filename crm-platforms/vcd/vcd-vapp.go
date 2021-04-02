@@ -401,7 +401,7 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 	}
 	// find the master, which can be either the first or second vm in the vapp, or none
 	masterIP := ""
-	if vmparams.Role == vmlayer.RoleNode { // k8s-node
+	if vmparams.Role == vmlayer.RoleK8sNode { // k8s-node
 		log.SpanLog(ctx, log.DebugLevelInfra, "Have k8s-node find masterIP ", "vm", vm.VM.Name)
 		vapp, err := vm.GetParentVApp()
 

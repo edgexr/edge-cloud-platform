@@ -229,7 +229,8 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		switch role {
 		case vmlayer.RoleMaster:
 			masterAddr = vm.NetInfo.InternalIp
-		case vmlayer.RoleNode:
+		case vmlayer.RoleK8sNode:
+		case vmlayer.RoleDockerNode:
 		default:
 			// rootlb
 			continue
@@ -271,7 +272,7 @@ func (o *VMPoolPlatform) createVMsInternal(ctx context.Context, markedVMs map[st
 		// bring other nodes once master node is up (if deployment is k8s)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up kubernetes worker nodes"))
 		for _, vm := range markedVMs {
-			if vmRoles[vm.InternalName] != vmlayer.RoleNode {
+			if vmRoles[vm.InternalName] != vmlayer.RoleK8sNode {
 				continue
 			}
 			client, err := accessClient.AddHop(vm.NetInfo.InternalIp, 22)
