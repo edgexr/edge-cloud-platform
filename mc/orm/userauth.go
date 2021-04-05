@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"golang.org/x/crypto/pbkdf2"
@@ -277,9 +278,11 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 }
 
 type authOptions struct {
-	showAudit     bool
-	requiresOrg   string
-	noEdgeboxOnly bool
+	showAudit          bool
+	requiresOrg        string
+	noEdgeboxOnly      bool
+	requiresBillingOrg string
+	targetCloudlet     *edgeproto.Cloudlet
 }
 
 type authOp func(opts *authOptions)
@@ -294,4 +297,11 @@ func withRequiresOrg(org string) authOp {
 
 func withNoEdgeboxOnly() authOp {
 	return func(opts *authOptions) { opts.noEdgeboxOnly = true }
+}
+
+func withRequiresBillingOrg(org string, targetCloudlet *edgeproto.Cloudlet) authOp {
+	return func(opts *authOptions) {
+		opts.requiresBillingOrg = org
+		opts.targetCloudlet = targetCloudlet
+	}
 }
