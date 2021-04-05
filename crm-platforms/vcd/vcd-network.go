@@ -185,7 +185,7 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 			// We've fenced our VApp isolated networks, so they can all use the same subnet
 			subnet = "10.101.1.1"
 			if v.Verbose {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetowkrNamek", port.NetworkName, "IP subnet", subnet)
+				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "IP subnet", subnet)
 			}
 			if v.haveSharedRootLB(ctx, vmgp) {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net for SharedLB", "vapp", vapp.VApp.Name)
@@ -197,8 +197,12 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 				}
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp created iso vdcnet for SharedLB", "network", port.SubnetId, "vapp", vapp.VApp.Name, "IP subnet", subnet)
 			} else {
+
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net non-shared", "vapp", vapp.VApp.Name)
-				_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, subnet)
+				if len(vmgp.Subnets) == 0 {
+					return "", fmt.Errorf("No subnets specified in orch params")
+				}
+				_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, subnet, vmgp.Subnets[0].DNSServers)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "create internal net failed", "err", err)
 					return "", err
@@ -508,16 +512,25 @@ func (v *VcdPlatform) IncrCidr(a string, delta int) (string, error) {
 
 const InternalNetMax = 100
 
-func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *govcd.VApp, serverName, netName string, cidr string) (string, error) {
+func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *govcd.VApp, serverName, netName string, cidr string, dnsServers []string) (string, error) {
 	var iprange []*types.IPRange
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "create internal server net", "netname", netName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "create internal server net", "netname", netName, "dnsServers", dnsServers)
 
 	description := fmt.Sprintf("internal-%s", cidr)
 	a := strings.Split(cidr, "/")
 	addr := string(a[0])
 	gateway := addr
+
+	if len(dnsServers) == 0 {
+		// NoSubnetDns is not supported for vCD
+		return "", fmt.Errorf("No DNS servers specified")
+	}
+	dns1 := dnsServers[0]
 	dns2 := ""
+	if len(dnsServers) > 1 {
+		dns2 = dnsServers[1]
+	}
 
 	startAddr, err := IncrIP(ctx, gateway, 1)
 	if err != nil {
@@ -545,7 +558,7 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 		Description:      description,
 		Gateway:          gateway,
 		NetMask:          "255.255.255.0",
-		DNS1:             "1.1.1.1",
+		DNS1:             dns1,
 		DNS2:             dns2,
 		DNSSuffix:        "mobiledgex.net",
 		StaticIPRanges:   iprange,
