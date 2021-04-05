@@ -76,7 +76,7 @@ type InvoiceData struct {
 	IssueDate           string `json:"issue_date,omitempty"`
 	DueDate             string `json:"due_date,omitempty"`
 	PaidDate            string `json:"paid_date,omitempty"`
-	Status              string `json:"status_omitempty"`
+	Status              string `json:"status,omitempty"`
 	CollectionMethod    string `json:"collection_method,omitempty"`
 	PaymentInstructions string `json:"payment_instructions,omitempty"`
 	Currency            string `json:"currency,omitempty"`
@@ -103,6 +103,7 @@ type InvoiceData struct {
 	RefundAmount        string          `json:"refund_amount,omitempty"`
 	PaidAmount          string          `json:"paid_amount,omitempty"`
 	DueAmount           string          `json:"due_amount,omitempty"`
+	TotalAmount         string          `json:"total_amount,omitempty"`
 	LineItems           []LineItems     `json:"line_items,omitempty"`
 	Discounts           []Discounts     `json:"discounts,omitempty"`
 	Taxes               []Taxes         `json:"taxes,omitempty"`

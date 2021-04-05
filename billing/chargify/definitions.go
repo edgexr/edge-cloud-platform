@@ -211,7 +211,7 @@ type Invoice struct {
 	IssueDate                  string          `json:"issue_date,omitempty"`
 	DueDate                    string          `json:"due_date,omitempty"`
 	PaidDate                   string          `json:"paid_date,omitempty"`
-	Status                     string          `json:"status_omitempty"`
+	Status                     string          `json:"status,omitempty"`
 	CollectionMethod           string          `json:"collection_method,omitempty"`
 	PaymentInstructions        string          `json:"payment_instructions,omitempty"`
 	Currency                   string          `json:"currency,omitempty"`
@@ -227,6 +227,7 @@ type Invoice struct {
 	BillingAddress             Address         `json:"billing_address,omitempty"`
 	ShippingAddress            Address         `json:"shipping_address,omitempty"`
 	SubtotalAmount             string          `json:"subtotal_amount,omitempty"`
+	TotalAmount                string          `json:"total_amount,omitempty"`
 	DiscountAmount             string          `json:"discount_amount,omitempty"`
 	TaxAmount                  string          `json:"tax_amount,omitempty"`
 	CreditAmount               string          `json:"credit_amount,omitempty"`
