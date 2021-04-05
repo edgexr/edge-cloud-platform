@@ -569,6 +569,18 @@ func testDeleteVApp(t *testing.T, ctx context.Context, name string) error {
 			fmt.Printf("Error waiting undeploy of the vapp first %s \n", name)
 			return err
 		}
+	} else {
+		task, err := vapp.Undeploy()
+		if err != nil {
+			fmt.Printf("Error from vapp.Undploy the vapp  as : %s\n", err.Error())
+			return err
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			fmt.Printf("Error waiting undeploy of the vapp first %s \n", name)
+			return err
+		}
+
 	}
 	vappStatus, err = vapp.GetStatus()
 
