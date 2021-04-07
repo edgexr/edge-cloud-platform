@@ -215,19 +215,13 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 		return err
 	}
 
-	vappStatus, err := vapp.GetStatus()
-	if err != nil {
-		return err
-	}
 	task, err := vapp.Undeploy()
 	if err != nil {
-		return err
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp err vapp.Undeploy ignoring", "vapp", vappName, "err", err)
+	} else {
+		_ = task.WaitTaskCompletion()
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeployed", "Vapp", vappName, "status", vappStatus)
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeployed", "Vapp", vappName)
 	// If GetVappIsoNetwork actually fails
 	// don't fail the delete cluster operation here.
 	netName, err := v.GetVappIsoNetwork(ctx, vdc, vapp)
@@ -241,38 +235,33 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vm not found", "vm", vmName, "for server", vappName)
 				return err
 			}
-			vmStatus, err := vm.GetStatus()
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeploy/poweroff/delete", "vm", vmName)
+			task, err := vm.Undeploy()
 			if err != nil {
-				return err
-			}
-			if vmStatus != "POWERED_OFF" {
-				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeploy/poweroff/delete", "vm", vmName)
-				task, err := vm.Undeploy()
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp unDeploy failed", "vm", vmName, "error", err)
-					return err
-				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp unDeploy failed", "vm", vmName, "error", err)
+			} else {
 				if err = task.WaitTaskCompletion(); err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait for undeploy failed", "vm", vmName, "error", err)
-					return err
-				}
-				task, err = vm.PowerOff()
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp PowerOff failed", "vm", vmName, "error", err)
-					return err
-				}
-				if err = task.WaitTaskCompletion(); err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait for PowerOff failed", "vm", vmName, "error", err)
-					return err
 				}
 			}
+			// undeployed
+			task, err = vm.PowerOff()
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp PowerOff failed", "vm", vmName, "error", err)
+			} else {
+				if err = task.WaitTaskCompletion(); err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait for PowerOff failed", "vm", vmName, "error", err)
+				}
+			}
+			// powered off
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp delete powered off", "vm", vmName)
 			err = vm.Delete()
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp PowerOff failed", "vm", vmName, "error", err)
-				return err
 			}
+			// deleted
 		}
+
 		task, err := vapp.RemoveAllNetworks()
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveAllNetworks failed ", "err", err)
@@ -282,10 +271,6 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task for RemoveAllNetworks failed", "error", err)
 			}
 		}
-		vappNetSettings := govcd.VappNetworkSettings{}
-		orgNetwork := types.OrgVDCNetwork{}
-		_, _ = vapp.UpdateNetwork(&vappNetSettings, &orgNetwork)
-
 		if vdc.IsNsxv() {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName)
 			err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
@@ -312,16 +297,16 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 
 	task, err = vapp.Delete()
 	if err != nil {
-		return err
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
+	} else {
+		err = task.WaitTaskCompletion()
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task failed vapp.Delete", "vapp", vappName, "err", err)
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp deleted", "Vapp", vappName)
 	return nil
-}
 
+}
 func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string, vcdClient *govcd.VCDClient) (*govcd.VApp, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "FindVApp", "vappName", vappName)
 
