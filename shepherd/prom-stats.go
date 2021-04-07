@@ -65,7 +65,7 @@ func getPromMetrics(ctx context.Context, addr string, query string, client ssh.C
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
 	resp, err := client.Output("curl -s -S " + reqURI)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err, "resp", resp)
 		return nil, err
 	}
 	promResp := &PromResp{}
@@ -79,7 +79,7 @@ func getPromAlerts(ctx context.Context, addr string, client ssh.Client) ([]edgep
 	reqURI := "'http://" + addr + "/api/v1/alerts'"
 	out, err := client.Output("curl -s -S " + reqURI)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to run <%s>, %v", reqURI, err)
+		return nil, fmt.Errorf("Failed to run <%s>, %v[%s]", reqURI, err, out)
 	}
 	resp := struct {
 		Status string
