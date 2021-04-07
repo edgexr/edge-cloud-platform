@@ -214,7 +214,8 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 		}
 		resp, err := target.Client.OutputWithTimeout(request, shepherd_common.ShepherdSshConnectTimeout)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			errStr := fmt.Sprintf("%s[%s]", err, resp)
+			http.Error(w, errStr, http.StatusInternalServerError)
 			return
 		}
 		w.Write([]byte(resp))

@@ -292,4 +292,3 @@ replace github.com/cloudflare/cloudflare-go => github.com/cloudflare/cloudflare-
 replace github.com/jaegertracing/jaeger => github.com/jaegertracing/jaeger v1.21.0
 
 replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.4.0+incompatible
-
