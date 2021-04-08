@@ -6,7 +6,7 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    locationtile: 2-1713,5065
+    locationtile: 2-1713,5065-2
   values:
     0s: 4
     5ms: 1
