@@ -87,6 +87,8 @@ var targetsFileWorkerKey = "write-targets"
 
 var CRMTimeout = 1 * time.Minute
 
+var ShepherdExitDelay = 3 * time.Minute
+
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	if target := CollectProxyStats(ctx, new); target != "" {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Writing a target to a file", "app", new, "target", target)
@@ -496,6 +498,9 @@ func start() {
 
 	err = myPlatform.Init(ctx, &pc)
 	if err != nil {
+		// failing to init the platform usually means CRM is not ready.  Give it a little time before exiting as it will restart
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to initialize platform, waiting before exit", "waitTime", ShepherdExitDelay)
+		time.Sleep(ShepherdExitDelay)
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	workerMap = make(map[string]*ClusterWorker)

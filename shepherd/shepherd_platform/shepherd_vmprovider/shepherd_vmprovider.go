@@ -2,6 +2,7 @@ package shepherd_vmprovider
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 // Default Ceilometer granularity is 300 secs(5 mins)
 var VmScrapeInterval = time.Minute * 5
+var sharedRootLBWait = time.Minute * 5
 
 var caches *platform.Caches
 
@@ -58,7 +60,24 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	}
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,
 	s.rootLbName = cloudcommon.GetRootLBFQDN(pc.CloudletKey, s.appDNSRoot)
-	s.SharedClient, err = s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: s.rootLbName})
+
+	start := time.Now()
+	// first wait for the rootlb to exist so we can get a client
+	for {
+		s.SharedClient, err = s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: s.rootLbName})
+		if err == nil {
+			break
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Error getting rootlb client", "rootLB", s.rootLbName, "err", err)
+		elapsed := time.Since(start)
+		if elapsed > sharedRootLBWait {
+			return fmt.Errorf("timed out waiting for shared rootlb %s -- %v", s.rootLbName, err)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 10 seconds before retry", "elapsed", elapsed, "SharedRootLBWait", sharedRootLBWait)
+		time.Sleep(10 * time.Second)
+	}
+	// now wait for the client to be reachable
+	err = vmlayer.WaitServerReady(ctx, s.VMPlatform.VMProvider, s.SharedClient, s.rootLbName, vmlayer.MaxRootLBWait)
 	if err != nil {
 		return err
 	}
