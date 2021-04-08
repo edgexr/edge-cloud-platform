@@ -65,6 +65,7 @@ func getPromMetrics(ctx context.Context, addr string, query string, client ssh.C
 	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
 	resp, err := client.Output("curl -s -S " + reqURI)
 	if err != nil {
+		log.ForceLogSpan(log.SpanFromContext(ctx))
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err, "resp", resp)
 		return nil, err
 	}
