@@ -3,7 +3,7 @@
     cloudlet: dmuus-cloud-1
     cloudletorg: dmuus
     devicecarrier: dmuus
-    locationtile: 2-1713,5065
+    locationtile: 2-1713,5065-2
   values:
     0s: 4
     5ms: 1
@@ -25,6 +25,6 @@
     devicecarrier: dmuus
     devicemodel: SM-G920F
     deviceos: Android
-    locationtile: 2-1713,5065
+    locationtile: 2-1713,5065-2
   values:
     numsessions: 1
