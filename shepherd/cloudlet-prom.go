@@ -289,7 +289,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	appInst := edgeproto.AppInst{}
 	found := AppInstCache.Get(&key, &appInst)
 	if !found || appInst.State != edgeproto.TrackedState_READY {
-		log.SpanLog(ctx, log.DebugLevelApi, "delete rules for AppInst", "AppInst", key)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "delete rules for AppInst", "AppInst", key)
 		untrackAppInstByPolicy(key)
 		// AppInst is being deleted - delete rules
 		fileName := getAppInstRulesFileName(key)
@@ -306,7 +306,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		return
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "write rules for AppInst", "AppInst", key)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "write rules for AppInst", "AppInst", key)
 
 	// get any rules for AppInst
 	grps := prommgmt.GroupsData{}
@@ -327,13 +327,13 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 
 	if len(grps.Groups) == 0 {
-		log.SpanLog(ctx, log.DebugLevelApi, "no rules for AppInst", "AppInst", key)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "no rules for AppInst", "AppInst", key)
 		// no rules
 		return
 	}
 	byt, err := yaml.Marshal(grps)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to marshal prom rule groups", "AppInst", appInst.Key, "rules", grps, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to marshal prom rule groups", "AppInst", appInst.Key, "rules", grps, "err", err)
 		return
 	}
 
