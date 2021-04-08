@@ -953,12 +953,11 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "vmname", vm.VM.Name)
 	var serverIPs []vmlayer.ServerIP
-	if vm == nil {
+	if vm == nil || vm.VM == nil || vm.VM.NetworkConnectionSection == nil {
 		return serverIPs, fmt.Errorf("Nil vm received")
 	}
 	vmName := vm.VM.Name
 	//parentVapp, err := vm.GetParentVApp()
-
 	connections := vm.VM.NetworkConnectionSection.NetworkConnection
 
 	for _, connection := range connections {
@@ -1204,7 +1203,10 @@ func (v *VcdPlatform) addNewVMRegenUuid(vapp *govcd.VApp, name string, vappTempl
 	// Inject network config
 	vAppComposition.SourcedItem.InstantiationParams.NetworkConnectionSection = network
 
-	apiEndpoint, _ := url.ParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint, err := url.ParseRequestURI(vapp.VApp.HREF)
+	if err != nil {
+		return govcd.Task{}, fmt.Errorf("Error in addNewVMRegenUuid %v", err)
+	}
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task

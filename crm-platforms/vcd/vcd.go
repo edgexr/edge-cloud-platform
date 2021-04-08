@@ -248,7 +248,7 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", serverName)
-		return nil, err
+		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError)
 	}
 	detail := vmlayer.ServerDetail{}
 	detail.Name = vm.VM.Name
