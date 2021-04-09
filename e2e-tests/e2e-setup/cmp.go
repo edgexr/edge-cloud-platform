@@ -415,6 +415,8 @@ func cmpFilterSpans(data []SpanSearch) {
 				ignoreMapVal(log.KeyValues, "resp")
 				ignoreMapVal(log.KeyValues, "rev")
 				ignoreMapVal(log.KeyValues, "autoProvStats")
+				ignoreMapVal(log.KeyValues, "stats count")
+				ignoreMapVal(log.KeyValues, "stats last count")
 			}
 		}
 	}

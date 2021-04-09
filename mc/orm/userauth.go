@@ -255,10 +255,10 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 		if strings.Contains(err.Error(), "not found") {
 			return echo.NewHTTPError(http.StatusBadRequest, err)
 		}
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("org %s lookup failed: %v", org, err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Org %s lookup failed: %v", org, err))
 	}
 	if lookup.DeleteInProgress {
-		return echo.NewHTTPError(http.StatusBadRequest, "operation not allowed for org with delete in progress")
+		return echo.NewHTTPError(http.StatusBadRequest, "Operation not allowed for org with delete in progress")
 	}
 	// see if resource is only for a specific type of org
 	orgType := ""
@@ -268,11 +268,11 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 		orgType = OrgTypeOperator
 	}
 	if orgType != "" && lookup.Type != orgType {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("operation only allowed for organizations of type %s", orgType))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Operation only allowed for organizations of type %s", orgType))
 	}
 	// make sure only edgebox cloudlets are created for edgebox org
 	if lookup.EdgeboxOnly && noEdgeboxOnly {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("only allowed to create EDGEBOX cloudlet on org %s", org))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Only allowed to create EDGEBOX cloudlet on org %s", org))
 	}
 	return nil
 }

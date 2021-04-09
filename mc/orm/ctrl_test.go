@@ -1694,7 +1694,7 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 	}
 	_, status, err = mcClient.CreateCloudlet(uri, token, &regCloudlet)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "only allowed to create EDGEBOX cloudlet")
+	require.Contains(t, err.Error(), "Only allowed to create EDGEBOX cloudlet")
 
 	// cloudlet creation should work for edgebox platform
 	regCloudlet.Cloudlet.PlatformType = edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX

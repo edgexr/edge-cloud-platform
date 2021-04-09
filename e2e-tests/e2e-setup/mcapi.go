@@ -208,6 +208,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		// convert showMetrics into something yml compatible
 		parsedMetrics = parseMetrics(showEvents)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		*retry = true
 		return rc
 	}
 
@@ -231,6 +232,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 			}
 		}
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		*retry = true
 		return rc
 	}
 
@@ -241,6 +243,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientApiMetrics = showMcClientApiMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseMetrics(showClientApiMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		*retry = true
 		return rc
 	}
 
@@ -251,6 +254,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientAppMetrics = showMcClientAppMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseMetrics(showClientAppMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		*retry = true
 		return rc
 	}
 
@@ -261,6 +265,7 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		showClientCloudletMetrics = showMcClientCloudletMetrics(uri, token, targets, &rc)
 		parsedMetrics = parseMetrics(showClientCloudletMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
+		*retry = true
 		return rc
 	}
 
