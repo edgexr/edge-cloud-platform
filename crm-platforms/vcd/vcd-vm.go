@@ -988,13 +988,15 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 				// These are iosorgvdc networks, (ioslated but shared by all VApp in this vdc (cloudlet))
 				// Find the key in IsoNamesMap that matches connection.Network, and use
 				// the value (subnetId) found to return.
-				for k, v := range v.IsoNamesMap {
-					log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses found type 2 network (iso) swap name", "from", connection.Network, "to", k)
-					if v == connection.Network {
-						servIP.PortName = vmName + "-" + k + "-port"
-						break
-					}
+
+				// find the current key for value
+				k, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, "", "", connection.Network)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses updateIsoNamesMap failed", "error", err)
+					return serverIPs, err
 				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses found type 2 network (iso) swap name", "from", connection.Network, "to", k)
+				servIP.PortName = vmName + "-" + k + "-port"
 			} else {
 				servIP.PortName = vmName + "-" + connection.Network + "-port"
 			}

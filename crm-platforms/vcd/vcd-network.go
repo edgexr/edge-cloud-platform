@@ -227,9 +227,9 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 	// The network itself has been created by the client cluster vapp.
 	cidrNet := ""
 	if len(v.IsoNamesMap) > 0 {
-		cidrNet = v.IsoNamesMap[subnetName]
-		if cidrNet == "" {
-			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName)
+		cidrNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
+		if cidrNet == "" || err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName, "error", err)
 			return fmt.Errorf("No Matching Subnet in IsoNamesMap")
 		}
 	} else {
@@ -322,7 +322,7 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "ServerName", serverName, "subnet", subnetName, "port", portName)
 	cidrNet := ""
 	if len(v.IsoNamesMap) > 0 {
-		cidrNet = v.IsoNamesMap[subnetName]
+		cidrNet, _ = v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
 		if cidrNet == "" {
 			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName)
 			return fmt.Errorf("No Matching Subnet in IsoNamesMap")
@@ -901,7 +901,7 @@ func (v *VcdPlatform) CreateIsoVdcNetwork(ctx context.Context, vapp *govcd.VApp,
 
 	}
 
-	orgvdcnet, err := vdc.GetOrgVdcNetworkByName(cidr /*netName*/, true)
+	orgvdcnet, err := vdc.GetOrgVdcNetworkByName(cidr, true)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork GetOrgVDCNetwork  failed ", "netName", netName, "err", err)
 		return err
@@ -919,11 +919,16 @@ func (v *VcdPlatform) CreateIsoVdcNetwork(ctx context.Context, vapp *govcd.VApp,
 		return err
 	}
 	// xlate names map for network reuse. All these iossubnets are now named with their cidrs
-	// Lookup the real vdc name (subnetId) using our netName
-	v.IsoNamesMap[netName] = cidr
+	// Addthe real vdc name (subnetId) using our netName
+	_, err = v.updateIsoNamesMap(ctx, IsoMapActionAdd, netName, cidr, "")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork updateIsoNamemsMap failed on Add", "error", err)
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork IsoNameMap", "key", netName, " = value", cidr)
 	// enable crm restarts, stash the subnetId name in Vapp as metadata)
 	v.AddSubnetIdToShareLBClientVapp(ctx, netName, vapp)
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetowrk added org net ok", "network", netName, "cidr", cidr, "vapp", vapp.VApp.Name, "NetConfigSection", netConfSec)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork added org net ok", "network", netName, "cidr", cidr, "vapp", vapp.VApp.Name, "NetConfigSection", netConfSec)
 	return nil
 }
 
@@ -1040,12 +1045,15 @@ func (v *VcdPlatform) RebuildIsoNamesAndFreeMaps(ctx context.Context) error {
 			subnetId, err := v.vappUsesIsoNet(ctx, orgvdcnetwork.OrgVDCNetwork.Name, vdc)
 			if subnetId != "" {
 				log.SpanLog(ctx, log.DebugLevelInfra, "RebuildMaps add FreeIsoNets", "Net", orgvdcnetwork.OrgVDCNetwork.Name, "subnetId", subnetId)
-				v.IsoNamesMap[orgvdcnetwork.OrgVDCNetwork.Name] = subnetId
+				_, err := v.updateIsoNamesMap(ctx, IsoMapActionAdd, orgvdcnetwork.OrgVDCNetwork.Name, subnetId, "")
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "RebuildMaps updateIsoNamesMap failed", "error", err)
+					return err
+				}
 			} else {
 				// No existing vapp references this orgvdc type 2 net, freelist it
 				v.FreeIsoNets[orgvdcnetwork.OrgVDCNetwork.Name] = orgvdcnetwork
 			}
-
 		}
 	}
 	if len(v.IsoNamesMap) == 0 {
@@ -1082,4 +1090,52 @@ func (v *VcdPlatform) vappUsesIsoNet(ctx context.Context, netName string, vdc *g
 		}
 	}
 	return "", fmt.Errorf("Not Found")
+}
+
+var iosNamesLock sync.Mutex
+
+func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapActionType, key, value, matchval string) (string, error) {
+
+	iosNamesLock.Lock()
+	defer iosNamesLock.Unlock()
+
+	if action == IsoMapActionRead {
+		if key != "" {
+			return v.IsoNamesMap[key], nil
+		} else if value == "" && matchval != "" {
+			for k, val := range v.IsoNamesMap {
+				if val == matchval {
+					return k, nil
+				}
+			}
+		} else {
+			return "", fmt.Errorf("invalid args for action read")
+		}
+	} else if action == IsoMapActionDelete {
+
+		if key == "" && value == "" && matchval != "" {
+			for k, val := range v.IsoNamesMap {
+				if val == matchval {
+					delete(v.IsoNamesMap, k)
+					return k, nil
+				}
+			}
+			return "", fmt.Errorf("matchval %s not found in map", matchval)
+		} else if key != "" {
+			delete(v.IsoNamesMap, key)
+			return "", nil
+		} else {
+			return "", fmt.Errorf("invalid args for action delete")
+		}
+
+	} else if action == IsoMapActionAdd {
+		if key != "" && value != "" {
+			v.IsoNamesMap[key] = value
+		} else {
+			return "", fmt.Errorf("invalid args for action Create")
+		}
+	} else {
+		return "", fmt.Errorf("Unsupported action type %s encountered", action)
+	}
+	return "", nil
 }
