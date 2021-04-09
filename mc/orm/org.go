@@ -185,7 +185,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 			log.SpanLog(ctx, log.DebugLevelApi, "undo mark org for delete", "undoerr", undoerr)
 		}
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_org_fkey\"") {
-			return fmt.Errorf("Cannot delete organization because it is referenced by an OrgCloudletPool")
+			return fmt.Errorf("Cannot delete organization because it is referenced by some cloudletpool invitation or confirmation")
 		}
 		return dbErr(err)
 	}

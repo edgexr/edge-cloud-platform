@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 var echoContextError = "mobiledgexError"
@@ -14,6 +15,9 @@ var echoContextError = "mobiledgexError"
 type M map[string]interface{}
 
 func Msg(msg string) *ormapi.Result {
+	if len(msg) > 0 {
+		msg = util.CapitalizeMessage(msg)
+	}
 	return &ormapi.Result{Message: msg}
 }
 
