@@ -294,6 +294,13 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	} else if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
 	}
+	// finally, remove the IsoNamesMap entry
+	key, err := v.updateIsoNamesMap(ctx, IsoMapActionDelete, "", "", netName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp updateIsoNamesMap", "error", err)
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp removed namemap entry ", "cidr", netName, "subnetId", key)
 
 	task, err = vapp.Delete()
 	if err != nil {

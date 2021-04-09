@@ -65,11 +65,17 @@ type VAppMap map[string]*govcd.VApp
 type VMMap map[string]*govcd.VM
 type NetMap map[string]*govcd.OrgVDCNetwork
 
+type IsoMapActionType string
+
+const (
+	IsoMapActionAdd    IsoMapActionType = "add"
+	IsoMapActionDelete IsoMapActionType = "delete"
+	IsoMapActionRead   IsoMapActionType = "read"
+)
+
 func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 
-	v.Verbose = true
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for Vcd 1", "stage", stage)
+	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for Vcd", "stage", stage)
 	v.Verbose = v.GetVcdVerbose()
 	v.IsoNamesMap = make(map[string]string)
 	v.FreeIsoNets = make(NetMap)
