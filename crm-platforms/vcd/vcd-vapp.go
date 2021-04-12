@@ -222,11 +222,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 		_ = task.WaitTaskCompletion()
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp undeployed", "Vapp", vappName)
-	// If GetVappIsoNetwork actually fails
-	// don't fail the delete cluster operation here.
-	netName, err := v.GetVappIsoNetwork(ctx, vdc, vapp)
-	// if one of these is an isolated orgvdcnetwork
-	if err == nil && netName != "" {
+	if vapp.VApp.Children.VM != nil {
 		vms := vapp.VApp.Children.VM
 		for _, tvm := range vms {
 			vmName := tvm.Name
@@ -261,16 +257,19 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 			}
 			// deleted
 		}
-
-		task, err := vapp.RemoveAllNetworks()
+	}
+	task, err = vapp.RemoveAllNetworks()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveAllNetworks failed ", "err", err)
+	} else {
+		err = task.WaitTaskCompletion()
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveAllNetworks failed ", "err", err)
-		} else {
-			err = task.WaitTaskCompletion()
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task for RemoveAllNetworks failed", "error", err)
-			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp wait task for RemoveAllNetworks failed", "error", err)
 		}
+	}
+	// check if we're using a isolated orgvdcnetwork /  sharedLB
+	netName, err := v.GetVappIsoNetwork(ctx, vdc, vapp)
+	if err == nil && netName != "" {
 		if vdc.IsNsxv() {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName)
 			err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
@@ -280,6 +279,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 					return err
 				}
 			}
+
 		} else {
 			// place the network on the free list for resue. Should be an nsx-t backed vdc
 			orgvdcnetwork, err := vdc.GetOrgVdcNetworkByName(netName, false)
@@ -291,17 +291,21 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists nsx-t, add to free list for reuse", "vapp", vappName, "netName", netName, "err", err, "isNsxt?", vdc.IsNsxt())
 
 		}
+
 	} else if err != nil {
+		// If GetVappIsoNetwork actually fails
+		// don't fail the delete cluster operation here, dedicated LBs don't use type 2 orgvcdnetworks.
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
 	}
-	// finally, remove the IsoNamesMap entry
-	key, err := v.updateIsoNamesMap(ctx, IsoMapActionDelete, "", "", netName)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp updateIsoNamesMap", "error", err)
-		return err
+	if netName != "" {
+		// finally, remove the IsoNamesMap entry for shared LBs.
+		key, err := v.updateIsoNamesMap(ctx, IsoMapActionDelete, "", "", netName)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp updateIsoNamesMap", "error", err)
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp removed namemap entry ", "cidr", netName, "subnetId", key)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp removed namemap entry ", "cidr", netName, "subnetId", key)
-
 	task, err = vapp.Delete()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
