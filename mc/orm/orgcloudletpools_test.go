@@ -9,12 +9,18 @@ import (
 )
 
 func addNewTestOrgCloudletPool(data *[]ormapi.OrgCloudletPool, i int, typ string) {
+	decision := ""
+	if typ == ormapi.CloudletPoolAccessDecisionAccept || typ == ormapi.CloudletPoolAccessDecisionReject {
+		decision = typ
+		typ = ormapi.CloudletPoolAccessResponse
+	}
 	op := ormapi.OrgCloudletPool{
 		Org:             fmt.Sprintf("testocp-org%d", i),
 		Region:          "USA",
 		CloudletPool:    fmt.Sprintf("testocp-pool%d", i),
 		CloudletPoolOrg: fmt.Sprintf("testocp-poolorg%d", i),
 		Type:            typ,
+		Decision:        decision,
 	}
 	*data = append(*data, op)
 }
@@ -29,29 +35,41 @@ func addOldTestOrgCloudletPool(data *[]OrgCloudletPool, i int) {
 	*data = append(*data, op)
 }
 
-func TestGetAccessGranted(t *testing.T) {
+func TestGetAccessGrantedPending(t *testing.T) {
 	addNew := addNewTestOrgCloudletPool
 
 	// Data with some OrgCloudletPools with matching invitations and
 	// confirmations, and some without matching, in random order.
 	data := []ormapi.OrgCloudletPool{}
-	addNew(&data, 7, ormapi.CloudletPoolAccessConfirmation)
+	addNew(&data, 7, ormapi.CloudletPoolAccessDecisionAccept)
 	addNew(&data, 1, ormapi.CloudletPoolAccessInvitation)
-	addNew(&data, 1, ormapi.CloudletPoolAccessConfirmation)
+	addNew(&data, 1, ormapi.CloudletPoolAccessDecisionAccept)
 	addNew(&data, 2, ormapi.CloudletPoolAccessInvitation)
-	addNew(&data, 3, ormapi.CloudletPoolAccessConfirmation)
+	addNew(&data, 3, ormapi.CloudletPoolAccessDecisionAccept)
 	addNew(&data, 4, ormapi.CloudletPoolAccessInvitation)
-	addNew(&data, 5, ormapi.CloudletPoolAccessConfirmation)
 	addNew(&data, 6, ormapi.CloudletPoolAccessInvitation)
-	addNew(&data, 4, ormapi.CloudletPoolAccessConfirmation)
+	addNew(&data, 5, ormapi.CloudletPoolAccessDecisionAccept)
+	addNew(&data, 4, ormapi.CloudletPoolAccessDecisionAccept)
 	addNew(&data, 7, ormapi.CloudletPoolAccessInvitation)
+	addNew(&data, 8, ormapi.CloudletPoolAccessInvitation)
+	addNew(&data, 8, ormapi.CloudletPoolAccessDecisionReject)
+	addNew(&data, 9, ormapi.CloudletPoolAccessInvitation)
+	addNew(&data, 10, ormapi.CloudletPoolAccessDecisionReject)
+	addNew(&data, 10, ormapi.CloudletPoolAccessInvitation)
 	// Expect to only get single instances of the matching ones,
 	// with no type set.
 	expected := []ormapi.OrgCloudletPool{}
 	addNew(&expected, 1, "")
 	addNew(&expected, 4, "")
 	addNew(&expected, 7, "")
-
 	actual := getAccessGranted(data)
+	require.Equal(t, expected, actual)
+
+	// Expect only invitations without confirmation/rejection
+	expected = []ormapi.OrgCloudletPool{}
+	addNew(&expected, 2, "")
+	addNew(&expected, 6, "")
+	addNew(&expected, 9, "")
+	actual = getAccessPending(data)
 	require.Equal(t, expected, actual)
 }

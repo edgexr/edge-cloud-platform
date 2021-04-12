@@ -213,13 +213,20 @@ type OrgCloudletPool struct {
 	CloudletPool string `gorm:"not null"`
 	// Operator's Organization
 	CloudletPoolOrg string `gorm:"type:citext REFERENCES organizations(name)"`
-	// Type is an internal-only field which is either invitation or confirmation
+	// Type is an internal-only field which is either invitation or response
 	Type string `json:",omitempty"`
+	// Decision is to either accept or reject an invitation
+	Decision string `json:",omitempty"`
 }
 
 const (
-	CloudletPoolAccessInvitation   = "invitation"
-	CloudletPoolAccessConfirmation = "confirmation"
+	CloudletPoolAccessInvitation = "invitation"
+	CloudletPoolAccessResponse   = "response"
+)
+
+const (
+	CloudletPoolAccessDecisionAccept = "accept"
+	CloudletPoolAccessDecisionReject = "reject"
 )
 
 // Structs used for API calls
@@ -363,14 +370,14 @@ type WSStreamPayload struct {
 // all data is for full create/delete
 
 type AllData struct {
-	Controllers                     []Controller          `json:"controllers,omitempty"`
-	BillingOrgs                     []BillingOrganization `json:"billingorgs,omitempty"`
-	AlertReceivers                  []AlertReceiver       `json:"alertreceivers,omitempty"`
-	Orgs                            []Organization        `json:"orgs,omitempty"`
-	Roles                           []Role                `json:"roles,omitempty"`
-	CloudletPoolAccessInvitations   []OrgCloudletPool     `json:"cloudletpoolaccessinvitations,omitempty"`
-	CloudletPoolAccessConfirmations []OrgCloudletPool     `json:"cloudletpoolaccessconfirmations,omitempty"`
-	RegionData                      []RegionData          `json:"regiondata,omitempty"`
+	Controllers                   []Controller          `json:"controllers,omitempty"`
+	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
+	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
+	Orgs                          []Organization        `json:"orgs,omitempty"`
+	Roles                         []Role                `json:"roles,omitempty"`
+	CloudletPoolAccessInvitations []OrgCloudletPool     `json:"cloudletpoolaccessinvitations,omitempty"`
+	CloudletPoolAccessResponses   []OrgCloudletPool     `json:"cloudletpoolaccessresponses,omitempty"`
+	RegionData                    []RegionData          `json:"regiondata,omitempty"`
 }
 
 type RegionData struct {

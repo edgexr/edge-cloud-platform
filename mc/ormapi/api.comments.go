@@ -72,7 +72,8 @@ var OrgCloudletPoolComments = map[string]string{
 	"region":          `Region`,
 	"cloudletpool":    `Operator's CloudletPool name`,
 	"cloudletpoolorg": `Operator's Organization`,
-	"type":            `Type is an internal-only field which is either invitation or confirmation`,
+	"type":            `Type is an internal-only field which is either invitation or response`,
+	"decision":        `Decision is to either accept or reject an invitation`,
 }
 
 var RolePermComments = map[string]string{

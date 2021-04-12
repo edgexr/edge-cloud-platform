@@ -597,26 +597,35 @@ func TestController(t *testing.T) {
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenDev)
 	// operator can see both invitations
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, tokenOper, op1, op2)
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenOper, op1, op2)
 	// developers can only see invitations related to them
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, tokenDev, op1)
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenDev, op1)
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, tokenDev2, op2)
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenDev2, op2)
 
 	// operator should not be able to see AppInsts of developer part of pool1,
 	// but have not yet confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
 	// developer confirms invitation
-	status, err = mcClient.CreateCloudletPoolAccessConfirmation(uri, tokenDev, &op1)
+	op1accept := op1
+	op1accept.Decision = ormapi.CloudletPoolAccessDecisionAccept
+
+	status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev, &op1accept)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// developer2 cannot confirm invitation for dev1
-	status, err = mcClient.CreateCloudletPoolAccessConfirmation(uri, tokenDev2, &op1)
+	status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev2, &op1accept)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 
 	// check that show reports access granted
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenOper, op1)
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, tokenDev, op1)
+	// check pending. operator should still see for op2
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenOper, op2)
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenDev)
 
 	// tc3 should now be visible along with all other cloudlets
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, ccount, "")
@@ -662,7 +671,9 @@ func TestController(t *testing.T) {
 	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 
 	// developer2 confirms invitation
-	status, err = mcClient.CreateCloudletPoolAccessConfirmation(uri, tokenDev2, &op2)
+	op2accept := op2
+	op2accept.Decision = ormapi.CloudletPoolAccessDecisionAccept
+	status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev2, &op2accept)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// check that operator can see both granted, but developers only see their own
@@ -689,12 +700,41 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	// check that tc3 is not visible
 	testShowOrgCloudlet(t, mcClient, uri, tokenDev, OrgTypeDeveloper, ctrl.Region, org1, count, "")
-	// developer can also remove confirmation
-	status, err = mcClient.DeleteCloudletPoolAccessConfirmation(uri, tokenDev, &op1)
+	// operator reissue invitation
+	status, err = mcClient.CreateCloudletPoolAccessInvitation(uri, tokenOper, &op1)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// developer2 is able to create appinst/clusterinst on tc3 part of pool1
+	goodPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	goodPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	// developer2 delete accept
+	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev2, &op2)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// invitation should be pending
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenDev2, op2)
+	// developer2 change response to reject
+	op2reject := op2
+	op2reject.Decision = ormapi.CloudletPoolAccessDecisionReject
+	status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev2, &op2reject)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// developer2 is not able to access cloudlet
+	badPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	badPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
+	// invitation no longer pending
+	testShowCloudletPoolAccessPending(t, mcClient, uri, tokenDev2)
+	// operator delete invitation
+	status, err = mcClient.DeleteCloudletPoolAccessInvitation(uri, tokenOper, &op1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
-	status, err = mcClient.DeleteCloudletPoolAccessConfirmation(uri, tokenDev2, &op2)
+	// developer can also remove response
+	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev, &op1)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev2, &op2)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	// operator remove org2 invitation
@@ -703,8 +743,9 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	// make sure everything is cleaned up
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, token)
-	testShowCloudletPoolAccessConfirmation(t, mcClient, uri, token)
+	testShowCloudletPoolAccessResponse(t, mcClient, uri, token)
 	testShowCloudletPoolAccessGranted(t, mcClient, uri, token)
+	testShowCloudletPoolAccessPending(t, mcClient, uri, token)
 
 	// bug1741 - empty args to Delete CloudletPool when pools are present
 	// Should allow delete to continue to controller which always returns success
@@ -984,12 +1025,12 @@ func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *ormclient.Clie
 	require.Equal(t, expected, list)
 }
 
-func testShowCloudletPoolAccessConfirmation(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessConfirmation(uri, token, &ormapi.OrgCloudletPool{})
-	require.Nil(t, err, "show cloudlet pool access confirmation")
+	list, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, &ormapi.OrgCloudletPool{})
+	require.Nil(t, err, "show cloudlet pool access response")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
 }
@@ -1000,6 +1041,16 @@ func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *ormclient.Client,
 	}
 	list, status, err := mcClient.ShowCloudletPoolAccessGranted(uri, token, &ormapi.OrgCloudletPool{})
 	require.Nil(t, err, "show cloudlet pool access granted")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, expected, list)
+}
+
+func testShowCloudletPoolAccessPending(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+	if expected == nil {
+		expected = []ormapi.OrgCloudletPool{}
+	}
+	list, status, err := mcClient.ShowCloudletPoolAccessPending(uri, token, &ormapi.OrgCloudletPool{})
+	require.Nil(t, err, "show cloudlet pool access pending")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
 }
@@ -1610,7 +1661,7 @@ func TestUpgrade(t *testing.T) {
 	require.Nil(t, err, "server online")
 
 	// expect that old OrgCloudletPool data has been converted
-	// to invitation/confirmation pairs.
+	// to invitation/response pairs.
 	addNew := addNewTestOrgCloudletPool
 	expected := []ormapi.OrgCloudletPool{}
 	for ii := 0; ii < dataLen; ii++ {
@@ -1618,7 +1669,7 @@ func TestUpgrade(t *testing.T) {
 			// data was dropped
 			continue
 		}
-		addNew(&expected, ii, ormapi.CloudletPoolAccessConfirmation)
+		addNew(&expected, ii, ormapi.CloudletPoolAccessDecisionAccept)
 		addNew(&expected, ii, ormapi.CloudletPoolAccessInvitation)
 	}
 	// check upgraded data

@@ -44,7 +44,7 @@ func main() {
 
 	developerCommands := []*cobra.Command{
 		devShowCloudlet,
-		ormctl.GetCloudletPoolConfirmationCommand(),
+		ormctl.GetCloudletPoolResponseCommand(),
 		ormctl.AppApiCmdsGroup,
 		ormctl.ClusterInstApiCmdsGroup,
 		ormctl.AppInstApiCmdsGroup,
