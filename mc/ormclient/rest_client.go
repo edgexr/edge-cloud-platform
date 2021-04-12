@@ -152,14 +152,14 @@ func (s *Client) RemoveChildOrg(uri, token string, bOrg *ormapi.BillingOrganizat
 	return s.PostJson(uri+"/auth/billingorg/removechild", token, bOrg, nil)
 }
 
-func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	return s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/create", token, op, nil)
-}
-
 func (s *Client) GetInvoice(uri, token string, req *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error) {
 	invoice := []billing.InvoiceData{}
 	status, err := s.PostJson(uri+"/auth/billingorg/invoice", token, req, &invoice)
 	return invoice, status, err
+}
+
+func (s *Client) CreateCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessinvitation/create", token, op, nil)
 }
 
 func (s *Client) DeleteCloudletPoolAccessInvitation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
@@ -172,23 +172,29 @@ func (s *Client) ShowCloudletPoolAccessInvitation(uri, token string, filter *orm
 	return ops, status, err
 }
 
-func (s *Client) CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	return s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/create", token, op, nil)
+func (s *Client) CreateCloudletPoolAccessResponse(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessresponse/create", token, op, nil)
 }
 
-func (s *Client) DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	return s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/delete", token, op, nil)
+func (s *Client) DeleteCloudletPoolAccessResponse(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	return s.PostJson(uri+"/auth/cloudletpoolaccessresponse/delete", token, op, nil)
 }
 
-func (s *Client) ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessResponse(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
 	ops := []ormapi.OrgCloudletPool{}
-	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessconfirmation/show", token, filter, &ops)
+	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessresponse/show", token, filter, &ops)
 	return ops, status, err
 }
 
 func (s *Client) ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
 	ops := []ormapi.OrgCloudletPool{}
 	status, err := s.PostJson(uri+"/auth/cloudletpoolaccessgranted/show", token, filter, &ops)
+	return ops, status, err
+}
+
+func (s *Client) ShowCloudletPoolAccessPending(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	ops := []ormapi.OrgCloudletPool{}
+	status, err := s.PostJson(uri+"/auth/cloudletpoolaccesspending/show", token, filter, &ops)
 	return ops, status, err
 }
 

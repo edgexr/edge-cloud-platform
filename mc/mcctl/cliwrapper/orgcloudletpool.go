@@ -22,25 +22,32 @@ func (s *Client) ShowCloudletPoolAccessInvitation(uri, token string, filter *orm
 	return ops, st, err
 }
 
-func (s *Client) CreateCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolconfirmation", "create"}
+func (s *Client) CreateCloudletPoolAccessResponse(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolresponse", "create"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
-func (s *Client) DeleteCloudletPoolAccessConfirmation(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
-	args := []string{"cloudletpoolconfirmation", "delete"}
+func (s *Client) DeleteCloudletPoolAccessResponse(uri, token string, op *ormapi.OrgCloudletPool) (int, error) {
+	args := []string{"cloudletpoolresponse", "delete"}
 	return s.runObjs(uri, token, args, op, nil)
 }
 
-func (s *Client) ShowCloudletPoolAccessConfirmation(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"cloudletpoolconfirmation", "show"}
+func (s *Client) ShowCloudletPoolAccessResponse(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	args := []string{"cloudletpoolresponse", "show"}
 	ops := []ormapi.OrgCloudletPool{}
 	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err
 }
 
 func (s *Client) ShowCloudletPoolAccessGranted(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
-	args := []string{"cloudletpoolconfirmation", "showgranted"}
+	args := []string{"cloudletpoolresponse", "showgranted"}
+	ops := []ormapi.OrgCloudletPool{}
+	st, err := s.runObjs(uri, token, args, filter, &ops)
+	return ops, st, err
+}
+
+func (s *Client) ShowCloudletPoolAccessPending(uri, token string, filter *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+	args := []string{"cloudletpoolresponse", "showpending"}
 	ops := []ormapi.OrgCloudletPool{}
 	st, err := s.runObjs(uri, token, args, filter, &ops)
 	return ops, st, err

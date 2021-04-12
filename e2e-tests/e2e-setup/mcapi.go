@@ -500,16 +500,16 @@ func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
 	checkMcErr("ShowRoles", status, err, rc)
 	invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, &ormapi.OrgCloudletPool{})
 	checkMcErr("ShowCloudletPoolAccessInvitations", status, err, rc)
-	confirms, status, err := mcClient.ShowCloudletPoolAccessConfirmation(uri, token, &ormapi.OrgCloudletPool{})
-	checkMcErr("ShowCloudletPoolAccessConfirmations", status, err, rc)
+	responses, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, &ormapi.OrgCloudletPool{})
+	checkMcErr("ShowCloudletPoolAccessResponses", status, err, rc)
 
 	showData := &ormapi.AllData{
-		Controllers:                     ctrls,
-		Orgs:                            orgs,
-		BillingOrgs:                     bOrgs,
-		Roles:                           roles,
-		CloudletPoolAccessInvitations:   invites,
-		CloudletPoolAccessConfirmations: confirms,
+		Controllers:                   ctrls,
+		Orgs:                          orgs,
+		BillingOrgs:                   bOrgs,
+		Roles:                         roles,
+		CloudletPoolAccessInvitations: invites,
+		CloudletPoolAccessResponses:   responses,
 	}
 	for _, ctrl := range ctrls {
 		client := testutil.TestClient{
@@ -635,12 +635,12 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 				st, err := mcClient.CreateCloudletPoolAccessInvitation(uri, token, &oc)
 				outMcErr(output, fmt.Sprintf("CreateCloudletPoolAccessInvitation[%d]", ii), st, err)
 			}
-			for ii, oc := range data.CloudletPoolAccessConfirmations {
+			for ii, oc := range data.CloudletPoolAccessResponses {
 				if oc.Region != region {
 					continue
 				}
-				st, err := mcClient.CreateCloudletPoolAccessConfirmation(uri, token, &oc)
-				outMcErr(output, fmt.Sprintf("CreateCloudletPoolAccessConfirmation[%d]", ii), st, err)
+				st, err := mcClient.CreateCloudletPoolAccessResponse(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("CreateCloudletPoolAccessResponse[%d]", ii), st, err)
 			}
 		}
 		delete(regions, region)
@@ -674,12 +674,12 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 	apiRegionCb := func(next, region string) {
 		// these must be done before CloudletPools
 		if next == "cloudletpools" {
-			for ii, oc := range data.CloudletPoolAccessConfirmations {
+			for ii, oc := range data.CloudletPoolAccessResponses {
 				if oc.Region != region {
 					continue
 				}
-				st, err := mcClient.DeleteCloudletPoolAccessConfirmation(uri, token, &oc)
-				outMcErr(output, fmt.Sprintf("DeleteCloudletPoolAccessConfirmation[%d]", ii), st, err)
+				st, err := mcClient.DeleteCloudletPoolAccessResponse(uri, token, &oc)
+				outMcErr(output, fmt.Sprintf("DeleteCloudletPoolAccessResponse[%d]", ii), st, err)
 			}
 			for ii, oc := range data.CloudletPoolAccessInvitations {
 				if oc.Region != region {
@@ -734,7 +734,7 @@ func getRegionsForCb(data *ormapi.AllData) map[string]struct{} {
 	for _, oc := range data.CloudletPoolAccessInvitations {
 		regions[oc.Region] = struct{}{}
 	}
-	for _, oc := range data.CloudletPoolAccessConfirmations {
+	for _, oc := range data.CloudletPoolAccessResponses {
 		regions[oc.Region] = struct{}{}
 	}
 	return regions
