@@ -226,18 +226,11 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 	// shared LBs are asked to grow a new isolated OrgVDCNetwork
 	// The network itself has been created by the client cluster vapp.
 	cidrNet := ""
-	if len(v.IsoNamesMap) > 0 {
-		cidrNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
-		if cidrNet == "" || err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName, "error", err)
-			return fmt.Errorf("No Matching Subnet in IsoNamesMap")
-		}
-	} else {
-		// Since the requested network should have been created already, this map must be non empty
-		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPort no netname xlation available")
-		return fmt.Errorf("Internal Server Error")
+	cidrNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
+	if cidrNet == "" || err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName, "error", err)
+		return fmt.Errorf("No Matching Subnet in IsoNamesMap")
 	}
-
 	vappName := serverName + v.GetVappServerSuffix()
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
@@ -321,17 +314,11 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer", "ServerName", serverName, "subnet", subnetName, "port", portName)
 	cidrNet := ""
-	if len(v.IsoNamesMap) > 0 {
-		cidrNet, _ = v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
-		if cidrNet == "" {
-			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName)
-			return fmt.Errorf("No Matching Subnet in IsoNamesMap")
-		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf("Internal Server Error")
+	cidrNet, _ = v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
+	if cidrNet == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName)
+		return fmt.Errorf("No Matching Subnet in IsoNamesMap")
 	}
-
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
@@ -1100,6 +1087,7 @@ func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapAction
 	defer iosNamesLock.Unlock()
 
 	if action == IsoMapActionRead {
+
 		if key != "" {
 			return v.IsoNamesMap[key], nil
 		} else if value == "" && matchval != "" {
