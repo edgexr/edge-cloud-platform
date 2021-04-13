@@ -26,6 +26,7 @@ func TestNginxStats(t *testing.T) {
 		Cluster:    "UnitTestCluster",
 		ClusterOrg: "UnitTestDev",
 		Client:     &shepherd_unittest.UTClient{},
+		ListenIP:   cloudcommon.ProxyMetricsDefaultListenIP,
 	}
 
 	fakeNginxTestServer := httptest.NewServer(http.HandlerFunc(nginxHandler))

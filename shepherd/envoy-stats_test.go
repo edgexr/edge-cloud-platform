@@ -64,6 +64,7 @@ func TestEnvoyStats(t *testing.T) {
 		TcpPorts:   []int32{1234, 4321},
 		UdpPorts:   []int32{5678, 8765},
 		Client:     &shepherd_unittest.UTClient{},
+		ListenIP:   cloudcommon.ProxyMetricsDefaultListenIP,
 	}
 	ctx := setupLog()
 	fakeEnvoyTestServer := startServer()

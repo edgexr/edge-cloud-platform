@@ -129,3 +129,45 @@ func (c *CommonPlatform) DeleteProxySecurityGroupRules(ctx context.Context, clie
 	}
 	return whiteListDel(ctx, client, wlParams)
 }
+
+// GetUniqueLoopbackIp returns an IP on the loopback interface, which is anything in the
+// 127.0.0.0/8 subnet.   The purpose is to have a unique loopback IP which can be used for the
+// envoy metrics port.  The IP returned is derived from the highest number app port as follows
+// First octet: 127
+// Second octet:  1 if highest port is TCP, 2 if highest port is UDP
+// Third and fourth octets: highest port number
+func GetUniqueLoopbackIp(ctx context.Context, ports []dme.AppPort) string {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetUniqueLoopbackIp", "ports", ports)
+
+	var maxUdp int32 = 0
+	var maxTcp int32 = 0
+	var maxPort int32 = 0
+	for _, p := range ports {
+		endPort := p.EndPort
+		if endPort == 0 {
+			endPort = p.PublicPort
+		}
+		if p.Proto == dme.LProto_L_PROTO_TCP {
+			if endPort > maxTcp {
+				maxTcp = endPort
+			}
+		} else {
+			if endPort > maxUdp {
+				maxUdp = endPort
+			}
+		}
+	}
+	var oct2 string
+	if maxTcp >= maxUdp {
+		oct2 = "1" // tcp
+		maxPort = maxTcp
+	} else {
+		oct2 = "2" // udp
+		maxPort = maxUdp
+	}
+	oct3 := maxPort / 256
+	oct4 := maxPort % 256
+	result := fmt.Sprintf("127.%s.%d.%d", oct2, oct3, oct4)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetUniqueLoopbackIp", "maxUdp", maxUdp, "maxTcp", maxTcp, "result", result)
+	return result
+}
