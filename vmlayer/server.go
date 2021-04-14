@@ -26,6 +26,7 @@ var serverExternalIpCache map[string]*ServerIP
 type NetworkType string
 
 const ServerDoesNotExistError string = "Server does not exist"
+const ServerIPNotFound string = "unable to find IP"
 
 var ServerActive = "ACTIVE"
 var ServerShutoff = "SHUTOFF"
@@ -110,7 +111,7 @@ func GetIPFromServerDetails(ctx context.Context, networkName string, portName st
 	if found {
 		return sipPtr, nil
 	}
-	return nil, fmt.Errorf("unable to find IP for server: %s on network: %s port: %s", sd.Name, networkName, portName)
+	return nil, fmt.Errorf(ServerIPNotFound+" for server: %s on network: %s port: %s", sd.Name, networkName, portName)
 }
 
 func GetCloudletNetworkIfaceFile(netplanEnabled bool) string {

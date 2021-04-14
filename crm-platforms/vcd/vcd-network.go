@@ -319,6 +319,8 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 		log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName)
 		return fmt.Errorf("No Matching Subnet in IsoNamesMap")
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer found isoNamesMap", "subnet", subnetName, "cidrNet", cidrNet)
+
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
@@ -376,7 +378,6 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 	_, err = vapp.RemoveNetwork(orgvdcnet.OrgVDCNetwork.Name)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer RemoveNetwork (byName) failed try RemoveIsolatedNetwork", "serverName", serverName, "port", portName, "subnet", subnetName, "cidrNet", cidrNet, "err", err)
-
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer net removed from vapp ok")
 	return nil
@@ -967,6 +968,11 @@ func (v *VcdPlatform) GetNextVdcIsoSubnet(ctx context.Context, vcdClient *govcd.
 func (v *VcdPlatform) GetVappIsoNetwork(ctx context.Context, vdc *govcd.Vdc, vapp *govcd.VApp) (string, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVappIsoNetwork", "vapp", vapp.VApp.Name)
+
+	if vapp.VApp == nil || vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
+		// prevent a VMware panic from GetNetworkConnectionSection
+		return "", fmt.Errorf("Vapp has no children")
+	}
 
 	ncs, err := vapp.GetNetworkConnectionSection()
 	if err != nil {

@@ -138,7 +138,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 		return nil
 	}
 
-	if v.GetVcdOauthAgwUrl() != "" {
+	if v.GetVcdOauthAgwUrl() != "" && !v.GetAllowApiGwImageUpload() {
 		// uploading a VM app image thru the API GW is not possible
 		return fmt.Errorf("VM App images cannot be imported when using an API Gateway")
 	}

@@ -126,6 +126,23 @@ func (c *CommonPlatform) initMappedIPs() error {
 	return nil
 }
 
+// ValidateExternalIPMapping checjs mapped IPs are defined but there is no entry for this particular
+// IP, then it may indicate a provisioning error in which the external range is not matched with the
+// internal range
+func (c *CommonPlatform) ValidateExternalIPMapping(ctx context.Context, ip string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ValidateExternalIPMapping", "ip", ip)
+
+	if len(c.MappedExternalIPs) == 0 {
+		// no mapped ips defined
+		return nil
+	}
+	_, ok := c.MappedExternalIPs[ip]
+	if !ok {
+		return fmt.Errorf("Mapped IPs defined but IP %s not found in map", ip)
+	}
+	return nil
+}
+
 // GetMappedExternalIP returns the IP that the input IP should be mapped to. This
 // is used for environments which used NATted external IPs
 func (c *CommonPlatform) GetMappedExternalIP(ip string) string {
