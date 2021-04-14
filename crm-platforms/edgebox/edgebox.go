@@ -36,12 +36,10 @@ var edgeboxProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_EDGEBOX_DOCKER_USER": &edgeproto.PropertyInfo{
 		Name:        "EdgeBox Docker Username",
 		Description: "Username to login to docker registry server",
-		Mandatory:   true,
 	},
 	"MEX_EDGEBOX_DOCKER_PASS": &edgeproto.PropertyInfo{
 		Name:        "EdgeBox Docker Password",
 		Description: "Password to login to docker registry server",
-		Mandatory:   true,
 		Secret:      true,
 	},
 }
@@ -50,6 +48,7 @@ func (e *EdgeboxPlatform) Init(ctx context.Context, platformConfig *platform.Pla
 	err := e.generic.Init(ctx, platformConfig, caches, updateCallback)
 	// Set the test Mode based on what is in PlatformConfig
 	infracommon.SetTestMode(platformConfig.TestMode)
+	infracommon.SetEdgeboxMode(true)
 
 	if err := e.commonPf.InitInfraCommon(ctx, platformConfig, edgeboxProps); err != nil {
 		return err
