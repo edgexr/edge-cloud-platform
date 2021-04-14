@@ -1013,6 +1013,7 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	vmProperties.IptablesBasedFirewall = true
 	vmProperties.RunLbDhcpServerForVmApps = true
 	vmProperties.AppendFlavorToVmAppImage = true
+	vmProperties.ValidateExternalIPMapping = true
 }
 
 // Should always be a vapp/cluster/group name

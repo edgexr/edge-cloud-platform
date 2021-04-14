@@ -190,8 +190,8 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
-		if strings.Contains(err.Error(), ServerDoesNotExistError) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB is gone, allow stack delete to proceed")
+		if strings.Contains(err.Error(), ServerDoesNotExistError) || strings.Contains(err.Error(), ServerIPNotFound) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB is gone or has no IP, allow stack delete to proceed", "err", err)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Error in getting platform client", "err", err)
 			return err
