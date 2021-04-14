@@ -61,7 +61,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:53001"
   vaultaddr: "http://127.0.0.1:8200"
   hostname: "127.0.0.1"
-  testmode: true
+  testmode: false
   checkpointinterval: 3m
   requirenotifyaccesskey: true
   envvars:

@@ -30,6 +30,7 @@ type CommonPlatform struct {
 
 // Package level test mode variable
 var testMode = false
+var edgeboxMode = false
 
 func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf.PlatformConfig, platformSpecificProps map[string]*edgeproto.PropertyInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon", "cloudletKey", platformConfig.CloudletKey)
@@ -54,7 +55,7 @@ func (c *CommonPlatform) InitInfraCommon(ctx context.Context, platformConfig *pf
 		return fmt.Errorf("unable to init Mapped IPs: %v", err)
 	}
 
-	if testMode {
+	if testMode || edgeboxMode {
 		return nil
 	}
 
@@ -104,6 +105,10 @@ func (c *CommonPlatform) GetCloudletDNSZone() string {
 
 func SetTestMode(tMode bool) {
 	testMode = tMode
+}
+
+func SetEdgeboxMode(mode bool) {
+	edgeboxMode = mode
 }
 
 // initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:
