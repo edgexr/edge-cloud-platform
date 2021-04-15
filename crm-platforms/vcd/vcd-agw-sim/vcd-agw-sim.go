@@ -46,13 +46,13 @@ func doApi(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 	stoken := strings.Split(token, "Bearer")
 	if len(stoken) != 2 {
-		log.Printf("Bad access token: %s", token)
+		log.Printf("Bad access token, no bearer: %s", token)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	tokval := strings.TrimSpace(stoken[1])
-	if tokval != "simulatoraccesstoken" {
-		log.Printf("Bad access token: %s", tokval)
+	if !strings.HasPrefix(tokval, "simulatoraccesstoken") {
+		log.Printf("Bad access token, wrong value: %s", tokval)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
