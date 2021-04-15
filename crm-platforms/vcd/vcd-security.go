@@ -32,6 +32,8 @@ type vcdClientInfo struct {
 var cloudletClients map[edgeproto.CloudletKey]*vcdClientInfo
 var cloudletClientLock sync.Mutex
 
+var maxOauthTokenReadyTime = time.Second * 60
+
 // vcd security related operations
 
 func init() {
@@ -210,6 +212,7 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 	if creds.OauthAgwUrl != "" {
 		apiUrl = creds.OauthAgwUrl
 	}
+	newOauthToken := false
 	u, err := url.ParseRequestURI(apiUrl)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse request to org %s at %s err: %s", creds.Org, creds.VcdApiUrl, err)
@@ -277,6 +280,7 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 				delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
 				return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
 			}
+			newOauthToken = true
 		}
 		clientInfo.lastUpdateTime = time.Now()
 	}
@@ -285,9 +289,23 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		return nil, fmt.Errorf("CopyClient failed - %v", err)
 	}
 	// always refresh the vcd session token
-	_, err = clientCopy.GetAuthResponse(creds.User, creds.Password, creds.Org)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Unable to login to org", "org", creds.Org, "err", err)
+	start := time.Now()
+	for {
+		_, err = clientCopy.GetAuthResponse(creds.User, creds.Password, creds.Org)
+		if err == nil {
+			break
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Error logging into org", "org", creds.Org, "err", err)
+		if newOauthToken {
+			// if we just got a new oauth token, it may not be ready for us to use.  Give
+			// it a little time.  This is a workaround pending a more complete fix.
+			elapsed := time.Since(start)
+			if elapsed < maxOauthTokenReadyTime {
+				log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 3 seconds to retry oauth token", "org", creds.Org, "err", err)
+				time.Sleep(3 * time.Second)
+				continue
+			}
+		}
 		delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
 		return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
 	}
