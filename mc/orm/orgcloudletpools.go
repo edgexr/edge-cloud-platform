@@ -425,6 +425,7 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 				CloudletInfo.MaintenanceState = output.MaintenanceState
 				CloudletInfo.TrustPolicyState = output.TrustPolicyState
 				CloudletInfo.ResourcesSnapshot = output.ResourcesSnapshot
+				CloudletInfo.CompatibilityVersion = output.CompatibilityVersion
 			}
 			show = append(show, CloudletInfo)
 		}
