@@ -256,12 +256,12 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		log.SpanLog(ctx, log.DebugLevelInfra, "No global client yet exists for cloudlet", "CloudletKey", v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
 	} else {
 		tokenAge := time.Since(clientInfo.lastUpdateTime)
-		clientExpired := (uint64(tokenAge.Seconds()) >= creds.ClientRefreshInterval)
+		clientExpired = (uint64(tokenAge.Seconds()) >= creds.ClientRefreshInterval)
 		log.SpanLog(ctx, log.DebugLevelInfra, "Check for token expired", "tokenAge", tokenAge, "ClientRefreshInterval", creds.ClientRefreshInterval, "clientExpired", clientExpired)
 	}
 
 	if !clientExists || clientExpired {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Need to refresh client token")
+		log.SpanLog(ctx, log.DebugLevelInfra, "Need to refresh client")
 		cloudletClient := govcd.NewVCDClient(*u, creds.Insecure,
 			govcd.WithOauthUrl(creds.OauthSgwUrl),
 			govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
@@ -273,16 +273,28 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		cloudletClients[*v.vmProperties.CommonPf.PlatformConfig.CloudletKey] = clientInfo
 		log.SpanLog(ctx, log.DebugLevelInfra, "Created cloudlet client", "org", creds.Org, "OauthSgwUrl", creds.OauthSgwUrl)
 
-		if creds.OauthSgwUrl != "" {
-			_, err := cloudletClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "err", err)
-				delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
-				return nil, fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
+		maxRetry := 3
+		retries := 0
+		for {
+			if creds.OauthSgwUrl != "" {
+				_, err := cloudletClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "err", err)
+					delete(cloudletClients, *v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
+					if retries >= maxRetry {
+						return nil, fmt.Errorf("failed oauth response after retries %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
+					}
+					log.SpanLog(ctx, log.DebugLevelInfra, "retry oauth", "retries", retries, "maxRetry", maxRetry)
+					retries++
+				} else {
+					newOauthToken = true
+					clientInfo.lastUpdateTime = time.Now()
+					break
+				}
+			} else {
+				break
 			}
-			newOauthToken = true
 		}
-		clientInfo.lastUpdateTime = time.Now()
 	}
 	clientCopy, err := clientInfo.vcdClient.CopyClient()
 	if err != nil {
@@ -301,7 +313,7 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 			// it a little time.  This is a workaround pending a more complete fix.
 			elapsed := time.Since(start)
 			if elapsed < maxOauthTokenReadyTime {
-				log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 3 seconds to retry oauth token", "org", creds.Org, "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 3 seconds to retry auth", "org", creds.Org, "err", err)
 				time.Sleep(3 * time.Second)
 				continue
 			}

@@ -93,6 +93,7 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 		err := v.RebuildIsoNamesAndFreeMaps(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider Rebuild maps failed", "error", err)
+			return err
 		}
 		if len(v.FreeIsoNets) == 0 {
 			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider FreeIsoNets empty")
