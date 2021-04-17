@@ -293,11 +293,11 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 			return err
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp deleted", "Vapp", vappName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp deleted", "Vapp", vappName, "netName", netName)
 	// check if we're using a isolated orgvdcnetwork /  sharedLB
 	if netName != "" {
-		if vdc.IsNsxv() {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName, "netName", netName)
+		if v.GetNsxType() == NSXV {
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName, "netName", netName, "isNsxt?", vdc.IsNsxt(), "isNsxv?", vdc.IsNsxv())
 			err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
 			if err != nil {
 				if err != nil {
@@ -305,7 +305,6 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 					return err
 				}
 			}
-
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-t marking network free", "vapp", vappName, "netName", netName)
 
@@ -316,7 +315,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 				return err
 			}
 			v.FreeIsoNets[netName] = orgvdcnetwork
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists nsx-t, add to free list for reuse", "vapp", vappName, "netName", netName, "err", err, "isNsxt?", vdc.IsNsxt())
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp RemoveOrgVdcNetworkIfExists nsx-t, add to free list for reuse", "vapp", vappName, "netName", netName, "err", err)
 
 		}
 
