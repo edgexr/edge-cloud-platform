@@ -16,10 +16,10 @@ const BillingTypeFake = "fake"
 
 type AccountInfo struct {
 	OrgName        string `gorm:"primary_key;type:citext"`
-	AccountId      string
-	SubscriptionId string
-	ParentId       string
-	Type           string
+	AccountId      string `json:",omitempty"`
+	SubscriptionId string `json:",omitempty"`
+	ParentId       string `json:",omitempty"`
+	Type           string `json:",omitempty"`
 }
 
 type CustomerDetails struct {
