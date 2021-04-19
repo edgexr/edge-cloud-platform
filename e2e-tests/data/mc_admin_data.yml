@@ -40,6 +40,11 @@ billingorgs:
   currency: USD
   children: user3org
 
+accountinfos:
+- orgname: user3org
+  accountid: "111"
+  subscriptionid: "222"
+
 roles:
 - org: user3org
   role: DeveloperManager

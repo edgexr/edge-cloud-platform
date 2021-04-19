@@ -9,6 +9,11 @@ func (s *Client) CreateBillingOrg(uri, token string, org *ormapi.BillingOrganiza
 	return s.runObjs(uri, token, args, org, nil)
 }
 
+func (s *Client) UpdateAccountInfo(uri, token string, acc *billing.AccountInfo) (int, error) {
+	args := []string{"billingorg", "updateaccountinfo"}
+	return s.runObjs(uri, token, args, acc, nil)
+}
+
 func (s *Client) DeleteBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error) {
 	args := []string{"billingorg", "delete"}
 	return s.runObjs(uri, token, args, org, nil)

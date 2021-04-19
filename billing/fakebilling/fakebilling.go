@@ -25,7 +25,11 @@ func (bs *BillingService) GetType() string {
 	return "fakebilling"
 }
 
-func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *billing.AccountInfo, payment *billing.PaymentMethod) error {
+func (bs *BillingService) ValidateCustomer(ctx context.Context, account *billing.AccountInfo) error {
+	return nil
+}
+
+func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *billing.AccountInfo) error {
 	accMux.Lock()
 	account.AccountId = strconv.Itoa(accountCounter)
 	accountCounter = accountCounter + 1
@@ -58,7 +62,7 @@ func (bs *BillingService) UpdateCustomer(ctx context.Context, account *billing.A
 }
 
 func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAccount *billing.AccountInfo, childDetails *billing.CustomerDetails) error {
-	bs.CreateCustomer(ctx, childDetails, childAccount, nil)
+	bs.CreateCustomer(ctx, childDetails, childAccount)
 	childAccount.ParentId = parentAccount.AccountId
 	return nil
 }

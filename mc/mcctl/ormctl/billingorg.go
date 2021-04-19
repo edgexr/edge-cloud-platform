@@ -1,8 +1,6 @@
 package ormctl
 
 import (
-	"strings"
-
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
@@ -11,14 +9,21 @@ import (
 
 func GetBillingOrgCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
-		Use:          "create",
-		Short:        "Create a billing organization to handle billing",
+		Use:          "validate",
+		Short:        "Set up a BillingOrganization and validate inputs",
 		RequiredArgs: "name type firstname lastname email",
 		OptionalArgs: "address address2 city country state postalcode phone paymenttype ccfirstname cclastname ccnumber ccexpmonth ccexpyear children",
-		AliasArgs:    strings.Join(CreateBillingOrgAliasArgs, " "),
-		ReqData:      &ormapi.CreateBillingOrganization{},
+		ReqData:      &ormapi.BillingOrganization{},
 		Comments:     CreateBillingOrgComments,
 		Run:          runRest("/auth/billingorg/create"),
+	}, &cli.Command{
+		Use:          "updateaccountinfo",
+		Short:        "Commit a BillingOrganization after validating it with our payment platform",
+		RequiredArgs: "orgname accountid",
+		OptionalArgs: "subscriptionid",
+		ReqData:      &billing.AccountInfo{},
+		Comments:     ormapi.AccountInfoComments,
+		Run:          runRest("/auth/billingorg/updateaccount"),
 	}, &cli.Command{
 		Use:          "update",
 		Short:        "Update a billing organization",
@@ -61,38 +66,24 @@ func GetBillingOrgCommand() *cobra.Command {
 		RequiredArgs: "name",
 		OptionalArgs: "startdate enddate",
 		ReqData:      &ormapi.InvoiceRequest{},
+		Comments:     ormapi.InvoiceComments,
 		ReplyData:    &[]billing.InvoiceData{},
 		Run:          runRest("/auth/billingorg/invoice"),
 	}}
 	return cli.GenGroup("billingorg", "Manage billing organizations", cmds)
 }
 
-var CreateBillingOrgAliasArgs = []string{
-	"paymenttype=payment.paymenttype",
-	"ccfirstname=payment.creditcard.firstname",
-	"cclastname=payment.creditcard.lastname",
-	"ccnumber=payment.creditcard.cardnumber",
-	"ccexpmonth=payment.creditcard.expirationmonth",
-	"ccexpyear=payment.creditcard.expirationyear",
-}
-
 var CreateBillingOrgComments = map[string]string{
-	"name":        "name of the billingOrg",
-	"type":        "type of the billingOrg",
-	"firstname":   "First name",
-	"lastname":    "Last name",
-	"email":       "Email address",
-	"address":     "Address line 1",
-	"address2":    "Address line 2",
-	"city":        "City",
-	"country":     "Country",
-	"state":       "State",
-	"postalcode":  "zip code",
-	"phone":       "Phone number",
-	"paymenttype": "payment type, currently supported methods are: `credit_card`",
-	"ccfirstname": "First Name as appears on the credit card",
-	"cclastname":  "Last Name as appears on the credit card",
-	"ccnumber":    "Credit card number",
-	"ccexpmonth":  "Credit card expiration month (mm)",
-	"ccexpyear":   "Credit card expiration year (yyyy)",
+	"name":       "name of the billingOrg",
+	"type":       "type of the billingOrg",
+	"firstname":  "First name",
+	"lastname":   "Last name",
+	"email":      "Email address",
+	"address":    "Address line 1",
+	"address2":   "Address line 2",
+	"city":       "City",
+	"country":    "Country",
+	"state":      "State",
+	"postalcode": "zip code",
+	"phone":      "Phone number",
 }
