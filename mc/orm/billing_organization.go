@@ -161,7 +161,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	span := log.SpanFromContext(ctx)
 	span.SetTag("billing org", acc.OrgName)
 	err = UpdateAccountInfoObj(ctx, claims, &acc)
-	return setReply(c, err, Msg("Billing Organization committed"))
+	return setReply(c, err, Msg("Account Info Updated"))
 }
 
 func UpdateAccountInfoObj(ctx context.Context, claims *UserClaims, account *billing.AccountInfo) (reterr error) {
