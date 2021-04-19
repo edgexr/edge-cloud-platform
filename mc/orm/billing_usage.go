@@ -85,8 +85,8 @@ func recordRegionUsage(ctx context.Context, region string, start, end time.Time)
 		EndTime:   end,
 		VmOnly:    true,
 	}
-	eventCmd := AppInstUsageEventsQuery(&appIn)
-	checkpointCmd := AppInstCheckpointsQuery(&appIn)
+	eventCmd := AppInstUsageEventsQuery(&appIn, []string{})
+	checkpointCmd := AppInstCheckpointsQuery(&appIn, []string{})
 	eventResp, checkResp, err := GetEventAndCheckpoint(ctx, &rc, eventCmd, checkpointCmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error gathering app usage for billing", "region", region, "err", err)
@@ -104,8 +104,8 @@ func recordRegionUsage(ctx context.Context, region string, start, end time.Time)
 		StartTime: start,
 		EndTime:   end,
 	}
-	eventCmd = ClusterUsageEventsQuery(&clusterIn)
-	checkpointCmd = ClusterCheckpointsQuery(&clusterIn)
+	eventCmd = ClusterUsageEventsQuery(&clusterIn, []string{})
+	checkpointCmd = ClusterCheckpointsQuery(&clusterIn, []string{})
 	eventResp, checkResp, err = GetEventAndCheckpoint(ctx, &rc, eventCmd, checkpointCmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error gathering cluster usage for billing", "region", region, "err", err)
