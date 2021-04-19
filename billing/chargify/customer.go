@@ -11,17 +11,12 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
-	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var customerEndpoint = "/customers"
 
-func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *billing.AccountInfo, payment *billing.PaymentMethod) error {
+func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *billing.AccountInfo) error {
 	newCustomer := billingToChargifyCustomer(customer)
-	newPaymentSpecified := false
-	if payment != nil && payment.PaymentType != "" {
-		newPaymentSpecified = true
-	}
 
 	if customer.Type == billing.CUSTOMER_TYPE_CHILD {
 		parentId, err := strconv.Atoi(customer.ParentId)
@@ -29,8 +24,6 @@ func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.
 			return fmt.Errorf("Unable to parse parentId: %s, err: %v", customer.ParentId, err)
 		}
 		newCustomer.ParentId = parentId
-	} else if customer.Type == billing.CUSTOMER_TYPE_PARENT && !newPaymentSpecified {
-		return fmt.Errorf("Parent type customers must have a payment profile specified")
 	}
 
 	resp, err := newChargifyReq("POST", "/customers.json", CustomerWrapper{Customer: &newCustomer})
@@ -47,27 +40,6 @@ func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.
 		return fmt.Errorf("Error parsing response: %v\n", err)
 	}
 
-	paymentProfileId := 0
-	if newPaymentSpecified {
-		paymentProfileId, err = addPayment(custResp.Customer.Id, payment)
-		if err != nil {
-			endpoint := "/customers" + strconv.Itoa(custResp.Customer.Id) + ".json"
-			resp, undoErr := newChargifyReq("DELETE", endpoint, nil)
-			if undoErr != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "Error undoing account creation", "err", err, "undoErr", undoErr)
-				return fmt.Errorf("Error creating payment profile: %v", err)
-			}
-			if resp.StatusCode == http.StatusNoContent {
-				return fmt.Errorf("Error creating payment profile: %v", err)
-			}
-			undoErr = infracommon.GetReqErr(resp.Body)
-			log.SpanLog(ctx, log.DebugLevelInfo, "Error undoing account creation", "err", err, "undoErr", undoErr)
-			return fmt.Errorf("Error creating payment profile: %v", err)
-		}
-	} else if payment.PaymentProfile != 0 {
-		paymentProfileId = payment.PaymentProfile
-	}
-
 	// if its a self or child org, create subscription for it to the public_edge product
 	if customer.Type != billing.CUSTOMER_TYPE_PARENT {
 		newSub := Subscription{
@@ -78,11 +50,7 @@ func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.
 		// TODO: remove this and the function when we no longer offer free trials
 		addFreeTrial(&newSub)
 
-		if paymentProfileId == 0 {
-			newSub.PaymentCollectionMethod = "invoice"
-		} else {
-			newSub.PaymentProfileId = strconv.Itoa(paymentProfileId)
-		}
+		newSub.PaymentCollectionMethod = "invoice"
 
 		// set the billing cycle to the first of the month
 		y, m, _ := time.Now().UTC().Date()
@@ -181,7 +149,7 @@ func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAcco
 	childCopy := *childDetails
 	childCopy.ParentId = parentAccount.AccountId
 	childCopy.Type = billing.CUSTOMER_TYPE_CHILD
-	err := bs.CreateCustomer(ctx, &childCopy, childAccount, &billing.PaymentMethod{PaymentProfile: parentAccount.DefaultPaymentProfile})
+	err := bs.CreateCustomer(ctx, &childCopy, childAccount)
 	if err != nil {
 		return err
 	}
@@ -219,6 +187,70 @@ func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAcco
 
 func (bs *BillingService) RemoveChild(ctx context.Context, parent, child *billing.AccountInfo) error {
 	return bs.DeleteCustomer(ctx, child)
+}
+
+func (bs *BillingService) ValidateCustomer(ctx context.Context, account *billing.AccountInfo) error {
+	// TODO: check chargify to make sure this account info is for real, and not some bogus from a malicious client
+	// need to verify accountId, subId, and if there is a payment method attached to the subscription
+	endpoint, err := url.Parse("/customers.json")
+	if err != nil {
+		return err
+	}
+	params := url.Values{}
+	params.Add("q", account.AccountId)
+	endpoint.RawQuery = params.Encode()
+	resp, err := newChargifyReq("GET", endpoint.String(), nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return infracommon.GetReqErr(resp.Body)
+	}
+	var cust []CustomerWrapper
+	err = json.NewDecoder(resp.Body).Decode(&cust)
+	if err != nil {
+		return fmt.Errorf("Error parsing response: %v\n", err)
+	}
+	if len(cust) == 0 {
+		return fmt.Errorf("Could not find customer information")
+	} else if len(cust) > 1 {
+		return fmt.Errorf("Invalid customer query, more than one result")
+	}
+	if cust[0].Customer.Organization != account.OrgName {
+		return fmt.Errorf("Invalid Account details")
+	}
+	if account.Type != billing.CUSTOMER_TYPE_PARENT {
+		// check the subscription
+		subEndpoint := fmt.Sprintf("/customers/%s/subscriptions.json", account.AccountId)
+		subResp, err := newChargifyReq("GET", subEndpoint, nil)
+		if err != nil {
+			return err
+		}
+		defer subResp.Body.Close()
+		if subResp.StatusCode != http.StatusOK {
+			return infracommon.GetReqErr(subResp.Body)
+		}
+		var subs []SubscriptionWrapper
+		err = json.NewDecoder(subResp.Body).Decode(&subs)
+		if err != nil {
+			return fmt.Errorf("Error parsing response: %v\n", err)
+		}
+		if len(subs) == 0 {
+			return fmt.Errorf("Customer does not have an attached subscription")
+		} else if len(subs) > 1 {
+			return fmt.Errorf("Customer is enrolled in more than one subscription")
+		}
+		sub := subs[0].Subscription
+		if strconv.Itoa(sub.Id) != account.SubscriptionId {
+			return fmt.Errorf("Invalid subscription information")
+		}
+		if sub.Product.Handle != publicEdgeProductHandle {
+			return fmt.Errorf("Invalid subscription, incorrect product assignment")
+		}
+		// TODO: when payment info becomes mandatory, check that here EDGECLOUD-4723
+	}
+	return nil
 }
 
 // converts a customerDetails to a chargify specific struct of customer info

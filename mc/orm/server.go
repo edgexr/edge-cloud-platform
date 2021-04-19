@@ -404,17 +404,8 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   404: notFound
 	auth.POST("/org/delete", DeleteOrg)
 
-	// swagger:route POST /auth/billingorg/create BillingOrganization CreateBillingOrg
-	// Create BillingOrganization.
-	// Create a BillingOrganization to set up billing info.
-	// Security:
-	//   Bearer:
-	// responses:
-	//   200: success
-	//   400: badRequest
-	//   403: forbidden
-	//   404: notFound
 	auth.POST("/billingorg/create", CreateBillingOrg)
+	auth.POST("/billingorg/updateaccount", UpdateAccountInfo)
 	// swagger:route POST /auth/billingorg/update BillingOrganization UpdateBillingOrg
 	// Update BillingOrganization.
 	// API to update an existing BillingOrganization.

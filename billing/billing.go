@@ -15,12 +15,11 @@ const PAYMENT_TYPE_CC = "credit_card"
 const BillingTypeFake = "fake"
 
 type AccountInfo struct {
-	OrgName               string `gorm:"primary_key;type:citext"`
-	AccountId             string
-	SubscriptionId        string
-	ParentId              string
-	Type                  string
-	DefaultPaymentProfile int
+	OrgName        string `gorm:"primary_key;type:citext"`
+	AccountId      string
+	SubscriptionId string
+	ParentId       string
+	Type           string
 }
 
 type CustomerDetails struct {
@@ -38,28 +37,6 @@ type CustomerDetails struct {
 	Phone     string
 	Type      string // parent or child
 	ParentId  string
-}
-
-type PaymentMethod struct {
-	PaymentType    string
-	PaymentProfile int
-	CreditCard     CreditCard
-}
-
-type CreditCard struct {
-	FirstName       string
-	LastName        string
-	CardNumber      string
-	CardType        string
-	ExpirationMonth int
-	ExpirationYear  int
-	Cvv             int
-	BillingAddress  string
-	BillingAddress2 string
-	City            string
-	State           string
-	Zip             string
-	Country         string
 }
 
 type UsageRecord struct {
@@ -226,7 +203,7 @@ type BillingService interface {
 	// The Billing service's type ie. "chargify" or "zuora"
 	GetType() string
 	// Create Customer, and fills out the accountInfo for that customer
-	CreateCustomer(ctx context.Context, customer *CustomerDetails, account *AccountInfo, payment *PaymentMethod) error
+	ValidateCustomer(ctx context.Context, account *AccountInfo) error
 	// Delete Customer
 	DeleteCustomer(ctx context.Context, account *AccountInfo) error
 	// Update Customer

@@ -49,6 +49,18 @@ var BillingOrganizationComments = map[string]string{
 	"children":   `Children belonging to this BillingOrganization`,
 }
 
+var AccountInfoComments = map[string]string{
+	"orgname":        `BillingOrganization name to commit`,
+	"accountid":      `account id given by the billing platform`,
+	"subscriptionid": `subscription id given by the billing platform`,
+}
+
+var InvoiceComments = map[string]string{
+	"name":      `BillingOrganization name to retrieve invoices for`,
+	"startdate": `date filter for invoice selection YYYY-MM-DD format`,
+	"enddate":   `date filter for invoice selection YYYY-MM-DD format`,
+}
+
 var ControllerComments = map[string]string{
 	"region":     `Controller region name`,
 	"address":    `Controller API address or URL`,

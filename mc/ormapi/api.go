@@ -110,24 +110,6 @@ type Organization struct {
 	EdgeboxOnly bool `json:",omitempty"`
 }
 
-// used for CreateBillingOrg, so we can pass through payment details to the billing service without actually storing them
-type CreateBillingOrganization struct {
-	Name       string `json:",omitempty"`
-	Type       string `json:",omitempty"`
-	FirstName  string `json:",omitempty"`
-	LastName   string `json:",omitempty"`
-	Email      string `json:",omitempty"`
-	Address    string `json:",omitempty"`
-	Address2   string `json:",omitempty"`
-	City       string `json:",omitempty"`
-	Country    string `json:",omitempty"`
-	State      string `json:",omitempty"`
-	PostalCode string `json:",omitempty"`
-	Phone      string `json:",omitempty"`
-	Children   string `json:",omitempty"`
-	Payment    billing.PaymentMethod
-}
-
 type InvoiceRequest struct {
 	Name      string `json:",omitempty"`
 	StartDate string `json:",omitempty"`
@@ -168,6 +150,8 @@ type BillingOrganization struct {
 	UpdatedAt time.Time `json:",omitempty"`
 	// read only: true
 	DeleteInProgress bool `json:",omitempty"`
+	// read only: true
+	CreateInProgress bool `json:",omitempty"`
 }
 
 type Controller struct {
@@ -372,6 +356,7 @@ type WSStreamPayload struct {
 type AllData struct {
 	Controllers                   []Controller          `json:"controllers,omitempty"`
 	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
+	AccountInfos                  []billing.AccountInfo `json:"accountinfo,omitempty"`
 	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
 	Orgs                          []Organization        `json:"orgs,omitempty"`
 	Roles                         []Role                `json:"roles,omitempty"`
