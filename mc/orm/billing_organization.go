@@ -34,7 +34,7 @@ func CreateBillingOrg(c echo.Context) error {
 	span.SetTag("billing org", org.Name)
 
 	err = CreateBillingOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Billing Organization primed"))
+	return setReply(c, err, Msg("Billing Organization created"))
 }
 
 // Parent billing orgs will have a billing Group, self billing orgs will just use the existing developer group from the org
@@ -203,7 +203,7 @@ func UpdateAccountInfoObj(ctx context.Context, claims *UserClaims, account *bill
 		}
 	}
 	defer func() {
-		// if we reach here this is a big problem, that means the account was OK'ed by us earlier in primer and we validated it was successfully
+		// if we reach here this is a big problem, that means the account was OK'ed by us earlier in create and we validated it was successfully
 		// created in chargify, we need some sort of alert to have an admin go and manually delete the customer and sub from chargify
 		if reterr != nil {
 			bOrg.CreateInProgress = true
