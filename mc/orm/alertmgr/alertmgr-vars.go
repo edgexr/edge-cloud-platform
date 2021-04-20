@@ -61,17 +61,11 @@ var (
 
 	alertmanagerConfigSlackIcon = "https://www.mobiledgex.com/img/logo.svg"
 
-	alertmanagerConfigPagerDutyAllAlertsDetails = `{{ template "pagerduty.instances" .Alerts.Firing }}{{ template "pagerduty.instances" .Alerts.Resolved }}`
-
 	alertmanagerConfigPagerDutyClient      = "MobiledgeX Monitoring"
 	alertmanagerConfigPagerDutyDescription = `{{ template "common.title" . }}`
 	alertmanagerConfigPagerDutyDetails     = map[string]string{
-		"alerts": alertmanagerConfigPagerDutyAllAlertsDetails,
-		// Need to reset default values, otherwise they get included in the notification
-		"firing":       "",
-		"resolved":     "",
-		"num_firing":   "",
-		"num_resolved": "",
+		"firing":   `{{ template "pagerduty.instances" .Alerts.Firing }}`,
+		"resolved": `{{ template "pagerduty.instances" .Alerts.Resolved }}`,
 	}
 
 	PagerDutyIntegrationKeyLen = 32
