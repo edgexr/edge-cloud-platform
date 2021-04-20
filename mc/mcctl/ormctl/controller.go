@@ -9,22 +9,22 @@ import (
 func GetControllerCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
 		Use:          "create",
-		Short:        "Register a new regional controller",
+		Short:        "Create a new regional controller",
 		RequiredArgs: "region address",
 		OptionalArgs: "influxdb",
 		ReqData:      &ormapi.Controller{},
 		Run:          runRest("/auth/controller/create"),
 	}, &cli.Command{
 		Use:          "delete",
-		Short:        "Deregister a new regional controller",
+		Short:        "Delete a regional controller",
 		RequiredArgs: "region",
 		ReqData:      &ormapi.Controller{},
 		Run:          runRest("/auth/controller/delete"),
 	}, &cli.Command{
 		Use:       "show",
-		Short:     "Show registered regional controllers",
+		Short:     "Show regional controllers",
 		ReplyData: &[]ormapi.Controller{},
 		Run:       runRest("/auth/controller/show"),
 	}}
-	return cli.GenGroup("controller", "Register regional controllers", cmds)
+	return cli.GenGroup("controller", "Manage regional controllers", cmds)
 }

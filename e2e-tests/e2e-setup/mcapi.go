@@ -981,6 +981,15 @@ func runMcAudit(api, uri, apiFile, curUserFile, outputDir string, mods []string,
 			log.Printf("Write events start time file %s failed, %v\n", fname, err)
 			rc = false
 		}
+
+		// Clear our edgeeventsfindcloudlet.yml, so that we upload deviceinfo stats on FindCloudlet each time
+		// Otherwise mc apis will pull metrics from other findcloudlet calls
+		err = ioutil.WriteFile(outputDir+"/"+"edgeeventfindcloudlet.yml", []byte{}, 0644)
+		if err != nil {
+			log.Printf("Failed to clear contents of edgeeventfindcloudlet.yml\n")
+			rc = false
+		}
+
 		return rc
 	}
 	users := readUsersFiles(curUserFile, vars)

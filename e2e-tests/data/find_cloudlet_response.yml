@@ -1,5 +1,5 @@
 status: FindFound
-fqdn: dmuus-cloud-2.dmuus.mobiledgex.net
+fqdn: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
 ports:
 - proto: LProtoTcp
   internalport: 80
@@ -14,5 +14,5 @@ ports:
   publicport: 10002
   fqdnprefix: someapplication110-udp.
 cloudletlocation:
-  latitude: 35
-  longitude: -95
+  latitude: 31
+  longitude: -91

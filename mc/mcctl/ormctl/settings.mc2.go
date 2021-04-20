@@ -189,9 +189,10 @@ var SettingsComments = map[string]string{
 	"createcloudlettimeout":                 "Create Cloudlet timeout (duration)",
 	"updatecloudlettimeout":                 "Update Cloudlet timeout (duration)",
 	"locationtilesidelengthkm":              "Length of location tiles side for latency metrics (km)",
-	"influxdbdownsampledmetricsretention":   "Default retention policy for downsampled influx db (duration)",
-	"influxdbedgeeventsmetricsretention":    "Default retention policy for edgeevents metrics influx db (duration)",
-	"appinstclientcleanupinterval":          "AppInstClient cleanup thread run interval",
+	"edgeeventsmetricscontinuousqueriescollectionintervals:#.interval": "Collection interval for Influxdb (Specifically used for continuous query intervals)",
+	"influxdbdownsampledmetricsretention":                              "Default retention policy for downsampled influx db (duration)",
+	"influxdbedgeeventsmetricsretention":                               "Default retention policy for edgeevents metrics influx db (duration)",
+	"appinstclientcleanupinterval":                                     "AppInstClient cleanup thread run interval",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",
@@ -203,5 +204,7 @@ var CollectionIntervalOptionalArgs = []string{
 var CollectionIntervalAliasArgs = []string{
 	"interval=collectioninterval.interval",
 }
-var CollectionIntervalComments = map[string]string{}
+var CollectionIntervalComments = map[string]string{
+	"interval": "Collection interval for Influxdb (Specifically used for continuous query intervals)",
+}
 var CollectionIntervalSpecialArgs = map[string]string{}
