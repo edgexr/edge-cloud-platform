@@ -9,7 +9,7 @@ import (
 
 func GetBillingOrgCommand() *cobra.Command {
 	cmds := []*cli.Command{&cli.Command{
-		Use:          "validate",
+		Use:          "create",
 		Short:        "Set up a BillingOrganization and validate inputs",
 		RequiredArgs: "name type firstname lastname email",
 		OptionalArgs: "address address2 city country state postalcode phone paymenttype ccfirstname cclastname ccnumber ccexpmonth ccexpyear children",
