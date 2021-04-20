@@ -161,8 +161,9 @@ MobiledX Monitoring System: {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}
 https://console.mobiledgex.net
 {{ end }}
 
+# use description as the title of the alert, so no need to add "description" label, subsequently skip description annotation
 {{ define "pagerduty.instances" -}}
-{{ range . }}{{ range .Annotations.SortedPairs }}{{ .Name }} : {{ .Value }}
-{{ end }}Labels:
+{{ range . }}{{ .Annotations.title }} - {{ .Annotations.description }}
+Labels:
 {{ range .Labels.SortedPairs }} {{ .Name }} = {{ .Value }}
 {{ end }}{{ end }}{{ end }}

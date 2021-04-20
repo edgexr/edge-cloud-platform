@@ -5,9 +5,8 @@
     source: MobiledgeX Monitoring
     severity: error
     customdetails:
-      alerts: |
-        description : Application server port is not responding
-        title : AppInstDown
+      firing: |
+        AppInstDown - Application server port is not responding
         Labels:
          alertname = AppInstDown
          app = someapplication1
@@ -20,6 +19,8 @@
          region = local
          scope = Application
          status = HealthCheckFailServerFail
+      numfiring: "1"
+      numresolved: "0"
   client: MobiledgeX Monitoring
   clienturl: |
     https://console.mobiledgex.net
@@ -30,9 +31,10 @@
     source: MobiledgeX Monitoring
     severity: error
     customdetails:
-      alerts: |
-        description : Application server port is not responding
-        title : AppInstDown
+      numfiring: "0"
+      numresolved: "1"
+      resolved: |
+        AppInstDown - Application server port is not responding
         Labels:
          alertname = AppInstDown
          app = someapplication1
