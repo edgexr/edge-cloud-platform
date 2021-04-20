@@ -6,7 +6,7 @@ tests:
   actions: [dmeapi-register]
 
 - name: FindCloudlet
-  apifile: "{{datadir}}/find_cloudlet_app1.yml"
+  apifile: "{{datadir2}}/find_cloudlet_request.yml"
   actions: [dmeapi-findcloudlet]
   compareyaml:
     yaml1: "{{outputdir}}/findcloudlet.yml"

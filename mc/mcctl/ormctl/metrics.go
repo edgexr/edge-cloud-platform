@@ -1,6 +1,7 @@
 package ormctl
 
 import (
+	fmt "fmt"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm"
@@ -66,7 +67,7 @@ func GetMetricsCommand() *cobra.Command {
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientAppUsageMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientAppUsageMetricOptionalArgs, " "),
 		AliasArgs:    strings.Join(ClientAppUsageMetricAliasArgs, " "),
-		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), ClientAppUsageMetricComments),
+		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("app")),
 		ReqData:      &ormapi.RegionClientAppUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
 		Run:          runRest("/auth/metrics/clientappusage"),
@@ -76,7 +77,7 @@ func GetMetricsCommand() *cobra.Command {
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientCloudletUsageMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientCloudletUsageMetricOptionalArgs, " "),
 		AliasArgs:    strings.Join(ClientCloudletUsageMetricAliasArgs, " "),
-		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), ClientCloudletUsageMetricComments),
+		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("cloudlet")),
 		ReqData:      &ormapi.RegionClientCloudletUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
 		Run:          runRest("/auth/metrics/clientcloudletusage"),
@@ -212,11 +213,11 @@ var ClientAppUsageMetricOptionalArgs = []string{
 	"cluster-org",
 	"cloudlet",
 	"cloudlet-org",
-	"location",
-	"device-os",
-	"device-type",
-	"data-network-type",
-	"raw-data",
+	"locationtile",
+	"deviceos",
+	"devicetype",
+	"datanetworktype",
+	"rawdata",
 	"last",
 	"starttime",
 	"endtime",
@@ -232,15 +233,6 @@ var ClientAppUsageMetricAliasArgs = []string{
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
 
-var ClientAppUsageMetricComments = map[string]string{
-	"location":          "Location tile. Use only for latency selector",
-	"device-os":         "Device operating system. Use only for deviceinfo selector",
-	"device-type":       "Device type. Use only for deviceinfo selector",
-	"data-network-type": "Data network type used by client device. Use only for deviceinfo selector",
-	"raw-data":          "Set to true for additional raw data (not downsampled)",
-	"selector":          "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.ClientAppUsageSelectors, "\", \"") + "\"",
-}
-
 var ClientCloudletUsageMetricRequiredArgs = []string{
 	"cloudlet-org",
 	"selector",
@@ -248,11 +240,11 @@ var ClientCloudletUsageMetricRequiredArgs = []string{
 
 var ClientCloudletUsageMetricOptionalArgs = []string{
 	"cloudlet",
-	"location",
-	"device-os",
-	"device-type",
-	"data-network-type",
-	"raw-data",
+	"locationtile",
+	"deviceos",
+	"devicetype",
+	"datanetworktype",
+	"rawdata",
 	"last",
 	"starttime",
 	"endtime",
@@ -261,15 +253,6 @@ var ClientCloudletUsageMetricOptionalArgs = []string{
 var ClientCloudletUsageMetricAliasArgs = []string{
 	"cloudlet-org=cloudlet.organization",
 	"cloudlet=cloudlet.name",
-}
-
-var ClientCloudletUsageMetricComments = map[string]string{
-	"location":          "Location tile. Use for either latency or deviceinfo selectors",
-	"device-os":         "Device operating system. Use only for deviceinfo selector",
-	"device-type":       "Device type. Use only for deviceinfo selector",
-	"data-network-type": "Data network type used by client device. Use only for latency selector",
-	"raw-data":          "Set to true for additional raw data (not downsampled)",
-	"selector":          "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(orm.ClientCloudletUsageSelectors, "\", \"") + "\"",
 }
 
 var MetricCommentsCommon = map[string]string{
@@ -296,4 +279,40 @@ func mergeMetricComments(a, b map[string]string) map[string]string {
 		res[k] = v
 	}
 	return res
+}
+
+// generates ClientAppUsage and ClientCloudletUsage comments along with which args are available for which selectors
+func getClientTypeUsageMetricComments(typ string) map[string]string {
+	baseSelectorPermission := "Can be used for selectors: %s."
+	var locationtileSelectorPermission string
+	var deviceosSelectorPermission string
+	var devicetypeSelectorPermission string
+	var datanetworktypeSelectorPermission string
+	var availableMetrics string
+
+	switch typ {
+	case "app":
+		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency")
+		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		devicetypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		availableMetrics = strings.Join(orm.ClientAppUsageSelectors, "\", \"")
+	case "cloudlet":
+		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")
+		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		devicetypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency")
+		availableMetrics = strings.Join(orm.ClientCloudletUsageSelectors, "\", \"")
+	default:
+		return map[string]string{}
+	}
+
+	return map[string]string{
+		"locationtile":    fmt.Sprintf("Location tile. Format is: \"Quadrant-LatitudeIndex,LongitudeIndex-LocationTileLength\". Quadrant is the standard 1,2,3,4 sections in R2 where 1 is the top right quarter, 2 is the top left quarter, 3 is the bottom left quarter, and 4 is the bottom right quarter. Indices are the number of tiles away from the origin in the specified quadrant's direction. %s", locationtileSelectorPermission),
+		"deviceos":        fmt.Sprintf("Device operating system. %s", deviceosSelectorPermission),
+		"devicetype":      fmt.Sprintf("Device type. %s", devicetypeSelectorPermission),
+		"datanetworktype": fmt.Sprintf("Data network type used by client device. %s", datanetworktypeSelectorPermission),
+		"rawdata":         "Set to true for additional raw data (not downsampled)",
+		"selector":        fmt.Sprintf("Comma separated list of metrics to view. Available metrics: \"%s\"", availableMetrics),
+	}
 }
