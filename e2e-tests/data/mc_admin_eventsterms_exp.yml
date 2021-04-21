@@ -44,6 +44,8 @@
       count: 3
     - key: /api/v1/auth/billingorg/create
       count: 2
+    - key: /api/v1/auth/billingorg/updateaccount
+      count: 2
     - key: /api/v1/auth/cloudletpoolaccessresponse/create
       count: 2
     - key: /api/v1/auth/cloudletpoolaccessinvitation/create
