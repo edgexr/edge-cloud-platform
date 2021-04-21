@@ -12,7 +12,7 @@ func GetBillingOrgCommand() *cobra.Command {
 		Use:          "create",
 		Short:        "Set up a BillingOrganization and validate inputs",
 		RequiredArgs: "name type firstname lastname email",
-		OptionalArgs: "address address2 city country state postalcode phone paymenttype ccfirstname cclastname ccnumber ccexpmonth ccexpyear children",
+		OptionalArgs: "address address2 city country state postalcode phone",
 		ReqData:      &ormapi.BillingOrganization{},
 		Comments:     CreateBillingOrgComments,
 		Run:          runRest("/auth/billingorg/create"),
