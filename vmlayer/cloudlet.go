@@ -25,6 +25,8 @@ const (
 	VMDomainAny      VMDomain = "any" // used for matching only
 )
 
+var CloudletAccessToken = "CloudletAccessToken"
+
 func (v *VMPlatform) IsCloudletServicesLocal() bool {
 	return false
 }

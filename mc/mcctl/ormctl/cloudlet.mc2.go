@@ -492,6 +492,29 @@ var OperationTimeLimitsComments = map[string]string{
 	"deleteappinsttimeout":     "override default max time to delete an app instance (duration)",
 }
 var OperationTimeLimitsSpecialArgs = map[string]string{}
+var CloudletInternalRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+}
+var CloudletInternalOptionalArgs = []string{
+	"props",
+}
+var CloudletInternalAliasArgs = []string{
+	"fields=cloudletinternal.fields",
+	"key.organization=cloudletinternal.key.organization",
+	"key.name=cloudletinternal.key.name",
+	"props=cloudletinternal.props",
+}
+var CloudletInternalComments = map[string]string{
+	"fields":           "Fields are used for the Update API to specify which fields to apply.",
+	"key.organization": "Organization of the cloudlet site",
+	"key.name":         "Name of the cloudlet",
+	"props":            "Map of key value pairs for data exchanged between components",
+}
+var CloudletInternalSpecialArgs = map[string]string{
+	"cloudletinternal.fields": "StringArray",
+	"cloudletinternal.props":  "StringToString",
+}
 var PlatformConfigRequiredArgs = []string{}
 var PlatformConfigOptionalArgs = []string{
 	"containerregistrypath",

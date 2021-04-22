@@ -30,7 +30,7 @@ type Platform struct {
 	// TODO - add Prometheus/nginx strings here EDGECLOUD-1252
 }
 
-func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
+func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig, caches *platform.Caches) error {
 	return nil
 }
 

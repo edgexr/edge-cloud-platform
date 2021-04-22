@@ -143,7 +143,8 @@ type ProviderInitStage string
 const (
 	ProviderInitCreateCloudletDirect     ProviderInitStage = "CreateCloudletDirect"
 	ProviderInitCreateCloudletRestricted ProviderInitStage = "CreateCloudletRestricted"
-	ProviderInitPlatformStart            ProviderInitStage = "PlatformStart"
+	ProviderInitPlatformStartCrm         ProviderInitStage = "PlatformStartCrm"
+	ProviderInitPlatformStartShepherd    ProviderInitStage = "PlatformStartShepherd"
 	ProviderInitDeleteCloudlet           ProviderInitStage = "DeleteCloudlet"
 	ProviderInitGetVmSpec                ProviderInitStage = "GetVmSpec"
 )
@@ -332,6 +333,13 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		v.Type)
 
 	updateCallback(edgeproto.UpdateTask, "Initializing VM platform type: "+v.Type)
+
+	// setup the internal cloudlet cache which does not come from the controller
+	cloudletInternal := edgeproto.CloudletInternal{
+		Key:   *platformConfig.CloudletKey,
+		Props: make(map[string]string),
+	}
+	caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	v.Caches = caches
 	v.VMProperties.Domain = VMDomainCompute
 
@@ -351,12 +359,12 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	v.VMProvider.InitData(ctx, caches)
 
 	updateCallback(edgeproto.UpdateTask, "Fetching API access credentials")
-	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars, ProviderInitPlatformStart); err != nil {
+	if err := v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars, ProviderInitPlatformStartCrm); err != nil {
 		return err
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "doing init provider")
-	if err := v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStart, updateCallback); err != nil {
+	if err := v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrm, updateCallback); err != nil {
 		return err
 	}
 	var result OperationInitResult

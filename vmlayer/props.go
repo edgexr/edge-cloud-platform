@@ -26,6 +26,7 @@ type VMProperties struct {
 	RunLbDhcpServerForVmApps   bool
 	AppendFlavorToVmAppImage   bool
 	ValidateExternalIPMapping  bool
+	CloudletAccessToken        string
 }
 
 // note that qcow2 must be understood by vsphere and vmdk must

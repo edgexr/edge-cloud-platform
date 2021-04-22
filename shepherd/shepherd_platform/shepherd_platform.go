@@ -13,7 +13,7 @@ import (
 // Platform abstracts the underlying cloudlet platform.
 type Platform interface {
 	// Init is called once during shepherd startup.
-	Init(ctx context.Context, pc *platform.PlatformConfig) error
+	Init(ctx context.Context, pc *platform.PlatformConfig, caches *platform.Caches) error
 	// Set VMPool in cache
 	SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool)
 	// Gets the IP for a cluster

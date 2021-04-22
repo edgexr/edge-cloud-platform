@@ -64,6 +64,7 @@ var VMPoolCache edgeproto.VMPoolCache
 var VMPoolInfoCache edgeproto.VMPoolInfoCache
 var CloudletCache edgeproto.CloudletCache
 var CloudletInfoCache edgeproto.CloudletInfoCache
+var CloudletInternalCache edgeproto.CloudletInternalCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
 var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
@@ -86,8 +87,6 @@ var stopCh = make(chan bool, 1)
 var targetsFileWorkerKey = "write-targets"
 
 var CRMTimeout = 1 * time.Minute
-
-var ShepherdExitDelay = 3 * time.Minute
 
 func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppInst) {
 	if target := CollectProxyStats(ctx, new); target != "" {
@@ -274,6 +273,10 @@ func cloudletCb(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Clo
 	}
 }
 
+func cloudletInternalCb(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "cloudletInternalCb")
+}
+
 func getPlatform() (platform.Platform, error) {
 	var plat platform.Platform
 	var err error
@@ -414,7 +417,6 @@ func start() {
 	edgeproto.InitVMPoolCache(&VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&VMPoolInfoCache)
 	edgeproto.InitCloudletCache(&CloudletCache)
-
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(nodeMgr.Name(), addrs,
 		tls.GetGrpcDialOption(clientTlsConfig),
@@ -430,10 +432,14 @@ func start() {
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAppCache(&AppCache)
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
+	notifyClient.RegisterRecvCloudletInternalCache(&CloudletInternalCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
 	SettingsCache.SetUpdatedCb(settingsCb)
 	VMPoolInfoCache.SetUpdatedCb(vmPoolInfoCb)
 	CloudletCache.SetUpdatedCb(cloudletCb)
+	edgeproto.InitCloudletInternalCache(&CloudletInternalCache)
+	CloudletInternalCache.SetUpdatedCb(cloudletInternalCb)
+
 	// register to send metrics
 	MetricSender = notify.NewMetricSend()
 	notifyClient.RegisterSend(MetricSender)
@@ -469,8 +475,7 @@ func start() {
 	case <-time.After(CRMTimeout):
 		log.FatalLog("Timed out waiting for cloudlet cache from controller")
 	}
-	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from controller", "cloudlet", cloudlet)
-
+	log.SpanLog(ctx, log.DebugLevelInfo, "fetched cloudlet cache from CRM", "cloudlet", cloudlet)
 	if cloudlet.PlatformType == edgeproto.PlatformType_PLATFORM_TYPE_VM_POOL {
 		if cloudlet.VmPool == "" {
 			log.FatalLog("Cloudlet is missing VM pool name")
@@ -496,11 +501,11 @@ func start() {
 		AccessApi:      accessApi,
 	}
 
-	err = myPlatform.Init(ctx, &pc)
+	caches := pf.Caches{
+		CloudletInternalCache: &CloudletInternalCache,
+	}
+	err = myPlatform.Init(ctx, &pc, &caches)
 	if err != nil {
-		// failing to init the platform usually means CRM is not ready.  Give it a little time before exiting as it will restart
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to initialize platform, waiting before exit", "waitTime", ShepherdExitDelay)
-		time.Sleep(ShepherdExitDelay)
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
 	workerMap = make(map[string]*ClusterWorker)

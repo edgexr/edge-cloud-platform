@@ -43,7 +43,7 @@ func (o *VMPoolPlatform) InitProvider(ctx context.Context, caches *platform.Cach
 		// A VerifyVMs error fails CreateCloudlet
 		updateCallback(edgeproto.UpdateTask, "Verifying VMs")
 		return o.VerifyVMs(ctx, caches.VMPool.Vms)
-	case vmlayer.ProviderInitPlatformStart:
+	case vmlayer.ProviderInitPlatformStartCrm:
 		updateCallback(edgeproto.UpdateTask, "Verifying VMs")
 		err := o.VerifyVMs(ctx, caches.VMPool.Vms)
 		if err != nil {

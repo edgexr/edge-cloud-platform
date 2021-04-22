@@ -31,7 +31,17 @@ type ShepherdPlatform struct {
 	appDNSRoot      string
 }
 
-func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
+func (s *ShepherdPlatform) vmProviderCloudletCb(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "vmProviderCloudletCb")
+
+	token, ok := new.Props[vmlayer.CloudletAccessToken]
+	if ok {
+		log.SpanLog(ctx, log.DebugLevelInfra, "stored new cloudlet access token")
+		s.VMPlatform.VMProperties.CloudletAccessToken = token
+	}
+}
+
+func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig, platformCaches *platform.Caches) error {
 	s.platformConfig = pc
 	s.appDNSRoot = pc.AppDNSRoot
 
@@ -45,11 +55,14 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	if err = s.VMPlatform.InitProps(ctx, pc); err != nil {
 		return err
 	}
-	s.VMPlatform.VMProvider.InitData(ctx, caches)
-	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, pc.EnvVars, vmlayer.ProviderInitPlatformStart); err != nil {
+
+	s.VMPlatform.VMProvider.InitData(ctx, platformCaches)
+	// Override cloudlet internal updated callback so CloudletAccessToken updates from the CRM can be stored
+	platformCaches.CloudletInternalCache.SetUpdatedCb(s.vmProviderCloudletCb)
+
+	if err = s.VMPlatform.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, pc.EnvVars, vmlayer.ProviderInitPlatformStartShepherd); err != nil {
 		return err
 	}
-
 	var result vmlayer.OperationInitResult
 	ctx, result, err = s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitStart)
 	if err != nil {
@@ -81,6 +94,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	if err != nil {
 		return err
 	}
+
 	// Reuse the same ssh connection whever possible
 	err = s.SharedClient.StartPersistentConn(shepherd_common.ShepherdSshConnectTimeout)
 	if err != nil {

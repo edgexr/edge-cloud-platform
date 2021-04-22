@@ -87,7 +87,7 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 		return err
 	}
 
-	if stage == vmlayer.ProviderInitPlatformStart {
+	if stage == vmlayer.ProviderInitPlatformStartCrm {
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider RebuildMaps", "stage", stage)
 		err := v.RebuildIsoNamesAndFreeMaps(ctx)
