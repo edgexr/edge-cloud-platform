@@ -22,7 +22,7 @@ type Platform struct {
 	SharedClient ssh.Client
 }
 
-func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig) error {
+func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig, caches *platform.Caches) error {
 	s.SharedClient, _ = s.pf.GetNodePlatformClient(ctx, nil)
 	return nil
 }

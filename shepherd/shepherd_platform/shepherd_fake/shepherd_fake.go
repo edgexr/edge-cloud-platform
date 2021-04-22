@@ -15,7 +15,7 @@ type Platform struct {
 	promStarted bool
 }
 
-func (s *Platform) Init(ctx context.Context, pfConfig *platform.PlatformConfig) error {
+func (s *Platform) Init(ctx context.Context, pfConfig *platform.PlatformConfig, caches *platform.Caches) error {
 	return nil
 }
 
