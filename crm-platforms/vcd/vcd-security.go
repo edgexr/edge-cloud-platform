@@ -450,12 +450,14 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 	if creds.OauthSgwUrl != "" && v.vmProperties.CloudletAccessToken == "" {
 		return nil, fmt.Errorf("Oauth GW specified but no cloudlet Token found")
 	}
-	decToken, err := DecryptToken(ctx, v.vmProperties.CloudletAccessToken, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
-	if err != nil {
-		return nil, err
+	if v.vmProperties.CloudletAccessToken != "" {
+		decToken, err := DecryptToken(ctx, v.vmProperties.CloudletAccessToken, v.vmProperties.CommonPf.PlatformConfig.CloudletKey)
+		if err != nil {
+			return nil, err
+		}
+		vcdClient.Client.OauthAccessToken = decToken
 	}
 
-	vcdClient.Client.OauthAccessToken = decToken
 	// always refresh the vcd session token
 	_, err = vcdClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
 	if err != nil {
