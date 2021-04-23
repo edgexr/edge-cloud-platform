@@ -38,6 +38,7 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 	// Use secrets from env-var as we already have console creds, which limits user to access its own org images
 	dockerUser, dockerPass := e.GetEdgeboxDockerCreds()
 	existingCreds := cloudcommon.RegistryAuth{}
+	existingCreds.AuthType = cloudcommon.BasicAuth
 	existingCreds.Username = dockerUser
 	existingCreds.Password = dockerPass
 	if app.Deployment != cloudcommon.DeploymentTypeDocker {
