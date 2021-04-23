@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vsphere"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_edgebox"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_fake"
@@ -77,6 +78,7 @@ var appInstAlertWorkers tasks.KeyWorkers
 var cloudletKey edgeproto.CloudletKey
 var myPlatform platform.Platform
 var nodeMgr node.NodeMgr
+var infraProps infracommon.InfraProperties
 
 var sigChan chan os.Signal
 var notifyClient *notify.Client
@@ -94,6 +96,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
 		appInstAlertWorkers.NeedsWork(ctx, new.Key)
 	}
+	ChangeSinceLastPlatformStats = true
 	var port int32
 	var exists bool
 	var mapKey string
@@ -178,7 +181,12 @@ func appInstDeletedCb(ctx context.Context, old *edgeproto.AppInst) {
 	appInstCb(ctx, old, old)
 }
 
+func clusterInstDeletedCb(ctx context.Context, old *edgeproto.ClusterInst) {
+	ChangeSinceLastPlatformStats = true
+}
+
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
+	ChangeSinceLastPlatformStats = true
 	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
 	workerMapMutex.Lock()
 	defer workerMapMutex.Unlock()
@@ -266,6 +274,7 @@ func vmPoolInfoCb(ctx context.Context, old *edgeproto.VMPoolInfo, new *edgeproto
 }
 
 func cloudletCb(ctx context.Context, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet) {
+	ChangeSinceLastPlatformStats = true
 	select {
 	case cloudletWait <- true:
 		// Got cloudlet object
@@ -408,6 +417,8 @@ func start() {
 	AppInstCache.SetDeletedCb(appInstDeletedCb)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)
 	ClusterInstCache.SetUpdatedCb(clusterInstCb)
+	ClusterInstCache.SetDeletedCb(clusterInstDeletedCb)
+
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitAutoProvPolicyCache(&AutoProvPoliciesCache)
 	AutoProvPoliciesCache.SetUpdatedCb(autoProvPolicyCb)
@@ -504,6 +515,9 @@ func start() {
 	caches := pf.Caches{
 		CloudletInternalCache: &CloudletInternalCache,
 	}
+	// get access to infra properties
+	infraProps.Init()
+	infraProps.SetPropsFromVars(ctx, cloudlet.EnvVar)
 	err = myPlatform.Init(ctx, &pc, &caches)
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)

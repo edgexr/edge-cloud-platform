@@ -45,6 +45,12 @@ var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "CRM Gateway Address",
 		Description: "Required if infra API endpoint is completely isolated from external network",
 	},
+	"MEX_PLATFORM_STATS_MAX_CACHE_TIME": {
+		Name:        "Platform Stats Max Cache Time",
+		Description: "Maximum time to used cached platform stats if nothing changed, in seconds",
+		Internal:    true,
+		Value:       "3600",
+	},
 }
 
 func (ip *InfraProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
@@ -66,6 +72,18 @@ func (ip *InfraProperties) GetCloudletCRMGatewayIPAndPort() (string, int) {
 func GetVaultCloudletCommonPath(filePath string) string {
 	// TODO this path really should not be openstack
 	return fmt.Sprintf("/secret/data/cloudlet/openstack/%s", filePath)
+}
+
+func (ip *InfraProperties) GetPlatformStatsMaxCacheTime() (uint64, error) {
+	val, ok := ip.GetValue("MEX_PLATFORM_STATS_MAX_CACHE_TIME")
+	if !ok {
+		return 0, nil
+	}
+	v, err := strconv.ParseUint(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("ERROR: unable to parse MEX_PLATFORM_STATS_MAX_CACHE_TIME %s - %v", val, err)
+	}
+	return v, nil
 }
 
 type InfraProperties struct {

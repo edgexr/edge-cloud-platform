@@ -13,6 +13,10 @@ import (
 
 var cloudletMetrics shepherd_common.CloudletMetrics
 
+// ChangeSinceLastCloudletStats means some cluster or appinst changed since last platform stats collection
+var ChangeSinceLastPlatformStats bool
+var LastPlatformCollectionTime time.Time
+
 // Don't need to do much, just spin up a metrics collection thread
 func InitPlatformMetrics(done chan bool) {
 	go CloudletScraper(done)
@@ -20,6 +24,12 @@ func InitPlatformMetrics(done chan bool) {
 }
 
 func CloudletScraper(done chan bool) {
+	var metrics []*edgeproto.Metric
+	m, err := infraProps.GetPlatformStatsMaxCacheTime()
+	if err != nil {
+		log.FatalLog(err.Error())
+	}
+	maxCacheTime := time.Second * time.Duration(m)
 	for {
 		// check if there are any new apps we need to start/stop scraping for
 		select {
@@ -27,15 +37,25 @@ func CloudletScraper(done chan bool) {
 			span := log.StartSpan(log.DebugLevelSampled, "send-cloudlet-metric")
 			log.SetTags(span, cloudletKey.GetTags())
 			ctx := log.ContextWithSpan(context.Background(), span)
-			cloudletStats, err := myPlatform.GetPlatformStats(ctx)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", myPlatform, "error", err.Error())
-			} else {
-				metrics := MarshalCloudletMetrics(&cloudletStats)
-				for _, metric := range metrics {
-					MetricSender.Update(context.Background(), metric)
+			// if nothing has changed since the last collection, used cached stats up until MaxCachedPlatformStatsTime
+			elapsed := time.Since(LastPlatformCollectionTime)
+			if ChangeSinceLastPlatformStats || elapsed > maxCacheTime {
+				cloudletStats, err := myPlatform.GetPlatformStats(ctx)
+				ChangeSinceLastPlatformStats = false
+				LastPlatformCollectionTime = time.Now()
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving platform metrics", "Platform", myPlatform, "error", err.Error())
+					continue
+				} else {
+					metrics = MarshalCloudletMetrics(&cloudletStats)
 				}
+			} else {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Using cached metrics due to no changes", "elapsed", elapsed)
 			}
+			for _, metric := range metrics {
+				MetricSender.Update(context.Background(), metric)
+			}
+
 			span.Finish()
 		case <-done:
 			// process killed/interrupted, so quit
