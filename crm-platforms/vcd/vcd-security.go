@@ -381,17 +381,22 @@ func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigPara
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Got successful VCD auth response")
 	var cloudletInternal edgeproto.CloudletInternal
-	if !v.caches.CloudletInternalCache.Get(v.vmProperties.CommonPf.PlatformConfig.CloudletKey, &cloudletInternal) {
-		return fmt.Errorf("cannot get cloudlet internal from cache")
-	}
+
 	encToken, err := EncryptToken(ctx, cloudletClient.Client.OauthAccessToken, (v.vmProperties.CommonPf.PlatformConfig.CloudletKey))
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to cache and vmProperties")
-	cloudletInternal.Props[vmlayer.CloudletAccessToken] = encToken
+	// internal Cache can be nil when running on the controller
+	if v.caches.CloudletInternalCache != nil {
+		if !v.caches.CloudletInternalCache.Get(v.vmProperties.CommonPf.PlatformConfig.CloudletKey, &cloudletInternal) {
+			return fmt.Errorf("cannot get cloudlet internal from cache")
+		}
+		cloudletInternal.Props[vmlayer.CloudletAccessToken] = encToken
+		log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to cache")
+		v.caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to vmProperties")
 	v.vmProperties.CloudletAccessToken = encToken
-	v.caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	return nil
 }
 
@@ -442,11 +447,6 @@ func (v *VcdPlatform) GetClient(ctx context.Context, creds *VcdConfigParams) (cl
 		govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
 		govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
 
-	var cloudletInternal edgeproto.CloudletInternal
-	if !v.caches.CloudletInternalCache.Get(v.vmProperties.CommonPf.PlatformConfig.CloudletKey, &cloudletInternal) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetClient unable to retrieve cloudlet from cache", "cloudletInternal", cloudletInternal.Key.String())
-		return nil, fmt.Errorf("Cannot get client - Cloudlet Internal Not Found in cache")
-	}
 	if creds.OauthSgwUrl != "" && v.vmProperties.CloudletAccessToken == "" {
 		return nil, fmt.Errorf("Oauth GW specified but no cloudlet Token found")
 	}
