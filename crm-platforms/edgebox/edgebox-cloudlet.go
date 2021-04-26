@@ -32,6 +32,8 @@ func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeprot
 
 func (e *EdgeboxPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update cloudlet for edgebox")
+	// Update envvars
+	e.commonPf.Properties.UpdatePropsFromVars(ctx, cloudlet.EnvVar)
 	return nil
 }
 
