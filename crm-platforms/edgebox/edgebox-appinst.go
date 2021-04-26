@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
@@ -11,8 +12,32 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
 	v1 "k8s.io/api/core/v1"
 )
+
+// Use secrets from env-var as we already have console creds,
+// which limits user to access its own org images
+func (e *EdgeboxPlatform) getDockerCredsFromEnv(imgPath string) (*cloudcommon.RegistryAuth, error) {
+	dockerUser, dockerPass := e.GetEdgeboxDockerCreds()
+	existingCreds := cloudcommon.RegistryAuth{}
+	existingCreds.AuthType = cloudcommon.BasicAuth
+	existingCreds.Username = dockerUser
+	existingCreds.Password = dockerPass
+	urlObj, err := util.ImagePathParse(imgPath)
+	if err != nil {
+		return nil, err
+	}
+	hostname := strings.Split(urlObj.Host, ":")
+	if len(hostname) < 1 {
+		return nil, fmt.Errorf("empty hostname")
+	}
+	existingCreds.Hostname = hostname[0]
+	if len(hostname) > 1 {
+		existingCreds.Port = hostname[1]
+	}
+	return &existingCreds, nil
+}
 
 func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	client, err := e.generic.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -34,16 +59,15 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 		return err
 	}
 	names.IsUriIPAddr = true
-	// Setup secrets only for K8s app. For docker, we already do it as part of edgebox script
-	// Use secrets from env-var as we already have console creds, which limits user to access its own org images
-	dockerUser, dockerPass := e.GetEdgeboxDockerCreds()
-	existingCreds := cloudcommon.RegistryAuth{}
-	existingCreds.AuthType = cloudcommon.BasicAuth
-	existingCreds.Username = dockerUser
-	existingCreds.Password = dockerPass
 	if app.Deployment != cloudcommon.DeploymentTypeDocker {
 		for _, imagePath := range names.ImagePaths {
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, e.commonPf.PlatformConfig.AccessApi, names, &existingCreds)
+			// Setup secrets only for K8s app. For docker, we already do
+			// it as part of edgebox script.
+			existingCreds, err := e.getDockerCredsFromEnv(imagePath)
+			if err != nil {
+				return err
+			}
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, e.commonPf.PlatformConfig.AccessApi, names, existingCreds)
 			if err != nil {
 				return err
 			}
@@ -114,19 +138,19 @@ func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgepr
 		return err
 	}
 	if app.Deployment == cloudcommon.DeploymentTypeKubernetes || app.Deployment == cloudcommon.DeploymentTypeHelm {
-		// Use secrets from env-var as we already have console creds, which limits user to access its own org images
-		dockerUser, dockerPass := e.GetEdgeboxDockerCreds()
-		existingCreds := cloudcommon.RegistryAuth{}
-		existingCreds.Username = dockerUser
-		existingCreds.Password = dockerPass
 		kconf := k8smgmt.GetKconfName(clusterInst)
 		for _, imagePath := range names.ImagePaths {
-			// secret may have changed, so delete and re-create
-			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, e.commonPf.PlatformConfig.AccessApi, names, &existingCreds)
+			// Use secrets from env-var as we already have console creds, which limits user to access its own org images
+			existingCreds, err := e.getDockerCredsFromEnv(imagePath)
 			if err != nil {
 				return err
 			}
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, e.commonPf.PlatformConfig.AccessApi, names, &existingCreds)
+			// secret may have changed, so delete and re-create
+			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, e.commonPf.PlatformConfig.AccessApi, names, existingCreds)
+			if err != nil {
+				return err
+			}
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, e.commonPf.PlatformConfig.AccessApi, names, existingCreds)
 			if err != nil {
 				return err
 			}

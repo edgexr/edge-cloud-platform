@@ -88,7 +88,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	// may put multiple apps in the same ClusterInst and they may come
 	// from different registries.
 	cmd := fmt.Sprintf("kubectl create secret docker-registry %s "+
-		"--docker-server=%s --docker-username=%s --docker-password=%s "+
+		"--docker-server=%s --docker-username='%s' --docker-password='%s' "+
 		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
 		secretName, dockerServer, auth.Username, auth.Password,
 		kconf)
