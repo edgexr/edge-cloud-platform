@@ -298,7 +298,7 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 			return fmt.Errorf("DeviceOS not allowed for appinst latency metric")
 		}
 		if req.DeviceModel != "" {
-			return fmt.Errorf("DeviceType not allowed for appinst latency metric")
+			return fmt.Errorf("DeviceModel not allowed for appinst latency metric")
 		}
 		if req.DataNetworkType != "" {
 			return fmt.Errorf("DataNetworkType not allowed for appinst latency metric")
@@ -324,7 +324,7 @@ func validateClientCloudletUsageMetricReq(req *ormapi.RegionClientCloudletUsageM
 			return fmt.Errorf("DeviceOS not allowed for cloudlet latency metric")
 		}
 		if req.DeviceModel != "" {
-			return fmt.Errorf("DeviceType not allowed for cloudlet latency metric")
+			return fmt.Errorf("DeviceModel not allowed for cloudlet latency metric")
 		}
 	case "deviceinfo":
 		if req.DataNetworkType != "" {
