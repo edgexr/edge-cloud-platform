@@ -102,7 +102,7 @@ func (u *UserClaims) SetKid(kid int) {
 	u.Kid = kid
 }
 
-func GenerateCookie(user *ormapi.User, apiKeyId string) (string, error) {
+func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, error) {
 	claims := UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
@@ -127,7 +127,20 @@ func GenerateCookie(user *ormapi.User, apiKeyId string) (string, error) {
 		claims.AuthType = PasswordAuth
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
-	return cookie, err
+	httpCookie := http.Cookie{
+		Name:    "token",
+		Value:   cookie,
+		Expires: time.Unix(claims.ExpiresAt, 0),
+		// only send this cookie over HTTPS
+		Secure: true,
+		// true means no scripts will be able to access this cookie, http requests only
+		HttpOnly: true,
+		// limit cookie access to this domain only
+		Domain: domain,
+		// limits cookie's scope to only requests originating from same site
+		SameSite: http.SameSiteStrictMode,
+	}
+	return &httpCookie, err
 }
 
 func getClaims(c echo.Context) (*UserClaims, error) {
@@ -167,16 +180,28 @@ func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 		auth := c.Request().Header.Get(echo.HeaderAuthorization)
 		scheme := "Bearer"
 		l := len(scheme)
-		if len(auth) <= len(scheme) || !strings.HasPrefix(auth, scheme) {
-			//if no token provided, return a 400 err
+		cookie := ""
+		if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
+			cookie = auth[l+1:]
+		} else {
+			// if no token provided as part of request headers,
+			// then check if it is part of http cookie
+			for _, httpCookie := range c.Request().Cookies() {
+				if httpCookie.Name == "token" {
+					cookie = httpCookie.Value
+					break
+				}
+			}
+		}
+
+		if cookie == "" {
+			//if no token found, return a 400 err
 			return &echo.HTTPError{
 				Code:     http.StatusBadRequest,
 				Message:  "no bearer token found",
 				Internal: fmt.Errorf("no token found for Authorization Bearer"),
 			}
 		}
-
-		cookie := auth[l+1:]
 
 		claims := UserClaims{}
 		token, err := Jwks.VerifyCookie(cookie, &claims)

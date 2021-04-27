@@ -76,6 +76,7 @@ func main() {
 		AlertCache:              &alertCache,
 		AlertmgrResolveTimout:   *alertMgrResolveTimeout,
 		UsageCheckpointInterval: *usageCheckpointInterval,
+		DomainName:              nodeMgr.CommonName(),
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {
