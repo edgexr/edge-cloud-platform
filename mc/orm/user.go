@@ -209,15 +209,16 @@ func Login(c echo.Context) error {
 		}
 	}
 
-	cookie, err := GenerateCookie(&user, login.ApiKeyId)
+	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.DomainName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
 	}
-	ret := M{"token": cookie}
+	ret := M{"token": cookie.Value}
 	if isAdmin {
 		ret["admin"] = true
 	}
+	c.SetCookie(cookie)
 	return c.JSON(http.StatusOK, ret)
 }
 
