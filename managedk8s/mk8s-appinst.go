@@ -40,7 +40,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
 		if err == nil {
 			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 
@@ -125,7 +125,7 @@ func (m *ManagedK8sPlatform) GetAppInstRuntime(ctx context.Context, clusterInst 
 	return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 }
 
-func (m *ManagedK8sPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 	updateCallback(edgeproto.UpdateTask, "Updating AppInst")
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
@@ -137,7 +137,7 @@ func (m *ManagedK8sPlatform) UpdateAppInst(ctx context.Context, clusterInst *edg
 		return err
 	}
 
-	err = k8smgmt.UpdateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+	err = k8smgmt.UpdateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)

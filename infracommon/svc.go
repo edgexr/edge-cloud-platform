@@ -1,7 +1,5 @@
 package infracommon
 
-import "k8s.io/api/core/v1"
-
 type ksaPort struct {
 	Name       string `json:"name"`
 	Protocol   string `json:"protocol"`
@@ -16,8 +14,4 @@ type ksaSpec struct {
 
 type kubernetesServiceAbbrev struct {
 	Spec ksaSpec `json:"spec"`
-}
-
-type svcItems struct {
-	Items []v1.Service `json:"items"`
 }

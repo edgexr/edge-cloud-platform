@@ -19,7 +19,7 @@ import (
 
 var DockerUser = "1000"
 
-func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
 
 	var err error
@@ -63,7 +63,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+			err = k8smgmt.CreateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, appInstFlavor)
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 			err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
@@ -196,7 +196,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 	}
 }
 
-func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
@@ -207,7 +207,7 @@ func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *e
 	if err != nil {
 		return err
 	}
-	return k8smgmt.UpdateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+	return k8smgmt.UpdateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, appInstFlavor)
 }
 
 func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {

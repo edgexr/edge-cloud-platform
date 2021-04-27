@@ -128,6 +128,13 @@ test-robot-start:
 test-robot-stop:
 	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi_automation.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
 
+# Kind local k8s testing
+kind-test-start:
+	e2e-tests -testfile ./e2e-tests/testfiles/kind_deploy_start_create.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -stop -notimestamp
+
+kind-test-stop:
+	e2e-tests -testfile ./e2e-tests/testfiles/stop_cleanup.yml -setupfile ./e2e-tests/setups/local_multi.yml -varsfile ./e2e-tests/vars.yml -notimestamp
+
 ## note: edgebox requires make install-dind from edge-cloud to be run once
 edgebox-start:
 	e2e-tests -testfile ./e2e-tests/testfiles/deploy_start_create_edgebox.yml -setupfile ./e2e-tests/setups/local_edgebox.yml -varsfile ./e2e-tests/vars.yml -notimestamp -stop

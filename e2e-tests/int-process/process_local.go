@@ -553,12 +553,12 @@ func (p *PromE2e) StartLocal(logfile string, opts ...process.StartOp) error {
 			return fmt.Errorf("Failed to build docker image for e2e prometheus: %v", err)
 		}
 	}
-	args := []string{
-		"run", "--rm", "-p", fmt.Sprintf("%d:%d", p.Port, p.Port), "--name", p.Name, p.Name,
-	}
-
-	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	args := p.GetRunArgs()
+	args = append(args,
+		"-p", fmt.Sprintf("%d:%d", p.Port, p.Port),
+		p.Name)
+	cmd, err := process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	return err
 }
 
@@ -576,14 +576,6 @@ func imageFound(name string) bool {
 	}
 	return false
 }
-
-func (p *PromE2e) StopLocal() {
-	process.StopLocal(p.cmd)
-}
-
-func (p *PromE2e) GetExeName() string { return "docker" }
-
-func (p *PromE2e) LookupArgs() string { return p.Name }
 
 func (p *HttpServer) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{
@@ -656,55 +648,34 @@ func (p *Alertmanager) StartLocal(logfile string, opts ...process.StartOp) error
 	if p.TemplateFile != "" {
 		templateFile = p.TemplateFile
 	}
-	args := []string{
-		"run", "--rm", "-p", fmt.Sprintf("%d:%d", p.Port, p.Port),
-		"-v", configFile + ":/etc/prometheus/alertmanager.yml",
-		"-v", templateFile + ":/etc/alertmanager/templates/alertmanager.tmpl",
-		"--name", p.Name,
+	args := p.GetRunArgs()
+	args = append(args,
+		"-p", fmt.Sprintf("%d:%d", p.Port, p.Port),
+		"-v", configFile+":/etc/prometheus/alertmanager.yml",
+		"-v", templateFile+":/etc/alertmanager/templates/alertmanager.tmpl",
 		"prom/alertmanager:v0.21.0",
 		"--web.listen-address", fmt.Sprintf(":%d", p.Port),
 		"--log.level", "debug",
 		"--config.file", "/etc/prometheus/alertmanager.yml",
-	}
+	)
 
-	var err error
 	log.Printf("Start Alertmanager: %v\n", args)
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	cmd, err := process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	return err
 }
-
-func (p *Alertmanager) StopLocal() {
-	process.StopLocal(p.cmd)
-	cmd := exec.Command("docker", "kill", p.Name)
-	cmd.Run()
-}
-
-func (p *Alertmanager) GetExeName() string { return "docker" }
-
-func (p *Alertmanager) LookupArgs() string { return p.Name }
 
 func (p *Maildev) StartLocal(logfile string, opts ...process.StartOp) error {
-	args := []string{
-		"run", "--rm",
+	args := p.GetRunArgs()
+	args = append(args,
 		"-p", fmt.Sprintf("%d:%d", p.UiPort, 80),
 		"-p", fmt.Sprintf("%d:%d", p.MailPort, 25),
-		"--name", p.Name,
 		"maildev/maildev:1.1.0",
-	}
-	var err error
-	p.cmd, err = process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	)
+	cmd, err := process.StartLocal(p.Name, p.GetExeName(), args, p.GetEnv(), logfile)
+	p.SetCmd(cmd)
 	return err
 }
-
-func (p *Maildev) StopLocal() {
-	process.StopLocal(p.cmd)
-	cmd := exec.Command("docker", "kill", p.Name)
-	cmd.Run()
-}
-
-func (p *Maildev) GetExeName() string { return "docker" }
-
-func (p *Maildev) LookupArgs() string { return p.Name }
 
 func (p *AlertmanagerSidecar) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{"--httpAddr", p.HttpAddr}

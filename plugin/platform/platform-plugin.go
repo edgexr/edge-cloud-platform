@@ -10,6 +10,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/gcp"
 	k8sbm "github.com/mobiledgex/edge-cloud-infra/crm-platforms/k8s-baremetal"
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/kindinfra"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/openstack"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vcd"
 	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/vmpool"
@@ -78,6 +79,8 @@ func GetPlatform(plat string) (platform.Platform, error) {
 		outPlatform = &fakeinfra.Platform{}
 	case "PLATFORM_TYPE_K8S_BARE_METAL":
 		outPlatform = &k8sbm.K8sBareMetalPlatform{}
+	case "PLATFORM_TYPE_KINDINFRA":
+		outPlatform = &kindinfra.Platform{}
 	default:
 		return nil, fmt.Errorf("unknown platform %s", plat)
 	}

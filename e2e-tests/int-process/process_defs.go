@@ -67,9 +67,8 @@ type AutoProv struct {
 }
 
 type PromE2e struct {
-	process.Common `yaml:",inline"`
-	Port           int
-	cmd            *exec.Cmd
+	process.DockerGeneric `yaml:",inline"`
+	Port                  int
 }
 
 type HttpServer struct {
@@ -86,18 +85,16 @@ type ChefServer struct {
 }
 
 type Alertmanager struct {
-	process.Common `yaml:",inline"`
-	ConfigFile     string
-	TemplateFile   string
-	Port           int
-	cmd            *exec.Cmd
+	process.DockerGeneric `yaml:",inline"`
+	ConfigFile            string
+	TemplateFile          string
+	Port                  int
 }
 
 type Maildev struct {
-	process.Common `yaml:",inline"`
-	UiPort         int
-	MailPort       int
-	cmd            *exec.Cmd
+	process.DockerGeneric `yaml:",inline"`
+	UiPort                int
+	MailPort              int
 }
 
 type AlertmanagerSidecar struct {

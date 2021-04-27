@@ -1,0 +1,25 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: defaultmtclust
+        cloudletkey:
+          organization: dmuus
+          name: kind-cloud-1
+        organization: MobiledgeX
+      flavor:
+        name: x1.medium
+      liveness: LivenessStatic
+      state: Ready
+      ipaccess: IpAccessShared
+      nodeflavor: x1.medium
+      deployment: kubernetes
+      nummasters: 1
+      numnodes: 3
+      masternodeflavor: x1.small
+      createdat:
+        seconds: 1618351730
+        nanos: 933380000
+      multitenant: true
