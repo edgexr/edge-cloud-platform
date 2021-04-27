@@ -327,7 +327,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 
 	if netName != "" {
 		// finally, remove the IsoNamesMap entry for shared LBs.
-		key, err := v.updateIsoNamesMap(ctx, IsoMapActionDelete, "", "", netName)
+		key, err := v.updateIsoNamesMap(ctx, IsoMapActionDelete, "", netName)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp updateIsoNamesMap", "error", err)
 			return err

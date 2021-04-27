@@ -990,7 +990,7 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 				// the value (subnetId) found to return.
 
 				// find the current key for value
-				k, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, "", "", connection.Network)
+				k, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, "", connection.Network)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses updateIsoNamesMap failed", "error", err)
 					return serverIPs, err

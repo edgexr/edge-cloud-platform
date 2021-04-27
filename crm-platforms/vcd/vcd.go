@@ -2,6 +2,7 @@ package vcd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"unicode"
@@ -464,4 +465,25 @@ func (v *VcdPlatform) DisableOrgRuntimeLease(ctx context.Context, override bool)
 	log.SpanLog(ctx, log.DebugLevelInfra, "DisableOrgRuntimeLease disabled lease", "settings",
 		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings)
 	return nil
+}
+
+func (v *VcdPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
+
+	token, ok := new.Props[vmlayer.CloudletAccessToken]
+	if ok {
+		log.SpanLog(ctx, log.DebugLevelInfra, "stored new cloudlet access token")
+		v.vmProperties.CloudletAccessToken = token
+	}
+	// if we find an isoMap property use it to update the iso map cache which is a json string
+	isoMapStr, ok := new.Props[CloudletIsoNamesMap]
+	var isoMap map[string]string
+
+	if ok && isoMapStr != "" {
+		err := json.Unmarshal([]byte(isoMapStr), &isoMap)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Error in unmarshal of isoNamesMap", "isoMapStr", isoMapStr, "err", err)
+		}
+		v.replaceIsoNamesMap(ctx, isoMap)
+	}
 }

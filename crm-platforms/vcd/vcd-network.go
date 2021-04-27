@@ -2,6 +2,7 @@ package vcd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -20,6 +21,8 @@ import (
 
 // TODO: currently VCD assumes 10.101.x.x.  We should tweak to use the netplan value so we can have different cloudlets on one vcd
 var mexInternalNetRange = "10.101"
+
+var CloudletIsoNamesMap = "CloudletIsoNamesMap"
 
 func (v *VcdPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
 	return []string{
@@ -229,7 +232,7 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 	// shared LBs are asked to grow a new isolated OrgVDCNetwork
 	// The network itself has been created by the client cluster vapp.
 	cidrNet := ""
-	cidrNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
+	cidrNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "")
 	if cidrNet == "" || err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName, "error", err, "IsoNamesMap", v.IsoNamesMap)
 		return fmt.Errorf("No Matching Subnet in IsoNamesMap")
@@ -323,7 +326,7 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 		cidrNet = subnetName
 		portName = subnetName
 	} else {
-		cidrNet, _ = v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "", "")
+		cidrNet, _ = v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "")
 		if cidrNet == "" {
 			log.SpanLog(ctx, log.DebugLevelInfra, "No mapping for", "Network", subnetName, "IsoNamesMap", v.IsoNamesMap)
 			return fmt.Errorf("No Matching Subnet in IsoNamesMap")
@@ -921,7 +924,7 @@ func (v *VcdPlatform) CreateIsoVdcNetwork(ctx context.Context, vapp *govcd.VApp,
 	}
 	// xlate names map for network reuse. All these iossubnets are now named with their cidrs
 	// Addthe real vdc name (subnetId) using our netName
-	_, err = v.updateIsoNamesMap(ctx, IsoMapActionAdd, netName, cidr, "")
+	_, err = v.updateIsoNamesMap(ctx, IsoMapActionAdd, netName, cidr)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork updateIsoNamemsMap failed on Add", "error", err)
 		return err
@@ -1153,7 +1156,7 @@ func (v *VcdPlatform) RebuildIsoNamesAndFreeMaps(ctx context.Context) error {
 		vappNet, ok := vappNets[o]
 		if ok {
 			log.SpanLog(ctx, log.DebugLevelInfra, "org vcd network is not an orphan", "name", o, "vappNet", vappNet)
-			_, err := v.updateIsoNamesMap(ctx, IsoMapActionAdd, vappNet, o, "")
+			_, err := v.updateIsoNamesMap(ctx, IsoMapActionAdd, vappNet, o)
 			if err != nil {
 				return err
 			}
@@ -1266,21 +1269,31 @@ func (v *VcdPlatform) getVappToSubnetMap(ctx context.Context, vdc *govcd.Vdc, vc
 
 }
 
-var iosNamesLock sync.Mutex
+var isoNamesLock sync.Mutex
 
-func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapActionType, key, value, matchval string) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "updateIsoNamesMap", "action", action, "key", key, "value", value, "matchval", matchval, "map", v.IsoNamesMap)
+func (v *VcdPlatform) replaceIsoNamesMap(ctx context.Context, newMap map[string]string) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "replaceIsoNamesMap", "newMap", newMap)
 
-	iosNamesLock.Lock()
-	defer iosNamesLock.Unlock()
+	isoNamesLock.Lock()
+	defer isoNamesLock.Unlock()
+	v.IsoNamesMap = newMap
+}
+
+func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapActionType, key, value string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateIsoNamesMap", "action", action, "key", key, "value", value, "map", v.IsoNamesMap)
+
+	cacheUpdateNeeded := false
+	keyValToReturn := ""
+	isoNamesLock.Lock()
+	defer isoNamesLock.Unlock()
 
 	if action == IsoMapActionRead {
 
 		if key != "" {
 			return v.IsoNamesMap[key], nil
-		} else if value == "" && matchval != "" {
+		} else if value != "" {
 			for k, val := range v.IsoNamesMap {
-				if val == matchval {
+				if val == value {
 					return k, nil
 				}
 			}
@@ -1289,17 +1302,21 @@ func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapAction
 		}
 	} else if action == IsoMapActionDelete {
 
-		if key == "" && value == "" && matchval != "" {
+		if key == "" && value != "" {
 			for k, val := range v.IsoNamesMap {
-				if val == matchval {
+				if val == value {
 					delete(v.IsoNamesMap, k)
-					return k, nil
+					cacheUpdateNeeded = true
+					keyValToReturn = k
+					break
 				}
 			}
-			return "", fmt.Errorf("matchval %s not found in map", matchval)
+			if keyValToReturn == "" {
+				return "", fmt.Errorf("value %s not found in map", value)
+			}
 		} else if key != "" {
 			delete(v.IsoNamesMap, key)
-			return "", nil
+			cacheUpdateNeeded = true
 		} else {
 			return "", fmt.Errorf("invalid args for action delete")
 		}
@@ -1307,11 +1324,26 @@ func (v *VcdPlatform) updateIsoNamesMap(ctx context.Context, action IsoMapAction
 	} else if action == IsoMapActionAdd {
 		if key != "" && value != "" {
 			v.IsoNamesMap[key] = value
+			cacheUpdateNeeded = true
 		} else {
 			return "", fmt.Errorf("invalid args for action Create")
 		}
 	} else {
 		return "", fmt.Errorf("Unsupported action type %s encountered", action)
 	}
-	return "", nil
+	if cacheUpdateNeeded {
+		var cloudletInternal edgeproto.CloudletInternal
+
+		if !v.caches.CloudletInternalCache.Get(v.vmProperties.CommonPf.PlatformConfig.CloudletKey, &cloudletInternal) {
+			return "", fmt.Errorf("cannot get cloudlet internal from cache")
+		}
+		mapJson, err := json.Marshal(v.IsoNamesMap)
+		if err != nil {
+			return "", fmt.Errorf("Fail to marshal isoNamesMap into json for cache update")
+		}
+		cloudletInternal.Props[CloudletIsoNamesMap] = string(mapJson)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Updating cache with new isoMap", "mapJson", string(mapJson))
+		v.caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
+	}
+	return keyValToReturn, nil
 }

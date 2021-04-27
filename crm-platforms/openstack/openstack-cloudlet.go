@@ -317,3 +317,7 @@ func (o *OpenstackPlatform) GetClusterAdditionalResourceMetric(ctx context.Conte
 	resMetric.AddIntVal("floatingIpsUsed", oRes.FloatingIPsUsed)
 	return nil
 }
+
+func (p *OpenstackPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
+}

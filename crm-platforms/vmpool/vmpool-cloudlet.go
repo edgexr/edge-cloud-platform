@@ -86,3 +86,7 @@ func (o *VMPoolPlatform) GetClusterAdditionalResources(ctx context.Context, clou
 func (o *VMPoolPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
 }
+
+func (o *VMPoolPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
+}
