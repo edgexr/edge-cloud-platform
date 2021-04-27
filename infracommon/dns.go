@@ -51,7 +51,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			return err
 		}
 	}
-	svcs, err := GetServices(ctx, client, kubeNames)
+	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 	if err != nil {
 		return err
 	}
-	svcs, err := GetServices(ctx, client, kubeNames)
+	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames)
 	if err != nil {
 		return err
 	}

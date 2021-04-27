@@ -1,0 +1,28 @@
+regiondata:
+- region: local
+  appdata:
+    apps:
+    - key:
+        organization: user3org
+        name: someappuser3
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
+      imagetype: ImageTypeDocker
+      deployment: "kubernetes"
+      defaultflavor:
+        name: x1.tiny
+      accessports: "tcp:7777"
+      androidpackagename: com.user3.someapplication1
+      allowmultitenant: true
+      autoprovpolicies:
+      - autoprovHA
+    autoprovpolicies:
+    - key:
+        name: autoprovHA
+        organization: user3org
+      minactiveinstances: 1
+      maxinstances: 2
+      cloudlets:
+      - key:
+          organization: dmuus
+          name: kind-cloud-1

@@ -141,6 +141,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"skipcrmcleanuponfailure",
 	"reservationendedat.seconds",
 	"reservationendedat.nanos",
+	"multitenant",
 }
 var ClusterInstKeyRequiredArgs = []string{}
 var ClusterInstKeyOptionalArgs = []string{
@@ -182,6 +183,7 @@ var ClusterInstOptionalArgs = []string{
 	"skipcrmcleanuponfailure",
 	"reservationendedat.seconds",
 	"reservationendedat.nanos",
+	"multitenant",
 }
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
@@ -234,6 +236,7 @@ var ClusterInstAliasArgs = []string{
 	"updatedat.nanos=clusterinst.updatedat.nanos",
 	"reservationendedat.seconds=clusterinst.reservationendedat.seconds",
 	"reservationendedat.nanos=clusterinst.reservationendedat.nanos",
+	"multitenant=clusterinst.multitenant",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -272,6 +275,7 @@ var ClusterInstComments = map[string]string{
 	"resources.vms:#.containers:#.status":    "Runtime status of the container",
 	"resources.vms:#.containers:#.clusterip": "IP within the CNI and is applicable to kubernetes only",
 	"resources.vms:#.containers:#.restarts":  "Restart count, applicable to kubernetes only",
+	"multitenant":                            "Multi-tenant kubernetes cluster",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"clusterinst.errors":      "StringArray",

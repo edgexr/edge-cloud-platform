@@ -1,0 +1,83 @@
+description: Deploys and starts a system. Does not stop or cleanup
+
+tests:
+- includefile: {{edge-cloud-testfiles}}/stop_cleanup.yml
+- includefile: deploy_start.yml
+- includefile: mc_setup_users.yml
+
+- name: stop prom-e2e, it gets in the way of the proxies
+  actions: [stop=prom-e2e]
+- name: stop cluster-svc1, dont need it right now
+  actions: [stop=cluster-svc1]
+- name: stop cluster-svc2, dont need it right now
+  actions: [stop=cluster-svc2]
+
+- name: admin creates controllers, flavors; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_data.yml'
+    filetype: mcdata
+
+- name: admin set longer timeouts
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/kind_settings.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: user1 creates operators
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_org_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: admin marks operator orgs an non-edgebox only
+  actions: [mcapi-restrictedupdateorg]
+  apifile: '{{datadir2}}/mc_user1_org_update.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: user1 creates cloudlets; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/kind_user1_cloudlet_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/kind_user1_data_show.yml'
+    filetype: mcdata
+
+- name: wait until multi-tenant cluster is created and ready
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/kind_mtcluster_filter.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  retrycount: 120
+  retryintervalsec: 5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/kind_mtcluster_show.yml'
+    filetype: mcdata-xind
+
+- name: user2 creates data; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/kind_user2_data.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 40
+  retryintervalsec: 2
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/kind_user2_data_show.yml'
+    filetype: mcdata-xind
+
+- name: user3 creates data; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/kind_user3_data.yml'
+  curuserfile: '{{datadir2}}/mc_user3.yml'
+  retrycount: 40
+  retryintervalsec: 2
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/kind_user3_data_show.yml'
+    filetype: mcdata-xind
+
+- name: run network policy checks
+  actions: [script]
+  apifile: 'python3 {{datadir2}}/kind_networkpolicy_checks.py'

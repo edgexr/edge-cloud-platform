@@ -126,7 +126,7 @@ func (e *EdgeboxPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgepr
 	return nil
 }
 
-func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
@@ -157,7 +157,7 @@ func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgepr
 		}
 	}
 
-	err = e.generic.UpdateAppInst(ctx, clusterInst, app, appInst, updateCallback)
+	err = e.generic.UpdateAppInst(ctx, clusterInst, app, appInst, flavor, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error updating appinst", "error", err)
 		return err

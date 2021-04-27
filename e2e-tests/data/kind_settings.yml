@@ -1,0 +1,13 @@
+regiondata:
+- region: local
+  appdata:
+    settings:
+      createappinsttimeout: 60s
+      updateappinsttimeout: 60s
+      deleteappinsttimeout: 30s
+      createclusterinsttimeout: 15m
+      updateclusterinsttimeout: 300s
+      deleteclusterinsttimeout: 200s
+      createcloudlettimeout: 60s
+      updatecloudlettimeout: 30s
+      cloudletmaintenancetimeout: 30s

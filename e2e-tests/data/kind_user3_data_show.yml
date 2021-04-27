@@ -1,0 +1,210 @@
+controllers:
+- region: local
+  address: 127.0.0.1:55001
+  notifyaddr: 127.0.0.1:37001
+  influxdb: http://127.0.0.1:8086
+  createdat: 2021-04-15T18:08:45.161569-07:00
+  updatedat: 2021-04-15T18:08:45.161569-07:00
+- region: locala
+  address: 127.0.0.1:55011
+  notifyaddr: 127.0.0.1:37011
+  influxdb: http://127.0.0.1:8087
+  createdat: 2021-04-15T18:08:45.169829-07:00
+  updatedat: 2021-04-15T18:08:45.169829-07:00
+billingorgs:
+- name: user3org
+  type: self
+  firstname: user3
+  lastname: dev
+  email: john@enterprise.com
+  address: enterprise hq
+  city: Gainesville
+  country: US
+  state: FL
+  postalcode: "32604"
+  phone: 123-123-1234
+  children: user3org
+  createdat: 2021-04-15T18:08:45.209742-07:00
+  updatedat: 2021-04-15T18:08:45.209742-07:00
+orgs:
+- name: user3org
+  type: developer
+  address: enterprise headquarters
+  phone: 123-123-1234
+  createdat: 2021-04-15T18:08:45.197494-07:00
+  updatedat: 2021-04-15T18:08:45.208389-07:00
+  parent: user3org
+roles:
+- org: user3org
+  username: mexadmin
+  role: DeveloperManager
+- org: user3org
+  username: user3
+  role: DeveloperManager
+regiondata:
+- region: local
+  appdata:
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4
+    cloudlets:
+    - key:
+        organization: dmuus
+        name: kind-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      state: Ready
+      platformtype: PlatformTypeKindinfra
+      trustpolicystate: NotPresent
+    autoprovpolicies:
+    - key:
+        organization: user3org
+        name: autoprovHA
+      cloudlets:
+      - key:
+          organization: dmuus
+          name: kind-cloud-1
+        loc:
+          latitude: 31
+          longitude: -91
+      minactiveinstances: 1
+      maxinstances: 2
+    apps:
+    - key:
+        organization: user3org
+        name: someappuser3
+        version: "1.0"
+      imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
+      imagetype: ImageTypeDocker
+      accessports: tcp:7777
+      defaultflavor:
+        name: x1.tiny
+      deployment: kubernetes
+      deploymentmanifest: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: someappuser310-tcp
+          labels:
+            run: someappuser31.0
+        spec:
+          type: LoadBalancer
+          ports:
+          - name: tcp7777
+            protocol: TCP
+            port: 7777
+            targetPort: 7777
+          selector:
+            run: someappuser31.0
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: someappuser310-deployment
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              run: someappuser31.0
+          template:
+            metadata:
+              labels:
+                run: someappuser31.0
+            spec:
+              volumes:
+              imagePullSecrets:
+              - name: docker.mobiledgex.net
+              containers:
+              - name: someappuser310
+                image: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
+                imagePullPolicy: Always
+                ports:
+                - containerPort: 7777
+                  protocol: TCP
+      deploymentgenerator: kubernetes-basic
+      androidpackagename: com.user3.someapplication1
+      accesstype: AccessTypeLoadBalancer
+      autoprovpolicies:
+      - autoprovHA
+      createdat:
+        seconds: 1618535368
+        nanos: 569739000
+      allowmultitenant: true
+    appinstances:
+    - key:
+        appkey:
+          organization: user3org
+          name: someappuser3
+          version: "1.0"
+        clusterinstkey:
+          clusterkey:
+            name: autocluster-autoprov
+          cloudletkey:
+            organization: dmuus
+            name: kind-cloud-1
+          organization: MobiledgeX
+      cloudletloc:
+        latitude: 31
+        longitude: -91
+      uri: kind-cloud-1.dmuus.mobiledgex.net
+      liveness: LivenessAutoprov
+      mappedports:
+      - proto: LProtoTcp
+        internalport: 7777
+        publicport: 10000
+        fqdnprefix: someappuser310-tcp.
+      flavor:
+        name: x1.tiny
+      state: Ready
+      runtimeinfo:
+        containerids:
+        - someappuser310-deployment-f575fbcc9-cgq4w
+      createdat:
+        seconds: 1618535368
+        nanos: 655637000
+      healthcheck: HealthCheckOk
+      powerstate: PowerOn
+      vmflavor: x1.tiny
+      realclustername: defaultmtclust
+    appinstrefs:
+    - key:
+        organization: user3org
+        name: someappuser3
+        version: "1.0"
+      insts:
+        ? '{"app_key":{"organization":"user3org","name":"someappuser3","version":"1.0"},"cluster_inst_key":{"cluster_key":{"name":"autocluster-autoprov"},"cloudlet_key":{"organization":"dmuus","name":"kind-cloud-1"},"organization":"MobiledgeX"}}'
+        : 1
+- region: locala
+  appdata:
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4

@@ -216,6 +216,7 @@ var AppOptionalArgs = []string{
 	"requiredoutboundconnections:#.protocol",
 	"requiredoutboundconnections:#.port",
 	"requiredoutboundconnections:#.remoteip",
+	"allowmultitenant",
 }
 var AppAliasArgs = []string{
 	"fields=app.fields",
@@ -255,6 +256,7 @@ var AppAliasArgs = []string{
 	"requiredoutboundconnections:#.protocol=app.requiredoutboundconnections:#.protocol",
 	"requiredoutboundconnections:#.port=app.requiredoutboundconnections:#.port",
 	"requiredoutboundconnections:#.remoteip=app.requiredoutboundconnections:#.remoteip",
+	"allowmultitenant=app.allowmultitenant",
 }
 var AppComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -290,6 +292,7 @@ var AppComments = map[string]string{
 	"requiredoutboundconnections:#.protocol": "tcp, udp or icmp",
 	"requiredoutboundconnections:#.port":     "TCP or UDP port",
 	"requiredoutboundconnections:#.remoteip": "remote IP X.X.X.X",
+	"allowmultitenant":                       "App is allowed to deploy to multi-tenant clusters",
 }
 var AppSpecialArgs = map[string]string{
 	"app.autoprovpolicies": "StringArray",

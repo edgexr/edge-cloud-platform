@@ -446,6 +446,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// RequiredOutboundConnectionsProtocol: 38.1
 	// RequiredOutboundConnectionsPort: 38.2
 	// RequiredOutboundConnectionsRemoteIp: 38.4
+	// AllowMultiTenant: 39
 	// ```
 	// Security:
 	//   Bearer:
@@ -1074,6 +1075,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ReservationEndedAt: 31
 	// ReservationEndedAtSeconds: 31.1
 	// ReservationEndedAtNanos: 31.2
+	// MultiTenant: 32
 	// ```
 	// Security:
 	//   Bearer:
