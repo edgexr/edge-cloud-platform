@@ -227,3 +227,7 @@ func (s *VSpherePlatform) GetClusterAdditionalResources(ctx context.Context, clo
 func (s *VSpherePlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
 }
+
+func (v *VSpherePlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
+}

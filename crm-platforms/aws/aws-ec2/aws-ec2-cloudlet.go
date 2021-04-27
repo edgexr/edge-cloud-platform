@@ -288,3 +288,7 @@ func (a *AwsEc2Platform) GetClusterAdditionalResources(ctx context.Context, clou
 func (a *AwsEc2Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
 }
+
+func (a *AwsEc2Platform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
+}

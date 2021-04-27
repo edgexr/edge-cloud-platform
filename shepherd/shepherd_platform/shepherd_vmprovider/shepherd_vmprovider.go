@@ -33,12 +33,8 @@ type ShepherdPlatform struct {
 
 func (s *ShepherdPlatform) vmProviderCloudletCb(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "vmProviderCloudletCb")
+	s.VMPlatform.VMProvider.InternalCloudletUpdatedCallback(ctx, old, new)
 
-	token, ok := new.Props[vmlayer.CloudletAccessToken]
-	if ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "stored new cloudlet access token")
-		s.VMPlatform.VMProperties.CloudletAccessToken = token
-	}
 }
 
 func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig, platformCaches *platform.Caches) error {
