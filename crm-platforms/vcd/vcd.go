@@ -354,6 +354,9 @@ func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient 
 					if v.Verbose {
 						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr consider ", "vapp", res.Name)
 					}
+					if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
+						continue
+					}
 					ncs, err := vapp.GetNetworkConnectionSection()
 					if err != nil {
 						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr ", "error", err)
