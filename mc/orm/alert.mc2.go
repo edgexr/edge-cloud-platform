@@ -446,7 +446,11 @@ func addControllerApis(method string, group *echo.Group) {
 	// RequiredOutboundConnectionsProtocol: 38.1
 	// RequiredOutboundConnectionsPort: 38.2
 	// RequiredOutboundConnectionsRemoteIp: 38.4
-	// AllowMultiTenant: 39
+	// AllowServerless: 39
+	// ServerlessConfig: 40
+	// ServerlessConfigVcpus: 40.1
+	// ServerlessConfigRam: 40.2
+	// ServerlessConfigMinReplicas: 40.3
 	// ```
 	// Security:
 	//   Bearer:
