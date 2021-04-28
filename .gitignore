@@ -91,4 +91,4 @@ mc/orm/testAlertMgrConfig.yml
 *.auto.tfvars
 *.auto.tfvars.json
 
-version/*
+version/version.go
