@@ -122,7 +122,11 @@ regiondata:
       createdat:
         seconds: 1618357221
         nanos: 126849000
-      allowmultitenant: true
+      allowserverless: true
+      serverlessconfig:
+        vcpus: 0.2
+        ram: 10
+        minreplicas: 2
     appinstances:
     - key:
         appkey:

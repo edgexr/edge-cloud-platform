@@ -13,7 +13,11 @@ regiondata:
         name: x1.tiny
       accessports: "tcp:7777"
       androidpackagename: com.user3.someapplication1
-      allowmultitenant: true
+      allowserverless: true
+      serverlessconfig:
+        vcpus: 0.2
+        ram: 10
+        minreplicas: 2
       autoprovpolicies:
       - autoprovHA
     autoprovpolicies:
