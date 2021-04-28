@@ -7,6 +7,7 @@ import (
 	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -438,6 +439,8 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 	chefAttributes["notifyAddrs"] = pfConfig.NotifyCtrlAddrs
 
 	chefAttributes["tags"] = GetChefCloudletTags(cloudlet, pfConfig, serverType)
+
+	chefAttributes["mobiledgeXPackageVersion"] = version.MobiledgeXPackageVersion
 
 	// Use default address if port is 0, as we'll have single
 	// CRM instance here, hence there will be no port conflict
