@@ -1,5 +1,7 @@
 package ormapi
 
+// This is an auto-generated file. DO NOT EDIT directly.
+
 var UserComments = map[string]string{
 	"name":       `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"email":      `User email`,
@@ -33,6 +35,12 @@ var OrganizationComments = map[string]string{
 	"phone":   `Organization phone number`,
 }
 
+var InvoiceRequestComments = map[string]string{
+	"name":      `Billing Organization name to retrieve invoices for`,
+	"startdate": `Date filter for invoice selection, YYYY-MM-DD format`,
+	"enddate":   `Date filter for invoice selection, YYYY-MM-DD format`,
+}
+
 var BillingOrganizationComments = map[string]string{
 	"name":       `BillingOrganization name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"type":       `Organization type: "parent" or "self"`,
@@ -50,15 +58,9 @@ var BillingOrganizationComments = map[string]string{
 }
 
 var AccountInfoComments = map[string]string{
-	"orgname":        `BillingOrganization name to commit`,
-	"accountid":      `account id given by the billing platform`,
-	"subscriptionid": `subscription id given by the billing platform`,
-}
-
-var InvoiceComments = map[string]string{
-	"name":      `BillingOrganization name to retrieve invoices for`,
-	"startdate": `date filter for invoice selection YYYY-MM-DD format`,
-	"enddate":   `date filter for invoice selection YYYY-MM-DD format`,
+	"orgname":        `Billing Organization name to commit`,
+	"accountid":      `Account ID given by the billing platform`,
+	"subscriptionid": `Subscription ID given by the billing platform`,
 }
 
 var ControllerComments = map[string]string{

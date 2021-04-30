@@ -11,11 +11,12 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
 var customerEndpoint = "/customers"
 
-func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *billing.AccountInfo) error {
+func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *ormapi.AccountInfo) error {
 	newCustomer := billingToChargifyCustomer(customer)
 
 	if customer.Type == billing.CUSTOMER_TYPE_CHILD {
@@ -87,7 +88,7 @@ func addFreeTrial(sub *Subscription) {
 
 // this doesnt actually delete the customer, what it does is cancels the subscription associated with the customer
 // if we delete the customer, we also have to delete the subscription first which would result in losing the transaction history of that sub
-func (bs *BillingService) DeleteCustomer(ctx context.Context, customer *billing.AccountInfo) error {
+func (bs *BillingService) DeleteCustomer(ctx context.Context, customer *ormapi.AccountInfo) error {
 	switch customer.Type {
 	case billing.CUSTOMER_TYPE_SELF:
 		endpoint := "/subscriptions/" + customer.SubscriptionId + "/delayed_cancel.json"
@@ -129,7 +130,7 @@ func (bs *BillingService) DeleteCustomer(ctx context.Context, customer *billing.
 	return nil
 }
 
-func (bs *BillingService) UpdateCustomer(ctx context.Context, account *billing.AccountInfo, customerDetails *billing.CustomerDetails) error {
+func (bs *BillingService) UpdateCustomer(ctx context.Context, account *ormapi.AccountInfo, customerDetails *billing.CustomerDetails) error {
 	update := billingToChargifyCustomer(customerDetails) // any fields that actually contain a value will be the ones that are updated
 	endpoint := "/customers/" + account.AccountId + ".json"
 	resp, err := newChargifyReq("POST", endpoint, CustomerWrapper{Customer: &update})
@@ -144,7 +145,7 @@ func (bs *BillingService) UpdateCustomer(ctx context.Context, account *billing.A
 	return nil
 }
 
-func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAccount *billing.AccountInfo, childDetails *billing.CustomerDetails) error {
+func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAccount *ormapi.AccountInfo, childDetails *billing.CustomerDetails) error {
 	// dont modify the existing struct
 	childCopy := *childDetails
 	childCopy.ParentId = parentAccount.AccountId
@@ -185,11 +186,11 @@ func (bs *BillingService) AddChild(ctx context.Context, parentAccount, childAcco
 	return nil
 }
 
-func (bs *BillingService) RemoveChild(ctx context.Context, parent, child *billing.AccountInfo) error {
+func (bs *BillingService) RemoveChild(ctx context.Context, parent, child *ormapi.AccountInfo) error {
 	return bs.DeleteCustomer(ctx, child)
 }
 
-func (bs *BillingService) ValidateCustomer(ctx context.Context, account *billing.AccountInfo) error {
+func (bs *BillingService) ValidateCustomer(ctx context.Context, account *ormapi.AccountInfo) error {
 	// TODO: check chargify to make sure this account info is for real, and not some bogus from a malicious client
 	// need to verify accountId, subId, and if there is a payment method attached to the subscription
 	endpoint, err := url.Parse("/customers.json")

@@ -8,10 +8,11 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
-func (bs *BillingService) RecordUsage(ctx context.Context, account *billing.AccountInfo, usageRecords []billing.UsageRecord) error {
+func (bs *BillingService) RecordUsage(ctx context.Context, account *ormapi.AccountInfo, usageRecords []billing.UsageRecord) error {
 	for _, record := range usageRecords {
 		var memo string
 		var cloudlet *edgeproto.CloudletKey

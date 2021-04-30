@@ -9,6 +9,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 )
 
 type invoiceResp struct {
@@ -22,7 +23,7 @@ type invoiceResp struct {
 
 var invoiceEndpoint = "/invoices.json"
 
-func (bs *BillingService) GetInvoice(ctx context.Context, account *billing.AccountInfo, startDate, endDate string) ([]billing.InvoiceData, error) {
+func (bs *BillingService) GetInvoice(ctx context.Context, account *ormapi.AccountInfo, startDate, endDate string) ([]billing.InvoiceData, error) {
 	base, err := url.Parse(invoiceEndpoint)
 	if err != nil {
 		return nil, err

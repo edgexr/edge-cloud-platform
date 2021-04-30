@@ -39,6 +39,7 @@ func main() {
 	// generate comments
 	buf := &bytes.Buffer{}
 	fmt.Fprintf(buf, "package %s", allStructs.pkgName)
+	fmt.Fprintf(buf, "\n// This is an auto-generated file. DO NOT EDIT directly.\n")
 	for _, apiSt := range allStructs.apiStructs {
 		comments := []Field{}
 		apiSt.genComments(&allStructs, []string{}, &comments)
