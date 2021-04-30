@@ -21,7 +21,7 @@ func GetBillingOrgCommand() *cobra.Command {
 		Short:        "Commit a BillingOrganization after validating it with our payment platform",
 		RequiredArgs: "orgname accountid",
 		OptionalArgs: "subscriptionid",
-		ReqData:      &billing.AccountInfo{},
+		ReqData:      &ormapi.AccountInfo{},
 		Comments:     ormapi.AccountInfoComments,
 		Run:          runRest("/auth/billingorg/updateaccount"),
 	}, &cli.Command{
@@ -66,7 +66,7 @@ func GetBillingOrgCommand() *cobra.Command {
 		RequiredArgs: "name",
 		OptionalArgs: "startdate enddate",
 		ReqData:      &ormapi.InvoiceRequest{},
-		Comments:     ormapi.InvoiceComments,
+		Comments:     ormapi.InvoiceRequestComments,
 		ReplyData:    &[]billing.InvoiceData{},
 		Run:          runRest("/auth/billingorg/invoice"),
 	}}

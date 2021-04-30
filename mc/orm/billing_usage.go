@@ -168,7 +168,7 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 		orgTracker[newAppInst.AppKey.Organization] = append(records, newRecord)
 	}
 	for org, record := range orgTracker {
-		var accountInfo *billing.AccountInfo
+		var accountInfo *ormapi.AccountInfo
 		accountInfo, err := GetAccountObj(ctx, org)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get account info", "org", org, "err", err)
@@ -229,7 +229,7 @@ func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudlet
 		orgTracker[newClusterInst.Organization] = append(records, newRecord)
 	}
 	for org, record := range orgTracker {
-		var accountInfo *billing.AccountInfo
+		var accountInfo *ormapi.AccountInfo
 		accountInfo, err := GetAccountObj(ctx, org)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get account info", "org", org, "err", err)

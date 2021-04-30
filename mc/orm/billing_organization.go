@@ -131,7 +131,7 @@ func createBillingAccount(ctx context.Context, info *ormapi.BillingOrganization)
 	if !billingEnabled(ctx) {
 		return nil
 	}
-	accountInfo := billing.AccountInfo{
+	accountInfo := ormapi.AccountInfo{
 		OrgName: info.Name,
 		Type:    info.Type,
 	}
@@ -154,7 +154,7 @@ func UpdateAccountInfo(c echo.Context) error {
 		return err
 	}
 	ctx := GetContext(c)
-	acc := billing.AccountInfo{}
+	acc := ormapi.AccountInfo{}
 	if err := c.Bind(&acc); err != nil {
 		return bindErr(c, err)
 	}
@@ -164,7 +164,7 @@ func UpdateAccountInfo(c echo.Context) error {
 	return setReply(c, err, Msg("Account Info Updated"))
 }
 
-func UpdateAccountInfoObj(ctx context.Context, claims *UserClaims, account *billing.AccountInfo) (reterr error) {
+func UpdateAccountInfoObj(ctx context.Context, claims *UserClaims, account *ormapi.AccountInfo) (reterr error) {
 	// TODO: remove this later, for now only mexadmin has the permission to create billingOrgs
 	roles, err := ShowUserRoleObj(ctx, claims.Username)
 	if err != nil {
@@ -646,12 +646,12 @@ func billingOrgExists(ctx context.Context, orgName string) (*ormapi.BillingOrgan
 	return &org, nil
 }
 
-func accountInfoExists(ctx context.Context, orgName string) (*billing.AccountInfo, error) {
-	lookup := billing.AccountInfo{
+func accountInfoExists(ctx context.Context, orgName string) (*ormapi.AccountInfo, error) {
+	lookup := ormapi.AccountInfo{
 		OrgName: orgName,
 	}
 	db := loggedDB(ctx)
-	info := billing.AccountInfo{}
+	info := ormapi.AccountInfo{}
 	res := db.Where(&lookup).First(&info)
 	if res.RecordNotFound() {
 		return nil, nil
@@ -694,11 +694,11 @@ func deleteBillingAccount(ctx context.Context, orgName, deleteType string) error
 	return nil
 }
 
-func GetAccountObj(ctx context.Context, orgName string) (*billing.AccountInfo, error) {
+func GetAccountObj(ctx context.Context, orgName string) (*ormapi.AccountInfo, error) {
 	if orgName == "" {
 		return nil, fmt.Errorf("no orgName specified")
 	}
-	acc := billing.AccountInfo{
+	acc := ormapi.AccountInfo{
 		OrgName: orgName,
 	}
 	db := loggedDB(ctx)
@@ -804,7 +804,7 @@ func linkChildAccount(ctx context.Context, parent *ormapi.BillingOrganization, c
 
 	// chargify (and zuora) requires you to have billToContact info even if you are linked to a parent
 	// so for now just use parent first and last name
-	childAccountInfo := billing.AccountInfo{OrgName: child}
+	childAccountInfo := ormapi.AccountInfo{OrgName: child}
 	billTo := billing.CustomerDetails{
 		OrgName:   child,
 		FirstName: parent.FirstName,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/vault"
 )
@@ -13,14 +14,6 @@ const CUSTOMER_TYPE_CHILD = "child"
 const CUSTOMER_TYPE_SELF = "self"
 const PAYMENT_TYPE_CC = "credit_card"
 const BillingTypeFake = "fake"
-
-type AccountInfo struct {
-	OrgName        string `gorm:"primary_key;type:citext"`
-	AccountId      string `json:",omitempty"`
-	SubscriptionId string `json:",omitempty"`
-	ParentId       string `json:",omitempty"`
-	Type           string `json:",omitempty"`
-}
 
 type CustomerDetails struct {
 	OrgName   string
@@ -203,17 +196,17 @@ type BillingService interface {
 	// The Billing service's type ie. "chargify" or "zuora"
 	GetType() string
 	// Create Customer, and fills out the accountInfo for that customer
-	ValidateCustomer(ctx context.Context, account *AccountInfo) error
+	ValidateCustomer(ctx context.Context, account *ormapi.AccountInfo) error
 	// Delete Customer
-	DeleteCustomer(ctx context.Context, account *AccountInfo) error
+	DeleteCustomer(ctx context.Context, account *ormapi.AccountInfo) error
 	// Update Customer
-	UpdateCustomer(ctx context.Context, account *AccountInfo, customerDetails *CustomerDetails) error
+	UpdateCustomer(ctx context.Context, account *ormapi.AccountInfo, customerDetails *CustomerDetails) error
 	// Add a child to a parent
-	AddChild(ctx context.Context, parentAccount, childAccount *AccountInfo, childDetails *CustomerDetails) error
+	AddChild(ctx context.Context, parentAccount, childAccount *ormapi.AccountInfo, childDetails *CustomerDetails) error
 	// Remove a child from a parent
-	RemoveChild(ctx context.Context, parent, child *AccountInfo) error
+	RemoveChild(ctx context.Context, parent, child *ormapi.AccountInfo) error
 	// Records usage
-	RecordUsage(ctx context.Context, account *AccountInfo, usageRecords []UsageRecord) error
+	RecordUsage(ctx context.Context, account *ormapi.AccountInfo, usageRecords []UsageRecord) error
 	// Grab invoice data
-	GetInvoice(ctx context.Context, account *AccountInfo, startDate, endDate string) ([]InvoiceData, error)
+	GetInvoice(ctx context.Context, account *ormapi.AccountInfo, startDate, endDate string) ([]InvoiceData, error)
 }

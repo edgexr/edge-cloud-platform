@@ -130,7 +130,7 @@ func (s *Client) CreateBillingOrg(uri, token string, bOrg *ormapi.BillingOrganiz
 	return s.PostJson(uri+"/auth/billingorg/create", token, bOrg, nil)
 }
 
-func (s *Client) UpdateAccountInfo(uri, token string, acc *billing.AccountInfo) (int, error) {
+func (s *Client) UpdateAccountInfo(uri, token string, acc *ormapi.AccountInfo) (int, error) {
 	return s.PostJson(uri+"/auth/billingorg/updateaccount", token, acc, nil)
 }
 

@@ -3,7 +3,6 @@ package ormapi
 import (
 	"time"
 
-	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -111,9 +110,12 @@ type Organization struct {
 }
 
 type InvoiceRequest struct {
-	Name      string `json:",omitempty"`
+	// Billing Organization name to retrieve invoices for
+	Name string `json:",omitempty"`
+	// Date filter for invoice selection, YYYY-MM-DD format
 	StartDate string `json:",omitempty"`
-	EndDate   string `json:",omitempty"`
+	// Date filter for invoice selection, YYYY-MM-DD format
+	EndDate string `json:",omitempty"`
 }
 
 type BillingOrganization struct {
@@ -152,6 +154,17 @@ type BillingOrganization struct {
 	DeleteInProgress bool `json:",omitempty"`
 	// read only: true
 	CreateInProgress bool `json:",omitempty"`
+}
+
+type AccountInfo struct {
+	// Billing Organization name to commit
+	OrgName string `gorm:"primary_key;type:citext"`
+	// Account ID given by the billing platform
+	AccountId string `json:",omitempty"`
+	// Subscription ID given by the billing platform
+	SubscriptionId string `json:",omitempty"`
+	ParentId       string `json:",omitempty"`
+	Type           string `json:",omitempty"`
 }
 
 type Controller struct {
@@ -356,7 +369,7 @@ type WSStreamPayload struct {
 type AllData struct {
 	Controllers                   []Controller          `json:"controllers,omitempty"`
 	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
-	AccountInfos                  []billing.AccountInfo `json:"accountinfo,omitempty"`
+	AccountInfos                  []AccountInfo         `json:"accountinfo,omitempty"`
 	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
 	Orgs                          []Organization        `json:"orgs,omitempty"`
 	Roles                         []Role                `json:"roles,omitempty"`
