@@ -7,7 +7,7 @@ name 'docker_crm'
 default_source :chef_server, "https://chef.mobiledgex.net/organizations/mobiledgex"
 
 # run_list: chef-client will run these recipes in the order specified.
-run_list 'recipe[runstatus_handler]', 'recipe[setup_infra]', 'recipe[preflight_crm_checks]', 'recipe[run_diagnostics]', 'recipe[setup_services::docker]', 'recipe[run_cmd]'
+run_list 'recipe[runstatus_handler]', 'recipe[run_cmd]', 'recipe[setup_infra]', 'recipe[preflight_crm_checks]', 'recipe[run_diagnostics]', 'recipe[setup_services::docker]'
 
 # Specify a custom source for a single cookbook:
 cookbook 'runstatus_handler', '= 1.0.0'
@@ -19,6 +19,6 @@ cookbook 'run_diagnostics', '= 1.0.0'
 cookbook 'run_cmd', '= 1.0.0'
 
 # Set edgeCloudVersion (i.e. edge-cloud docker base image version) for all the cloudlets
-override['main']['edgeCloudVersion'] = '2020-09-23-5'
+override['main']['edgeCloudVersion'] = '2021-04-15-1'
 # By default, commercialCerts is not on. Hence add override to turn it on for all the cloudlets
 override['main']['crmserver']['args']['commercialCerts'] = ""
