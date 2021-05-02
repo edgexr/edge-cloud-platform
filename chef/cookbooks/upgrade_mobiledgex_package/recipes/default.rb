@@ -28,6 +28,11 @@ if node.normal['tags'].include?('vmtype/rootlb')
       distribution 'cirrus'
       components ['main']
     end
+    execute('Unhold the mobiledgex package, if held') do
+      action "run"
+      command "apt-mark unhold mobiledgex"
+      returns 0
+    end
     apt_update
     apt_package 'mobiledgex' do
       action :upgrade
