@@ -226,6 +226,29 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 	return subnet, nil
 }
 
+// InsertConnectionIntoNcs replaces the network connection if the conIdx exists, otherwise appends it
+func (v *VcdPlatform) InsertConnectionIntoNcs(ctx context.Context, ncs *types.NetworkConnectionSection, newConn *types.NetworkConnection, conIdx int) *types.NetworkConnectionSection {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InsertConnectionIntoNcs", "conIdx", conIdx, "newConn", newConn)
+	updatedNcs := types.NetworkConnectionSection{}
+	inserted := false
+	for _, origConn := range ncs.NetworkConnection {
+		if origConn.NetworkConnectionIndex == conIdx {
+			inserted = true
+			updatedNcs.NetworkConnection = append(updatedNcs.NetworkConnection, newConn)
+			newConn.MACAddress = origConn.MACAddress
+			log.SpanLog(ctx, log.DebugLevelInfra, "Replaced Connection in ncs", "mac", newConn.MACAddress)
+		} else {
+			updatedNcs.NetworkConnection = append(updatedNcs.NetworkConnection, origConn)
+		}
+	}
+	if !inserted {
+		// append to the end
+		log.SpanLog(ctx, log.DebugLevelInfra, "Appended Connection to ncs")
+		updatedNcs.NetworkConnection = append(updatedNcs.NetworkConnection, newConn)
+	}
+	return &updatedNcs
+}
+
 // AttachPortToServer
 func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnetName, portName, ipaddr string, action vmlayer.ActionType) error {
 
@@ -293,17 +316,24 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 			return err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer ", "subnetName", subnetName, "ip", gateway, "conIdx", conIdx)
-		ncs.NetworkConnection = append(ncs.NetworkConnection,
-			&types.NetworkConnection{
-				Network:                 cidrNet, /* subnetName */
-				NetworkConnectionIndex:  conIdx,
-				IPAddress:               gateway,
-				IsConnected:             true,
-				IPAddressAllocationMode: types.IPAllocationModeManual,
-			})
+		nc := &types.NetworkConnection{
+			Network:                 cidrNet, /* subnetName */
+			NetworkConnectionIndex:  conIdx,
+			IPAddress:               gateway,
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModeManual,
+		}
+		ncs = v.InsertConnectionIntoNcs(ctx, ncs, nc, conIdx)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Update NetworkConnectionSection", "ncs", ncs)
 		err = vm.UpdateNetworkConnectionSection(ncs)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vmName, "error", err)
+			// cleanup net from vApp as we failed to add it to the VM
+			vapp.Refresh()
+			_, delerr := vapp.RemoveNetwork(cidrNet)
+			if delerr != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error deleting network from vapp", "vapp", vapp.VApp.Name, "net", cidrNet, "delerr", delerr)
+			}
 			return err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp added connection", "net", subnetName, "ip", gateway, "VM", vmName, "conIdx", conIdx)
@@ -373,8 +403,8 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 		}
 
 		for n, nc := range ncs.NetworkConnection {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Remove network from ncs", "nc.Network", nc.Network, "portName", portName)
 			if nc.Network == portName {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Remove network from ncs", "nc.Network", nc.Network, "portName", portName)
 				ncs.NetworkConnection[n] = ncs.NetworkConnection[len(ncs.NetworkConnection)-1]
 				ncs.NetworkConnection[len(ncs.NetworkConnection)-1] = &types.NetworkConnection{}
 				ncs.NetworkConnection = ncs.NetworkConnection[:len(ncs.NetworkConnection)-1]
