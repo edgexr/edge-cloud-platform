@@ -18,6 +18,13 @@ if node.normal['tags'].include?('vmtype/rootlb')
     file "/etc/apt/sources.list" do
       content ""
     end
+    # Make sure the apt sources directory is present
+    directory "/etc/apt/sources.list.d" do
+      owner "root"
+      group "root"
+      mode "0755"
+      action :create
+    end
     apt_repository 'bionic' do
       uri 'https://apt.mobiledgex.net/cirrus/2021-02-01'
       distribution 'bionic'

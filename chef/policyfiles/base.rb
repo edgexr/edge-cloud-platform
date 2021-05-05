@@ -12,4 +12,4 @@ run_list 'recipe[runstatus_handler]', 'recipe[copy_resource_tracker]', 'recipe[u
 # Specify a custom source for a single cookbook:
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'copy_resource_tracker', '= 1.0.1'
-cookbook 'upgrade_mobiledgex_package', '= 1.0.2'
+cookbook 'upgrade_mobiledgex_package', '= 1.0.3'
