@@ -759,7 +759,7 @@ func (v *VcdPlatform) GetNextInternalSubnet(ctx context.Context, vappName string
 	// We'll incr the netSpec.DelimiterOctet of this start addr, if it's not in our
 	// All VApps map, it's available
 	curAddr := startAddr
-	vappMap, err := v.GetAllVAppsForVdcByIntAddr(ctx, vcdClient)
+	vappMap, err := v.GetVappToNetworkMap(ctx, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetNextInternalSubnet return", "curAddr", curAddr)
 		return curAddr, false, err
