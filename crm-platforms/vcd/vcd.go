@@ -285,63 +285,14 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 
 }
 
-func (v *VcdPlatform) GetAllVMsForVdcByIntAddr(ctx context.Context, vcdClient *govcd.VCDClient) (VMMap, error) {
-	vmMap := make(VMMap)
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return vmMap, err
-	}
-	netName := v.vmProperties.GetCloudletExternalNetwork()
-
-	for _, r := range vdc.Vdc.ResourceEntities {
-		for _, res := range r.ResourceEntity {
-			if res.Type == "application/vnd.vmware.vcloud.vm+xml" {
-				vm, err := v.FindVMByName(ctx, res.Name, vcdClient)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsForVdcByIntAddr FindVMByName error", "vm", res.Name, "error", err)
-					return vmMap, err
-				} else {
-					if v.Verbose {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsByIntAddr consider ", "vm", res.Name)
-					}
-					ncs, err := vm.GetNetworkConnectionSection()
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVMsByIntAddr GetNetworkConnectionSection failed", "error", err)
-						return vmMap, err
-					}
-					// looking for internal network name
-					for _, nc := range ncs.NetworkConnection {
-						if nc.Network != netName {
-							ip, err := v.GetAddrOfVM(ctx, vm, nc.Network)
-							if err != nil {
-								log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVapps GetAddrOfVapp ", "error", err)
-								return vmMap, err
-							}
-							// We only want gateway addrs in this map so reject any addrs
-							// that have other an .1 as the last octet
-							//
-							// Skip the vapp we're attempting to set
-							if ip != "" {
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return vmMap, nil
-}
-
-func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
+func (v *VcdPlatform) GetVappToNetworkMap(ctx context.Context, vcdClient *govcd.VCDClient) (VAppMap, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVappToNetworkMap")
 
 	vappMap := make(VAppMap)
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
 		return vappMap, err
 	}
-
-	extNetName := v.vmProperties.GetCloudletExternalNetwork()
 
 	for _, r := range vdc.Vdc.ResourceEntities {
 		for _, res := range r.ResourceEntity {
@@ -351,48 +302,15 @@ func (v *VcdPlatform) GetAllVAppsForVdcByIntAddr(ctx context.Context, vcdClient 
 					log.SpanLog(ctx, log.DebugLevelInfra, "GetVappByName", "Vapp", res.Name, "error", err)
 					return vappMap, err
 				} else {
-					if v.Verbose {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr consider ", "vapp", res.Name)
-					}
-					if vapp.VApp.Children == nil || len(vapp.VApp.Children.VM) == 0 {
-						continue
-					}
-					ncs, err := vapp.GetNetworkConnectionSection()
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr ", "error", err)
-						return vappMap, err
-					}
-					// looking for internal network name
-					for _, nc := range ncs.NetworkConnection {
-						if nc.Network != extNetName {
-							ip, err := v.GetAddrOfVapp(ctx, vapp, nc.Network)
-							if err != nil {
-								log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVapps GetAddrOfVapp ", "error", err)
-								return vappMap, err
-							}
-							// We only want gateway addrs in this map so reject any addrs
-							// that have other an .1 as the last octet
-							//
-							// Skip the vapp we're attempting to set
-							if ip != "" {
-								delimiter, err := Octet(ctx, ip, 2)
-								if err != nil {
-									log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr Octet failed", "err", err)
-									return vappMap, err
-								}
-								addr := fmt.Sprintf("10.101.%d.1", delimiter)
-								log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr add", "ip", ip, "vapp", res.Name)
-								vappMap[addr] = vapp
-							}
-						}
-						// else if it has no other nets, just skip it
+					log.SpanLog(ctx, log.DebugLevelInfra, "GetAllVappsByIntAddr found vapp", "vapp", res.Name)
+					for _, n := range vapp.VApp.NetworkConfigSection.NetworkNames() {
+						vappMap[n] = vapp
 					}
 				}
 			}
 		}
 	}
 	return vappMap, nil
-
 }
 
 func (v *VcdPlatform) GetApiEndpointAddr(ctx context.Context) (string, error) {
