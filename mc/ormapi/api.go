@@ -152,8 +152,6 @@ type BillingOrganization struct {
 	UpdatedAt time.Time `json:",omitempty"`
 	// read only: true
 	DeleteInProgress bool `json:",omitempty"`
-	// read only: true
-	CreateInProgress bool `json:",omitempty"`
 }
 
 type AccountInfo struct {
@@ -165,6 +163,13 @@ type AccountInfo struct {
 	SubscriptionId string `json:",omitempty"`
 	ParentId       string `json:",omitempty"`
 	Type           string `json:",omitempty"`
+}
+
+type PaymentProfileDeletion struct {
+	// Billing Organization Name associated with the payment profile
+	Org string `json:",omitempty"`
+	// Payment Profile Id
+	Id int `json:",omitempty"`
 }
 
 type Controller struct {
@@ -369,7 +374,6 @@ type WSStreamPayload struct {
 type AllData struct {
 	Controllers                   []Controller          `json:"controllers,omitempty"`
 	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
-	AccountInfos                  []AccountInfo         `json:"accountinfo,omitempty"`
 	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
 	Orgs                          []Organization        `json:"orgs,omitempty"`
 	Roles                         []Role                `json:"roles,omitempty"`

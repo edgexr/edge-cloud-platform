@@ -190,13 +190,19 @@ type PrevBalanceData struct {
 	} `json:"invoices,omitempty"`
 }
 
+type PaymentProfile struct {
+	ProfileId  int    `json:"profile_id,omitempty"`
+	CardNumber string `json:"card_number,omitempty"`
+	CardType   string `json:"card_type,omitempty"`
+}
+
 type BillingService interface {
 	// Init is called once during startup
 	Init(ctx context.Context, vaultConfig *vault.Config) error
 	// The Billing service's type ie. "chargify" or "zuora"
 	GetType() string
 	// Create Customer, and fills out the accountInfo for that customer
-	ValidateCustomer(ctx context.Context, account *ormapi.AccountInfo) error
+	CreateCustomer(ctx context.Context, customer *CustomerDetails, account *ormapi.AccountInfo) error
 	// Delete Customer
 	DeleteCustomer(ctx context.Context, account *ormapi.AccountInfo) error
 	// Update Customer
@@ -209,4 +215,8 @@ type BillingService interface {
 	RecordUsage(ctx context.Context, account *ormapi.AccountInfo, usageRecords []UsageRecord) error
 	// Grab invoice data
 	GetInvoice(ctx context.Context, account *ormapi.AccountInfo, startDate, endDate string) ([]InvoiceData, error)
+	// Show payment profiles
+	ShowPaymentProfiles(ctx context.Context, account *ormapi.AccountInfo) ([]PaymentProfile, error)
+	// Delete payment profile
+	DeletePaymentProfile(ctx context.Context, account *ormapi.AccountInfo, profile *PaymentProfile) error
 }

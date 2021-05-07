@@ -29,12 +29,14 @@ type Api interface {
 	RestrictedUpdateOrg(uri, token string, org map[string]interface{}) (int, error)
 
 	CreateBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
-	UpdateAccountInfo(uri, token string, acc *ormapi.AccountInfo) (int, error)
 	DeleteBillingOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
 	UpdateBillingOrg(uri, token string, jsonData string) (int, error)
 	ShowBillingOrg(uri, token string) ([]ormapi.BillingOrganization, int, error)
+	ShowAccountInfo(uri, token string) ([]ormapi.AccountInfo, int, error)
 	AddChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
 	RemoveChildOrg(uri, token string, org *ormapi.BillingOrganization) (int, error)
+	ShowPaymentProfiles(uri, token string, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, int, error)
+	DeletePaymentProfile(uri, token string, profile *ormapi.PaymentProfileDeletion) (int, error)
 	GetInvoice(uri, token string, req *ormapi.InvoiceRequest) ([]billing.InvoiceData, int, error)
 
 	AddUserRole(uri, token string, role *ormapi.Role) (int, error)

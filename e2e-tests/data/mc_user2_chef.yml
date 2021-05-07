@@ -19,11 +19,6 @@ billingorgs:
   phone: 123-123-1234
   currency: USD
 
-accountinfos:
-- orgname: DevOrg
-  accountid: "123"
-  subscriptionid: "321"
-
 regiondata:
 - region: local
   appdata:

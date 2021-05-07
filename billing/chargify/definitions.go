@@ -180,22 +180,22 @@ type PaymentProfileWrapper struct {
 }
 
 type PaymentProfile struct {
-	PaymentType     string `json:"payment_type,omitempty"`
-	CustomerId      int    `json:"customer_id,omitempty"`
-	FirstName       string `json:"first_name,omitempty"`
-	LastName        string `json:"last_name,omitempty"`
-	FullNumber      string `json:"full_number,omitempty"`
-	ExpirationMonth int    `json:"expiration_month,omitempty"`
-	ExpirationYear  int    `json:"expiration_year,omitempty"`
-	Cvv             int    `json:"cvv,omitempty"`
-	BillingAddress  string `json:"billing_address,omitempty"`
-	BillingAddress2 string `json:"billing_address2,omitempty"`
-	BillingCity     string `json:"billing_city,omitempty"`
-	BillingState    string `json:"billing_state,omitempty"`
-	BillingZip      string `json:"billing_zip,omitempty"`
-	BillingCountry  string `json:"billing_country,omitempty"`
-	CardType        string `json:"card_type,omitempty"`
-	Id              int    `json:"id,omitempty"`
+	PaymentType      string `json:"payment_type,omitempty"`
+	CustomerId       int    `json:"customer_id,omitempty"`
+	FirstName        string `json:"first_name,omitempty"`
+	LastName         string `json:"last_name,omitempty"`
+	MaskedCardNumber string `json:"masked_card_number,omitempty"`
+	ExpirationMonth  int    `json:"expiration_month,omitempty"`
+	ExpirationYear   int    `json:"expiration_year,omitempty"`
+	Cvv              int    `json:"cvv,omitempty"`
+	BillingAddress   string `json:"billing_address,omitempty"`
+	BillingAddress2  string `json:"billing_address2,omitempty"`
+	BillingCity      string `json:"billing_city,omitempty"`
+	BillingState     string `json:"billing_state,omitempty"`
+	BillingZip       string `json:"billing_zip,omitempty"`
+	BillingCountry   string `json:"billing_country,omitempty"`
+	CardType         string `json:"card_type,omitempty"`
+	Id               int    `json:"id,omitempty"`
 }
 
 // This is essentially billing.InvoiceData uncensored

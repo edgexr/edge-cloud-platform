@@ -63,6 +63,11 @@ var AccountInfoComments = map[string]string{
 	"subscriptionid": `Subscription ID given by the billing platform`,
 }
 
+var PaymentProfileDeletionComments = map[string]string{
+	"org": `Billing Organization Name associated with the payment profile`,
+	"id":  `Payment Profile Id`,
+}
+
 var ControllerComments = map[string]string{
 	"region":     `Controller region name`,
 	"address":    `Controller API address or URL`,

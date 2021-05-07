@@ -17,14 +17,6 @@ func GetBillingOrgCommand() *cobra.Command {
 		Comments:     CreateBillingOrgComments,
 		Run:          runRest("/auth/billingorg/create"),
 	}, &cli.Command{
-		Use:          "updateaccountinfo",
-		Short:        "Commit a BillingOrganization after validating it with our payment platform",
-		RequiredArgs: "orgname accountid",
-		OptionalArgs: "subscriptionid",
-		ReqData:      &ormapi.AccountInfo{},
-		Comments:     ormapi.AccountInfoComments,
-		Run:          runRest("/auth/billingorg/updateaccount"),
-	}, &cli.Command{
 		Use:          "update",
 		Short:        "Update a billing organization",
 		RequiredArgs: "name",
@@ -61,6 +53,27 @@ func GetBillingOrgCommand() *cobra.Command {
 		Comments:  ormapi.BillingOrganizationComments,
 		ReplyData: &[]ormapi.BillingOrganization{},
 		Run:       runRest("/auth/billingorg/show"),
+	}, &cli.Command{
+		Use:       "showaccountinfo",
+		Short:     "Show billing account information",
+		ReplyData: &[]ormapi.AccountInfo{},
+		Comments:  ormapi.AccountInfoComments,
+		Run:       runRest("/auth/billingorg/showaccount"),
+	}, &cli.Command{
+		Use:          "showpaymentprofiles",
+		Short:        "Show payment profiles associated with the billing org",
+		RequiredArgs: "name",
+		Comments:     map[string]string{"name": "name of the billingOrg to show payment info for"},
+		ReqData:      &ormapi.BillingOrganization{},
+		ReplyData:    &[]billing.PaymentProfile{},
+		Run:          runRest("/auth/billingorg/showpaymentprofiles"),
+	}, &cli.Command{
+		Use:          "deletepaymentprofile",
+		Short:        "Remove a payment profile",
+		RequiredArgs: "org id",
+		Comments:     ormapi.PaymentProfileDeletionComments,
+		ReqData:      &ormapi.PaymentProfileDeletion{},
+		Run:          runRest("/auth/billingorg/deletepaymentprofile"),
 	}, &cli.Command{
 		Use:          "getinvoice",
 		RequiredArgs: "name",

@@ -1776,11 +1776,7 @@ func testCreateBillingOrg(t *testing.T, mcClient *ormclient.Client, uri, token, 
 		Type: orgType,
 		Name: orgName,
 	}
-	acc := ormapi.AccountInfo{OrgName: org.Name}
 	status, err := mcClient.CreateBillingOrg(uri, token, &org)
 	require.Nil(t, err, "create billing org ", orgName)
-	require.Equal(t, http.StatusOK, status)
-	status, err = mcClient.UpdateAccountInfo(uri, token, &acc)
-	require.Nil(t, err, "update account info ", orgName)
 	require.Equal(t, http.StatusOK, status)
 }
