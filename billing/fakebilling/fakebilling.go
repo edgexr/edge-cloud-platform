@@ -26,10 +26,6 @@ func (bs *BillingService) GetType() string {
 	return "fakebilling"
 }
 
-func (bs *BillingService) ValidateCustomer(ctx context.Context, account *ormapi.AccountInfo) error {
-	return nil
-}
-
 func (bs *BillingService) CreateCustomer(ctx context.Context, customer *billing.CustomerDetails, account *ormapi.AccountInfo) error {
 	accMux.Lock()
 	account.AccountId = strconv.Itoa(accountCounter)
@@ -78,4 +74,12 @@ func (bs *BillingService) RecordUsage(ctx context.Context, account *ormapi.Accou
 
 func (bs *BillingService) GetInvoice(ctx context.Context, account *ormapi.AccountInfo, startDate, endDate string) ([]billing.InvoiceData, error) {
 	return nil, nil
+}
+
+func (bs *BillingService) ShowPaymentProfiles(ctx context.Context, account *ormapi.AccountInfo) ([]billing.PaymentProfile, error) {
+	return nil, nil
+}
+
+func (bs *BillingService) DeletePaymentProfile(ctx context.Context, account *ormapi.AccountInfo, profile *billing.PaymentProfile) error {
+	return nil
 }

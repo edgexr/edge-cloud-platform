@@ -130,8 +130,20 @@ func (s *Client) CreateBillingOrg(uri, token string, bOrg *ormapi.BillingOrganiz
 	return s.PostJson(uri+"/auth/billingorg/create", token, bOrg, nil)
 }
 
-func (s *Client) UpdateAccountInfo(uri, token string, acc *ormapi.AccountInfo) (int, error) {
-	return s.PostJson(uri+"/auth/billingorg/updateaccount", token, acc, nil)
+func (s *Client) ShowAccountInfo(uri, token string) ([]ormapi.AccountInfo, int, error) {
+	accs := []ormapi.AccountInfo{}
+	status, err := s.PostJson(uri+"/auth/billingorg/showaccount", token, nil, &accs)
+	return accs, status, err
+}
+
+func (s *Client) ShowPaymentProfiles(uri, token string, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, int, error) {
+	pros := []billing.PaymentProfile{}
+	status, err := s.PostJson(uri+"/auth/billingorg/showpaymentprofiles", token, org, &pros)
+	return pros, status, err
+}
+
+func (s *Client) DeletePaymentProfile(uri, token string, profile *ormapi.PaymentProfileDeletion) (int, error) {
+	return s.PostJson(uri+"/auth/billingorg/deletepaymentprofile", token, profile, nil)
 }
 
 func (s *Client) DeleteBillingOrg(uri, token string, bOrg *ormapi.BillingOrganization) (int, error) {

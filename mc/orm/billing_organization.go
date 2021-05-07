@@ -94,7 +94,6 @@ func CreateBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Bi
 		return fmt.Errorf("Invalid type: %s. Type must be either \"%s\" or \"%s\"", org.Type, billing.CUSTOMER_TYPE_SELF, billing.CUSTOMER_TYPE_PARENT)
 	}
 
-	org.CreateInProgress = true
 	err = db.Create(&org).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"organizations_pkey") {
@@ -131,115 +130,34 @@ func createBillingAccount(ctx context.Context, info *ormapi.BillingOrganization)
 	if !billingEnabled(ctx) {
 		return nil
 	}
-	accountInfo := ormapi.AccountInfo{
-		OrgName: info.Name,
-		Type:    info.Type,
+	accountInfo := ormapi.AccountInfo{OrgName: info.Name}
+	billTo := billing.CustomerDetails{
+		FirstName: info.FirstName,
+		LastName:  info.LastName,
+		OrgName:   info.Name,
+		Email:     info.Email,
+		Address1:  info.Address,
+		Address2:  info.Address2,
+		City:      info.City,
+		Country:   info.Country,
+		State:     info.State,
+		Zip:       info.PostalCode,
+		Phone:     info.Phone,
+		Type:      info.Type,
+	}
+	var err error
+	err = serverConfig.BillingService.CreateCustomer(ctx, &billTo, &accountInfo)
+	if err != nil {
+		return err
 	}
 
 	//put the account info in the db
 	db := loggedDB(ctx)
-	err := db.Create(&accountInfo).Error
+	err = db.Create(&accountInfo).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"accountinfo_pkey") {
 			return fmt.Errorf("AccountInfo with name %s (case-insensitive) already exists", info.Name)
 		}
-		return dbErr(err)
-	}
-	return nil
-}
-
-func UpdateAccountInfo(c echo.Context) error {
-	claims, err := getClaims(c)
-	if err != nil {
-		return err
-	}
-	ctx := GetContext(c)
-	acc := ormapi.AccountInfo{}
-	if err := c.Bind(&acc); err != nil {
-		return bindErr(c, err)
-	}
-	span := log.SpanFromContext(ctx)
-	span.SetTag("billing org", acc.OrgName)
-	err = UpdateAccountInfoObj(ctx, claims, &acc)
-	return setReply(c, err, Msg("Account Info Updated"))
-}
-
-func UpdateAccountInfoObj(ctx context.Context, claims *UserClaims, account *ormapi.AccountInfo) (reterr error) {
-	// TODO: remove this later, for now only mexadmin has the permission to create billingOrgs
-	roles, err := ShowUserRoleObj(ctx, claims.Username)
-	if err != nil {
-		return fmt.Errorf("Unable to discover user roles: %v", err)
-	}
-	isAdmin := false
-	for _, role := range roles {
-		if isAdminRole(role.Role) {
-			isAdmin = true
-		}
-	}
-	if !isAdmin && billingEnabled(ctx) {
-		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
-	}
-	if err := authorized(ctx, claims.Username, account.OrgName, ResourceBilling, ActionManage); err != nil {
-		return fmt.Errorf("Not authorized to create a Billing Organization")
-	}
-	db := loggedDB(ctx)
-	bOrg, err := billingOrgExists(ctx, account.OrgName)
-	if err != nil {
-		return dbErr(err)
-	} else if bOrg == nil {
-		return fmt.Errorf("No BillingOrg named %s to commit", account.OrgName)
-	}
-	// if they do specify, it must match
-	if account.Type != "" && account.Type != bOrg.Type {
-		return fmt.Errorf("Invalid account details")
-	}
-	if !bOrg.CreateInProgress {
-		return fmt.Errorf("BillingOrganization %s already committed", account.OrgName)
-	}
-	if billingEnabled(ctx) {
-		err = serverConfig.BillingService.ValidateCustomer(ctx, account)
-		if err != nil {
-			return err
-		}
-	}
-	defer func() {
-		// if we reach here this is a big problem, that means the account was OK'ed by us earlier in create and we validated it was successfully
-		// created in chargify, we need some sort of alert to have an admin go and manually delete the customer and sub from chargify
-		if reterr != nil {
-			bOrg.CreateInProgress = true
-			db.Save(bOrg)
-		}
-	}()
-	if billingEnabled(ctx) {
-		acc, err := accountInfoExists(ctx, account.OrgName)
-		if err != nil {
-			return dbErr(err)
-		} else if acc == nil {
-			return fmt.Errorf("Could not locate account information to commit for %s", account.OrgName)
-		}
-		originalAcc := acc.AccountId
-		originalSub := acc.SubscriptionId
-		originalParent := acc.ParentId
-		defer func() {
-			// reset the acc if there is an err after this point
-			if reterr != nil {
-				acc.AccountId = originalAcc
-				acc.SubscriptionId = originalSub
-				acc.ParentId = originalParent
-				db.Save(acc)
-			}
-		}()
-		acc.AccountId = account.AccountId
-		acc.SubscriptionId = account.SubscriptionId
-		acc.ParentId = account.ParentId
-		err = db.Save(acc).Error
-		if err != nil {
-			return dbErr(err)
-		}
-	}
-	bOrg.CreateInProgress = false
-	err = db.Save(bOrg).Error
-	if err != nil {
 		return dbErr(err)
 	}
 	return nil
@@ -588,7 +506,7 @@ func ShowBillingOrg(c echo.Context) error {
 func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.BillingOrganization, error) {
 	orgs := []ormapi.BillingOrganization{}
 	db := loggedDB(ctx)
-	err := authorized(ctx, claims.Username, "", ResourceUsers, ActionView)
+	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionView)
 	if err == nil {
 		// super user, show all orgs
 		err := db.Find(&orgs).Error
@@ -597,37 +515,119 @@ func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Billin
 		}
 	} else {
 		// show orgs for current user
-		groupings, err := enforcer.GetGroupingPolicy()
-		if err != nil {
-			return nil, dbErr(err)
-		}
-		for _, grp := range groupings {
-			if len(grp) < 2 {
-				continue
+		for orgName, _ := range authOrgs {
+			org := ormapi.BillingOrganization{}
+			org.Name = orgName
+			err := db.Where(&org).First(&org).Error
+			if err != nil {
+				return nil, dbErr(err)
 			}
-			orguser := strings.Split(grp[0], "::")
-			if len(orguser) > 1 && orguser[1] == claims.Username {
-				org := ormapi.BillingOrganization{}
-				org.Name = orguser[0]
-				err := db.Where(&org).First(&org).Error
-				show := true
-				if err != nil {
-					// check to make sure it wasnt a regular org before throwing an error
-					regOrg := ormapi.Organization{Name: orguser[0]}
-					regErr := db.Where(&regOrg).First(&regOrg).Error
-					if regErr == nil {
-						show = false
-					} else {
-						return nil, dbErr(err)
-					}
-				}
-				if show {
-					orgs = append(orgs, org)
-				}
-			}
+			orgs = append(orgs, org)
 		}
 	}
 	return orgs, nil
+}
+
+func ShowAccountInfo(c echo.Context) error {
+	ctx := GetContext(c)
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	accs, err := ShowAccountInfoObj(ctx, claims)
+	return setReply(c, err, accs)
+}
+
+func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.AccountInfo, error) {
+	accs := []ormapi.AccountInfo{}
+	db := loggedDB(ctx)
+	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionManage)
+	if err == nil {
+		// super user, show all accs
+		err := db.Find(&accs).Error
+		if err != nil {
+			return nil, dbErr(err)
+		}
+	} else {
+		// show accs for current user
+		for org, _ := range authOrgs {
+			acc := ormapi.AccountInfo{}
+			acc.OrgName = org
+			err = db.Where(&acc).First(&acc).Error
+			if err != nil {
+				return nil, dbErr(err)
+			}
+			accs = append(accs, acc)
+		}
+	}
+	return accs, nil
+}
+
+func ShowPaymentInfo(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+	org := ormapi.BillingOrganization{}
+	if err := c.Bind(&org); err != nil {
+		return bindErr(c, err)
+	}
+	profiles, err := ShowPaymentInfoObj(ctx, claims, &org)
+	return setReply(c, err, profiles)
+}
+
+func ShowPaymentInfoObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, error) {
+	// TODO: remove this later, for now only mexadmin has the permission to manipulate payment info
+	isAdmin, err := isUserAdmin(ctx, claims.Username)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin && billingEnabled(ctx) {
+		return nil, fmt.Errorf("Currently only admins may create and commit billingOrgs")
+	}
+	if err := authorized(ctx, claims.Username, org.Name, ResourceBilling, ActionView); err != nil {
+		return nil, err
+	}
+	acc, err := GetAccountObj(ctx, org.Name)
+	if err != nil {
+		return nil, err
+	}
+	profiles, err := serverConfig.BillingService.ShowPaymentProfiles(ctx, acc)
+	return profiles, err
+}
+
+func DeletePaymentInfo(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+	profile := ormapi.PaymentProfileDeletion{}
+	if err := c.Bind(&profile); err != nil {
+		return bindErr(c, err)
+	}
+	err = deletePaymentProfileObj(ctx, claims, &profile)
+	return setReply(c, err, nil)
+}
+
+func deletePaymentProfileObj(ctx context.Context, claims *UserClaims, profile *ormapi.PaymentProfileDeletion) error {
+	// TODO: remove this later, for now only mexadmin has the permission to manipulare payment info
+	isAdmin, err := isUserAdmin(ctx, claims.Username)
+	if err != nil {
+		return err
+	}
+	if !isAdmin && billingEnabled(ctx) {
+		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
+	}
+	if err := authorized(ctx, claims.Username, profile.Org, ResourceBilling, ActionManage); err != nil {
+		return err
+	}
+	acc, err := GetAccountObj(ctx, profile.Org)
+	if err != nil {
+		return err
+	}
+	return serverConfig.BillingService.DeletePaymentProfile(ctx, acc, &billing.PaymentProfile{ProfileId: profile.Id})
 }
 
 func billingOrgExists(ctx context.Context, orgName string) (*ormapi.BillingOrganization, error) {
@@ -787,7 +787,7 @@ func isBillable(ctx context.Context, orgName string) bool {
 	}
 	// this should always pass but just in case
 	bOrg, _ := billingOrgExists(ctx, org.Parent)
-	if bOrg == nil || bOrg.CreateInProgress {
+	if bOrg == nil {
 		return false
 	}
 	return true
