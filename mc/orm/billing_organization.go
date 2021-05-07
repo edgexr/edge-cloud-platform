@@ -507,7 +507,11 @@ func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Billin
 	orgs := []ormapi.BillingOrganization{}
 	db := loggedDB(ctx)
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionView)
-	if err == nil {
+	if err != nil {
+		return nil, err
+	}
+	_, isAdmin := authOrgs[""]
+	if isAdmin {
 		// super user, show all orgs
 		err := db.Find(&orgs).Error
 		if err != nil {
@@ -519,10 +523,20 @@ func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.Billin
 			org := ormapi.BillingOrganization{}
 			org.Name = orgName
 			err := db.Where(&org).First(&org).Error
+			show := true
 			if err != nil {
-				return nil, dbErr(err)
+				// check to make sure it wasnt a regular org with no billing before throwing an error
+				regOrg := ormapi.Organization{Name: orgName}
+				regErr := db.Where(&regOrg).First(&regOrg).Error
+				if regErr == nil {
+					show = false
+				} else {
+					return nil, dbErr(err)
+				}
 			}
-			orgs = append(orgs, org)
+			if show {
+				orgs = append(orgs, org)
+			}
 		}
 	}
 	return orgs, nil
@@ -542,7 +556,11 @@ func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.Accou
 	accs := []ormapi.AccountInfo{}
 	db := loggedDB(ctx)
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceBilling, ActionManage)
-	if err == nil {
+	if err != nil {
+		return nil, err
+	}
+	_, isAdmin := authOrgs[""]
+	if isAdmin {
 		// super user, show all accs
 		err := db.Find(&accs).Error
 		if err != nil {
@@ -554,10 +572,20 @@ func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.Accou
 			acc := ormapi.AccountInfo{}
 			acc.OrgName = org
 			err = db.Where(&acc).First(&acc).Error
+			show := true
 			if err != nil {
-				return nil, dbErr(err)
+				// check to make sure it wasnt a regular orge with no billing before throwing an error
+				regOrg := ormapi.Organization{Name: org}
+				regErr := db.Where(&regOrg).First(&regOrg).Error
+				if regErr == nil {
+					show = false
+				} else {
+					return nil, dbErr(err)
+				}
 			}
-			accs = append(accs, acc)
+			if show {
+				accs = append(accs, acc)
+			}
 		}
 	}
 	return accs, nil

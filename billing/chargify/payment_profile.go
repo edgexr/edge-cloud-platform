@@ -54,6 +54,7 @@ func (bs *BillingService) DeletePaymentProfile(ctx context.Context, account *orm
 	if err != nil {
 		return fmt.Errorf("Error sending request: %v\n", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		return infracommon.GetReqErr(resp.Body)
 	}
