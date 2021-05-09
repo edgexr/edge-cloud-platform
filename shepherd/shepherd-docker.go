@@ -244,7 +244,7 @@ func parseContainerDiskUsage(ctx context.Context, diskStr string) (uint64, error
 	diskBytes, err := parseComputeUnitsDelim(ctx, virtDisk)
 	if err != nil || len(diskBytes) != 1 {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse disk bytes", "virtDisk", virtDisk,
-			"diskStr", diskStr, "err", err.Error())
+			"diskStr", diskStr, "err", err)
 		return 0, fmt.Errorf("Failed to parse disk Units - %v", err)
 	}
 	return diskBytes[0], nil
