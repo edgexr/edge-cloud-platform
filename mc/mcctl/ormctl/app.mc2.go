@@ -24,7 +24,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAppCmd = &cli.Command{
+var CreateAppCmd = &ApiCommand{
+	Name:         "CreateApp",
 	Use:          "create",
 	Short:        "Create Application. Creates a definition for an application instance for Cloudlet deployment.",
 	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
@@ -32,12 +33,15 @@ var CreateAppCmd = &cli.Command{
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
 	Comments:     addRegionComment(AppComments),
+	NoConfig:     "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateApp"),
+	Path:         "/auth/ctrl/CreateApp",
+	ProtobufApi:  true,
 }
 
-var DeleteAppCmd = &cli.Command{
+var DeleteAppCmd = &ApiCommand{
+	Name:         "DeleteApp",
 	Use:          "delete",
 	Short:        "Delete Application. Deletes a definition of an Application instance. Make sure no other application instances exist with that definition. If they do exist, you must delete those Application instances first.",
 	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
@@ -45,27 +49,31 @@ var DeleteAppCmd = &cli.Command{
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
 	Comments:     addRegionComment(AppComments),
+	NoConfig:     "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteApp"),
+	Path:         "/auth/ctrl/DeleteApp",
+	ProtobufApi:  true,
 }
 
-var UpdateAppCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update Application. Updates the definition of an Application instance.",
-	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
-	OptionalArgs: strings.Join(AppOptionalArgs, " "),
-	AliasArgs:    strings.Join(AppAliasArgs, " "),
-	SpecialArgs:  &AppSpecialArgs,
-	Comments:     addRegionComment(AppComments),
-	ReqData:      &ormapi.RegionApp{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateApp",
-		withSetFieldsFunc(setUpdateAppFields),
-	),
+var UpdateAppCmd = &ApiCommand{
+	Name:          "UpdateApp",
+	Use:           "update",
+	Short:         "Update Application. Updates the definition of an Application instance.",
+	RequiredArgs:  "region " + strings.Join(AppRequiredArgs, " "),
+	OptionalArgs:  strings.Join(AppOptionalArgs, " "),
+	AliasArgs:     strings.Join(AppAliasArgs, " "),
+	SpecialArgs:   &AppSpecialArgs,
+	Comments:      addRegionComment(AppComments),
+	NoConfig:      "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
+	ReqData:       &ormapi.RegionApp{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateApp",
+	SetFieldsFunc: SetUpdateAppFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateAppFields(in map[string]interface{}) {
+func SetUpdateAppFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("App")]
 	if obj == nil {
@@ -85,7 +93,8 @@ func setUpdateAppFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowAppCmd = &cli.Command{
+var ShowAppCmd = &ApiCommand{
+	Name:         "ShowApp",
 	Use:          "show",
 	Short:        "Show Applications. Lists all Application definitions managed from the Edge Controller. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
@@ -93,13 +102,16 @@ var ShowAppCmd = &cli.Command{
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
 	Comments:     addRegionComment(AppComments),
+	NoConfig:     "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
 	ReqData:      &ormapi.RegionApp{},
 	ReplyData:    &edgeproto.App{},
-	Run:          runRest("/auth/ctrl/ShowApp"),
+	Path:         "/auth/ctrl/ShowApp",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddAppAutoProvPolicyCmd = &cli.Command{
+var AddAppAutoProvPolicyCmd = &ApiCommand{
+	Name:         "AddAppAutoProvPolicy",
 	Use:          "addautoprovpolicy",
 	Short:        "Add an AutoProvPolicy to the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
@@ -109,10 +121,12 @@ var AddAppAutoProvPolicyCmd = &cli.Command{
 	Comments:     addRegionComment(AppAutoProvPolicyComments),
 	ReqData:      &ormapi.RegionAppAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddAppAutoProvPolicy"),
+	Path:         "/auth/ctrl/AddAppAutoProvPolicy",
+	ProtobufApi:  true,
 }
 
-var RemoveAppAutoProvPolicyCmd = &cli.Command{
+var RemoveAppAutoProvPolicyCmd = &ApiCommand{
+	Name:         "RemoveAppAutoProvPolicy",
 	Use:          "removeautoprovpolicy",
 	Short:        "Remove an AutoProvPolicy from the App",
 	RequiredArgs: "region " + strings.Join(AppAutoProvPolicyRequiredArgs, " "),
@@ -122,10 +136,11 @@ var RemoveAppAutoProvPolicyCmd = &cli.Command{
 	Comments:     addRegionComment(AppAutoProvPolicyComments),
 	ReqData:      &ormapi.RegionAppAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveAppAutoProvPolicy"),
+	Path:         "/auth/ctrl/RemoveAppAutoProvPolicy",
+	ProtobufApi:  true,
 }
 
-var AppApiCmds = []*cli.Command{
+var AppApiCmds = []*ApiCommand{
 	CreateAppCmd,
 	DeleteAppCmd,
 	UpdateAppCmd,
@@ -134,7 +149,11 @@ var AppApiCmds = []*cli.Command{
 	RemoveAppAutoProvPolicyCmd,
 }
 
-var AppApiCmdsGroup = cli.GenGroup("app", "Manage Apps", AppApiCmds)
+const AppGroup = "App"
+
+func init() {
+	AllApis.AddGroup(AppGroup, "Manage Apps", AppApiCmds)
+}
 
 var RemoteConnectionRequiredArgs = []string{}
 var RemoteConnectionOptionalArgs = []string{

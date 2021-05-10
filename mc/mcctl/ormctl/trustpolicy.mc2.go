@@ -23,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateTrustPolicyCmd = &cli.Command{
+var CreateTrustPolicyCmd = &ApiCommand{
+	Name:                 "CreateTrustPolicy",
 	Use:                  "create",
 	Short:                "Create a Trust Policy",
 	RequiredArgs:         "region " + strings.Join(TrustPolicyRequiredArgs, " "),
@@ -33,12 +34,14 @@ var CreateTrustPolicyCmd = &cli.Command{
 	Comments:             addRegionComment(TrustPolicyComments),
 	ReqData:              &ormapi.RegionTrustPolicy{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/CreateTrustPolicy"),
+	Path:                 "/auth/ctrl/CreateTrustPolicy",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var DeleteTrustPolicyCmd = &cli.Command{
+var DeleteTrustPolicyCmd = &ApiCommand{
+	Name:                 "DeleteTrustPolicy",
 	Use:                  "delete",
 	Short:                "Delete a Trust policy",
 	RequiredArgs:         "region " + strings.Join(TrustPolicyRequiredArgs, " "),
@@ -48,29 +51,31 @@ var DeleteTrustPolicyCmd = &cli.Command{
 	Comments:             addRegionComment(TrustPolicyComments),
 	ReqData:              &ormapi.RegionTrustPolicy{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/DeleteTrustPolicy"),
+	Path:                 "/auth/ctrl/DeleteTrustPolicy",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var UpdateTrustPolicyCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update a Trust policy",
-	RequiredArgs: "region " + strings.Join(TrustPolicyRequiredArgs, " "),
-	OptionalArgs: strings.Join(TrustPolicyOptionalArgs, " "),
-	AliasArgs:    strings.Join(TrustPolicyAliasArgs, " "),
-	SpecialArgs:  &TrustPolicySpecialArgs,
-	Comments:     addRegionComment(TrustPolicyComments),
-	ReqData:      &ormapi.RegionTrustPolicy{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateTrustPolicy",
-		withSetFieldsFunc(setUpdateTrustPolicyFields),
-	),
+var UpdateTrustPolicyCmd = &ApiCommand{
+	Name:                 "UpdateTrustPolicy",
+	Use:                  "update",
+	Short:                "Update a Trust policy",
+	RequiredArgs:         "region " + strings.Join(TrustPolicyRequiredArgs, " "),
+	OptionalArgs:         strings.Join(TrustPolicyOptionalArgs, " "),
+	AliasArgs:            strings.Join(TrustPolicyAliasArgs, " "),
+	SpecialArgs:          &TrustPolicySpecialArgs,
+	Comments:             addRegionComment(TrustPolicyComments),
+	ReqData:              &ormapi.RegionTrustPolicy{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateTrustPolicy",
+	SetFieldsFunc:        SetUpdateTrustPolicyFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-func setUpdateTrustPolicyFields(in map[string]interface{}) {
+func SetUpdateTrustPolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("TrustPolicy")]
 	if obj == nil {
@@ -90,7 +95,8 @@ func setUpdateTrustPolicyFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowTrustPolicyCmd = &cli.Command{
+var ShowTrustPolicyCmd = &ApiCommand{
+	Name:         "ShowTrustPolicy",
 	Use:          "show",
 	Short:        "Show Trust Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
@@ -100,18 +106,23 @@ var ShowTrustPolicyCmd = &cli.Command{
 	Comments:     addRegionComment(TrustPolicyComments),
 	ReqData:      &ormapi.RegionTrustPolicy{},
 	ReplyData:    &edgeproto.TrustPolicy{},
-	Run:          runRest("/auth/ctrl/ShowTrustPolicy"),
+	Path:         "/auth/ctrl/ShowTrustPolicy",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var TrustPolicyApiCmds = []*cli.Command{
+var TrustPolicyApiCmds = []*ApiCommand{
 	CreateTrustPolicyCmd,
 	DeleteTrustPolicyCmd,
 	UpdateTrustPolicyCmd,
 	ShowTrustPolicyCmd,
 }
 
-var TrustPolicyApiCmdsGroup = cli.GenGroup("trustpolicy", "Manage TrustPolicys", TrustPolicyApiCmds)
+const TrustPolicyGroup = "TrustPolicy"
+
+func init() {
+	AllApis.AddGroup(TrustPolicyGroup, "Manage TrustPolicys", TrustPolicyApiCmds)
+}
 
 var SecurityRuleRequiredArgs = []string{}
 var SecurityRuleOptionalArgs = []string{

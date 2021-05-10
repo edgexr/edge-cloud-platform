@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
-	"github.com/spf13/cobra"
 )
 
-func GetUsageCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const UsageGroup = "Usage"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "ShowAppUsage",
 		Use:          "app",
 		Short:        "View App usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, AppUsageRequiredArgs...), " "),
@@ -18,8 +19,9 @@ func GetUsageCommand() *cobra.Command {
 		Comments:     addRegionComment(AppUsageComments),
 		ReqData:      &ormapi.RegionAppInstUsage{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/usage/app"),
-	}, &cli.Command{
+		Path:         "/auth/usage/app",
+	}, &ApiCommand{
+		Name:         "ShowClusterUsage",
 		Use:          "cluster",
 		Short:        "View ClusterInst usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClusterUsageRequiredArgs...), " "),
@@ -28,8 +30,9 @@ func GetUsageCommand() *cobra.Command {
 		Comments:     addRegionComment(ClusterUsageComments),
 		ReqData:      &ormapi.RegionClusterInstUsage{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/usage/cluster"),
-	}, &cli.Command{
+		Path:         "/auth/usage/cluster",
+	}, &ApiCommand{
+		Name:         "ShowCloudletPoolUsage",
 		Use:          "cloudletpool",
 		Short:        "View CloudletPool usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolUsageRequiredArgs...), " "),
@@ -38,9 +41,9 @@ func GetUsageCommand() *cobra.Command {
 		Comments:     addRegionComment(CloudletPoolUsageComments),
 		ReqData:      &ormapi.RegionCloudletPoolUsage{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/usage/cloudletpool"),
+		Path:         "/auth/usage/cloudletpool",
 	}}
-	return cli.GenGroup("usage", "View App, Cluster, etc usage ", cmds)
+	AllApis.AddGroup(UsageGroup, "View App, Cluster, etc usage ", cmds)
 }
 
 var AppUsageRequiredArgs = []string{

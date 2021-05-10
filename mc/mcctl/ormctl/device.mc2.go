@@ -10,7 +10,6 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -24,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var InjectDeviceCmd = &cli.Command{
+var InjectDeviceCmd = &ApiCommand{
+	Name:         "InjectDevice",
 	Use:          "inject",
 	Short:        "Inject a device",
 	RequiredArgs: "region " + strings.Join(DeviceRequiredArgs, " "),
@@ -34,10 +34,12 @@ var InjectDeviceCmd = &cli.Command{
 	Comments:     addRegionComment(DeviceComments),
 	ReqData:      &ormapi.RegionDevice{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/InjectDevice"),
+	Path:         "/auth/ctrl/InjectDevice",
+	ProtobufApi:  true,
 }
 
-var ShowDeviceCmd = &cli.Command{
+var ShowDeviceCmd = &ApiCommand{
+	Name:         "ShowDevice",
 	Use:          "show",
 	Short:        "Show devices",
 	RequiredArgs: "region",
@@ -47,11 +49,13 @@ var ShowDeviceCmd = &cli.Command{
 	Comments:     addRegionComment(DeviceComments),
 	ReqData:      &ormapi.RegionDevice{},
 	ReplyData:    &edgeproto.Device{},
-	Run:          runRest("/auth/ctrl/ShowDevice"),
+	Path:         "/auth/ctrl/ShowDevice",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var EvictDeviceCmd = &cli.Command{
+var EvictDeviceCmd = &ApiCommand{
+	Name:         "EvictDevice",
 	Use:          "evict",
 	Short:        "Evict a device",
 	RequiredArgs: "region " + strings.Join(DeviceRequiredArgs, " "),
@@ -61,10 +65,12 @@ var EvictDeviceCmd = &cli.Command{
 	Comments:     addRegionComment(DeviceComments),
 	ReqData:      &ormapi.RegionDevice{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/EvictDevice"),
+	Path:         "/auth/ctrl/EvictDevice",
+	ProtobufApi:  true,
 }
 
-var ShowDeviceReportCmd = &cli.Command{
+var ShowDeviceReportCmd = &ApiCommand{
+	Name:         "ShowDeviceReport",
 	Use:          "showreport",
 	Short:        "Device Reports API.",
 	RequiredArgs: "region",
@@ -74,18 +80,23 @@ var ShowDeviceReportCmd = &cli.Command{
 	Comments:     addRegionComment(DeviceReportComments),
 	ReqData:      &ormapi.RegionDeviceReport{},
 	ReplyData:    &edgeproto.Device{},
-	Run:          runRest("/auth/ctrl/ShowDeviceReport"),
+	Path:         "/auth/ctrl/ShowDeviceReport",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var DeviceApiCmds = []*cli.Command{
+var DeviceApiCmds = []*ApiCommand{
 	InjectDeviceCmd,
 	ShowDeviceCmd,
 	EvictDeviceCmd,
 	ShowDeviceReportCmd,
 }
 
-var DeviceApiCmdsGroup = cli.GenGroup("device", "Manage Devices", DeviceApiCmds)
+const DeviceGroup = "Device"
+
+func init() {
+	AllApis.AddGroup(DeviceGroup, "Manage Devices", DeviceApiCmds)
+}
 
 var DeviceReportRequiredArgs = []string{
 	"key.uniqueidtype",

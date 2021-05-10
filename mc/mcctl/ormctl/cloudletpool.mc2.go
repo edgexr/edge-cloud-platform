@@ -24,7 +24,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateCloudletPoolCmd = &cli.Command{
+var CreateCloudletPoolCmd = &ApiCommand{
+	Name:         "CreateCloudletPool",
 	Use:          "create",
 	Short:        "Create a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
@@ -32,12 +33,15 @@ var CreateCloudletPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
+	NoConfig:     "Members,CreatedAt,UpdatedAt",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateCloudletPool"),
+	Path:         "/auth/ctrl/CreateCloudletPool",
+	ProtobufApi:  true,
 }
 
-var DeleteCloudletPoolCmd = &cli.Command{
+var DeleteCloudletPoolCmd = &ApiCommand{
+	Name:         "DeleteCloudletPool",
 	Use:          "delete",
 	Short:        "Delete a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
@@ -45,27 +49,31 @@ var DeleteCloudletPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
+	NoConfig:     "Members,CreatedAt,UpdatedAt",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteCloudletPool"),
+	Path:         "/auth/ctrl/DeleteCloudletPool",
+	ProtobufApi:  true,
 }
 
-var UpdateCloudletPoolCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update a CloudletPool",
-	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletPoolOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
-	SpecialArgs:  &CloudletPoolSpecialArgs,
-	Comments:     addRegionComment(CloudletPoolComments),
-	ReqData:      &ormapi.RegionCloudletPool{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateCloudletPool",
-		withSetFieldsFunc(setUpdateCloudletPoolFields),
-	),
+var UpdateCloudletPoolCmd = &ApiCommand{
+	Name:          "UpdateCloudletPool",
+	Use:           "update",
+	Short:         "Update a CloudletPool",
+	RequiredArgs:  "region " + strings.Join(CloudletPoolRequiredArgs, " "),
+	OptionalArgs:  strings.Join(CloudletPoolOptionalArgs, " "),
+	AliasArgs:     strings.Join(CloudletPoolAliasArgs, " "),
+	SpecialArgs:   &CloudletPoolSpecialArgs,
+	Comments:      addRegionComment(CloudletPoolComments),
+	NoConfig:      "Members,CreatedAt,UpdatedAt",
+	ReqData:       &ormapi.RegionCloudletPool{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateCloudletPool",
+	SetFieldsFunc: SetUpdateCloudletPoolFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateCloudletPoolFields(in map[string]interface{}) {
+func SetUpdateCloudletPoolFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("CloudletPool")]
 	if obj == nil {
@@ -85,7 +93,8 @@ func setUpdateCloudletPoolFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowCloudletPoolCmd = &cli.Command{
+var ShowCloudletPoolCmd = &ApiCommand{
+	Name:         "ShowCloudletPool",
 	Use:          "show",
 	Short:        "Show CloudletPools",
 	RequiredArgs: "region",
@@ -93,13 +102,16 @@ var ShowCloudletPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolComments),
+	NoConfig:     "Members,CreatedAt,UpdatedAt",
 	ReqData:      &ormapi.RegionCloudletPool{},
 	ReplyData:    &edgeproto.CloudletPool{},
-	Run:          runRest("/auth/ctrl/ShowCloudletPool"),
+	Path:         "/auth/ctrl/ShowCloudletPool",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddCloudletPoolMemberCmd = &cli.Command{
+var AddCloudletPoolMemberCmd = &ApiCommand{
+	Name:         "AddCloudletPoolMember",
 	Use:          "addmember",
 	Short:        "Add a Cloudlet to a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
@@ -109,10 +121,12 @@ var AddCloudletPoolMemberCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletPoolMemberComments),
 	ReqData:      &ormapi.RegionCloudletPoolMember{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddCloudletPoolMember"),
+	Path:         "/auth/ctrl/AddCloudletPoolMember",
+	ProtobufApi:  true,
 }
 
-var RemoveCloudletPoolMemberCmd = &cli.Command{
+var RemoveCloudletPoolMemberCmd = &ApiCommand{
+	Name:         "RemoveCloudletPoolMember",
 	Use:          "removemember",
 	Short:        "Remove a Cloudlet from a CloudletPool",
 	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
@@ -122,10 +136,11 @@ var RemoveCloudletPoolMemberCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletPoolMemberComments),
 	ReqData:      &ormapi.RegionCloudletPoolMember{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveCloudletPoolMember"),
+	Path:         "/auth/ctrl/RemoveCloudletPoolMember",
+	ProtobufApi:  true,
 }
 
-var CloudletPoolApiCmds = []*cli.Command{
+var CloudletPoolApiCmds = []*ApiCommand{
 	CreateCloudletPoolCmd,
 	DeleteCloudletPoolCmd,
 	UpdateCloudletPoolCmd,
@@ -134,7 +149,11 @@ var CloudletPoolApiCmds = []*cli.Command{
 	RemoveCloudletPoolMemberCmd,
 }
 
-var CloudletPoolApiCmdsGroup = cli.GenGroup("cloudletpool", "Manage CloudletPools", CloudletPoolApiCmds)
+const CloudletPoolGroup = "CloudletPool"
+
+func init() {
+	AllApis.AddGroup(CloudletPoolGroup, "Manage CloudletPools", CloudletPoolApiCmds)
+}
 
 var CloudletPoolKeyRequiredArgs = []string{}
 var CloudletPoolKeyOptionalArgs = []string{

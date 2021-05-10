@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
-	"github.com/spf13/cobra"
 )
 
-func GetBillingEventsCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const BillingEventsGroup = "BillingEvents"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "ShowAppEvents",
 		Use:          "app",
 		Short:        "View App billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, AppEventRequiredArgs...), " "),
@@ -18,8 +19,9 @@ func GetBillingEventsCommand() *cobra.Command {
 		Comments:     addRegionComment(EventComments),
 		ReqData:      &ormapi.RegionAppInstEvents{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/events/app"),
-	}, &cli.Command{
+		Path:         "/auth/events/app",
+	}, &ApiCommand{
+		Name:         "ShowClusterEvents",
 		Use:          "cluster",
 		Short:        "View ClusterInst billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClusterEventRequiredArgs...), " "),
@@ -28,8 +30,9 @@ func GetBillingEventsCommand() *cobra.Command {
 		Comments:     addRegionComment(EventComments),
 		ReqData:      &ormapi.RegionClusterInstEvents{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/events/cluster"),
-	}, &cli.Command{
+		Path:         "/auth/events/cluster",
+	}, &ApiCommand{
+		Name:         "ShowCloudletEvents",
 		Use:          "cloudlet",
 		Short:        "View Cloudlet billing events",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletEventRequiredArgs...), " "),
@@ -38,9 +41,9 @@ func GetBillingEventsCommand() *cobra.Command {
 		Comments:     addRegionComment(EventComments),
 		ReqData:      &ormapi.RegionCloudletEvents{},
 		ReplyData:    &ormapi.AllMetrics{},
-		Run:          runRest("/auth/events/cloudlet"),
+		Path:         "/auth/events/cloudlet",
 	}}
-	return cli.GenGroup("billingevents", "View billing events ", cmds)
+	AllApis.AddGroup(BillingEventsGroup, "View billing events ", cmds)
 }
 
 var AppEventRequiredArgs = []string{

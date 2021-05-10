@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +22,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var EnableDebugLevelsCmd = &cli.Command{
+var EnableDebugLevelsCmd = &ApiCommand{
+	Name:         "EnableDebugLevels",
 	Use:          "enabledebuglevels",
 	Short:        "Enable debug log levels",
 	RequiredArgs: strings.Join(EnableDebugLevelsRequiredArgs, " "),
@@ -31,13 +31,16 @@ var EnableDebugLevelsCmd = &cli.Command{
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
 	SpecialArgs:  &DebugRequestSpecialArgs,
 	Comments:     addRegionComment(DebugRequestComments),
+	NoConfig:     "Cmd,Id",
 	ReqData:      &ormapi.RegionDebugRequest{},
 	ReplyData:    &edgeproto.DebugReply{},
-	Run:          runRest("/auth/ctrl/EnableDebugLevels"),
+	Path:         "/auth/ctrl/EnableDebugLevels",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var DisableDebugLevelsCmd = &cli.Command{
+var DisableDebugLevelsCmd = &ApiCommand{
+	Name:         "DisableDebugLevels",
 	Use:          "disabledebuglevels",
 	Short:        "Disable debug log levels",
 	RequiredArgs: strings.Join(DisableDebugLevelsRequiredArgs, " "),
@@ -45,13 +48,16 @@ var DisableDebugLevelsCmd = &cli.Command{
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
 	SpecialArgs:  &DebugRequestSpecialArgs,
 	Comments:     addRegionComment(DebugRequestComments),
+	NoConfig:     "Cmd,Id",
 	ReqData:      &ormapi.RegionDebugRequest{},
 	ReplyData:    &edgeproto.DebugReply{},
-	Run:          runRest("/auth/ctrl/DisableDebugLevels"),
+	Path:         "/auth/ctrl/DisableDebugLevels",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var ShowDebugLevelsCmd = &cli.Command{
+var ShowDebugLevelsCmd = &ApiCommand{
+	Name:         "ShowDebugLevels",
 	Use:          "showdebuglevels",
 	Short:        "Show debug log levels",
 	RequiredArgs: strings.Join(ShowDebugLevelsRequiredArgs, " "),
@@ -59,13 +65,16 @@ var ShowDebugLevelsCmd = &cli.Command{
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
 	SpecialArgs:  &DebugRequestSpecialArgs,
 	Comments:     addRegionComment(DebugRequestComments),
+	NoConfig:     "Levels,Cmd,Id",
 	ReqData:      &ormapi.RegionDebugRequest{},
 	ReplyData:    &edgeproto.DebugReply{},
-	Run:          runRest("/auth/ctrl/ShowDebugLevels"),
+	Path:         "/auth/ctrl/ShowDebugLevels",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var RunDebugCmd = &cli.Command{
+var RunDebugCmd = &ApiCommand{
+	Name:         "RunDebug",
 	Use:          "rundebug",
 	Short:        "Run debug command",
 	RequiredArgs: strings.Join(RunDebugRequiredArgs, " "),
@@ -73,20 +82,26 @@ var RunDebugCmd = &cli.Command{
 	AliasArgs:    strings.Join(DebugRequestAliasArgs, " "),
 	SpecialArgs:  &DebugRequestSpecialArgs,
 	Comments:     addRegionComment(DebugRequestComments),
+	NoConfig:     "Levels,Id",
 	ReqData:      &ormapi.RegionDebugRequest{},
 	ReplyData:    &edgeproto.DebugReply{},
-	Run:          runRest("/auth/ctrl/RunDebug"),
+	Path:         "/auth/ctrl/RunDebug",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var DebugApiCmds = []*cli.Command{
+var DebugApiCmds = []*ApiCommand{
 	EnableDebugLevelsCmd,
 	DisableDebugLevelsCmd,
 	ShowDebugLevelsCmd,
 	RunDebugCmd,
 }
 
-var DebugApiCmdsGroup = cli.GenGroup("debug", "Manage Debugs", DebugApiCmds)
+const DebugGroup = "Debug"
+
+func init() {
+	AllApis.AddGroup(DebugGroup, "Manage Debugs", DebugApiCmds)
+}
 
 var EnableDebugLevelsRequiredArgs = []string{
 	"levels",

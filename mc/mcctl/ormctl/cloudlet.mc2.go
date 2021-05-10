@@ -24,7 +24,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateCloudletCmd = &cli.Command{
+var CreateCloudletCmd = &ApiCommand{
+	Name:                 "CreateCloudlet",
 	Use:                  "create",
 	Short:                "Create Cloudlet. Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.",
 	RequiredArgs:         "region " + strings.Join(CreateCloudletRequiredArgs, " "),
@@ -32,14 +33,17 @@ var CreateCloudletCmd = &cli.Command{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/CreateCloudlet"),
+	Path:                 "/auth/ctrl/CreateCloudlet",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var DeleteCloudletCmd = &cli.Command{
+var DeleteCloudletCmd = &ApiCommand{
+	Name:                 "DeleteCloudlet",
 	Use:                  "delete",
 	Short:                "Delete Cloudlet. Removes the Cloudlet services where they are no longer managed from the Edge Controller.",
 	RequiredArgs:         "region " + strings.Join(DeleteCloudletRequiredArgs, " "),
@@ -47,31 +51,35 @@ var DeleteCloudletCmd = &cli.Command{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/DeleteCloudlet"),
+	Path:                 "/auth/ctrl/DeleteCloudlet",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var UpdateCloudletCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update Cloudlet. Updates the Cloudlet configuration and manages the upgrade of Cloudlet services.",
-	RequiredArgs: "region " + strings.Join(UpdateCloudletRequiredArgs, " "),
-	OptionalArgs: strings.Join(UpdateCloudletOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
-	SpecialArgs:  &CloudletSpecialArgs,
-	Comments:     addRegionComment(CloudletComments),
-	ReqData:      &ormapi.RegionCloudlet{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateCloudlet",
-		withSetFieldsFunc(setUpdateCloudletFields),
-	),
+var UpdateCloudletCmd = &ApiCommand{
+	Name:                 "UpdateCloudlet",
+	Use:                  "update",
+	Short:                "Update Cloudlet. Updates the Cloudlet configuration and manages the upgrade of Cloudlet services.",
+	RequiredArgs:         "region " + strings.Join(UpdateCloudletRequiredArgs, " "),
+	OptionalArgs:         strings.Join(UpdateCloudletOptionalArgs, " "),
+	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:          &CloudletSpecialArgs,
+	Comments:             addRegionComment(CloudletComments),
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
+	ReqData:              &ormapi.RegionCloudlet{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateCloudlet",
+	SetFieldsFunc:        SetUpdateCloudletFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-func setUpdateCloudletFields(in map[string]interface{}) {
+func SetUpdateCloudletFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("Cloudlet")]
 	if obj == nil {
@@ -91,7 +99,8 @@ func setUpdateCloudletFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowCloudletCmd = &cli.Command{
+var ShowCloudletCmd = &ApiCommand{
+	Name:         "ShowCloudlet",
 	Use:          "show",
 	Short:        "Show Cloudlets. Lists all the cloudlets managed from Edge Controller.",
 	RequiredArgs: "region",
@@ -99,13 +108,16 @@ var ShowCloudletCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
 	Comments:     addRegionComment(CloudletComments),
+	NoConfig:     "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
 	ReqData:      &ormapi.RegionCloudlet{},
 	ReplyData:    &edgeproto.Cloudlet{},
-	Run:          runRest("/auth/ctrl/ShowCloudlet"),
+	Path:         "/auth/ctrl/ShowCloudlet",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var GetCloudletManifestCmd = &cli.Command{
+var GetCloudletManifestCmd = &ApiCommand{
+	Name:         "GetCloudletManifest",
 	Use:          "getmanifest",
 	Short:        "Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
@@ -115,10 +127,12 @@ var GetCloudletManifestCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletKeyComments),
 	ReqData:      &ormapi.RegionCloudletKey{},
 	ReplyData:    &edgeproto.CloudletManifest{},
-	Run:          runRest("/auth/ctrl/GetCloudletManifest"),
+	Path:         "/auth/ctrl/GetCloudletManifest",
+	ProtobufApi:  true,
 }
 
-var GetCloudletPropsCmd = &cli.Command{
+var GetCloudletPropsCmd = &ApiCommand{
+	Name:         "GetCloudletProps",
 	Use:          "getprops",
 	Short:        "Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet",
 	RequiredArgs: "region " + strings.Join(GetCloudletPropsRequiredArgs, " "),
@@ -126,12 +140,15 @@ var GetCloudletPropsCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletPropsAliasArgs, " "),
 	SpecialArgs:  &CloudletPropsSpecialArgs,
 	Comments:     addRegionComment(CloudletPropsComments),
+	NoConfig:     "Properties",
 	ReqData:      &ormapi.RegionCloudletProps{},
 	ReplyData:    &edgeproto.CloudletProps{},
-	Run:          runRest("/auth/ctrl/GetCloudletProps"),
+	Path:         "/auth/ctrl/GetCloudletProps",
+	ProtobufApi:  true,
 }
 
-var GetCloudletResourceQuotaPropsCmd = &cli.Command{
+var GetCloudletResourceQuotaPropsCmd = &ApiCommand{
+	Name:         "GetCloudletResourceQuotaProps",
 	Use:          "getresourcequotaprops",
 	Short:        "Get Cloudlet Resource Quota Properties. Shows all the resource quota properties of the cloudlet",
 	RequiredArgs: "region " + strings.Join(GetCloudletResourceQuotaPropsRequiredArgs, " "),
@@ -139,12 +156,15 @@ var GetCloudletResourceQuotaPropsCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletResourceQuotaPropsAliasArgs, " "),
 	SpecialArgs:  &CloudletResourceQuotaPropsSpecialArgs,
 	Comments:     addRegionComment(CloudletResourceQuotaPropsComments),
+	NoConfig:     "Properties",
 	ReqData:      &ormapi.RegionCloudletResourceQuotaProps{},
 	ReplyData:    &edgeproto.CloudletResourceQuotaProps{},
-	Run:          runRest("/auth/ctrl/GetCloudletResourceQuotaProps"),
+	Path:         "/auth/ctrl/GetCloudletResourceQuotaProps",
+	ProtobufApi:  true,
 }
 
-var GetCloudletResourceUsageCmd = &cli.Command{
+var GetCloudletResourceUsageCmd = &ApiCommand{
+	Name:         "GetCloudletResourceUsage",
 	Use:          "getresourceusage",
 	Short:        "Get Cloudlet resource information. Shows cloudlet resources used and their limits",
 	RequiredArgs: "region " + strings.Join(GetCloudletResourceUsageRequiredArgs, " "),
@@ -152,12 +172,15 @@ var GetCloudletResourceUsageCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletResourceUsageAliasArgs, " "),
 	SpecialArgs:  &CloudletResourceUsageSpecialArgs,
 	Comments:     addRegionComment(CloudletResourceUsageComments),
+	NoConfig:     "Info",
 	ReqData:      &ormapi.RegionCloudletResourceUsage{},
 	ReplyData:    &edgeproto.CloudletResourceUsage{},
-	Run:          runRest("/auth/ctrl/GetCloudletResourceUsage"),
+	Path:         "/auth/ctrl/GetCloudletResourceUsage",
+	ProtobufApi:  true,
 }
 
-var AddCloudletResMappingCmd = &cli.Command{
+var AddCloudletResMappingCmd = &ApiCommand{
+	Name:         "AddCloudletResMapping",
 	Use:          "addresmapping",
 	Short:        "Add Optional Resource tag table",
 	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
@@ -167,10 +190,12 @@ var AddCloudletResMappingCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletResMapComments),
 	ReqData:      &ormapi.RegionCloudletResMap{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddCloudletResMapping"),
+	Path:         "/auth/ctrl/AddCloudletResMapping",
+	ProtobufApi:  true,
 }
 
-var RemoveCloudletResMappingCmd = &cli.Command{
+var RemoveCloudletResMappingCmd = &ApiCommand{
+	Name:         "RemoveCloudletResMapping",
 	Use:          "removeresmapping",
 	Short:        "Add Optional Resource tag table",
 	RequiredArgs: "region " + strings.Join(CloudletResMapRequiredArgs, " "),
@@ -180,10 +205,12 @@ var RemoveCloudletResMappingCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletResMapComments),
 	ReqData:      &ormapi.RegionCloudletResMap{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveCloudletResMapping"),
+	Path:         "/auth/ctrl/RemoveCloudletResMapping",
+	ProtobufApi:  true,
 }
 
-var FindFlavorMatchCmd = &cli.Command{
+var FindFlavorMatchCmd = &ApiCommand{
+	Name:         "FindFlavorMatch",
 	Use:          "findflavormatch",
 	Short:        "Discover if flavor produces a matching platform flavor",
 	RequiredArgs: "region " + strings.Join(FlavorMatchRequiredArgs, " "),
@@ -193,10 +220,12 @@ var FindFlavorMatchCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorMatchComments),
 	ReqData:      &ormapi.RegionFlavorMatch{},
 	ReplyData:    &edgeproto.FlavorMatch{},
-	Run:          runRest("/auth/ctrl/FindFlavorMatch"),
+	Path:         "/auth/ctrl/FindFlavorMatch",
+	ProtobufApi:  true,
 }
 
-var RevokeAccessKeyCmd = &cli.Command{
+var RevokeAccessKeyCmd = &ApiCommand{
+	Name:         "RevokeAccessKey",
 	Use:          "revokeaccesskey",
 	Short:        "Revoke crm access key",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
@@ -206,10 +235,12 @@ var RevokeAccessKeyCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletKeyComments),
 	ReqData:      &ormapi.RegionCloudletKey{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RevokeAccessKey"),
+	Path:         "/auth/ctrl/RevokeAccessKey",
+	ProtobufApi:  true,
 }
 
-var GenerateAccessKeyCmd = &cli.Command{
+var GenerateAccessKeyCmd = &ApiCommand{
+	Name:         "GenerateAccessKey",
 	Use:          "generateaccesskey",
 	Short:        "Generate new crm access key",
 	RequiredArgs: "region " + strings.Join(CloudletKeyRequiredArgs, " "),
@@ -219,10 +250,11 @@ var GenerateAccessKeyCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletKeyComments),
 	ReqData:      &ormapi.RegionCloudletKey{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/GenerateAccessKey"),
+	Path:         "/auth/ctrl/GenerateAccessKey",
+	ProtobufApi:  true,
 }
 
-var CloudletApiCmds = []*cli.Command{
+var CloudletApiCmds = []*ApiCommand{
 	CreateCloudletCmd,
 	DeleteCloudletCmd,
 	UpdateCloudletCmd,
@@ -238,7 +270,11 @@ var CloudletApiCmds = []*cli.Command{
 	GenerateAccessKeyCmd,
 }
 
-var CloudletApiCmdsGroup = cli.GenGroup("cloudlet", "Manage Cloudlets", CloudletApiCmds)
+const CloudletGroup = "Cloudlet"
+
+func init() {
+	AllApis.AddGroup(CloudletGroup, "Manage Cloudlets", CloudletApiCmds)
+}
 
 var CreateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -404,7 +440,8 @@ var GetCloudletResourceUsageOptionalArgs = []string{
 	"infrausage",
 }
 
-var ShowCloudletInfoCmd = &cli.Command{
+var ShowCloudletInfoCmd = &ApiCommand{
+	Name:         "ShowCloudletInfo",
 	Use:          "show",
 	Short:        "Show CloudletInfos",
 	RequiredArgs: "region",
@@ -412,13 +449,16 @@ var ShowCloudletInfoCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
 	SpecialArgs:  &CloudletInfoSpecialArgs,
 	Comments:     addRegionComment(CloudletInfoComments),
+	NoConfig:     "Resources",
 	ReqData:      &ormapi.RegionCloudletInfo{},
 	ReplyData:    &edgeproto.CloudletInfo{},
-	Run:          runRest("/auth/ctrl/ShowCloudletInfo"),
+	Path:         "/auth/ctrl/ShowCloudletInfo",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var InjectCloudletInfoCmd = &cli.Command{
+var InjectCloudletInfoCmd = &ApiCommand{
+	Name:         "InjectCloudletInfo",
 	Use:          "inject",
 	Short:        "Inject (create) a CloudletInfo for regression testing",
 	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
@@ -426,12 +466,15 @@ var InjectCloudletInfoCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
 	SpecialArgs:  &CloudletInfoSpecialArgs,
 	Comments:     addRegionComment(CloudletInfoComments),
+	NoConfig:     "Resources",
 	ReqData:      &ormapi.RegionCloudletInfo{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/InjectCloudletInfo"),
+	Path:         "/auth/ctrl/InjectCloudletInfo",
+	ProtobufApi:  true,
 }
 
-var EvictCloudletInfoCmd = &cli.Command{
+var EvictCloudletInfoCmd = &ApiCommand{
+	Name:         "EvictCloudletInfo",
 	Use:          "evict",
 	Short:        "Evict (delete) a CloudletInfo for regression testing",
 	RequiredArgs: "region " + strings.Join(CloudletInfoRequiredArgs, " "),
@@ -439,18 +482,24 @@ var EvictCloudletInfoCmd = &cli.Command{
 	AliasArgs:    strings.Join(CloudletInfoAliasArgs, " "),
 	SpecialArgs:  &CloudletInfoSpecialArgs,
 	Comments:     addRegionComment(CloudletInfoComments),
+	NoConfig:     "Resources",
 	ReqData:      &ormapi.RegionCloudletInfo{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/EvictCloudletInfo"),
+	Path:         "/auth/ctrl/EvictCloudletInfo",
+	ProtobufApi:  true,
 }
 
-var CloudletInfoApiCmds = []*cli.Command{
+var CloudletInfoApiCmds = []*ApiCommand{
 	ShowCloudletInfoCmd,
 	InjectCloudletInfoCmd,
 	EvictCloudletInfoCmd,
 }
 
-var CloudletInfoApiCmdsGroup = cli.GenGroup("cloudletinfo", "Manage CloudletInfos", CloudletInfoApiCmds)
+const CloudletInfoGroup = "CloudletInfo"
+
+func init() {
+	AllApis.AddGroup(CloudletInfoGroup, "Manage CloudletInfos", CloudletInfoApiCmds)
+}
 
 var CloudletKeyRequiredArgs = []string{}
 var CloudletKeyOptionalArgs = []string{

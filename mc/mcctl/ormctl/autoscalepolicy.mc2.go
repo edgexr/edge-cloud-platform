@@ -23,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAutoScalePolicyCmd = &cli.Command{
+var CreateAutoScalePolicyCmd = &ApiCommand{
+	Name:         "CreateAutoScalePolicy",
 	Use:          "create",
 	Short:        "Create an Auto Scale Policy",
 	RequiredArgs: "region " + strings.Join(CreateAutoScalePolicyRequiredArgs, " "),
@@ -33,10 +34,12 @@ var CreateAutoScalePolicyCmd = &cli.Command{
 	Comments:     addRegionComment(AutoScalePolicyComments),
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateAutoScalePolicy"),
+	Path:         "/auth/ctrl/CreateAutoScalePolicy",
+	ProtobufApi:  true,
 }
 
-var DeleteAutoScalePolicyCmd = &cli.Command{
+var DeleteAutoScalePolicyCmd = &ApiCommand{
+	Name:         "DeleteAutoScalePolicy",
 	Use:          "delete",
 	Short:        "Delete an Auto Scale Policy",
 	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
@@ -46,25 +49,27 @@ var DeleteAutoScalePolicyCmd = &cli.Command{
 	Comments:     addRegionComment(AutoScalePolicyComments),
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteAutoScalePolicy"),
+	Path:         "/auth/ctrl/DeleteAutoScalePolicy",
+	ProtobufApi:  true,
 }
 
-var UpdateAutoScalePolicyCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update an Auto Scale Policy",
-	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
-	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
-	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
-	SpecialArgs:  &AutoScalePolicySpecialArgs,
-	Comments:     addRegionComment(AutoScalePolicyComments),
-	ReqData:      &ormapi.RegionAutoScalePolicy{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateAutoScalePolicy",
-		withSetFieldsFunc(setUpdateAutoScalePolicyFields),
-	),
+var UpdateAutoScalePolicyCmd = &ApiCommand{
+	Name:          "UpdateAutoScalePolicy",
+	Use:           "update",
+	Short:         "Update an Auto Scale Policy",
+	RequiredArgs:  "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
+	OptionalArgs:  strings.Join(AutoScalePolicyOptionalArgs, " "),
+	AliasArgs:     strings.Join(AutoScalePolicyAliasArgs, " "),
+	SpecialArgs:   &AutoScalePolicySpecialArgs,
+	Comments:      addRegionComment(AutoScalePolicyComments),
+	ReqData:       &ormapi.RegionAutoScalePolicy{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateAutoScalePolicy",
+	SetFieldsFunc: SetUpdateAutoScalePolicyFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateAutoScalePolicyFields(in map[string]interface{}) {
+func SetUpdateAutoScalePolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("AutoScalePolicy")]
 	if obj == nil {
@@ -84,7 +89,8 @@ func setUpdateAutoScalePolicyFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowAutoScalePolicyCmd = &cli.Command{
+var ShowAutoScalePolicyCmd = &ApiCommand{
+	Name:         "ShowAutoScalePolicy",
 	Use:          "show",
 	Short:        "Show Auto Scale Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
@@ -94,18 +100,23 @@ var ShowAutoScalePolicyCmd = &cli.Command{
 	Comments:     addRegionComment(AutoScalePolicyComments),
 	ReqData:      &ormapi.RegionAutoScalePolicy{},
 	ReplyData:    &edgeproto.AutoScalePolicy{},
-	Run:          runRest("/auth/ctrl/ShowAutoScalePolicy"),
+	Path:         "/auth/ctrl/ShowAutoScalePolicy",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AutoScalePolicyApiCmds = []*cli.Command{
+var AutoScalePolicyApiCmds = []*ApiCommand{
 	CreateAutoScalePolicyCmd,
 	DeleteAutoScalePolicyCmd,
 	UpdateAutoScalePolicyCmd,
 	ShowAutoScalePolicyCmd,
 }
 
-var AutoScalePolicyApiCmdsGroup = cli.GenGroup("autoscalepolicy", "Manage AutoScalePolicys", AutoScalePolicyApiCmds)
+const AutoScalePolicyGroup = "AutoScalePolicy"
+
+func init() {
+	AllApis.AddGroup(AutoScalePolicyGroup, "Manage AutoScalePolicys", AutoScalePolicyApiCmds)
+}
 
 var CreateAutoScalePolicyRequiredArgs = []string{
 	"cluster-org",

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jarcoal/httpmock"
 	"github.com/mobiledgex/edge-cloud-infra/billing"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -159,7 +160,7 @@ func TestAppStoreApi(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := &ormclient.Client{}
+	mcClient := mctestclient.NewClient(&ormclient.Client{})
 
 	// login as super user
 	tokenAdmin, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
@@ -273,7 +274,7 @@ func TestAppStoreApi(t *testing.T) {
 	gm.verifyEmpty(t)
 }
 
-func mcClientCreate(t *testing.T, v entry, mcClient *ormclient.Client, uri string) {
+func mcClientCreate(t *testing.T, v entry, mcClient *mctestclient.Client, uri string) {
 	token := ""
 	for user, userType := range v.Users {
 		if userType == RoleDeveloperManager || userType == RoleOperatorManager {
@@ -290,7 +291,7 @@ func mcClientCreate(t *testing.T, v entry, mcClient *ormclient.Client, uri strin
 	}
 }
 
-func mcClientDelete(t *testing.T, v entry, mcClient *ormclient.Client, uri, tokenAdmin string) {
+func mcClientDelete(t *testing.T, v entry, mcClient *mctestclient.Client, uri, tokenAdmin string) {
 	for user, userType := range v.Users {
 		if userType == RoleDeveloperManager || userType == RoleOperatorManager {
 			continue

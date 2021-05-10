@@ -24,7 +24,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateClusterInstCmd = &cli.Command{
+var CreateClusterInstCmd = &ApiCommand{
+	Name:                 "CreateClusterInst",
 	Use:                  "create",
 	Short:                "Create Cluster Instance. Creates an instance of a Cluster on a Cloudlet, defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of compute resources on a Cloudlet on which AppInsts are deployed.",
 	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
@@ -32,14 +33,17 @@ var CreateClusterInstCmd = &cli.Command{
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
 	Comments:             addRegionComment(ClusterInstComments),
+	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes",
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/CreateClusterInst"),
+	Path:                 "/auth/ctrl/CreateClusterInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var DeleteClusterInstCmd = &cli.Command{
+var DeleteClusterInstCmd = &ApiCommand{
+	Name:                 "DeleteClusterInst",
 	Use:                  "delete",
 	Short:                "Delete Cluster Instance. Deletes an instance of a Cluster deployed on a Cloudlet.",
 	RequiredArgs:         "region " + strings.Join(ClusterInstRequiredArgs, " "),
@@ -47,31 +51,35 @@ var DeleteClusterInstCmd = &cli.Command{
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
 	Comments:             addRegionComment(ClusterInstComments),
+	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes",
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/DeleteClusterInst"),
+	Path:                 "/auth/ctrl/DeleteClusterInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var UpdateClusterInstCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.",
-	RequiredArgs: "region " + strings.Join(UpdateClusterInstRequiredArgs, " "),
-	OptionalArgs: strings.Join(UpdateClusterInstOptionalArgs, " "),
-	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
-	SpecialArgs:  &ClusterInstSpecialArgs,
-	Comments:     addRegionComment(ClusterInstComments),
-	ReqData:      &ormapi.RegionClusterInst{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateClusterInst",
-		withSetFieldsFunc(setUpdateClusterInstFields),
-	),
+var UpdateClusterInstCmd = &ApiCommand{
+	Name:                 "UpdateClusterInst",
+	Use:                  "update",
+	Short:                "Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.",
+	RequiredArgs:         "region " + strings.Join(UpdateClusterInstRequiredArgs, " "),
+	OptionalArgs:         strings.Join(UpdateClusterInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:          &ClusterInstSpecialArgs,
+	Comments:             addRegionComment(ClusterInstComments),
+	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName",
+	ReqData:              &ormapi.RegionClusterInst{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateClusterInst",
+	SetFieldsFunc:        SetUpdateClusterInstFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-func setUpdateClusterInstFields(in map[string]interface{}) {
+func SetUpdateClusterInstFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("ClusterInst")]
 	if obj == nil {
@@ -91,7 +99,8 @@ func setUpdateClusterInstFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowClusterInstCmd = &cli.Command{
+var ShowClusterInstCmd = &ApiCommand{
+	Name:         "ShowClusterInst",
 	Use:          "show",
 	Short:        "Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.",
 	RequiredArgs: "region",
@@ -99,13 +108,16 @@ var ShowClusterInstCmd = &cli.Command{
 	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:  &ClusterInstSpecialArgs,
 	Comments:     addRegionComment(ClusterInstComments),
+	NoConfig:     "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes",
 	ReqData:      &ormapi.RegionClusterInst{},
 	ReplyData:    &edgeproto.ClusterInst{},
-	Run:          runRest("/auth/ctrl/ShowClusterInst"),
+	Path:         "/auth/ctrl/ShowClusterInst",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var DeleteIdleReservableClusterInstsCmd = &cli.Command{
+var DeleteIdleReservableClusterInstsCmd = &ApiCommand{
+	Name:         "DeleteIdleReservableClusterInsts",
 	Use:          "deleteidlereservables",
 	Short:        "Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.",
 	RequiredArgs: "region " + strings.Join(IdleReservableClusterInstsRequiredArgs, " "),
@@ -115,10 +127,11 @@ var DeleteIdleReservableClusterInstsCmd = &cli.Command{
 	Comments:     addRegionComment(IdleReservableClusterInstsComments),
 	ReqData:      &ormapi.RegionIdleReservableClusterInsts{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteIdleReservableClusterInsts"),
+	Path:         "/auth/ctrl/DeleteIdleReservableClusterInsts",
+	ProtobufApi:  true,
 }
 
-var ClusterInstApiCmds = []*cli.Command{
+var ClusterInstApiCmds = []*ApiCommand{
 	CreateClusterInstCmd,
 	DeleteClusterInstCmd,
 	UpdateClusterInstCmd,
@@ -126,7 +139,11 @@ var ClusterInstApiCmds = []*cli.Command{
 	DeleteIdleReservableClusterInstsCmd,
 }
 
-var ClusterInstApiCmdsGroup = cli.GenGroup("clusterinst", "Manage ClusterInsts", ClusterInstApiCmds)
+const ClusterInstGroup = "ClusterInst"
+
+func init() {
+	AllApis.AddGroup(ClusterInstGroup, "Manage ClusterInsts", ClusterInstApiCmds)
+}
 
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",

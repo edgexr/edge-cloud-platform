@@ -22,7 +22,5 @@ build:
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genapi,pkg=ormapi:${OUTAPI} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN}:${OUTDIR} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},gentest,suffix=_mc2_test.go:${OUTDIR} *.proto)
-	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genclient,pkg=ormclient,suffix=_client.go:${OUTCLIENT} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},genctl,pkg=ormctl:${OUTCTL} *.proto)
-	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},gencliwrapper,pkg=cliwrapper:${OUTCLIWRAPPER} *.proto)
 	(cd ${PROTODIR}; protoc ${INCLUDE} --mc2_out=${BUILTIN},gentestutil,pkg=testutil,suffix=_mc2_testutil.go:${OUTTESTUTIL} *.proto)

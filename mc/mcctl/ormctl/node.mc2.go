@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +22,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var ShowNodeCmd = &cli.Command{
+var ShowNodeCmd = &ApiCommand{
+	Name:         "ShowNode",
 	Use:          "show",
 	Short:        "Show all Nodes connected to all Controllers",
 	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
@@ -32,15 +32,20 @@ var ShowNodeCmd = &cli.Command{
 	Comments:     addRegionComment(NodeComments),
 	ReqData:      &ormapi.RegionNode{},
 	ReplyData:    &edgeproto.Node{},
-	Run:          runRest("/auth/ctrl/ShowNode"),
+	Path:         "/auth/ctrl/ShowNode",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var NodeApiCmds = []*cli.Command{
+var NodeApiCmds = []*ApiCommand{
 	ShowNodeCmd,
 }
 
-var NodeApiCmdsGroup = cli.GenGroup("node", "Manage Nodes", NodeApiCmds)
+const NodeGroup = "Node"
+
+func init() {
+	AllApis.AddGroup(NodeGroup, "Manage Nodes", NodeApiCmds)
+}
 
 var NodeKeyRequiredArgs = []string{}
 var NodeKeyOptionalArgs = []string{

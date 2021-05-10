@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +36,7 @@ func InitAlertmgrMock() (string, error) {
 	return sidecarServer.GetApiAddr(), nil
 }
 
-func testShowAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, username string) ([]ormapi.AlertReceiver, int, error) {
+func testShowAlertReceiver(mcClient *mctestclient.Client, uri, token, region, org, name, username string) ([]ormapi.AlertReceiver, int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	dat := &ormapi.AlertReceiver{}
@@ -48,7 +48,7 @@ func testShowAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, 
 	return recs, status, err
 }
 
-func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity, username, email string, appInstKey *edgeproto.AppInstKey, cloudlet *edgeproto.CloudletKey) (int, error) {
+func testCreateAlertReceiver(mcClient *mctestclient.Client, uri, token, region, org, name, rType, severity, username, email string, appInstKey *edgeproto.AppInstKey, cloudlet *edgeproto.CloudletKey) (int, error) {
 	if appInstKey == nil && cloudlet == nil {
 		appInstKey = &edgeproto.AppInstKey{}
 		appInstKey.AppKey.Organization = org
@@ -68,7 +68,7 @@ func testCreateAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 	return status, err
 }
 
-func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org, name, rType, severity, username string) (int, error) {
+func testDeleteAlertReceiver(mcClient *mctestclient.Client, uri, token, region, org, name, rType, severity, username string) (int, error) {
 	in := &edgeproto.AppInstKey{}
 	in.AppKey.Organization = org
 	dat := &ormapi.AlertReceiver{}
@@ -83,7 +83,7 @@ func testDeleteAlertReceiver(mcClient *ormclient.Client, uri, token, region, org
 
 }
 
-func badPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+func badPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	status, err := testCreateAlertReceiver(mcClient, uri, token, region, org, "testAlert", "email", "error", "", "", nil, nil)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
@@ -97,7 +97,7 @@ func badPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, to
 	require.Equal(t, 0, len(list))
 }
 
-func userPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, devMgr, devMgrToken, dev, devToken, region, devOrg, operOrg string) {
+func userPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri, devMgr, devMgrToken, dev, devToken, region, devOrg, operOrg string) {
 	// mgrDeveloper creates a receiver
 	status, err := testCreateAlertReceiver(mcClient, uri, devMgrToken, region, devOrg, "mgrReceiver", "email", "error", "", "", nil, nil)
 	require.Nil(t, err)
@@ -156,7 +156,7 @@ func userPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, d
 	require.Equal(t, 0, len(list))
 }
 
-func goodPermTestAlertReceivers(t *testing.T, mcClient *ormclient.Client, uri, devToken, operToken, region, devOrg, operOrg string) {
+func goodPermTestAlertReceivers(t *testing.T, mcClient *mctestclient.Client, uri, devToken, operToken, region, devOrg, operOrg string) {
 	// Permissions test
 	status, err := testCreateAlertReceiver(mcClient, uri, devToken, region, devOrg, "testAlert", "email", "error", "", "", nil, nil)
 	require.Nil(t, err)

@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +23,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestEnableDebugLevels(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestEnableDebugLevels(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	dat := &ormapi.RegionDebugRequest{}
 	dat.Region = region
 	dat.DebugRequest = *in
@@ -32,12 +32,12 @@ func TestEnableDebugLevels(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.EnableDebugLevels(uri, token, dat)
 }
-func TestPermEnableDebugLevels(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestPermEnableDebugLevels(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	in := &edgeproto.DebugRequest{}
 	return TestEnableDebugLevels(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDisableDebugLevels(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestDisableDebugLevels(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	dat := &ormapi.RegionDebugRequest{}
 	dat.Region = region
 	dat.DebugRequest = *in
@@ -46,12 +46,12 @@ func TestDisableDebugLevels(mcClient *ormclient.Client, uri, token, region strin
 	}
 	return mcClient.DisableDebugLevels(uri, token, dat)
 }
-func TestPermDisableDebugLevels(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestPermDisableDebugLevels(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	in := &edgeproto.DebugRequest{}
 	return TestDisableDebugLevels(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowDebugLevels(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestShowDebugLevels(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	dat := &ormapi.RegionDebugRequest{}
 	dat.Region = region
 	dat.DebugRequest = *in
@@ -60,12 +60,12 @@ func TestShowDebugLevels(mcClient *ormclient.Client, uri, token, region string, 
 	}
 	return mcClient.ShowDebugLevels(uri, token, dat)
 }
-func TestPermShowDebugLevels(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestPermShowDebugLevels(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	in := &edgeproto.DebugRequest{}
 	return TestShowDebugLevels(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRunDebug(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestRunDebug(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DebugRequest, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	dat := &ormapi.RegionDebugRequest{}
 	dat.Region = region
 	dat.DebugRequest = *in
@@ -74,7 +74,7 @@ func TestRunDebug(mcClient *ormclient.Client, uri, token, region string, in *edg
 	}
 	return mcClient.RunDebug(uri, token, dat)
 }
-func TestPermRunDebug(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
+func TestPermRunDebug(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) ([]edgeproto.DebugReply, int, error) {
 	in := &edgeproto.DebugRequest{}
 	return TestRunDebug(mcClient, uri, token, region, in, modFuncs...)
 }

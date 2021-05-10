@@ -2,36 +2,41 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
-	"github.com/spf13/cobra"
 )
 
-func GetConfigCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const ConfigGroup = "Config"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "UpdateConfig",
 		Use:          "update",
 		Short:        "Update master controller global configuration",
 		OptionalArgs: "locknewaccounts notifyemailaddress, skipverifyemail, maxmetricsdatapoints, passwordmincracktimesec, adminpasswordmincracktimesec userapikeycreatelimit billingenable",
 		ReqData:      &ormapi.Config{},
-		Run:          runRest("/auth/config/update"),
-	}, &cli.Command{
+		Path:         "/auth/config/update",
+	}, &ApiCommand{
+		Name:  "ResetConfig",
 		Use:   "reset",
 		Short: "Reset master controller global configuration",
-		Run:   runRest("/auth/config/reset"),
-	}, &cli.Command{
+		Path:  "/auth/config/reset",
+	}, &ApiCommand{
+		Name:      "ShowConfig",
 		Use:       "show",
 		Short:     "Show master controller global configuration",
 		ReplyData: &ormapi.Config{},
-		Run:       runRest("/auth/config/show"),
-	}, &cli.Command{
+		Path:      "/auth/config/show",
+	}, &ApiCommand{
+		Name:      "ShowPublicConfig",
 		Use:       "public",
 		Short:     "Show publicly visible master controller global configuration",
 		ReplyData: &ormapi.Config{},
-		Run:       runRest("/publicconfig"),
-	}, &cli.Command{
+		Path:      "/publicconfig",
+	}, &ApiCommand{
+		Name:      "MCVersion",
 		Use:       "version",
 		Short:     "Show master controller version",
 		ReplyData: &ormapi.Version{},
-		Run:       runRest("/auth/config/version"),
+		Path:      "/auth/config/version",
 	}}
-	return cli.GenGroup("config", "Manage global configuration", cmds)
+	AllApis.AddGroup(ConfigGroup, "Manage global configuration", cmds)
 }

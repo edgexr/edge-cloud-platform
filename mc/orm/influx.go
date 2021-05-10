@@ -52,50 +52,6 @@ type influxQueryArgs struct {
 	CloudletList   string
 }
 
-var AppSelectors = []string{
-	"cpu",
-	"mem",
-	"disk",
-	"network",
-	"connections",
-	"udp",
-}
-
-var ClusterSelectors = []string{
-	"cpu",
-	"mem",
-	"disk",
-	"network",
-	"tcp",
-	"udp",
-}
-
-var CloudletSelectors = []string{
-	"network",
-	"utilization",
-	"ipusage",
-}
-
-var CloudletUsageSelectors = []string{
-	"resourceusage",
-	"flavorusage",
-}
-
-var ClientApiUsageSelectors = []string{
-	"api",
-}
-
-var ClientAppUsageSelectors = []string{
-	"latency",
-	"deviceinfo",
-	"custom",
-}
-
-var ClientCloudletUsageSelectors = []string{
-	"latency",
-	"deviceinfo",
-}
-
 // AppFields are the field names used to query the DB
 var AppFields = []string{
 	"\"app\"",
@@ -423,19 +379,19 @@ func validateSelectorString(selector, metricType string) error {
 	var validSelectors []string
 	switch metricType {
 	case APPINST:
-		validSelectors = AppSelectors
+		validSelectors = ormapi.AppSelectors
 	case CLUSTER:
-		validSelectors = ClusterSelectors
+		validSelectors = ormapi.ClusterSelectors
 	case CLOUDLET:
-		validSelectors = CloudletSelectors
+		validSelectors = ormapi.CloudletSelectors
 	case CLOUDLETUSAGE:
-		validSelectors = CloudletUsageSelectors
+		validSelectors = ormapi.CloudletUsageSelectors
 	case CLIENT_APIUSAGE:
-		validSelectors = ClientApiUsageSelectors
+		validSelectors = ormapi.ClientApiUsageSelectors
 	case CLIENT_APPUSAGE:
-		validSelectors = ClientAppUsageSelectors
+		validSelectors = ormapi.ClientAppUsageSelectors
 	case CLIENT_CLOUDLETUSAGE:
-		validSelectors = ClientCloudletUsageSelectors
+		validSelectors = ormapi.ClientCloudletUsageSelectors
 	default:
 		return fmt.Errorf("Invalid metric type %s", metricType)
 	}
@@ -455,13 +411,13 @@ func getMeasurementString(selector, measurementType string) string {
 	var measurements []string
 	switch measurementType {
 	case APPINST:
-		measurements = AppSelectors
+		measurements = ormapi.AppSelectors
 	case CLUSTER:
-		measurements = ClusterSelectors
+		measurements = ormapi.ClusterSelectors
 	case CLOUDLET:
-		measurements = CloudletSelectors
+		measurements = ormapi.CloudletSelectors
 	case CLIENT_APIUSAGE:
-		measurements = ClientApiUsageSelectors
+		measurements = ormapi.ClientApiUsageSelectors
 	}
 	if selector != "*" {
 		measurements = strings.Split(selector, ",")
@@ -472,7 +428,7 @@ func getMeasurementString(selector, measurementType string) string {
 
 func getCloudletUsageMeasurementString(selector, platformType string) string {
 	measurements := []string{}
-	selectors := CloudletUsageSelectors
+	selectors := ormapi.CloudletUsageSelectors
 	if selector != "*" {
 		selectors = strings.Split(selector, ",")
 	}
@@ -497,25 +453,25 @@ func getFields(selector, measurementType string) string {
 		if selector != "connections" {
 			fields = append(fields, PodFields...)
 		}
-		selectors = AppSelectors
+		selectors = ormapi.AppSelectors
 	case CLUSTER:
 		fields = ClusterFields
-		selectors = ClusterSelectors
+		selectors = ormapi.ClusterSelectors
 	case CLOUDLET:
 		fields = CloudletFields
-		selectors = CloudletSelectors
+		selectors = ormapi.CloudletSelectors
 	case CLOUDLETUSAGE:
 		fields = CloudletFields
-		selectors = CloudletUsageSelectors
+		selectors = ormapi.CloudletUsageSelectors
 	case CLIENT_APIUSAGE:
 		fields = ClientApiUsageFields
-		selectors = ClientApiUsageSelectors
+		selectors = ormapi.ClientApiUsageSelectors
 	case CLIENT_APPUSAGE:
 		fields = ClientAppUsageFields
-		selectors = ClientAppUsageSelectors
+		selectors = ormapi.ClientAppUsageSelectors
 	case CLIENT_CLOUDLETUSAGE:
 		fields = ClientCloudletUsageFields
-		selectors = ClientCloudletUsageSelectors
+		selectors = ormapi.ClientCloudletUsageSelectors
 	default:
 		return "*"
 	}

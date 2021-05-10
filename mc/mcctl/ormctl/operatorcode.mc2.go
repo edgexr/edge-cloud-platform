@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +22,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateOperatorCodeCmd = &cli.Command{
+var CreateOperatorCodeCmd = &ApiCommand{
+	Name:         "CreateOperatorCode",
 	Use:          "create",
 	Short:        "Create Operator Code. Create a code for an Operator.",
 	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
@@ -33,10 +33,12 @@ var CreateOperatorCodeCmd = &cli.Command{
 	Comments:     addRegionComment(OperatorCodeComments),
 	ReqData:      &ormapi.RegionOperatorCode{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateOperatorCode"),
+	Path:         "/auth/ctrl/CreateOperatorCode",
+	ProtobufApi:  true,
 }
 
-var DeleteOperatorCodeCmd = &cli.Command{
+var DeleteOperatorCodeCmd = &ApiCommand{
+	Name:         "DeleteOperatorCode",
 	Use:          "delete",
 	Short:        "Delete Operator Code. Delete a code for an Operator.",
 	RequiredArgs: "region " + strings.Join(OperatorCodeRequiredArgs, " "),
@@ -46,10 +48,12 @@ var DeleteOperatorCodeCmd = &cli.Command{
 	Comments:     addRegionComment(OperatorCodeComments),
 	ReqData:      &ormapi.RegionOperatorCode{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteOperatorCode"),
+	Path:         "/auth/ctrl/DeleteOperatorCode",
+	ProtobufApi:  true,
 }
 
-var ShowOperatorCodeCmd = &cli.Command{
+var ShowOperatorCodeCmd = &ApiCommand{
+	Name:         "ShowOperatorCode",
 	Use:          "show",
 	Short:        "Show Operator Code. Show Codes for an Operator.",
 	RequiredArgs: "region",
@@ -59,17 +63,22 @@ var ShowOperatorCodeCmd = &cli.Command{
 	Comments:     addRegionComment(OperatorCodeComments),
 	ReqData:      &ormapi.RegionOperatorCode{},
 	ReplyData:    &edgeproto.OperatorCode{},
-	Run:          runRest("/auth/ctrl/ShowOperatorCode"),
+	Path:         "/auth/ctrl/ShowOperatorCode",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var OperatorCodeApiCmds = []*cli.Command{
+var OperatorCodeApiCmds = []*ApiCommand{
 	CreateOperatorCodeCmd,
 	DeleteOperatorCodeCmd,
 	ShowOperatorCodeCmd,
 }
 
-var OperatorCodeApiCmdsGroup = cli.GenGroup("operatorcode", "Manage OperatorCodes", OperatorCodeApiCmds)
+const OperatorCodeGroup = "OperatorCode"
+
+func init() {
+	AllApis.AddGroup(OperatorCodeGroup, "Manage OperatorCodes", OperatorCodeApiCmds)
+}
 
 var OperatorCodeRequiredArgs = []string{}
 var OperatorCodeOptionalArgs = []string{

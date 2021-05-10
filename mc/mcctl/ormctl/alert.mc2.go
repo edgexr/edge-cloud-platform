@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -24,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var ShowAlertCmd = &cli.Command{
+var ShowAlertCmd = &ApiCommand{
+	Name:         "ShowAlert",
 	Use:          "show",
 	Short:        "Show alerts",
 	RequiredArgs: "region",
@@ -34,15 +34,20 @@ var ShowAlertCmd = &cli.Command{
 	Comments:     addRegionComment(AlertComments),
 	ReqData:      &ormapi.RegionAlert{},
 	ReplyData:    &edgeproto.Alert{},
-	Run:          runRest("/auth/ctrl/ShowAlert"),
+	Path:         "/auth/ctrl/ShowAlert",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AlertApiCmds = []*cli.Command{
+var AlertApiCmds = []*ApiCommand{
 	ShowAlertCmd,
 }
 
-var AlertApiCmdsGroup = cli.GenGroup("alert", "Manage Alerts", AlertApiCmds)
+const AlertGroup = "Alert"
+
+func init() {
+	AllApis.AddGroup(AlertGroup, "Manage Alerts", AlertApiCmds)
+}
 
 var AlertRequiredArgs = []string{}
 var AlertOptionalArgs = []string{

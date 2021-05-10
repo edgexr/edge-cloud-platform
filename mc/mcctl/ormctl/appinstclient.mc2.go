@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -24,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var ShowAppInstClientCmd = &cli.Command{
+var ShowAppInstClientCmd = &ApiCommand{
+	Name:                 "ShowAppInstClient",
 	Use:                  "showappinstclient",
 	Short:                "Show application instance clients.",
 	RequiredArgs:         "region " + strings.Join(AppInstClientKeyRequiredArgs, " "),
@@ -34,16 +34,21 @@ var ShowAppInstClientCmd = &cli.Command{
 	Comments:             addRegionComment(AppInstClientKeyComments),
 	ReqData:              &ormapi.RegionAppInstClientKey{},
 	ReplyData:            &edgeproto.AppInstClient{},
-	Run:                  runRest("/auth/ctrl/ShowAppInstClient"),
+	Path:                 "/auth/ctrl/ShowAppInstClient",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var AppInstClientApiCmds = []*cli.Command{
+var AppInstClientApiCmds = []*ApiCommand{
 	ShowAppInstClientCmd,
 }
 
-var AppInstClientApiCmdsGroup = cli.GenGroup("appinstclient", "Manage AppInstClients", AppInstClientApiCmds)
+const AppInstClientGroup = "AppInstClient"
+
+func init() {
+	AllApis.AddGroup(AppInstClientGroup, "Manage AppInstClients", AppInstClientApiCmds)
+}
 
 var AppInstClientKeyRequiredArgs = []string{
 	"app-org",

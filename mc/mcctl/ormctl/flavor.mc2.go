@@ -23,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateFlavorCmd = &cli.Command{
+var CreateFlavorCmd = &ApiCommand{
+	Name:         "CreateFlavor",
 	Use:          "create",
 	Short:        "Create a Flavor",
 	RequiredArgs: "region " + strings.Join(CreateFlavorRequiredArgs, " "),
@@ -33,10 +34,12 @@ var CreateFlavorCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateFlavor"),
+	Path:         "/auth/ctrl/CreateFlavor",
+	ProtobufApi:  true,
 }
 
-var DeleteFlavorCmd = &cli.Command{
+var DeleteFlavorCmd = &ApiCommand{
+	Name:         "DeleteFlavor",
 	Use:          "delete",
 	Short:        "Delete a Flavor",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
@@ -46,25 +49,27 @@ var DeleteFlavorCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteFlavor"),
+	Path:         "/auth/ctrl/DeleteFlavor",
+	ProtobufApi:  true,
 }
 
-var UpdateFlavorCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update a Flavor",
-	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
-	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
-	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
-	SpecialArgs:  &FlavorSpecialArgs,
-	Comments:     addRegionComment(FlavorComments),
-	ReqData:      &ormapi.RegionFlavor{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateFlavor",
-		withSetFieldsFunc(setUpdateFlavorFields),
-	),
+var UpdateFlavorCmd = &ApiCommand{
+	Name:          "UpdateFlavor",
+	Use:           "update",
+	Short:         "Update a Flavor",
+	RequiredArgs:  "region " + strings.Join(FlavorRequiredArgs, " "),
+	OptionalArgs:  strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:     strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:   &FlavorSpecialArgs,
+	Comments:      addRegionComment(FlavorComments),
+	ReqData:       &ormapi.RegionFlavor{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateFlavor",
+	SetFieldsFunc: SetUpdateFlavorFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateFlavorFields(in map[string]interface{}) {
+func SetUpdateFlavorFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("Flavor")]
 	if obj == nil {
@@ -84,7 +89,8 @@ func setUpdateFlavorFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowFlavorCmd = &cli.Command{
+var ShowFlavorCmd = &ApiCommand{
+	Name:         "ShowFlavor",
 	Use:          "show",
 	Short:        "Show Flavors",
 	RequiredArgs: "region",
@@ -94,11 +100,13 @@ var ShowFlavorCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Flavor{},
-	Run:          runRest("/auth/ctrl/ShowFlavor"),
+	Path:         "/auth/ctrl/ShowFlavor",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddFlavorResCmd = &cli.Command{
+var AddFlavorResCmd = &ApiCommand{
+	Name:         "AddFlavorRes",
 	Use:          "addres",
 	Short:        "Add Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
@@ -108,10 +116,12 @@ var AddFlavorResCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddFlavorRes"),
+	Path:         "/auth/ctrl/AddFlavorRes",
+	ProtobufApi:  true,
 }
 
-var RemoveFlavorResCmd = &cli.Command{
+var RemoveFlavorResCmd = &ApiCommand{
+	Name:         "RemoveFlavorRes",
 	Use:          "removeres",
 	Short:        "Remove Optional Resource",
 	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
@@ -121,10 +131,11 @@ var RemoveFlavorResCmd = &cli.Command{
 	Comments:     addRegionComment(FlavorComments),
 	ReqData:      &ormapi.RegionFlavor{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveFlavorRes"),
+	Path:         "/auth/ctrl/RemoveFlavorRes",
+	ProtobufApi:  true,
 }
 
-var FlavorApiCmds = []*cli.Command{
+var FlavorApiCmds = []*ApiCommand{
 	CreateFlavorCmd,
 	DeleteFlavorCmd,
 	UpdateFlavorCmd,
@@ -133,7 +144,11 @@ var FlavorApiCmds = []*cli.Command{
 	RemoveFlavorResCmd,
 }
 
-var FlavorApiCmdsGroup = cli.GenGroup("flavor", "Manage Flavors", FlavorApiCmds)
+const FlavorGroup = "Flavor"
+
+func init() {
+	AllApis.AddGroup(FlavorGroup, "Manage Flavors", FlavorApiCmds)
+}
 
 var CreateFlavorRequiredArgs = []string{
 	"name",

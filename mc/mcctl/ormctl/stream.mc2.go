@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +22,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var StreamAppInstCmd = &cli.Command{
+var StreamAppInstCmd = &ApiCommand{
+	Name:                 "StreamAppInst",
 	Use:                  "streamappinst",
 	Short:                "Stream Application Instance current progress",
 	RequiredArgs:         "region " + strings.Join(AppInstKeyRequiredArgs, " "),
@@ -33,12 +33,14 @@ var StreamAppInstCmd = &cli.Command{
 	Comments:             addRegionComment(AppInstKeyComments),
 	ReqData:              &ormapi.RegionAppInstKey{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/StreamAppInst"),
+	Path:                 "/auth/ctrl/StreamAppInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var StreamClusterInstCmd = &cli.Command{
+var StreamClusterInstCmd = &ApiCommand{
+	Name:                 "StreamClusterInst",
 	Use:                  "streamclusterinst",
 	Short:                "Stream Cluster Instance current progress",
 	RequiredArgs:         "region " + strings.Join(ClusterInstKeyRequiredArgs, " "),
@@ -48,12 +50,14 @@ var StreamClusterInstCmd = &cli.Command{
 	Comments:             addRegionComment(ClusterInstKeyComments),
 	ReqData:              &ormapi.RegionClusterInstKey{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/StreamClusterInst"),
+	Path:                 "/auth/ctrl/StreamClusterInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var StreamCloudletCmd = &cli.Command{
+var StreamCloudletCmd = &ApiCommand{
+	Name:                 "StreamCloudlet",
 	Use:                  "streamcloudlet",
 	Short:                "Stream Cloudlet current progress",
 	RequiredArgs:         "region " + strings.Join(CloudletKeyRequiredArgs, " "),
@@ -63,18 +67,23 @@ var StreamCloudletCmd = &cli.Command{
 	Comments:             addRegionComment(CloudletKeyComments),
 	ReqData:              &ormapi.RegionCloudletKey{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/StreamCloudlet"),
+	Path:                 "/auth/ctrl/StreamCloudlet",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var StreamObjApiCmds = []*cli.Command{
+var StreamObjApiCmds = []*ApiCommand{
 	StreamAppInstCmd,
 	StreamClusterInstCmd,
 	StreamCloudletCmd,
 }
 
-var StreamObjApiCmdsGroup = cli.GenGroup("streamobj", "Manage StreamObjs", StreamObjApiCmds)
+const StreamObjGroup = "StreamObj"
+
+func init() {
+	AllApis.AddGroup(StreamObjGroup, "Manage StreamObjs", StreamObjApiCmds)
+}
 
 var StreamObjRequiredArgs = []string{
 	"key.appkey.organization",

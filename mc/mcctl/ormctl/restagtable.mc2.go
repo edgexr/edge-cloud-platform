@@ -23,7 +23,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateResTagTableCmd = &cli.Command{
+var CreateResTagTableCmd = &ApiCommand{
+	Name:         "CreateResTagTable",
 	Use:          "create",
 	Short:        "Create TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
@@ -33,10 +34,12 @@ var CreateResTagTableCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableComments),
 	ReqData:      &ormapi.RegionResTagTable{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateResTagTable"),
+	Path:         "/auth/ctrl/CreateResTagTable",
+	ProtobufApi:  true,
 }
 
-var DeleteResTagTableCmd = &cli.Command{
+var DeleteResTagTableCmd = &ApiCommand{
+	Name:         "DeleteResTagTable",
 	Use:          "delete",
 	Short:        "Delete TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
@@ -46,25 +49,27 @@ var DeleteResTagTableCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableComments),
 	ReqData:      &ormapi.RegionResTagTable{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteResTagTable"),
+	Path:         "/auth/ctrl/DeleteResTagTable",
+	ProtobufApi:  true,
 }
 
-var UpdateResTagTableCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update TagTable",
-	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
-	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
-	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
-	SpecialArgs:  &ResTagTableSpecialArgs,
-	Comments:     addRegionComment(ResTagTableComments),
-	ReqData:      &ormapi.RegionResTagTable{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateResTagTable",
-		withSetFieldsFunc(setUpdateResTagTableFields),
-	),
+var UpdateResTagTableCmd = &ApiCommand{
+	Name:          "UpdateResTagTable",
+	Use:           "update",
+	Short:         "Update TagTable",
+	RequiredArgs:  "region " + strings.Join(ResTagTableRequiredArgs, " "),
+	OptionalArgs:  strings.Join(ResTagTableOptionalArgs, " "),
+	AliasArgs:     strings.Join(ResTagTableAliasArgs, " "),
+	SpecialArgs:   &ResTagTableSpecialArgs,
+	Comments:      addRegionComment(ResTagTableComments),
+	ReqData:       &ormapi.RegionResTagTable{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateResTagTable",
+	SetFieldsFunc: SetUpdateResTagTableFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateResTagTableFields(in map[string]interface{}) {
+func SetUpdateResTagTableFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("ResTagTable")]
 	if obj == nil {
@@ -84,7 +89,8 @@ func setUpdateResTagTableFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowResTagTableCmd = &cli.Command{
+var ShowResTagTableCmd = &ApiCommand{
+	Name:         "ShowResTagTable",
 	Use:          "show",
 	Short:        "Show TagTable",
 	RequiredArgs: "region",
@@ -94,11 +100,13 @@ var ShowResTagTableCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableComments),
 	ReqData:      &ormapi.RegionResTagTable{},
 	ReplyData:    &edgeproto.ResTagTable{},
-	Run:          runRest("/auth/ctrl/ShowResTagTable"),
+	Path:         "/auth/ctrl/ShowResTagTable",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddResTagCmd = &cli.Command{
+var AddResTagCmd = &ApiCommand{
+	Name:         "AddResTag",
 	Use:          "addrestag",
 	Short:        "Add new tag(s) to TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
@@ -108,10 +116,12 @@ var AddResTagCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableComments),
 	ReqData:      &ormapi.RegionResTagTable{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddResTag"),
+	Path:         "/auth/ctrl/AddResTag",
+	ProtobufApi:  true,
 }
 
-var RemoveResTagCmd = &cli.Command{
+var RemoveResTagCmd = &ApiCommand{
+	Name:         "RemoveResTag",
 	Use:          "removerestag",
 	Short:        "Remove existing tag(s) from TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
@@ -121,10 +131,12 @@ var RemoveResTagCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableComments),
 	ReqData:      &ormapi.RegionResTagTable{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveResTag"),
+	Path:         "/auth/ctrl/RemoveResTag",
+	ProtobufApi:  true,
 }
 
-var GetResTagTableCmd = &cli.Command{
+var GetResTagTableCmd = &ApiCommand{
+	Name:         "GetResTagTable",
 	Use:          "get",
 	Short:        "Fetch a copy of the TagTable",
 	RequiredArgs: "region " + strings.Join(ResTagTableKeyRequiredArgs, " "),
@@ -134,10 +146,11 @@ var GetResTagTableCmd = &cli.Command{
 	Comments:     addRegionComment(ResTagTableKeyComments),
 	ReqData:      &ormapi.RegionResTagTableKey{},
 	ReplyData:    &edgeproto.ResTagTable{},
-	Run:          runRest("/auth/ctrl/GetResTagTable"),
+	Path:         "/auth/ctrl/GetResTagTable",
+	ProtobufApi:  true,
 }
 
-var ResTagTableApiCmds = []*cli.Command{
+var ResTagTableApiCmds = []*ApiCommand{
 	CreateResTagTableCmd,
 	DeleteResTagTableCmd,
 	UpdateResTagTableCmd,
@@ -147,7 +160,11 @@ var ResTagTableApiCmds = []*cli.Command{
 	GetResTagTableCmd,
 }
 
-var ResTagTableApiCmdsGroup = cli.GenGroup("restagtable", "Manage ResTagTables", ResTagTableApiCmds)
+const ResTagTableGroup = "ResTagTable"
+
+func init() {
+	AllApis.AddGroup(ResTagTableGroup, "Manage ResTagTables", ResTagTableApiCmds)
+}
 
 var ResTagTableKeyRequiredArgs = []string{}
 var ResTagTableKeyOptionalArgs = []string{

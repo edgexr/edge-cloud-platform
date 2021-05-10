@@ -8,7 +8,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -22,7 +21,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var ShowCloudletRefsCmd = &cli.Command{
+var ShowCloudletRefsCmd = &ApiCommand{
+	Name:         "ShowCloudletRefs",
 	Use:          "show",
 	Short:        "Show CloudletRefs (debug only)",
 	RequiredArgs: "region",
@@ -32,17 +32,23 @@ var ShowCloudletRefsCmd = &cli.Command{
 	Comments:     addRegionComment(CloudletRefsComments),
 	ReqData:      &ormapi.RegionCloudletRefs{},
 	ReplyData:    &edgeproto.CloudletRefs{},
-	Run:          runRest("/auth/ctrl/ShowCloudletRefs"),
+	Path:         "/auth/ctrl/ShowCloudletRefs",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var CloudletRefsApiCmds = []*cli.Command{
+var CloudletRefsApiCmds = []*ApiCommand{
 	ShowCloudletRefsCmd,
 }
 
-var CloudletRefsApiCmdsGroup = cli.GenGroup("cloudletrefs", "Manage CloudletRefs", CloudletRefsApiCmds)
+const CloudletRefsGroup = "CloudletRefs"
 
-var ShowClusterRefsCmd = &cli.Command{
+func init() {
+	AllApis.AddGroup(CloudletRefsGroup, "Manage CloudletRefs", CloudletRefsApiCmds)
+}
+
+var ShowClusterRefsCmd = &ApiCommand{
+	Name:         "ShowClusterRefs",
 	Use:          "show",
 	Short:        "Show ClusterRefs (debug only)",
 	RequiredArgs: "region",
@@ -52,17 +58,23 @@ var ShowClusterRefsCmd = &cli.Command{
 	Comments:     addRegionComment(ClusterRefsComments),
 	ReqData:      &ormapi.RegionClusterRefs{},
 	ReplyData:    &edgeproto.ClusterRefs{},
-	Run:          runRest("/auth/ctrl/ShowClusterRefs"),
+	Path:         "/auth/ctrl/ShowClusterRefs",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var ClusterRefsApiCmds = []*cli.Command{
+var ClusterRefsApiCmds = []*ApiCommand{
 	ShowClusterRefsCmd,
 }
 
-var ClusterRefsApiCmdsGroup = cli.GenGroup("clusterrefs", "Manage ClusterRefs", ClusterRefsApiCmds)
+const ClusterRefsGroup = "ClusterRefs"
 
-var ShowAppInstRefsCmd = &cli.Command{
+func init() {
+	AllApis.AddGroup(ClusterRefsGroup, "Manage ClusterRefs", ClusterRefsApiCmds)
+}
+
+var ShowAppInstRefsCmd = &ApiCommand{
+	Name:         "ShowAppInstRefs",
 	Use:          "show",
 	Short:        "Show AppInstRefs (debug only)",
 	RequiredArgs: "region",
@@ -72,15 +84,20 @@ var ShowAppInstRefsCmd = &cli.Command{
 	Comments:     addRegionComment(AppInstRefsComments),
 	ReqData:      &ormapi.RegionAppInstRefs{},
 	ReplyData:    &edgeproto.AppInstRefs{},
-	Run:          runRest("/auth/ctrl/ShowAppInstRefs"),
+	Path:         "/auth/ctrl/ShowAppInstRefs",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AppInstRefsApiCmds = []*cli.Command{
+var AppInstRefsApiCmds = []*ApiCommand{
 	ShowAppInstRefsCmd,
 }
 
-var AppInstRefsApiCmdsGroup = cli.GenGroup("appinstrefs", "Manage AppInstRefs", AppInstRefsApiCmds)
+const AppInstRefsGroup = "AppInstRefs"
+
+func init() {
+	AllApis.AddGroup(AppInstRefsGroup, "Manage AppInstRefs", AppInstRefsApiCmds)
+}
 
 var VMResourceRequiredArgs = []string{
 	"key.clusterkey.name",

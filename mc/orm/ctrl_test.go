@@ -15,6 +15,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
@@ -105,7 +106,7 @@ func TestController(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := &ormclient.Client{}
+	mcClient := mctestclient.NewClient(&ormclient.Client{})
 
 	// login as super user
 	token, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
@@ -805,9 +806,10 @@ func TestController(t *testing.T) {
 	}
 	out := edgeproto.Result{}
 	count = 0
+	restClient := &ormclient.Client{}
 	// check that we get intermediate results.
 	// the callback func is only called when data is read back.
-	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
 		token, &dat, &out, func() {
 			// got a result, trigger next result
 			count++
@@ -820,7 +822,7 @@ func TestController(t *testing.T) {
 	// check that we hit timeout if we don't trigger the next one.
 	count = 0
 	sds.next = make(chan int, 1)
-	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
 		token, &dat, &out, func() {
 			count++
 		})
@@ -835,7 +837,7 @@ func TestController(t *testing.T) {
 	// the callback func is only called when data is read back.
 	// Test Websocket connection
 	uri = "ws://" + addr + "/ws/api/v1"
-	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
 		token, &dat, &wsOut, func() {
 			// got a result, trigger next result
 			count++
@@ -852,7 +854,7 @@ func TestController(t *testing.T) {
 	// check that we hit timeout if we don't trigger the next one.
 	count = 0
 	sds.next = make(chan int, 1)
-	status, err = mcClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
 		token, &dat, &wsOut, func() {
 			count++
 		})
@@ -862,14 +864,14 @@ func TestController(t *testing.T) {
 	require.Equal(t, 1, count)
 }
 
-func testCreateUser(t *testing.T, mcClient *ormclient.Client, uri, name string) (*ormapi.User, string, string) {
+func testCreateUser(t *testing.T, mcClient *mctestclient.Client, uri, name string) (*ormapi.User, string, string) {
 	user := ormapi.User{
 		Name:       name,
 		Email:      name + "@gmail.com",
 		Passhash:   name + "-password-super-long-crazy-hard-difficult",
 		EnableTOTP: true,
 	}
-	resp, status, err := mcClient.CreateUser(uri, &user)
+	resp, status, err := mcClient.CreateUser(uri, &ormapi.CreateUser{User: user})
 	require.Nil(t, err, "create user ", name)
 	require.Equal(t, http.StatusOK, status)
 	require.NotEmpty(t, resp.TOTPSharedKey, "user totp shared key", name)
@@ -882,7 +884,7 @@ func testCreateUser(t *testing.T, mcClient *ormclient.Client, uri, name string) 
 	return &user, token, user.Passhash
 }
 
-func testCreateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgType, orgName string) *ormapi.Organization {
+func testCreateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, orgName string) *ormapi.Organization {
 	// create org
 	org := ormapi.Organization{
 		Type: orgType,
@@ -894,11 +896,7 @@ func testCreateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgType
 	return &org
 }
 
-var updateOrgData = `{"Name":"%s","PublicImages":%t}`
-var updateOrgType = `{"Name":"%s","Type":"%s"}`
-var updateOrgDeleteInProgress = `{"Name":"%s","DeleteInProgress":%t}`
-
-func testUpdateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgName string) {
+func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
 	org := getOrg(t, mcClient, uri, token, orgName)
 	update := *org
 	update.PublicImages = !org.PublicImages
@@ -906,8 +904,10 @@ func testUpdateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgName
 	// For updates, must specify json directly so we can
 	// specify empty strings and false values. Otherwise json.Marshal()
 	// will just ignore them.
-	dat := fmt.Sprintf(updateOrgData, update.Name, update.PublicImages)
-
+	dat := map[string]interface{}{
+		"Name":         update.Name,
+		"PublicImages": update.PublicImages,
+	}
 	status, err := mcClient.UpdateOrg(uri, token, dat)
 	require.Nil(t, err, "update org ", org.Name)
 	require.Equal(t, http.StatusOK, status)
@@ -918,7 +918,7 @@ func testUpdateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgName
 	require.Equal(t, update, *check, "updated org should be as expected")
 
 	// change back
-	dat = fmt.Sprintf(updateOrgData, org.Name, org.PublicImages)
+	dat["PublicImages"] = org.PublicImages
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.Nil(t, err, "update org ", org.Name)
 	require.Equal(t, http.StatusOK, status)
@@ -933,26 +933,32 @@ func testUpdateOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgName
 	if org.Type == OrgTypeDeveloper {
 		typ = OrgTypeOperator
 	}
-	dat = fmt.Sprintf(updateOrgType, org.Name, typ)
+	dat = map[string]interface{}{
+		"Name": org.Name,
+		"Type": typ,
+	}
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err, "update org type")
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Cannot change Organization type")
-	dat = fmt.Sprintf(updateOrgType, org.Name, OrgTypeAdmin)
+	dat["Type"] = OrgTypeAdmin
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err, "update org type")
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Cannot change Organization type")
 }
 
-func testUpdateOrgFail(t *testing.T, mcClient *ormclient.Client, uri, token, orgName string) {
-	dat := fmt.Sprintf(updateOrgData, orgName, false)
+func testUpdateOrgFail(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
+	dat := map[string]interface{}{
+		"Name":         orgName,
+		"PublicImages": false,
+	}
 	status, err := mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func getOrg(t *testing.T, mcClient *ormclient.Client, uri, token, name string) *ormapi.Organization {
+func getOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, name string) *ormapi.Organization {
 	orgs, status, err := mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -965,13 +971,13 @@ func getOrg(t *testing.T, mcClient *ormclient.Client, uri, token, name string) *
 	return nil
 }
 
-func testCreateUserOrg(t *testing.T, mcClient *ormclient.Client, uri, name, orgType, orgName string) (*ormapi.User, *ormapi.Organization, string) {
+func testCreateUserOrg(t *testing.T, mcClient *mctestclient.Client, uri, name, orgType, orgName string) (*ormapi.User, *ormapi.Organization, string) {
 	user, token, _ := testCreateUser(t, mcClient, uri, name)
 	org := testCreateOrg(t, mcClient, uri, token, orgType, orgName)
 	return user, org, token
 }
 
-func setOperatorOrgNoEdgeboxOnly(t *testing.T, mcClient *ormclient.Client, uri, token, orgName string) {
+func setOperatorOrgNoEdgeboxOnly(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
 	orgReq := make(map[string]interface{})
 	orgReq["name"] = orgName
 	orgReq["edgeboxonly"] = false
@@ -980,7 +986,7 @@ func setOperatorOrgNoEdgeboxOnly(t *testing.T, mcClient *ormclient.Client, uri, 
 	require.Equal(t, http.StatusOK, status)
 }
 
-func testAddUserRole(t *testing.T, mcClient *ormclient.Client, uri, token, org, role, username string, success bool) {
+func testAddUserRole(t *testing.T, mcClient *mctestclient.Client, uri, token, org, role, username string, success bool) {
 	roleArg := ormapi.Role{
 		Username: username,
 		Org:      org,
@@ -995,7 +1001,7 @@ func testAddUserRole(t *testing.T, mcClient *ormclient.Client, uri, token, org, 
 	}
 }
 
-func testRemoveUserRole(t *testing.T, mcClient *ormclient.Client, uri, token, org, role, username string, success bool) {
+func testRemoveUserRole(t *testing.T, mcClient *mctestclient.Client, uri, token, org, role, username string, success bool) {
 	roleArg := ormapi.Role{
 		Username: username,
 		Org:      org,
@@ -1016,7 +1022,7 @@ func setClusterInstDev(dev string, insts []edgeproto.ClusterInst) {
 	}
 }
 
-func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *mctestclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
@@ -1026,7 +1032,7 @@ func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *ormclient.Clie
 	require.Equal(t, expected, list)
 }
 
-func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *mctestclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
@@ -1036,7 +1042,7 @@ func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *ormclient.Client
 	require.Equal(t, expected, list)
 }
 
-func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *mctestclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
@@ -1046,7 +1052,7 @@ func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *ormclient.Client,
 	require.Equal(t, expected, list)
 }
 
-func testShowCloudletPoolAccessPending(t *testing.T, mcClient *ormclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
+func testShowCloudletPoolAccessPending(t *testing.T, mcClient *mctestclient.Client, uri, token string, expected ...ormapi.OrgCloudletPool) {
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
@@ -1056,7 +1062,7 @@ func testShowCloudletPoolAccessPending(t *testing.T, mcClient *ormclient.Client,
 	require.Equal(t, expected, list)
 }
 
-func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, orgType, region, org string, showcount int, matchOrg string) {
+func testShowOrgCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, region, org string, showcount int, matchOrg string) {
 	oc := ormapi.OrgCloudlet{}
 	oc.Region = region
 	oc.Org = org
@@ -1092,7 +1098,7 @@ func testShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, o
 	}
 }
 
-func badPermShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+func badPermShowOrgCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	oc := ormapi.OrgCloudlet{}
 	oc.Region = region
 	oc.Org = org
@@ -1106,7 +1112,7 @@ func badPermShowOrgCloudlet(t *testing.T, mcClient *ormclient.Client, uri, token
 }
 
 // Test that we get forbidden for Orgs that don't exist
-func badPermTestNonExistent(t *testing.T, mcClient *ormclient.Client, uri, token, region string, tc *edgeproto.CloudletKey) {
+func badPermTestNonExistent(t *testing.T, mcClient *mctestclient.Client, uri, token, region string, tc *edgeproto.CloudletKey) {
 	neOrg := "non-existent-org"
 	badPermCreateApp(t, mcClient, uri, token, region, neOrg)
 	badPermCreateAppInst(t, mcClient, uri, token, region, neOrg, tc)
@@ -1120,7 +1126,7 @@ func badPermTestNonExistent(t *testing.T, mcClient *ormclient.Client, uri, token
 	badPermCreateResTagTable(t, mcClient, uri, token, region, neOrg)
 }
 
-func badPermTestAutoProvPolicy400(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
+func badPermTestAutoProvPolicy400(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	// check for "No permissions" instead of Forbidden(403)
 	_, status, err := ormtestutil.TestPermCreateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
@@ -1132,7 +1138,7 @@ func badPermTestAutoProvPolicy400(t *testing.T, mcClient *ormclient.Client, uri,
 	require.Contains(t, err.Error(), "No permissions for Cloudlet")
 }
 
-func badPermAddAutoProvPolicyCloudlet400(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
+func badPermAddAutoProvPolicyCloudlet400(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
 	// check for "No permissions" instead of Forbidden(403)
 	_, status, err := ormtestutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.Equal(t, http.StatusBadRequest, status)
@@ -1200,7 +1206,7 @@ func (s *StreamDummyServer) ShowCloudletPool(in *edgeproto.CloudletPool, cb edge
 	return nil
 }
 
-func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer, ctrl *ormapi.Controller, count int, mcClient *ormclient.Client, uri, token string) {
+func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer, ctrl *ormapi.Controller, count int, mcClient *mctestclient.Client, uri, token string) {
 	// login as super user
 	token, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
@@ -1353,7 +1359,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Equal(t, apiKeyRole.Role, getApiKeyRoleName(resp.Id))
 	require.Equal(t, apiKeyRole.Username, resp.Id)
 	require.Equal(t, apiKeyRole.Org, operOrg.Name)
-	policies, status, err := showRolePerms(mcClient, uri, token)
+	policies, status, err := mcClient.ShowRolePerm(uri, token)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	apiKeyRoleViewPerm := ormapi.RolePerm{}
@@ -1459,7 +1465,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 		}
 	}
 	require.False(t, found, "role doesn't exist")
-	policies, status, err = showRolePerms(mcClient, uri, token)
+	policies, status, err = mcClient.ShowRolePerm(uri, token)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	found = false
@@ -1720,7 +1726,7 @@ func TestUpgrade(t *testing.T) {
 	require.Equal(t, 1, found)
 }
 
-func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, region string) {
+func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, uri, region string) {
 	// login as super user
 	token, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
@@ -1770,7 +1776,7 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 	require.Nil(t, err)
 }
 
-func testCreateBillingOrg(t *testing.T, mcClient *ormclient.Client, uri, token, orgType, orgName string) {
+func testCreateBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, orgName string) {
 	// create billing org
 	org := ormapi.BillingOrganization{
 		Type: orgType,

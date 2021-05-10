@@ -23,22 +23,23 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var UpdateSettingsCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update settings",
-	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
-	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
-	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
-	SpecialArgs:  &SettingsSpecialArgs,
-	Comments:     addRegionComment(SettingsComments),
-	ReqData:      &ormapi.RegionSettings{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateSettings",
-		withSetFieldsFunc(setUpdateSettingsFields),
-	),
+var UpdateSettingsCmd = &ApiCommand{
+	Name:          "UpdateSettings",
+	Use:           "update",
+	Short:         "Update settings",
+	RequiredArgs:  "region " + strings.Join(SettingsRequiredArgs, " "),
+	OptionalArgs:  strings.Join(SettingsOptionalArgs, " "),
+	AliasArgs:     strings.Join(SettingsAliasArgs, " "),
+	SpecialArgs:   &SettingsSpecialArgs,
+	Comments:      addRegionComment(SettingsComments),
+	ReqData:       &ormapi.RegionSettings{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateSettings",
+	SetFieldsFunc: SetUpdateSettingsFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateSettingsFields(in map[string]interface{}) {
+func SetUpdateSettingsFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("Settings")]
 	if obj == nil {
@@ -58,7 +59,8 @@ func setUpdateSettingsFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ResetSettingsCmd = &cli.Command{
+var ResetSettingsCmd = &ApiCommand{
+	Name:         "ResetSettings",
 	Use:          "reset",
 	Short:        "Reset all settings to their defaults",
 	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
@@ -68,10 +70,12 @@ var ResetSettingsCmd = &cli.Command{
 	Comments:     addRegionComment(SettingsComments),
 	ReqData:      &ormapi.RegionSettings{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/ResetSettings"),
+	Path:         "/auth/ctrl/ResetSettings",
+	ProtobufApi:  true,
 }
 
-var ShowSettingsCmd = &cli.Command{
+var ShowSettingsCmd = &ApiCommand{
+	Name:         "ShowSettings",
 	Use:          "show",
 	Short:        "Show settings",
 	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
@@ -81,16 +85,21 @@ var ShowSettingsCmd = &cli.Command{
 	Comments:     addRegionComment(SettingsComments),
 	ReqData:      &ormapi.RegionSettings{},
 	ReplyData:    &edgeproto.Settings{},
-	Run:          runRest("/auth/ctrl/ShowSettings"),
+	Path:         "/auth/ctrl/ShowSettings",
+	ProtobufApi:  true,
 }
 
-var SettingsApiCmds = []*cli.Command{
+var SettingsApiCmds = []*ApiCommand{
 	UpdateSettingsCmd,
 	ResetSettingsCmd,
 	ShowSettingsCmd,
 }
 
-var SettingsApiCmdsGroup = cli.GenGroup("settings", "Manage Settings", SettingsApiCmds)
+const SettingsGroup = "Settings"
+
+func init() {
+	AllApis.AddGroup(SettingsGroup, "Manage Settings", SettingsApiCmds)
+}
 
 var SettingsRequiredArgs = []string{}
 var SettingsOptionalArgs = []string{

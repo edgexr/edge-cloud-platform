@@ -3,14 +3,18 @@ package ormctl
 import (
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel"
-	"github.com/spf13/cobra"
 )
 
-func GetEventsCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const (
+	EventsGroup = "Events"
+	SpansGroup  = "Spans"
+)
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "ShowEvents",
 		Use:          "show",
 		Short:        "Show events and audit events",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
@@ -19,8 +23,9 @@ func GetEventsCommand() *cobra.Command {
 		SpecialArgs:  &EventsSpecialArgs,
 		ReqData:      &node.EventSearch{},
 		ReplyData:    &[]node.EventData{},
-		Run:          runRest("/auth/events/show"),
-	}, &cli.Command{
+		Path:         "/auth/events/show",
+	}, &ApiCommand{
+		Name:         "ShowOldEvents",
 		Use:          "showold",
 		Short:        "Show events and audit events (for old events format)",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
@@ -29,8 +34,9 @@ func GetEventsCommand() *cobra.Command {
 		SpecialArgs:  &EventsSpecialArgs,
 		ReqData:      &node.EventSearch{},
 		ReplyData:    &[]node.EventDataOld{},
-		Run:          runRest("/auth/events/show"),
-	}, &cli.Command{
+		Path:         "/auth/events/show",
+	}, &ApiCommand{
+		Name:         "FindEvents",
 		Use:          "find",
 		Short:        "Find events and audit events, results sorted by relevance",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
@@ -39,8 +45,9 @@ func GetEventsCommand() *cobra.Command {
 		SpecialArgs:  &EventsSpecialArgs,
 		ReqData:      &node.EventSearch{},
 		ReplyData:    &[]node.EventData{},
-		Run:          runRest("/auth/events/find"),
-	}, &cli.Command{
+		Path:         "/auth/events/find",
+	}, &ApiCommand{
+		Name:         "EventTerms",
 		Use:          "terms",
 		Short:        "Show aggregated events terms",
 		OptionalArgs: strings.Join(EventsOptionalArgs, " "),
@@ -49,13 +56,12 @@ func GetEventsCommand() *cobra.Command {
 		SpecialArgs:  &EventsSpecialArgs,
 		ReqData:      &node.EventSearch{},
 		ReplyData:    &node.EventTerms{},
-		Run:          runRest("/auth/events/terms"),
+		Path:         "/auth/events/terms",
 	}}
-	return cli.GenGroup("events", "Search events and audit events", cmds)
-}
+	AllApis.AddGroup(EventsGroup, "Search events and audit events", cmds)
 
-func GetSpansCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+	cmds = []*ApiCommand{&ApiCommand{
+		Name:         "SpanTerms",
 		Use:          "terms",
 		Short:        "Show aggregated spans terms",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
@@ -64,8 +70,9 @@ func GetSpansCommand() *cobra.Command {
 		SpecialArgs:  &ShowSpansSpecialArgs,
 		ReqData:      &node.SpanSearch{},
 		ReplyData:    &node.SpanTerms{},
-		Run:          runRest("/auth/spans/terms"),
-	}, &cli.Command{
+		Path:         "/auth/spans/terms",
+	}, &ApiCommand{
+		Name:         "ShowSpans",
 		Use:          "show",
 		Short:        "Search spans",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
@@ -74,8 +81,9 @@ func GetSpansCommand() *cobra.Command {
 		SpecialArgs:  &ShowSpansSpecialArgs,
 		ReqData:      &node.SpanSearch{},
 		ReplyData:    &[]node.SpanOutCondensed{},
-		Run:          runRest("/auth/spans/show"),
-	}, &cli.Command{
+		Path:         "/auth/spans/show",
+	}, &ApiCommand{
+		Name:         "ShowSpansVerbose",
 		Use:          "showverbose",
 		Short:        "Search spans, output raw format",
 		OptionalArgs: strings.Join(ShowSpansOptionalArgs, " "),
@@ -84,9 +92,9 @@ func GetSpansCommand() *cobra.Command {
 		SpecialArgs:  &ShowSpansSpecialArgs,
 		ReqData:      &node.SpanSearch{},
 		ReplyData:    &[]dbmodel.Span{},
-		Run:          runRest("/auth/spans/showverbose"),
+		Path:         "/auth/spans/showverbose",
 	}}
-	return cli.GenGroup("spans", "Search spans", cmds)
+	AllApis.AddGroup(SpansGroup, "Search spans", cmds)
 }
 
 var EventsOptionalArgs = []string{

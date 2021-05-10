@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +23,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateTrustPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestCreateTrustPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionTrustPolicy{}
 	dat.Region = region
 	dat.TrustPolicy = *in
@@ -32,13 +32,13 @@ func TestCreateTrustPolicy(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.CreateTrustPolicy(uri, token, dat)
 }
-func TestPermCreateTrustPolicy(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestPermCreateTrustPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.TrustPolicy{}
 	in.Key.Organization = org
 	return TestCreateTrustPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteTrustPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestDeleteTrustPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionTrustPolicy{}
 	dat.Region = region
 	dat.TrustPolicy = *in
@@ -47,13 +47,13 @@ func TestDeleteTrustPolicy(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.DeleteTrustPolicy(uri, token, dat)
 }
-func TestPermDeleteTrustPolicy(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestPermDeleteTrustPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.TrustPolicy{}
 	in.Key.Organization = org
 	return TestDeleteTrustPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestUpdateTrustPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestUpdateTrustPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionTrustPolicy{}
 	dat.Region = region
 	dat.TrustPolicy = *in
@@ -62,13 +62,13 @@ func TestUpdateTrustPolicy(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.UpdateTrustPolicy(uri, token, dat)
 }
-func TestPermUpdateTrustPolicy(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
+func TestPermUpdateTrustPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.TrustPolicy{}
 	in.Key.Organization = org
 	return TestUpdateTrustPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowTrustPolicy(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.TrustPolicy, int, error) {
+func TestShowTrustPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.TrustPolicy, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.TrustPolicy, int, error) {
 	dat := &ormapi.RegionTrustPolicy{}
 	dat.Region = region
 	dat.TrustPolicy = *in
@@ -77,7 +77,7 @@ func TestShowTrustPolicy(mcClient *ormclient.Client, uri, token, region string, 
 	}
 	return mcClient.ShowTrustPolicy(uri, token, dat)
 }
-func TestPermShowTrustPolicy(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.TrustPolicy, int, error) {
+func TestPermShowTrustPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.TrustPolicy, int, error) {
 	in := &edgeproto.TrustPolicy{}
 	in.Key.Organization = org
 	return TestShowTrustPolicy(mcClient, uri, token, region, in, modFuncs...)
