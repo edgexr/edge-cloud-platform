@@ -13,6 +13,7 @@ import (
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -24,7 +25,7 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
-var mcClient ormclient.Api
+var mcClient *mctestclient.Client
 var errs []Err
 
 type Err struct {
@@ -43,17 +44,19 @@ func RunMcAPI(api, mcname, apiFile, curUserFile, outputDir string, mods []string
 	uri := "https://" + mc.Addr + "/api/v1"
 	log.Printf("Using MC %s at %s", mc.Name, uri)
 
+	var clientRun mctestclient.ClientRun
 	if hasMod("cli", mods) {
-		mcClient = &cliwrapper.Client{
-			DebugLog:     true,
-			SkipVerify:   true,
-			SilenceUsage: true,
-		}
+		cliclient := cliwrapper.NewClient()
+		cliclient.DebugLog = true
+		cliclient.SkipVerify = true
+		cliclient.SilenceUsage = true
+		clientRun = cliclient
 	} else {
-		mcClient = &ormclient.Client{
+		clientRun = &ormclient.Client{
 			SkipVerify: true,
 		}
 	}
+	mcClient = mctestclient.NewClient(clientRun)
 
 	if strings.HasSuffix(api, "users") {
 		return runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
@@ -122,7 +125,10 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 	switch api {
 	case "createusers":
 		for _, user := range users {
-			resp, status, err := mcClient.CreateUser(uri, &user)
+			createUser := ormapi.CreateUser{
+				User: user,
+			}
+			resp, status, err := mcClient.CreateUser(uri, &createUser)
 			checkMcErr("CreateUser", status, err, &rc)
 			sharedData[user.Name] = resp.TOTPSharedKey
 		}
@@ -573,7 +579,7 @@ func getRegionAppDataFromMap(regionDataMap interface{}) map[string]interface{} {
 	return appData
 }
 
-func runRegionDataApi(mcClient ormclient.Api, uri, token, tag string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string, apicb edgetestutil.RunAllDataApiCallback) *edgetestutil.AllDataOut {
+func runRegionDataApi(mcClient *mctestclient.Client, uri, token, tag string, rd *ormapi.RegionData, rdMap interface{}, rc *bool, mode string, apicb edgetestutil.RunAllDataApiCallback) *edgetestutil.AllDataOut {
 	appDataMap := getRegionAppDataFromMap(rdMap)
 	client := testutil.TestClient{
 		Region:   rd.Region,
@@ -831,7 +837,7 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 			Method: method,
 			Last:   1,
 		}
-		for _, selector := range orm.ClientApiUsageSelectors {
+		for _, selector := range ormapi.ClientApiUsageSelectors {
 			clientApiUsageQuery.Selector = selector
 			clientApiUsageMetric, status, err := mcClient.ShowClientApiUsageMetrics(uri, token, &clientApiUsageQuery)
 			checkMcErr("ShowClientApiUsage"+strings.Title(selector), status, err, rc)
@@ -849,7 +855,7 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 		RawData: true,
 		Last:    1,
 	}
-	for _, selector := range orm.ClientAppUsageSelectors {
+	for _, selector := range ormapi.ClientAppUsageSelectors {
 		if selector == "custom" {
 			continue
 		}
@@ -869,7 +875,7 @@ func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *
 		RawData:  true,
 		Last:     1,
 	}
-	for _, selector := range orm.ClientCloudletUsageSelectors {
+	for _, selector := range ormapi.ClientCloudletUsageSelectors {
 		clientCloudletUsageQuery.Selector = selector
 		clientCloudletUsageMetric, status, err := mcClient.ShowClientCloudletUsageMetrics(uri, token, &clientCloudletUsageQuery)
 		checkMcErr("ShowClientCloudletUsage"+strings.Title(selector), status, err, rc)
@@ -900,18 +906,18 @@ func runMcExec(api, uri, apiFile, curUserFile, outputDir string, mods []string, 
 	// Regardless of hasMod, use `mcctl` to run exec api's, as exec output
 	// requires additional connections to websocket to read output,
 	// which is already done as part of mcctl run
-	client := &cliwrapper.Client{
-		DebugLog:   true,
-		SkipVerify: true,
-	}
+	cliclient := cliwrapper.NewClient()
+	cliclient.DebugLog = true
+	cliclient.SkipVerify = true
+	mcClient := mctestclient.NewClient(cliclient)
 
 	var out string
 	if api == "runcommand" {
-		out, err = client.RunCommandOut(uri, token, &data.Request)
+		out, _, err = mcClient.RunCommandCli(uri, token, &data.Request)
 	} else if api == "accesscloudlet" {
-		out, err = client.AccessCloudletOut(uri, token, &data.Request)
+		out, _, err = mcClient.AccessCloudletCli(uri, token, &data.Request)
 	} else {
-		out, err = client.ShowLogsOut(uri, token, &data.Request)
+		out, _, err = mcClient.ShowLogsCli(uri, token, &data.Request)
 	}
 	if err != nil {
 		log.Printf("Error running %s API %v\n", api, err)

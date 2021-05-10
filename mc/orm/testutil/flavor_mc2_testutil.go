@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +23,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestCreateFlavor(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -32,12 +32,12 @@ func TestCreateFlavor(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.CreateFlavor(uri, token, dat)
 }
-func TestPermCreateFlavor(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestPermCreateFlavor(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestCreateFlavor(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestDeleteFlavor(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -46,12 +46,12 @@ func TestDeleteFlavor(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.DeleteFlavor(uri, token, dat)
 }
-func TestPermDeleteFlavor(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestPermDeleteFlavor(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestDeleteFlavor(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestUpdateFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestUpdateFlavor(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -60,12 +60,12 @@ func TestUpdateFlavor(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.UpdateFlavor(uri, token, dat)
 }
-func TestPermUpdateFlavor(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestPermUpdateFlavor(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestUpdateFlavor(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowFlavor(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) ([]edgeproto.Flavor, int, error) {
+func TestShowFlavor(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) ([]edgeproto.Flavor, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -74,12 +74,12 @@ func TestShowFlavor(mcClient *ormclient.Client, uri, token, region string, in *e
 	}
 	return mcClient.ShowFlavor(uri, token, dat)
 }
-func TestPermShowFlavor(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) ([]edgeproto.Flavor, int, error) {
+func TestPermShowFlavor(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) ([]edgeproto.Flavor, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestShowFlavor(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestAddFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestAddFlavorRes(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -88,12 +88,12 @@ func TestAddFlavorRes(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.AddFlavorRes(uri, token, dat)
 }
-func TestPermAddFlavorRes(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestPermAddFlavorRes(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestAddFlavorRes(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestRemoveFlavorRes(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Flavor, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionFlavor{}
 	dat.Region = region
 	dat.Flavor = *in
@@ -102,7 +102,7 @@ func TestRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region string, 
 	}
 	return mcClient.RemoveFlavorRes(uri, token, dat)
 }
-func TestPermRemoveFlavorRes(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
+func TestPermRemoveFlavorRes(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Flavor{}
 	return TestRemoveFlavorRes(mcClient, uri, token, region, in, modFuncs...)
 }

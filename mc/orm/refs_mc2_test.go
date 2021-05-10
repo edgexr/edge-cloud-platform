@@ -7,8 +7,8 @@ import (
 	fmt "fmt"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"github.com/stretchr/testify/require"
@@ -26,19 +26,19 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
+func badPermShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
 	_, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletRefs)) {
+func badShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletRefs)) {
 	_, st, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
+func goodPermShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
 	_, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -46,19 +46,19 @@ func goodPermShowCloudletRefs(t *testing.T, mcClient *ormclient.Client, uri, tok
 
 var _ = edgeproto.GetFields
 
-func badPermShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
+func badPermShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
 	_, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterRefs)) {
+func badShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterRefs)) {
 	_, st, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
+func goodPermShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
 	_, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -66,19 +66,19 @@ func goodPermShowClusterRefs(t *testing.T, mcClient *ormclient.Client, uri, toke
 
 var _ = edgeproto.GetFields
 
-func badPermShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
+func badPermShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
 	_, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstRefs)) {
+func badShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppInstRefs)) {
 	_, st, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowAppInstRefs(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
+func goodPermShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
 	_, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)

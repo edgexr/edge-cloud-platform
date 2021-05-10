@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -24,7 +24,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowAlert(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Alert, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
+func TestShowAlert(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Alert, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
 	dat := &ormapi.RegionAlert{}
 	dat.Region = region
 	dat.Alert = *in
@@ -33,7 +33,7 @@ func TestShowAlert(mcClient *ormclient.Client, uri, token, region string, in *ed
 	}
 	return mcClient.ShowAlert(uri, token, dat)
 }
-func TestPermShowAlert(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
+func TestPermShowAlert(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Alert)) ([]edgeproto.Alert, int, error) {
 	in := &edgeproto.Alert{}
 	return TestShowAlert(mcClient, uri, token, region, in, modFuncs...)
 }

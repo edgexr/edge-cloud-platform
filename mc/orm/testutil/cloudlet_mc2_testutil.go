@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -24,7 +24,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestCreateCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestCreateCloudlet(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudlet{}
 	dat.Region = region
 	dat.Cloudlet = *in
@@ -33,13 +33,13 @@ func TestCreateCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 	}
 	return mcClient.CreateCloudlet(uri, token, dat)
 }
-func TestPermCreateCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermCreateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
 	in.Key.Organization = org
 	return TestCreateCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestDeleteCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestDeleteCloudlet(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudlet{}
 	dat.Region = region
 	dat.Cloudlet = *in
@@ -48,13 +48,13 @@ func TestDeleteCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 	}
 	return mcClient.DeleteCloudlet(uri, token, dat)
 }
-func TestPermDeleteCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermDeleteCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
 	in.Key.Organization = org
 	return TestDeleteCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestUpdateCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudlet{}
 	dat.Region = region
 	dat.Cloudlet = *in
@@ -63,13 +63,13 @@ func TestUpdateCloudlet(mcClient *ormclient.Client, uri, token, region string, i
 	}
 	return mcClient.UpdateCloudlet(uri, token, dat)
 }
-func TestPermUpdateCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
 	in.Key.Organization = org
 	return TestUpdateCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowCloudlet(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Cloudlet, int, error) {
+func TestShowCloudlet(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Cloudlet, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Cloudlet, int, error) {
 	dat := &ormapi.RegionCloudlet{}
 	dat.Region = region
 	dat.Cloudlet = *in
@@ -78,12 +78,12 @@ func TestShowCloudlet(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.ShowCloudlet(uri, token, dat)
 }
-func TestPermShowCloudlet(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Cloudlet, int, error) {
+func TestPermShowCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Cloudlet, int, error) {
 	in := &edgeproto.Cloudlet{}
 	return TestShowCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletManifest(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
+func TestGetCloudletManifest(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
 	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
 	dat.CloudletKey = *in
@@ -92,13 +92,13 @@ func TestGetCloudletManifest(mcClient *ormclient.Client, uri, token, region stri
 	}
 	return mcClient.GetCloudletManifest(uri, token, dat)
 }
-func TestPermGetCloudletManifest(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
+func TestPermGetCloudletManifest(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.CloudletManifest, int, error) {
 	in := &edgeproto.CloudletKey{}
 	in.Organization = org
 	return TestGetCloudletManifest(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletProps(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
+func TestGetCloudletProps(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletProps, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
 	dat := &ormapi.RegionCloudletProps{}
 	dat.Region = region
 	dat.CloudletProps = *in
@@ -107,13 +107,13 @@ func TestGetCloudletProps(mcClient *ormclient.Client, uri, token, region string,
 	}
 	return mcClient.GetCloudletProps(uri, token, dat)
 }
-func TestPermGetCloudletProps(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
+func TestPermGetCloudletProps(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletProps)) (*edgeproto.CloudletProps, int, error) {
 	in := &edgeproto.CloudletProps{}
 	in.Organization = org
 	return TestGetCloudletProps(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletResourceQuotaProps(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResourceQuotaProps, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) (*edgeproto.CloudletResourceQuotaProps, int, error) {
+func TestGetCloudletResourceQuotaProps(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletResourceQuotaProps, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) (*edgeproto.CloudletResourceQuotaProps, int, error) {
 	dat := &ormapi.RegionCloudletResourceQuotaProps{}
 	dat.Region = region
 	dat.CloudletResourceQuotaProps = *in
@@ -122,13 +122,13 @@ func TestGetCloudletResourceQuotaProps(mcClient *ormclient.Client, uri, token, r
 	}
 	return mcClient.GetCloudletResourceQuotaProps(uri, token, dat)
 }
-func TestPermGetCloudletResourceQuotaProps(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) (*edgeproto.CloudletResourceQuotaProps, int, error) {
+func TestPermGetCloudletResourceQuotaProps(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceQuotaProps)) (*edgeproto.CloudletResourceQuotaProps, int, error) {
 	in := &edgeproto.CloudletResourceQuotaProps{}
 	in.Organization = org
 	return TestGetCloudletResourceQuotaProps(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResourceUsage, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
+func TestGetCloudletResourceUsage(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletResourceUsage, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
 	dat := &ormapi.RegionCloudletResourceUsage{}
 	dat.Region = region
 	dat.CloudletResourceUsage = *in
@@ -137,13 +137,13 @@ func TestGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region
 	}
 	return mcClient.GetCloudletResourceUsage(uri, token, dat)
 }
-func TestPermGetCloudletResourceUsage(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
+func TestPermGetCloudletResourceUsage(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResourceUsage)) (*edgeproto.CloudletResourceUsage, int, error) {
 	in := &edgeproto.CloudletResourceUsage{}
 	in.Key.Organization = org
 	return TestGetCloudletResourceUsage(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResMap, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
+func TestAddCloudletResMapping(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletResMap, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletResMap{}
 	dat.Region = region
 	dat.CloudletResMap = *in
@@ -152,13 +152,13 @@ func TestAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region st
 	}
 	return mcClient.AddCloudletResMapping(uri, token, dat)
 }
-func TestPermAddCloudletResMapping(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
+func TestPermAddCloudletResMapping(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletResMap{}
 	in.Key.Organization = org
 	return TestAddCloudletResMapping(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRemoveCloudletResMapping(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletResMap, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
+func TestRemoveCloudletResMapping(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletResMap, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletResMap{}
 	dat.Region = region
 	dat.CloudletResMap = *in
@@ -167,13 +167,13 @@ func TestRemoveCloudletResMapping(mcClient *ormclient.Client, uri, token, region
 	}
 	return mcClient.RemoveCloudletResMapping(uri, token, dat)
 }
-func TestPermRemoveCloudletResMapping(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
+func TestPermRemoveCloudletResMapping(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletResMap)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletResMap{}
 	in.Key.Organization = org
 	return TestRemoveCloudletResMapping(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestFindFlavorMatch(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.FlavorMatch, modFuncs ...func(*edgeproto.FlavorMatch)) (*edgeproto.FlavorMatch, int, error) {
+func TestFindFlavorMatch(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.FlavorMatch, modFuncs ...func(*edgeproto.FlavorMatch)) (*edgeproto.FlavorMatch, int, error) {
 	dat := &ormapi.RegionFlavorMatch{}
 	dat.Region = region
 	dat.FlavorMatch = *in
@@ -182,13 +182,13 @@ func TestFindFlavorMatch(mcClient *ormclient.Client, uri, token, region string, 
 	}
 	return mcClient.FindFlavorMatch(uri, token, dat)
 }
-func TestPermFindFlavorMatch(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.FlavorMatch)) (*edgeproto.FlavorMatch, int, error) {
+func TestPermFindFlavorMatch(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.FlavorMatch)) (*edgeproto.FlavorMatch, int, error) {
 	in := &edgeproto.FlavorMatch{}
 	in.Key.Organization = org
 	return TestFindFlavorMatch(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRevokeAccessKey(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+func TestRevokeAccessKey(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
 	dat.CloudletKey = *in
@@ -197,13 +197,13 @@ func TestRevokeAccessKey(mcClient *ormclient.Client, uri, token, region string, 
 	}
 	return mcClient.RevokeAccessKey(uri, token, dat)
 }
-func TestPermRevokeAccessKey(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+func TestPermRevokeAccessKey(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletKey{}
 	in.Organization = org
 	return TestRevokeAccessKey(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestGenerateAccessKey(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+func TestGenerateAccessKey(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
 	dat.CloudletKey = *in
@@ -212,7 +212,7 @@ func TestGenerateAccessKey(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.GenerateAccessKey(uri, token, dat)
 }
-func TestPermGenerateAccessKey(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
+func TestPermGenerateAccessKey(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletKey{}
 	in.Organization = org
 	return TestGenerateAccessKey(mcClient, uri, token, region, in, modFuncs...)
@@ -378,7 +378,7 @@ func (s *TestClient) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorMa
 	return out, err
 }
 
-func TestShowCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) ([]edgeproto.CloudletInfo, int, error) {
+func TestShowCloudletInfo(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) ([]edgeproto.CloudletInfo, int, error) {
 	dat := &ormapi.RegionCloudletInfo{}
 	dat.Region = region
 	dat.CloudletInfo = *in
@@ -387,13 +387,13 @@ func TestShowCloudletInfo(mcClient *ormclient.Client, uri, token, region string,
 	}
 	return mcClient.ShowCloudletInfo(uri, token, dat)
 }
-func TestPermShowCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) ([]edgeproto.CloudletInfo, int, error) {
+func TestPermShowCloudletInfo(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) ([]edgeproto.CloudletInfo, int, error) {
 	in := &edgeproto.CloudletInfo{}
 	in.Key.Organization = org
 	return TestShowCloudletInfo(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestInjectCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
+func TestInjectCloudletInfo(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletInfo{}
 	dat.Region = region
 	dat.CloudletInfo = *in
@@ -402,13 +402,13 @@ func TestInjectCloudletInfo(mcClient *ormclient.Client, uri, token, region strin
 	}
 	return mcClient.InjectCloudletInfo(uri, token, dat)
 }
-func TestPermInjectCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
+func TestPermInjectCloudletInfo(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletInfo{}
 	in.Key.Organization = org
 	return TestInjectCloudletInfo(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestEvictCloudletInfo(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
+func TestEvictCloudletInfo(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletInfo, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletInfo{}
 	dat.Region = region
 	dat.CloudletInfo = *in
@@ -417,7 +417,7 @@ func TestEvictCloudletInfo(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.EvictCloudletInfo(uri, token, dat)
 }
-func TestPermEvictCloudletInfo(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
+func TestPermEvictCloudletInfo(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletInfo)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletInfo{}
 	in.Key.Organization = org
 	return TestEvictCloudletInfo(mcClient, uri, token, region, in, modFuncs...)

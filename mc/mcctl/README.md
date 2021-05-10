@@ -5,17 +5,20 @@ The master controller CLI (mcctl) implements a command line interface to the mas
 For MC API development, consider the following directories in the edge-cloud-infra repo:
 
 ```
-mc/orm                MC code (echo framework)
-mc/ormapi             MC api struct definitions (no functions)
-mc/ormclient          client api definitions and code for connecting to MC
-mc/mcctl/cli          cli library for parsing input args to objs/json
-mc/mcctl/ormctl       cobra command for mcctl
-mc/mcctl/cliwrapper   client library wrapped around mcctl for testing
+mc/orm                   MC code (echo framework)
+mc/ormapi                MC api struct definitions (no functions)
+mc/ormclient             Rest client code for connecting to MC
+mc/mcctl/ormctl          MC client API definitions (no functions)
+mc/mcctl/cli             Cli library for parsing input args to objs/json
+mc/mcctl/mccli           Mcctl library to build cobra.Command hierarchy for mcctl
+mc/mcctl/cliwrapper      Client library wrapped around mcctl for testing
+mc/mcctl/genmctestclient Generator for object-specific client funcs
+mc/mcctl/mctestclient    Object-specific client funcs to call into Rest/Cliwrapper clients
 ```
 
-For testing, e2e tests uses the client interface defined in ```mc/ormclient/clientapi.go```. This allows it to switch between direct REST API calls from ```mc/ormclient``` and wrapped API calls that actually use mcctl from ```mc/mcctl/cliwrapper```.
+For testing, e2e tests uses the client functions defined in ```mc/mcctl/mctestclient```. These are object-specific functions to make test code easy to write. The mctestclient uses a ClientRun object, which is either from the Rest client code ```mc/ormclient``` or the cliwrapper ```mc/mcctl/cliwrapper```. This allows it to switch between direct REST API calls from ```mc/ormclient``` and wrapped API calls that actually use mcctl from ```mc/mcctl/cliwrapper```.
 
-When adding a new API, the back-end handling code will likely be in ```mc/orm```, with any structs using for transport defined in ```mc/ormapi```. If a cli is desired, it should be defined in ```mc/mcctl/ormctl```, with a client api implemented in ```mc/ormclient``` and a client api wrapper in ```mc/mcctl/cliwrapper```.
+When adding a new API, the back-end handling code will likely be in ```mc/orm```, with any structs using for transport defined in ```mc/ormapi```. On the client side, the API should also be defined in the ```mc/mcctl/ormctl``` library. This will generate a client function in the mctestclient. You may also need to edit ```mc/mcctl/mccli/rootcmd.go``` to add it to mcctl if it not already part of an existing group. No other changes should be needed unless you need custom functionality.
 
 Functionality is really limited to a few files, while the rest just define functions/APIs based on those building block code. Those files are:
 

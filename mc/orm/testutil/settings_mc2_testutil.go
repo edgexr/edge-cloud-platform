@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -23,7 +23,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestUpdateSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
+func TestUpdateSettings(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
@@ -32,12 +32,12 @@ func TestUpdateSettings(mcClient *ormclient.Client, uri, token, region string, i
 	}
 	return mcClient.UpdateSettings(uri, token, dat)
 }
-func TestPermUpdateSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
+func TestPermUpdateSettings(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Settings{}
 	return TestUpdateSettings(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestResetSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
+func TestResetSettings(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
@@ -46,12 +46,12 @@ func TestResetSettings(mcClient *ormclient.Client, uri, token, region string, in
 	}
 	return mcClient.ResetSettings(uri, token, dat)
 }
-func TestPermResetSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
+func TestPermResetSettings(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.Settings{}
 	return TestResetSettings(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestShowSettings(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
+func TestShowSettings(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.Settings, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
 	dat := &ormapi.RegionSettings{}
 	dat.Region = region
 	dat.Settings = *in
@@ -60,7 +60,7 @@ func TestShowSettings(mcClient *ormclient.Client, uri, token, region string, in 
 	}
 	return mcClient.ShowSettings(uri, token, dat)
 }
-func TestPermShowSettings(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
+func TestPermShowSettings(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) (*edgeproto.Settings, int, error) {
 	in := &edgeproto.Settings{}
 	return TestShowSettings(mcClient, uri, token, region, in, modFuncs...)
 }

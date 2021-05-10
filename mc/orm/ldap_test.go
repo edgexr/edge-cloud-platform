@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -51,7 +52,7 @@ func TestLDAPServer(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := &ormclient.Client{}
+	mcClient := mctestclient.NewClient(&ormclient.Client{})
 
 	// login as super user
 	tokenAd, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
@@ -157,12 +158,12 @@ func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, f
 	return sr
 }
 
-func unlockUser(t *testing.T, mcClient *ormclient.Client, uri, token, username string) {
+func unlockUser(t *testing.T, mcClient *mctestclient.Client, uri, token, username string) {
 	req := make(map[string]interface{})
 	req["name"] = username
 	req["locked"] = false
 	req["emailverified"] = true
-	status, err := mcClient.RestrictedUserUpdate(uri, token, req)
+	status, err := mcClient.RestrictedUpdateUser(uri, token, req)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }

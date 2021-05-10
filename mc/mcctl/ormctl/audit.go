@@ -5,13 +5,14 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/spf13/cobra"
 )
 
-func GetAuditCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const AuditGroup = "Audit"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "ShowAuditSelf",
 		Use:          "showself",
 		OptionalArgs: "limit operation tags starttime endtime startage endage",
 		AliasArgs:    strings.Join(AuditAliasArgs, " "),
@@ -19,8 +20,9 @@ func GetAuditCommand() *cobra.Command {
 		SpecialArgs:  &AuditSpecialArgs,
 		ReqData:      &ormapi.AuditQuery{},
 		ReplyData:    &[]ormapi.AuditResponse{},
-		Run:          runRest("/auth/audit/showself"),
-	}, &cli.Command{
+		Path:         "/auth/audit/showself",
+	}, &ApiCommand{
+		Name:         "ShowAuditOrg",
 		Use:          "showorg",
 		OptionalArgs: "org limit operation tags starttime endtime startage endage",
 		AliasArgs:    strings.Join(AuditAliasArgs, " "),
@@ -28,13 +30,14 @@ func GetAuditCommand() *cobra.Command {
 		SpecialArgs:  &AuditSpecialArgs,
 		ReqData:      &ormapi.AuditQuery{},
 		ReplyData:    &[]ormapi.AuditResponse{},
-		Run:          runRest("/auth/audit/showorg"),
-	}, &cli.Command{
+		Path:         "/auth/audit/showorg",
+	}, &ApiCommand{
+		Name:      "ShowAuditOperations",
 		Use:       "operations",
 		ReplyData: &[]string{},
-		Run:       runRest("/auth/audit/operations"),
+		Path:      "/auth/audit/operations",
 	}}
-	return cli.GenGroup("audit", "Show audit logs", cmds)
+	AllApis.AddGroup(AuditGroup, "Show audit logs", cmds)
 }
 
 var tagsComment = fmt.Sprintf("key=value tag, may be specified multiple times, key may include %s", strings.Join(edgeproto.AllKeyTags, ", "))

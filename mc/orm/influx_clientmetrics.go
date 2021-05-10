@@ -310,7 +310,7 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 	case "custom":
 		return fmt.Errorf("Custom stat not implemented yet")
 	default:
-		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ClientAppUsageSelectors, "\", \""))
+		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientAppUsageSelectors, "\", \""))
 	}
 	return nil
 }
@@ -331,7 +331,7 @@ func validateClientCloudletUsageMetricReq(req *ormapi.RegionClientCloudletUsageM
 			return fmt.Errorf("DataNetworkType not allowed for cloudlet deviceinfo metric")
 		}
 	default:
-		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ClientCloudletUsageSelectors, "\", \""))
+		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientCloudletUsageSelectors, "\", \""))
 	}
 	return nil
 }

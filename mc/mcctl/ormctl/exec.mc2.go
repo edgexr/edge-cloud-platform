@@ -8,7 +8,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -22,7 +21,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var RunCommandCmd = &cli.Command{
+var RunCommandCmd = &ApiCommand{
+	Name:         "RunCommand",
 	Use:          "runcommand",
 	Short:        "Run a Command or Shell on a container",
 	RequiredArgs: "region " + strings.Join(RunCommandRequiredArgs, " "),
@@ -30,12 +30,15 @@ var RunCommandCmd = &cli.Command{
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
 	Comments:     addRegionComment(ExecRequestComments),
+	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,AccessUrl,EdgeTurnAddr,Cmd.CloudletMgmtNode",
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
-	Run:          runRest("/auth/ctrl/RunCommand"),
+	Path:         "/auth/ctrl/RunCommand",
+	ProtobufApi:  true,
 }
 
-var RunConsoleCmd = &cli.Command{
+var RunConsoleCmd = &ApiCommand{
+	Name:         "RunConsole",
 	Use:          "runconsole",
 	Short:        "Run console on a VM",
 	RequiredArgs: "region " + strings.Join(RunConsoleRequiredArgs, " "),
@@ -43,12 +46,15 @@ var RunConsoleCmd = &cli.Command{
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
 	Comments:     addRegionComment(ExecRequestComments),
+	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Cmd,Console,ContainerId,AccessUrl,EdgeTurnAddr",
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
-	Run:          runRest("/auth/ctrl/RunConsole"),
+	Path:         "/auth/ctrl/RunConsole",
+	ProtobufApi:  true,
 }
 
-var ShowLogsCmd = &cli.Command{
+var ShowLogsCmd = &ApiCommand{
+	Name:         "ShowLogs",
 	Use:          "showlogs",
 	Short:        "View logs for AppInst",
 	RequiredArgs: "region " + strings.Join(ShowLogsRequiredArgs, " "),
@@ -56,12 +62,15 @@ var ShowLogsCmd = &cli.Command{
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
 	Comments:     addRegionComment(ExecRequestComments),
+	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Cmd,Console,AccessUrl,EdgeTurnAddr",
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
-	Run:          runRest("/auth/ctrl/ShowLogs"),
+	Path:         "/auth/ctrl/ShowLogs",
+	ProtobufApi:  true,
 }
 
-var AccessCloudletCmd = &cli.Command{
+var AccessCloudletCmd = &ApiCommand{
+	Name:         "AccessCloudlet",
 	Use:          "accesscloudlet",
 	Short:        "Access Cloudlet VM",
 	RequiredArgs: "region " + strings.Join(AccessCloudletRequiredArgs, " "),
@@ -69,19 +78,25 @@ var AccessCloudletCmd = &cli.Command{
 	AliasArgs:    strings.Join(ExecRequestAliasArgs, " "),
 	SpecialArgs:  &ExecRequestSpecialArgs,
 	Comments:     addRegionComment(ExecRequestComments),
+	NoConfig:     "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,Offer,Answer,Err,Timeout,Log,Console,ContainerId,AccessUrl,EdgeTurnAddr,AppInstKey.AppKey.Name,AppInstKey.AppKey.Version,AppInstKey.AppKey.Organization,AppInstKey.ClusterInstKey.ClusterKey.Name,AppInstKey.ClusterInstKey.Organization",
 	ReqData:      &ormapi.RegionExecRequest{},
 	ReplyData:    &edgeproto.ExecRequest{},
-	Run:          runRest("/auth/ctrl/AccessCloudlet"),
+	Path:         "/auth/ctrl/AccessCloudlet",
+	ProtobufApi:  true,
 }
 
-var ExecApiCmds = []*cli.Command{
+var ExecApiCmds = []*ApiCommand{
 	RunCommandCmd,
 	RunConsoleCmd,
 	ShowLogsCmd,
 	AccessCloudletCmd,
 }
 
-var ExecApiCmdsGroup = cli.GenGroup("exec", "Manage Execs", ExecApiCmds)
+const ExecGroup = "Exec"
+
+func init() {
+	AllApis.AddGroup(ExecGroup, "Manage Execs", ExecApiCmds)
+}
 
 var RunCommandRequiredArgs = []string{
 	"app-org",

@@ -11,7 +11,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mccli"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud/cli"
+	"github.com/spf13/cobra"
 )
 
 // These functions wrap around mcctl and implement ormclient.Api.
@@ -22,26 +26,61 @@ type Client struct {
 	DebugLog     bool
 	SkipVerify   bool
 	SilenceUsage bool
+	rootCmd      *cobra.Command
+	cliPaths     map[string][]string
 }
 
-func (s *Client) run(uri, token string, args []string) ([]byte, error) {
-	uri = strings.TrimSuffix(uri, "/api/v1")
-	args = append([]string{"--parsable", "--output-format", "json-compact",
-		"--addr", uri}, args...)
-	if token != "" {
-		args = append([]string{"--token", token}, args...)
+func NewClient() *Client {
+	s := &Client{}
+	s.rootCmd = mccli.GetRootCommand()
+	s.cliPaths = make(map[string][]string)
+	s.addCliPaths(s.rootCmd, []string{})
+	return s
+}
+
+func (s *Client) addCliPaths(cmd *cobra.Command, parent []string) {
+	// In order for the wrapper to know what the organization
+	// of the cobra commands are, we walk nested commands and build
+	// a lookup map. This lets us find the path based on the api
+	// command's name.
+	for _, c := range cmd.Commands() {
+		clipath := append(parent, c.Use)
+		if name, ok := c.Annotations[mccli.LookupKey]; ok {
+			fmt.Printf("added clipath %s -> %v\n", name, clipath)
+			s.cliPaths[name] = clipath
+		}
+		s.addCliPaths(c, clipath)
+	}
+}
+
+func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
+	args := []string{}
+	uri := strings.TrimSuffix(runData.Uri, "/api/v1")
+	args = append(args, "--parsable", "--output-format", "json-compact",
+		"--addr", uri)
+	if runData.Token != "" {
+		args = append(args, "--token", runData.Token)
 	}
 	if s.SkipVerify {
-		args = append([]string{"--skipverify"}, args...)
+		args = append(args, "--skipverify")
 	}
 	if s.SilenceUsage {
-		args = append([]string{"--silence-usage"}, args...)
+		args = append(args, "--silence-usage")
 	}
-	if s.DebugLog {
-		log.Printf("running mcctl %s\n", strings.Join(args, " "))
+	clipath, found := s.cliPaths[apiCmd.Name]
+	if !found {
+		panic(fmt.Errorf("No clipath found for api command %s", apiCmd.Name))
 	}
-	cmd := exec.Command("mcctl", args...)
-	return cmd.CombinedOutput()
+	args = append(args, clipath...)
+
+	ops := []runOp{}
+	if apiCmd.NoConfig != "" {
+		ops = append(ops, withIgnore(strings.Split(apiCmd.NoConfig, ",")))
+	}
+	if apiCmd.StreamOutIncremental {
+		ops = append(ops, withStreamOutIncremental())
+	}
+	runData.RetStatus, runData.RetError = s.runObjs(runData.Uri, runData.Token, args, runData.In, runData.Out, ops...)
 }
 
 func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, ops ...runOp) (int, error) {
@@ -65,7 +104,11 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 		}
 		args = append(args, objArgs...)
 	}
-	byt, err := s.run(uri, token, args)
+	if s.DebugLog {
+		log.Printf("running mcctl %s\n", strings.Join(args, " "))
+	}
+	cmd := exec.Command("mcctl", args...)
+	byt, err := cmd.CombinedOutput()
 	// note we lose the status code, since a non-StatusOK result
 	// always generates an error.
 	if err != nil {

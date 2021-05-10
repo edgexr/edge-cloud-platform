@@ -8,8 +8,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -28,19 +28,19 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func badPermCreateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermCreateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badCreateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
+func badCreateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
 	_, st, err := testutil.TestPermCreateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermCreateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func goodPermCreateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermCreateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -48,19 +48,19 @@ func goodPermCreateApp(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func badPermDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermDeleteApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badDeleteApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
+func badDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
 	_, st, err := testutil.TestPermDeleteApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermDeleteApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func goodPermDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermDeleteApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -68,19 +68,19 @@ func goodPermDeleteApp(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func badPermUpdateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermUpdateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badUpdateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
+func badUpdateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
 	_, st, err := testutil.TestPermUpdateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermUpdateApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func goodPermUpdateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermUpdateApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -88,19 +88,19 @@ func goodPermUpdateApp(t *testing.T, mcClient *ormclient.Client, uri, token, reg
 
 var _ = edgeproto.GetFields
 
-func badPermShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func badPermShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
+func badShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.App)) {
 	_, st, err := testutil.TestPermShowApp(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func goodPermShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	_, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -108,19 +108,19 @@ func goodPermShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 
 var _ = edgeproto.GetFields
 
-func badPermAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func badPermAddAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, status, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func badAddAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, st, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func goodPermAddAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, status, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -128,19 +128,19 @@ func goodPermAddAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri,
 
 var _ = edgeproto.GetFields
 
-func badPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func badPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func badRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, st, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
 	_, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -148,13 +148,13 @@ func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *ormclient.Client, u
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+func badPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
 	badPermCreateApp(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermUpdateApp(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermDeleteApp(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
-func badPermTestShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+func badPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
 	list, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
 	require.Nil(t, err)
@@ -164,7 +164,7 @@ func badPermTestShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, re
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.App)) {
+func goodPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.App)) {
 	goodPermCreateApp(t, mcClient, uri, token, region, org)
 	goodPermUpdateApp(t, mcClient, uri, token, region, org)
 	goodPermDeleteApp(t, mcClient, uri, token, region, org)
@@ -186,7 +186,7 @@ func goodPermTestApp(t *testing.T, mcClient *ormclient.Client, uri, token, regio
 	goodPermTestShowApp(t, mcClient, uri, token, region, org, showcount)
 }
 
-func goodPermTestShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, count int) {
+func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
 	list, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -203,7 +203,7 @@ func goodPermTestShowApp(t *testing.T, mcClient *ormclient.Client, uri, token, r
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestApp(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.App)) {
+func permTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.App)) {
 	badPermTestApp(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowApp(t, mcClient, uri, token1, region, org2)
 	badPermTestApp(t, mcClient, uri, token2, region, org1, modFuncs...)

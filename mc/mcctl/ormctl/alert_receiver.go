@@ -4,9 +4,7 @@ import (
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
-	"github.com/spf13/cobra"
 )
 
 var AlertReceiverAliasArgs = []string{
@@ -25,8 +23,11 @@ var AlertReceiverAliasArgs = []string{
 	"cloudlet=cloudlet.name",
 }
 
-func GetAlertReceiverCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const AlertReceiverGroup = "AlertReceiver"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "CreateAlertReceiver",
 		Use:          "create",
 		Short:        "Create an alert receiver",
 		RequiredArgs: strings.Join(AlertReceiverRequiredArgs, " "),
@@ -34,8 +35,9 @@ func GetAlertReceiverCommand() *cobra.Command {
 		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
 		Comments:     AlertReceiverArgsComments,
 		ReqData:      &ormapi.AlertReceiver{},
-		Run:          runRest("/auth/alertreceiver/create"),
-	}, &cli.Command{
+		Path:         "/auth/alertreceiver/create",
+	}, &ApiCommand{
+		Name:         "DeleteAlertReceiver",
 		Use:          "delete",
 		Short:        "Delete an alert receiver",
 		RequiredArgs: strings.Join(AlertReceiverRequiredArgs, " "),
@@ -43,8 +45,9 @@ func GetAlertReceiverCommand() *cobra.Command {
 		ReqData:      &ormapi.AlertReceiver{},
 		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
 		Comments:     AlertReceiverArgsComments,
-		Run:          runRest("/auth/alertreceiver/delete"),
-	}, &cli.Command{
+		Path:         "/auth/alertreceiver/delete",
+	}, &ApiCommand{
+		Name:         "ShowAlertReceiver",
 		Use:          "show",
 		Short:        "Show alert receivers",
 		AliasArgs:    strings.Join(AlertReceiverAliasArgs, " "),
@@ -52,9 +55,9 @@ func GetAlertReceiverCommand() *cobra.Command {
 		OptionalArgs: strings.Join(AlertReceiverOptionalArgs, " ") + " " + strings.Join(AlertReceiverRequiredArgs, " "),
 		ReqData:      &ormapi.AlertReceiver{},
 		ReplyData:    &[]ormapi.AlertReceiver{},
-		Run:          runRest("/auth/alertreceiver/show"),
+		Path:         "/auth/alertreceiver/show",
 	}}
-	return cli.GenGroup("alertreceiver", "Manage alert receivers", cmds)
+	AllApis.AddGroup(AlertReceiverGroup, "Manage alert receivers", cmds)
 }
 
 var AlertReceiverRequiredArgs = []string{

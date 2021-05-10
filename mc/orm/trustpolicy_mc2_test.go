@@ -8,8 +8,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"github.com/stretchr/testify/require"
@@ -27,19 +27,19 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badPermCreateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermCreateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badCreateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badCreateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, st, err := testutil.TestPermCreateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermCreateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func goodPermCreateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermCreateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -47,19 +47,19 @@ func goodPermCreateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badPermDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badDeleteTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, st, err := testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermDeleteTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func goodPermDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -67,19 +67,19 @@ func goodPermDeleteTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badPermUpdateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermUpdateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badUpdateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badUpdateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, st, err := testutil.TestPermUpdateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermUpdateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func goodPermUpdateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermUpdateTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -87,19 +87,19 @@ func goodPermUpdateTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badPermShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, st, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func goodPermShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	_, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -107,13 +107,13 @@ func goodPermShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, toke
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func badPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	badPermCreateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermUpdateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
 	badPermDeleteTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
 }
 
-func badPermTestShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+func badPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
 	list, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
 	require.Nil(t, err)
@@ -123,7 +123,7 @@ func badPermTestShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, t
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func goodPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	goodPermCreateTrustPolicy(t, mcClient, uri, token, region, org)
 	goodPermUpdateTrustPolicy(t, mcClient, uri, token, region, org)
 	goodPermDeleteTrustPolicy(t, mcClient, uri, token, region, org)
@@ -145,7 +145,7 @@ func goodPermTestTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, toke
 	goodPermTestShowTrustPolicy(t, mcClient, uri, token, region, org, showcount)
 }
 
-func goodPermTestShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, count int) {
+func goodPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
 	list, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -162,7 +162,7 @@ func goodPermTestShowTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, 
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestTrustPolicy(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+func permTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	badPermTestTrustPolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
 	badPermTestShowTrustPolicy(t, mcClient, uri, token1, region, org2)
 	badPermTestTrustPolicy(t, mcClient, uri, token2, region, org1, modFuncs...)

@@ -61,3 +61,7 @@ func testObjToArgs(t *testing.T, obj interface{}, expected []string) {
 	sort.Strings(expected)
 	require.Equal(t, expected, args)
 }
+
+func TestCliPath(t *testing.T) {
+	NewClient()
+}

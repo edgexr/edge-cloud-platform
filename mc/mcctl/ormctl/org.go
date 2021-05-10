@@ -2,52 +2,55 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
-	"github.com/spf13/cobra"
 )
 
-func GetOrgCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+const OrgGroup = "Org"
+
+func init() {
+	cmds := []*ApiCommand{&ApiCommand{
+		Name:         "CreateOrg",
 		Use:          "create",
 		Short:        "Create a new developer or operator organization",
 		RequiredArgs: "name type",
 		OptionalArgs: "address phone publicimages",
 		Comments:     ormapi.OrganizationComments,
 		ReqData:      &ormapi.Organization{},
-		Run:          runRest("/auth/org/create"),
-	}, &cli.Command{
+		Path:         "/auth/org/create",
+	}, &ApiCommand{
+		Name:         "UpdateOrg",
 		Use:          "update",
 		Short:        "Update an organization",
 		RequiredArgs: "name",
 		OptionalArgs: "address phone publicimages",
 		Comments:     ormapi.OrganizationComments,
 		ReqData:      &ormapi.Organization{},
-		Run:          runRest("/auth/org/update"),
-	}, &cli.Command{
+		Path:         "/auth/org/update",
+	}, &ApiCommand{
+		Name:         "DeleteOrg",
 		Use:          "delete",
 		Short:        "Delete an organization",
 		RequiredArgs: "name",
 		Comments:     ormapi.OrganizationComments,
 		ReqData:      &ormapi.Organization{},
-		Run:          runRest("/auth/org/delete"),
-	}, &cli.Command{
+		Path:         "/auth/org/delete",
+	}, &ApiCommand{
+		Name:      "ShowOrg",
 		Use:       "show",
 		Short:     "Show organizations",
 		ReplyData: &[]ormapi.Organization{},
-		Run:       runRest("/auth/org/show"),
+		Path:      "/auth/org/show",
 	}}
-	return cli.GenGroup("org", "Manage organizations", cmds)
-}
+	AllApis.AddGroup(OrgGroup, "Manage organizations", cmds)
 
-func GetRestrictedOrgUpdateCmd() *cobra.Command {
-	cmd := cli.Command{
-		Use:          "restrictedorgupdate",
+	cmd := &ApiCommand{
+		Name:         "RestrictedUpdateOrg",
 		Short:        "Admin-only update of org fields, requires name",
 		RequiredArgs: "name",
 		OptionalArgs: "edgeboxonly",
 		Comments:     ormapi.OrganizationComments,
 		ReqData:      &ormapi.Organization{},
-		Run:          runRest("/auth/restricted/org/update"),
+		Path:         "/auth/restricted/org/update",
+		IsUpdate:     true,
 	}
-	return cmd.GenCmd()
+	AllApis.AddCommand(cmd)
 }

@@ -25,7 +25,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAutoProvPolicyCmd = &cli.Command{
+var CreateAutoProvPolicyCmd = &ApiCommand{
+	Name:         "CreateAutoProvPolicy",
 	Use:          "create",
 	Short:        "Create an Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(CreateAutoProvPolicyRequiredArgs, " "),
@@ -33,12 +34,15 @@ var CreateAutoProvPolicyCmd = &cli.Command{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
+	NoConfig:     "Cloudlets:#.Loc",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateAutoProvPolicy"),
+	Path:         "/auth/ctrl/CreateAutoProvPolicy",
+	ProtobufApi:  true,
 }
 
-var DeleteAutoProvPolicyCmd = &cli.Command{
+var DeleteAutoProvPolicyCmd = &ApiCommand{
+	Name:         "DeleteAutoProvPolicy",
 	Use:          "delete",
 	Short:        "Delete an Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
@@ -46,27 +50,31 @@ var DeleteAutoProvPolicyCmd = &cli.Command{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
+	NoConfig:     "Cloudlets:#.Loc",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteAutoProvPolicy"),
+	Path:         "/auth/ctrl/DeleteAutoProvPolicy",
+	ProtobufApi:  true,
 }
 
-var UpdateAutoProvPolicyCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update an Auto Provisioning Policy",
-	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
-	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
-	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
-	SpecialArgs:  &AutoProvPolicySpecialArgs,
-	Comments:     addRegionComment(AutoProvPolicyComments),
-	ReqData:      &ormapi.RegionAutoProvPolicy{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateAutoProvPolicy",
-		withSetFieldsFunc(setUpdateAutoProvPolicyFields),
-	),
+var UpdateAutoProvPolicyCmd = &ApiCommand{
+	Name:          "UpdateAutoProvPolicy",
+	Use:           "update",
+	Short:         "Update an Auto Provisioning Policy",
+	RequiredArgs:  "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
+	OptionalArgs:  strings.Join(AutoProvPolicyOptionalArgs, " "),
+	AliasArgs:     strings.Join(AutoProvPolicyAliasArgs, " "),
+	SpecialArgs:   &AutoProvPolicySpecialArgs,
+	Comments:      addRegionComment(AutoProvPolicyComments),
+	NoConfig:      "Cloudlets:#.Loc",
+	ReqData:       &ormapi.RegionAutoProvPolicy{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateAutoProvPolicy",
+	SetFieldsFunc: SetUpdateAutoProvPolicyFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateAutoProvPolicyFields(in map[string]interface{}) {
+func SetUpdateAutoProvPolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("AutoProvPolicy")]
 	if obj == nil {
@@ -86,7 +94,8 @@ func setUpdateAutoProvPolicyFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowAutoProvPolicyCmd = &cli.Command{
+var ShowAutoProvPolicyCmd = &ApiCommand{
+	Name:         "ShowAutoProvPolicy",
 	Use:          "show",
 	Short:        "Show Auto Provisioning Policies. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
@@ -94,13 +103,16 @@ var ShowAutoProvPolicyCmd = &cli.Command{
 	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
 	SpecialArgs:  &AutoProvPolicySpecialArgs,
 	Comments:     addRegionComment(AutoProvPolicyComments),
+	NoConfig:     "Cloudlets:#.Loc",
 	ReqData:      &ormapi.RegionAutoProvPolicy{},
 	ReplyData:    &edgeproto.AutoProvPolicy{},
-	Run:          runRest("/auth/ctrl/ShowAutoProvPolicy"),
+	Path:         "/auth/ctrl/ShowAutoProvPolicy",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddAutoProvPolicyCloudletCmd = &cli.Command{
+var AddAutoProvPolicyCloudletCmd = &ApiCommand{
+	Name:         "AddAutoProvPolicyCloudlet",
 	Use:          "addcloudlet",
 	Short:        "Add a Cloudlet to the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
@@ -110,10 +122,12 @@ var AddAutoProvPolicyCloudletCmd = &cli.Command{
 	Comments:     addRegionComment(AutoProvPolicyCloudletComments),
 	ReqData:      &ormapi.RegionAutoProvPolicyCloudlet{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddAutoProvPolicyCloudlet"),
+	Path:         "/auth/ctrl/AddAutoProvPolicyCloudlet",
+	ProtobufApi:  true,
 }
 
-var RemoveAutoProvPolicyCloudletCmd = &cli.Command{
+var RemoveAutoProvPolicyCloudletCmd = &ApiCommand{
+	Name:         "RemoveAutoProvPolicyCloudlet",
 	Use:          "removecloudlet",
 	Short:        "Remove a Cloudlet from the Auto Provisioning Policy",
 	RequiredArgs: "region " + strings.Join(AutoProvPolicyCloudletRequiredArgs, " "),
@@ -123,10 +137,11 @@ var RemoveAutoProvPolicyCloudletCmd = &cli.Command{
 	Comments:     addRegionComment(AutoProvPolicyCloudletComments),
 	ReqData:      &ormapi.RegionAutoProvPolicyCloudlet{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveAutoProvPolicyCloudlet"),
+	Path:         "/auth/ctrl/RemoveAutoProvPolicyCloudlet",
+	ProtobufApi:  true,
 }
 
-var AutoProvPolicyApiCmds = []*cli.Command{
+var AutoProvPolicyApiCmds = []*ApiCommand{
 	CreateAutoProvPolicyCmd,
 	DeleteAutoProvPolicyCmd,
 	UpdateAutoProvPolicyCmd,
@@ -135,7 +150,11 @@ var AutoProvPolicyApiCmds = []*cli.Command{
 	RemoveAutoProvPolicyCloudletCmd,
 }
 
-var AutoProvPolicyApiCmdsGroup = cli.GenGroup("autoprovpolicy", "Manage AutoProvPolicys", AutoProvPolicyApiCmds)
+const AutoProvPolicyGroup = "AutoProvPolicy"
+
+func init() {
+	AllApis.AddGroup(AutoProvPolicyGroup, "Manage AutoProvPolicys", AutoProvPolicyApiCmds)
+}
 
 var CreateAutoProvPolicyRequiredArgs = []string{
 	"app-org",

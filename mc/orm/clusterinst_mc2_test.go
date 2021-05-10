@@ -8,8 +8,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -28,19 +28,19 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
-func badPermCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badPermCreateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermCreateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badCreateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, st, err := testutil.TestPermCreateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func goodPermCreateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermCreateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -48,19 +48,19 @@ func goodPermCreateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badPermDeleteClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermDeleteClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badDeleteClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, st, err := testutil.TestPermDeleteClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func goodPermDeleteClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermDeleteClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -68,19 +68,19 @@ func goodPermDeleteClusterInst(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badPermUpdateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermUpdateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badUpdateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, st, err := testutil.TestPermUpdateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func goodPermUpdateClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermUpdateClusterInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -88,19 +88,19 @@ func goodPermUpdateClusterInst(t *testing.T, mcClient *ormclient.Client, uri, to
 
 var _ = edgeproto.GetFields
 
-func badPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badPermShowClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badShowClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, st, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) {
+func goodPermShowClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInst)) {
 	_, status, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -108,19 +108,19 @@ func goodPermShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, toke
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+func badPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
 	_, status, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+func badDeleteIdleReservableClusterInsts(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
 	_, st, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
+func goodPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.IdleReservableClusterInsts)) {
 	_, status, err := testutil.TestPermDeleteIdleReservableClusterInsts(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -128,13 +128,13 @@ func goodPermDeleteIdleReservableClusterInsts(t *testing.T, mcClient *ormclient.
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
+func badPermTestClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.ClusterInst)) {
 	badPermCreateClusterInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	badPermUpdateClusterInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	badPermDeleteClusterInst(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 }
 
-func badPermTestShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string) {
+func badPermTestShowClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
 	list, status, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org)
 	require.Nil(t, err)
@@ -144,7 +144,7 @@ func badPermTestShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, t
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.ClusterInst)) {
+func goodPermTestClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.ClusterInst)) {
 	goodPermCreateClusterInst(t, mcClient, uri, token, region, org, targetCloudlet)
 	goodPermUpdateClusterInst(t, mcClient, uri, token, region, org, targetCloudlet)
 	goodPermDeleteClusterInst(t, mcClient, uri, token, region, org, targetCloudlet)
@@ -166,7 +166,7 @@ func goodPermTestClusterInst(t *testing.T, mcClient *ormclient.Client, uri, toke
 	goodPermTestShowClusterInst(t, mcClient, uri, token, region, org, showcount)
 }
 
-func goodPermTestShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token, region, org string, count int) {
+func goodPermTestShowClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
 	list, status, err := testutil.TestPermShowClusterInst(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -183,7 +183,7 @@ func goodPermTestShowClusterInst(t *testing.T, mcClient *ormclient.Client, uri, 
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestClusterInst(t *testing.T, mcClient *ormclient.Client, uri, token1, token2, region, org1, org2 string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.ClusterInst)) {
+func permTestClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.ClusterInst)) {
 	badPermTestClusterInst(t, mcClient, uri, token1, region, org2, targetCloudlet, modFuncs...)
 	badPermTestShowClusterInst(t, mcClient, uri, token1, region, org2)
 	badPermTestClusterInst(t, mcClient, uri, token2, region, org1, targetCloudlet, modFuncs...)

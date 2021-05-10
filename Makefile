@@ -47,6 +47,8 @@ build-internal: build-vers $(APICOMMENTS)
 	go install ./protoc-gen-mc2
 	make -f proto.make
 	make -C vault/letsencrypt-plugin letsencrypt/version.go
+	go install ./mc/mcctl/genmctestclient
+	genmctestclient > ./mc/mcctl/mctestclient/mctestclient_generatedfuncs.go
 	go build ./...
 	go build -buildmode=plugin -o ${GOPATH}/plugins/platforms.so plugin/platform/*.go
 	go build -buildmode=plugin -o ${GOPATH}/plugins/edgeevents.so plugin/edgeevents/*.go	

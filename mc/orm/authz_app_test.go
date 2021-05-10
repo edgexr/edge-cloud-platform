@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/stretchr/testify/require"
 )
 
-func testImagePaths(t *testing.T, ctx context.Context, mcClient *ormclient.Client, uri, tokenAd string) {
+func testImagePaths(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, uri, tokenAd string) {
 	org1 := ormapi.Organization{
 		Type: "developer",
 		Name: "org1",

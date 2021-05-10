@@ -24,7 +24,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateAppInstCmd = &cli.Command{
+var CreateAppInstCmd = &ApiCommand{
+	Name:                 "CreateAppInst",
 	Use:                  "create",
 	Short:                "Create Application Instance. Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition.",
 	RequiredArgs:         "region " + strings.Join(CreateAppInstRequiredArgs, " "),
@@ -32,14 +33,17 @@ var CreateAppInstCmd = &cli.Command{
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
 	Comments:             addRegionComment(AppInstComments),
+	NoConfig:             "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,UpdateMultiple,ForceUpdate,PowerState",
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/CreateAppInst"),
+	Path:                 "/auth/ctrl/CreateAppInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var DeleteAppInstCmd = &cli.Command{
+var DeleteAppInstCmd = &ApiCommand{
+	Name:                 "DeleteAppInst",
 	Use:                  "delete",
 	Short:                "Delete Application Instance. Deletes an instance of the App from the Cloudlet.",
 	RequiredArgs:         "region " + strings.Join(DeleteAppInstRequiredArgs, " "),
@@ -47,14 +51,17 @@ var DeleteAppInstCmd = &cli.Command{
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
 	Comments:             addRegionComment(AppInstComments),
+	NoConfig:             "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,PowerState",
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/DeleteAppInst"),
+	Path:                 "/auth/ctrl/DeleteAppInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var RefreshAppInstCmd = &cli.Command{
+var RefreshAppInstCmd = &ApiCommand{
+	Name:                 "RefreshAppInst",
 	Use:                  "refresh",
 	Short:                "Refresh Application Instance. Restarts an App instance with new App settings or image.",
 	RequiredArgs:         "region " + strings.Join(RefreshAppInstRequiredArgs, " "),
@@ -62,31 +69,35 @@ var RefreshAppInstCmd = &cli.Command{
 	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:          &AppInstSpecialArgs,
 	Comments:             addRegionComment(AppInstComments),
+	NoConfig:             "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,Flavor,AutoClusterIpAccess,Configs,PowerState,HealthCheck,SharedVolumeSize,VmFlavor",
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
-	Run:                  runRest("/auth/ctrl/RefreshAppInst"),
+	Path:                 "/auth/ctrl/RefreshAppInst",
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-var UpdateAppInstCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update Application Instance. Updates an Application instance and then refreshes it.",
-	RequiredArgs: "region " + strings.Join(UpdateAppInstRequiredArgs, " "),
-	OptionalArgs: strings.Join(UpdateAppInstOptionalArgs, " "),
-	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
-	SpecialArgs:  &AppInstSpecialArgs,
-	Comments:     addRegionComment(AppInstComments),
-	ReqData:      &ormapi.RegionAppInst{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateAppInst",
-		withSetFieldsFunc(setUpdateAppInstFields),
-	),
+var UpdateAppInstCmd = &ApiCommand{
+	Name:                 "UpdateAppInst",
+	Use:                  "update",
+	Short:                "Update Application Instance. Updates an Application instance and then refreshes it.",
+	RequiredArgs:         "region " + strings.Join(UpdateAppInstRequiredArgs, " "),
+	OptionalArgs:         strings.Join(UpdateAppInstOptionalArgs, " "),
+	AliasArgs:            strings.Join(AppInstAliasArgs, " "),
+	SpecialArgs:          &AppInstSpecialArgs,
+	Comments:             addRegionComment(AppInstComments),
+	NoConfig:             "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,Flavor,AutoClusterIpAccess,UpdateMultiple,ForceUpdate,HealthCheck,SharedVolumeSize,VmFlavor",
+	ReqData:              &ormapi.RegionAppInst{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateAppInst",
+	SetFieldsFunc:        SetUpdateAppInstFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
+	ProtobufApi:          true,
 }
 
-func setUpdateAppInstFields(in map[string]interface{}) {
+func SetUpdateAppInstFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("AppInst")]
 	if obj == nil {
@@ -106,7 +117,8 @@ func setUpdateAppInstFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowAppInstCmd = &cli.Command{
+var ShowAppInstCmd = &ApiCommand{
+	Name:         "ShowAppInst",
 	Use:          "show",
 	Short:        "Show Application Instances. Lists all the Application instances managed by the Edge Controller. Any fields specified will be used to filter results.",
 	RequiredArgs: "region",
@@ -114,13 +126,15 @@ var ShowAppInstCmd = &cli.Command{
 	AliasArgs:    strings.Join(AppInstAliasArgs, " "),
 	SpecialArgs:  &AppInstSpecialArgs,
 	Comments:     addRegionComment(AppInstComments),
+	NoConfig:     "CloudletLoc,Uri,MappedPorts,Liveness,CreatedAt,Status,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess",
 	ReqData:      &ormapi.RegionAppInst{},
 	ReplyData:    &edgeproto.AppInst{},
-	Run:          runRest("/auth/ctrl/ShowAppInst"),
+	Path:         "/auth/ctrl/ShowAppInst",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AppInstApiCmds = []*cli.Command{
+var AppInstApiCmds = []*ApiCommand{
 	CreateAppInstCmd,
 	DeleteAppInstCmd,
 	RefreshAppInstCmd,
@@ -128,7 +142,11 @@ var AppInstApiCmds = []*cli.Command{
 	ShowAppInstCmd,
 }
 
-var AppInstApiCmdsGroup = cli.GenGroup("appinst", "Manage AppInsts", AppInstApiCmds)
+const AppInstGroup = "AppInst"
+
+func init() {
+	AllApis.AddGroup(AppInstGroup, "Manage AppInsts", AppInstApiCmds)
+}
 
 var CreateAppInstRequiredArgs = []string{
 	"app-org",
@@ -202,7 +220,8 @@ var UpdateAppInstOptionalArgs = []string{
 	"realclustername",
 }
 
-var RequestAppInstLatencyCmd = &cli.Command{
+var RequestAppInstLatencyCmd = &ApiCommand{
+	Name:         "RequestAppInstLatency",
 	Use:          "request",
 	Short:        "Request Latency measurements for clients connected to AppInst",
 	RequiredArgs: "region " + strings.Join(AppInstLatencyRequiredArgs, " "),
@@ -212,14 +231,19 @@ var RequestAppInstLatencyCmd = &cli.Command{
 	Comments:     addRegionComment(AppInstLatencyComments),
 	ReqData:      &ormapi.RegionAppInstLatency{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RequestAppInstLatency"),
+	Path:         "/auth/ctrl/RequestAppInstLatency",
+	ProtobufApi:  true,
 }
 
-var AppInstLatencyApiCmds = []*cli.Command{
+var AppInstLatencyApiCmds = []*ApiCommand{
 	RequestAppInstLatencyCmd,
 }
 
-var AppInstLatencyApiCmdsGroup = cli.GenGroup("appinstlatency", "Manage AppInstLatencys", AppInstLatencyApiCmds)
+const AppInstLatencyGroup = "AppInstLatency"
+
+func init() {
+	AllApis.AddGroup(AppInstLatencyGroup, "Manage AppInstLatencys", AppInstLatencyApiCmds)
+}
 
 var VirtualClusterInstKeyRequiredArgs = []string{}
 var VirtualClusterInstKeyOptionalArgs = []string{

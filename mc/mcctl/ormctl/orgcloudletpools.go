@@ -2,107 +2,114 @@ package ormctl
 
 import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/spf13/cobra"
 )
 
-func GetCloudletPoolInvitationCommand() *cobra.Command {
-	cmds := []*cli.Command{{
+const (
+	CloudletPoolInvitationGroup = "CloudletPoolInvitation"
+	CloudletPoolResponseGroup   = "CloudletPoolResponse"
+	CloudletPoolAccessGroup     = "CloudletPoolAccess"
+	OrgCloudletPoolGroup        = "OrgCloudletPool"
+	OrgCloudletGroup            = "OrgCloudlet"
+	OrgCloudletInfoGroup        = "OrgCloudletInfo"
+)
+
+func init() {
+	cmds := []*ApiCommand{{
+		Name:         "CreateCloudletPoolAccessInvitation",
 		Use:          "create",
 		Short:        "Create a cloudletpool invitation",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessinvitation/create"),
+		Path:         "/auth/cloudletpoolaccessinvitation/create",
 	}, {
+		Name:         "DeleteCloudletPoolAccessInvitation",
 		Use:          "delete",
 		Short:        "Delete a cloudletpool invitation",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessinvitation/delete"),
+		Path:         "/auth/cloudletpoolaccessinvitation/delete",
 	}, {
+		Name:         "ShowCloudletPoolAccessInvitation",
 		Use:          "show",
 		Short:        "Show cloudletpool invitations",
 		OptionalArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessinvitation/show"),
-	}, &grantedCommand, &pendingCommand,
-	}
-	return cli.GenGroup("cloudletpoolinvitation", "Manage CloudletPool invitations", cmds)
-}
-
-func GetCloudletPoolResponseCommand() *cobra.Command {
-	cmds := []*cli.Command{{
+		Path:         "/auth/cloudletpoolaccessinvitation/show",
+	}}
+	AllApis.AddGroup(CloudletPoolInvitationGroup, "Manage CloudletPool invitations", cmds)
+	cmds = []*ApiCommand{{
+		Name:         "CreateCloudletPoolAccessResponse",
 		Use:          "create",
 		Short:        "Create a cloudletpool response to an invitation",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg decision",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessresponse/create"),
+		Path:         "/auth/cloudletpoolaccessresponse/create",
 	}, {
+		Name:         "DeleteCloudletPoolAccessResponse",
 		Use:          "delete",
 		Short:        "Delete a cloudletpool response to an invitation",
 		RequiredArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessresponse/delete"),
+		Path:         "/auth/cloudletpoolaccessresponse/delete",
 	}, {
+		Name:         "ShowCloudletPoolAccessResponse",
 		Use:          "show",
 		Short:        "Show cloudletpool responses",
 		OptionalArgs: "org region cloudletpool cloudletpoolorg",
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
-		Run:          runRest("/auth/cloudletpoolaccessresponse/show"),
-	}, &grantedCommand, &pendingCommand,
-	}
-	return cli.GenGroup("cloudletpoolresponse", "Manage CloudletPool responses to invitations", cmds)
-}
+		Path:         "/auth/cloudletpoolaccessresponse/show",
+	}}
+	AllApis.AddGroup(CloudletPoolResponseGroup, "Manage CloudletPool responses to invitations", cmds)
 
-var grantedCommand = cli.Command{
-	Use:          "showgranted",
-	Short:        "Show granted cloudletpool access",
-	OptionalArgs: "org region cloudletpool cloudletpoolorg",
-	Comments:     OrgCloudletPoolComments,
-	ReqData:      &ormapi.OrgCloudletPool{},
-	ReplyData:    &[]ormapi.OrgCloudletPool{},
-	Run:          runRest("/auth/cloudletpoolaccessgranted/show"),
-}
+	cmds = []*ApiCommand{{
+		Name:         "ShowCloudletPoolAccessGranted",
+		Use:          "showgranted",
+		Short:        "Show granted cloudletpool access",
+		OptionalArgs: "org region cloudletpool cloudletpoolorg",
+		Comments:     OrgCloudletPoolComments,
+		ReqData:      &ormapi.OrgCloudletPool{},
+		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		Path:         "/auth/cloudletpoolaccessgranted/show",
+	}, {
+		Name:         "ShowCloudletPoolAccessPending",
+		Use:          "showpending",
+		Short:        "Show pending cloudletpool invitations without responses",
+		OptionalArgs: "org region cloudletpool cloudletpoolorg",
+		Comments:     OrgCloudletPoolComments,
+		ReqData:      &ormapi.OrgCloudletPool{},
+		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		Path:         "/auth/cloudletpoolaccesspending/show",
+	}}
+	AllApis.AddGroup(CloudletPoolAccessGroup, "View CloudletPool access", cmds)
 
-var pendingCommand = cli.Command{
-	Use:          "showpending",
-	Short:        "Show pending cloudletpool invitations without responses",
-	OptionalArgs: "org region cloudletpool cloudletpoolorg",
-	Comments:     OrgCloudletPoolComments,
-	ReqData:      &ormapi.OrgCloudletPool{},
-	ReplyData:    &[]ormapi.OrgCloudletPool{},
-	Run:          runRest("/auth/cloudletpoolaccesspending/show"),
-}
-
-func GetOrgCloudletCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+	cmds = []*ApiCommand{&ApiCommand{
+		Name:         "ShowOrgCloudlet",
 		Use:          "show",
 		RequiredArgs: "region org",
 		ReqData:      &ormapi.OrgCloudlet{},
 		ReplyData:    &[]edgeproto.Cloudlet{},
-		Run:          runRest("/auth/orgcloudlet/show"),
+		Path:         "/auth/orgcloudlet/show",
 	}}
-	return cli.GenGroup("orgcloudlet", "manage Org Cloudlets", cmds)
-}
+	AllApis.AddGroup(OrgCloudletGroup, "manage Org Cloudlets", cmds)
 
-func GetOrgCloudletInfoCommand() *cobra.Command {
-	cmds := []*cli.Command{&cli.Command{
+	cmds = []*ApiCommand{&ApiCommand{
+		Name:         "ShowOrgCloudletInfo",
 		Use:          "show",
 		RequiredArgs: "region org",
 		ReqData:      &ormapi.OrgCloudlet{},
 		ReplyData:    &[]edgeproto.CloudletInfo{},
-		Run:          runRest("/auth/orgcloudletinfo/show"),
+		Path:         "/auth/orgcloudletinfo/show",
 	}}
-	return cli.GenGroup("orgcloudletinfo", "manage Org CloudletInfos", cmds)
+	AllApis.AddGroup(OrgCloudletInfoGroup, "manage Org CloudletInfos", cmds)
 }
 
 var OrgCloudletPoolComments = map[string]string{

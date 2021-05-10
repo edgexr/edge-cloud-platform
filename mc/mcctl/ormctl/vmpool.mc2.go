@@ -25,7 +25,8 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-var CreateVMPoolCmd = &cli.Command{
+var CreateVMPoolCmd = &ApiCommand{
+	Name:         "CreateVMPool",
 	Use:          "create",
 	Short:        "Create VMPool. Creates VM pool which will have VMs defined.",
 	RequiredArgs: "region " + strings.Join(CreateVMPoolRequiredArgs, " "),
@@ -33,12 +34,15 @@ var CreateVMPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
 	SpecialArgs:  &VMPoolSpecialArgs,
 	Comments:     addRegionComment(VMPoolComments),
+	NoConfig:     "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor,Vms:#.State",
 	ReqData:      &ormapi.RegionVMPool{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/CreateVMPool"),
+	Path:         "/auth/ctrl/CreateVMPool",
+	ProtobufApi:  true,
 }
 
-var DeleteVMPoolCmd = &cli.Command{
+var DeleteVMPoolCmd = &ApiCommand{
+	Name:         "DeleteVMPool",
 	Use:          "delete",
 	Short:        "Delete VMPool. Deletes VM pool given that none of VMs part of this pool is used.",
 	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
@@ -46,27 +50,31 @@ var DeleteVMPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
 	SpecialArgs:  &VMPoolSpecialArgs,
 	Comments:     addRegionComment(VMPoolComments),
+	NoConfig:     "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor",
 	ReqData:      &ormapi.RegionVMPool{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/DeleteVMPool"),
+	Path:         "/auth/ctrl/DeleteVMPool",
+	ProtobufApi:  true,
 }
 
-var UpdateVMPoolCmd = &cli.Command{
-	Use:          "update",
-	Short:        "Update VMPool. Updates a VM pools VMs.",
-	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
-	OptionalArgs: strings.Join(VMPoolOptionalArgs, " "),
-	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
-	SpecialArgs:  &VMPoolSpecialArgs,
-	Comments:     addRegionComment(VMPoolComments),
-	ReqData:      &ormapi.RegionVMPool{},
-	ReplyData:    &edgeproto.Result{},
-	Run: runRest("/auth/ctrl/UpdateVMPool",
-		withSetFieldsFunc(setUpdateVMPoolFields),
-	),
+var UpdateVMPoolCmd = &ApiCommand{
+	Name:          "UpdateVMPool",
+	Use:           "update",
+	Short:         "Update VMPool. Updates a VM pools VMs.",
+	RequiredArgs:  "region " + strings.Join(VMPoolRequiredArgs, " "),
+	OptionalArgs:  strings.Join(VMPoolOptionalArgs, " "),
+	AliasArgs:     strings.Join(VMPoolAliasArgs, " "),
+	SpecialArgs:   &VMPoolSpecialArgs,
+	Comments:      addRegionComment(VMPoolComments),
+	NoConfig:      "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor",
+	ReqData:       &ormapi.RegionVMPool{},
+	ReplyData:     &edgeproto.Result{},
+	Path:          "/auth/ctrl/UpdateVMPool",
+	SetFieldsFunc: SetUpdateVMPoolFields,
+	ProtobufApi:   true,
 }
 
-func setUpdateVMPoolFields(in map[string]interface{}) {
+func SetUpdateVMPoolFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
 	obj := in[strings.ToLower("VMPool")]
 	if obj == nil {
@@ -86,7 +94,8 @@ func setUpdateVMPoolFields(in map[string]interface{}) {
 	objmap["fields"] = fields
 }
 
-var ShowVMPoolCmd = &cli.Command{
+var ShowVMPoolCmd = &ApiCommand{
+	Name:         "ShowVMPool",
 	Use:          "show",
 	Short:        "Show VMPools. Lists all the VMs part of the VM pool.",
 	RequiredArgs: "region",
@@ -94,13 +103,16 @@ var ShowVMPoolCmd = &cli.Command{
 	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
 	SpecialArgs:  &VMPoolSpecialArgs,
 	Comments:     addRegionComment(VMPoolComments),
+	NoConfig:     "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor",
 	ReqData:      &ormapi.RegionVMPool{},
 	ReplyData:    &edgeproto.VMPool{},
-	Run:          runRest("/auth/ctrl/ShowVMPool"),
+	Path:         "/auth/ctrl/ShowVMPool",
 	StreamOut:    true,
+	ProtobufApi:  true,
 }
 
-var AddVMPoolMemberCmd = &cli.Command{
+var AddVMPoolMemberCmd = &ApiCommand{
+	Name:         "AddVMPoolMember",
 	Use:          "addmember",
 	Short:        "Add VMPoolMember. Adds a VM to existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(AddVMPoolMemberRequiredArgs, " "),
@@ -108,12 +120,15 @@ var AddVMPoolMemberCmd = &cli.Command{
 	AliasArgs:    strings.Join(VMPoolMemberAliasArgs, " "),
 	SpecialArgs:  &VMPoolMemberSpecialArgs,
 	Comments:     addRegionComment(VMPoolMemberComments),
+	NoConfig:     "Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName,Vm.Flavor",
 	ReqData:      &ormapi.RegionVMPoolMember{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/AddVMPoolMember"),
+	Path:         "/auth/ctrl/AddVMPoolMember",
+	ProtobufApi:  true,
 }
 
-var RemoveVMPoolMemberCmd = &cli.Command{
+var RemoveVMPoolMemberCmd = &ApiCommand{
+	Name:         "RemoveVMPoolMember",
 	Use:          "removemember",
 	Short:        "Remove VMPoolMember. Removes a VM from existing VM Pool.",
 	RequiredArgs: "region " + strings.Join(RemoveVMPoolMemberRequiredArgs, " "),
@@ -121,12 +136,14 @@ var RemoveVMPoolMemberCmd = &cli.Command{
 	AliasArgs:    strings.Join(VMPoolMemberAliasArgs, " "),
 	SpecialArgs:  &VMPoolMemberSpecialArgs,
 	Comments:     addRegionComment(VMPoolMemberComments),
+	NoConfig:     "Vm.GroupName,Vm.State,Vm.UpdatedAt.Seconds,Vm.UpdatedAt.Nanos,Vm.InternalName,Vm.Flavor,Vm.NetInfo.ExternalIp,Vm.NetInfo.InternalIp,Vm.Flavor",
 	ReqData:      &ormapi.RegionVMPoolMember{},
 	ReplyData:    &edgeproto.Result{},
-	Run:          runRest("/auth/ctrl/RemoveVMPoolMember"),
+	Path:         "/auth/ctrl/RemoveVMPoolMember",
+	ProtobufApi:  true,
 }
 
-var VMPoolApiCmds = []*cli.Command{
+var VMPoolApiCmds = []*ApiCommand{
 	CreateVMPoolCmd,
 	DeleteVMPoolCmd,
 	UpdateVMPoolCmd,
@@ -135,7 +152,11 @@ var VMPoolApiCmds = []*cli.Command{
 	RemoveVMPoolMemberCmd,
 }
 
-var VMPoolApiCmdsGroup = cli.GenGroup("vmpool", "Manage VMPools", VMPoolApiCmds)
+const VMPoolGroup = "VMPool"
+
+func init() {
+	AllApis.AddGroup(VMPoolGroup, "Manage VMPools", VMPoolApiCmds)
+}
 
 var CreateVMPoolRequiredArgs = []string{
 	"vmpool-org",

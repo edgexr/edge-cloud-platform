@@ -9,8 +9,8 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -24,7 +24,7 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-func TestShowAppInstClient(mcClient *ormclient.Client, uri, token, region string, in *edgeproto.AppInstClientKey, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
+func TestShowAppInstClient(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppInstClientKey, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
 	dat := &ormapi.RegionAppInstClientKey{}
 	dat.Region = region
 	dat.AppInstClientKey = *in
@@ -33,7 +33,7 @@ func TestShowAppInstClient(mcClient *ormclient.Client, uri, token, region string
 	}
 	return mcClient.ShowAppInstClient(uri, token, dat)
 }
-func TestPermShowAppInstClient(mcClient *ormclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
+func TestPermShowAppInstClient(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) ([]edgeproto.AppInstClient, int, error) {
 	in := &edgeproto.AppInstClientKey{}
 	in.AppInstKey.AppKey.Organization = org
 	return TestShowAppInstClient(mcClient, uri, token, region, in, modFuncs...)
