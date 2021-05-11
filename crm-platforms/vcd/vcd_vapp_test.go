@@ -80,12 +80,16 @@ func TestDumpVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
 		fmt.Printf("TestDumpVAppNetworks...")
 		vappName := "mex-cldlet3.gddt.mobiledgex.net-vapp"
 		//vappName := "mex-vmware-vcd.gddt.mobiledgex.net-vapp"
-		vapp, err := tv.FindVApp(ctx, vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("%s not found\n", vappName)
 			return
@@ -688,9 +692,13 @@ func TestExtAddrVApp(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		require.Nil(t, err, "FindVapp")
 		fmt.Printf("TestVApp-Start create vapp named %s in vdc %s \n", *vappName, *vdcName)
 

@@ -19,6 +19,7 @@ import (
 var VmHardwareVersion = 14
 
 var ResolvedStateMaxWait = 4 * 60 // 4 mins
+var ResolvedStateTickTime time.Duration = time.Second * 3
 
 // Compose a new vapp from the given template, using vmgrp orch params
 // Creates one or more vms.
@@ -41,7 +42,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp", "name", vmgp.GroupName, "tmpl", vappTmpl.VAppTemplate.Name)
 
 	vappName := vmgp.GroupName + "-vapp"
-	vapp, err = v.FindVApp(ctx, vappName, vcdClient)
+	vapp, err = v.FindVApp(ctx, vappName, vcdClient, vdc)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp vapp alredy exists", "name", vmgp.GroupName, "vapp", vapp)
 		return vapp, nil
@@ -84,8 +85,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	}
 
 	// wait before adding vms
-	err = vapp.BlockWhileStatus("UNRESOLVED", ResolvedStateMaxWait) // upto seconds
-
+	err = v.BlockWhileStatusWithTickTime(ctx, vapp, "UNRESOLVED", ResolvedStateMaxWait, ResolvedStateTickTime)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "wait for RESOLVED error", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
@@ -196,10 +196,13 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	vappName := vapp.VApp.Name
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp", "name", vappName)
-
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
 	// First, does this guy even exist?
 	// If not, ok, its deleted
-	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
+	vapp, err = v.FindVApp(ctx, vappName, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp vapp not found return success", "vapp", vappName)
 		return nil
@@ -208,12 +211,6 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	// handle deletion of an iso orgvdcnet of the client of a shared LB
 	// DetachPortFromServer has already been called, and can't delete the network
 	// because it's still in use, possibly by this vapp (shared clusterInst)
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp err getting vdc", "vapp", vappName, "err", err)
-		return err
-	}
 
 	// Notes on deletion order related to isolated Org VDC networks:
 	// - GetVappIsoNetwork must happen before VMs are deleted or the network will not be found
@@ -337,13 +334,9 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	return nil
 
 }
-func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string, vcdClient *govcd.VCDClient) (*govcd.VApp, error) {
+func (v *VcdPlatform) FindVApp(ctx context.Context, vappName string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) (*govcd.VApp, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "FindVApp", "vappName", vappName)
 
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, err
-	}
 	vapp, err := vdc.GetVAppByName(vappName, true)
 	return vapp, err
 }
@@ -538,4 +531,30 @@ func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp
 		}
 	}
 	return nil
+}
+
+// BlockWhileStatusWithTickTime is the same as the govcd version vapp.BlockWhileStatus.  The only difference is that it
+// allows a variable tickTime instead of every 200msec so that the number of API calls can be reduced
+func (v *VcdPlatform) BlockWhileStatusWithTickTime(ctx context.Context, vapp *govcd.VApp, unwantedStatus string, timeOutAfterSeconds int, tickTime time.Duration) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "BlockWhileStatusWithTimer", "timeOutAfterSeconds", timeOutAfterSeconds, "tickTime", tickTime)
+
+	timeoutAfter := time.After(time.Duration(timeOutAfterSeconds) * time.Second)
+	tick := time.NewTicker(tickTime)
+
+	for {
+		select {
+		case <-timeoutAfter:
+			return fmt.Errorf("timed out waiting for vApp to exit state %s after %d seconds",
+				unwantedStatus, timeOutAfterSeconds)
+		case <-tick.C:
+			currentStatus, err := vapp.GetStatus()
+
+			if err != nil {
+				return fmt.Errorf("could not get vApp status %s", err)
+			}
+			if currentStatus != unwantedStatus {
+				return nil
+			}
+		}
+	}
 }
