@@ -29,6 +29,7 @@ var _ = edgeproto.GetFields
 func badPermRunCommand(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermRunCommand(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -49,6 +50,7 @@ var _ = edgeproto.GetFields
 func badPermRunConsole(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermRunConsole(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -69,6 +71,7 @@ var _ = edgeproto.GetFields
 func badPermShowLogs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermShowLogs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -89,6 +92,7 @@ var _ = edgeproto.GetFields
 func badPermAccessCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ExecRequest)) {
 	_, status, err := testutil.TestPermAccessCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

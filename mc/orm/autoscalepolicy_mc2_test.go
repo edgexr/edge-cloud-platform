@@ -30,6 +30,7 @@ var _ = edgeproto.GetFields
 func badPermCreateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermCreateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -50,6 +51,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -70,6 +72,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermUpdateAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -90,6 +93,7 @@ var _ = edgeproto.GetFields
 func badPermShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	_, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

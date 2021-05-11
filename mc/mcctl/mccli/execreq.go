@@ -15,14 +15,14 @@ import (
 // We don't use the auto-generated Command because the client
 // must use websocket connection
 
-func getExecCmd(name string) *cobra.Command {
+func (s *RootCommand) getExecCmd(name string) *cobra.Command {
 	apiCmd := ormctl.MustGetCommand(name)
-	cliCmd := ConvertCmd(apiCmd)
-	cliCmd.Run = runExecRequest(apiCmd.Path)
+	cliCmd := s.ConvertCmd(apiCmd)
+	cliCmd.Run = s.runExecRequest(apiCmd.Path)
 	return cliCmd.GenCmd()
 }
 
-func runExecRequest(path string) func(c *cli.Command, args []string) error {
+func (s *RootCommand) runExecRequest(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		input := cli.Input{
 			RequiredArgs: strings.Split(c.RequiredArgs, " "),
@@ -33,11 +33,11 @@ func runExecRequest(path string) func(c *cli.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		client.Debug = cli.Debug
+		s.client.Debug = cli.Debug
 
 		exchangeFunc := func() (*edgeproto.ExecRequest, error) {
 			reply := edgeproto.ExecRequest{}
-			st, err := client.PostJson(getUri()+path, Token, &req, &reply)
+			st, err := s.client.PostJson(s.getUri()+path, s.token, &req, &reply)
 			err = check(c, st, err, nil)
 			if err != nil {
 				return nil, err

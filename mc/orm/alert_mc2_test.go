@@ -31,6 +31,7 @@ var _ = edgeproto.GetFields
 func badPermShowAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Alert)) {
 	_, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

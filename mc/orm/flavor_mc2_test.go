@@ -30,6 +30,7 @@ var _ = edgeproto.GetFields
 func badPermCreateFlavor(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermCreateFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -50,6 +51,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteFlavor(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermDeleteFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -70,6 +72,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateFlavor(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermUpdateFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -90,6 +93,7 @@ var _ = edgeproto.GetFields
 func badPermShowFlavor(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermShowFlavor(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -110,6 +114,7 @@ var _ = edgeproto.GetFields
 func badPermAddFlavorRes(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermAddFlavorRes(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -130,6 +135,7 @@ var _ = edgeproto.GetFields
 func badPermRemoveFlavorRes(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Flavor)) {
 	_, status, err := testutil.TestPermRemoveFlavorRes(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

@@ -102,15 +102,42 @@ func TestController(t *testing.T) {
 	}()
 	defer dc.Stop()
 
+	dc2 := grpc.NewServer()
+	ctrlAddr2 := "127.0.0.1:9997"
+	lis2, err := net.Listen("tcp", ctrlAddr2)
+	require.Nil(t, err)
+	sds := StreamDummyServer{}
+	sds.next = make(chan int, 1)
+	edgeproto.RegisterClusterInstApiServer(dc2, &sds)
+	edgeproto.RegisterCloudletPoolApiServer(dc2, &sds)
+	go func() {
+		dc2.Serve(lis2)
+	}()
+	defer dc2.Stop()
+
 	// wait till mc is ready
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := mctestclient.NewClient(&ormclient.Client{})
+	for _, clientRun := range getUnitTestClientRuns() {
+		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, ds, &sds)
+	}
+}
+
+func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri, addr, ctrlAddr, ctrlAddr2 string, influxServer *httptest.Server, ds *testutil.DummyServer, sds *StreamDummyServer) {
+	mcClient := mctestclient.NewClient(clientRun)
 
 	// login as super user
 	token, _, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
 	require.Nil(t, err, "login as superuser")
+
+	// make sure roles are as expected
+	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token)
+	require.Nil(t, err, "show roles")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(roleAssignments))
+	require.Equal(t, RoleAdminManager, roleAssignments[0].Role)
+	require.Equal(t, DefaultSuperuser, roleAssignments[0].Username)
 
 	// test controller api
 	ctrls, status, err := mcClient.ShowController(uri, token)
@@ -136,7 +163,7 @@ func TestController(t *testing.T) {
 	// delete non-existing controller
 	status, err = mcClient.DeleteController(uri, token, &ormapi.Controller{})
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Controller Region not specified")
+	require.True(t, strings.Contains(err.Error(), "Controller Region not specified") || strings.Contains(err.Error(), "missing required args: region"), "error is %s", err.Error())
 
 	// create admin
 	admin, tokenAd, _ := testCreateUser(t, mcClient, uri, "admin1")
@@ -166,11 +193,19 @@ func TestController(t *testing.T) {
 
 	// number of dummy objects we add of each type and org
 	dcnt := 3
-	ds.AddDummyObjs(ctx, dcnt)
-	ds.AddDummyOrgObjs(ctx, org1, dcnt)
-	ds.AddDummyOrgObjs(ctx, org2, dcnt)
-	ds.AddDummyOrgObjs(ctx, org3, dcnt)
-	ds.AddDummyOrgObjs(ctx, org4, dcnt)
+	tag := "ctrltest"
+	ds.SetDummyObjs(ctx, testutil.Create, tag, dcnt)
+	ds.SetDummyOrgObjs(ctx, testutil.Create, org1, dcnt)
+	ds.SetDummyOrgObjs(ctx, testutil.Create, org2, dcnt)
+	ds.SetDummyOrgObjs(ctx, testutil.Create, org3, dcnt)
+	ds.SetDummyOrgObjs(ctx, testutil.Create, org4, dcnt)
+	defer func() {
+		ds.SetDummyObjs(ctx, testutil.Delete, tag, dcnt)
+		ds.SetDummyOrgObjs(ctx, testutil.Delete, org1, dcnt)
+		ds.SetDummyOrgObjs(ctx, testutil.Delete, org2, dcnt)
+		ds.SetDummyOrgObjs(ctx, testutil.Delete, org3, dcnt)
+		ds.SetDummyOrgObjs(ctx, testutil.Delete, org4, dcnt)
+	}()
 
 	// number of org objects total of each type (sum of above)
 	count := 4 * dcnt
@@ -195,7 +230,7 @@ func TestController(t *testing.T) {
 	testAddUserRole(t, mcClient, uri, tokenOper, org3, "OperatorContributor", oper3.Name, Success)
 	testAddUserRole(t, mcClient, uri, tokenOper, org3, "OperatorViewer", oper4.Name, Success)
 	// make sure dev/ops without user perms can't add new users
-	user5, _, _ := testCreateUser(t, mcClient, uri, "user5")
+	user5, tokenUser5, _ := testCreateUser(t, mcClient, uri, "user5")
 	testAddUserRole(t, mcClient, uri, tokenDev3, org1, "DeveloperViewer", user5.Name, Fail)
 	testAddUserRole(t, mcClient, uri, tokenDev4, org1, "DeveloperViewer", user5.Name, Fail)
 	testAddUserRole(t, mcClient, uri, tokenOper3, org3, "OperatorViewer", user5.Name, Fail)
@@ -358,6 +393,8 @@ func TestController(t *testing.T) {
 		// dev will be able to create clusterinst/appinst on any public cloudlet
 		goodPermTestAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, org1CloudletCnt)
 		goodPermTestClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3, org1CloudletCnt)
+		// clean up billing org (TODO: change from tokenAd to tokenDev)
+		testDeleteBillingOrg(t, mcClient, uri, tokenAd, org1)
 		// Disable billing
 		configReq["billingenable"] = false
 		status, err = mcClient.UpdateConfig(uri, token, configReq)
@@ -499,6 +536,8 @@ func TestController(t *testing.T) {
 		_, status, err = ormtestutil.TestDeleteAppInst(mcClient, uri, tokenAd, ctrl.Region, &appinst)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
+		// clean up org
+		testDeleteOrg(t, mcClient, uri, tokenAd, cloudcommon.OrganizationMobiledgeX)
 	}
 
 	// remove users from roles, test that they can't modify anything anymore
@@ -774,94 +813,102 @@ func TestController(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
 
-	// Test Streaming APIs
-	dc2 := grpc.NewServer()
-	ctrlAddr2 := "127.0.0.1:9997"
-	lis2, err := net.Listen("tcp", ctrlAddr2)
-	require.Nil(t, err)
-	sds := StreamDummyServer{}
-	sds.next = make(chan int, 1)
-	edgeproto.RegisterClusterInstApiServer(dc2, &sds)
-	edgeproto.RegisterCloudletPoolApiServer(dc2, &sds)
-	go func() {
-		dc2.Serve(lis2)
-	}()
-	defer dc2.Stop()
-
-	ctrl = ormapi.Controller{
-		Region:  "Stream",
-		Address: ctrlAddr2,
-	}
-	// create controller
-	status, err = mcClient.CreateController(uri, token, &ctrl)
-	require.Nil(t, err, "create controller")
-	require.Equal(t, http.StatusOK, status)
-	dat := ormapi.RegionClusterInst{
-		Region: ctrl.Region,
-		ClusterInst: edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				Organization: "org1",
+	// Test Streaming APIs - not supported via mcctl
+	if restClient, ok := mcClient.ClientRun.(*ormclient.Client); ok {
+		ctrl = ormapi.Controller{
+			Region:  "Stream",
+			Address: ctrlAddr2,
+		}
+		// create controller
+		status, err = mcClient.CreateController(uri, token, &ctrl)
+		require.Nil(t, err, "create controller")
+		require.Equal(t, http.StatusOK, status)
+		dat := ormapi.RegionClusterInst{
+			Region: ctrl.Region,
+			ClusterInst: edgeproto.ClusterInst{
+				Key: edgeproto.ClusterInstKey{
+					Organization: "org1",
+				},
 			},
-		},
-	}
-	out := edgeproto.Result{}
-	count = 0
-	restClient := &ormclient.Client{}
-	// check that we get intermediate results.
-	// the callback func is only called when data is read back.
-	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &out, func() {
-			// got a result, trigger next result
-			count++
-			require.Equal(t, count, int(out.Code))
-			sds.next <- 1
-		})
-	require.Nil(t, err, "stream test create cluster inst")
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 3, count)
-	// check that we hit timeout if we don't trigger the next one.
-	count = 0
-	sds.next = make(chan int, 1)
-	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &out, func() {
-			count++
-		})
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "timedout")
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 1, count)
+		}
+		out := edgeproto.Result{}
+		count = 0
+		// check that we get intermediate results.
+		// the callback func is only called when data is read back.
+		status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+			token, &dat, &out, func() {
+				// got a result, trigger next result
+				count++
+				require.Equal(t, count, int(out.Code))
+				sds.next <- 1
+			})
+		require.Nil(t, err, "stream test create cluster inst")
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, 3, count)
+		// check that we hit timeout if we don't trigger the next one.
+		count = 0
+		sds.next = make(chan int, 1)
+		status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
+			token, &dat, &out, func() {
+				count++
+			})
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "timedout")
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, 1, count)
 
-	count = 0
-	wsOut := ormapi.WSStreamPayload{}
-	// check that we get intermediate results.
-	// the callback func is only called when data is read back.
-	// Test Websocket connection
-	uri = "ws://" + addr + "/ws/api/v1"
-	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &wsOut, func() {
-			// got a result, trigger next result
-			count++
-			require.Equal(t, 200, int(wsOut.Code))
-			result := edgeproto.Result{}
-			err = mapstructure.Decode(wsOut.Data, &result)
-			require.Nil(t, err, "Received data of type Result")
-			require.Equal(t, count, int(result.Code))
-			sds.next <- 1
-		})
-	require.Nil(t, err, "stream test create cluster inst")
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 3, count)
-	// check that we hit timeout if we don't trigger the next one.
-	count = 0
-	sds.next = make(chan int, 1)
-	status, err = restClient.PostJsonStreamOut(uri+"/auth/ctrl/CreateClusterInst",
-		token, &dat, &wsOut, func() {
-			count++
-		})
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "timedout")
-	require.Equal(t, http.StatusBadRequest, status)
-	require.Equal(t, 1, count)
+		count = 0
+		wsOut := ormapi.WSStreamPayload{}
+		// check that we get intermediate results.
+		// the callback func is only called when data is read back.
+		// Test Websocket connection
+		wsuri := "ws://" + addr + "/ws/api/v1"
+		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
+			token, &dat, &wsOut, func() {
+				// got a result, trigger next result
+				count++
+				require.Equal(t, 200, int(wsOut.Code))
+				result := edgeproto.Result{}
+				err = mapstructure.Decode(wsOut.Data, &result)
+				require.Nil(t, err, "Received data of type Result")
+				require.Equal(t, count, int(result.Code))
+				sds.next <- 1
+			})
+		require.Nil(t, err, "stream test create cluster inst")
+		require.Equal(t, http.StatusOK, status)
+		require.Equal(t, 3, count)
+		// check that we hit timeout if we don't trigger the next one.
+		count = 0
+		sds.next = make(chan int, 1)
+		status, err = restClient.PostJsonStreamOut(wsuri+"/auth/ctrl/CreateClusterInst",
+			token, &dat, &wsOut, func() {
+				count++
+			})
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "timedout")
+		require.Equal(t, http.StatusBadRequest, status)
+		require.Equal(t, 1, count)
+		// clean up controller
+		status, err = mcClient.DeleteController(uri, token, &ctrl)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+	// clean up orgs
+	testDeleteOrg(t, mcClient, uri, tokenDev, org1)
+	testDeleteOrg(t, mcClient, uri, tokenDev2, org2)
+	testDeleteOrg(t, mcClient, uri, tokenOper, org3)
+	testDeleteOrg(t, mcClient, uri, tokenOper2, org4)
+	// clean up users
+	testDeleteUser(t, mcClient, uri, tokenDev, "dev")
+	testDeleteUser(t, mcClient, uri, tokenDev2, "dev2")
+	testDeleteUser(t, mcClient, uri, tokenDev3, "dev3")
+	testDeleteUser(t, mcClient, uri, tokenDev4, "dev4")
+	testDeleteUser(t, mcClient, uri, tokenOper, "oper")
+	testDeleteUser(t, mcClient, uri, tokenOper2, "oper2")
+	testDeleteUser(t, mcClient, uri, tokenOper3, "oper3")
+	testDeleteUser(t, mcClient, uri, tokenOper4, "oper4")
+	testDeleteUser(t, mcClient, uri, tokenUser5, "user5")
+	testDeleteUser(t, mcClient, uri, tokenAd, "admin1")
 }
 
 func testCreateUser(t *testing.T, mcClient *mctestclient.Client, uri, name string) (*ormapi.User, string, string) {
@@ -884,6 +931,15 @@ func testCreateUser(t *testing.T, mcClient *mctestclient.Client, uri, name strin
 	return &user, token, user.Passhash
 }
 
+func testDeleteUser(t *testing.T, mcClient *mctestclient.Client, uri, token, name string) {
+	user := ormapi.User{
+		Name: name,
+	}
+	status, err := mcClient.DeleteUser(uri, token, &user)
+	require.Nil(t, err, "delete user ", name)
+	require.Equal(t, http.StatusOK, status)
+}
+
 func testCreateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, orgName string) *ormapi.Organization {
 	// create org
 	org := ormapi.Organization{
@@ -896,12 +952,21 @@ func testCreateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgT
 	return &org
 }
 
+func testDeleteOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
+	org := ormapi.Organization{
+		Name: orgName,
+	}
+	status, err := mcClient.DeleteOrg(uri, token, &org)
+	require.Nil(t, err, "delete org ", orgName)
+	require.Equal(t, http.StatusOK, status)
+}
+
 func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
 	org := getOrg(t, mcClient, uri, token, orgName)
 	update := *org
 	update.PublicImages = !org.PublicImages
 
-	// For updates, must specify json directly so we can
+	// For updates, must specify struct map directly so we can
 	// specify empty strings and false values. Otherwise json.Marshal()
 	// will just ignore them.
 	dat := map[string]interface{}{
@@ -962,6 +1027,7 @@ func getOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, name string
 	orgs, status, err := mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	fmt.Printf("got orgs: %v\n", orgs)
 	for _, org := range orgs {
 		if org.Name == name {
 			return &org
@@ -1426,8 +1492,13 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 
 	// user should be able to view/manage the resources it is allowed to
 	dcnt := 2
-	ds.AddDummyObjs(ctx, dcnt)
-	ds.AddDummyOrgObjs(ctx, operOrg.Name, dcnt)
+	tag := "apikeytest"
+	ds.SetDummyObjs(ctx, testutil.Create, tag, dcnt)
+	ds.SetDummyOrgObjs(ctx, testutil.Create, operOrg.Name, dcnt)
+	defer func() {
+		ds.SetDummyObjs(ctx, testutil.Delete, tag, dcnt)
+		ds.SetDummyOrgObjs(ctx, testutil.Delete, operOrg.Name, dcnt)
+	}()
 	goodPermTestCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, count+2)
 	goodPermTestShowCloudlet(t, mcClient, uri, apiKeyLoginToken, ctrl.Region, operOrg.Name, count+2)
 	tc := edgeproto.CloudletKey{
@@ -1507,6 +1578,11 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 		require.Nil(t, err, "delete user api key")
 		require.Equal(t, http.StatusOK, status)
 	}
+	// cleanup orgs
+	testDeleteOrg(t, mcClient, uri, token, devOrg.Name)
+	testDeleteOrg(t, mcClient, uri, token, operOrg.Name)
+	// cleanup users
+	testDeleteUser(t, mcClient, uri, token1, "user1")
 }
 
 // This is the old version of OrgCloudletPool, before type got added
@@ -1774,6 +1850,8 @@ func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *
 	// cleanup cloudlet
 	_, status, err = mcClient.DeleteCloudlet(uri, token, &regCloudlet)
 	require.Nil(t, err)
+	// cleanup org
+	testDeleteOrg(t, mcClient, uri, token, operOrg.Name)
 }
 
 func testCreateBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgType, orgName string) {
@@ -1784,5 +1862,14 @@ func testCreateBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, toke
 	}
 	status, err := mcClient.CreateBillingOrg(uri, token, &org)
 	require.Nil(t, err, "create billing org ", orgName)
+	require.Equal(t, http.StatusOK, status)
+}
+
+func testDeleteBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
+	org := ormapi.BillingOrganization{
+		Name: orgName,
+	}
+	status, err := mcClient.DeleteBillingOrg(uri, token, &org)
+	require.Nil(t, err, "delete billing org ", orgName)
 	require.Equal(t, http.StatusOK, status)
 }

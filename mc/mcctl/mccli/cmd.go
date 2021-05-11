@@ -15,16 +15,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Addr string
-var Token string
-var SkipVerify bool
-var client ormclient.Client
-
 var LookupKey = "lookupkey"
 
 type setFieldsFunc func(in map[string]interface{})
 
-func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) error {
+func (s *RootCommand) runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
@@ -46,14 +41,14 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 			opts.setFieldsFunc(in)
 		}
 
-		client.Debug = cli.Debug
+		s.client.Debug = cli.Debug
 		if c.StreamOut && c.StreamOutIncremental {
 			// print streamed data as it comes
 			replyReady := func() {
 				check(c, 0, nil, c.ReplyData)
 			}
-			st, err := client.PostJsonStreamOut(getUri()+path,
-				Token, in, c.ReplyData, replyReady)
+			st, err := s.client.PostJsonStreamOut(s.getUri()+path,
+				s.token, in, c.ReplyData, replyReady)
 			return check(c, st, err, nil)
 		} else if c.StreamOut {
 			// gather streamed data into array to print
@@ -68,13 +63,16 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 				copy := reflect.Indirect(reflect.ValueOf(c.ReplyData)).Interface()
 				outs = append(outs, copy)
 			}
-			st, err := client.PostJsonStreamOut(getUri()+path,
-				Token, in, c.ReplyData, replyReady)
+			st, err := s.client.PostJsonStreamOut(s.getUri()+path,
+				s.token, in, c.ReplyData, replyReady)
 			// print output
 			check(c, st, nil, outs)
 			return check(c, st, err, nil)
 		} else {
-			st, err := client.PostJson(getUri()+path, Token,
+			if s.clearState {
+				ormclient.ClearObject(c.ReplyData)
+			}
+			st, err := s.client.PostJson(s.getUri()+path, s.token,
 				in, c.ReplyData)
 			return check(c, st, err, c.ReplyData)
 		}
@@ -82,6 +80,7 @@ func runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) 
 }
 
 func check(c *cli.Command, status int, err error, reply interface{}) error {
+	wr := c.CobraCmd.OutOrStdout()
 	// all failure cases result in error getting set (by PostJson)
 	if err != nil {
 		if status != 0 {
@@ -93,7 +92,7 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 	if res, ok := reply.(*ormapi.Result); ok && !cli.Parsable {
 		// pretty print result
 		if res.Message != "" {
-			fmt.Println(res.Message)
+			fmt.Fprintln(wr, res.Message)
 		}
 		return nil
 	}
@@ -102,15 +101,15 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 			return nil
 		}
 		if out, ok := res.Data.(string); ok {
-			fmt.Print(out)
+			fmt.Fprint(wr, out)
 			return nil
 		}
 		reply = res.Data
 	}
 	if res, ok := reply.(*ormapi.UserResponse); ok && !cli.Parsable {
 		if res.Message != "" {
-			fmt.Println(res.Message)
-			fmt.Println(res.TOTPSharedKey)
+			fmt.Fprintln(wr, res.Message)
+			fmt.Fprintln(wr, res.TOTPSharedKey)
 		}
 		return nil
 	}
@@ -122,7 +121,7 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 				return nil
 			}
 		}
-		err = c.WriteOutput(reply, cli.OutputFormat)
+		err = c.WriteOutput(wr, reply, cli.OutputFormat)
 		if err != nil {
 			return err
 		}
@@ -130,18 +129,18 @@ func check(c *cli.Command, status int, err error, reply interface{}) error {
 	return nil
 }
 
-func PreRunE(cmd *cobra.Command, args []string) error {
-	if Token == "" {
-		Token = os.Getenv("TOKEN")
+func (s *RootCommand) PreRunE(cmd *cobra.Command, args []string) error {
+	if s.token == "" {
+		s.token = os.Getenv("TOKEN")
 	}
-	if Token == "" {
+	if s.token == "" {
 		tok, err := ioutil.ReadFile(getTokenFile())
 		if err == nil {
-			Token = strings.TrimSpace(string(tok))
+			s.token = strings.TrimSpace(string(tok))
 		}
 	}
-	if SkipVerify {
-		client.SkipVerify = true
+	if s.skipVerify {
+		s.client.SkipVerify = true
 	}
 	return nil
 }
@@ -156,22 +155,24 @@ func GetAdminFile() string {
 	return home + "/.mcctl_admin"
 }
 
-func getUri() string {
-	if !strings.HasPrefix(Addr, "http") {
-		Addr = "http://" + Addr
+func (s *RootCommand) getUri() string {
+	prefix := ""
+	if !strings.HasPrefix(s.addr, "http") {
+		prefix = "http://"
 	}
-	return Addr + "/api/v1"
+	return prefix + s.addr + "/api/v1"
 }
 
-func getWSUri() string {
-	newAddr := Addr
-	if !strings.HasPrefix(Addr, "http") {
-		newAddr = "http://" + Addr
+/*
+func (s *RootCommand) getWSUri() string {
+	newAddr := s.addr
+	if !strings.HasPrefix(s.addr, "http") {
+		newAddr = "http://" + s.Addr
 	}
-	newAddr = strings.Replace(Addr, "http", "ws", -1)
+	newAddr = strings.Replace(newAddr, "http", "ws", -1)
 	return newAddr + "/ws/api/v1"
 }
-
+*/
 type runRestOptions struct {
 	setFieldsFunc func(in map[string]interface{})
 }
@@ -188,7 +189,7 @@ func (o *runRestOptions) apply(opts []runRestOp) {
 	}
 }
 
-func ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
+func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 	use := api.Use
 	if use == "" {
 		// generate the same way we do for protobuf methods
@@ -228,16 +229,16 @@ func ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 		StreamOutIncremental: api.StreamOutIncremental,
 		DataFlagOnly:         api.DataFlagOnly,
 		Annotations:          annotations,
-		Run:                  runRest(api.Path, ops...),
+		Run:                  s.runRest(api.Path, ops...),
 	}
 	return cmd
 }
 
-func getCmd(name string) *cobra.Command {
-	return ConvertCmd(ormctl.MustGetCommand(name)).GenCmd()
+func (s *RootCommand) getCmd(name string) *cobra.Command {
+	return s.ConvertCmd(ormctl.MustGetCommand(name)).GenCmd()
 }
 
-func getCmdGroup(names ...string) *cobra.Command {
+func (s *RootCommand) getCmdGroup(names ...string) *cobra.Command {
 	cmds := []*cli.Command{}
 	var mainGroup *ormctl.ApiGroup
 	for _, name := range names {
@@ -246,7 +247,7 @@ func getCmdGroup(names ...string) *cobra.Command {
 			mainGroup = apiGroup
 		}
 		for _, c := range apiGroup.Commands {
-			cmds = append(cmds, ConvertCmd(c))
+			cmds = append(cmds, s.ConvertCmd(c))
 		}
 	}
 	return cli.GenGroup(strings.ToLower(mainGroup.Name), mainGroup.Desc, cmds)

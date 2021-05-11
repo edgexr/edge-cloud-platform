@@ -19,6 +19,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -31,6 +32,25 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 	var status int
 	var err error
 	uri := runData.Uri + apiCmd.Path
+
+	if structMap, ok := runData.In.(map[string]interface{}); ok {
+		// Passed in generic map must be in the StructNamespace,
+		// so we convert it to the json namespace then marshal it.
+		// It must be in the StructNamespace, because the cliwrapper
+		// client requires it in the StructNamepsace. This is
+		// because unlike yaml/mapstructure/args processing, json
+		// collapses out embedded structs, making it incompatible
+		// with args process (i.e. cliwrapper converting the map
+		// to args). Instead json namespace is only used for the
+		// final PostJsonSend call.
+		jsonMap, err := cli.JsonMap(structMap, apiCmd.ReqData, cli.StructNamespace)
+		if err != nil {
+			runData.RetStatus = 0
+			runData.RetError = err
+			return
+		}
+		runData.In = jsonMap
+	}
 
 	if apiCmd.StreamOut {
 		// ReplyData should be a pointer to a single object,
@@ -61,6 +81,8 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	var body io.Reader
 	var datastr string
 	if reqData != nil {
+		// Note that if reqData is a generic map, it must be in the
+		// JSON namspace, because it is marshaled and sent directly.
 		str, ok := reqData.(string)
 		if ok {
 			// assume string is json data
@@ -179,8 +201,7 @@ func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData inter
 		if replyData != nil {
 			// clear passed in buffer for next iteration.
 			// replyData must be pointer to object.
-			p := reflect.ValueOf(replyData).Elem()
-			p.Set(reflect.Zero(p.Type()))
+			ClearObject(replyData)
 		}
 
 		payload.Result = nil
@@ -278,8 +299,7 @@ func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reade
 		if payload != nil {
 			// clear passed in buffer for next iteration.
 			// payload must be pointer to object.
-			p := reflect.ValueOf(payload).Elem()
-			p.Set(reflect.Zero(p.Type()))
+			ClearObject(payload)
 		}
 
 		err := ws.ReadJSON(&payload)
@@ -305,4 +325,11 @@ func (s *Client) HandleWebsocketStreamOut(uri, token string, reader *bufio.Reade
 		}
 	}
 	return http.StatusOK, nil
+}
+
+func ClearObject(obj interface{}) {
+	// clear passed in buffer for next iteration.
+	// payload must be pointer to object.
+	p := reflect.ValueOf(obj).Elem()
+	p.Set(reflect.Zero(p.Type()))
 }

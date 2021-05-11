@@ -48,7 +48,8 @@ func init() {
 		Short:        "Show users",
 		ReqData:      &ormapi.ShowUser{},
 		OptionalArgs: "name email emailverified familyname givenname nickname locked enabletotp orgname role",
-		Comments:     ormapi.UserComments,
+		AliasArgs:    strings.Join(EmbeddedUserAliasArgs, " "),
+		Comments:     aliasedComments(ormapi.ShowUserComments, EmbeddedUserAliasArgs),
 		ReplyData:    &[]ormapi.User{},
 		Path:         "/auth/user/show",
 	}, &ApiCommand{
@@ -144,17 +145,20 @@ func init() {
 	AllApis.AddCommand(cmd)
 }
 
-var CreateUserAliasArgs = []string{
+var EmbeddedUserAliasArgs = []string{
 	"name=user.name",
 	"email=user.email",
 	"nickname=user.nickname",
 	"familyname=user.familyname",
 	"givenname=user.givenname",
 	"password=user.passhash",
-	"callbackurl=verify.callbackurl",
 	"enabletotp=user.enabletotp",
 	"metadata=user.metadata",
 }
+
+var CreateUserAliasArgs = append(EmbeddedUserAliasArgs, []string{
+	"callbackurl=verify.callbackurl",
+}...)
 
 var CreateUserApiKeyAliasArgs = []string{
 	"org=userapikey.org",

@@ -30,6 +30,7 @@ var _ = edgeproto.GetFields
 func badPermEnableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -50,6 +51,7 @@ var _ = edgeproto.GetFields
 func badPermDisableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -70,6 +72,7 @@ var _ = edgeproto.GetFields
 func badPermShowDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -90,6 +93,7 @@ var _ = edgeproto.GetFields
 func badPermRunDebug(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
 	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
