@@ -40,13 +40,9 @@ func (v *VcdPlatform) FindVM(ctx context.Context, serverName, vappName string, v
 }
 
 // If all you have is the serverName (vmName)
-func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdClient *govcd.VCDClient) (*govcd.VM, error) {
+func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) (*govcd.VM, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName", "serverName", serverName)
 
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, fmt.Errorf("GetVdc Failed - %v", err)
-	}
 	vm := &govcd.VM{}
 
 	vappRefList := vdc.GetVappList()
@@ -647,8 +643,12 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
 
-	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVMs GroupName not found", "Vapp", vappName, "err", err)
 		return err
@@ -799,9 +799,13 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
 	vappName := vmGroupName + "-vapp"
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs check", "vappName", vappName)
-	vapp, err := v.FindVApp(ctx, vappName, vcdClient)
+	vapp, err := v.FindVApp(ctx, vappName, vcdClient, vdc)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs deleting", "VApp", vappName)
 		err := v.DeleteVapp(ctx, vapp, vcdClient)
@@ -827,6 +831,10 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return nil, fmt.Errorf(NoVCDClientInContext, err)
 	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return nil, fmt.Errorf("GetVdc Failed - %v", err)
+	}
 
 	vmName := cloudcommon.GetAppFQN(&key.AppKey)
 	if vmName == "" {
@@ -834,7 +842,7 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats for", "vm", vmName)
 
-	vm, err = v.FindVMByName(ctx, vmName, vcdClient)
+	vm, err = v.FindVMByName(ctx, vmName, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats vm not found", "vnname", vmName)
 		return nil, err
@@ -877,7 +885,11 @@ func (v *VcdPlatform) SetPowerState(ctx context.Context, serverName, serverActio
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return fmt.Errorf(NoVCDClientInContext)
 	}
-	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return fmt.Errorf("GetVdc Failed - %v", err)
+	}
+	vm, err := v.FindVMByName(ctx, serverName, vcdClient, vdc)
 	if err != nil {
 		return err
 	}
@@ -945,13 +957,9 @@ func (v *VcdPlatform) VerifyVMs(ctx context.Context, vms []edgeproto.VM) error {
 	return nil
 }
 
-func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClient *govcd.VCDClient) ([]vmlayer.ServerIP, error) {
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, fmt.Errorf("GetVdc Failed - %v", err)
-	}
+func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) ([]vmlayer.ServerIP, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "vmname", vm.VM.Name)
+
 	var serverIPs []vmlayer.ServerIP
 	if vm == nil || vm.VM == nil || vm.VM.NetworkConnectionSection == nil {
 		return serverIPs, fmt.Errorf("Nil vm received")

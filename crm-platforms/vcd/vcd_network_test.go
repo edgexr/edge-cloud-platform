@@ -106,9 +106,13 @@ func TestGetVappAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("Test error finding vapp %s\n", *vappName)
 			return
@@ -129,9 +133,14 @@ func TestGetVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
 		fmt.Printf("TestGetVappNetworks for %s\n", *vappName)
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("vapp %s not found err %s\n", *vappName, err.Error())
 			return
@@ -155,9 +164,14 @@ func TestGetVMNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
 		fmt.Printf("TestVMNetworks for %s\n", *vmName)
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("vapp %s not found err %s\n", *vappName, err.Error())
 			return
@@ -186,9 +200,13 @@ func TestGetVMAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
-		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient)
+		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("error finding vm %s\n", *vmName)
 			return
@@ -425,7 +443,7 @@ func TestIsoVdcNet(t *testing.T) {
 		fmt.Printf("Network %s created successfully now add it to %s\n", networkName, *vappName)
 		// ok, now that it's created, we'll add it to *vappNmae eh?
 
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("Failed to find vapp %s\n", *vappName)
 			return
@@ -548,14 +566,18 @@ func TestAttachPortToServer(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if live {
 		fmt.Printf("TestAttachPortToServer testsubnets to %s\n", *vappName)
 
 		// create 3 vapp internal (isolated) networks for vapp
 		// then add connections to same for the first vm in target vapp
 
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("%s not found\n", *vappName)
 			return
@@ -682,8 +704,12 @@ func testEnableVAppFirewall(t *testing.T, ctx context.Context, vappName string) 
 }
 
 func testDeleteVAppNetwork(t *testing.T, ctx context.Context, vappName, networkName string) (*types.NetworkConfigSection, error) {
-
-	vapp, err := tv.FindVApp(ctx, vappName, testVcdClient)
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return nil, err
+	}
+	vapp, err := tv.FindVApp(ctx, vappName, testVcdClient, vdc)
 	if err != nil {
 		fmt.Printf("Error finding Vapp: %s : %s \n", vappName, err.Error())
 		return nil, err
@@ -710,7 +736,7 @@ func TestAddNextIsoSubnetToVapp(t *testing.T) {
 			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return
 		}
-		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient)
+		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("Error getvapp %s\n", err.Error())
 			return

@@ -16,6 +16,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	ssh "github.com/mobiledgex/golang-ssh"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Note regarding govcd SDK:
@@ -127,10 +128,15 @@ func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.Re
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return "", fmt.Errorf(NoVCDClientInContext)
 	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return "", err
+	}
 	// VM, Subnet and SecGrp are the current potential values of Type
 	// The only one we have so far is VMs, (subnets soon, and secGrps eventually)
 	if resourceType == vmlayer.ResourceTypeVM {
-		vm, err := v.FindVMByName(ctx, resourceName, vcdClient)
+		vm, err := v.FindVMByName(ctx, resourceName, vcdClient, vdc)
 		if err != nil {
 			return "", fmt.Errorf("resource %s not found", resourceName)
 		}
@@ -247,13 +253,18 @@ func (v *VcdPlatform) IdSanitize(name string) string {
 }
 
 func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*vmlayer.ServerDetail, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail", "serverName", serverName)
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return nil, fmt.Errorf(NoVCDClientInContext)
 	}
-	vm, err := v.FindVMByName(ctx, serverName, vcdClient)
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		return nil, fmt.Errorf("GetVdcFailed - %v", err)
+	}
+	vm, err := v.FindVMByName(ctx, serverName, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail not found", "vmname", serverName)
 		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError)
@@ -261,10 +272,7 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 	detail := vmlayer.ServerDetail{}
 	detail.Name = vm.VM.Name
 	detail.ID = vm.VM.ID
-	vmStatus, err := vm.GetStatus()
-	if err != nil {
-		return nil, err
-	}
+	vmStatus := types.VAppStatuses[vm.VM.Status]
 
 	if vmStatus == "POWERED_ON" {
 		detail.Status = vmlayer.ServerActive
@@ -274,7 +282,7 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 		detail.Status = vmStatus
 	}
 
-	addresses, err := v.GetVMAddresses(ctx, vm, vcdClient)
+	addresses, err := v.GetVMAddresses(ctx, vm, vcdClient, vdc)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetServerDetail err getting VMAddresses for", "vmname", serverName, "err", err)
 		return nil, err

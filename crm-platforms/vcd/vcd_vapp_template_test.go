@@ -270,10 +270,15 @@ func dumpVAppTemplate(tv *VcdPlatform, ctx context.Context, vt *govcd.VAppTempla
 	fmt.Printf("%s %s\n", fill+"Name", vt.VAppTemplate.Name)
 	fmt.Printf("%s %s\n", fill+"HREF", vt.VAppTemplate.HREF)
 	fmt.Printf("%s %s\n", fill+"Type", vt.VAppTemplate.Type)
+	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	if err != nil {
+		fmt.Printf("GetVdc failed: %s\n", err.Error())
+		return
+	}
 	if vt.VAppTemplate.Type == "application/vnd.vmware.vcloud.vm+xml" {
 
 		// we can fetch it from vCD or from our local cache if we've done things right
-		vm, err := tv.FindVMByName(ctx, vt.VAppTemplate.Name, testVcdClient)
+		vm, err := tv.FindVMByName(ctx, vt.VAppTemplate.Name, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("Failed to find vm %s locally\n", vt.VAppTemplate.Name)
 		} else {
