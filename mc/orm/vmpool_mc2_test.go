@@ -32,6 +32,7 @@ var _ = edgeproto.GetFields
 func badPermCreateVMPool(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
 	_, status, err := testutil.TestPermCreateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -52,6 +53,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteVMPool(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
 	_, status, err := testutil.TestPermDeleteVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -72,6 +74,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateVMPool(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
 	_, status, err := testutil.TestPermUpdateVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -92,6 +95,7 @@ var _ = edgeproto.GetFields
 func badPermShowVMPool(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) {
 	_, status, err := testutil.TestPermShowVMPool(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -112,6 +116,7 @@ var _ = edgeproto.GetFields
 func badPermAddVMPoolMember(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
 	_, status, err := testutil.TestPermAddVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -132,6 +137,7 @@ var _ = edgeproto.GetFields
 func badPermRemoveVMPoolMember(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPoolMember)) {
 	_, status, err := testutil.TestPermRemoveVMPoolMember(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

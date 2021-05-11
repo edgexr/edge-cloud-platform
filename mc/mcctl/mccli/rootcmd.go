@@ -6,85 +6,106 @@ import (
 	"os"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/spf13/cobra"
 )
 
 const mcctl = "mcctl"
 
-func GetRootCommand() *cobra.Command {
+type RootCommand struct {
+	addr       string
+	token      string
+	skipVerify bool
+	client     ormclient.Client
+	CobraCmd   *cobra.Command
+	clearState bool
+}
+
+// Clear any state if RootCommand is being used for multiple calls
+// (happens only when reused for unit-tests.
+func (s *RootCommand) ClearState() {
+	s.addr = ""
+	s.token = ""
+	s.skipVerify = false
+	s.clearState = true
+}
+
+func GetRootCommand() *RootCommand {
+	rc := &RootCommand{}
 	rootCmd := &cobra.Command{
 		Use:               mcctl,
-		PersistentPreRunE: PreRunE,
+		PersistentPreRunE: rc.PreRunE,
 		RunE:              cli.GroupRunE,
 	}
+	rc.CobraCmd = rootCmd
 
 	// User and Organizational Management
 	managementCommands := []*cobra.Command{
-		getLoginCmd(),
-		getCmdGroup(ormctl.UserGroup),
-		getCmdGroup(ormctl.RoleGroup),
-		getCmdGroup(ormctl.OrgGroup),
-		getCmdGroup(ormctl.BillingOrgGroup),
+		rc.getLoginCmd(),
+		rc.getCmdGroup(ormctl.UserGroup),
+		rc.getCmdGroup(ormctl.RoleGroup),
+		rc.getCmdGroup(ormctl.OrgGroup),
+		rc.getCmdGroup(ormctl.BillingOrgGroup),
 	}
 	operatorCommands := []*cobra.Command{
-		getCmdGroup(ormctl.CloudletGroup),
-		getCmdGroup(ormctl.CloudletPoolGroup),
-		getCmdGroup(ormctl.CloudletPoolInvitationGroup, ormctl.CloudletPoolAccessGroup),
-		getCmdGroup(ormctl.CloudletInfoGroup),
-		getCmdGroup(ormctl.TrustPolicyGroup),
-		getCmdGroup(ormctl.ResTagTableGroup),
-		getCmdGroup(ormctl.OperatorCodeGroup),
-		getCmdGroup(ormctl.CloudletRefsGroup),
-		getCmdGroup(ormctl.VMPoolGroup),
+		rc.getCmdGroup(ormctl.CloudletGroup),
+		rc.getCmdGroup(ormctl.CloudletPoolGroup),
+		rc.getCmdGroup(ormctl.CloudletPoolInvitationGroup, ormctl.CloudletPoolAccessGroup),
+		rc.getCmdGroup(ormctl.CloudletInfoGroup),
+		rc.getCmdGroup(ormctl.TrustPolicyGroup),
+		rc.getCmdGroup(ormctl.ResTagTableGroup),
+		rc.getCmdGroup(ormctl.OperatorCodeGroup),
+		rc.getCmdGroup(ormctl.CloudletRefsGroup),
+		rc.getCmdGroup(ormctl.VMPoolGroup),
 	}
 	developerCommands := []*cobra.Command{
-		getDevCloudletShowCommand(),
-		getCmdGroup(ormctl.CloudletPoolResponseGroup, ormctl.CloudletPoolAccessGroup),
-		getCmdGroup(ormctl.AppGroup),
-		getCmdGroup(ormctl.ClusterInstGroup),
-		getCmdGroup(ormctl.AppInstGroup),
-		getCmdGroup(ormctl.AutoScalePolicyGroup),
-		getCmdGroup(ormctl.AutoProvPolicyGroup),
-		getCmdGroup(ormctl.AppInstClientGroup),
-		getCmdGroup(ormctl.AppInstRefsGroup),
-		getCmdGroup(ormctl.AppInstLatencyGroup),
-		getExecCmd("RunCommandCli"),
-		getExecCmd("RunConsole"),
-		getExecCmd("ShowLogsCli"),
+		rc.getDevCloudletShowCommand(),
+		rc.getCmdGroup(ormctl.CloudletPoolResponseGroup, ormctl.CloudletPoolAccessGroup),
+		rc.getCmdGroup(ormctl.AppGroup),
+		rc.getCmdGroup(ormctl.ClusterInstGroup),
+		rc.getCmdGroup(ormctl.AppInstGroup),
+		rc.getCmdGroup(ormctl.AutoScalePolicyGroup),
+		rc.getCmdGroup(ormctl.AutoProvPolicyGroup),
+		rc.getCmdGroup(ormctl.AppInstClientGroup),
+		rc.getCmdGroup(ormctl.AppInstRefsGroup),
+		rc.getCmdGroup(ormctl.AppInstLatencyGroup),
+		rc.getExecCmd("RunCommandCli"),
+		rc.getExecCmd("RunConsole"),
+		rc.getExecCmd("ShowLogsCli"),
 	}
 	adminCommands := []*cobra.Command{
-		getCmdGroup(ormctl.ControllerGroup),
-		getCmdGroup(ormctl.ConfigGroup),
-		getCmdGroup(ormctl.FlavorGroup),
-		getCmdGroup(ormctl.NodeGroup),
-		getCmdGroup(ormctl.SettingsGroup),
-		getCmdGroup(ormctl.AlertGroup),
-		getCmdGroup(ormctl.DebugGroup),
-		getCmdGroup(ormctl.DeviceGroup),
-		getCmdGroup(ormctl.ClusterRefsGroup),
-		getCmdGroup(ormctl.RepositoryGroup),
-		getExecCmd("AccessCloudletCli"),
-		getCmdGroup(ormctl.SpansGroup),
-		getCmd("RestrictedUpdateUser"),
-		getCmd("RestrictedUpdateOrg"),
+		rc.getCmdGroup(ormctl.ControllerGroup),
+		rc.getCmdGroup(ormctl.ConfigGroup),
+		rc.getCmdGroup(ormctl.FlavorGroup),
+		rc.getCmdGroup(ormctl.NodeGroup),
+		rc.getCmdGroup(ormctl.SettingsGroup),
+		rc.getCmdGroup(ormctl.AlertGroup),
+		rc.getCmdGroup(ormctl.DebugGroup),
+		rc.getCmdGroup(ormctl.DeviceGroup),
+		rc.getCmdGroup(ormctl.ClusterRefsGroup),
+		rc.getCmdGroup(ormctl.RepositoryGroup),
+		rc.getExecCmd("AccessCloudletCli"),
+		rc.getCmdGroup(ormctl.SpansGroup),
+		rc.getCmd("RestrictedUpdateUser"),
+		rc.getCmd("RestrictedUpdateOrg"),
 	}
 	logsMetricsCommands := []*cobra.Command{
-		getCmdGroup(ormctl.MetricsGroup),
-		getCmdGroup(ormctl.BillingEventsGroup),
-		getCmdGroup(ormctl.EventsGroup),
-		getCmdGroup(ormctl.UsageGroup),
-		getCmdGroup(ormctl.AlertReceiverGroup),
+		rc.getCmdGroup(ormctl.MetricsGroup),
+		rc.getCmdGroup(ormctl.BillingEventsGroup),
+		rc.getCmdGroup(ormctl.EventsGroup),
+		rc.getCmdGroup(ormctl.UsageGroup),
+		rc.getCmdGroup(ormctl.AlertReceiverGroup),
 	}
 	otherCommands := []*cobra.Command{
 		GetVersionCmd(),
 	}
 	hiddenCommands := []*cobra.Command{
-		getCmdGroup(ormctl.OrgCloudletGroup),     // for UI only
-		getCmdGroup(ormctl.OrgCloudletInfoGroup), // for UI only
-		getCmdGroup(ormctl.StreamObjGroup),       // for UI only
-		getCmdGroup(ormctl.AuditGroup),           // deprecated
-		getCmdGroup(ormctl.AllDataGroup),         // deprecated
+		rc.getCmdGroup(ormctl.OrgCloudletGroup),     // for UI only
+		rc.getCmdGroup(ormctl.OrgCloudletInfoGroup), // for UI only
+		rc.getCmdGroup(ormctl.StreamObjGroup),       // for UI only
+		rc.getCmdGroup(ormctl.AuditGroup),           // deprecated
+		rc.getCmdGroup(ormctl.AllDataGroup),         // deprecated
 	}
 
 	rootCmd.AddCommand(managementCommands...)
@@ -142,15 +163,15 @@ func GetRootCommand() *cobra.Command {
 		return err
 	})
 
-	rootCmd.PersistentFlags().StringVar(&Addr, "addr", "http://127.0.0.1:9900", "MC address")
-	rootCmd.PersistentFlags().StringVar(&Token, "token", "", "JWT token")
+	rootCmd.PersistentFlags().StringVar(&rc.addr, "addr", "http://127.0.0.1:9900", "MC address")
+	rootCmd.PersistentFlags().StringVar(&rc.token, "token", "", "JWT token")
 	cli.AddInputFlags(rootCmd.PersistentFlags())
 	cli.AddOutputFlags(rootCmd.PersistentFlags())
 	cli.AddDebugFlag(rootCmd.PersistentFlags())
-	rootCmd.PersistentFlags().BoolVar(&SkipVerify, "skipverify", false, "don't verify cert for TLS connections")
+	rootCmd.PersistentFlags().BoolVar(&rc.skipVerify, "skipverify", false, "don't verify cert for TLS connections")
 
 	cobra.EnableCommandSorting = false
-	return rootCmd
+	return rc
 }
 
 func printCommandGroup(out io.Writer, desc string, pad int, cmds []*cobra.Command) {

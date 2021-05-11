@@ -32,6 +32,7 @@ var _ = edgeproto.GetFields
 func badPermCreateAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermCreateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -52,6 +53,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermDeleteAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -72,6 +74,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermUpdateAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -92,6 +95,7 @@ var _ = edgeproto.GetFields
 func badPermShowAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) {
 	_, status, err := testutil.TestPermShowAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -112,6 +116,7 @@ var _ = edgeproto.GetFields
 func badPermAddAutoProvPolicyCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
 	_, status, err := testutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -132,6 +137,7 @@ var _ = edgeproto.GetFields
 func badPermRemoveAutoProvPolicyCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicyCloudlet)) {
 	_, status, err := testutil.TestPermRemoveAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

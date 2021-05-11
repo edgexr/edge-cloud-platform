@@ -31,6 +31,7 @@ var _ = edgeproto.GetFields
 func badPermInjectDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
 	_, status, err := testutil.TestPermInjectDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -51,6 +52,7 @@ var _ = edgeproto.GetFields
 func badPermShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
 	_, status, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -71,6 +73,7 @@ var _ = edgeproto.GetFields
 func badPermEvictDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
 	_, status, err := testutil.TestPermEvictDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -91,6 +94,7 @@ var _ = edgeproto.GetFields
 func badPermShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DeviceReport)) {
 	_, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
@@ -59,7 +60,13 @@ func TestServer(t *testing.T) {
 	err = server.WaitUntilReady()
 	require.Nil(t, err, "server online")
 
-	mcClient := mctestclient.NewClient(&ormclient.Client{})
+	for _, clientRun := range getUnitTestClientRuns() {
+		testServerClientRun(t, ctx, clientRun, uri)
+	}
+}
+
+func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri string) {
+	mcClient := mctestclient.NewClient(clientRun)
 
 	// login as super user
 	token, isSuper, err := mcClient.DoLogin(uri, DefaultSuperuser, DefaultSuperpass, NoOTP, NoApiKeyId, NoApiKey)
@@ -77,6 +84,7 @@ func TestServer(t *testing.T) {
 	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
+	fmt.Printf("roleAssignments: %v\n", roleAssignments)
 	require.Equal(t, 1, len(roleAssignments), "num role assignments")
 	require.Equal(t, RoleAdminManager, roleAssignments[0].Role)
 	require.Equal(t, super.Name, roleAssignments[0].Username)
@@ -114,7 +122,9 @@ func TestServer(t *testing.T) {
 	require.False(t, isAdmin)
 	// enable 2fa for user1
 	mapData := map[string]interface{}{
-		"EnableTOTP": true,
+		"User": map[string]interface{}{
+			"EnableTOTP": true,
+		},
 	}
 	resp, status, err = mcClient.UpdateUser(uri, tokenMisterX, mapData)
 	require.Nil(t, err)
@@ -126,7 +136,9 @@ func TestServer(t *testing.T) {
 	require.Nil(t, err, "login as mister X")
 	// disable 2fa for user1
 	mapData = map[string]interface{}{
-		"EnableTOTP": false,
+		"User": map[string]interface{}{
+			"EnableTOTP": false,
+		},
 	}
 	_, status, err = mcClient.UpdateUser(uri, tokenMisterX, mapData)
 	require.Nil(t, err)
@@ -200,10 +212,12 @@ func TestServer(t *testing.T) {
 	updateNewNickname := "mistery"
 	updateNewMetadata := "{timezone:PST,theme:Light}"
 	mapData = map[string]interface{}{
-		"Email":    updateNewEmail,
-		"Picture":  updateNewPicture,
-		"Nickname": updateNewNickname,
-		"Metadata": updateNewMetadata,
+		"User": map[string]interface{}{
+			"Email":    updateNewEmail,
+			"Picture":  updateNewPicture,
+			"Nickname": updateNewNickname,
+			"Metadata": updateNewMetadata,
+		},
 	}
 	_, status, err = mcClient.UpdateUser(uri, tokenMisterY, mapData)
 	require.Nil(t, err)
@@ -218,7 +232,9 @@ func TestServer(t *testing.T) {
 
 	// update user: disallowed fields
 	mapData = map[string]interface{}{
-		"Passhash": "uhoh",
+		"User": map[string]interface{}{
+			"Passhash": "uhoh",
+		},
 	}
 	_, status, err = mcClient.UpdateUser(uri, tokenMisterY, mapData)
 	require.NotNil(t, err)
@@ -965,6 +981,17 @@ func testEdgeboxOnlyOrgs(t *testing.T, uri string, mcClient *mctestclient.Client
 	require.Equal(t, http.StatusForbidden, status)
 
 	// cleanup org
-	_, err = mcClient.DeleteOrg(uri, userTok, &org)
-	require.Nil(t, err, "delete org")
+	testDeleteOrg(t, mcClient, uri, userTok, org.Name)
+	// cleanup user
+	testDeleteUser(t, mcClient, uri, userTok, user.Name)
+}
+
+func getUnitTestClientRuns() []mctestclient.ClientRun {
+	restClient := &ormclient.Client{}
+	cliClient := cliwrapper.NewClient()
+	cliClient.DebugLog = true
+	cliClient.SilenceUsage = true
+	cliClient.RunInline = true
+	cliClient.InjectRequiredArgs = true
+	return []mctestclient.ClientRun{restClient, cliClient}
 }

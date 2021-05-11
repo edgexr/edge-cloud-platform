@@ -33,6 +33,7 @@ type ApiCommand struct {
 	StreamOutIncremental bool
 	DataFlagOnly         bool
 	IsUpdate             bool
+	CliEmptyRequiredArgs string
 }
 
 type ApiGroup struct {

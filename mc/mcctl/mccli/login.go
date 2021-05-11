@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func getLoginCmd() *cobra.Command {
+func (s *RootCommand) getLoginCmd() *cobra.Command {
 	apiCmd := ormctl.MustGetCommand("Login")
-	cliCmd := ConvertCmd(apiCmd)
-	cliCmd.Run = runLogin(apiCmd.Path)
+	cliCmd := s.ConvertCmd(apiCmd)
+	cliCmd.Run = s.runLogin(apiCmd.Path)
 	return cliCmd.GenCmd()
 }
 
-func runLogin(path string) func(c *cli.Command, args []string) error {
+func (s *RootCommand) runLogin(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		input := cli.Input{
 			PasswordArg: "password",
@@ -31,27 +31,28 @@ func runLogin(path string) func(c *cli.Command, args []string) error {
 			return err
 		}
 		out := map[string]interface{}{}
-		st, err := client.PostJson(getUri()+path, "", &login, &out)
+		st, err := s.client.PostJson(s.getUri()+path, "", &login, &out)
 		if err != nil {
 			return err
 		}
+
+		wr := c.CobraCmd.OutOrStdout()
+		if cli.Parsable {
+			c.WriteOutput(wr, out, cli.OutputFormat)
+			return nil
+		}
+
 		token, admin, err := ormctl.ParseLoginResp(out, st, err)
 		if err != nil {
 			return err
 		}
-
-		if cli.Parsable {
-			c.WriteOutput(out, cli.OutputFormat)
-			return nil
-		}
-
-		fmt.Println("login successful")
+		fmt.Fprintln(wr, "login successful")
 		err = ioutil.WriteFile(getTokenFile(), []byte(token), 0600)
 		if err != nil {
-			fmt.Printf("warning, cannot save token file %s, %v\n", getTokenFile(), err)
-			fmt.Printf("token: %s\n", token)
+			fmt.Fprintf(wr, "warning, cannot save token file %s, %v\n", getTokenFile(), err)
+			fmt.Fprintf(wr, "token: %s\n", token)
 		} else {
-			fmt.Printf("token saved to %s\n", getTokenFile())
+			fmt.Fprintf(wr, "token saved to %s\n", getTokenFile())
 		}
 		if err == nil && admin {
 			ioutil.WriteFile(GetAdminFile(), []byte{}, 0600)
@@ -62,9 +63,9 @@ func runLogin(path string) func(c *cli.Command, args []string) error {
 	}
 }
 
-func getDevCloudletShowCommand() *cobra.Command {
+func (s *RootCommand) getDevCloudletShowCommand() *cobra.Command {
 	apiCmd := ormctl.MustGetCommand("ShowCloudlet")
-	cliCmd := ConvertCmd(apiCmd)
+	cliCmd := s.ConvertCmd(apiCmd)
 	cliCmd.Use = "cloudletshow"
 	cliCmd.Short = "View cloudlets"
 	return cliCmd.GenCmd()

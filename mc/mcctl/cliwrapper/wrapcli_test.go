@@ -4,6 +4,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -64,4 +65,22 @@ func testObjToArgs(t *testing.T, obj interface{}, expected []string) {
 
 func TestCliPath(t *testing.T) {
 	NewClient()
+}
+
+func TestInjectRequiredArgs(t *testing.T) {
+	cmd := *ormctl.MustGetCommand("CreateUser")
+	// add some more required args to cover different types,
+	// so we cover string, int, float, bool.
+	cmd.RequiredArgs = "name email iter passcracktimesec enabletotp"
+	cmd.AliasArgs += " iter=user.iter passcracktimesec=user.passcracktimesec"
+
+	args := []string{}
+	expectedArgs := append(args, `name=""`, `email=""`, `iter=0`, `passcracktimesec=0`, `enabletotp=false`)
+	actualArgs := injectRequiredArgs(args, &cmd)
+	require.Equal(t, expectedArgs, actualArgs)
+
+	args = []string{"email=foobar", "passcracktimesec=1"}
+	expectedArgs = append(args, `name=""`, `iter=0`, `enabletotp=false`)
+	actualArgs = injectRequiredArgs(args, &cmd)
+	require.Equal(t, expectedArgs, actualArgs)
 }

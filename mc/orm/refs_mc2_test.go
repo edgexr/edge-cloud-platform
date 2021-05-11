@@ -29,6 +29,7 @@ var _ = edgeproto.GetFields
 func badPermShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
 	_, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -49,6 +50,7 @@ var _ = edgeproto.GetFields
 func badPermShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
 	_, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -69,6 +71,7 @@ var _ = edgeproto.GetFields
 func badPermShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
 	_, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

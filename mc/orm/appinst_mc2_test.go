@@ -31,6 +31,7 @@ var _ = edgeproto.GetFields
 func badPermCreateAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermCreateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -51,6 +52,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermDeleteAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -71,6 +73,7 @@ var _ = edgeproto.GetFields
 func badPermRefreshAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermRefreshAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -91,6 +94,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermUpdateAppInst(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -111,6 +115,7 @@ var _ = edgeproto.GetFields
 func badPermShowAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInst)) {
 	_, status, err := testutil.TestPermShowAppInst(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -198,6 +203,7 @@ var _ = edgeproto.GetFields
 func badPermRequestAppInstLatency(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstLatency)) {
 	_, status, err := testutil.TestPermRequestAppInstLatency(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

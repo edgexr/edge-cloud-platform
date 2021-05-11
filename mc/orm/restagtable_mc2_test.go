@@ -30,6 +30,7 @@ var _ = edgeproto.GetFields
 func badPermCreateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermCreateResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -50,6 +51,7 @@ var _ = edgeproto.GetFields
 func badPermDeleteResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermDeleteResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -70,6 +72,7 @@ var _ = edgeproto.GetFields
 func badPermUpdateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermUpdateResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -90,6 +93,7 @@ var _ = edgeproto.GetFields
 func badPermShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -110,6 +114,7 @@ var _ = edgeproto.GetFields
 func badPermAddResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermAddResTag(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -130,6 +135,7 @@ var _ = edgeproto.GetFields
 func badPermRemoveResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
 	_, status, err := testutil.TestPermRemoveResTag(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
@@ -150,6 +156,7 @@ var _ = edgeproto.GetFields
 func badPermGetResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTableKey)) {
 	_, status, err := testutil.TestPermGetResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 

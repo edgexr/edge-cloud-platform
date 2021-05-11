@@ -8,7 +8,7 @@ import (
 
 func main() {
 	rootCmd := mccli.GetRootCommand()
-	err := rootCmd.Execute()
+	err := rootCmd.CobraCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
