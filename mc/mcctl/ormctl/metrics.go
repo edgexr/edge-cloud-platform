@@ -222,6 +222,7 @@ var ClientAppUsageMetricOptionalArgs = []string{
 	"locationtile",
 	"deviceos",
 	"devicemodel",
+	"devicecarrier",
 	"datanetworktype",
 	"rawdata",
 	"last",
@@ -249,6 +250,7 @@ var ClientCloudletUsageMetricOptionalArgs = []string{
 	"locationtile",
 	"deviceos",
 	"devicemodel",
+	"devicecarrier",
 	"datanetworktype",
 	"rawdata",
 	"last",
@@ -293,6 +295,7 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 	var locationtileSelectorPermission string
 	var deviceosSelectorPermission string
 	var devicemodelSelectorPermission string
+	var devicecarrierSelectorPermission string
 	var datanetworktypeSelectorPermission string
 	var availableMetrics string
 
@@ -301,12 +304,14 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency")
 		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicemodelSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		devicecarrierSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		availableMetrics = strings.Join(ormapi.ClientAppUsageSelectors, "\", \"")
 	case "cloudlet":
 		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")
 		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicemodelSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		devicecarrierSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")
 		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency")
 		availableMetrics = strings.Join(ormapi.ClientCloudletUsageSelectors, "\", \"")
 	default:
@@ -314,9 +319,10 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 	}
 
 	return map[string]string{
-		"locationtile":    fmt.Sprintf("Location tile. Format is: \"Quadrant-LatitudeIndex,LongitudeIndex-LocationTileLength\". Quadrant is the standard 1,2,3,4 sections in R2 where 1 is the top right quarter, 2 is the top left quarter, 3 is the bottom left quarter, and 4 is the bottom right quarter. Indices are the number of tiles away from the origin in the specified quadrant's direction. %s", locationtileSelectorPermission),
+		"locationtile":    fmt.Sprintf("Location tile. Provides the range of GPS coordinates for the location tile/square. Format is: \"LocationUnderLongitude,LocationUnderLatitude_LocationOverLongitude,LocationOverLatitude_LocationTileLength\". LocationUnder are the GPS coordinates of the corner closest to (0,0) of the location tile. LocationOver are the GPS coordinates of the corner farthest from (0,0) of the location tile. LocationTileLength is the length (in kilometers) of one side of the location tile square. %s", locationtileSelectorPermission),
 		"deviceos":        fmt.Sprintf("Device operating system. %s", deviceosSelectorPermission),
 		"devicemodel":     fmt.Sprintf("Device model. %s", devicemodelSelectorPermission),
+		"devicecarrier":   fmt.Sprintf("Device carrier. %s", devicecarrierSelectorPermission),
 		"datanetworktype": fmt.Sprintf("Data network type used by client device. %s", datanetworktypeSelectorPermission),
 		"rawdata":         "Set to true for additional raw data (not downsampled)",
 		"selector":        fmt.Sprintf("Comma separated list of metrics to view. Available metrics: \"%s\"", availableMetrics),
