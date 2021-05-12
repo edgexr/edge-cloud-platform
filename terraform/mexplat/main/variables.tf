@@ -125,6 +125,21 @@ variable "stun_domain_name" {
   default     = "stun"
 }
 
+variable "harbor_static_address_name" {
+  description = "Harbor static IP entity name"
+  default     = "harbor"
+}
+
+variable "harbor_instance_name" {
+  description = "Harbor registry instance name"
+  default     = "harbor"
+}
+
+variable "harbor_domain_name" {
+  description = "Harbor registry domain name"
+  default     = "harbor.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = string
