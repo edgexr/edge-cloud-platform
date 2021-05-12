@@ -13,13 +13,13 @@ type AuthzOrgCloudletPool struct {
 	allowAll        bool
 }
 
-func newAuthzOrgCloudletPool(ctx context.Context, region, username string) (*AuthzOrgCloudletPool, error) {
+func newAuthzOrgCloudletPool(ctx context.Context, region, username, action string) (*AuthzOrgCloudletPool, error) {
 	// This may be called by either a developer or an operator.
-	authOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceCloudletPools, ActionManage)
+	authOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceCloudletPools, action)
 	if err != nil {
 		return nil, err
 	}
-	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceUsers, ActionManage)
+	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceUsers, action)
 	if err != nil {
 		return nil, err
 	}

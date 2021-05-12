@@ -745,6 +745,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.CreateCloudletPoolAccessInvitation(uri, tokenOper, &op1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	// response should have been deleted as well,
+	// so developer will need to recreate it (this will fail if it still exists)
+	status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev, &op1accept)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 	// developer2 is able to create appinst/clusterinst on tc3 part of pool1
 	goodPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 	goodPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
@@ -770,11 +775,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 
-	// developer can also remove response
+	// developer can also remove response (should fail with not exist)
 	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev, &op1)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Response not found")
+	// developer can also remove response
 	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev2, &op2)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -782,6 +787,12 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.DeleteCloudletPoolAccessInvitation(uri, tokenOper, &op2)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+	// fail case: creating an invitation for an operator org
+	badInv := op1
+	badInv.Org = org3
+	status, err = mcClient.CreateCloudletPoolAccessInvitation(uri, tokenOper, &badInv)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Specified organization is not a developer organization")
 	// make sure everything is cleaned up
 	testShowCloudletPoolAccessInvitation(t, mcClient, uri, token)
 	testShowCloudletPoolAccessResponse(t, mcClient, uri, token)
