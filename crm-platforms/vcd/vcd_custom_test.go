@@ -39,14 +39,13 @@ func TestProdSec(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
 	if live {
 		fmt.Printf("TestProdSec:")
-
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		// Test setting ProductSection as a means of guest customization
 		// Create a test vm
 		// Create some Properties, let's start with the VMRole of the node as an example

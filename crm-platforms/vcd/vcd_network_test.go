@@ -36,7 +36,6 @@ func TestGetVdcNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
 	if live {
 		fmt.Printf("TestGetVdcNetworks...\n")
 		vdc, err := tv.GetVdc(ctx, testVcdClient)
@@ -62,7 +61,6 @@ func TestRMOrgVdcType2Networks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
 	if live {
 		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
@@ -106,12 +104,12 @@ func TestGetVappAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("Test error finding vapp %s\n", *vappName)
@@ -133,12 +131,12 @@ func TestGetVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("TestGetVappNetworks for %s\n", *vappName)
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
@@ -164,12 +162,12 @@ func TestGetVMNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("TestVMNetworks for %s\n", *vmName)
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
@@ -200,12 +198,13 @@ func TestGetVMAddr(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("error finding vm %s\n", *vmName)
@@ -288,7 +287,6 @@ func TestGetAllocatedIPs(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
 	if live {
 		vdc, err := tv.GetVdc(ctx, testVcdClient)
 
@@ -375,7 +373,6 @@ func TestIsoVdcNet(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-
 	if live {
 		fmt.Printf("TestIsoVdcNet\n")
 		vdc, err := tv.GetVdc(ctx, testVcdClient)
@@ -566,12 +563,13 @@ func TestAttachPortToServer(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("TestAttachPortToServer testsubnets to %s\n", *vappName)
 
 		// create 3 vapp internal (isolated) networks for vapp

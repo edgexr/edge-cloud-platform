@@ -80,12 +80,12 @@ func TestDumpVappNetworks(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("TestDumpVAppNetworks...")
 		vappName := "mex-cldlet3.gddt.mobiledgex.net-vapp"
 		//vappName := "mex-vmware-vcd.gddt.mobiledgex.net-vapp"
@@ -542,65 +542,71 @@ func createInternalNetwork(t *testing.T, ctx context.Context, vapp *govcd.VApp) 
 // Doesn't matter if the vapp is current powered on or off, this will delete it.
 //
 func testDeleteVApp(t *testing.T, ctx context.Context, name string) error {
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
+	live, ctx, err := InitVcdTestEnv()
 	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
 		return err
 	}
-	vapp, err := vdc.GetVAppByName(name, true)
-	if err != nil {
-		fmt.Printf("testDestroyVApp-E-error Getting Vapp %s by name: %s\n", name, err.Error())
-		return err
-	}
-	// Info only.
-	vappStatus, err := vapp.GetStatus()
-	if err != nil {
-		fmt.Printf("Error fetching status for vapp %s\n", name)
-		return err
-	}
-	fmt.Printf("Vapp %s currently in state: %s\n", name, vappStatus)
-	task, err := vapp.Undeploy()
-	if err != nil {
-		fmt.Printf("Error from vapp.Undploy the vapp  as : %s CONTINUE \n", err.Error())
-	} else {
-		err = task.WaitTaskCompletion()
+	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
 		if err != nil {
-			fmt.Printf("Error waiting undeploy of the vapp first %s CONTINUE\n", name)
-		}
-	}
-	vappStatus, err = vapp.GetStatus()
-	fmt.Printf("vapp  status now %s \n", vappStatus)
-	for _, tvm := range vapp.VApp.Children.VM {
-		vm, err := vapp.GetVMByName(tvm.Name, true)
-		if err != nil {
-			fmt.Printf("Error GetVMByName  as : %s\n", err.Error())
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
 			return err
 		}
-		vm.Undeploy()
-		fmt.Printf("Powering off vm %s for vapp deletion\n", vm.VM.Name)
-		task, err := vm.PowerOff()
+		vapp, err := vdc.GetVAppByName(name, true)
 		if err != nil {
-			fmt.Printf("Error from PowerOFf  vm %s  : %s Continue\n", vm.VM.Name, err.Error())
+			fmt.Printf("testDestroyVApp-E-error Getting Vapp %s by name: %s\n", name, err.Error())
+			return err
+		}
+		// Info only.
+		vappStatus, err := vapp.GetStatus()
+		if err != nil {
+			fmt.Printf("Error fetching status for vapp %s\n", name)
+			return err
+		}
+		fmt.Printf("Vapp %s currently in state: %s\n", name, vappStatus)
+		task, err := vapp.Undeploy()
+		if err != nil {
+			fmt.Printf("Error from vapp.Undploy the vapp  as : %s CONTINUE \n", err.Error())
 		} else {
 			err = task.WaitTaskCompletion()
 			if err != nil {
-				fmt.Printf("Error waiting for power off : %s Continue\n", err.Error())
+				fmt.Printf("Error waiting undeploy of the vapp first %s CONTINUE\n", name)
 			}
 		}
-		vm.Delete()
-		fmt.Printf("VM should be off\n")
-	}
-	fmt.Printf("Calling vapp.Delete()\n")
-	task, err = vapp.Delete()
-	if err != nil {
-		fmt.Printf("vapp.Delete failed: %s\n current status: %s Continue\n", err.Error(), vappStatus)
-	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		fmt.Printf("Wait task for delete vapp failed:  %s\n", err.Error())
-		return err
-	} else {
-		fmt.Printf("VApp %s Deleted.\n", name)
+		vappStatus, err = vapp.GetStatus()
+		fmt.Printf("vapp  status now %s \n", vappStatus)
+		for _, tvm := range vapp.VApp.Children.VM {
+			vm, err := vapp.GetVMByName(tvm.Name, true)
+			if err != nil {
+				fmt.Printf("Error GetVMByName  as : %s\n", err.Error())
+				return err
+			}
+			vm.Undeploy()
+			fmt.Printf("Powering off vm %s for vapp deletion\n", vm.VM.Name)
+			task, err := vm.PowerOff()
+			if err != nil {
+				fmt.Printf("Error from PowerOFf  vm %s  : %s Continue\n", vm.VM.Name, err.Error())
+			} else {
+				err = task.WaitTaskCompletion()
+				if err != nil {
+					fmt.Printf("Error waiting for power off : %s Continue\n", err.Error())
+				}
+			}
+			vm.Delete()
+			fmt.Printf("VM should be off\n")
+		}
+		fmt.Printf("Calling vapp.Delete()\n")
+		task, err = vapp.Delete()
+		if err != nil {
+			fmt.Printf("vapp.Delete failed: %s\n current status: %s Continue\n", err.Error(), vappStatus)
+		}
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			fmt.Printf("Wait task for delete vapp failed:  %s\n", err.Error())
+			return err
+		} else {
+			fmt.Printf("VApp %s Deleted.\n", name)
+		}
 	}
 	return nil
 }
@@ -692,12 +698,13 @@ func TestExtAddrVApp(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitVcdTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		require.Nil(t, err, "FindVapp")
 		fmt.Printf("TestVApp-Start create vapp named %s in vdc %s \n", *vappName, *vdcName)

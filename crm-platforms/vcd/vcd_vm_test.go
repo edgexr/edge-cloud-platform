@@ -96,12 +96,13 @@ func TestShowVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("vapp %s not found\n", *vappName)
@@ -266,12 +267,13 @@ func TestRMVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient, vdc)
 		if err != nil {
 			fmt.Printf("VM %s not found\n", *vmName)
@@ -315,12 +317,13 @@ func TestVMDisk(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("\nTestVMDisk Live: \n")
 		vapp, err := tv.FindVApp(ctx, *vappName, testVcdClient, vdc)
 		if err != nil {
@@ -544,12 +547,13 @@ func TestGetExtAddrOfVM(t *testing.T) {
 	live, ctx, err := InitVcdTestEnv()
 	require.Nil(t, err, "InitTestEnv")
 	defer testVcdClient.Disconnect()
-	vdc, err := tv.GetVdc(ctx, testVcdClient)
-	if err != nil {
-		fmt.Printf("GetVdc failed: %s\n", err.Error())
-		return
-	}
+
 	if live {
+		vdc, err := tv.GetVdc(ctx, testVcdClient)
+		if err != nil {
+			fmt.Printf("GetVdc failed: %s\n", err.Error())
+			return
+		}
 		fmt.Printf("TestGetExtAddrOfVM vmName %s netName %s\n", *vmName, *netName)
 		vm, err := tv.FindVMByName(ctx, *vmName, testVcdClient, vdc)
 		if err != nil {
