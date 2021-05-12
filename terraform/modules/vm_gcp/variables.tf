@@ -62,3 +62,7 @@ variable "ansible_ssh_user" {
   default     = "ansible"
 }
 
+variable "nat_ip"{
+  description = "External IP"
+  default     = null
+}

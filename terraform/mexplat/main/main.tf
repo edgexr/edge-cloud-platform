@@ -62,7 +62,7 @@ module "vault_a" {
   instance_name  = var.vault_a_vm_name
   environ_tag    = var.environ_tag
   zone           = var.vault_a_gcp_zone
-  boot_disk_size = 20
+  boot_disk_size = 100
   tags = [
     "mexplat-${var.environ_tag}",
     "vault-ac",
@@ -87,7 +87,7 @@ module "vault_b" {
   instance_name  = var.vault_b_vm_name
   environ_tag    = var.environ_tag
   zone           = var.vault_b_gcp_zone
-  boot_disk_size = 20
+  boot_disk_size = 100
   tags = [
     "mexplat-${var.environ_tag}",
     "vault-ac",
@@ -112,7 +112,7 @@ module "vault_c" {
   instance_name       = "${var.vault_c_vm_name}"
   environ_tag         = "${var.environ_tag}"
   zone                = "${var.vault_c_gcp_zone}"
-  boot_disk_size      = 20
+  boot_disk_size      = 100
   tags                = [
     "mexplat-${var.environ_tag}",
     "vault-ac",
@@ -224,3 +224,31 @@ resource "google_compute_firewall" "mc_notify" {
   ]
 }
 
+resource "google_compute_address" "harbor" {
+  name    = var.harbor_static_address_name
+}
+
+module "harbor" {
+  source = "../../modules/vm_gcp"
+
+  instance_name  = var.harbor_instance_name
+  environ_tag    = var.environ_tag
+  zone           = var.gcp_zone
+  boot_disk_size = 50
+  tags = [
+    "http-server",
+    "https-server",
+  ]
+  labels = {
+    "environ" = var.environ_tag
+    "console" = "true"
+    "owner"   = "ops"
+  }
+  nat_ip = "${google_compute_address.harbor.address}"
+}
+
+module "harbor_dns" {
+  source   = "../../modules/cloudflare_record"
+  hostname = var.harbor_domain_name
+  ip       = module.harbor.external_ip
+}
