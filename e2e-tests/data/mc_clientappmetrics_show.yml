@@ -6,7 +6,7 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    locationtile: 2-1713,5065-2
+    locationtile: -90.998922,30.984896_-91.016888,31.002985_2
   values:
     0s: 4
     5ms: 1
@@ -18,7 +18,7 @@
     max: 5.33
     min: 1.12
     numsamples: 5
-    signalstrength: 0
+    signalstrength: 5
     stddev: 1.6512211238958883
     variance: 2.7265312
 - name: device-metric
@@ -29,7 +29,8 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
+    devicecarrier: dmuus
     devicemodel: SM-G920F
     deviceos: Android
   values:
-    numsessions: 1
+    numsessions: 3

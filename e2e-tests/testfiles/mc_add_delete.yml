@@ -89,7 +89,7 @@ tests:
 - includefile: stream_edgeevent.yml
 
 - name: sleep, allow time for metrics to collect
-  actions: [sleep=2]
+  actions: [sleep=3]
 
 - name: Check client app metrics
   actions: [mcapi-showclientappmetrics]

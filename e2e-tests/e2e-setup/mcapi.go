@@ -859,6 +859,11 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 		if selector == "custom" {
 			continue
 		}
+		if selector == "latency" {
+			clientAppUsageQuery.LocationTile = targets.LocationTile
+		} else {
+			clientAppUsageQuery.LocationTile = ""
+		}
 		clientAppUsageQuery.Selector = selector
 		clientAppUsageMetric, status, err := mcClient.ShowClientAppUsageMetrics(uri, token, &clientAppUsageQuery)
 		checkMcErr("ShowClientAppUsage"+strings.Title(selector), status, err, rc)
@@ -870,10 +875,11 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *bool) *ormapi.AllMetrics {
 	allMetrics := ormapi.AllMetrics{Data: make([]ormapi.MetricData, 0)}
 	clientCloudletUsageQuery := ormapi.RegionClientCloudletUsageMetrics{
-		Region:   "local",
-		Cloudlet: targets.CloudletKey,
-		RawData:  true,
-		Last:     1,
+		Region:       "local",
+		Cloudlet:     targets.CloudletKey,
+		LocationTile: targets.LocationTile,
+		RawData:      true,
+		Last:         1,
 	}
 	for _, selector := range ormapi.ClientCloudletUsageSelectors {
 		clientCloudletUsageQuery.Selector = selector

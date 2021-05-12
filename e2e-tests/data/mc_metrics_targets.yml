@@ -22,3 +22,5 @@ clusterinstkey:
 cloudletkey:
   organization: dmuus
   name: dmuus-cloud-1
+
+locationtile: "-90.998922,30.984896_-91.016888,31.002985_2"

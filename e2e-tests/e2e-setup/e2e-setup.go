@@ -93,6 +93,7 @@ type MetricTargets struct {
 	AppInstKey     edgeproto.AppInstKey
 	ClusterInstKey edgeproto.ClusterInstKey
 	CloudletKey    edgeproto.CloudletKey
+	LocationTile   string // used for clientappusage and clientcloudletusage metrics to guarantee correct metric
 }
 
 type EventSearch struct {
