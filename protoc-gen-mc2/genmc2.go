@@ -775,7 +775,7 @@ var {{.MethodName}}Cmd = &ApiCommand{
 {{if .SetFields}}
 func Set{{.MethodName}}Fields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("{{.InName}}")]
+	obj := in["{{.InName}}"]
 	if obj == nil {
 		return
 	}

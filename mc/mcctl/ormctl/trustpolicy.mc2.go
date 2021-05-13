@@ -77,7 +77,7 @@ var UpdateTrustPolicyCmd = &ApiCommand{
 
 func SetUpdateTrustPolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("TrustPolicy")]
+	obj := in["TrustPolicy"]
 	if obj == nil {
 		return
 	}

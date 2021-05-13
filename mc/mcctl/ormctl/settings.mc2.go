@@ -41,7 +41,7 @@ var UpdateSettingsCmd = &ApiCommand{
 
 func SetUpdateSettingsFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("Settings")]
+	obj := in["Settings"]
 	if obj == nil {
 		return
 	}

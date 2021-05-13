@@ -99,7 +99,7 @@ var UpdateAppInstCmd = &ApiCommand{
 
 func SetUpdateAppInstFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("AppInst")]
+	obj := in["AppInst"]
 	if obj == nil {
 		return
 	}

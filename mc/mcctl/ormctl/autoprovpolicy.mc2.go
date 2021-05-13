@@ -76,7 +76,7 @@ var UpdateAutoProvPolicyCmd = &ApiCommand{
 
 func SetUpdateAutoProvPolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("AutoProvPolicy")]
+	obj := in["AutoProvPolicy"]
 	if obj == nil {
 		return
 	}

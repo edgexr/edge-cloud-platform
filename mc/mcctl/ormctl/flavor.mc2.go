@@ -71,7 +71,7 @@ var UpdateFlavorCmd = &ApiCommand{
 
 func SetUpdateFlavorFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("Flavor")]
+	obj := in["Flavor"]
 	if obj == nil {
 		return
 	}

@@ -1038,7 +1038,6 @@ func getOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, name string
 	orgs, status, err := mcClient.ShowOrg(uri, token)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	fmt.Printf("got orgs: %v\n", orgs)
 	for _, org := range orgs {
 		if org.Name == name {
 			return &org

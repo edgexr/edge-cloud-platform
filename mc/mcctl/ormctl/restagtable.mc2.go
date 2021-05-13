@@ -71,7 +71,7 @@ var UpdateResTagTableCmd = &ApiCommand{
 
 func SetUpdateResTagTableFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("ResTagTable")]
+	obj := in["ResTagTable"]
 	if obj == nil {
 		return
 	}
