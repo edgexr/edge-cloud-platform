@@ -76,7 +76,7 @@ var UpdateVMPoolCmd = &ApiCommand{
 
 func SetUpdateVMPoolFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("VMPool")]
+	obj := in["VMPool"]
 	if obj == nil {
 		return
 	}

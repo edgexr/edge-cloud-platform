@@ -71,7 +71,7 @@ var UpdateAutoScalePolicyCmd = &ApiCommand{
 
 func SetUpdateAutoScalePolicyFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("AutoScalePolicy")]
+	obj := in["AutoScalePolicy"]
 	if obj == nil {
 		return
 	}

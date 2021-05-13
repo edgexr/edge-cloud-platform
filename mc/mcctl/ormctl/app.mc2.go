@@ -75,7 +75,7 @@ var UpdateAppCmd = &ApiCommand{
 
 func SetUpdateAppFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("App")]
+	obj := in["App"]
 	if obj == nil {
 		return
 	}

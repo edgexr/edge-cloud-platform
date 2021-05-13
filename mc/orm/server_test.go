@@ -28,6 +28,8 @@ func TestServer(t *testing.T) {
 	uri := "http://" + addr + "/api/v1"
 	ctx := log.StartTestSpan(context.Background())
 
+	vault.DefaultJwkRefreshDelay = time.Hour
+
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
 

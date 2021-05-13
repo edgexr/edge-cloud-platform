@@ -81,7 +81,7 @@ var UpdateCloudletCmd = &ApiCommand{
 
 func SetUpdateCloudletFields(in map[string]interface{}) {
 	// get map for edgeproto object in region struct
-	obj := in[strings.ToLower("Cloudlet")]
+	obj := in["Cloudlet"]
 	if obj == nil {
 		return
 	}
