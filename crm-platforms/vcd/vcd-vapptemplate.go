@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v2/govcd"
-
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
-
-// vapptemplate related operations
 
 // Return requested vdc template
 func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {

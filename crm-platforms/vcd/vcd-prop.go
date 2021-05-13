@@ -54,11 +54,6 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Optional HTTP URL to retrieve template",
 		Internal:    true,
 	},
-	"VCD_ALLOW_APIGW_IMAGE_UPLOAD": {
-		Description: "If value is \"true\", VM App images can be uploaded via an API GW",
-		Value:       "true",
-		Internal:    true,
-	},
 	"VCD_NSX_TYPE": {
 		Description: "NSX-T or NSX-V",
 		Mandatory:   true,
@@ -286,13 +281,4 @@ func (v *VcdPlatform) GetLeaseOverride() bool {
 func (v *VcdPlatform) GetTemplateUrl() string {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_TEMPLATE_URL")
 	return val
-}
-
-func (v *VcdPlatform) GetAllowApiGwImageUpload() bool {
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_ALLOW_APIGW_IMAGE_UPLOAD")
-	if val == "true" {
-		return true
-	} else {
-		return false
-	}
 }
