@@ -1,6 +1,7 @@
 package ormapi
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -554,4 +555,75 @@ type AlertReceiver struct {
 	Cloudlet edgeproto.CloudletKey `json:",omitempty"`
 	// AppInst spec for alerts
 	AppInst edgeproto.AppInstKey `json:",omitempty"`
+}
+
+// Reporter to generate period reports
+type Reporter struct {
+	// Reporter name. Can only contain letters, digits, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen
+	// required: true
+	Name string `gorm:"primary_key;type:citext"`
+	// Organization name
+	// required: true
+	Org string `gorm:"primary_key;type:citext REFERENCES organizations(name)"`
+	// Email to send generated reports
+	Email string `json:",omitempty"`
+	// Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth
+	Schedule edgeproto.ReportSchedule `json:",omitempty"`
+	// Start date (UTC) when the report is scheduled to be generated (Default: today)
+	StartScheduleDateUTC time.Time `json:",omitempty"`
+	// Date (UTC) when the next report is scheduled to be generated (for internal use only)
+	// read only: true
+	NextScheduleDateUTC time.Time `json:",omitempty"`
+	// Timezone in which to show the reports, defaults to either user setting or UTC
+	Timezone string
+	// User name (for internal use only)
+	// read only: true
+	Username string
+}
+
+type DownloadReport struct {
+	// Organization name
+	// required: true
+	Org string
+	// Name of the report file to be downloaded
+	// required: true
+	Filename string
+}
+
+type GenerateReport struct {
+	// Organization name
+	// required: true
+	Org string
+	// Absolute time to start report capture in UTC
+	// required: true
+	StartTimeUTC time.Time `json:",omitempty"`
+	// Absolute time to end report capture in UTC
+	// required: true
+	EndTimeUTC time.Time `json:",omitempty"`
+	// Region name (for internal use only)
+	// read only: true
+	Region string
+	// Timezone in which to show the reports, defaults to either user setting or UTC
+	Timezone string
+}
+
+func GetReportFileName(reporterName string, report *GenerateReport) string {
+	// File name should be of this format: "<orgname>_<startdate>_<enddate>_<reportername>_report.pdf"
+	startDate := report.StartTimeUTC.Format("20060102") // YYYYMMDD
+	endDate := report.EndTimeUTC.Format("20060102")
+	subStr := ""
+	if reporterName != "" {
+		subStr = "_" + reporterName
+	}
+	return report.Org + "_" + startDate + "_" + endDate + subStr + "_report.pdf"
+}
+
+func GetOrgFromReportFileName(fileName string) string {
+	pattern := `(.*)_\d{8}_\d{8}_[a-zA-Z0-9-.]*_report.pdf`
+	regObj := regexp.MustCompile(pattern)
+	allStrs := regObj.FindStringSubmatch(fileName)
+	if len(allStrs) < 2 {
+		return ""
+	}
+	return allStrs[1]
 }

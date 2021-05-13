@@ -2,6 +2,7 @@ mcs:
 - name: mc1
   addr: {{mc}}:443
   hostname: {{mc}}
+  deploymenttag: "{{deploy-env}}"
 
 crms:
 - name: crm1

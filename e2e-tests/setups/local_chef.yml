@@ -54,6 +54,7 @@ mcs:
   hostname: "127.0.0.1"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
   apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: "local"
   envvars:
     E2ETEST_TLS: true
 

@@ -2061,6 +2061,97 @@ func (s *Client) ShowOrgCloudletInfo(uri string, token string, in *ormapi.OrgClo
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group Report
+
+func (s *Client) GenerateReport(uri string, token string, in *ormapi.GenerateReport) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("GenerateReport")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowReport(uri string, token string, in *ormapi.DownloadReport) ([]string, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []string
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowReport")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DownloadReport(uri string, token string, in *ormapi.DownloadReport) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("DownloadReport")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+// Generating group Reporter
+
+func (s *Client) CreateReporter(uri string, token string, in *ormapi.Reporter) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("CreateReporter")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UpdateReporter(uri string, token string, in map[string]interface{}) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("UpdateReporter")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteReporter(uri string, token string, in *ormapi.Reporter) (int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+
+	apiCmd := ormctl.MustGetCommand("DeleteReporter")
+	s.ClientRun.Run(apiCmd, &rundata)
+	return rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowReporter(uri string, token string, in *ormapi.Reporter) ([]ormapi.Reporter, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []ormapi.Reporter
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowReporter")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group Repos
 
 func (s *Client) ArtifactoryResync(uri string, token string) (int, error) {

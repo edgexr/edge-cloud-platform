@@ -38,6 +38,7 @@ var hostname = flag.String("hostname", "", "Unique hostname")
 var billingPlatform = flag.String("billingPlatform", "fake", "Billing platform to use")
 var usageCollectionInterval = flag.Duration("usageCollectionInterval", -1*time.Second, "Collection interval")
 var usageCheckpointInterval = flag.String("usageCheckpointInterval", "MONTH", "Checkpointing interval(must be same as controller's checkpointInterval)")
+var staticDir = flag.String("staticDir", "/", "Path to static data")
 
 var sigChan chan os.Signal
 var nodeMgr node.NodeMgr
@@ -77,6 +78,8 @@ func main() {
 		AlertmgrResolveTimout:   *alertMgrResolveTimeout,
 		UsageCheckpointInterval: *usageCheckpointInterval,
 		DomainName:              nodeMgr.CommonName(),
+		StaticDir:               *staticDir,
+		DeploymentTag:           nodeMgr.DeploymentTag,
 	}
 	server, err := orm.RunServer(&config)
 	if err != nil {
@@ -91,6 +94,10 @@ func main() {
 	}
 
 	go orm.CollectBillingUsage(*usageCollectionInterval)
+
+	// start report generation thread
+	orm.InitReporter()
+	go orm.GenerateReports()
 
 	// wait until process is killed/interrupted
 	signal.Notify(sigChan, os.Interrupt)

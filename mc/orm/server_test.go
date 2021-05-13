@@ -47,6 +47,7 @@ func TestServer(t *testing.T) {
 		vaultConfig:             vaultConfig,
 		UsageCheckpointInterval: "MONTH",
 		BillingPlatform:         billing.BillingTypeFake,
+		DeploymentTag:           "local",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

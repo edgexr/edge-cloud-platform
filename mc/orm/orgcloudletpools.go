@@ -575,22 +575,30 @@ func showCloudletPoolAccess(c echo.Context, typ string) error {
 	if err := c.Bind(&filter); err != nil {
 		return bindErr(c, err)
 	}
+	out, err := showCloudletPoolAccessObj(ctx, claims.Username, &filter, typ)
+	if err != nil {
+		return err
+	}
+	return setReply(c, nil, out)
+}
+
+func showCloudletPoolAccessObj(ctx context.Context, username string, filter *ormapi.OrgCloudletPool, typ string) ([]ormapi.OrgCloudletPool, error) {
 	// granted and pending are not types in the database,
 	// they're just used here for special cases.
 	if typ != accessTypeGranted && typ != accessTypePending {
 		filter.Type = typ
 	}
 
-	authz, err := newAuthzOrgCloudletPool(ctx, filter.Region, claims.Username, ActionView)
+	authz, err := newAuthzOrgCloudletPool(ctx, filter.Region, username, ActionView)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ops := []ormapi.OrgCloudletPool{}
 	db := loggedDB(ctx)
 	err = db.Where(&filter).Find(&ops).Error
 	if err != nil {
-		return dbErr(err)
+		return nil, dbErr(err)
 	}
 
 	retops := []ormapi.OrgCloudletPool{}
@@ -611,7 +619,7 @@ func showCloudletPoolAccess(c echo.Context, typ string) error {
 		// filter invitations to ones without responses
 		retops = getAccessPending(retops)
 	}
-	return setReply(c, nil, retops)
+	return retops, nil
 
 }
 

@@ -80,6 +80,8 @@ type ServerConfig struct {
 	AlertmgrResolveTimout   time.Duration
 	UsageCheckpointInterval string
 	DomainName              string
+	StaticDir               string
+	DeploymentTag           string
 }
 
 var DefaultDBUser = "mcuser"
@@ -137,6 +139,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		serverConfig.LDAPPassword = os.Getenv("LDAP_PASSWORD")
 	}
 	allRegionCaches.init()
+
+	if config.DeploymentTag == "" {
+		return nil, fmt.Errorf("Missing deployment tag")
+	}
 
 	ctx, span, err := nodeMgr.Init(node.NodeTypeMC, node.CertIssuerGlobal, node.WithName(config.Hostname), node.WithCloudletPoolLookup(&allRegionCaches))
 	if err != nil {
@@ -692,6 +698,14 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	//   403: forbidden
 	//   404: notFound
 	auth.POST("/alertreceiver/show", ShowAlertReceiver)
+
+	auth.POST("/reporter/create", CreateReporter)
+	auth.POST("/reporter/update", UpdateReporter)
+	auth.POST("/reporter/delete", DeleteReporter)
+	auth.POST("/reporter/show", ShowReporter)
+	auth.POST("/report/generate", GenerateReport)
+	auth.POST("/report/show", ShowReport)
+	auth.POST("/report/download", DownloadReport)
 
 	// Use GET method for websockets as thats the method used
 	// in setting up TCP connection by most of the clients
