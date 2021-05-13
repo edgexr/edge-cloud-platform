@@ -315,6 +315,7 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
 
 - name: mc2
   addr: "127.0.0.1:9901"
@@ -333,6 +334,7 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
+  staticdir: "{{staticdir}}"
 
 sqls:
 - name: sql1

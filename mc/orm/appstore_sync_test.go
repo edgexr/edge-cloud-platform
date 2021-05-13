@@ -144,6 +144,7 @@ func TestAppStoreApi(t *testing.T) {
 		LocalVault:              true,
 		UsageCheckpointInterval: "MONTH",
 		BillingPlatform:         billing.BillingTypeFake,
+		DeploymentTag:           "local",
 	}
 
 	server, err := RunServer(&config)

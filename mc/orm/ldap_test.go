@@ -37,6 +37,7 @@ func TestLDAPServer(t *testing.T) {
 		LDAPPassword:            "gitlab",
 		UsageCheckpointInterval: "MONTH",
 		BillingPlatform:         billing.BillingTypeFake,
+		DeploymentTag:           "local",
 	}
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")

@@ -40,6 +40,16 @@ func ValidName(name string) error {
 	return nil
 }
 
+func ValidNameNoUnderscore(name string) error {
+	if err := ValidName(name); err != nil {
+		return err
+	}
+	if strings.Contains(name, "_") {
+		return fmt.Errorf("Name cannot contain _")
+	}
+	return nil
+}
+
 // Gitlab groups can only contain letters, digits, _ . -
 // cannot start with '-' or end in '.', '.git' or '.atom'
 // This combines the rules for both name and path.

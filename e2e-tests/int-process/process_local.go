@@ -81,6 +81,10 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--alertMgrApiAddr")
 		args = append(args, p.AlertMgrApiAddr)
 	}
+	if p.DeploymentTag != "" {
+		args = append(args, "--deploymentTag")
+		args = append(args, p.DeploymentTag)
+	}
 	args = append(args, "--hostname", p.Name)
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)

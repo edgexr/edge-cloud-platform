@@ -23,6 +23,7 @@ type MC struct {
 	AlertMgrApiAddr         string
 	ApiTlsCert              string
 	ApiTlsKey               string
+	DeploymentTag           string
 	TLS                     process.TLSCerts
 	cmd                     *exec.Cmd
 }

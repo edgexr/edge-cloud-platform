@@ -13,7 +13,6 @@ var UserComments = map[string]string{
 }
 
 var CreateUserApiKeyComments = map[string]string{
-	"userapikey.id":          `API key ID used as an identifier for API keys`,
 	"userapikey.description": `Description of the purpose of this API key`,
 	"userapikey.org":         `Org to which API key has permissions to access its objects`,
 	"apikey":                 `API key`,
@@ -23,7 +22,6 @@ var CreateUserApiKeyComments = map[string]string{
 }
 
 var UserApiKeyComments = map[string]string{
-	"id":          `API key ID used as an identifier for API keys`,
 	"description": `Description of the purpose of this API key`,
 	"org":         `Org to which API key has permissions to access its objects`,
 }
@@ -156,4 +154,25 @@ var AlertReceiverComments = map[string]string{
 	"slackwebhook":            `Custom slack webhook`,
 	"pagerdutyintegrationkey": `PagerDuty integration key`,
 	"pagerdutyapiversion":     `PagerDuty API version`,
+}
+
+var ReporterComments = map[string]string{
+	"name":                 `Reporter name. Can only contain letters, digits, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"org":                  `Organization name`,
+	"email":                `Email to send generated reports`,
+	"schedule":             `Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth`,
+	"startscheduledateutc": `Start date (UTC) when the report is scheduled to be generated (Default: today)`,
+	"timezone":             `Timezone in which to show the reports, defaults to either user setting or UTC`,
+}
+
+var DownloadReportComments = map[string]string{
+	"org":      `Organization name`,
+	"filename": `Name of the report file to be downloaded`,
+}
+
+var GenerateReportComments = map[string]string{
+	"org":          `Organization name`,
+	"starttimeutc": `Absolute time to start report capture in UTC`,
+	"endtimeutc":   `Absolute time to end report capture in UTC`,
+	"timezone":     `Timezone in which to show the reports, defaults to either user setting or UTC`,
 }

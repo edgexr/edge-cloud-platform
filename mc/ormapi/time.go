@@ -14,6 +14,10 @@ const (
 	Millisecond       = 1000 * Second
 	Microsecond       = 1000 * Millisecond
 	Nanosecond        = 1000 * Microsecond
+
+	TimeFormatDate        = "2006/01/02"
+	TimeFormatDateTime    = "01-02 15:04:05"
+	TimeFormatDayDateTime = "Mon Jan 2 15:04:05"
 )
 
 // It is intentional to not define custom marshalers for JSON.
@@ -79,4 +83,32 @@ func (s *DurationMicroseconds) UnmarshalYAML(unmarshal func(interface{}) error) 
 func (s DurationMicroseconds) MarshalYAML() (interface{}, error) {
 	dur := time.Duration(s * 1000)
 	return dur.String(), nil
+}
+
+func DateCmpUTC(date1, date2 time.Time) int {
+	y1, m1, d1 := date1.UTC().Date()
+	y2, m2, d2 := date2.UTC().Date()
+	if y1-y2 != 0 {
+		return y1 - y2
+	}
+	if m1-m2 != 0 {
+		return int(m1 - m2)
+	}
+	if d1-d2 != 0 {
+		return d1 - d2
+	}
+	return 0
+}
+
+func IsUTCTimezone(date time.Time) bool {
+	tz, offset := date.Zone()
+	if tz != "UTC" || offset != 0 {
+		return false
+	}
+	return true
+}
+
+func StripTimeUTC(date time.Time) time.Time {
+	utcDate := date.UTC()
+	return time.Date(utcDate.Year(), utcDate.Month(), utcDate.Day(), 0, 0, 0, 0, time.UTC)
 }
