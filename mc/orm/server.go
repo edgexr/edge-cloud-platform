@@ -47,6 +47,8 @@ type Server struct {
 	notifyServer *notify.ServerMgr
 	notifyClient *notify.Client
 	sqlListener  *pq.Listener
+	ldapServer   *ldap.Server
+	done         chan struct{}
 }
 
 type ServerConfig struct {
@@ -110,6 +112,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		config.NodeMgr = &node.NodeMgr{}
 	}
 	nodeMgr = config.NodeMgr
+	server.done = make(chan struct{})
 
 	dbuser := os.Getenv("db_username")
 	dbpass := os.Getenv("db_password")
@@ -188,7 +191,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "vault auth", "type", config.vaultConfig.Auth.Type())
 	server.initJWKDone = make(chan struct{}, 1)
-	InitVault(config.vaultConfig, server.initJWKDone)
+	InitVault(config.vaultConfig, server.done, server.initJWKDone)
 
 	switch serverConfig.BillingPlatform {
 	case "fake":
@@ -253,7 +256,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	}
 
 	server.initDataDone = make(chan error, 1)
-	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.initDataDone)
+	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.done, server.initDataDone)
 
 	if config.AlertMgrAddr != "" {
 		tlsConfig, err := nodeMgr.GetPublicClientTlsConfig(ctx)
@@ -772,6 +775,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	handler := &ldapHandler{}
 	ldapServer.BindFunc("", handler)
 	ldapServer.SearchFunc("", handler)
+	server.ldapServer = ldapServer
 	go func() {
 		var err error
 		if config.ApiTlsCertFile != "" {
@@ -792,12 +796,12 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	if err != nil {
 		return nil, err
 	}
-	gitlabSync.Start()
-	artifactorySync.Start()
+	gitlabSync.Start(server.done)
+	artifactorySync.Start(server.done)
 	if AlertManagerServer != nil {
 		AlertManagerServer.Start()
 	}
-	sqlListener, err := initSqlListener(ctx)
+	sqlListener, err := initSqlListener(ctx, server.done)
 	if err != nil {
 		return nil, err
 	}
@@ -836,6 +840,10 @@ func (s *Server) WaitUntilReady() error {
 
 func (s *Server) Stop() {
 	s.stopInitData = true
+	close(s.done)
+	if s.ldapServer != nil {
+		close(s.ldapServer.Quit)
+	}
 	if s.echo != nil {
 		s.echo.Close()
 	}
