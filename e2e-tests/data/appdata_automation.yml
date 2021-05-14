@@ -29,7 +29,6 @@ cloudlets:
 - key:
     organization: dmuus
     name: tmocloud-1
-  accessuri: cloud1.tmo
   location:
     latitude: 31
     longitude: -91
@@ -38,7 +37,6 @@ cloudlets:
 - key:
     organization: dmuus
     name: tmocloud-2
-  accessuri: cloud2.tmo
   location:
     latitude: 35
     longitude: -95
@@ -47,7 +45,6 @@ cloudlets:
 - key:
     organization: GDDT
     name: automationBuckhornCloudlet 
-  accessuri: cloud3.tmo
   location:
     latitude: 35
     longitude: -95
@@ -56,7 +53,6 @@ cloudlets:
 - key:
     organization: dmuus
     name: automationBeaconCloudlet
-  accessuri: cloud4.tmo
   location:
     latitude: 35
     longitude: -95
@@ -65,7 +61,6 @@ cloudlets:
 - key:
     organization: dmuus
     name: automationHawkinsCloudlet
-  accessuri: cloud5.tmo
   location:
     latitude: 35
     longitude: -95
@@ -74,7 +69,6 @@ cloudlets:
 - key:
     organization: att
     name: attcloud-1
-  accessuri: cloud6.tmo
   location:
     latitude: 35
     longitude: -95
@@ -83,7 +77,6 @@ cloudlets:
 - key:
     organization: dmuus
     name: automationProdHawkinsCloudlet
-  accessuri: cloud7.tmo
   location:
     latitude: 35
     longitude: -95

@@ -8,14 +8,13 @@ import (
 
 type MC struct {
 	process.Common          `yaml:",inline"`
+	process.NodeCommon      `yaml:",inline"`
 	Addr                    string
 	SqlAddr                 string
-	VaultAddr               string
 	RolesFile               string
 	LdapAddr                string
 	NotifySrvAddr           string
 	ConsoleProxyAddr        string
-	UseVaultPki             bool
 	AlertResolveTimeout     string
 	BillingPlatform         string
 	UsageCollectionInterval string
@@ -23,8 +22,7 @@ type MC struct {
 	AlertMgrApiAddr         string
 	ApiTlsCert              string
 	ApiTlsKey               string
-	DeploymentTag           string
-	TLS                     process.TLSCerts
+	StaticDir               string
 	cmd                     *exec.Cmd
 }
 type Sql struct {
@@ -37,34 +35,27 @@ type Sql struct {
 	cmd            *exec.Cmd
 }
 type Shepherd struct {
-	process.Common `yaml:",inline"`
-	NotifyAddrs    string
-	Platform       string
-	VaultAddr      string
-	MetricsAddr    string
-	PhysicalName   string
-	CloudletKey    string
-	UseVaultPki    bool
-	TLS            process.TLSCerts
-	cmd            *exec.Cmd
-	Span           string
-	Region         string
-	AppDNSRoot     string
-	DeploymentTag  string
-	ChefServerPath string
-	AccessKeyFile  string
-	AccessApiAddr  string
+	process.Common     `yaml:",inline"`
+	process.NodeCommon `yaml:",inline"`
+	NotifyAddrs        string
+	Platform           string
+	MetricsAddr        string
+	PhysicalName       string
+	CloudletKey        string
+	cmd                *exec.Cmd
+	Span               string
+	Region             string
+	AppDNSRoot         string
+	ChefServerPath     string
 }
 type AutoProv struct {
-	process.Common `yaml:",inline"`
-	NotifyAddrs    string
-	CtrlAddrs      string
-	VaultAddr      string
-	InfluxAddr     string
-	Region         string
-	UseVaultPki    bool
-	TLS            process.TLSCerts
-	cmd            *exec.Cmd
+	process.Common     `yaml:",inline"`
+	process.NodeCommon `yaml:",inline"`
+	NotifyAddrs        string
+	CtrlAddrs          string
+	InfluxAddr         string
+	Region             string
+	cmd                *exec.Cmd
 }
 
 type PromE2e struct {

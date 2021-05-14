@@ -112,20 +112,22 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 			Hostname: cloudlet.Key.Name,
 			EnvVars:  envVars,
 		},
-		TLS: process.TLSCerts{
-			ServerCert: tlsCertFile,
-			ServerKey:  tlsKeyFile,
-			CACert:     tlsCAFile,
+		NodeCommon: process.NodeCommon{
+			TLS: process.TLSCerts{
+				ServerCert: tlsCertFile,
+				ServerKey:  tlsKeyFile,
+				CACert:     tlsCAFile,
+			},
+			VaultAddr:     vaultAddr,
+			UseVaultPki:   useVaultPki,
+			DeploymentTag: deploymentTag,
+			AccessApiAddr: accessApiAddr,
 		},
-		VaultAddr:      vaultAddr,
 		PhysicalName:   cloudlet.PhysicalName,
 		Span:           span,
 		Region:         region,
-		UseVaultPki:    useVaultPki,
 		AppDNSRoot:     appDNSRoot,
-		DeploymentTag:  deploymentTag,
 		ChefServerPath: chefServerPath,
-		AccessApiAddr:  accessApiAddr,
 	}, opts, nil
 }
 
