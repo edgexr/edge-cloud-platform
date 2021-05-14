@@ -3,7 +3,6 @@ orgs:
   type: operator
   address: mexdev headquarters
   phone: 123-123-1234
-  adminusername: user1
 
 regiondata:
 - region: local
@@ -12,7 +11,6 @@ regiondata:
     - key:
         organization: mexdev
         name: chef-test-1
-      accessuri: chef-test-1.tmo
       location:
         latitude: 31
         longitude: -91

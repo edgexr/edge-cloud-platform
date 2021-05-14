@@ -1,7 +1,3 @@
-config:
-  skipverifyemail: true
-  notifyemailaddress: support@mobiledgex.com
-
 controllers:
 - region: local
   address: "127.0.0.1:55001"
@@ -17,13 +13,11 @@ orgs:
   type: developer
   address: mobiledgex
   phone: 123-123-1234
-  adminusername: mexadmin
   publicimages: true
 - name: user3org
   type: developer
   address: enterprise headquarters
   phone: 123-123-1234
-  adminusername: mexadmin
   parent: user3org
 
 billingorgs:
@@ -38,7 +32,6 @@ billingorgs:
   state: FL
   postalcode: 32604
   phone: 123-123-1234
-  currency: USD
   children: user3org
 
 roles:

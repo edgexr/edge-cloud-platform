@@ -22,7 +22,7 @@ import (
 // Master Controller
 
 func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
-	args := []string{}
+	args := p.GetNodeMgrArgs()
 	if p.Addr != "" {
 		args = append(args, "--addr")
 		args = append(args, p.Addr)
@@ -31,11 +31,6 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--sqlAddr")
 		args = append(args, p.SqlAddr)
 	}
-	if p.VaultAddr != "" {
-		args = append(args, "--vaultAddr")
-		args = append(args, p.VaultAddr)
-	}
-	args = p.TLS.AddInternalPkiArgs(args)
 	if p.TLS.ClientCert != "" {
 		args = append(args, "--clientCert")
 		args = append(args, p.TLS.ClientCert)
@@ -62,9 +57,6 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--alertResolveTimeout")
 		args = append(args, p.AlertResolveTimeout)
 	}
-	if p.UseVaultPki {
-		args = append(args, "--useVaultPki")
-	}
 	if p.BillingPlatform != "" {
 		args = append(args, "--billingPlatform")
 		args = append(args, p.BillingPlatform)
@@ -81,9 +73,8 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--alertMgrApiAddr")
 		args = append(args, p.AlertMgrApiAddr)
 	}
-	if p.DeploymentTag != "" {
-		args = append(args, "--deploymentTag")
-		args = append(args, p.DeploymentTag)
+	if p.StaticDir != "" {
+		args = append(args, "--staticDir", p.StaticDir)
 	}
 	args = append(args, "--hostname", p.Name)
 	options := process.StartOptions{}
@@ -266,7 +257,7 @@ func (p *Sql) runPsql(args []string) ([]byte, error) {
 }
 
 func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
-	args := []string{}
+	args := p.GetNodeMgrArgs()
 	if p.Name != "" {
 		args = append(args, "--name")
 		args = append(args, p.Name)
@@ -279,10 +270,6 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--platform")
 		args = append(args, p.Platform)
 	}
-	if p.VaultAddr != "" {
-		args = append(args, "--vaultAddr")
-		args = append(args, p.VaultAddr)
-	}
 	if p.PhysicalName != "" {
 		args = append(args, "--physicalName")
 		args = append(args, p.PhysicalName)
@@ -291,7 +278,6 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--cloudletKey")
 		args = append(args, p.CloudletKey)
 	}
-	args = p.TLS.AddInternalPkiArgs(args)
 	if p.Span != "" {
 		args = append(args, "--span")
 		args = append(args, p.Span)
@@ -299,9 +285,6 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 	if p.Region != "" {
 		args = append(args, "--region")
 		args = append(args, p.Region)
-	}
-	if p.UseVaultPki {
-		args = append(args, "--useVaultPki")
 	}
 	if p.MetricsAddr != "" {
 		args = append(args, "--metricsAddr")
@@ -311,19 +294,9 @@ func (p *Shepherd) GetArgs(opts ...process.StartOp) []string {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
 	}
-	if p.DeploymentTag != "" {
-		args = append(args, "--deploymentTag")
-		args = append(args, p.DeploymentTag)
-	}
 	if p.ChefServerPath != "" {
 		args = append(args, "--chefServerPath")
 		args = append(args, p.ChefServerPath)
-	}
-	if p.AccessKeyFile != "" {
-		args = append(args, "--accessKeyFile", p.AccessKeyFile)
-	}
-	if p.AccessApiAddr != "" {
-		args = append(args, "--accessApiAddr", p.AccessApiAddr)
 	}
 
 	options := process.StartOptions{}
@@ -371,25 +344,18 @@ func (p *Shepherd) Wait() {
 
 func (p *AutoProv) StartLocal(logfile string, opts ...process.StartOp) error {
 	args := []string{"--notifyAddrs", p.NotifyAddrs}
+	args = append(args, p.GetNodeMgrArgs()...)
 	if p.CtrlAddrs != "" {
 		args = append(args, "--ctrlAddrs")
 		args = append(args, p.CtrlAddrs)
-	}
-	if p.VaultAddr != "" {
-		args = append(args, "--vaultAddr")
-		args = append(args, p.VaultAddr)
 	}
 	if p.InfluxAddr != "" {
 		args = append(args, "--influxAddr")
 		args = append(args, p.InfluxAddr)
 	}
-	args = p.TLS.AddInternalPkiArgs(args)
 	if p.Region != "" {
 		args = append(args, "--region")
 		args = append(args, p.Region)
-	}
-	if p.UseVaultPki {
-		args = append(args, "--useVaultPki")
 	}
 	options := process.StartOptions{}
 	options.ApplyStartOptions(opts...)

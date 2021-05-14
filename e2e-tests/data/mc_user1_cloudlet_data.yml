@@ -15,7 +15,6 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-1
-      accessuri: cloud1.tmo
       location:
         latitude: 31
         longitude: -91
@@ -35,7 +34,6 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-2
-      accessuri: cloud2.tmo
       location:
         latitude: 35
         longitude: -95
@@ -45,7 +43,6 @@ regiondata:
     - key:
         organization: azure
         name: azure-cloud-4
-      accessuri: cloud4.azure
       location:
         latitude: 32
         longitude: -91
@@ -55,7 +52,6 @@ regiondata:
     - key:
         organization: gcp
         name: gcp-cloud-5
-      accessuri: cloud5.gcp
       location:
         latitude: 36
         longitude: -95
@@ -109,7 +105,6 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-3
-      accessuri: cloud1.tmo
       location:
         latitude: 32
         longitude: -92
@@ -119,7 +114,6 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-4
-      accessuri: cloud2.tmo
       location:
         latitude: 36
         longitude: -96

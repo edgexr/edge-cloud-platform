@@ -12,22 +12,18 @@ orgs:
   type: operator
   address: dmuus headquarters
   phone: 123-123-1234
-  adminusername: user1
 - name: azure
   type: operator
   address: amazon jungle
   phone: 123-123-1234
-  adminusername: user1
 - name: gcp
   type: operator
   address: mountain view
   phone: 123-123-1234
-  adminusername: user1
 - name: enterprise
   type: operator
   address: enterprise headquarters
   phone: 123-123-1234
-  adminusername: user1
 roles:
 - org: dmuus
   username: user1

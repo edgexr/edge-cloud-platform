@@ -5,7 +5,6 @@ regiondata:
     - key:
         organization: dmuus
         name: kind-cloud-1
-      accessuri: cloud1.kind
       location:
         latitude: 31
         longitude: -91

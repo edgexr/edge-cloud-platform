@@ -100,7 +100,6 @@ controllers:
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:41001"
-  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -121,7 +120,6 @@ controllers:
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:41002"
-  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -144,7 +142,6 @@ controllers:
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:41011"
-  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -167,7 +164,6 @@ controllers:
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:41012"
-  requirenotifyaccesskey: true
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -308,7 +304,6 @@ mcs:
   consoleproxyaddr: "127.0.0.1:6080"
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
   alertmgrapiaddr: "https://127.0.0.1:9094"
-  billingpath: "fake"
   apitlscert: "{{tlsoutdir}}/mex-server.crt"
   apitlskey: "{{tlsoutdir}}/mex-server.key"
   deploymenttag: dev
