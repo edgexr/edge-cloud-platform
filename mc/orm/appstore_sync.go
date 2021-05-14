@@ -64,38 +64,46 @@ func AppStoreNewSync(appStoreType string) *AppStoreSync {
 	return &sync
 }
 
-func (s *AppStoreSync) Start() {
+func (s *AppStoreSync) Start(done chan struct{}) {
 	go func() {
-		for {
-			time.Sleep(AppStoreSyncInterval)
-			if s.needsSync {
-				s.wakeup()
+		isDone := false
+		for !isDone {
+			select {
+			case <-done:
+				isDone = true
+			case <-time.After(AppStoreSyncInterval):
+				if s.needsSync {
+					s.wakeup()
+				}
 			}
 		}
 	}()
 	s.NeedsSync()
 	s.wakeup()
-	go s.runThread()
+	go s.runThread(done)
 }
 
-func (s *AppStoreSync) runThread() {
+func (s *AppStoreSync) runThread(done chan struct{}) {
 	var err error
-	for {
+	isDone := false
+	for !isDone {
 		if err != nil {
 			err = nil
 		}
 		select {
+		case <-done:
+			isDone = true
 		case <-s.run:
+			span := log.StartSpan(log.DebugLevelApi, "appstore sync")
+			span.SetTag("type", s.appStoreType)
+			ctx := log.ContextWithSpan(context.Background(), span)
+
+			s.needsSync = false
+			s.syncObjects(ctx)
+			s.count++
+
+			span.Finish()
 		}
-		span := log.StartSpan(log.DebugLevelApi, "appstore sync")
-		span.SetTag("type", s.appStoreType)
-		ctx := log.ContextWithSpan(context.Background(), span)
-
-		s.needsSync = false
-		s.syncObjects(ctx)
-		s.count++
-
-		span.Finish()
 	}
 }
 

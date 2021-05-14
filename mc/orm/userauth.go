@@ -44,9 +44,9 @@ type TokenAuth struct {
 	Token string
 }
 
-func InitVault(config *vault.Config, updateDone chan struct{}) {
+func InitVault(config *vault.Config, serverDone chan struct{}, updateDone chan struct{}) {
 	Jwks.Init(config, "", "mcorm")
-	Jwks.GoUpdate(updateDone)
+	Jwks.GoUpdate(serverDone, updateDone)
 }
 
 func ValidPassword(pw string) error {
