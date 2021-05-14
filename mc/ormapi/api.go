@@ -579,6 +579,9 @@ type Reporter struct {
 	// User name (for internal use only)
 	// read only: true
 	Username string
+	// Last report status
+	// read only: true
+	Status string
 }
 
 type DownloadReport struct {
