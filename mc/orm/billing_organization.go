@@ -40,23 +40,13 @@ func CreateBillingOrg(c echo.Context) error {
 // Parent billing orgs will have a billing Group, self billing orgs will just use the existing developer group from the org
 func CreateBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) error {
 	// TODO: remove this later, for now only mexadmin the permission to create billingOrgs
-	roles, err := ShowUserRoleObj(ctx, claims.Username)
-	if err != nil {
-		return fmt.Errorf("Unable to discover user roles: %v", err)
-	}
-	isAdmin := false
-	for _, role := range roles {
-		if isAdminRole(role.Role) {
-			isAdmin = true
-		}
-	}
-	if !isAdmin && billingEnabled(ctx) {
+	if !isAdmin(ctx, claims.Username) && billingEnabled(ctx) {
 		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
 	}
 	if org.Name == "" {
 		return fmt.Errorf("Name not specified")
 	}
-	err = ValidName(org.Name)
+	err := ValidName(org.Name)
 	if err != nil {
 		return err
 	}
@@ -415,6 +405,10 @@ func DeleteBillingOrg(c echo.Context) error {
 }
 
 func DeleteBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) error {
+	// TODO: remove this check later, for now to keep consistent with create, only allow admins to delete billingOrgs
+	if !isAdmin(ctx, claims.Username) && billingEnabled(ctx) {
+		return fmt.Errorf("Currently only admins may create and commit billingOrgs")
+	}
 	if org.Name == "" {
 		return fmt.Errorf("Organization name not specified")
 	}

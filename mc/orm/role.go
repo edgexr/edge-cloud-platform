@@ -606,3 +606,16 @@ func isApiKeyRole(role string) bool {
 	}
 	return false
 }
+
+func isAdmin(ctx context.Context, username string) bool {
+	roles, err := ShowUserRoleObj(ctx, username)
+	if err != nil {
+		return false
+	}
+	for _, role := range roles {
+		if isAdminRole(role.Role) {
+			return true
+		}
+	}
+	return false
+}

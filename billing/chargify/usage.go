@@ -28,7 +28,12 @@ func (bs *BillingService) RecordUsage(ctx context.Context, account *ormapi.Accou
 		componentId := getComponentCode(record.FlavorName, cloudlet, record.StartTime, record.EndTime)
 		endpoint := "/subscriptions/" + account.SubscriptionId + "/components/" + componentId + "/usages.json"
 
-		duration := int(record.EndTime.Sub(record.StartTime).Minutes() * float64(record.NodeCount))
+		nodeCount := record.NodeCount
+		// in docker, nodeCount isn't used, but we can't have multiplication by 0
+		if nodeCount == 0 {
+			nodeCount = 1
+		}
+		duration := int(record.EndTime.Sub(record.StartTime).Minutes() * float64(nodeCount))
 		newUsage := Usage{
 			Quantity: duration,
 			Memo:     memo,
