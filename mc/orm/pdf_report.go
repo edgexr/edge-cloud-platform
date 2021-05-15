@@ -88,6 +88,10 @@ func (r *PDFReport) AddPageTitle(titleName string) {
 	r.pdf.Ln(-1)
 }
 
+func (r *PDFReport) ResetHeader() {
+	r.pdf.SetHeaderFunc(nil)
+}
+
 func (r *PDFReport) AddHeader(report *ormapi.GenerateReport, logoPath, cloudlet string) {
 	r.pdf.SetHeaderFuncMode(func() {
 		r.pdf.SetFont(FontName, "I", HeaderFontSize)

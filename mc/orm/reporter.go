@@ -775,43 +775,60 @@ func GetCloudletResourceUsageData(ctx context.Context, username string, report *
 		}
 		for _, result := range results {
 			for _, row := range result.Series {
-				/*
-					columns[0]  -> time
-					columns[1]  -> cloudlet
-					columns[2]  -> cloudletorg
-					columns[3:] -> resources
-				*/
-				for _, val := range row.Values {
-					if len(val) < 4 {
-						// not enough data
-						continue
+				if len(row.Columns) < 4 {
+					// not enough data
+					continue
+				}
+				// get column indices
+				timeIndex := -1
+				cloudletIndex := -1
+				cloudletOrgIndex := -1
+				resIndices := []int{}
+				for ii, col := range row.Columns {
+					switch col {
+					case "time":
+						timeIndex = ii
+					case "cloudlet":
+						cloudletIndex = ii
+					case "cloudletorg":
+						cloudletOrgIndex = ii
+					default:
+						resIndices = append(resIndices, ii)
 					}
-					timeStr, ok := val[0].(string)
+				}
+				if timeIndex < 0 || cloudletIndex < 0 || cloudletOrgIndex < 0 || len(resIndices) == 0 {
+					// not enough data
+					continue
+				}
+				for _, val := range row.Values {
+					timeStr, ok := val[timeIndex].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch resource time", "time", val[0])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch resource time", "time", val[timeIndex])
+						continue
 					}
 					time, err := time.Parse("2006-01-02T15:04:05Z", timeStr)
 					if err != nil {
 						log.SpanLog(ctx, log.DebugLevelInfo, "failed to parse resource time", "time", timeStr)
 						continue
 					}
-					cloudlet, ok := val[1].(string)
+					cloudlet, ok := val[cloudletIndex].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cloudlet name", "cloudlet", val[1])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cloudlet name", "cloudlet", val[cloudletIndex])
+						continue
 					}
 					if _, ok := chartMap[cloudlet]; !ok {
 						chartMap[cloudlet] = make(TimeChartDataMap)
 					}
-					for resIndex := 3; resIndex < len(val); resIndex++ {
+					for _, resIndex := range resIndices {
+						if val[resIndex] == nil {
+							continue
+						}
 						resName := row.Columns[resIndex]
 						if _, ok := chartMap[cloudlet][resName]; !ok {
 							chartMap[cloudlet][resName] = []TimeChartData{TimeChartData{}}
 						}
 						clData := chartMap[cloudlet][resName][0]
 
-						if val[resIndex] == nil {
-							continue
-						}
 						resVal, err := val[resIndex].(json.Number).Float64()
 						if err != nil {
 							log.SpanLog(ctx, log.DebugLevelInfo, "failed to parse resource value", "value", val[resIndex])
@@ -860,33 +877,56 @@ func GetCloudletFlavorUsageData(ctx context.Context, username string, report *or
 		}
 		for _, result := range results {
 			for _, row := range result.Series {
-				/*
-					columns[0] -> time
-					columns[1] -> cloudlet
-					columns[2] -> cloudletorg
-					columns[3] -> count
-					columns[4] -> flavor
-				*/
+				if len(row.Columns) < 5 {
+					// not enough data
+					continue
+				}
+				// get column indices
+				timeIndex := -1
+				cloudletIndex := -1
+				cloudletOrgIndex := -1
+				countIndex := -1
+				flavorIndex := -1
+				for ii, col := range row.Columns {
+					switch col {
+					case "time":
+						timeIndex = ii
+					case "cloudlet":
+						cloudletIndex = ii
+					case "cloudletorg":
+						cloudletOrgIndex = ii
+					case "count":
+						countIndex = ii
+					case "flavor":
+						flavorIndex = ii
+					}
+				}
+				if timeIndex < 0 ||
+					cloudletIndex < 0 ||
+					cloudletOrgIndex < 0 ||
+					countIndex < 0 ||
+					flavorIndex < 0 {
+					// not enough data
+					continue
+				}
 				for _, val := range row.Values {
-					if len(val) < 5 {
-						// not enough data
-						continue
-					}
-					cloudlet, ok := val[1].(string)
+					cloudlet, ok := val[cloudletIndex].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cloudlet name", "cloudlet", val[1])
-					}
-					if val[3] == nil {
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch cloudlet name", "cloudlet", val[cloudletIndex])
 						continue
 					}
-					countVal, err := val[3].(json.Number).Float64()
+					if val[countIndex] == nil || val[flavorIndex] == nil {
+						continue
+					}
+					countVal, err := val[countIndex].(json.Number).Float64()
 					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to parse flavor count", "value", val[3])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to parse flavor count", "value", val[countIndex])
 						continue
 					}
-					flavor, ok := val[4].(string)
+					flavor, ok := val[flavorIndex].(string)
 					if !ok {
-						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch flavor name", "flavor", val[4])
+						log.SpanLog(ctx, log.DebugLevelInfo, "failed to fetch flavor name", "flavor", val[flavorIndex])
+						continue
 					}
 					if _, ok := flavorMap[cloudlet]; !ok {
 						flavorMap[cloudlet] = make(PieChartDataMap)
@@ -1279,9 +1319,20 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 		return err
 	}
 	for _, region := range regions {
+		report.Region = region
+		// Get cloudlet summary
+		cloudlets_summary, err := GetCloudletSummaryData(ctx, username, report)
+		if err != nil {
+			return fmt.Errorf("failed to get cloudlet summary: %v", err)
+		}
+		if len(cloudlets_summary) == 0 {
+			// Skip as Operator has no cloudlets in this region
+			continue
+		}
+
 		log.SpanLog(ctx, log.DebugLevelInfo, "Generate operator report for region", "region", region)
 		// start new page for every region
-		report.Region = region
+		pdfReport.ResetHeader()
 		pdfReport.AddPage()
 
 		pdfReport.AddReportTitle(logoPath)
@@ -1292,12 +1343,6 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 
 		// Step-1: Gather all data
 		// -------------------------
-		// Get cloudlet summary
-		cloudlets_summary, err := GetCloudletSummaryData(ctx, username, report)
-		if err != nil {
-			return fmt.Errorf("failed to get cloudlet summary: %v", err)
-		}
-
 		// Get list of cloudletpools
 		cloudletpools, err := GetCloudletPoolSummaryData(ctx, username, report)
 		if err != nil {
@@ -1442,16 +1487,13 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 				pdfReport.AddTable("Developer App State", header, data, columnsWidth)
 			}
 		}
-
-		pdfReport.AddHeader(report, logoPath, NoCloudlet)
-
-		if err = pdfReport.Err(); err != nil {
-			return fmt.Errorf("failed to create PDF report: %s\n", err.Error())
-		}
-		err = pdfReport.Output(pdfOut)
-		if err != nil {
-			return fmt.Errorf("cannot get PDF output: %v", err)
-		}
+	}
+	if err = pdfReport.Err(); err != nil {
+		return fmt.Errorf("failed to create PDF report: %s\n", err.Error())
+	}
+	err = pdfReport.Output(pdfOut)
+	if err != nil {
+		return fmt.Errorf("cannot get PDF output: %v", err)
 	}
 	return nil
 }
