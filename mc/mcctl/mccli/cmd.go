@@ -163,16 +163,6 @@ func (s *RootCommand) getUri() string {
 	return prefix + s.addr + "/api/v1"
 }
 
-/*
-func (s *RootCommand) getWSUri() string {
-	newAddr := s.addr
-	if !strings.HasPrefix(s.addr, "http") {
-		newAddr = "http://" + s.Addr
-	}
-	newAddr = strings.Replace(newAddr, "http", "ws", -1)
-	return newAddr + "/ws/api/v1"
-}
-*/
 type runRestOptions struct {
 	setFieldsFunc func(in map[string]interface{})
 }

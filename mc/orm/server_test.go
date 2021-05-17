@@ -87,7 +87,6 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
-	fmt.Printf("roleAssignments: %v\n", roleAssignments)
 	require.Equal(t, 1, len(roleAssignments), "num role assignments")
 	require.Equal(t, RoleAdminManager, roleAssignments[0].Role)
 	require.Equal(t, super.Name, roleAssignments[0].Username)

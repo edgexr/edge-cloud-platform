@@ -398,18 +398,20 @@ type MetricData struct {
 }
 
 type MetricSeries struct {
-	Columns []string        `json:"columns"`
-	Name    string          `json:"name"`
-	Values  [][]interface{} `json:"values"`
+	Columns []string          `json:"columns"`
+	Name    string            `json:"name"`
+	Tags    map[string]string `json:"tags"`
+	Values  [][]interface{}   `json:"values"`
 }
 
 type RegionAppInstMetrics struct {
 	Region    string
-	AppInst   edgeproto.AppInstKey
 	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	AppInst   edgeproto.AppInstKey   `json:",omitempty"`
+	AppInsts  []edgeproto.AppInstKey `json:",omitempty"`
+	StartTime time.Time              `json:",omitempty"`
+	EndTime   time.Time              `json:",omitempty"`
+	Last      int                    `json:",omitempty"`
 }
 
 type RegionClusterInstMetrics struct {

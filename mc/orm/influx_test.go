@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -52,6 +53,23 @@ func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region
 	dat.Selector = selector
 	dat.AppInst = *in
 	return mcClient.ShowClientApiUsageMetrics(uri, token, dat)
+}
+
+func testPassCheckPermissionsAndGetCloudletList(t *testing.T, ctx context.Context, username, region string, devOrgs []string,
+	resource string, cloudletKeys []edgeproto.CloudletKey, expectedCloudlets []string) {
+
+	list, err := checkPermissionsAndGetCloudletList(ctx, username, region, devOrgs, resource, cloudletKeys)
+	require.Nil(t, err)
+	require.ElementsMatch(t, expectedCloudlets, list)
+}
+
+func testFailCheckPermissionsAndGetCloudletList(t *testing.T, ctx context.Context, username, region string, devOrgs []string,
+	resource string, cloudletKeys []edgeproto.CloudletKey, errorContains string) {
+
+	list, err := checkPermissionsAndGetCloudletList(ctx, username, region, devOrgs, resource, cloudletKeys)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), errorContains)
+	require.Empty(t, list)
 }
 
 func badPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {

@@ -116,6 +116,13 @@ var AppMetricAliasArgs = []string{
 	"cluster-org=appinst.clusterinstkey.organization",
 	"cloudlet-org=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
+	"appinsts:#.app-org=appinsts:#.appkey.organization",
+	"appinsts:#.appname=appinsts:#.appkey.name",
+	"appinsts:#.appvers=appinsts:.appkey.version",
+	"appinsts:#.cluster=appinsts:#.clusterinstkey.clusterkey.name",
+	"appinsts:#.cluster-org=appinsts:#.clusterinstkey.organization",
+	"appinsts:#.cloudlet-org=appinsts:#.clusterinstkey.cloudletkey.organization",
+	"appinsts:#.cloudlet=appinsts:#.clusterinstkey.cloudletkey.name",
 }
 
 var AppMetricComments = map[string]string{
