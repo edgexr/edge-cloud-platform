@@ -670,7 +670,8 @@ func GetUsageCommon(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Both start and end times must be specified"), nil)
 		}
 
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.AppInst.AppKey.Organization, ResourceAppAnalytics, in.AppInst.ClusterInstKey.CloudletKey)
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
+			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 		if err != nil {
 			return setReply(c, err, nil)
 		}
@@ -697,7 +698,8 @@ func GetUsageCommon(c echo.Context) error {
 			return setReply(c, fmt.Errorf("Both start and end times must be specified"), nil)
 		}
 
-		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims, in.Region, in.ClusterInst.Organization, ResourceClusterAnalytics, in.ClusterInst.CloudletKey)
+		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
+			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
 			return setReply(c, err, nil)
 		}
