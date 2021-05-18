@@ -430,6 +430,7 @@ func UpdateReporter(c echo.Context) error {
 		if _, ok := edgeproto.ReportSchedule_name[int32(reporter.Schedule)]; !ok {
 			return setReply(c, fmt.Errorf("invalid schedule"), nil)
 		}
+		reporter.StartScheduleDateUTC = time.Now().UTC()
 		applyUpdate = true
 	}
 
@@ -617,7 +618,7 @@ func GenerateReport(c echo.Context) error {
 		return setReply(c, fmt.Errorf("StartTimeUTC must be in UTC timezone"), nil)
 	}
 	if !ormapi.IsUTCTimezone(report.EndTimeUTC) {
-		return setReply(c, fmt.Errorf("StartTimeUTC must be in UTC timezone"), nil)
+		return setReply(c, fmt.Errorf("EndTimeUTC must be in UTC timezone"), nil)
 	}
 	if !report.StartTimeUTC.Before(report.EndTimeUTC) {
 		return c.JSON(http.StatusBadRequest, Msg("start time must be before end time"))
@@ -719,7 +720,7 @@ func GetCloudletPoolSummaryData(ctx context.Context, username string, report *or
 	poolCloudlets := make(map[string][]string)
 	err = ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{Key: poolKey}, func(pool *edgeproto.CloudletPool) {
 		for _, name := range pool.Cloudlets {
-			if cloudlets, ok := poolCloudlets[op.CloudletPool]; ok {
+			if cloudlets, ok := poolCloudlets[pool.Key.Name]; ok {
 				cloudlets = append(cloudlets, name)
 				poolCloudlets[pool.Key.Name] = cloudlets
 			} else {
