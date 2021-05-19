@@ -108,6 +108,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.StreamObjGroup),       // for UI only
 		rc.getCmdGroup(ormctl.AuditGroup),           // deprecated
 		rc.getCmdGroup(ormctl.AllDataGroup),         // deprecated
+		rc.getCmdGroup(ormctl.ReportDataGroup),      // for testingonly
 	}
 
 	rootCmd.AddCommand(managementCommands...)

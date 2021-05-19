@@ -706,6 +706,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/reporter/update", UpdateReporter)
 	auth.POST("/reporter/delete", DeleteReporter)
 	auth.POST("/reporter/show", ShowReporter)
+	auth.POST("/report/generatedata", GenerateReportData)
 	auth.POST("/report/generate", GenerateReport)
 	auth.POST("/report/show", ShowReport)
 	auth.POST("/report/download", DownloadReport)
