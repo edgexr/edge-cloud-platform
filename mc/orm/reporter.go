@@ -130,7 +130,7 @@ func getAllRegions(ctx context.Context) ([]string, error) {
 // Start report generation thread to run every day 12AM UTC
 func GenerateReports() {
 	retryCount := ReportRetryCount
-	reportTime := getNextReportTimeUTC(time.Now().UTC(), nil)
+	reportTime := time.Now().UTC()
 	for {
 		select {
 		case <-time.After(reportTime.Sub(time.Now().UTC())):
