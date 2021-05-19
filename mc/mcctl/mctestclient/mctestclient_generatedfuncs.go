@@ -2101,6 +2101,24 @@ func (s *Client) DownloadReport(uri string, token string, in *ormapi.DownloadRep
 	return rundata.RetStatus, rundata.RetError
 }
 
+// Generating group ReportData
+
+func (s *Client) GenerateReportData(uri string, token string, in *ormapi.GenerateReport) (map[string]interface{}, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out map[string]interface{}
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GenerateReportData")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group Reporter
 
 func (s *Client) CreateReporter(uri string, token string, in *ormapi.Reporter) (int, error) {
