@@ -748,15 +748,34 @@ func checkForTimeError(errStr string) string {
 	return errStr
 }
 
-func checkPermissionsAndGetCloudletList(ctx context.Context, username, region string, devOrgs []string, devResource string, cloudletKeys []edgeproto.CloudletKey) ([]string, error) {
+func checkPermissionsAndGetCloudletList(ctx context.Context, username, region string, devOrgsIn []string, devResource string, cloudletKeys []edgeproto.CloudletKey) ([]string, error) {
 	regionRc := &RegionContext{}
 	regionRc.username = username
 	regionRc.region = region
 	uniqueCloudlets := make(map[string]struct{})
 	devOrgPermOk := false
 	operOrgPermOk := false
-	// get all associated orgs
-	if len(devOrgs) == 0 && len(cloudletKeys) == 0 {
+	devOrgs := []string{}
+	cloudletOrgs := map[string]struct{}{}
+
+	// remove all empty strings
+	for ii, devOrg := range devOrgsIn {
+		if devOrg != "" {
+			devOrgs = append(devOrgs, devOrgsIn[ii])
+		}
+	}
+
+	// append to the list the specified cloudlets
+	for _, cloudletKey := range cloudletKeys {
+		if cloudletKey.Name != "" {
+			uniqueCloudlets[cloudletKey.Name] = struct{}{}
+		}
+		if cloudletKey.Organization != "" {
+			cloudletOrgs[cloudletKey.Organization] = struct{}{}
+		}
+	}
+
+	if len(devOrgs) == 0 && len(cloudletOrgs) == 0 {
 		return []string{}, fmt.Errorf("Must provide either App organization or Cloudlet organization")
 	}
 	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, devResource, ActionView)
@@ -808,16 +827,6 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 			return []string{}, fmt.Errorf("Operators please specify the Cloudlet Organization")
 		} else {
 			return []string{}, echo.ErrForbidden
-		}
-	}
-	cloudletOrgs := map[string]struct{}{}
-	// append to the list the specified cloudlets
-	for _, cloudletKey := range cloudletKeys {
-		if cloudletKey.Name != "" {
-			uniqueCloudlets[cloudletKey.Name] = struct{}{}
-		}
-		if cloudletKey.Organization != "" {
-			cloudletOrgs[cloudletKey.Organization] = struct{}{}
 		}
 	}
 
