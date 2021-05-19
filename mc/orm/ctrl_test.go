@@ -561,6 +561,9 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		testPassCheckPermissionsAndGetCloudletList(t, ctx, dev3.Name, ctrl.Region, []string{org1}, ResourceAppAnalytics,
 			[]edgeproto.CloudletKey{org3Cloudlet.Key}, []string{org3Cloudlet.Key.Name})
 
+		// no org, or cloudlet data
+		testFailCheckPermissionsAndGetCloudletList(t, ctx, dev.Name, ctrl.Region, []string{}, ResourceAppAnalytics,
+			[]edgeproto.CloudletKey{}, "Must provide either App organization or Cloudlet organization")
 		// trying to see apps of org that you are not a part of
 		testFailCheckPermissionsAndGetCloudletList(t, ctx, dev.Name, ctrl.Region, []string{org2}, ResourceAppAnalytics,
 			[]edgeproto.CloudletKey{org3Cloudlet.Key}, "Forbidden")
