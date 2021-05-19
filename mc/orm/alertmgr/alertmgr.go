@@ -244,7 +244,9 @@ func (s *AlertMgrServer) AddAlerts(ctx context.Context, alerts ...*edgeproto.Ale
 		return err
 	}
 	res, err := alertMgrApi(ctx, s.AlertMrgAddr, "POST", AlertApi, "", data, s.TlsConfig)
-	log.SpanLog(ctx, log.DebugLevelInfo, "marshal alerts", "alerts", string(data), "err", err, "res", res)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to add alerts", "err", err, "res", res)
+	}
 	return err
 }
 
