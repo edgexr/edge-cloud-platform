@@ -92,8 +92,8 @@ func (s *EdgeboxPlatform) GetNodePlatformClient(ctx context.Context, node *edgep
 	return s.generic.GetNodePlatformClient(ctx, node)
 }
 
-func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
-	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts)
+func (s *EdgeboxPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
+	return s.generic.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
 }
 
 func (s *EdgeboxPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletProps, error) {
