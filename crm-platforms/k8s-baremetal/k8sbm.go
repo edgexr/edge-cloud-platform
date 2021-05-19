@@ -129,7 +129,7 @@ func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *
 }
 
 // TODO
-func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
+func (k *K8sBareMetalPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return []edgeproto.CloudletMgmtNode{}, nil
 }
 

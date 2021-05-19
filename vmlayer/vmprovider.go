@@ -235,8 +235,8 @@ func (v *VMPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.
 	return v.GetSSHClientForServer(ctx, node.Name, v.VMProperties.GetCloudletExternalNetwork(), ops...)
 }
 
-func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst) ([]edgeproto.CloudletMgmtNode, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts)
+func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ListCloudletMgmtNodes", "clusterInsts", clusterInsts, "vmAppInsts", vmAppInsts)
 	mgmt_nodes := []edgeproto.CloudletMgmtNode{
 		edgeproto.CloudletMgmtNode{
 			Type: "platformvm",
@@ -254,6 +254,12 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 				Name: cloudcommon.GetDedicatedLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &clusterInst.Key.ClusterKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot),
 			})
 		}
+	}
+	for _, vmAppInst := range vmAppInsts {
+		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
+			Type: "dedicatedrootlb",
+			Name: cloudcommon.GetVMAppFQDN(&vmAppInst.Key, &vmAppInst.Key.ClusterInstKey.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot),
+		})
 	}
 	return mgmt_nodes, nil
 }
