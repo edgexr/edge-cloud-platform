@@ -308,7 +308,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				return err
 			}
 			updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules")
-			ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: false, AddSecurityRules: false}
+			addSecRules := v.VMProperties.IptablesBasedFirewall // need to do the rules here for iptables based providers
+			ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: false, AddSecurityRules: addSecRules}
 			wlParams := infracommon.WhiteListParams{
 				SecGrpName:  infracommon.GetServerSecurityGroupName(orchVals.externalServerName),
 				ServerName:  orchVals.externalServerName,

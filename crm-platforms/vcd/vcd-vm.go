@@ -291,10 +291,13 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 				log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB", "vm", vm.VM.Name, "gateway", baseAddr)
 
 				// remove the RootLB's IP as a default GW because VCD inserts it and there is no way to specify otherwise.
-				// Multiple GWs cause unpredictable behavior depending on the order they are processed. Since bootcmd runs on
-				// every reboot, there is no need to update the netplan file
+				// Multiple GWs cause unpredictable behavior depending on the order they are processed. Since the timing
+				// may sometimes be unpredictable, remove also from the netplan file
 				log.SpanLog(ctx, log.DebugLevelInfra, "removing extra default gw from dedicated rootLB", "gw", baseAddr)
 				vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, "route del default gw "+baseAddr)
+				netplanFile := "/etc/netplan/99-netcfg-vmware.yaml"
+				removeGwFromNetplan := fmt.Sprintf("sed -i /gateway4:.%s/d %s", baseAddr, netplanFile)
+				vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, removeGwFromNetplan)
 			} else {
 				if sharedRootLB {
 					log.SpanLog(ctx, log.DebugLevelInfra, "SharedLB", "vm", vm.VM.Name, "gateway", baseAddr)
