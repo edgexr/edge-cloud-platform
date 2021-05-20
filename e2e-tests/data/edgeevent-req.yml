@@ -12,9 +12,6 @@ findcloudletrequest:
   cellid: 1234
 clientedgeevent:
   eventtype: EVENT_INIT_CONNECTION
-  gpslocation:
-    latitude: 31.00
-    longitude: -91.00
   deviceinfostatic:
     deviceos: Android
     devicemodel: "SM-G920F"
