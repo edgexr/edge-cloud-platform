@@ -55,8 +55,8 @@ func getScheduleDayMonthCount(schedule edgeproto.ReportSchedule) (int, int, erro
 	return dayCount, monthCount, err
 }
 
-func getNextReportTimeUTC(now time.Time, retryCount *int) time.Time {
-	utcNow := now.UTC()
+func getNextReportTimeUTC(retryCount *int) time.Time {
+	utcNow := time.Now().UTC()
 	nextReportTime := time.Time{}
 	if retryCount != nil && *retryCount > 0 {
 		nextReportTime = utcNow.Add(ReportRetryInterval)
@@ -148,7 +148,7 @@ func GenerateReports() {
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get list of reporters", "err", err)
 			// retry again in few minutes
-			reportTime = getNextReportTimeUTC(time.Now().UTC(), &retryCount)
+			reportTime = getNextReportTimeUTC(&retryCount)
 			span.Finish()
 			continue
 		}
@@ -156,7 +156,7 @@ func GenerateReports() {
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get regions", "err", err)
 			// retry again in few minutes
-			reportTime = getNextReportTimeUTC(time.Now().UTC(), &retryCount)
+			reportTime = getNextReportTimeUTC(&retryCount)
 			span.Finish()
 			continue
 		}
@@ -165,7 +165,7 @@ func GenerateReports() {
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to setup GCS storage client", "err", err)
 			// retry again in few minutes
-			reportTime = getNextReportTimeUTC(time.Now().UTC(), &retryCount)
+			reportTime = getNextReportTimeUTC(&retryCount)
 			span.Finish()
 			continue
 		}
@@ -199,12 +199,12 @@ func GenerateReports() {
 				Timezone:     reporter.Timezone,
 			}
 			wg.Add(1)
-			go func(inReporter *ormapi.Reporter, genReport *ormapi.GenerateReport, wg *sync.WaitGroup) {
-				log.SpanLog(ctx, log.DebugLevelInfo, "Generate operator report", "args", genReport)
+			go func(inReporter ormapi.Reporter, genReport ormapi.GenerateReport, wg *sync.WaitGroup) {
+				log.SpanLog(ctx, log.DebugLevelInfo, "Generate operator report", "reporter", inReporter.Name, "args", genReport)
 				tags := map[string]string{"cloudletorg": genReport.Org}
 				defer wg.Done()
 				var output bytes.Buffer
-				_, err = GenerateCloudletReport(ctx, inReporter.Username, regions, genReport, &output, OutputPDF)
+				_, err = GenerateCloudletReport(ctx, inReporter.Username, regions, &genReport, &output, OutputPDF)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfo, "failed to generate cloudlet report", "org", genReport.Org, "err", err)
 					nodeMgr.Event(ctx, "Cloudlet report generation failure", genReport.Org, tags, err)
@@ -217,7 +217,7 @@ func GenerateReports() {
 				}
 				errStrs := []string{}
 				// Upload PDF report to cloudlet
-				filename := ormapi.GetReportFileName(inReporter.Name, genReport)
+				filename := ormapi.GetReportFileName(inReporter.Name, &genReport)
 				err = storageClient.UploadObject(ctx, filename, &output)
 				if err != nil {
 					nodeMgr.Event(ctx, "Cloudlet report upload failure", genReport.Org, tags, err)
@@ -226,7 +226,7 @@ func GenerateReports() {
 					errStrs = append(errStrs, fmt.Sprintf("Failed to upload report to cloudlet: %v", err))
 				}
 				// Trigger email
-				err = sendOperatorReportEmail(ctx, inReporter.Username, inReporter.Email, inReporter.Name, genReport, filename, output.Bytes())
+				err = sendOperatorReportEmail(ctx, inReporter.Username, inReporter.Email, inReporter.Name, &genReport, filename, output.Bytes())
 				if err != nil {
 					nodeMgr.Event(ctx, "Send Cloudlet report email", genReport.Org, tags, err)
 					log.SpanLog(ctx, log.DebugLevelInfo, "failed to send cloudlet report email", "org", genReport.Org, "email", inReporter.Email, "err", err)
@@ -236,7 +236,7 @@ func GenerateReports() {
 				// Update next schedule date
 				newDate := ormapi.StripTimeUTC(genReport.EndTimeUTC.AddDate(0, monthCount, dayCount))
 				updateReporterData(ctx, inReporter.Name, genReport.Org, newDate, errStrs)
-			}(&reporter, &genReport, &wg)
+			}(reporter, genReport, &wg)
 		}
 		go func() {
 			wg.Wait()
@@ -250,7 +250,7 @@ func GenerateReports() {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Timedout generating operator reports")
 		}
 		storageClient.Close()
-		reportTime = getNextReportTimeUTC(reportTime, nil)
+		reportTime = getNextReportTimeUTC(nil)
 		log.SpanLog(ctx, log.DebugLevelInfo, "Next operator report generation run info", "date", reportTime)
 		span.Finish()
 	}
