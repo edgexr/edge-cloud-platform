@@ -254,6 +254,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	}
 	oldType := org.Type
 	oldEdgeboxOnly := org.EdgeboxOnly
+	oldPublicImages := org.PublicImages
 
 	if updateType == AdminUpdate {
 		// Only admin user allowed to update org data.
@@ -276,6 +277,12 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	}
 	if org.EdgeboxOnly != oldEdgeboxOnly && updateType != AdminUpdate {
 		return c.JSON(http.StatusBadRequest, Msg("Cannot update edgeboxonly field for Organization"))
+	}
+	if org.PublicImages != oldPublicImages {
+		err := gitlabUpdateVisibility(ctx, &org)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = db.Save(&org).Error

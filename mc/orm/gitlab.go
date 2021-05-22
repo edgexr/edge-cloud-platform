@@ -98,7 +98,7 @@ func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 	groupOpts := gitlab.CreateGroupOptions{
 		Name:       &name,
 		Path:       &name,
-		Visibility: gitlab.Visibility(gitlab.PrivateVisibility),
+		Visibility: gitlab.Visibility(gitlab.PublicVisibility),
 	}
 	grp, _, err := gitlabClient.Groups.CreateGroup(&groupOpts)
 	if err != nil {
@@ -119,7 +119,7 @@ func gitlabCreateGroup(ctx context.Context, org *ormapi.Organization) {
 		gitlabSync.NeedsSync()
 		return
 	}
-	gitlabCreateProject(ctx, grp.ID, DefaultProjectName)
+	gitlabCreateProject(ctx, grp.ID, DefaultProjectName, org.PublicImages)
 }
 
 func gitlabDeleteGroup(ctx context.Context, org *ormapi.Organization) {
@@ -191,12 +191,67 @@ func gitlabRemoveGroupMember(ctx context.Context, role *ormapi.Role, orgType str
 	}
 }
 
-func gitlabCreateProject(ctx context.Context, groupID int, name string) {
+func getGitlabProjects(ctx context.Context) (map[string]*gitlab.Project, error) {
+	// get Gitlab projects
+	projsT := make(map[string]*gitlab.Project)
+	opts := gitlab.ListProjectsOptions{
+		ListOptions: ListOptions,
+	}
+	for {
+		projs, resp, err := gitlabClient.Projects.ListProjects(&opts)
+		if err != nil {
+			return nil, err
+		}
+		for ii, _ := range projs {
+			projsT[projs[ii].Namespace.Name] = projs[ii]
+		}
+		// Exit the loop when we've seen all pages.
+		if resp.CurrentPage >= resp.TotalPages {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+	return projsT, nil
+}
+
+func gitlabUpdateVisibility(ctx context.Context, org *ormapi.Organization) error {
+	projs, err := getGitlabProjects(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get list of gitlab projects: %v", err)
+	}
+	name := GitlabGroupSanitize(org.Name)
+	proj, ok := projs[name]
+	if !ok {
+		return fmt.Errorf("gitlab project %s not found", name)
+	}
+	// update project
+	approvals := 0
+	opts := gitlab.EditProjectOptions{
+		Name:                 &DefaultProjectName,
+		NamespaceID:          &proj.Namespace.ID,
+		ApprovalsBeforeMerge: &approvals,
+		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
+	}
+	if org.PublicImages {
+		opts.Visibility = gitlab.Visibility(gitlab.PublicVisibility)
+	}
+	_, _, err = gitlabClient.Projects.EditProject(proj.ID, &opts)
+	if err != nil {
+		return fmt.Errorf("failed to update gitlab project: %v", err)
+	}
+	return nil
+}
+
+func gitlabCreateProject(ctx context.Context, groupID int, name string, publicAccess bool) {
 	approvals := 0
 	opts := gitlab.CreateProjectOptions{
 		Name:                 &name,
 		NamespaceID:          &groupID,
 		ApprovalsBeforeMerge: &approvals,
+		Visibility:           gitlab.Visibility(gitlab.PrivateVisibility),
+	}
+	if publicAccess {
+		opts.Visibility = gitlab.Visibility(gitlab.PublicVisibility)
 	}
 	_, _, err := gitlabClient.Projects.CreateProject(&opts)
 	if err != nil {
