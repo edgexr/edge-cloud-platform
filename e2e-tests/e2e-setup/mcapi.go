@@ -110,7 +110,8 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		if !rc {
 			return false
 		}
-		users, status, err := mcClient.ShowUser(uri, token, &ormapi.ShowUser{})
+		filter := map[string]interface{}{}
+		users, status, err := mcClient.ShowUser(uri, token, filter)
 		checkMcErr("ShowUser", status, err, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
 		return rc
@@ -496,17 +497,18 @@ func hasMod(mod string, mods []string) bool {
 }
 
 func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
-	ctrls, status, err := mcClient.ShowController(uri, token)
+	showFilter := map[string]interface{}{}
+	ctrls, status, err := mcClient.ShowController(uri, token, showFilter)
 	checkMcErr("ShowControllers", status, err, rc)
-	orgs, status, err := mcClient.ShowOrg(uri, token)
+	orgs, status, err := mcClient.ShowOrg(uri, token, showFilter)
 	checkMcErr("ShowOrgs", status, err, rc)
-	bOrgs, status, err := mcClient.ShowBillingOrg(uri, token)
+	bOrgs, status, err := mcClient.ShowBillingOrg(uri, token, showFilter)
 	checkMcErr("ShowBillingOrgs", status, err, rc)
-	roles, status, err := mcClient.ShowUserRole(uri, token)
+	roles, status, err := mcClient.ShowUserRole(uri, token, showFilter)
 	checkMcErr("ShowRoles", status, err, rc)
-	invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, &ormapi.OrgCloudletPool{})
+	invites, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, showFilter)
 	checkMcErr("ShowCloudletPoolAccessInvitations", status, err, rc)
-	responses, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, &ormapi.OrgCloudletPool{})
+	responses, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, showFilter)
 	checkMcErr("ShowCloudletPoolAccessResponses", status, err, rc)
 
 	showData := &ormapi.AllData{

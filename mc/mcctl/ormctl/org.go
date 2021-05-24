@@ -34,11 +34,15 @@ func init() {
 		ReqData:      &ormapi.Organization{},
 		Path:         "/auth/org/delete",
 	}, &ApiCommand{
-		Name:      "ShowOrg",
-		Use:       "show",
-		Short:     "Show organizations",
-		ReplyData: &[]ormapi.Organization{},
-		Path:      "/auth/org/show",
+		Name:         "ShowOrg",
+		Use:          "show",
+		Short:        "Show organizations",
+		OptionalArgs: "name type address phone publicimages deleteinprogress edgeboxonly",
+		Comments:     ormapi.OrganizationComments,
+		ReqData:      &ormapi.Organization{},
+		ReplyData:    &[]ormapi.Organization{},
+		ShowFilter:   true,
+		Path:         "/auth/org/show",
 	}}
 	AllApis.AddGroup(OrgGroup, "Manage organizations", cmds)
 

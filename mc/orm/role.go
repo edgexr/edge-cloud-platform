@@ -177,6 +177,11 @@ func ShowRolePerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	filter, err := bindMap(c)
+	if err != nil {
+		return err
+	}
+
 	policies, err := enforcer.GetPolicy()
 	if err != nil {
 		return dbErr(err)
@@ -191,6 +196,9 @@ func ShowRolePerms(c echo.Context) error {
 			Resource: policies[ii][1],
 			Action:   policies[ii][2],
 		}
+		if !rolePermMatchesFilter(&perm, filter) {
+			continue
+		}
 		ret = append(ret, &perm)
 	}
 	return c.JSON(http.StatusOK, ret)
@@ -204,6 +212,10 @@ func ShowRoleAssignment(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 
+	filter, err := bindMap(c)
+	if err != nil {
+		return err
+	}
 	super := false
 	if authorized(ctx, claims.Username, "", ResourceUsers, ActionView) == nil {
 		// super user, show all roles
@@ -221,6 +233,9 @@ func ShowRoleAssignment(c echo.Context) error {
 			continue
 		}
 		if !super && claims.Username != role.Username {
+			continue
+		}
+		if !roleMatchesFilter(role, filter) {
 			continue
 		}
 		ret = append(ret, role)
@@ -245,6 +260,52 @@ func parseRole(grp []string) *ormapi.Role {
 		role.Username = grp[0]
 	}
 	return &role
+}
+
+func roleMatchesFilter(in *ormapi.Role, jsonFilter map[string]interface{}) bool {
+	for k, v := range jsonFilter {
+		switch strings.ToLower(k) {
+		case "org":
+			org, ok := v.(string)
+			if !ok || org != in.Org {
+				return false
+			}
+		case "username":
+			username, ok := v.(string)
+			if !ok || username != in.Username {
+				return false
+			}
+		case "role":
+			role, ok := v.(string)
+			if !ok || role != in.Role {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func rolePermMatchesFilter(in *ormapi.RolePerm, jsonFilter map[string]interface{}) bool {
+	for k, v := range jsonFilter {
+		switch strings.ToLower(k) {
+		case "role":
+			role, ok := v.(string)
+			if !ok || role != in.Role {
+				return false
+			}
+		case "resource":
+			resource, ok := v.(string)
+			if !ok || resource != in.Resource {
+				return false
+			}
+		case "action":
+			action, ok := v.(string)
+			if !ok || action != in.Action {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func ShowRole(c echo.Context) error {
@@ -500,14 +561,18 @@ func ShowUserRole(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 
-	roles, err := ShowUserRoleObj(ctx, claims.Username)
+	filter, err := bindMap(c)
+	if err != nil {
+		return err
+	}
+	roles, err := ShowUserRoleObj(ctx, claims.Username, filter)
 	return setReply(c, err, roles)
 }
 
 // show roles for organizations the current user has permission to
 // add/remove roles to. This "shows" all the actions taken by
 // Add/RemoveUserRole.
-func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error) {
+func ShowUserRoleObj(ctx context.Context, username string, filter map[string]interface{}) ([]ormapi.Role, error) {
 	roles := []ormapi.Role{}
 
 	groupings, err := enforcer.GetGroupingPolicy()
@@ -529,6 +594,9 @@ func ShowUserRoleObj(ctx context.Context, username string) ([]ormapi.Role, error
 			continue
 		}
 		if !authz.Ok(role.Org) {
+			continue
+		}
+		if !roleMatchesFilter(role, filter) {
 			continue
 		}
 		roles = append(roles, *role)
@@ -608,7 +676,7 @@ func isApiKeyRole(role string) bool {
 }
 
 func isAdmin(ctx context.Context, username string) bool {
-	roles, err := ShowUserRoleObj(ctx, username)
+	roles, err := ShowUserRoleObj(ctx, username, map[string]interface{}{})
 	if err != nil {
 		return false
 	}

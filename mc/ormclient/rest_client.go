@@ -37,12 +37,14 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 		// Passed in generic map must be in the StructNamespace,
 		// so we convert it to the json namespace then marshal it.
 		// It must be in the StructNamespace, because the cliwrapper
-		// client requires it in the StructNamepsace. This is
+		// client requires it in the StructNamespace. This is
 		// because unlike yaml/mapstructure/args processing, json
 		// collapses out embedded structs, making it incompatible
 		// with args process (i.e. cliwrapper converting the map
 		// to args). Instead json namespace is only used for the
 		// final PostJsonSend call.
+		// Note that because of the way reflect's FieldByNameFunc
+		// works, it handles collapsed embedded structs in the map.
 		jsonMap, err := cli.JsonMap(structMap, apiCmd.ReqData, cli.StructNamespace)
 		if err != nil {
 			runData.RetStatus = 0

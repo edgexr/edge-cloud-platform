@@ -662,10 +662,11 @@ func (s *Client) DeleteBillingOrg(uri string, token string, in *ormapi.BillingOr
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowBillingOrg(uri string, token string) ([]ormapi.BillingOrganization, int, error) {
+func (s *Client) ShowBillingOrg(uri string, token string, in map[string]interface{}) ([]ormapi.BillingOrganization, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.BillingOrganization
 	rundata.Out = &out
 
@@ -1095,7 +1096,7 @@ func (s *Client) RemoveCloudletPoolMember(uri string, token string, in *ormapi.R
 
 // Generating group CloudletPoolAccess
 
-func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in map[string]interface{}) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1111,7 +1112,7 @@ func (s *Client) ShowCloudletPoolAccessGranted(uri string, token string, in *orm
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessPending(uri string, token string, in *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessPending(uri string, token string, in map[string]interface{}) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1151,7 +1152,7 @@ func (s *Client) DeleteCloudletPoolAccessInvitation(uri string, token string, in
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessInvitation(uri string, token string, in *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessInvitation(uri string, token string, in map[string]interface{}) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1191,7 +1192,7 @@ func (s *Client) DeleteCloudletPoolAccessResponse(uri string, token string, in *
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowCloudletPoolAccessResponse(uri string, token string, in *ormapi.OrgCloudletPool) ([]ormapi.OrgCloudletPool, int, error) {
+func (s *Client) ShowCloudletPoolAccessResponse(uri string, token string, in map[string]interface{}) ([]ormapi.OrgCloudletPool, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -1416,10 +1417,11 @@ func (s *Client) DeleteController(uri string, token string, in *ormapi.Controlle
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowController(uri string, token string) ([]ormapi.Controller, int, error) {
+func (s *Client) ShowController(uri string, token string, in map[string]interface{}) ([]ormapi.Controller, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.Controller
 	rundata.Out = &out
 
@@ -2010,10 +2012,11 @@ func (s *Client) DeleteOrg(uri string, token string, in *ormapi.Organization) (i
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowOrg(uri string, token string) ([]ormapi.Organization, int, error) {
+func (s *Client) ShowOrg(uri string, token string, in map[string]interface{}) ([]ormapi.Organization, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.Organization
 	rundata.Out = &out
 
@@ -2345,10 +2348,11 @@ func (s *Client) RemoveUserRole(uri string, token string, in *ormapi.Role) (int,
 	return rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowUserRole(uri string, token string) ([]ormapi.Role, int, error) {
+func (s *Client) ShowUserRole(uri string, token string, in map[string]interface{}) ([]ormapi.Role, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.Role
 	rundata.Out = &out
 
@@ -2360,10 +2364,11 @@ func (s *Client) ShowUserRole(uri string, token string) ([]ormapi.Role, int, err
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowRoleAssignment(uri string, token string) ([]ormapi.Role, int, error) {
+func (s *Client) ShowRoleAssignment(uri string, token string, in map[string]interface{}) ([]ormapi.Role, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.Role
 	rundata.Out = &out
 
@@ -2375,10 +2380,11 @@ func (s *Client) ShowRoleAssignment(uri string, token string) ([]ormapi.Role, in
 	return out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowRolePerm(uri string, token string) ([]ormapi.RolePerm, int, error) {
+func (s *Client) ShowRolePerm(uri string, token string, in map[string]interface{}) ([]ormapi.RolePerm, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
+	rundata.In = in
 	var out []ormapi.RolePerm
 	rundata.Out = &out
 
@@ -2700,7 +2706,7 @@ func (s *Client) UpdateUser(uri string, token string, in map[string]interface{})
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) ShowUser(uri string, token string, in *ormapi.ShowUser) ([]ormapi.User, int, error) {
+func (s *Client) ShowUser(uri string, token string, in map[string]interface{}) ([]ormapi.User, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token

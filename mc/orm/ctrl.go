@@ -147,14 +147,18 @@ func ShowController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctrls, err := ShowControllerObj(ctx, claims)
+	filter, err := bindDbFilter(c, &ormapi.Controller{})
+	if err != nil {
+		return err
+	}
+	ctrls, err := ShowControllerObj(ctx, claims, filter)
 	return setReply(c, err, ctrls)
 }
 
-func ShowControllerObj(ctx context.Context, claims *UserClaims) ([]ormapi.Controller, error) {
+func ShowControllerObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Controller, error) {
 	ctrls := []ormapi.Controller{}
 	db := loggedDB(ctx)
-	err := db.Find(&ctrls).Error
+	err := db.Where(filter).Find(&ctrls).Error
 	if err != nil {
 		return nil, dbErr(err)
 	}

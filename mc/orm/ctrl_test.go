@@ -133,7 +133,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Nil(t, err, "login as superuser")
 
 	// make sure roles are as expected
-	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token)
+	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(roleAssignments))
@@ -141,7 +141,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Equal(t, DefaultSuperuser, roleAssignments[0].Username)
 
 	// test controller api
-	ctrls, status, err := mcClient.ShowController(uri, token)
+	ctrls, status, err := mcClient.ShowController(uri, token, NoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
@@ -154,12 +154,28 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.CreateController(uri, token, &ctrl)
 	require.Nil(t, err, "create controller")
 	require.Equal(t, http.StatusOK, status)
-	ctrls, status, err = mcClient.ShowController(uri, token)
+	ctrls, status, err = mcClient.ShowController(uri, token, NoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
 	require.Equal(t, ctrl.Region, ctrls[0].Region)
 	require.Equal(t, ctrl.Address, ctrls[0].Address)
+	// test show controller filtering
+	showController := map[string]interface{}{
+		"Region": "",
+	}
+	ctrls, status, err = mcClient.ShowController(uri, token, showController)
+	require.Nil(t, err, "show controllers")
+	require.Equal(t, http.StatusOK, status)
+	fmt.Printf("controllers: %v\n", ctrls)
+	require.Equal(t, 0, len(ctrls))
+	showController = map[string]interface{}{
+		"Region": "USA",
+	}
+	ctrls, status, err = mcClient.ShowController(uri, token, showController)
+	require.Nil(t, err, "show controllers")
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 1, len(ctrls))
 
 	// delete non-existing controller
 	status, err = mcClient.DeleteController(uri, token, &ormapi.Controller{})
@@ -248,10 +264,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Equal(t, http.StatusForbidden, status)
 	status, err = mcClient.CreateController(uri, tokenOper, &ctrlNew)
 	require.Equal(t, http.StatusForbidden, status)
-	ctrls, status, err = mcClient.ShowController(uri, tokenDev)
+	ctrls, status, err = mcClient.ShowController(uri, tokenDev, NoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
-	ctrls, status, err = mcClient.ShowController(uri, tokenOper)
+	ctrls, status, err = mcClient.ShowController(uri, tokenOper, NoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
 
@@ -881,7 +897,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.DeleteController(uri, token, &ctrl)
 	require.Nil(t, err, "delete controller")
 	require.Equal(t, http.StatusOK, status)
-	ctrls, status, err = mcClient.ShowController(uri, token)
+	ctrls, status, err = mcClient.ShowController(uri, token, NoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
@@ -1097,7 +1113,7 @@ func testUpdateOrgFail(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 }
 
 func getOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, name string) *ormapi.Organization {
-	orgs, status, err := mcClient.ShowOrg(uri, token)
+	orgs, status, err := mcClient.ShowOrg(uri, token, NoShowFilter)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	for _, org := range orgs {
@@ -1164,7 +1180,7 @@ func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *mctestclient.C
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, &ormapi.OrgCloudletPool{})
+	list, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, NoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access invitation")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1174,7 +1190,7 @@ func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *mctestclient.Cli
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, &ormapi.OrgCloudletPool{})
+	list, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, NoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access response")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1184,7 +1200,7 @@ func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *mctestclient.Clie
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessGranted(uri, token, &ormapi.OrgCloudletPool{})
+	list, status, err := mcClient.ShowCloudletPoolAccessGranted(uri, token, NoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access granted")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1194,7 +1210,7 @@ func testShowCloudletPoolAccessPending(t *testing.T, mcClient *mctestclient.Clie
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessPending(uri, token, &ormapi.OrgCloudletPool{})
+	list, status, err := mcClient.ShowCloudletPoolAccessPending(uri, token, NoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access pending")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1484,7 +1500,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.NotEmpty(t, resp.ApiKey, "api key exists")
 
 	// verify role exists
-	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token)
+	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
 	apiKeyRole := ormapi.Role{}
@@ -1497,7 +1513,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Equal(t, apiKeyRole.Role, getApiKeyRoleName(resp.Id))
 	require.Equal(t, apiKeyRole.Username, resp.Id)
 	require.Equal(t, apiKeyRole.Org, operOrg.Name)
-	policies, status, err := mcClient.ShowRolePerm(uri, token)
+	policies, status, err := mcClient.ShowRolePerm(uri, token, NoShowFilter)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	apiKeyRoleViewPerm := ormapi.RolePerm{}
@@ -1596,7 +1612,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Nil(t, err, "delete user api key")
 
 	// verify role doesn't exist
-	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token)
+	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
 	found := false
@@ -1608,7 +1624,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 		}
 	}
 	require.False(t, found, "role doesn't exist")
-	policies, status, err = mcClient.ShowRolePerm(uri, token)
+	policies, status, err = mcClient.ShowRolePerm(uri, token, NoShowFilter)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	found = false
