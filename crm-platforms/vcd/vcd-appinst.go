@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -25,8 +24,6 @@ type VmAppOvfParams struct {
 }
 
 var vcdDirectUser string = "vcdDirect"
-
-var uploadResponseHeaderTimeout time.Duration = time.Second * 15
 
 var vmAppOvfTemplate = `<?xml version='1.0' encoding='UTF-8'?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData">
@@ -239,9 +236,9 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 			timeout := cloudcommon.GetTimeout(int(size))
 			if timeout > 0 {
 				reqConfig.Timeout = timeout
+				reqConfig.ResponseHeaderTimeout = timeout
 				log.SpanLog(ctx, log.DebugLevelApi, "increased upload timeout", "file", f, "timeout", timeout.String())
 			}
-			reqConfig.ResponseHeaderTimeout = uploadResponseHeaderTimeout
 			body := bufio.NewReader(file)
 			reqConfig.Headers = make(map[string]string)
 			reqConfig.Headers["Content-Type"] = "application/octet-stream"
