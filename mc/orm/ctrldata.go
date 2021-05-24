@@ -37,7 +37,7 @@ func (s *AllRegionCaches) refreshRegions(ctx context.Context) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	ctrls, err := ShowControllerObj(ctx, nil)
+	ctrls, err := ShowControllerObj(ctx, NoUserClaims, NoShowFilter)
 	if err != nil {
 		return fmt.Errorf("failed to get controllers from database to refresh region notify clients, %v", err)
 	}

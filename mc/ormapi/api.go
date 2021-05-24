@@ -100,12 +100,15 @@ type Organization struct {
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
 	UpdatedAt time.Time `json:",omitempty"`
+	// Images are made available to other organization
 	// read only: true
 	PublicImages bool `json:",omitempty"`
+	// Delete of this organization is in progress
 	// read only: true
 	DeleteInProgress bool `json:",omitempty"`
 	// read only: true
 	Parent string `json:",omitempty"`
+	// Edgebox only operator organization
 	// read only: true
 	EdgeboxOnly bool `json:",omitempty"`
 }

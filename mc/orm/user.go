@@ -537,6 +537,15 @@ func CurrentUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+// Fields to ignore for ShowUser filtering. Names are in database format.
+var UserIgnoreFilterKeys = []string{
+	"passhash",
+	"salt",
+	"iter",
+	"pass_crack_time_sec",
+	"totp_shared_key",
+}
+
 // Show users by Organization
 func ShowUser(c echo.Context) error {
 	ctx := GetContext(c)
@@ -544,39 +553,42 @@ func ShowUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	filter := ormapi.ShowUser{}
-	if c.Request().ContentLength > 0 {
-		if err := c.Bind(&filter); err != nil {
-			return bindErr(c, err)
-		}
+	filter, err := bindDbFilter(c, &ormapi.ShowUser{})
+	if err != nil {
+		return err
 	}
+	// org and role are extra, when we query DB,
+	// we'll query by the User object.
+	filterOrg, _ := getFilterString(filter, "org")
+	filterRole, _ := getFilterString(filter, "role")
+	delete(filter, "org")
+	delete(filter, "role")
+
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceUsers, ActionView)
 	if err != nil {
 		return err
 	}
 	_, admin := authOrgs[""]
-	_, orgFound := authOrgs[filter.Org]
-	if filter.Org != "" && !admin && !orgFound {
+	_, orgFound := authOrgs[filterOrg]
+	if filterOrg != "" && !admin && !orgFound {
 		// no perms for specified org
 		return echo.ErrForbidden
 	}
 
 	// prevent filtering user on sensitive data
-	filter.User.Passhash = ""
-	filter.User.Salt = ""
-	filter.User.Iter = 0
-	filter.User.PassCrackTimeSec = 0
-	filter.User.TOTPSharedKey = ""
+	for _, name := range UserIgnoreFilterKeys {
+		delete(filter, name)
+	}
 
 	// look for all users matching user filter
 	db := loggedDB(ctx)
 	users := []ormapi.User{}
-	err = db.Where(&filter.User).Find(&users).Error
+	err = db.Where(filter).Find(&users).Error
 	if err != nil {
 		return setReply(c, dbErr(err), nil)
 	}
 
-	if !admin || filter.Org != "" || filter.Role != "" {
+	if !admin || filterOrg != "" || filterRole != "" {
 		// filter by specified org (or authorizedOrgs) or role
 		groupings, err := enforcer.GetGroupingPolicy()
 		if err != nil {
@@ -589,16 +601,16 @@ func ShowUser(c echo.Context) error {
 				continue
 			}
 
-			if filter.Org != "" && filter.Org != role.Org {
+			if filterOrg != "" && filterOrg != role.Org {
 				continue
 			}
-			if filter.Org == "" && !admin {
+			if filterOrg == "" && !admin {
 				// filter by allowed orgs
 				if _, found := authOrgs[role.Org]; !found {
 					continue
 				}
 			}
-			if filter.Role != "" && filter.Role != role.Role {
+			if filterRole != "" && filterRole != role.Role {
 				continue
 			}
 			allowedUsers[role.Username] = struct{}{}

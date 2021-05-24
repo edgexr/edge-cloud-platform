@@ -51,6 +51,7 @@ func init() {
 		AliasArgs:    strings.Join(EmbeddedUserAliasArgs, " "),
 		Comments:     aliasedComments(ormapi.ShowUserComments, EmbeddedUserAliasArgs),
 		ReplyData:    &[]ormapi.User{},
+		ShowFilter:   true,
 		Path:         "/auth/user/show",
 	}, &ApiCommand{
 		Name:      "CurrentUser",

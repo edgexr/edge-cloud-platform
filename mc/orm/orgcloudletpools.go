@@ -571,32 +571,39 @@ func showCloudletPoolAccess(c echo.Context, typ string) error {
 	}
 	ctx := GetContext(c)
 
-	filter := ormapi.OrgCloudletPool{}
-	if err := c.Bind(&filter); err != nil {
-		return bindErr(c, err)
-	}
-	out, err := showCloudletPoolAccessObj(ctx, claims.Username, &filter, typ)
+	filter, err := bindDbFilter(c, &ormapi.OrgCloudletPool{})
 	if err != nil {
 		return err
+	}
+	out, err := showCloudletPoolAccessObj(ctx, claims.Username, filter, typ)
+	if err != nil {
+		return setReply(c, err, nil)
 	}
 	return setReply(c, nil, out)
 }
 
-func showCloudletPoolAccessObj(ctx context.Context, username string, filter *ormapi.OrgCloudletPool, typ string) ([]ormapi.OrgCloudletPool, error) {
+func showCloudletPoolAccessObj(ctx context.Context, username string, filter map[string]interface{}, typ string) ([]ormapi.OrgCloudletPool, error) {
 	// granted and pending are not types in the database,
 	// they're just used here for special cases.
 	if typ != accessTypeGranted && typ != accessTypePending {
-		filter.Type = typ
+		filter["type"] = typ
+	} else {
+		delete(filter, "type")
 	}
-
-	authz, err := newAuthzOrgCloudletPool(ctx, filter.Region, username, ActionView)
+	region := ""
+	if v, ok := filter["region"]; ok {
+		if str, ok := v.(string); ok {
+			region = str
+		}
+	}
+	authz, err := newAuthzOrgCloudletPool(ctx, region, username, ActionView)
 	if err != nil {
 		return nil, err
 	}
 
 	ops := []ormapi.OrgCloudletPool{}
 	db := loggedDB(ctx)
-	err = db.Where(&filter).Find(&ops).Error
+	err = db.Where(filter).Find(&ops).Error
 	if err != nil {
 		return nil, dbErr(err)
 	}
@@ -606,7 +613,7 @@ func showCloudletPoolAccessObj(ctx context.Context, username string, filter *orm
 		if !authz.Ok(&op) {
 			continue
 		}
-		if filter.Type != "" {
+		if typ != accessTypeGranted && typ != accessTypePending {
 			// hide type as it is an internal-only field
 			op.Type = ""
 		}

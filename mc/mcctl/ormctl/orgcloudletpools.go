@@ -39,6 +39,7 @@ func init() {
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		ShowFilter:   true,
 		Path:         "/auth/cloudletpoolaccessinvitation/show",
 	}}
 	AllApis.AddGroup(CloudletPoolInvitationGroup, "Manage CloudletPool invitations", cmds)
@@ -66,6 +67,7 @@ func init() {
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		ShowFilter:   true,
 		Path:         "/auth/cloudletpoolaccessresponse/show",
 	}}
 	AllApis.AddGroup(CloudletPoolResponseGroup, "Manage CloudletPool responses to invitations", cmds)
@@ -78,6 +80,7 @@ func init() {
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		ShowFilter:   true,
 		Path:         "/auth/cloudletpoolaccessgranted/show",
 	}, {
 		Name:         "ShowCloudletPoolAccessPending",
@@ -87,6 +90,7 @@ func init() {
 		Comments:     OrgCloudletPoolComments,
 		ReqData:      &ormapi.OrgCloudletPool{},
 		ReplyData:    &[]ormapi.OrgCloudletPool{},
+		ShowFilter:   true,
 		Path:         "/auth/cloudletpoolaccesspending/show",
 	}}
 	AllApis.AddGroup(CloudletPoolAccessGroup, "View CloudletPool access", cmds)

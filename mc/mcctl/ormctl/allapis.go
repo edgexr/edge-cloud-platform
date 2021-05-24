@@ -34,6 +34,7 @@ type ApiCommand struct {
 	DataFlagOnly         bool
 	IsUpdate             bool
 	CliEmptyRequiredArgs string
+	ShowFilter           bool
 }
 
 type ApiGroup struct {

@@ -34,6 +34,7 @@ var BruteForceGuessesPerSecond = 1000000
 var JWTShortDuration = 4 * time.Hour
 
 var Jwks vault.JWKS
+var NoUserClaims *UserClaims = nil
 
 const (
 	ApiKeyAuth   string = "apikeyauth"

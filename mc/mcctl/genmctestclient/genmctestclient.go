@@ -97,10 +97,21 @@ func printCommand(wr io.Writer, cmd *ormctl.ApiCommand) error {
 		args.TokenArg = ", token string"
 	}
 	if cmd.ReqData != nil {
-		if (strings.HasPrefix(cmd.Name, "Update") || cmd.IsUpdate) && !cmd.ProtobufApi {
+		inputMap := false
+		if !cmd.ProtobufApi {
+			if strings.HasPrefix(cmd.Name, "Update") || cmd.IsUpdate {
+				// updates get passed in maps for REST-based APIs,
+				// or should have fields set for Protobuf-based APIs.
+				inputMap = true
+			}
+			if cmd.ShowFilter {
+				// MC API show filter input data should be a
+				// StructNamespace map
+				inputMap = true
+			}
+		}
+		if inputMap {
 			args.InArg = ", in map[string]interface{}"
-			// updates get passed in maps for JSON-based APIs,
-			// or should have fields set for Protobuf-based APIs.
 		} else {
 			args.InArg = fmt.Sprintf(", in %T", cmd.ReqData)
 		}

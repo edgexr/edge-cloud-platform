@@ -118,7 +118,7 @@ func updateReporterData(ctx context.Context, reporterName, reporterOrg string, n
 }
 
 func getAllRegions(ctx context.Context) ([]string, error) {
-	controllers, err := ShowControllerObj(ctx, nil)
+	controllers, err := ShowControllerObj(ctx, NoUserClaims, NoShowFilter)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get regions: %v", err)
 	}
@@ -727,17 +727,17 @@ func GetCloudletSummaryData(ctx context.Context, username string, report *ormapi
 
 func GetCloudletPoolSummaryData(ctx context.Context, username string, report *ormapi.GenerateReport) ([][]string, error) {
 	// get pools associated with orgs
-	op := ormapi.OrgCloudletPool{
-		Region:          report.Region,
-		CloudletPoolOrg: report.Org,
+	filter := map[string]interface{}{
+		"region":            report.Region,
+		"cloudlet_pool_org": report.Org,
 	}
 	poolAcceptedDevelopers := make(map[string][]string)
 	poolPendingDevelopers := make(map[string][]string)
-	acceptedOps, err := showCloudletPoolAccessObj(ctx, username, &op, accessTypeGranted)
+	acceptedOps, err := showCloudletPoolAccessObj(ctx, username, filter, accessTypeGranted)
 	if err != nil {
 		return nil, err
 	}
-	pendingOps, err := showCloudletPoolAccessObj(ctx, username, &op, accessTypePending)
+	pendingOps, err := showCloudletPoolAccessObj(ctx, username, filter, accessTypePending)
 	if err != nil {
 		return nil, err
 	}
