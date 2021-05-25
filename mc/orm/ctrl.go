@@ -123,6 +123,9 @@ func DeleteController(c echo.Context) error {
 		return bindErr(c, err)
 	}
 	err = DeleteControllerObj(ctx, claims, &ctrl)
+
+	// Close regional influxDB connection when controller is deleted
+	influxDbConnCache.DeleteClient(ctrl.Region)
 	return setReply(c, err, Msg("Controller deregistered"))
 }
 

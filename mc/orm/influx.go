@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -198,12 +199,64 @@ var operatorInfluxDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
 	` order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
+type InfluxDbConnCache struct {
+	sync.RWMutex
+	clients map[string]influxdb.Client
+}
+
+var influxDbConnCache InfluxDbConnCache
+
+func (c *InfluxDbConnCache) InitCache() {
+	c.clients = make(map[string]influxdb.Client)
+
+}
+
+func (c *InfluxDbConnCache) GetClient(region string) (influxdb.Client, error) {
+	c.RLock()
+	defer c.RUnlock()
+	if client, found := c.clients[region]; found {
+		return client, nil
+	}
+	return nil, fmt.Errorf("Client no found in cache")
+}
+
+func (c *InfluxDbConnCache) AddClient(client influxdb.Client, region string) {
+	c.Lock()
+	defer c.Unlock()
+	if oldClient, found := c.clients[region]; found {
+		oldClient.Close()
+	}
+	c.clients[region] = client
+}
+
+func (c *InfluxDbConnCache) DeleteClient(region string) {
+	c.Lock()
+	defer c.Unlock()
+	if client, found := c.clients[region]; found {
+		client.Close()
+	}
+	delete(c.clients, region)
+}
+
+func (c *InfluxDbConnCache) CloseIdleConnections(region string) {
+	c.Lock()
+	defer c.Unlock()
+	if client, found := c.clients[region]; found {
+		client.Close()
+	}
+}
+
 func init() {
 	devInfluxDBTemplate = template.Must(template.New("influxquery").Parse(devInfluxDBT))
 	operatorInfluxDBTemplate = template.Must(template.New("influxquery").Parse(operatorInfluxDBT))
+	influxDbConnCache.InitCache()
 }
 
 func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error) {
+	// If we have a cached client - return it
+	if client, err := influxDbConnCache.GetClient(region); err == nil {
+		return client, nil
+	}
 	addr, err := getInfluxDBAddrForRegion(ctx, region)
 	if err != nil {
 		return nil, err
@@ -222,6 +275,8 @@ func ConnectInfluxDB(ctx context.Context, region string) (influxdb.Client, error
 	if err != nil {
 		return nil, err
 	}
+	// cache this client for future use
+	influxDbConnCache.AddClient(client, region)
 	return client, nil
 }
 
@@ -338,10 +393,6 @@ func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, 
 			return err
 		}
 		rc.conn = conn
-		defer func() {
-			rc.conn.Close()
-			rc.conn = nil
-		}()
 	}
 	var results []influxdb.Result
 	for _, database := range databases {
@@ -355,6 +406,8 @@ func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, 
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "InfluxDB query failed",
 				"query", query, "resp", resp, "err", err)
+			// If the query failed, clean up idle connections
+			influxDbConnCache.CloseIdleConnections(rc.region)
 			// We return a different error, as we don't want to expose a URL-encoded query to influxDB
 			return fmt.Errorf("Connection to InfluxDB failed")
 		}
