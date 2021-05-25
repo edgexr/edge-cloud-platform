@@ -391,7 +391,7 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 		out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", "ubuntu64Guest", "-pool", poolName, "-ds", ds, "-dc", dcName, "-disk", image, "-net", netname, vm.Name)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
-			return fmt.Errorf("Failed to create template VM: %v", err)
+			return fmt.Errorf("Failed to create template VM: %s - %v", string(out), err)
 		}
 		return nil
 	} else {
@@ -412,7 +412,7 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 			vm.Name)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Error in clone VM", "vmName", vm.Name, "out", string(out), "err", err)
-			return fmt.Errorf("Failed to clone VM from template: %s - %v", vm.Name, err)
+			return fmt.Errorf("Failed to clone VM from template: %s - %s %v", vm.Name, string(out), err)
 		}
 		// clone only supports 1 network interface, add others here
 		for i := range vm.Ports {
@@ -832,7 +832,7 @@ func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFold
 	out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", "ubuntu64Guest", "-pool", pool, "-ds", ds, "-dc", dcName, "-folder", folder, "-disk", imageFolder+"/"+imageFile+".vmdk", "-net", extNet, templateName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
-		return fmt.Errorf("Failed to create template VM: %v", err)
+		return fmt.Errorf("Failed to create template VM: %s - %v", string(out), err)
 	}
 
 	// try to wait for tools to start. This update the VM so vSphere knows the tools are installed
