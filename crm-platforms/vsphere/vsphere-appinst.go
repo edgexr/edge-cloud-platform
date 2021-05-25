@@ -2,6 +2,9 @@ package vsphere
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
@@ -11,7 +14,7 @@ import (
 )
 
 func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "flavor", flavor)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent", "app.ImagePath", app.ImagePath, "imageInfo", imageInfo, "flavor", flavor)
 
 	f, err := v.GetFlavor(ctx, flavor)
 	if err != nil {
@@ -22,27 +25,38 @@ func (v *VSpherePlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "downloaded file", "filePath", filePath)
+	filesToCleanup := []string{}
+	defer func() {
+		for _, file := range filesToCleanup {
+			log.SpanLog(ctx, log.DebugLevelInfra, "delete file", "file", file)
+			if delerr := infracommon.DeleteFile(file); delerr != nil {
+				if !os.IsNotExist(delerr) {
+					log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "file", file)
+				}
+			}
+		}
+	}()
 
-	vmdkFile := filePath
+	log.SpanLog(ctx, log.DebugLevelInfra, "downloaded file", "filePath", filePath)
+	// rename to match localImageName
+	dirName := filepath.Dir(filePath)
+	extension := filepath.Ext(filePath)
+	newName := dirName + "/" + imageInfo.LocalImageName + extension
+	log.SpanLog(ctx, log.DebugLevelInfra, "renaming", "old name", filePath, "new name", newName)
+	err = os.Rename(filePath, newName)
+	if err != nil {
+		filesToCleanup = append(filesToCleanup, filePath)
+		return fmt.Errorf("Failed to rename image file - %v", err)
+	}
+	filesToCleanup = append(filesToCleanup, newName)
+	vmdkFile := newName
 	if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
 		updateCallback(edgeproto.UpdateTask, "Converting Image to VMDK")
-		vmdkFile, err = vmlayer.ConvertQcowToVmdk(ctx, filePath, f.Disk)
+		vmdkFile, err = vmlayer.ConvertQcowToVmdk(ctx, newName, f.Disk)
+		filesToCleanup = append(filesToCleanup, vmdkFile)
 		if err != nil {
 			return err
 		}
 	}
-
-	defer func() {
-		// Stale file might be present if download fails/succeeds, deleting it
-		if delerr := infracommon.DeleteFile(filePath); delerr != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "filePath", filePath)
-		}
-		if app.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW {
-			if delerr := infracommon.DeleteFile(vmdkFile); delerr != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "vmdkFile", vmdkFile)
-			}
-		}
-	}()
 	return v.ImportImage(ctx, cloudcommon.GetAppFQN(&app.Key), vmdkFile)
 }
