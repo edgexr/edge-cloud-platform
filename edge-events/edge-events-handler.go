@@ -16,10 +16,15 @@ import (
 
 // Implements dmecommon.EdgeEventsHandler interface
 type EdgeEventsHandlerPlugin struct {
-	mux util.Mutex
-	// Hashmap containing AppInsts on DME mapped to the clients connected to those AppInsts
-	AppInstsStruct             *AppInsts
+	util.Mutex
+	// Hashmap containing Cloudlets mapped to AppInsts mapped to the clients connected to those AppInsts
+	Cloudlets
 	EdgeEventsCookieExpiration time.Duration
+}
+
+// Map CloudletKey to AppInsts on that cloudlet
+type Cloudlets struct {
+	CloudletsMap map[edgeproto.CloudletKey]*AppInsts
 }
 
 // Map AppInstKey to Clients on appinst
@@ -46,21 +51,28 @@ type ClientInfo struct {
 
 // Add Client connected to specified AppInst to Map
 func (e *EdgeEventsHandlerPlugin) AddClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc *dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent)) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Initialize AppInstsMap
-	if e.AppInstsStruct.AppInstsMap == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "initializing app insts map")
-		e.AppInstsStruct.AppInstsMap = make(map[edgeproto.AppInstKey]*Clients)
+	e.Lock()
+	defer e.Unlock()
+	// Initialize CloudletsMap
+	if e.CloudletsMap == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "initializing cloudlets map")
+		e.CloudletsMap = make(map[edgeproto.CloudletKey]*AppInsts)
+	}
+	cloudletKey := appInstKey.ClusterInstKey.CloudletKey
+	appinsts, ok := e.CloudletsMap[cloudletKey]
+	if !ok {
+		// add first appinst
+		appinsts = new(AppInsts)
+		appinsts.AppInstsMap = make(map[edgeproto.AppInstKey]*Clients)
+		e.CloudletsMap[cloudletKey] = appinsts
 	}
 	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
+	clients, ok := appinsts.AppInstsMap[appInstKey]
 	if !ok {
 		// add first client for appinst
-		newClients := new(Clients)
-		newClients.ClientsMap = make(map[Client]*ClientInfo)
-		clients = newClients
-		e.AppInstsStruct.AppInstsMap[appInstKey] = clients
+		clients = new(Clients)
+		clients.ClientsMap = make(map[Client]*ClientInfo)
+		appinsts.AppInstsMap[appInstKey] = clients
 	}
 	// Initialize client info for new client
 	client := Client{cookieKey: cookieKey}
@@ -71,72 +83,49 @@ func (e *EdgeEventsHandlerPlugin) AddClientKey(ctx context.Context, appInstKey e
 	}
 }
 
-// Remove Client connected to specified AppInst from Map
-func (e *EdgeEventsHandlerPlugin) RemoveClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find appinst to remove", "appInstKey", appInstKey)
-		return
-	}
-	// Remove specified client
-	client := Client{cookieKey}
-	delete(clients.ClientsMap, client)
-}
-
 // Update Client's last location
 func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc *dme.Loc) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find appinst to remove", "appInstKey", appInstKey)
-		return
-	}
+	e.Lock()
+	defer e.Unlock()
 	// Update lastLoc field in cliientinfo for specified client
-	client := Client{cookieKey}
-	clientinfo, ok := clients.ClientsMap[client]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find client to update", "client", client)
+	clientinfo, err := e.getClientInfo(ctx, appInstKey, cookieKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find client to update", "client", cookieKey, "error", err)
 		return
 	}
 	clientinfo.lastLoc = lastLoc
 }
 
+// Remove Client connected to specified AppInst from Map
+func (e *EdgeEventsHandlerPlugin) RemoveClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
+	e.Lock()
+	defer e.Unlock()
+	e.removeClientKey(ctx, appInstKey, cookieKey)
+}
+
 // Remove AppInst from Map of AppInsts
 func (e *EdgeEventsHandlerPlugin) RemoveAppInstKey(ctx context.Context, appInstKey edgeproto.AppInstKey) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Check to see if appinst exists
-	_, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find appinst to remove", "appInstKey", appInstKey)
-		return
-	}
-	// Remove appinst from map of appinsts
-	delete(e.AppInstsStruct.AppInstsMap, appInstKey)
+	e.Lock()
+	defer e.Unlock()
+	e.removeAppInstKey(ctx, appInstKey)
+}
+
+func (e *EdgeEventsHandlerPlugin) RemoveCloudletKey(ctx context.Context, cloudletKey edgeproto.CloudletKey) {
+	e.Lock()
+	defer e.Unlock()
+	e.removeCloudletKey(ctx, cloudletKey)
 }
 
 // Handle processing of latency samples and then send back to client
 // For now: Avg, Min, Max, StdDev
 func (e *EdgeEventsHandlerPlugin) ProcessLatencySamples(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, samples []*dme.Sample) (*dme.Statistics, error) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst, no clients connected to appinst have edge events connection", "appInstKey", appInstKey)
-		return nil, fmt.Errorf("Cannot find specified appinst %v. No clients connected to appinst have edge events connection", appInstKey)
-	}
+	e.Lock()
+	defer e.Unlock()
 	// Check to see if client is on appinst
-	client := Client{cookieKey}
-	clientinfo, ok := clients.ClientsMap[client]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find client connected to appinst", "appInstKey", appInstKey, "client", client)
-		return nil, fmt.Errorf("Cannot find client connected to appinst %v", appInstKey)
+	clientinfo, err := e.getClientInfo(ctx, appInstKey, cookieKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find client connected to appinst", "appInstKey", appInstKey, "client", cookieKey, "error", err)
+		return nil, fmt.Errorf("cannot find client connected to appinst %v - error is %v", appInstKey, err)
 	}
 	// Create latencyEdgeEvent with processed stats
 	latencyEdgeEvent := new(dme.ServerEdgeEvent)
@@ -153,104 +142,104 @@ func (e *EdgeEventsHandlerPlugin) ProcessLatencySamples(ctx context.Context, app
 // Client will then send those latency samples back to be processed in the HandleLatencySamples function
 // Finally, DME will send the processed latency samples in the form of dme.Latency struct (with calculated avg, min, max, stddev) back to client
 func (e *EdgeEventsHandlerPlugin) SendLatencyRequestEdgeEvent(ctx context.Context, appInstKey edgeproto.AppInstKey) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
+	e.Lock()
+	defer e.Unlock()
 	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst. no clients connected to appinst have edge events connection.", "appInstKey", appInstKey)
+	clients, err := e.getClients(ctx, appInstKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst. no clients connected to appinst have edge events connection.", "appInstKey", appInstKey, "error", err)
 		return
 	}
+	// Build map of LatencyRequestEdgeEvents mapped to the sendFunc that will send the event to the correct client
+	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
+	for _, clientinfo := range clients.ClientsMap {
+		latencyRequestEdgeEvent := new(dme.ServerEdgeEvent)
+		latencyRequestEdgeEvent.EventType = dme.ServerEdgeEvent_EVENT_LATENCY_REQUEST
+		m[latencyRequestEdgeEvent] = clientinfo.sendFunc
+	}
 	// Send latency request to each client on appinst
-	go func() {
-		e.mux.Lock()
-		defer e.mux.Unlock()
-		for _, clientinfo := range clients.ClientsMap {
-			latencyRequestEdgeEvent := new(dme.ServerEdgeEvent)
-			latencyRequestEdgeEvent.EventType = dme.ServerEdgeEvent_EVENT_LATENCY_REQUEST
-			clientinfo.sendFunc(latencyRequestEdgeEvent)
-		}
-	}()
+	go e.sendEdgeEventsToClients(m)
 }
 
-// Send a ServerEdgeEvent with specified Event to all clients connected to specified AppInst (and also have initiated persistent connection)
-func (e *EdgeEventsHandlerPlugin) SendAppInstStateEvent(ctx context.Context, appInst *dmecommon.DmeAppInst, appInstKey edgeproto.AppInstKey, eventType dme.ServerEdgeEvent_ServerEventType) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
+// Send a AppInstState EdgeEvent with specified Event to all clients connected to specified AppInst (and also have initiated persistent connection)
+func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appInst *dmecommon.DmeAppInst, appInstKey edgeproto.AppInstKey, eventType dme.ServerEdgeEvent_ServerEventType) {
+	e.Lock()
+	defer e.Unlock()
 	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst. no clients connected to appinst have edge events connection.", "appInstKey", appInstKey)
+	clients, err := e.getClients(ctx, appInstKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst. no clients connected to appinst have edge events connection.", "appInstKey", appInstKey, "error", err)
 		return
 	}
 	// Check if appinst is usable. If not do a FindCloudlet for each client
-	appInstUsable := dmecommon.IsAppInstUsable(appInst)
+	usability := getUsability(appInst.MaintenanceState, appInst.CloudletState, appInst.AppInstHealth)
+	// Build map of AppInstStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
+	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
+	for _, clientinfo := range clients.ClientsMap {
+		appInstStateEdgeEvent := e.createAppInstStateEdgeEvent(ctx, appInst, appInstKey, clientinfo, eventType, usability)
+		m[appInstStateEdgeEvent] = clientinfo.sendFunc
+	}
 	// Send appinst state event to each client on affected appinst
-	go func() {
-		e.mux.Lock()
-		defer e.mux.Unlock()
+	go e.sendEdgeEventsToClients(m)
+}
+
+func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, cloudletKey edgeproto.CloudletKey) {
+	e.Lock()
+	defer e.Unlock()
+	// Get appinsts on specified cloudlet
+	appinsts, err := e.getAppInsts(ctx, cloudletKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find cloudlet. no appinsts on cloudlet", "cloudlet", cloudletKey, "error", err)
+		return
+	}
+	// Check if cloudlet is usable. If not do a FindCloudlet for each client (only use cloudlet.State)
+	usability := getUsability(dme.MaintenanceState_NORMAL_OPERATION, cloudlet.State, dme.HealthCheck_HEALTH_CHECK_OK)
+	// Build map of CloudletStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
+	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
+	for key, clients := range appinsts.AppInstsMap {
 		for _, clientinfo := range clients.ClientsMap {
-			// Look for a new cloudlet if the appinst is not usable
-			newCloudlet := new(dme.FindCloudletReply)
-			var err error
-			if !appInstUsable {
-				err = dmecommon.FindCloudlet(ctx, &appInstKey.AppKey, clientinfo.carrier, clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Current appinst is unusable, but error doing FindCloudlet", "err", err)
-					err = fmt.Errorf("Current appinst is unusable, but error doing FindCloudlet - error is %s", err.Error())
-					newCloudlet = nil
-				} else if newCloudlet.Status != dme.FindCloudletReply_FIND_FOUND {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Current appinst is unusable, but unable to find any cloudlets", "FindStatus", newCloudlet.Status)
-					err = fmt.Errorf("Current appinst is unusable, but unable to find any cloudlets - FindStatus is %s", newCloudlet.Status)
-					newCloudlet = nil
-				}
-			}
-			// Send the client the state event
-			updateServerEdgeEvent := createAppInstStateEvent(ctx, appInst, eventType, newCloudlet)
-			if err != nil {
-				updateServerEdgeEvent.ErrorMsg = err.Error()
-			}
-			clientinfo.sendFunc(updateServerEdgeEvent)
+			cloudletStateEdgeEvent := e.createCloudletStateEdgeEvent(ctx, cloudlet, key, clientinfo, usability)
+			m[cloudletStateEdgeEvent] = clientinfo.sendFunc
 		}
-	}()
+	}
+	// Send cloudlet state event to each client on each appinst on the affected cloudlet
+	go e.sendEdgeEventsToClients(m)
+}
+
+func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, cloudletKey edgeproto.CloudletKey) {
+	e.Lock()
+	defer e.Unlock()
+	// Get appinsts on specified cloudlet
+	appinsts, err := e.getAppInsts(ctx, cloudletKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find cloudlet. no appinsts on cloudlet", "cloudlet", cloudletKey, "error", err)
+		return
+	}
+	// Check if cloudlet is usable. If not do a FindCloudlet for each client (only use cloudlet.MaintenanceState)
+	usability := getUsability(cloudlet.MaintenanceState, dme.CloudletState_CLOUDLET_STATE_READY, dme.HealthCheck_HEALTH_CHECK_OK)
+	// Build map of CloudletMaintenanceStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
+	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
+	for key, clients := range appinsts.AppInstsMap {
+		for _, clientinfo := range clients.ClientsMap {
+			cloudletMaintenanceStateEdgeEvent := e.createCloudletMaintenanceStateEdgeEvent(ctx, cloudlet, key, clientinfo, usability)
+			m[cloudletMaintenanceStateEdgeEvent] = clientinfo.sendFunc
+		}
+	}
+	// Send cloudlet maintenance state event to each client on each appinst on the affected cloudlet
+	go e.sendEdgeEventsToClients(m)
 }
 
 // Send ServerEdgeEvent to specified client via persistent grpc stream
 func (e *EdgeEventsHandlerPlugin) SendEdgeEventToClient(ctx context.Context, serverEdgeEvent *dme.ServerEdgeEvent, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
-	e.mux.Lock()
-	defer e.mux.Unlock()
-	// Get clients on specified appinst
-	clients, ok := e.AppInstsStruct.AppInstsMap[appInstKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find appinst, no clients connected to appinst have edge events connection", "appInstKey", appInstKey)
-		return
-	}
+	e.Lock()
+	defer e.Unlock()
 	// Check to see if client is on appinst
-	client := Client{cookieKey}
-	clientinfo, ok := clients.ClientsMap[client]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find client connected to appinst", "appInstKey", appInstKey, "client", client)
+	clientinfo, err := e.getClientInfo(ctx, appInstKey, cookieKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot find client connected to appinst", "appInstKey", appInstKey, "client", cookieKey, "error", err)
 		return
 	}
 	clientinfo.sendFunc(serverEdgeEvent)
-}
-
-// Create the ServerEdgeEvent with specified Event
-func createAppInstStateEvent(ctx context.Context, appInst *dmecommon.DmeAppInst, eventType dme.ServerEdgeEvent_ServerEventType, newCloudlet *dme.FindCloudletReply) *dme.ServerEdgeEvent {
-	updateServerEdgeEvent := new(dme.ServerEdgeEvent)
-	updateServerEdgeEvent.EventType = eventType
-	updateServerEdgeEvent.NewCloudlet = newCloudlet
-	// Populate the corresponding ServerEdgeEvent field based on eventType
-	switch eventType {
-	case dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE:
-		updateServerEdgeEvent.CloudletState = appInst.CloudletState
-	case dme.ServerEdgeEvent_EVENT_CLOUDLET_MAINTENANCE:
-		updateServerEdgeEvent.MaintenanceState = appInst.MaintenanceState
-	case dme.ServerEdgeEvent_EVENT_APPINST_HEALTH:
-		updateServerEdgeEvent.HealthCheck = appInst.AppInstHealth
-	default:
-	}
-	return updateServerEdgeEvent
 }
 
 func (e *EdgeEventsHandlerPlugin) GetVersionProperties() map[string]string {

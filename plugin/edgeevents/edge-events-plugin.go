@@ -11,10 +11,7 @@ import (
 
 func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.Duration) (dmecommon.EdgeEventsHandler, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetEdgeEventHandler")
-
 	edgeEventsHandlerPlugin := new(edgeevents.EdgeEventsHandlerPlugin)
-	log.SpanLog(ctx, log.DebugLevelInfra, "initializing app insts struct")
-	edgeEventsHandlerPlugin.AppInstsStruct = new(edgeevents.AppInsts)
 	edgeEventsHandlerPlugin.EdgeEventsCookieExpiration = edgeEventsCookieExpiration
 	return edgeEventsHandlerPlugin, nil
 }
