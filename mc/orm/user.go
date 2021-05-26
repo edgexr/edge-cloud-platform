@@ -71,28 +71,28 @@ func Login(c echo.Context) error {
 	ctx := GetContext(c)
 	login := ormapi.UserLogin{}
 	if err := c.Bind(&login); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	db := loggedDB(ctx)
 	user := ormapi.User{}
 	if login.ApiKey != "" || login.ApiKeyId != "" {
 		if login.ApiKeyId == "" {
-			return c.JSON(http.StatusBadRequest, Msg("apikeyid not specified"))
+			return fmt.Errorf("apikeyid not specified")
 		}
 		if login.ApiKey == "" {
-			return c.JSON(http.StatusBadRequest, Msg("apikey not specified"))
+			return fmt.Errorf("apikey not specified")
 		}
 		apiKeyObj := ormapi.UserApiKey{Id: login.ApiKeyId}
 		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "ApiKey lookup failed", "apiKey", apiKeyObj, "err", err)
 			time.Sleep(BadAuthDelay)
-			return c.JSON(http.StatusBadRequest, Msg("Invalid ApiKey"))
+			return fmt.Errorf("Invalid ApiKey")
 		}
 		user.Name = apiKeyObj.Username
 		err = db.Where(&user).First(&user).Error
 		if err != nil {
-			return setReply(c, dbErr(err), nil)
+			return dbErr(err)
 		}
 		span := log.SpanFromContext(ctx)
 		span.SetTag("username", user.Name)
@@ -104,15 +104,15 @@ func Login(c echo.Context) error {
 		}
 		if !matches || err != nil {
 			time.Sleep(BadAuthDelay)
-			return c.JSON(http.StatusBadRequest, Msg("Invalid ApiKey or ApiKeyId"))
+			return fmt.Errorf("Invalid ApiKey or ApiKeyId")
 		}
 	} else {
 		if login.Username == "" {
-			return c.JSON(http.StatusBadRequest, Msg("Username not specified"))
+			return fmt.Errorf("Username not specified")
 		}
 
 		if login.Password == "" {
-			return c.JSON(http.StatusBadRequest, Msg("Please specify password"))
+			return fmt.Errorf("Please specify password")
 		}
 		lookup := ormapi.User{Name: login.Username}
 		res := db.Where(&lookup).First(&user)
@@ -126,7 +126,7 @@ func Login(c echo.Context) error {
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "user lookup failed", "lookup", lookup, "err", err)
 			time.Sleep(BadAuthDelay)
-			return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
+			return fmt.Errorf("Invalid username or password")
 		}
 		span := log.SpanFromContext(ctx)
 		span.SetTag("username", user.Name)
@@ -138,20 +138,20 @@ func Login(c echo.Context) error {
 		}
 		if !matches || err != nil {
 			time.Sleep(BadAuthDelay)
-			return c.JSON(http.StatusBadRequest, Msg("Invalid username or password"))
+			return fmt.Errorf("Invalid username or password")
 		}
 	}
 
 	if user.Locked {
-		return c.JSON(http.StatusBadRequest, Msg("Account is locked, please contact MobiledgeX support"))
+		return fmt.Errorf("Account is locked, please contact MobiledgeX support")
 	}
 	if !getSkipVerifyEmail(ctx, nil) && !user.EmailVerified {
-		return c.JSON(http.StatusBadRequest, Msg("Email not verified yet"))
+		return fmt.Errorf("Email not verified yet")
 	}
 
 	isAdmin, err := isUserAdmin(ctx, user.Name)
 	if err != nil {
-		return setReply(c, err, nil)
+		return err
 	}
 	if login.Password != "" && user.PassCrackTimeSec == 0 {
 		calcPasswordStrength(ctx, &user, login.Password)
@@ -160,7 +160,7 @@ func Login(c echo.Context) error {
 		if err != nil {
 			if isAdmin {
 				time.Sleep(BadAuthDelay)
-				return c.JSON(http.StatusBadRequest, Msg("Existing password for Admin too weak, please update first"))
+				return fmt.Errorf("Existing password for Admin too weak, please update first")
 			} else {
 				// log warning for now
 				log.SpanLog(ctx, log.DebugLevelApi, "user password strength check failure", "user", user.Name, "err", err)
@@ -169,7 +169,7 @@ func Login(c echo.Context) error {
 		// save password strength
 		err = db.Model(&user).Updates(&user).Error
 		if err != nil {
-			return setReply(c, dbErr(err), nil)
+			return dbErr(err)
 		}
 	}
 
@@ -184,15 +184,15 @@ func Login(c echo.Context) error {
 			// Send OTP over email
 			otp, err := totp.GenerateCodeCustom(user.TOTPSharedKey, time.Now().UTC(), opts)
 			if err != nil {
-				return setReply(c, err, nil)
+				return err
 			}
 			err = sendOTPEmail(ctx, user.Name, user.Email, otp, OTPExpirationTimeStr)
 			if err != nil {
 				// log and ignore
 				log.SpanLog(ctx, log.DebugLevelApi, "failed to send otp email", "err", err)
 			}
-			return c.JSON(http.StatusNetworkAuthenticationRequired, Msg("Missing OTP\nPlease use two factor authenticator app on "+
-				"your phone to get OTP. We have also sent OTP to your registered email address"))
+			return newHTTPError(http.StatusNetworkAuthenticationRequired, "Missing OTP\nPlease use two factor authenticator app on "+
+				"your phone to get OTP. We have also sent OTP to your registered email address")
 		}
 		// Default OTP expiration time for Authenticator client is set to 30secs
 		// Hence first validate for 30secs, if that fails then validate for
@@ -204,7 +204,7 @@ func Login(c echo.Context) error {
 			valid, err = totp.ValidateCustom(login.TOTP, user.TOTPSharedKey, time.Now().UTC(), opts)
 			if !valid {
 				log.SpanLog(ctx, log.DebugLevelApi, "invalid or expired otp", "user", user.Name, "err", err)
-				return c.JSON(http.StatusBadRequest, Msg("Invalid or expired OTP. Please login again to receive another OTP"))
+				return fmt.Errorf("Invalid or expired OTP. Please login again to receive another OTP")
 			}
 		}
 	}
@@ -212,7 +212,7 @@ func Login(c echo.Context) error {
 	cookie, err := GenerateCookie(&user, login.ApiKeyId, serverConfig.DomainName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
-		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
+		return fmt.Errorf("Failed to generate cookie")
 	}
 	ret := M{"token": cookie.Value}
 	if isAdmin {
@@ -230,18 +230,18 @@ func RefreshAuthCookie(c echo.Context) error {
 	ctx := GetContext(c)
 	if claims.FirstIssuedAt == 0 {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie as issued time is missing")
-		return c.JSON(http.StatusBadRequest, Msg("Failed to refresh auth cookie"))
+		return fmt.Errorf("Failed to refresh auth cookie")
 	}
 	// refresh auth cookie only if it was issued within 30 days
 	if time.Unix(claims.FirstIssuedAt, 0).AddDate(0, 0, 30).Unix() < time.Now().Unix() {
-		return c.JSON(http.StatusUnauthorized, Msg("expired jwt"))
+		return newHTTPError(http.StatusUnauthorized, "expired jwt")
 	}
 	claims.StandardClaims.IssuedAt = time.Now().Unix()
 	claims.StandardClaims.ExpiresAt = time.Now().AddDate(0, 0, 1).Unix()
 	cookie, err := Jwks.GenerateCookie(claims)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
-		return c.JSON(http.StatusBadRequest, Msg("Failed to generate cookie"))
+		return fmt.Errorf("Failed to generate cookie")
 	}
 	return c.JSON(http.StatusOK, M{"token": cookie})
 }
@@ -275,28 +275,27 @@ func CreateUser(c echo.Context) error {
 	ctx := GetContext(c)
 	createuser := ormapi.CreateUser{}
 	if err := c.Bind(&createuser); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	user := createuser.User
 	if user.Name == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Name not specified"))
+		return fmt.Errorf("Name not specified")
 	}
 	err := ValidName(user.Name)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, Msg(err.Error()))
+		return err
 	}
 	if !util.ValidEmail(user.Email) {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid email address"))
+		return fmt.Errorf("Invalid email address")
 	}
 	if err := ValidPassword(user.Passhash); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
-			err.Error()))
+		return fmt.Errorf("Invalid password, %s", err)
 	}
 	orgT, err := GetAllOrgs(ctx)
 	if err == nil {
 		for orgName, _ := range orgT {
 			if strings.ToLower(user.Name) == strings.ToLower(orgName) {
-				return c.JSON(http.StatusBadRequest, Msg("user name cannot be same as org name"))
+				return fmt.Errorf("user name cannot be same as org name")
 			}
 		}
 	}
@@ -310,7 +309,7 @@ func CreateUser(c echo.Context) error {
 	isAdmin := false
 	err = checkPasswordStrength(ctx, &user, config, isAdmin)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	if !getSkipVerifyEmail(ctx, config) {
@@ -318,7 +317,7 @@ func CreateUser(c echo.Context) error {
 		createuser.Verify.Email = "dummy@dummy.com"
 		err := ValidEmailRequest(c, &createuser.Verify)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, MsgErr(err))
+			return err
 		}
 	}
 	span := log.SpanFromContext(ctx)
@@ -335,7 +334,7 @@ func CreateUser(c echo.Context) error {
 	if user.EnableTOTP {
 		totpKey, totpQR, err := GenerateTOTPQR(user.Email)
 		if err != nil {
-			return setReply(c, fmt.Errorf("Failed to setup 2FA: %v", err), nil)
+			return fmt.Errorf("Failed to setup 2FA: %v", err)
 		}
 		user.TOTPSharedKey = totpKey
 
@@ -349,13 +348,13 @@ func CreateUser(c echo.Context) error {
 	if err := db.Create(&user).Error; err != nil {
 		//check specifically for duplicate username and/or emails
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_pkey\"" {
-			return setReply(c, fmt.Errorf("Username with name %s (case-insensitive) already exists", user.Name), nil)
+			return fmt.Errorf("Username with name %s (case-insensitive) already exists", user.Name)
 		}
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
-			return setReply(c, fmt.Errorf("Email already in use"), nil)
+			return fmt.Errorf("Email already in use")
 		}
 
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	createuser.Verify.Email = user.Email
 	err = sendVerifyEmail(ctx, user.Name, &createuser.Verify)
@@ -392,10 +391,10 @@ func ResendVerify(c echo.Context) error {
 
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	return sendVerifyEmail(ctx, "MobiledgeX user", &req)
 }
@@ -404,7 +403,7 @@ func VerifyEmail(c echo.Context) error {
 	ctx := GetContext(c)
 	tok := ormapi.Token{}
 	if err := c.Bind(&tok); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	claims := EmailClaims{}
 	token, err := Jwks.VerifyCookie(tok.Token, &claims)
@@ -427,7 +426,7 @@ func VerifyEmail(c echo.Context) error {
 
 	user.EmailVerified = true
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	return c.JSON(http.StatusOK, Msg("email verified, thank you"))
 }
@@ -441,10 +440,10 @@ func DeleteUser(c echo.Context) error {
 
 	user := ormapi.User{}
 	if err := c.Bind(&user); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if user.Name == "" {
-		return c.JSON(http.StatusBadRequest, Msg("User Name not specified"))
+		return fmt.Errorf("User Name not specified")
 	}
 	// Only user themself or super-user can delete user.
 	if user.Name != claims.Username {
@@ -453,7 +452,7 @@ func DeleteUser(c echo.Context) error {
 		}
 	}
 	if user.Name == Superuser {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot delete superuser"))
+		return fmt.Errorf("Cannot delete superuser")
 	}
 
 	// delete role mappings
@@ -490,7 +489,7 @@ func DeleteUser(c echo.Context) error {
 			} else {
 				err = fmt.Errorf("Error: Cannot delete the last remaining manager for the org %s", org)
 			}
-			return setReply(c, err, nil)
+			return err
 		}
 	}
 	for _, grp := range groups {
@@ -509,7 +508,7 @@ func DeleteUser(c echo.Context) error {
 	db := loggedDB(ctx)
 	err = db.Delete(&user).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	gitlabDeleteLDAPUser(ctx, user.Name)
 	artifactoryDeleteUser(ctx, user.Name)
@@ -528,7 +527,7 @@ func CurrentUser(c echo.Context) error {
 	db := loggedDB(ctx)
 	err = db.Where(&user).First(&user).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	user.Passhash = ""
 	user.Salt = ""
@@ -585,7 +584,7 @@ func ShowUser(c echo.Context) error {
 	users := []ormapi.User{}
 	err = db.Where(filter).Find(&users).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 
 	if !admin || filterOrg != "" || filterRole != "" {
@@ -651,7 +650,7 @@ func NewPassword(c echo.Context) error {
 	}
 	in := ormapi.NewPassword{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	return setPassword(c, claims.Username, in.Password)
 }
@@ -659,30 +658,29 @@ func NewPassword(c echo.Context) error {
 func setPassword(c echo.Context, username, password string) error {
 	ctx := GetContext(c)
 	if err := ValidPassword(password); err != nil {
-		return c.JSON(http.StatusBadRequest, Msg("Invalid password, "+
-			err.Error()))
+		return fmt.Errorf("Invalid password, %s", err)
 	}
 	user := ormapi.User{Name: username}
 	db := loggedDB(ctx)
 	err := db.Where(&user).First(&user).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 
 	calcPasswordStrength(ctx, &user, password)
 	// check password strength
 	isAdmin, err := isUserAdmin(ctx, user.Name)
 	if err != nil {
-		return setReply(c, err, nil)
+		return err
 	}
 	err = checkPasswordStrength(ctx, &user, nil, isAdmin)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	user.Passhash, user.Salt, user.Iter = NewPasshash(password)
 	if err := db.Model(&user).Updates(&user).Error; err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	return c.JSON(http.StatusOK, Msg("password updated"))
 }
@@ -714,10 +712,10 @@ func PasswordResetRequest(c echo.Context) error {
 	ctx := GetContext(c)
 	req := ormapi.EmailRequest{}
 	if err := c.Bind(&req); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if err := ValidEmailRequest(c, &req); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	noreply, err := getNoreply(ctx)
 	if err != nil {
@@ -772,7 +770,7 @@ func PasswordResetRequest(c echo.Context) error {
 func PasswordReset(c echo.Context) error {
 	pw := ormapi.PasswordReset{}
 	if err := c.Bind(&pw); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	claims := EmailClaims{}
 	token, err := Jwks.VerifyCookie(pw.Token, &claims)
@@ -804,12 +802,12 @@ func RestrictedUserUpdate(c echo.Context) error {
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	in := ormapi.User{}
 	err = json.Unmarshal(body, &in)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	// in may contain other fields, but can only specify
 	// name and email for where clause.
@@ -821,7 +819,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 	db := loggedDB(ctx)
 	res := db.Where(&lookup).First(&user)
 	if res.RecordNotFound() {
-		return c.JSON(http.StatusBadRequest, Msg("user not found"))
+		return fmt.Errorf("user not found")
 	}
 	if res.Error != nil {
 		return dbErr(res.Error)
@@ -830,7 +828,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 	// apply specified fields
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	// cannot update password or invariant fields
 	user.Passhash = saveuser.Passhash
@@ -903,41 +901,41 @@ func UpdateUser(c echo.Context) error {
 	db := loggedDB(ctx)
 	res := db.Where(user).First(user)
 	if res.RecordNotFound() {
-		return c.JSON(http.StatusBadRequest, Msg("User not found"))
+		return fmt.Errorf("User not found")
 	}
 	old := *user
 
 	// read args onto existing data, will overwrite only specified fields
 	if err := c.Bind(&cuser); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	// check for fields that are not allowed to change
 	if old.Name != user.Name {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change username"))
+		return fmt.Errorf("Cannot change username")
 	}
 	if old.EmailVerified != user.EmailVerified {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change emailverified"))
+		return fmt.Errorf("Cannot change emailverified")
 	}
 	if old.Passhash != user.Passhash {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change passhash"))
+		return fmt.Errorf("Cannot change passhash")
 	}
 	if old.Salt != user.Salt {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change salt"))
+		return fmt.Errorf("Cannot change salt")
 	}
 	if old.Iter != user.Iter {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change iter"))
+		return fmt.Errorf("Cannot change iter")
 	}
 	if !old.CreatedAt.Equal(user.CreatedAt) {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change createdat"))
+		return fmt.Errorf("Cannot change createdat")
 	}
 	if !old.UpdatedAt.Equal(user.UpdatedAt) {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change updatedat"))
+		return fmt.Errorf("Cannot change updatedat")
 	}
 	if old.Locked != user.Locked {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change locked"))
+		return fmt.Errorf("Cannot change locked")
 	}
 	if old.PassCrackTimeSec != user.PassCrackTimeSec {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change passcracktimesec"))
+		return fmt.Errorf("Cannot change passcracktimesec")
 	}
 
 	// if email changed, need to verify
@@ -950,7 +948,7 @@ func UpdateUser(c echo.Context) error {
 		if !getSkipVerifyEmail(ctx, config) {
 			err := ValidEmailRequest(c, &cuser.Verify)
 			if err != nil {
-				return c.JSON(http.StatusBadRequest, MsgErr(err))
+				return err
 			}
 			sendVerify = true
 		}
@@ -963,7 +961,7 @@ func UpdateUser(c echo.Context) error {
 		if user.EnableTOTP {
 			totpKey, totpQR, err := GenerateTOTPQR(user.Email)
 			if err != nil {
-				return setReply(c, fmt.Errorf("Failed to setup 2FA: %v", err), nil)
+				return fmt.Errorf("Failed to setup 2FA: %v", err)
 			}
 			user.TOTPSharedKey = totpKey
 
@@ -978,9 +976,9 @@ func UpdateUser(c echo.Context) error {
 	err = db.Save(user).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"email_pkey") {
-			return setReply(c, fmt.Errorf("Email %s already in use", user.Email), nil)
+			return fmt.Errorf("Email %s already in use", user.Email)
 		}
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 
 	if sendVerify {
@@ -990,7 +988,7 @@ func UpdateUser(c echo.Context) error {
 			if undoErr != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "undo update user failed", "user", claims.Username, "err", undoErr)
 			}
-			return setReply(c, fmt.Errorf("Failed to send verification email to %s, %v", user.Email, err), nil)
+			return fmt.Errorf("Failed to send verification email to %s, %v", user.Email, err)
 		}
 	}
 
@@ -1013,11 +1011,11 @@ func CreateUserApiKey(c echo.Context) error {
 	}
 	// Disallow apikey creation if auth type is ApiKey auth
 	if claims.AuthType == ApiKeyAuth {
-		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to create API keys, please log in with user account"))
+		return newHTTPError(http.StatusForbidden, "ApiKey auth not allowed to create API keys, please log in with user account")
 	}
 	apiKeyReq := ormapi.CreateUserApiKey{}
 	if err := c.Bind(&apiKeyReq); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	config, err := getConfig(ctx)
 	if err != nil {
@@ -1028,13 +1026,13 @@ func CreateUserApiKey(c echo.Context) error {
 	curApiKeys := []ormapi.UserApiKey{}
 	err = db.Where(&lookup).Find(&curApiKeys).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	if len(curApiKeys) >= config.UserApiKeyCreateLimit {
-		return setReply(c, fmt.Errorf("User cannot create more than %d API keys, please delete existing keys to create new one", config.UserApiKeyCreateLimit), nil)
+		return fmt.Errorf("User cannot create more than %d API keys, please delete existing keys to create new one", config.UserApiKeyCreateLimit)
 	}
 	if len(apiKeyReq.Permissions) == 0 {
-		return c.JSON(http.StatusBadRequest, Msg("No permissions for specified org"))
+		return fmt.Errorf("No permissions for specified org")
 	}
 
 	apiKeyObj := ormapi.UserApiKey{}
@@ -1047,7 +1045,7 @@ func CreateUserApiKey(c echo.Context) error {
 	org.Name = apiKeyObj.Org
 	err = db.Where(&org).First(&org).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 
 	lookupOrg := apiKeyObj.Org
@@ -1076,7 +1074,7 @@ func CreateUserApiKey(c echo.Context) error {
 	for _, perm := range apiKeyReq.Permissions {
 		if perm.Action != ActionView && perm.Action != ActionManage {
 			cleanupPoliciesOnErr()
-			return c.JSON(http.StatusBadRequest, Msg(fmt.Sprintf("Invalid action %s, valid actions are %s, %s", perm.Action, ActionView, ActionManage)))
+			return fmt.Errorf("Invalid action %s, valid actions are %s, %s", perm.Action, ActionView, ActionManage)
 		}
 		lookupRolePerm := ormapi.RolePerm{
 			Resource: perm.Resource,
@@ -1088,13 +1086,13 @@ func CreateUserApiKey(c echo.Context) error {
 		}
 		if _, ok := validRolePerms[lookupRolePerm]; !ok {
 			cleanupPoliciesOnErr()
-			return c.JSON(http.StatusBadRequest, Msg(fmt.Sprintf("Invalid permission specified: [%s:%s], valid permissions (resource:action) are %v", perm.Resource, perm.Action, validPerms)))
+			return fmt.Errorf("Invalid permission specified: [%s:%s], valid permissions (resource:action) are %v", perm.Resource, perm.Action, validPerms)
 		}
 		addPolicy(ctx, &policyErr, apiKeyRole, perm.Resource, perm.Action)
 	}
 	if policyErr != nil {
 		cleanupPoliciesOnErr()
-		return setReply(c, dbErr(policyErr), nil)
+		return dbErr(policyErr)
 	}
 
 	err = enforcer.AddGroupingPolicy(ctx, psub, apiKeyRole)
@@ -1110,7 +1108,7 @@ func CreateUserApiKey(c echo.Context) error {
 	apiKeyObj.Id = apiKeyId
 	if err := db.Create(&apiKeyObj).Error; err != nil {
 		cleanupPoliciesOnErr()
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	apiKeyOut := ormapi.CreateUserApiKey{}
 	apiKeyOut.Id = apiKeyId
@@ -1127,16 +1125,16 @@ func DeleteUserApiKey(c echo.Context) error {
 	}
 	// Disallow apikey deletion if auth type is ApiKey auth
 	if claims.AuthType == ApiKeyAuth {
-		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to delete API keys, please log in with user account"))
+		return newHTTPError(http.StatusForbidden, "ApiKey auth not allowed to delete API keys, please log in with user account")
 	}
 	lookup := ormapi.CreateUserApiKey{}
 	if err := c.Bind(&lookup); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	apiKeyObj := ormapi.UserApiKey{Id: lookup.Id}
 	err = db.Where(&apiKeyObj).First(&apiKeyObj).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	apiKeyRole := getApiKeyRoleName(apiKeyObj.Id)
 	err = enforcer.RemovePolicy(ctx, apiKeyRole)
@@ -1151,7 +1149,7 @@ func DeleteUserApiKey(c echo.Context) error {
 	// delete user api key
 	err = db.Delete(&apiKeyObj).Error
 	if err != nil {
-		return setReply(c, dbErr(err), nil)
+		return dbErr(err)
 	}
 	return c.JSON(http.StatusOK, Msg("deleted API Key successfully"))
 }
@@ -1165,12 +1163,12 @@ func ShowUserApiKey(c echo.Context) error {
 	}
 	// Disallow apikey users to view api keys
 	if claims.AuthType == ApiKeyAuth {
-		return c.JSON(http.StatusForbidden, Msg("ApiKey auth not allowed to show API keys, please log in with user account"))
+		return newHTTPError(http.StatusForbidden, "ApiKey auth not allowed to show API keys, please log in with user account")
 	}
 	filter := ormapi.CreateUserApiKey{}
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&filter); err != nil {
-			return bindErr(c, err)
+			return bindErr(err)
 		}
 	}
 	apiKeys := []ormapi.UserApiKey{}
@@ -1178,13 +1176,13 @@ func ShowUserApiKey(c echo.Context) error {
 	if filter.Id == "" {
 		err := db.Find(&apiKeys).Error
 		if err != nil {
-			return setReply(c, dbErr(err), nil)
+			return dbErr(err)
 		}
 	} else {
 		apiKeyObj := ormapi.UserApiKey{Id: filter.Id}
 		err := db.Where(&apiKeyObj).First(&apiKeyObj).Error
 		if err != nil {
-			return setReply(c, dbErr(err), nil)
+			return dbErr(err)
 		}
 		apiKeys = append(apiKeys, apiKeyObj)
 	}

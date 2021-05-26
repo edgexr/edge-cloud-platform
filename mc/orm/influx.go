@@ -386,7 +386,7 @@ func CloudletUsageMetricsQuery(obj *ormapi.RegionCloudletMetrics) string {
 
 // TODO: This function should be a streaming function, but currently client library for influxDB
 // doesn't implement it in a way could really be using it
-func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, dbQuery string, cb func(Data interface{})) error {
+func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, dbQuery string, cb func(Data interface{}) error) error {
 	if rc.conn == nil {
 		conn, err := ConnectInfluxDB(ctx, rc.region)
 		if err != nil {
@@ -416,8 +416,7 @@ func influxStream(ctx context.Context, rc *InfluxDBContext, databases []string, 
 		}
 		results = append(results, resp.Results...)
 	}
-	cb(results)
-	return nil
+	return cb(results)
 }
 
 func Contains(slice []string, elem string) bool {
@@ -619,10 +618,10 @@ func GetMetricsCommon(c echo.Context) error {
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
 			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		if err = validateSelectorString(in.Selector, APPINST); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = AppInstMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
@@ -636,10 +635,10 @@ func GetMetricsCommon(c echo.Context) error {
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		if err = validateSelectorString(in.Selector, CLUSTER); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = ClusterMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
@@ -651,18 +650,18 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// Operator name has to be specified
 		if in.Cloudlet.Organization == "" {
-			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
+			return fmt.Errorf("Cloudlet details must be present")
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 		if err = validateSelectorString(in.Selector, CLOUDLET); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = CloudletMetricsQuery(&in)
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/clientapiusage") {
 		dbNames = append(dbNames, cloudcommon.DeveloperMetricsDbName)
@@ -675,10 +674,10 @@ func GetMetricsCommon(c echo.Context) error {
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
 			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		if err = validateSelectorString(in.Selector, CLIENT_APIUSAGE); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = ClientApiUsageMetricsQuery(&in, cloudletList)
 
@@ -691,7 +690,7 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// Operator name has to be specified
 		if in.Cloudlet.Organization == "" {
-			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
+			return fmt.Errorf("Cloudlet details must be present")
 		}
 		// Platform type is required for cloudlet resource usage
 		platformTypes := make(map[string]struct{})
@@ -702,27 +701,28 @@ func GetMetricsCommon(c echo.Context) error {
 			obj := edgeproto.Cloudlet{
 				Key: in.Cloudlet,
 			}
-			err = ShowCloudletStream(ctx, rc, &obj, func(res *edgeproto.Cloudlet) {
+			err = ShowCloudletStream(ctx, rc, &obj, func(res *edgeproto.Cloudlet) error {
 				pfType := pf.GetType(res.PlatformType.String())
 				platformTypes[pfType] = struct{}{}
+				return nil
 			})
 			if err != nil {
-				return setReply(c, err, nil)
+				return err
 			}
 			if len(platformTypes) == 0 {
-				return setReply(c, nil, nil)
+				return setReply(c, nil)
 			}
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = CloudletUsageMetricsQuery(&in)
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/clientappusage") {
 		in := ormapi.RegionClientAppUsageMetrics{}
@@ -740,10 +740,10 @@ func GetMetricsCommon(c echo.Context) error {
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
 			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		if err = validateClientAppUsageMetricReq(&in, in.Selector); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = ClientAppUsageMetricsQuery(&in, cloudletList)
 	} else if strings.HasSuffix(c.Path(), "metrics/clientcloudletusage") {
@@ -760,33 +760,33 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// Operator name has to be specified
 		if in.Cloudlet.Organization == "" {
-			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
+			return fmt.Errorf("Cloudlet details must be present")
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 		if err = validateSelectorString(in.Selector, CLIENT_CLOUDLETUSAGE); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		if err = validateClientCloudletUsageMetricReq(&in, in.Selector); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 		cmd = ClientCloudletUsageMetricsQuery(&in)
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 	} else {
-		return setReply(c, echo.ErrNotFound, nil)
+		return echo.ErrNotFound
 	}
 
-	err = influxStream(ctx, rc, dbNames, cmd, func(res interface{}) {
+	err = influxStream(ctx, rc, dbNames, cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		return WriteError(c, err)
+		return err
 	}
 	return nil
 }

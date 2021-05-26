@@ -40,13 +40,16 @@ func CreateOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
 
 	err = CreateOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Organization created"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Organization created"))
 }
 
 func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
@@ -127,13 +130,16 @@ func DeleteOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
 
 	err = DeleteOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Organization deleted"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Organization deleted"))
 }
 
 func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
@@ -234,10 +240,10 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	in := ormapi.Organization{}
 	err = json.Unmarshal(body, &in)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if in.Name == "" {
-		return c.JSON(http.StatusBadRequest, Msg("Organization name not specified"))
+		return fmt.Errorf("Organization name not specified")
 	}
 
 	lookup := ormapi.Organization{
@@ -247,10 +253,10 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	db := loggedDB(ctx)
 	res := db.Where(&lookup).First(&org)
 	if res.RecordNotFound() {
-		return c.JSON(http.StatusBadRequest, Msg("Organization not found"))
+		return fmt.Errorf("Organization not found")
 	}
 	if res.Error != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(res.Error)))
+		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
 	}
 	oldType := org.Type
 	oldEdgeboxOnly := org.EdgeboxOnly
@@ -270,13 +276,13 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	// apply specified fields
 	err = json.Unmarshal(body, &org)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if org.Type != oldType {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change Organization type"))
+		return fmt.Errorf("Cannot change Organization type")
 	}
 	if org.EdgeboxOnly != oldEdgeboxOnly && updateType != AdminUpdate {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot update edgeboxonly field for Organization"))
+		return fmt.Errorf("Cannot update edgeboxonly field for Organization")
 	}
 	if org.PublicImages != oldPublicImages {
 		err := gitlabUpdateVisibility(ctx, &org)
@@ -287,7 +293,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 
 	err = db.Save(&org).Error
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(err)))
+		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
 	}
 	return nil
 }
@@ -304,7 +310,10 @@ func ShowOrg(c echo.Context) error {
 		return err
 	}
 	orgs, err := ShowOrgObj(ctx, claims, filter)
-	return setReply(c, err, orgs)
+	if err != nil {
+		return err
+	}
+	return setReply(c, orgs)
 }
 
 func ShowOrgObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Organization, error) {
@@ -404,14 +413,14 @@ func markOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error) {
 	findOrg := ormapi.Organization{}
 	res := tx.Where(&lookup).First(&findOrg)
 	if res.RecordNotFound() {
-		return echo.NewHTTPError(http.StatusBadRequest, "org not found")
+		return fmt.Errorf("org not found")
 	}
 	if res.Error != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, res.Error.Error())
+		return newHTTPError(http.StatusInternalServerError, res.Error.Error())
 	}
 	if mark {
 		if findOrg.DeleteInProgress {
-			return echo.NewHTTPError(http.StatusBadRequest, "org already being deleted")
+			return fmt.Errorf("org already being deleted")
 		}
 		findOrg.DeleteInProgress = true
 	} else {
@@ -419,7 +428,7 @@ func markOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error) {
 	}
 	err := tx.Save(&findOrg).Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return tx.Commit().Error
 }

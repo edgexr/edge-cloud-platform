@@ -39,7 +39,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -51,8 +51,9 @@ func CreateAutoProvPolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -92,7 +93,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -104,8 +105,9 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -145,7 +147,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -157,8 +159,9 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -201,25 +204,24 @@ func ShowAutoProvPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 
-	err = ShowAutoProvPolicyStream(ctx, rc, &in.AutoProvPolicy, func(res *edgeproto.AutoProvPolicy) {
+	err = ShowAutoProvPolicyStream(ctx, rc, &in.AutoProvPolicy, func(res *edgeproto.AutoProvPolicy) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowAutoProvPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy, cb func(res *edgeproto.AutoProvPolicy)) error {
+func ShowAutoProvPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy, cb func(res *edgeproto.AutoProvPolicy) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -258,15 +260,19 @@ func ShowAutoProvPolicyStream(ctx context.Context, rc *RegionContext, obj *edgep
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) ([]edgeproto.AutoProvPolicy, error) {
 	arr := []edgeproto.AutoProvPolicy{}
-	err := ShowAutoProvPolicyStream(ctx, rc, obj, func(res *edgeproto.AutoProvPolicy) {
+	err := ShowAutoProvPolicyStream(ctx, rc, obj, func(res *edgeproto.AutoProvPolicy) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -282,7 +288,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -294,8 +300,9 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
@@ -335,7 +342,7 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -347,8 +354,9 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {

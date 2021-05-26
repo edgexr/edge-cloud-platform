@@ -26,10 +26,10 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if err := search.TimeRange.Resolve(48 * time.Hour); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	// get all orgs user can view
@@ -49,7 +49,7 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 
 	events, err := searchFunc(ctx, &search)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, events)
 }
@@ -63,10 +63,10 @@ func EventTerms(c echo.Context) error {
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if err := search.TimeRange.Resolve(node.DefaultTimeDuration); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	// get all orgs user can view
@@ -86,7 +86,7 @@ func EventTerms(c echo.Context) error {
 
 	terms, err := nodeMgr.EventTerms(ctx, &search)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, *terms)
 }
@@ -98,7 +98,7 @@ func SpanTerms(c echo.Context) error {
 	}
 	out, err := nodeMgr.SpanTerms(GetContext(c), params)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -110,7 +110,7 @@ func ShowSpans(c echo.Context) error {
 	}
 	out, err := nodeMgr.ShowSpansCondensed(GetContext(c), params)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -122,7 +122,7 @@ func ShowSpansVerbose(c echo.Context) error {
 	}
 	out, err := nodeMgr.ShowSpans(GetContext(c), params)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(err))
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -136,10 +136,10 @@ func getSpanSearchParams(c echo.Context) (*node.SpanSearch, error) {
 
 	search := node.SpanSearch{}
 	if err := c.Bind(&search); err != nil {
-		return nil, bindErr(c, err)
+		return nil, bindErr(err)
 	}
 	if err := search.TimeRange.Resolve(48 * time.Hour); err != nil {
-		return nil, c.JSON(http.StatusBadRequest, MsgErr(err))
+		return nil, err
 	}
 	// admin only
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {

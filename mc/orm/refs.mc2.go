@@ -38,25 +38,24 @@ func ShowCloudletRefs(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletRefs.GetKey().GetTags())
 	span.SetTag("org", in.CloudletRefs.Key.Organization)
 
-	err = ShowCloudletRefsStream(ctx, rc, &in.CloudletRefs, func(res *edgeproto.CloudletRefs) {
+	err = ShowCloudletRefsStream(ctx, rc, &in.CloudletRefs, func(res *edgeproto.CloudletRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs, cb func(res *edgeproto.CloudletRefs)) error {
+func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs, cb func(res *edgeproto.CloudletRefs) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -95,15 +94,19 @@ func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgepro
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowCloudletRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs) ([]edgeproto.CloudletRefs, error) {
 	arr := []edgeproto.CloudletRefs{}
-	err := ShowCloudletRefsStream(ctx, rc, obj, func(res *edgeproto.CloudletRefs) {
+	err := ShowCloudletRefsStream(ctx, rc, obj, func(res *edgeproto.CloudletRefs) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -122,24 +125,23 @@ func ShowClusterRefs(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterRefs.GetKey().GetTags())
 
-	err = ShowClusterRefsStream(ctx, rc, &in.ClusterRefs, func(res *edgeproto.ClusterRefs) {
+	err = ShowClusterRefsStream(ctx, rc, &in.ClusterRefs, func(res *edgeproto.ClusterRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs, cb func(res *edgeproto.ClusterRefs)) error {
+func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs, cb func(res *edgeproto.ClusterRefs) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -178,15 +180,19 @@ func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowClusterRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, error) {
 	arr := []edgeproto.ClusterRefs{}
-	err := ShowClusterRefsStream(ctx, rc, obj, func(res *edgeproto.ClusterRefs) {
+	err := ShowClusterRefsStream(ctx, rc, obj, func(res *edgeproto.ClusterRefs) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -205,25 +211,24 @@ func ShowAppInstRefs(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstRefs.GetKey().GetTags())
 	span.SetTag("org", in.AppInstRefs.Key.Organization)
 
-	err = ShowAppInstRefsStream(ctx, rc, &in.AppInstRefs, func(res *edgeproto.AppInstRefs) {
+	err = ShowAppInstRefsStream(ctx, rc, &in.AppInstRefs, func(res *edgeproto.AppInstRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs, cb func(res *edgeproto.AppInstRefs)) error {
+func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs, cb func(res *edgeproto.AppInstRefs) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -262,15 +267,19 @@ func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAppInstRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error) {
 	arr := []edgeproto.AppInstRefs{}
-	err := ShowAppInstRefsStream(ctx, rc, obj, func(res *edgeproto.AppInstRefs) {
+	err := ShowAppInstRefsStream(ctx, rc, obj, func(res *edgeproto.AppInstRefs) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

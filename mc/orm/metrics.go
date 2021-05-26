@@ -54,14 +54,14 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 
 	// At least one AppInst org has to be specified
 	if len(in.AppInsts) == 0 {
-		return setReply(c, fmt.Errorf("At least one app org has to be specified"), nil)
+		return fmt.Errorf("At least one app org has to be specified")
 	}
 	rc.region = in.Region
 	if in.Selector == "*" {
-		return setReply(c, fmt.Errorf("MetricsV2 api does not allow for a wildcard selector"), nil)
+		return fmt.Errorf("MetricsV2 api does not allow for a wildcard selector")
 	}
 	if err = validateSelectorString(in.Selector, APPINST); err != nil {
-		return setReply(c, err, nil)
+		return err
 	}
 	orgsToCheck := []string{}
 	cloudletsToCheck := []edgeproto.CloudletKey{}
@@ -69,7 +69,7 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 		org = app.AppKey.Organization
 		// Developer name has to be specified
 		if org == "" {
-			return setReply(c, fmt.Errorf("App org must be present"), nil)
+			return fmt.Errorf("App org must be present")
 		}
 		orgsToCheck = append(orgsToCheck, org)
 		cloudletsToCheck = append(cloudletsToCheck, app.ClusterInstKey.CloudletKey)
@@ -77,17 +77,17 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, orgsToCheck,
 		ResourceAppAnalytics, cloudletsToCheck)
 	if err != nil {
-		return setReply(c, err, nil)
+		return err
 	}
 	cmd = GetAppInstsGroupQuery(ctx, in, cloudletList)
 
-	err = influxStream(ctx, rc, []string{cloudcommon.DeveloperMetricsDbName}, cmd, func(res interface{}) {
+	err = influxStream(ctx, rc, []string{cloudcommon.DeveloperMetricsDbName}, cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		return WriteError(c, err)
+		return err
 	}
 	return nil
 }

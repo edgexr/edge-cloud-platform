@@ -51,10 +51,10 @@ func (s *AuthzShow) setCloudletKeysFromPool(ctx context.Context, region, usernam
 		return err
 	}
 	s.allowedCloudlets = make(map[edgeproto.CloudletKey]struct{})
-	err = ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, func(pool *edgeproto.CloudletPool) {
+	err = ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, func(pool *edgeproto.CloudletPool) error {
 		if _, found := allowedOperOrgs[pool.Key.Organization]; !found {
 			// skip pools which operator is not allowed to access
-			return
+			return nil
 		}
 		for _, name := range pool.Cloudlets {
 			cloudletKey := edgeproto.CloudletKey{
@@ -63,6 +63,7 @@ func (s *AuthzShow) setCloudletKeysFromPool(ctx context.Context, region, usernam
 			}
 			s.allowedCloudlets[cloudletKey] = struct{}{}
 		}
+		return nil
 	})
 	return err
 }

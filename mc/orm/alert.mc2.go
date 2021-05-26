@@ -40,18 +40,17 @@ func ShowAlert(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	err = ShowAlertStream(ctx, rc, &in.Alert, func(res *edgeproto.Alert) {
+	err = ShowAlertStream(ctx, rc, &in.Alert, func(res *edgeproto.Alert) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
@@ -61,7 +60,7 @@ type ShowAlertAuthz interface {
 	Filter(obj *edgeproto.Alert)
 }
 
-func ShowAlertStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Alert, cb func(res *edgeproto.Alert)) error {
+func ShowAlertStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Alert, cb func(res *edgeproto.Alert) error) error {
 	var authz ShowAlertAuthz
 	var err error
 	if !rc.skipAuthz {
@@ -104,15 +103,19 @@ func ShowAlertStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Aler
 				authz.Filter(res)
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAlertObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Alert) ([]edgeproto.Alert, error) {
 	arr := []edgeproto.Alert{}
-	err := ShowAlertStream(ctx, rc, obj, func(res *edgeproto.Alert) {
+	err := ShowAlertStream(ctx, rc, obj, func(res *edgeproto.Alert) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

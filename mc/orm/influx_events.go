@@ -110,7 +110,7 @@ func GetEventsCommon(c echo.Context) error {
 		}
 		// Developer name has to be specified
 		if in.AppInst.AppKey.Organization == "" {
-			return setReply(c, fmt.Errorf("App details must be present"), nil)
+			return fmt.Errorf("App details must be present")
 		}
 		rc.region = in.Region
 		org = in.AppInst.AppKey.Organization
@@ -119,7 +119,7 @@ func GetEventsCommon(c echo.Context) error {
 
 		// Check the developer against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceAppAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 	} else if strings.HasSuffix(c.Path(), "events/cluster") {
 		in := ormapi.RegionClusterInstEvents{}
@@ -129,7 +129,7 @@ func GetEventsCommon(c echo.Context) error {
 		}
 		// Developer org name has to be specified
 		if in.ClusterInst.Organization == "" {
-			return setReply(c, fmt.Errorf("Cluster details must be present"), nil)
+			return fmt.Errorf("Cluster details must be present")
 		}
 		rc.region = in.Region
 		org = in.ClusterInst.Organization
@@ -148,7 +148,7 @@ func GetEventsCommon(c echo.Context) error {
 		}
 		// Operator name has to be specified
 		if in.Cloudlet.Organization == "" {
-			return setReply(c, fmt.Errorf("Cloudlet details must be present"), nil)
+			return fmt.Errorf("Cloudlet details must be present")
 		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
@@ -157,19 +157,19 @@ func GetEventsCommon(c echo.Context) error {
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, org, ResourceCloudletAnalytics, ActionView); err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 	} else {
-		return setReply(c, echo.ErrNotFound, nil)
+		return echo.ErrNotFound
 	}
 
-	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, cmd, func(res interface{}) {
+	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		return WriteError(c, err)
+		return err
 	}
 	return nil
 }

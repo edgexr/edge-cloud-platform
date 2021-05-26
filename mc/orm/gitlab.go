@@ -42,6 +42,7 @@ EOS
 
 var LDAPProvider = "ldapmain"
 var DefaultProjectName = "images"
+var gitlabIgnoreForUnitTest bool
 
 func gitlabCreateLDAPUser(ctx context.Context, user *ormapi.User) {
 	dn := ldapdn{
@@ -215,6 +216,9 @@ func getGitlabProjects(ctx context.Context) (map[string]*gitlab.Project, error) 
 }
 
 func gitlabUpdateVisibility(ctx context.Context, org *ormapi.Organization) error {
+	if gitlabIgnoreForUnitTest {
+		return nil
+	}
 	projs, err := getGitlabProjects(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get list of gitlab projects: %v", err)

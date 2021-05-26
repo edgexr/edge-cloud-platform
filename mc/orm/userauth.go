@@ -231,9 +231,9 @@ func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
 	err := ws.ReadJSON(&tokAuth)
 	if err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			return false, setReply(c, fmt.Errorf("no bearer token found"), nil)
+			return false, fmt.Errorf("no bearer token found")
 		}
-		return false, setReply(c, err, nil)
+		return false, err
 	}
 
 	claims := UserClaims{}
@@ -243,7 +243,7 @@ func AuthWSCookie(c echo.Context, ws *websocket.Conn) (bool, error) {
 		c.Set("user", token)
 		return true, nil
 	}
-	return false, setReply(c, fmt.Errorf("invalid or expired jwt"), nil)
+	return false, fmt.Errorf("invalid or expired jwt")
 }
 
 func authorized(ctx context.Context, sub, org, obj, act string, ops ...authOp) error {
@@ -279,12 +279,12 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 			return echo.ErrForbidden
 		}
 		if strings.Contains(err.Error(), "not found") {
-			return echo.NewHTTPError(http.StatusBadRequest, err)
+			return err
 		}
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Org %s lookup failed: %v", org, err))
+		return fmt.Errorf("Org %s lookup failed: %v", org, err)
 	}
 	if lookup.DeleteInProgress {
-		return echo.NewHTTPError(http.StatusBadRequest, "Operation not allowed for org with delete in progress")
+		return fmt.Errorf("Operation not allowed for org with delete in progress")
 	}
 	// see if resource is only for a specific type of org
 	orgType := ""
@@ -294,11 +294,11 @@ func checkRequiresOrg(ctx context.Context, org, resource string, admin, noEdgebo
 		orgType = OrgTypeOperator
 	}
 	if orgType != "" && lookup.Type != orgType {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Operation only allowed for organizations of type %s", orgType))
+		return fmt.Errorf("Operation only allowed for organizations of type %s", orgType)
 	}
 	// make sure only edgebox cloudlets are created for edgebox org
 	if lookup.EdgeboxOnly && noEdgeboxOnly {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Only allowed to create EDGEBOX cloudlet on org %s", org))
+		return fmt.Errorf("Only allowed to create EDGEBOX cloudlet on org %s", org)
 	}
 	return nil
 }

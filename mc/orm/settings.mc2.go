@@ -36,7 +36,7 @@ func UpdateSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -46,8 +46,9 @@ func UpdateSettings(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
@@ -87,7 +88,7 @@ func ResetSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -97,8 +98,9 @@ func ResetSettings(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func ResetSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Result, error) {
@@ -138,7 +140,7 @@ func ShowSettings(c echo.Context) error {
 
 	in := ormapi.RegionSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -148,8 +150,9 @@ func ShowSettings(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func ShowSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Settings) (*edgeproto.Settings, error) {

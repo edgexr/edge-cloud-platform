@@ -87,7 +87,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		}
 		// Operator and cloudletpool name has to be specified
 		if in.CloudletPool.Organization == "" || in.CloudletPool.Name == "" {
-			return setReply(c, fmt.Errorf("CloudletPool details must be present"), nil)
+			return fmt.Errorf("CloudletPool details must be present")
 		}
 		rc.region = in.Region
 		regionRc.region = in.Region
@@ -101,7 +101,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		}
 		if len(cloudletPools) != 1 {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Invalid response retrieving cloudletPool", "cloudletPools", cloudletPools)
-			return setReply(c, fmt.Errorf("Unable to retrieve CloudletPool info"), nil)
+			return fmt.Errorf("Unable to retrieve CloudletPool info")
 		}
 
 		cloudletList := []string{}
@@ -114,11 +114,11 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		checkpointCmd := cloudletPoolCheckpointsQuery(&in, cloudletList, CLUSTER)
 		eventResp, checkResp, err := GetEventAndCheckpoint(ctx, rc, eventCmd, checkpointCmd)
 		if err != nil {
-			return setReply(c, fmt.Errorf("Error retrieving usage records: %v", err), nil)
+			return fmt.Errorf("Error retrieving usage records: %v", err)
 		}
 		clusterUsage, err := GetClusterUsage(eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
 		if err != nil {
-			return setReply(c, fmt.Errorf("Error calculating usage records: %v", err), nil)
+			return fmt.Errorf("Error calculating usage records: %v", err)
 		}
 
 		// check appinsts
@@ -126,23 +126,19 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		checkpointCmd = cloudletPoolCheckpointsQuery(&in, cloudletList, APPINST)
 		eventResp, checkResp, err = GetEventAndCheckpoint(ctx, rc, eventCmd, checkpointCmd)
 		if err != nil {
-			return setReply(c, fmt.Errorf("Error retrieving usage records: %v", err), nil)
+			return fmt.Errorf("Error retrieving usage records: %v", err)
 		}
 		appUsage, err := GetAppUsage(eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
 		if err != nil {
-			return setReply(c, fmt.Errorf("Error calculating usage records: %v", err), nil)
+			return fmt.Errorf("Error calculating usage records: %v", err)
 		}
 		log.SpanLog(ctx, log.DebugLevelMetrics, "usage args", "cluster", clusterUsage, "app", appUsage, "list", cloudletList)
 
 		usage := ormapi.AllMetrics{
 			Data: []ormapi.MetricData{*clusterUsage, *appUsage},
 		}
-		if err != nil {
-			return setReply(c, err, nil)
-		}
-		return setReply(c, nil, &usage)
-
+		return setReply(c, &usage)
 	} else {
-		return setReply(c, echo.ErrNotFound, nil)
+		return echo.ErrNotFound
 	}
 }

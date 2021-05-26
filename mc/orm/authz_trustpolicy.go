@@ -41,15 +41,16 @@ func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string
 		skipAuthz: true, // skip since we already have the cloudlet authz
 	}
 	// allow policies associated with cloudlets that the user can see
-	err := ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) {
+	err := ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) error {
 		if authzOk, _ := s.authzCloudlet.Ok(cloudlet); !authzOk || cloudlet.TrustPolicy == "" {
-			return
+			return nil
 		}
 		key := edgeproto.PolicyKey{
 			Organization: cloudlet.Key.Organization,
 			Name:         cloudlet.TrustPolicy,
 		}
 		s.allowedTrustPolicies[key] = struct{}{}
+		return nil
 	})
 	if err != nil {
 		return err

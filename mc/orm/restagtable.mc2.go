@@ -37,7 +37,7 @@ func CreateResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -49,8 +49,9 @@ func CreateResTagTable(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
@@ -90,7 +91,7 @@ func DeleteResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -102,8 +103,9 @@ func DeleteResTagTable(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
@@ -143,7 +145,7 @@ func UpdateResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -155,8 +157,9 @@ func UpdateResTagTable(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
@@ -199,25 +202,24 @@ func ShowResTagTable(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
 
-	err = ShowResTagTableStream(ctx, rc, &in.ResTagTable, func(res *edgeproto.ResTagTable) {
+	err = ShowResTagTableStream(ctx, rc, &in.ResTagTable, func(res *edgeproto.ResTagTable) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowResTagTableStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable, cb func(res *edgeproto.ResTagTable)) error {
+func ShowResTagTableStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable, cb func(res *edgeproto.ResTagTable) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -256,15 +258,19 @@ func ShowResTagTableStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) ([]edgeproto.ResTagTable, error) {
 	arr := []edgeproto.ResTagTable{}
-	err := ShowResTagTableStream(ctx, rc, obj, func(res *edgeproto.ResTagTable) {
+	err := ShowResTagTableStream(ctx, rc, obj, func(res *edgeproto.ResTagTable) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -280,7 +286,7 @@ func AddResTag(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -292,8 +298,9 @@ func AddResTag(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddResTagObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
@@ -333,7 +340,7 @@ func RemoveResTag(c echo.Context) error {
 
 	in := ormapi.RegionResTagTable{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -345,8 +352,9 @@ func RemoveResTag(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveResTagObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTable) (*edgeproto.Result, error) {
@@ -386,7 +394,7 @@ func GetResTagTable(c echo.Context) error {
 
 	in := ormapi.RegionResTagTableKey{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -396,8 +404,9 @@ func GetResTagTable(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func GetResTagTableObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {

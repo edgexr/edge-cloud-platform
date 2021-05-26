@@ -289,14 +289,14 @@ func ArtifactorySummary(c echo.Context) error {
 	ctx := GetContext(c)
 	mcUsers, err := getMCUsers(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Users.MCUsers = len(mcUsers)
 
 	// Artifactory users
 	rtfUsers, err := artifactoryListUsers(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Users.AppStoreUsers = len(rtfUsers)
 
@@ -314,7 +314,7 @@ func ArtifactorySummary(c echo.Context) error {
 
 	orgsT, err := GetAllOrgs(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Groups.MCGroups = len(orgsT)
 
@@ -323,19 +323,19 @@ func ArtifactorySummary(c echo.Context) error {
 
 	groups, err := artifactoryListGroups(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Groups.AppStoreGroups = len(groups)
 
 	repos, err := artifactoryListRepos(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Groups.AppStoreRepos = len(repos)
 
 	perms, err := artifactoryListPerms(ctx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	summary.Groups.AppStorePerms = len(perms)
 
@@ -366,14 +366,14 @@ func ArtifactorySummary(c echo.Context) error {
 	// Get MC group members info
 	mcGroupMembers, err := getMCGroupMembers(orgsT)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	for userName, mcUserRoles := range mcGroupMembers {
 		// Get Artifactory roles
 		rtfGroups, err := artifactoryListUserGroups(ctx, userName)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, MsgErr(err))
+			return err
 		}
 		for mcGroup, _ := range mcUserRoles {
 			rtfGroup := getArtifactoryName(mcGroup)

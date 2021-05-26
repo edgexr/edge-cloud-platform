@@ -608,7 +608,7 @@ func testServerClientRun(t *testing.T, ctx context.Context, clientRun mctestclie
 	require.Equal(t, http.StatusOK, status)
 	status, err = mcClient.DeleteOrg(uri, tokenMisterX, &org1)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "org already being deleted")
+	require.Contains(t, err.Error(), "Org already being deleted")
 	require.Equal(t, http.StatusBadRequest, status)
 	dat["DeleteInProgress"] = false
 	status, err = mcClient.UpdateOrg(uri, tokenMisterX, dat)

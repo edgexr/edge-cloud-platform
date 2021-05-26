@@ -28,13 +28,16 @@ func CreateBillingOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("billing org", org.Name)
 
 	err = CreateBillingOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Billing Organization created"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Billing Organization created"))
 }
 
 // Parent billing orgs will have a billing Group, self billing orgs will just use the existing developer group from the org
@@ -166,10 +169,10 @@ func UpdateBillingOrg(c echo.Context) error {
 	in := ormapi.BillingOrganization{}
 	err = json.Unmarshal(body, &in)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if in.Name == "" {
-		return c.JSON(http.StatusBadRequest, Msg("BillingOrganization name not specified"))
+		return fmt.Errorf("BillingOrganization name not specified")
 	}
 
 	lookup := ormapi.BillingOrganization{
@@ -179,10 +182,10 @@ func UpdateBillingOrg(c echo.Context) error {
 	db := loggedDB(ctx)
 	res := db.Where(&lookup).First(&org)
 	if res.RecordNotFound() {
-		return c.JSON(http.StatusBadRequest, Msg("BillingOrganization not found"))
+		return fmt.Errorf("BillingOrganization not found")
 	}
 	if res.Error != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(res.Error)))
+		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
 	}
 	oldType := org.Type
 
@@ -193,10 +196,10 @@ func UpdateBillingOrg(c echo.Context) error {
 	// apply specified fields
 	err = json.Unmarshal(body, &org)
 	if err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	if org.Type != oldType {
-		return c.JSON(http.StatusBadRequest, Msg("Cannot change BillingOrganization type"))
+		return fmt.Errorf("Cannot change BillingOrganization type")
 	}
 
 	err = updateBillingInfo(ctx, &org)
@@ -206,7 +209,7 @@ func UpdateBillingOrg(c echo.Context) error {
 
 	err = db.Save(&org).Error
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, MsgErr(dbErr(err)))
+		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
 	}
 	return nil
 }
@@ -219,13 +222,16 @@ func AddChildOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("billing org", org.Name)
 
 	err = AddChildOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Organization added"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Organization added"))
 }
 
 func AddChildOrgObj(ctx context.Context, claims *UserClaims, parentOrg *ormapi.BillingOrganization) error {
@@ -304,13 +310,16 @@ func RemoveChildOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("billing org", org.Name)
 
 	err = RemoveChildOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Organization removed"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Organization removed"))
 }
 
 func RemoveChildOrgObj(ctx context.Context, claims *UserClaims, billing *ormapi.BillingOrganization) error {
@@ -395,13 +404,16 @@ func DeleteBillingOrg(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("billing org", org.Name)
 
 	err = DeleteBillingOrgObj(ctx, claims, &org)
-	return setReply(c, err, Msg("Billing Organization deleted"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Billing Organization deleted"))
 }
 
 func DeleteBillingOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) error {
@@ -494,7 +506,10 @@ func ShowBillingOrg(c echo.Context) error {
 		return err
 	}
 	orgs, err := ShowBillingOrgObj(ctx, claims)
-	return setReply(c, err, orgs)
+	if err != nil {
+		return err
+	}
+	return setReply(c, orgs)
 }
 
 func ShowBillingOrgObj(ctx context.Context, claims *UserClaims) ([]ormapi.BillingOrganization, error) {
@@ -543,7 +558,10 @@ func ShowAccountInfo(c echo.Context) error {
 		return err
 	}
 	accs, err := ShowAccountInfoObj(ctx, claims)
-	return setReply(c, err, accs)
+	if err != nil {
+		return err
+	}
+	return setReply(c, accs)
 }
 
 func ShowAccountInfoObj(ctx context.Context, claims *UserClaims) ([]ormapi.AccountInfo, error) {
@@ -593,10 +611,13 @@ func ShowPaymentInfo(c echo.Context) error {
 	ctx := GetContext(c)
 	org := ormapi.BillingOrganization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	profiles, err := ShowPaymentInfoObj(ctx, claims, &org)
-	return setReply(c, err, profiles)
+	if err != nil {
+		return err
+	}
+	return setReply(c, profiles)
 }
 
 func ShowPaymentInfoObj(ctx context.Context, claims *UserClaims, org *ormapi.BillingOrganization) ([]billing.PaymentProfile, error) {
@@ -627,10 +648,13 @@ func DeletePaymentInfo(c echo.Context) error {
 	ctx := GetContext(c)
 	profile := ormapi.PaymentProfileDeletion{}
 	if err := c.Bind(&profile); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	err = deletePaymentProfileObj(ctx, claims, &profile)
-	return setReply(c, err, nil)
+	if err != nil {
+		return err
+	}
+	return setReply(c, nil)
 }
 
 func deletePaymentProfileObj(ctx context.Context, claims *UserClaims, profile *ormapi.PaymentProfileDeletion) error {
@@ -750,14 +774,14 @@ func markBillingOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error)
 	findOrg := ormapi.BillingOrganization{}
 	res := tx.Where(&lookup).First(&findOrg)
 	if res.RecordNotFound() {
-		return echo.NewHTTPError(http.StatusBadRequest, "org not found")
+		return fmt.Errorf("org not found")
 	}
 	if res.Error != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, res.Error.Error())
+		return newHTTPError(http.StatusInternalServerError, res.Error.Error())
 	}
 	if mark {
 		if findOrg.DeleteInProgress {
-			return echo.NewHTTPError(http.StatusBadRequest, "org already being deleted")
+			return fmt.Errorf("org already being deleted")
 		}
 		findOrg.DeleteInProgress = true
 	} else {
@@ -765,7 +789,7 @@ func markBillingOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error)
 	}
 	err := tx.Save(&findOrg).Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return newHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return tx.Commit().Error
 }
@@ -902,7 +926,7 @@ func GetInvoice(c echo.Context) error {
 	ctx := GetContext(c)
 	req := ormapi.InvoiceRequest{}
 	if err := c.Bind(&req); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("invoice", req.Name)
@@ -914,5 +938,8 @@ func GetInvoice(c echo.Context) error {
 		return err
 	}
 	invoice, err := serverConfig.BillingService.GetInvoice(ctx, acc, req.StartDate, req.EndDate)
-	return setReply(c, err, invoice)
+	if err != nil {
+		return err
+	}
+	return setReply(c, invoice)
 }

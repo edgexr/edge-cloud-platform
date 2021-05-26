@@ -38,7 +38,7 @@ func CreateCloudletPool(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -50,8 +50,9 @@ func CreateCloudletPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -91,7 +92,7 @@ func DeleteCloudletPool(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -103,8 +104,9 @@ func DeleteCloudletPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -144,7 +146,7 @@ func UpdateCloudletPool(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -156,8 +158,9 @@ func UpdateCloudletPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -200,25 +203,24 @@ func ShowCloudletPool(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 
-	err = ShowCloudletPoolStream(ctx, rc, &in.CloudletPool, func(res *edgeproto.CloudletPool) {
+	err = ShowCloudletPoolStream(ctx, rc, &in.CloudletPool, func(res *edgeproto.CloudletPool) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowCloudletPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool, cb func(res *edgeproto.CloudletPool)) error {
+func ShowCloudletPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool, cb func(res *edgeproto.CloudletPool) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -257,15 +259,19 @@ func ShowCloudletPoolStream(ctx context.Context, rc *RegionContext, obj *edgepro
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) ([]edgeproto.CloudletPool, error) {
 	arr := []edgeproto.CloudletPool{}
-	err := ShowCloudletPoolStream(ctx, rc, obj, func(res *edgeproto.CloudletPool) {
+	err := ShowCloudletPoolStream(ctx, rc, obj, func(res *edgeproto.CloudletPool) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -281,7 +287,7 @@ func AddCloudletPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -293,8 +299,9 @@ func AddCloudletPoolMember(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
@@ -334,7 +341,7 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionCloudletPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -346,8 +353,9 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {

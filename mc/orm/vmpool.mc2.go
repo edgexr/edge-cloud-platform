@@ -39,7 +39,7 @@ func CreateVMPool(c echo.Context) error {
 
 	in := ormapi.RegionVMPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -51,8 +51,9 @@ func CreateVMPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -92,7 +93,7 @@ func DeleteVMPool(c echo.Context) error {
 
 	in := ormapi.RegionVMPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -104,8 +105,9 @@ func DeleteVMPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -145,7 +147,7 @@ func UpdateVMPool(c echo.Context) error {
 
 	in := ormapi.RegionVMPool{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -157,8 +159,9 @@ func UpdateVMPool(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -201,25 +204,24 @@ func ShowVMPool(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 
-	err = ShowVMPoolStream(ctx, rc, &in.VMPool, func(res *edgeproto.VMPool) {
+	err = ShowVMPoolStream(ctx, rc, &in.VMPool, func(res *edgeproto.VMPool) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool, cb func(res *edgeproto.VMPool)) error {
+func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool, cb func(res *edgeproto.VMPool) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -258,15 +260,19 @@ func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMP
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) ([]edgeproto.VMPool, error) {
 	arr := []edgeproto.VMPool{}
-	err := ShowVMPoolStream(ctx, rc, obj, func(res *edgeproto.VMPool) {
+	err := ShowVMPoolStream(ctx, rc, obj, func(res *edgeproto.VMPool) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -282,7 +288,7 @@ func AddVMPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionVMPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -294,8 +300,9 @@ func AddVMPoolMember(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
@@ -335,7 +342,7 @@ func RemoveVMPoolMember(c echo.Context) error {
 
 	in := ormapi.RegionVMPoolMember{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -347,8 +354,9 @@ func RemoveVMPoolMember(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
