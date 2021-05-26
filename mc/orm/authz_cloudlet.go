@@ -3,7 +3,6 @@ package orm
 import (
 	"context"
 	fmt "fmt"
-	"net/http"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -128,7 +127,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 	}
 	// build map of cloudlets associated with all cloudlet pools
 	s.cloudletPoolSide = make(map[edgeproto.CloudletKey]int)
-	err = ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, func(pool *edgeproto.CloudletPool) {
+	err = ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, func(pool *edgeproto.CloudletPool) error {
 		for _, name := range pool.Cloudlets {
 			cloudletKey := edgeproto.CloudletKey{
 				Name:         name,
@@ -145,6 +144,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 			}
 			s.cloudletPoolSide[cloudletKey] = side
 		}
+		return nil
 	})
 
 	// if dev org is not a billing org, then perform authz here
@@ -158,7 +158,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 					return echo.ErrForbidden
 				}
 			} else {
-				return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("Billing Org must be set up to deploy to public cloudlets"))
+				return fmt.Errorf("Billing Org must be set up to deploy to public cloudlets")
 			}
 		}
 	}
@@ -283,7 +283,7 @@ func authzCreateAutoProvPolicy(ctx context.Context, region, username string, obj
 			Key: apCloudlet.Key,
 		}
 		if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
+			return fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString())
 		}
 	}
 	return nil
@@ -304,7 +304,7 @@ func authzAddAutoProvPolicyCloudlet(ctx context.Context, region, username string
 		Key: obj.CloudletKey,
 	}
 	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString()))
+		return fmt.Errorf("No permissions for Cloudlet %s", cloudlet.Key.GetKeyString())
 	}
 	return nil
 }

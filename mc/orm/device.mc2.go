@@ -38,7 +38,7 @@ func InjectDevice(c echo.Context) error {
 
 	in := ormapi.RegionDevice{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -49,8 +49,9 @@ func InjectDevice(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func InjectDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
@@ -93,24 +94,23 @@ func ShowDevice(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Device.GetKey().GetTags())
 
-	err = ShowDeviceStream(ctx, rc, &in.Device, func(res *edgeproto.Device) {
+	err = ShowDeviceStream(ctx, rc, &in.Device, func(res *edgeproto.Device) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowDeviceStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Device, cb func(res *edgeproto.Device)) error {
+func ShowDeviceStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Device, cb func(res *edgeproto.Device) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -149,15 +149,19 @@ func ShowDeviceStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Dev
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) ([]edgeproto.Device, error) {
 	arr := []edgeproto.Device{}
-	err := ShowDeviceStream(ctx, rc, obj, func(res *edgeproto.Device) {
+	err := ShowDeviceStream(ctx, rc, obj, func(res *edgeproto.Device) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -173,7 +177,7 @@ func EvictDevice(c echo.Context) error {
 
 	in := ormapi.RegionDevice{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -184,8 +188,9 @@ func EvictDevice(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func EvictDeviceObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Device) (*edgeproto.Result, error) {
@@ -228,24 +233,23 @@ func ShowDeviceReport(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.DeviceReport.GetKey().GetTags())
 
-	err = ShowDeviceReportStream(ctx, rc, &in.DeviceReport, func(res *edgeproto.Device) {
+	err = ShowDeviceReportStream(ctx, rc, &in.DeviceReport, func(res *edgeproto.Device) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowDeviceReportStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DeviceReport, cb func(res *edgeproto.Device)) error {
+func ShowDeviceReportStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DeviceReport, cb func(res *edgeproto.Device) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -284,15 +288,19 @@ func ShowDeviceReportStream(ctx context.Context, rc *RegionContext, obj *edgepro
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowDeviceReportObj(ctx context.Context, rc *RegionContext, obj *edgeproto.DeviceReport) ([]edgeproto.Device, error) {
 	arr := []edgeproto.Device{}
-	err := ShowDeviceReportStream(ctx, rc, obj, func(res *edgeproto.Device) {
+	err := ShowDeviceReportStream(ctx, rc, obj, func(res *edgeproto.Device) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

@@ -39,23 +39,22 @@ func EnableDebugLevels(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	err = EnableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
+	err = EnableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForEnableDebugLevels(); err != nil {
 		return err
@@ -91,15 +90,19 @@ func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func EnableDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
 	arr := []edgeproto.DebugReply{}
-	err := EnableDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) {
+	err := EnableDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -118,23 +121,22 @@ func DisableDebugLevels(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	err = DisableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
+	err = DisableDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForDisableDebugLevels(); err != nil {
 		return err
@@ -170,15 +172,19 @@ func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgep
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func DisableDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
 	arr := []edgeproto.DebugReply{}
-	err := DisableDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) {
+	err := DisableDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -197,23 +203,22 @@ func ShowDebugLevels(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	err = ShowDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
+	err = ShowDebugLevelsStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, "",
@@ -246,15 +251,19 @@ func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
 	arr := []edgeproto.DebugReply{}
-	err := ShowDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) {
+	err := ShowDebugLevelsStream(ctx, rc, obj, func(res *edgeproto.DebugReply) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -273,23 +282,22 @@ func RunDebug(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 
-	err = RunDebugStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) {
+	err = RunDebugStream(ctx, rc, &in.DebugRequest, func(res *edgeproto.DebugReply) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply)) error {
+func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest, cb func(res *edgeproto.DebugReply) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForRunDebug(); err != nil {
 		return err
@@ -325,15 +333,19 @@ func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Debug
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func RunDebugObj(ctx context.Context, rc *RegionContext, obj *edgeproto.DebugRequest) ([]edgeproto.DebugReply, error) {
 	arr := []edgeproto.DebugReply{}
-	err := RunDebugStream(ctx, rc, obj, func(res *edgeproto.DebugReply) {
+	err := RunDebugStream(ctx, rc, obj, func(res *edgeproto.DebugReply) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

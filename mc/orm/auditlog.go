@@ -18,6 +18,8 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/util"
+	"google.golang.org/grpc/status"
 )
 
 var AuditId uint64
@@ -25,7 +27,7 @@ var AuditId uint64
 var TokenStringRegex = regexp.MustCompile(`"token":"(.*?)"`)
 
 func logger(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) (nexterr error) {
+	return func(c echo.Context) error {
 		eventStart := time.Now()
 		logaudit := true
 		req := c.Request()
@@ -64,6 +66,14 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		ctx := log.ContextWithSpan(context.Background(), span)
 		ec := NewEchoContext(c, ctx)
 
+		// The error handler injects the error into the response.
+		// This audit log needs the error to log it, but does not
+		// pass the error up, since it's already been written to
+		// the response, so echo doesn't need to see it.
+		// Error handler must come before body dump, so that body
+		// dump captures the changes to the response.
+		next = errorHandler(next)
+
 		reqBody := []byte{}
 		resBody := []byte{}
 		if strings.HasPrefix(req.RequestURI, "/ws/") {
@@ -83,7 +93,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		span.SetTag("method", req.Method)
 
-		nexterr = next(ec)
+		nexterr := next(ec)
 
 		span.SetTag("status", res.Status)
 
@@ -166,10 +176,10 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		eventErr := nexterr
 		if nexterr != nil {
 			span.SetTag("error", nexterr)
-			he, ok := nexterr.(*echo.HTTPError)
-			if ok && he.Internal != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.Internal)
-				eventErr = he.Internal
+			he, ok := nexterr.(*HTTPError)
+			if ok && he.internal != nil {
+				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.internal)
+				eventErr = he.internal
 			}
 		}
 		if len(resBody) > 0 {
@@ -217,21 +227,6 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			eventTags := make(map[string]string)
 			eventTags["status"] = fmt.Sprintf("%d", res.Status)
 			eventOrg := ""
-			if eventErr == nil && res.Status != http.StatusOK {
-				// setReply and echo put the error into
-				// the response body and set the status when
-				// using c.JSON(), whose err return value
-				// is only for writing to the response.
-				contextErr := c.Get(echoContextError)
-				if contextErr != nil {
-					if cerr, ok := contextErr.(error); ok {
-						eventErr = cerr
-					}
-				}
-				if eventErr == nil {
-					eventErr = fmt.Errorf("%s", response)
-				}
-			}
 			for k, v := range log.GetTags(span) {
 				if k == "level" || k == "error" || log.IgnoreSpanTag(k) {
 					continue
@@ -249,7 +244,71 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 			nodeMgr.TimedEvent(ctx, req.RequestURI, eventOrg, node.AuditType, eventTags, eventErr, eventStart, time.Now())
 		}
-		return nexterr
+		// do not pass error up, as it's already been handled by the handler
+		return nil
+	}
+}
+
+// Convert the error to a result to put in response.
+func getErrorResult(err error) (int, *ormapi.Result) {
+	// convert a GRPC error message to something more human readable
+	if st, ok := status.FromError(err); ok {
+		err = fmt.Errorf("%s", st.Message())
+	}
+	// convert err to result which can be inserted into http response
+	code := http.StatusBadRequest
+	msg := ""
+	if e, ok := err.(*HTTPError); ok {
+		code = e.Code
+		msg = e.Message
+	} else if e, ok := err.(*echo.HTTPError); ok {
+		code = e.Code
+		msg = fmt.Sprintf("%v", e.Message)
+	} else {
+		msg = err.Error()
+	}
+	if len(msg) > 0 {
+		msg = util.CapitalizeMessage(msg)
+	}
+	return code, &ormapi.Result{
+		Message: msg,
+	}
+}
+
+func errorHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// All error handling is done here. We do not rely on
+		// echo's default error handler, which basically just calls
+		// c.JSON(). We still pass the error up, but that's just
+		// so it can go into the audit log.
+		err := next(c)
+		if err == nil {
+			return nil
+		}
+		code, res := getErrorResult(err)
+
+		// write error to response/stream
+		var writeErr error
+		if ws := GetWs(c); ws != nil {
+			// websocket errors must be handled in
+			// websocketUpgrade before the ws is closed.
+		} else if c.Get(StreamAPITag) != nil && c.Response().Committed {
+			// JSON streaming response that has already written
+			// the header, so inject the error into the stream.
+			res.Code = code
+			payload := ormapi.StreamPayload{
+				Result: res,
+			}
+			writeErr = json.NewEncoder(c.Response()).Encode(payload)
+		} else {
+			// write to response header
+			writeErr = c.JSON(code, res)
+		}
+		if writeErr != nil {
+			ctx := GetContext(c)
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)
+		}
+		return err
 	}
 }
 
@@ -262,24 +321,24 @@ func ShowAuditSelf(c echo.Context) error {
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 
 	params := make(map[string]string)
 	if err := addAuditParams(&query, params); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	tags := make(map[string]string)
 	tags["level"] = "audit"
 	tags["email"] = claims.Email
 	if err := addAuditTags(&query, tags); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	resps, err := sendJaegerAuditQuery(ctx, serverConfig.JaegerAddr, params, tags, nil)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	return c.JSON(http.StatusOK, resps)
 }
@@ -293,7 +352,7 @@ func ShowAuditOrg(c echo.Context) error {
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 
 	filter := &AuditOrgsFilter{}
@@ -320,18 +379,18 @@ func ShowAuditOrg(c echo.Context) error {
 
 	params := make(map[string]string)
 	if err := addAuditParams(&query, params); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	tags := make(map[string]string)
 	tags["level"] = "audit"
 	if err := addAuditTags(&query, tags); err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 
 	resps, err := sendJaegerAuditQuery(ctx, serverConfig.JaegerAddr, params, tags, filter)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, MsgErr(err))
+		return err
 	}
 	return c.JSON(http.StatusOK, resps)
 }
@@ -568,14 +627,14 @@ func GetAuditOperations(c echo.Context) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		str := fmt.Sprintf("Bad status from log server, %s", http.StatusText(resp.StatusCode))
-		return c.JSON(http.StatusInternalServerError, Msg(str))
+		return newHTTPError(http.StatusInternalServerError, str)
 	}
 
 	respData := jaegerOperationsResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&respData)
 	if err != nil {
 		str := fmt.Sprintf("Cannot parse log server response, %v", err)
-		return c.JSON(http.StatusInternalServerError, Msg(str))
+		return newHTTPError(http.StatusInternalServerError, str)
 	}
 	// ignore any operations that are not user api calls, like
 	// "main" or "appstore sync".

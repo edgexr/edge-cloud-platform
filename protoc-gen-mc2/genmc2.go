@@ -511,10 +511,9 @@ func {{.MethodName}}(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 {{- else}}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 {{- end}}
 	rc.region = in.Region
@@ -528,13 +527,13 @@ func {{.MethodName}}(c echo.Context) error {
 {{- end}}
 {{- if .Outstream}}
 
-	err = {{.MethodName}}Stream(ctx, rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) {
+	err = {{.MethodName}}Stream(ctx, rc, &in.{{.InName}}, func(res *edgeproto.{{.OutName}}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 {{- else}}
@@ -543,8 +542,9 @@ func {{.MethodName}}(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 {{- end}}
 }
 
@@ -556,7 +556,7 @@ type {{.MethodName}}Authz interface {
 {{- end}}
 
 {{if .Outstream}}
-func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}})) error {
+func {{.MethodName}}Stream(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}}) error) error {
 {{- else}}
 func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
@@ -657,9 +657,12 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 {{- end}}
 		}
 {{- end}}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return {{.ReturnErrArg}}err
+		}
 	}
-	return nil
+	return {{.ReturnErrArg}}nil
 {{- else}}
 	return api.{{.MethodName}}(ctx, obj)
 {{- end}}
@@ -668,8 +671,9 @@ func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{
 {{ if .Outstream}}
 func {{.MethodName}}Obj(ctx context.Context, rc *RegionContext, obj *edgeproto.{{.InName}}) ([]edgeproto.{{.OutName}}, error) {
 	arr := []edgeproto.{{.OutName}}{}
-	err := {{.MethodName}}Stream(ctx, rc, obj, func(res *edgeproto.{{.OutName}}) {
+	err := {{.MethodName}}Stream(ctx, rc, obj, func(res *edgeproto.{{.OutName}}) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

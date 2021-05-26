@@ -39,25 +39,24 @@ func CreateTrustPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
 
-	err = CreateTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) {
+	err = CreateTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func CreateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
+func CreateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForCreateTrustPolicy(); err != nil {
 		return err
@@ -93,15 +92,19 @@ func CreateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func CreateTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy) ([]edgeproto.Result, error) {
 	arr := []edgeproto.Result{}
-	err := CreateTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) {
+	err := CreateTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -120,25 +123,24 @@ func DeleteTrustPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
 
-	err = DeleteTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) {
+	err = DeleteTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func DeleteTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
+func DeleteTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForDeleteTrustPolicy(); err != nil {
 		return err
@@ -174,15 +176,19 @@ func DeleteTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func DeleteTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy) ([]edgeproto.Result, error) {
 	arr := []edgeproto.Result{}
-	err := DeleteTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) {
+	err := DeleteTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -201,25 +207,24 @@ func UpdateTrustPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
 
-	err = UpdateTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) {
+	err = UpdateTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func UpdateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result)) error {
+func UpdateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.Result) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForUpdateTrustPolicy(); err != nil {
 		return err
@@ -255,15 +260,19 @@ func UpdateTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func UpdateTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy) ([]edgeproto.Result, error) {
 	arr := []edgeproto.Result{}
-	err := UpdateTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) {
+	err := UpdateTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.Result) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -282,20 +291,19 @@ func ShowTrustPolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
 
-	err = ShowTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.TrustPolicy) {
+	err = ShowTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.TrustPolicy) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
@@ -305,7 +313,7 @@ type ShowTrustPolicyAuthz interface {
 	Filter(obj *edgeproto.TrustPolicy)
 }
 
-func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.TrustPolicy)) error {
+func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy, cb func(res *edgeproto.TrustPolicy) error) error {
 	var authz ShowTrustPolicyAuthz
 	var err error
 	if !rc.skipAuthz {
@@ -348,15 +356,19 @@ func ShowTrustPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 				authz.Filter(res)
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.TrustPolicy) ([]edgeproto.TrustPolicy, error) {
 	arr := []edgeproto.TrustPolicy{}
-	err := ShowTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.TrustPolicy) {
+	err := ShowTrustPolicyStream(ctx, rc, obj, func(res *edgeproto.TrustPolicy) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

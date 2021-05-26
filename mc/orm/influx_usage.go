@@ -619,20 +619,22 @@ func checkInfluxOutput(resp *client.Response, measurement string) (bool, error) 
 
 func GetEventAndCheckpoint(ctx context.Context, rc *InfluxDBContext, eventCmd, checkpointCmd string) (*client.Response, *client.Response, error) {
 	var eventResponse, checkpointResponse *client.Response
-	err := influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, eventCmd, func(res interface{}) {
+	err := influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, eventCmd, func(res interface{}) error {
 		resp, ok := res.([]client.Result)
 		if ok {
 			eventResponse = &client.Response{Results: resp}
 		}
+		return nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, checkpointCmd, func(res interface{}) {
+	err = influxStream(ctx, rc, []string{cloudcommon.EventsDbName}, checkpointCmd, func(res interface{}) error {
 		resp, ok := res.([]client.Result)
 		if ok {
 			checkpointResponse = &client.Response{Results: resp}
 		}
+		return nil
 	})
 	if err != nil {
 		return nil, nil, err
@@ -667,13 +669,13 @@ func GetUsageCommon(c echo.Context) error {
 
 		// start and end times must be specified
 		if in.StartTime.IsZero() || in.EndTime.IsZero() {
-			return setReply(c, fmt.Errorf("Both start and end times must be specified"), nil)
+			return fmt.Errorf("Both start and end times must be specified")
 		}
 
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.AppInst.AppKey.Organization},
 			ResourceAppAnalytics, []edgeproto.CloudletKey{in.AppInst.ClusterInstKey.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 
 		rc.region = in.Region
@@ -695,13 +697,13 @@ func GetUsageCommon(c echo.Context) error {
 
 		// start and end times must be specified
 		if in.StartTime.IsZero() || in.EndTime.IsZero() {
-			return setReply(c, fmt.Errorf("Both start and end times must be specified"), nil)
+			return fmt.Errorf("Both start and end times must be specified")
 		}
 
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
 		if err != nil {
-			return setReply(c, err, nil)
+			return err
 		}
 
 		rc.region = in.Region
@@ -718,7 +720,7 @@ func GetUsageCommon(c echo.Context) error {
 			return err
 		}
 	} else {
-		return setReply(c, echo.ErrNotFound, nil)
+		return echo.ErrNotFound
 	}
 
 	payload := ormapi.StreamPayload{}

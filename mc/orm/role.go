@@ -335,10 +335,13 @@ func AddUserRole(c echo.Context) error {
 	}
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	err = AddUserRoleObj(GetContext(c), claims, &role)
-	return setReply(c, err, Msg("Role added to user"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Role added to user"))
 }
 
 func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
@@ -482,10 +485,13 @@ func RemoveUserRole(c echo.Context) error {
 
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	err = RemoveUserRoleObj(ctx, claims, &role)
-	return setReply(c, err, Msg("Role removed from user"))
+	if err != nil {
+		return err
+	}
+	return setReply(c, Msg("Role removed from user"))
 }
 
 func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
@@ -566,7 +572,10 @@ func ShowUserRole(c echo.Context) error {
 		return err
 	}
 	roles, err := ShowUserRoleObj(ctx, claims.Username, filter)
-	return setReply(c, err, roles)
+	if err != nil {
+		return err
+	}
+	return setReply(c, roles)
 }
 
 // show roles for organizations the current user has permission to

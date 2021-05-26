@@ -37,7 +37,7 @@ func CreateAutoScalePolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoScalePolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -49,8 +49,9 @@ func CreateAutoScalePolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
@@ -90,7 +91,7 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoScalePolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -102,8 +103,9 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
@@ -143,7 +145,7 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 
 	in := ormapi.RegionAutoScalePolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -155,8 +157,9 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
@@ -199,25 +202,24 @@ func ShowAutoScalePolicy(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoScalePolicy.Key.Organization)
 
-	err = ShowAutoScalePolicyStream(ctx, rc, &in.AutoScalePolicy, func(res *edgeproto.AutoScalePolicy) {
+	err = ShowAutoScalePolicyStream(ctx, rc, &in.AutoScalePolicy, func(res *edgeproto.AutoScalePolicy) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy, cb func(res *edgeproto.AutoScalePolicy)) error {
+func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy, cb func(res *edgeproto.AutoScalePolicy) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -256,15 +258,19 @@ func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edge
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoScalePolicy) ([]edgeproto.AutoScalePolicy, error) {
 	arr := []edgeproto.AutoScalePolicy{}
-	err := ShowAutoScalePolicyStream(ctx, rc, obj, func(res *edgeproto.AutoScalePolicy) {
+	err := ShowAutoScalePolicyStream(ctx, rc, obj, func(res *edgeproto.AutoScalePolicy) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

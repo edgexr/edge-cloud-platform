@@ -37,7 +37,7 @@ func CreateFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -48,8 +48,9 @@ func CreateFlavor(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
@@ -89,7 +90,7 @@ func DeleteFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -100,8 +101,9 @@ func DeleteFlavor(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
@@ -141,7 +143,7 @@ func UpdateFlavor(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -152,8 +154,9 @@ func UpdateFlavor(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
@@ -196,24 +199,23 @@ func ShowFlavor(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
 
-	err = ShowFlavorStream(ctx, rc, &in.Flavor, func(res *edgeproto.Flavor) {
+	err = ShowFlavorStream(ctx, rc, &in.Flavor, func(res *edgeproto.Flavor) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowFlavorStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor, cb func(res *edgeproto.Flavor)) error {
+func ShowFlavorStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor, cb func(res *edgeproto.Flavor) error) error {
 	if rc.conn == nil {
 		conn, err := connectController(ctx, rc.region)
 		if err != nil {
@@ -239,15 +241,19 @@ func ShowFlavorStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Fla
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowFlavorObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) ([]edgeproto.Flavor, error) {
 	arr := []edgeproto.Flavor{}
-	err := ShowFlavorStream(ctx, rc, obj, func(res *edgeproto.Flavor) {
+	err := ShowFlavorStream(ctx, rc, obj, func(res *edgeproto.Flavor) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -263,7 +269,7 @@ func AddFlavorRes(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -274,8 +280,9 @@ func AddFlavorRes(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddFlavorResObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {
@@ -315,7 +322,7 @@ func RemoveFlavorRes(c echo.Context) error {
 
 	in := ormapi.RegionFlavor{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -326,8 +333,9 @@ func RemoveFlavorRes(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveFlavorResObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Flavor) (*edgeproto.Result, error) {

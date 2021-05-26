@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+	fmt "fmt"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -80,12 +81,12 @@ func UpdateConfig(c echo.Context) error {
 	// calling bind after doing lookup will overwrite only the
 	// fields specified in the request body, keeping existing fields intact.
 	if err := c.Bind(&config); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	config.ID = defaultConfig.ID
 
 	if config.AdminPasswordMinCrackTimeSec < config.PasswordMinCrackTimeSec {
-		return c.JSON(http.StatusBadRequest, Msg("admin password min crack time must be greater than password min crack time"))
+		return fmt.Errorf("admin password min crack time must be greater than password min crack time")
 	}
 	if config.AdminPasswordMinCrackTimeSec != oldConfig.AdminPasswordMinCrackTimeSec || config.PasswordMinCrackTimeSec != oldConfig.PasswordMinCrackTimeSec {
 		err = resetUserPasswordCrackTimes(ctx)

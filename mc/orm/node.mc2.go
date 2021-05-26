@@ -39,24 +39,23 @@ func ShowNode(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Node.GetKey().GetTags())
 
-	err = ShowNodeStream(ctx, rc, &in.Node, func(res *edgeproto.Node) {
+	err = ShowNodeStream(ctx, rc, &in.Node, func(res *edgeproto.Node) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node, cb func(res *edgeproto.Node)) error {
+func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node, cb func(res *edgeproto.Node) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -95,15 +94,19 @@ func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node,
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowNodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Node) ([]edgeproto.Node, error) {
 	arr := []edgeproto.Node{}
-	err := ShowNodeStream(ctx, rc, obj, func(res *edgeproto.Node) {
+	err := ShowNodeStream(ctx, rc, obj, func(res *edgeproto.Node) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

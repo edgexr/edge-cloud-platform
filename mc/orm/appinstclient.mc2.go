@@ -40,25 +40,24 @@ func ShowAppInstClient(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstClientKey.GetKey().GetTags())
 	span.SetTag("org", in.AppInstClientKey.AppInstKey.AppKey.Organization)
 
-	err = ShowAppInstClientStream(ctx, rc, &in.AppInstClientKey, func(res *edgeproto.AppInstClient) {
+	err = ShowAppInstClientStream(ctx, rc, &in.AppInstClientKey, func(res *edgeproto.AppInstClient) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey, cb func(res *edgeproto.AppInstClient)) error {
+func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey, cb func(res *edgeproto.AppInstClient) error) error {
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if !rc.skipAuthz {
 		if err := authorized(ctx, rc.username, obj.AppInstKey.AppKey.Organization,
@@ -91,15 +90,19 @@ func ShowAppInstClientStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		if err != nil {
 			return err
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAppInstClientObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstClientKey) ([]edgeproto.AppInstClient, error) {
 	arr := []edgeproto.AppInstClient{}
-	err := ShowAppInstClientStream(ctx, rc, obj, func(res *edgeproto.AppInstClient) {
+	err := ShowAppInstClientStream(ctx, rc, obj, func(res *edgeproto.AppInstClient) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

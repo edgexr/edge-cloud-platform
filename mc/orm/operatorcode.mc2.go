@@ -37,7 +37,7 @@ func CreateOperatorCode(c echo.Context) error {
 
 	in := ormapi.RegionOperatorCode{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -48,8 +48,9 @@ func CreateOperatorCode(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
@@ -89,7 +90,7 @@ func DeleteOperatorCode(c echo.Context) error {
 
 	in := ormapi.RegionOperatorCode{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -100,8 +101,9 @@ func DeleteOperatorCode(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
@@ -144,24 +146,23 @@ func ShowOperatorCode(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.OperatorCode.Organization)
 
-	err = ShowOperatorCodeStream(ctx, rc, &in.OperatorCode, func(res *edgeproto.OperatorCode) {
+	err = ShowOperatorCodeStream(ctx, rc, &in.OperatorCode, func(res *edgeproto.OperatorCode) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode, cb func(res *edgeproto.OperatorCode)) error {
+func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode, cb func(res *edgeproto.OperatorCode) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -200,15 +201,19 @@ func ShowOperatorCodeStream(ctx context.Context, rc *RegionContext, obj *edgepro
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) ([]edgeproto.OperatorCode, error) {
 	arr := []edgeproto.OperatorCode{}
-	err := ShowOperatorCodeStream(ctx, rc, obj, func(res *edgeproto.OperatorCode) {
+	err := ShowOperatorCodeStream(ctx, rc, obj, func(res *edgeproto.OperatorCode) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }

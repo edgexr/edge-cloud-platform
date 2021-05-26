@@ -942,7 +942,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 				count++
 			})
 		require.NotNil(t, err)
-		require.Contains(t, err.Error(), "timedout")
+		require.Contains(t, err.Error(), "Timed out")
 		require.Equal(t, http.StatusOK, status)
 		require.Equal(t, 1, count)
 
@@ -974,12 +974,20 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 				count++
 			})
 		require.NotNil(t, err)
-		require.Contains(t, err.Error(), "timedout")
+		require.Contains(t, err.Error(), "Timed out")
 		require.Equal(t, http.StatusBadRequest, status)
 		require.Equal(t, 1, count)
 		// clean up controller
 		status, err = mcClient.DeleteController(uri, token, &ctrl)
 		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		// bug 5013 - test bad case for field name
+		filter := map[string]interface{}{
+			"region": "foo",
+		}
+		status, err = restClient.PostJson(uri+"/auth/cloudletpoolaccessresponse/show", token, filter, nil)
+		require.Nil(t, err, "show cloudlet pool access invitation")
 		require.Equal(t, http.StatusOK, status)
 	}
 	// clean up orgs
@@ -1051,6 +1059,10 @@ func testDeleteOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgN
 }
 
 func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
+	gitlabIgnoreForUnitTest = true
+	defer func() {
+		gitlabIgnoreForUnitTest = false
+	}()
 	org := getOrg(t, mcClient, uri, token, orgName)
 	update := *org
 	update.PublicImages = !org.PublicImages
@@ -1310,7 +1322,7 @@ func (s *StreamDummyServer) CreateClusterInst(in *edgeproto.ClusterInst, server 
 		select {
 		case <-s.next:
 		case <-time.After(1 * time.Second):
-			return fmt.Errorf("timedout")
+			return fmt.Errorf("timed out")
 		}
 		server.Send(&edgeproto.Result{Code: int32(ii)})
 	}

@@ -10,7 +10,28 @@ import (
 	"github.com/mobiledgex/edge-cloud/util"
 )
 
-var echoContextError = "mobiledgexError"
+// HTTPError that bundles code with the error message.
+// This differs from echo.HTTPError in two important ways,
+// first the Error() func does not include the code, which
+// allows us to chain error messages nicely, second the
+// error message is a string (just like the builtin error),
+// instead of an interface.
+type HTTPError struct {
+	Message  string `json:"message,omitempty"`
+	Code     int    `json:"code,omitempty"`
+	internal error
+}
+
+func (s *HTTPError) Error() string {
+	return s.Message
+}
+
+func newHTTPError(code int, err string) *HTTPError {
+	return &HTTPError{
+		Message: err,
+		Code:    code,
+	}
+}
 
 type M map[string]interface{}
 
@@ -21,70 +42,17 @@ func Msg(msg string) *ormapi.Result {
 	return &ormapi.Result{Message: msg}
 }
 
-func MsgErr(err error) *ormapi.Result {
-	return &ormapi.Result{Message: err.Error()}
-}
-
-func ctrlErr(c echo.Context, err error) error {
-	msg := "controller connect error, " + err.Error()
-	return c.JSON(http.StatusBadRequest, Msg(msg))
-}
-
 func dbErr(err error) error {
-	return fmt.Errorf("database error, %s", err.Error())
+	return fmt.Errorf("database error, " + err.Error())
 }
 
-func bindErr(c echo.Context, err error) error {
-	var code int
-	var msg string
-	if e, ok := err.(*echo.HTTPError); ok {
-		code = e.Code
-		msg = fmt.Sprintf("%v", e.Message)
-	} else {
-		code = http.StatusBadRequest
-		msg = err.Error()
-	}
-	return c.JSON(code, Msg("Invalid POST data, "+msg))
+func bindErr(err error) error {
+	return fmt.Errorf("invalid POST data, " + err.Error())
 }
 
-func setReply(c echo.Context, err error, data interface{}) error {
-	code := http.StatusOK
-	if err != nil {
-		switch err {
-		case echo.ErrForbidden:
-			code = http.StatusForbidden
-		case echo.ErrNotFound:
-			code = http.StatusNotFound
-		default:
-			code = http.StatusBadRequest
-		}
-		// set error on context so it can be easily retrieved for audit log
-		c.Set(echoContextError, err)
-	}
-	if ws := GetWs(c); ws != nil {
-		wsPayload := ormapi.WSStreamPayload{
-			Code: code,
-		}
-		if err != nil {
-			wsPayload.Data = MsgErr(err)
-		} else if data != nil {
-			wsPayload.Data = data
-		}
-		out, err := json.Marshal(wsPayload)
-		if err == nil {
-			LogWsResponse(c, string(out))
-		}
-		return ws.WriteJSON(wsPayload)
-	}
-	if err != nil {
-		// If error is HTTPError, pull out the message to prevent redundant status code info
-		if e, ok := err.(*echo.HTTPError); ok {
-			err = fmt.Errorf("%v", e.Message)
-			code = e.Code
-		}
-		return c.JSON(code, MsgErr(err))
-	}
-	return c.JSON(code, data)
+// setReply sets the reply data on a successful API call
+func setReply(c echo.Context, data interface{}) error {
+	return c.JSON(http.StatusOK, data)
 }
 
 // streamReply funcs used by alldata always send back just a status

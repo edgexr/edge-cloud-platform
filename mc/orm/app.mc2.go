@@ -38,7 +38,7 @@ func CreateApp(c echo.Context) error {
 
 	in := ormapi.RegionApp{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -50,8 +50,9 @@ func CreateApp(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func CreateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -91,7 +92,7 @@ func DeleteApp(c echo.Context) error {
 
 	in := ormapi.RegionApp{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -103,8 +104,9 @@ func DeleteApp(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func DeleteAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -144,7 +146,7 @@ func UpdateApp(c echo.Context) error {
 
 	in := ormapi.RegionApp{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -156,8 +158,9 @@ func UpdateApp(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func UpdateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -200,25 +203,24 @@ func ShowApp(c echo.Context) error {
 	if !success {
 		return err
 	}
-	defer CloseConn(c)
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
 
-	err = ShowAppStream(ctx, rc, &in.App, func(res *edgeproto.App) {
+	err = ShowAppStream(ctx, rc, &in.App, func(res *edgeproto.App) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
-		WriteStream(c, &payload)
+		return WriteStream(c, &payload)
 	})
 	if err != nil {
-		WriteError(c, err)
+		return err
 	}
 	return nil
 }
 
-func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, cb func(res *edgeproto.App)) error {
+func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, cb func(res *edgeproto.App) error) error {
 	var authz *AuthzShow
 	var err error
 	if !rc.skipAuthz {
@@ -257,15 +259,19 @@ func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, c
 				continue
 			}
 		}
-		cb(res)
+		err = cb(res)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func ShowAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) ([]edgeproto.App, error) {
 	arr := []edgeproto.App{}
-	err := ShowAppStream(ctx, rc, obj, func(res *edgeproto.App) {
+	err := ShowAppStream(ctx, rc, obj, func(res *edgeproto.App) error {
 		arr = append(arr, *res)
+		return nil
 	})
 	return arr, err
 }
@@ -281,7 +287,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAppAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -292,8 +298,9 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func AddAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
@@ -333,7 +340,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 
 	in := ormapi.RegionAppAutoProvPolicy{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(c, err)
+		return bindErr(err)
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -344,8 +351,9 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
 		}
+		return err
 	}
-	return setReply(c, err, resp)
+	return setReply(c, resp)
 }
 
 func RemoveAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {

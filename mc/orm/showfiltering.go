@@ -33,6 +33,7 @@ func jsonToDbNames(jsonMap map[string]interface{}, refObj interface{}) (map[stri
 		if jsonName == "" {
 			jsonName = field.Name
 		}
+		jsonName = strings.ToLower(jsonName)
 		jsonToDb[jsonName] = field.DBName
 	}
 	// gorm only allows embedded objects, so the struct depth
@@ -40,7 +41,7 @@ func jsonToDbNames(jsonMap map[string]interface{}, refObj interface{}) (map[stri
 	// to worry about maps inside of this map.
 	out := make(map[string]interface{})
 	for k, v := range jsonMap {
-		dbK, ok := jsonToDb[k]
+		dbK, ok := jsonToDb[strings.ToLower(k)]
 		if !ok {
 			return nil, fmt.Errorf("JSON field %s not found in database object %s", k, ms.ModelType.Name())
 		}
@@ -64,7 +65,7 @@ func bindDbFilter(c echo.Context, refObj interface{}) (map[string]interface{}, e
 	dbFilter, err := jsonToDbNames(filter, refObj)
 	if err != nil {
 		err = fmt.Errorf("Failed to parse input data: %s", err.Error())
-		return nil, setReply(c, err, nil)
+		return nil, err
 	}
 	return dbFilter, nil
 }
@@ -73,7 +74,7 @@ func bindMap(c echo.Context) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&m); err != nil {
-			return nil, bindErr(c, err)
+			return nil, err
 		}
 	}
 	return m, nil

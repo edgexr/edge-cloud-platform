@@ -31,7 +31,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
-	"google.golang.org/grpc/status"
 )
 
 // Server struct is just to track sql/db so we can stop them later.
@@ -935,17 +934,37 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 		SetWs(c, ws)
 
 		// call next handler
-		return next(c)
+		err = next(c)
+
+		// Any handler errors are sent via the websocket here before
+		// it is closed. The error is also passed to the caller, but
+		// only for being recorded in the audit log.
+		if err != nil {
+			code, res := getErrorResult(err)
+			wsPayload := ormapi.WSStreamPayload{
+				Code: code,
+				Data: res,
+			}
+			writeErr := writeWS(c, ws, &wsPayload)
+			if writeErr != nil {
+				ctx := GetContext(c)
+				log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to websocket stream", "err", err, "writeErr", writeErr)
+			}
+		}
+
+		ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+
+		return err
 	}
 }
+
+const StreamAPITag = "StreamAPITag"
 
 func ReadConn(c echo.Context, in interface{}) (bool, error) {
 	var err error
 
-	// Init header state while reading connection.
-	// This will be used to track if headers is written
-	// for response.
-	c.Set("WroteHeader", false)
+	// Mark stream API
+	c.Set(StreamAPITag, true)
 
 	if ws := GetWs(c); ws != nil {
 		err = ws.ReadJSON(in)
@@ -960,20 +979,13 @@ func ReadConn(c echo.Context, in interface{}) (bool, error) {
 	}
 	if err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			return false, setReply(c, fmt.Errorf("Invalid data"), nil)
+			return false, fmt.Errorf("Invalid data")
 		}
 		errStr := checkForTimeError(fmt.Sprintf("Invalid data: %v", err))
-		return false, setReply(c, fmt.Errorf(errStr), nil)
+		return false, fmt.Errorf(errStr)
 	}
 
 	return true, nil
-}
-
-func CloseConn(c echo.Context) {
-	if ws := GetWs(c); ws != nil {
-		ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-		ws.Close()
-	}
 }
 
 func WaitForConnClose(c echo.Context, serverClosed chan bool) {
@@ -1003,70 +1015,34 @@ func WaitForConnClose(c echo.Context, serverClosed chan bool) {
 	}
 }
 
+func writeWS(c echo.Context, ws *websocket.Conn, wsPayload *ormapi.WSStreamPayload) error {
+	out, err := json.Marshal(wsPayload)
+	if err == nil {
+		LogWsResponse(c, string(out))
+	}
+	return ws.WriteJSON(wsPayload)
+}
+
 func WriteStream(c echo.Context, payload *ormapi.StreamPayload) error {
 	if ws := GetWs(c); ws != nil {
 		wsPayload := ormapi.WSStreamPayload{
 			Code: http.StatusOK,
 			Data: (*payload).Data,
 		}
-		out, err := json.Marshal(wsPayload)
-		if err == nil {
-			LogWsResponse(c, string(out))
-		}
-		return ws.WriteJSON(wsPayload)
+		return writeWS(c, ws, &wsPayload)
 	} else {
-		headerFlag := c.Get("WroteHeader")
-		wroteHeader := false
-		if headerFlag != nil {
-			if h, ok := headerFlag.(bool); ok {
-				wroteHeader = h
-			}
-		}
 		// stream func may return "forbidden", so don't write
 		// header until we know it's ok
-		if !wroteHeader {
+		if !c.Response().Committed {
+			// Write header now that we're streaming back data
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			c.Response().WriteHeader(http.StatusOK)
-			c.Set("WroteHeader", true)
 		}
-		json.NewEncoder(c.Response()).Encode(*payload)
+		err := json.NewEncoder(c.Response()).Encode(*payload)
+		if err != nil {
+			return err
+		}
 		c.Response().Flush()
 	}
-
-	return nil
-}
-
-func WriteError(c echo.Context, err error) error {
-	if st, ok := status.FromError(err); ok {
-		err = fmt.Errorf("%s", st.Message())
-	}
-	headerFlag := c.Get("WroteHeader")
-	wroteHeader := false
-	if headerFlag != nil {
-		if h, ok := headerFlag.(bool); ok {
-			wroteHeader = h
-		}
-	}
-	if !wroteHeader {
-		return setReply(c, err, nil)
-	}
-	if ws := GetWs(c); ws != nil {
-		wsPayload := ormapi.WSStreamPayload{
-			Code: http.StatusBadRequest,
-			Data: MsgErr(err),
-		}
-		out, err := json.Marshal(wsPayload)
-		if err == nil {
-			LogWsResponse(c, string(out))
-		}
-		return ws.WriteJSON(wsPayload)
-	} else {
-		res := ormapi.Result{}
-		res.Message = err.Error()
-		res.Code = http.StatusBadRequest
-		payload := ormapi.StreamPayload{Result: &res}
-		json.NewEncoder(c.Response()).Encode(payload)
-	}
-
 	return nil
 }
