@@ -16,6 +16,8 @@ const (
 	Nanosecond        = 1000 * Microsecond
 
 	TimeFormatDate        = "2006/01/02"
+	TimeFormatDateName    = "20060102"
+	TimeFormatDateTZ      = "2006/01/02 (GMTZ07:00)"
 	TimeFormatDateTime    = "01-02 15:04:05"
 	TimeFormatDayDateTime = "Mon Jan 2 15:04:05"
 )
@@ -85,9 +87,9 @@ func (s DurationMicroseconds) MarshalYAML() (interface{}, error) {
 	return dur.String(), nil
 }
 
-func DateCmpUTC(date1, date2 time.Time) int {
-	y1, m1, d1 := date1.UTC().Date()
-	y2, m2, d2 := date2.UTC().Date()
+func DateCmp(date1, date2 time.Time) int {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.In(date1.Location()).Date()
 	if y1-y2 != 0 {
 		return y1 - y2
 	}
@@ -101,14 +103,21 @@ func DateCmpUTC(date1, date2 time.Time) int {
 }
 
 func IsUTCTimezone(date time.Time) bool {
-	tz, offset := date.Zone()
-	if tz != "UTC" || offset != 0 {
+	_, offset := date.Zone()
+	if offset != 0 {
 		return false
 	}
 	return true
 }
 
-func StripTimeUTC(date time.Time) time.Time {
-	utcDate := date.UTC()
-	return time.Date(utcDate.Year(), utcDate.Month(), utcDate.Day(), 0, 0, 0, 0, time.UTC)
+func StripTime(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+}
+
+func TimeToStr(in time.Time) string {
+	return in.Format(time.RFC3339)
+}
+
+func StrToTime(in string) (time.Time, error) {
+	return time.Parse(time.RFC3339, in)
 }
