@@ -157,12 +157,11 @@ var AlertReceiverComments = map[string]string{
 }
 
 var ReporterComments = map[string]string{
-	"name":                 `Reporter name. Can only contain letters, digits, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"org":                  `Organization name`,
-	"email":                `Email to send generated reports`,
-	"schedule":             `Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth`,
-	"startscheduledateutc": `Start date (UTC) when the report is scheduled to be generated (Default: today)`,
-	"timezone":             `Timezone in which to show the reports, defaults to either user setting or UTC`,
+	"name":              `Reporter name. Can only contain letters, digits, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"org":               `Organization name`,
+	"email":             `Email to send generated reports`,
+	"schedule":          `Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth`,
+	"startscheduledate": `Start date when the report is scheduled to be generated (Default: today)`,
 }
 
 var DownloadReportComments = map[string]string{
@@ -171,8 +170,7 @@ var DownloadReportComments = map[string]string{
 }
 
 var GenerateReportComments = map[string]string{
-	"org":          `Organization name`,
-	"starttimeutc": `Absolute time to start report capture in UTC`,
-	"endtimeutc":   `Absolute time to end report capture in UTC`,
-	"timezone":     `Timezone in which to show the reports, defaults to either user setting or UTC`,
+	"org":       `Organization name`,
+	"starttime": `Absolute time to start report capture`,
+	"endtime":   `Absolute time to end report capture`,
 }

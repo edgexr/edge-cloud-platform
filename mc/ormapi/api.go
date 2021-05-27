@@ -574,13 +574,11 @@ type Reporter struct {
 	Email string `json:",omitempty"`
 	// Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth
 	Schedule edgeproto.ReportSchedule `json:",omitempty"`
-	// Start date (UTC) when the report is scheduled to be generated (Default: today)
-	StartScheduleDateUTC time.Time `json:",omitempty"`
-	// Date (UTC) when the next report is scheduled to be generated (for internal use only)
+	// Start date when the report is scheduled to be generated (Default: today)
+	StartScheduleDate string `json:",omitempty"`
+	// Date when the next report is scheduled to be generated (for internal use only)
 	// read only: true
-	NextScheduleDateUTC time.Time `json:",omitempty"`
-	// Timezone in which to show the reports, defaults to either user setting or UTC
-	Timezone string
+	NextScheduleDate string `json:",omitempty"`
 	// User name (for internal use only)
 	// read only: true
 	Username string
@@ -602,23 +600,21 @@ type GenerateReport struct {
 	// Organization name
 	// required: true
 	Org string
-	// Absolute time to start report capture in UTC
+	// Absolute time to start report capture
 	// required: true
-	StartTimeUTC time.Time `json:",omitempty"`
-	// Absolute time to end report capture in UTC
+	StartTime time.Time `json:",omitempty"`
+	// Absolute time to end report capture
 	// required: true
-	EndTimeUTC time.Time `json:",omitempty"`
+	EndTime time.Time `json:",omitempty"`
 	// Region name (for internal use only)
 	// read only: true
 	Region string
-	// Timezone in which to show the reports, defaults to either user setting or UTC
-	Timezone string
 }
 
 func GetReportFileName(reporterName string, report *GenerateReport) string {
 	// File name should be of this format: "<orgname>_<startdate>_<enddate>_<reportername>_report.pdf"
-	startDate := report.StartTimeUTC.Format("20060102") // YYYYMMDD
-	endDate := report.EndTimeUTC.Format("20060102")
+	startDate := report.StartTime.Format(TimeFormatDateName) // YYYYMMDD
+	endDate := report.EndTime.Format(TimeFormatDateName)
 	subStr := ""
 	if reporterName != "" {
 		subStr = "_" + reporterName
