@@ -32,6 +32,7 @@ var PasshashSaltBytes = 8
 var BruteForceGuessesPerSecond = 1000000
 
 var JWTShortDuration = 4 * time.Hour
+var JWTWSAuthDuration = 2 * time.Minute
 
 var Jwks vault.JWKS
 var NoUserClaims *UserClaims = nil
@@ -103,6 +104,22 @@ func (u *UserClaims) SetKid(kid int) {
 	u.Kid = kid
 }
 
+func NewHTTPAuthCookie(token string, expires int64, domain string) *http.Cookie {
+	return &http.Cookie{
+		Name:    "token",
+		Value:   token,
+		Expires: time.Unix(expires, 0),
+		// only send this cookie over HTTPS
+		Secure: true,
+		// true means no scripts will be able to access this cookie, http requests only
+		HttpOnly: true,
+		// limit cookie access to this domain only
+		Domain: domain,
+		// limits cookie's scope to only requests originating from same site
+		SameSite: http.SameSiteStrictMode,
+	}
+}
+
 func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, error) {
 	claims := UserClaims{
 		StandardClaims: jwt.StandardClaims{
@@ -128,20 +145,7 @@ func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, e
 		claims.AuthType = PasswordAuth
 	}
 	cookie, err := Jwks.GenerateCookie(&claims)
-	httpCookie := http.Cookie{
-		Name:    "token",
-		Value:   cookie,
-		Expires: time.Unix(claims.ExpiresAt, 0),
-		// only send this cookie over HTTPS
-		Secure: true,
-		// true means no scripts will be able to access this cookie, http requests only
-		HttpOnly: true,
-		// limit cookie access to this domain only
-		Domain: domain,
-		// limits cookie's scope to only requests originating from same site
-		SameSite: http.SameSiteStrictMode,
-	}
-	return &httpCookie, err
+	return NewHTTPAuthCookie(cookie, claims.ExpiresAt, domain), err
 }
 
 func getClaims(c echo.Context) (*UserClaims, error) {

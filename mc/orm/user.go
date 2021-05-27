@@ -67,6 +67,25 @@ func InitAdmin(ctx context.Context, superuser, superpass string) error {
 	return nil
 }
 
+func GenerateWSAuthToken(c echo.Context) error {
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	ctx := GetContext(c)
+
+	claims.StandardClaims.IssuedAt = time.Now().Unix()
+	// Set short expiry as it is intended to be used immediately
+	// by the client for connection to Websocket API endpoint
+	claims.StandardClaims.ExpiresAt = time.Now().Add(JWTWSAuthDuration).Unix()
+	cookie, err := Jwks.GenerateCookie(claims)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
+		return fmt.Errorf("Failed to generate cookie")
+	}
+	return c.JSON(http.StatusOK, M{"token": cookie})
+}
+
 func Login(c echo.Context) error {
 	ctx := GetContext(c)
 	login := ormapi.UserLogin{}
@@ -243,6 +262,8 @@ func RefreshAuthCookie(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to generate cookie", "err", err)
 		return fmt.Errorf("Failed to generate cookie")
 	}
+	httpCookie := NewHTTPAuthCookie(cookie, claims.ExpiresAt, serverConfig.DomainName)
+	c.SetCookie(httpCookie)
 	return c.JSON(http.StatusOK, M{"token": cookie})
 }
 
