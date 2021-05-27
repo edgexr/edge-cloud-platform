@@ -36,7 +36,10 @@ func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.Re
 		return "", "", nil, nil
 	}
 	if auth.AuthType != cloudcommon.BasicAuth {
-		return "", "", nil, fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
+		// This can be ignored as it'll only happen for internally
+		// used non-docker registry hostnames like artifactory.mobiledgex.net
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, auth type is not basic auth type - assume internal registry", "hostname", auth.Hostname, "authType", auth.AuthType)
+		return "", "", nil, nil
 	}
 	// Note: docker-server must contain port if imagepath contains port,
 	// otherwise imagepullsecrets won't work.

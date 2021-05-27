@@ -99,5 +99,5 @@ end
 docker_image_prune "prune-old-images" do
   dangling false
   prune_until '1h'
-  action :nothing
+  action :prune
 end
