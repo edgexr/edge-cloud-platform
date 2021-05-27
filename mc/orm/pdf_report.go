@@ -352,8 +352,10 @@ func (r *PDFReport) AddTimeChart(chartPrefix, title string, multiChartData []Tim
 	r.setChartPageBreak(float64(ChartHeight))
 
 	r.pdf.SetFont(FontName, "B", DefaultFontSize)
-	titleWords := util.SplitCamelCase(title)
-	title = strings.Title(strings.Join(titleWords, " "))
+	if len(strings.Fields(title)) == 1 {
+		titleWords := util.SplitCamelCase(title)
+		title = strings.Title(strings.Join(titleWords, " "))
+	}
 	r.pdf.Cell(40, 10, title)
 	r.pdf.Ln(-1)
 

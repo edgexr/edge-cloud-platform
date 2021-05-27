@@ -104,7 +104,7 @@ func (k *K8sBareMetalPlatform) GetClusterAdditionalResourceMetric(ctx context.Co
 			externalIpsUsed += 1
 		}
 	}
-	resMetric.AddIntVal("externalIpsUsed", externalIpsUsed)
+	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, externalIpsUsed)
 	return nil
 }
 
