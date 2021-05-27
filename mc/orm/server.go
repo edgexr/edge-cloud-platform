@@ -710,6 +710,16 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/report/show", ShowReport)
 	auth.POST("/report/download", DownloadReport)
 
+	// Generate new short-lived token to authenticate websocket connections
+	// Note: Web-client should not store auth token as part of local storage,
+	//       instead browser should store it as secure cookies.
+	//       For HTTP endpoints, server responds with "set-cookie" to store
+	//       cookie in browser. But the same cannot be used for websockets
+	//       due to browser limitations.
+	//       Hence, authenticated clients can use this API endpoint to
+	//       fetch a short-lived token to authenticate websocket endpoints
+	auth.POST("/wstoken", GenerateWSAuthToken)
+
 	// Use GET method for websockets as thats the method used
 	// in setting up TCP connection by most of the clients
 	// Also, authorization is handled as part of websocketUpgrade
