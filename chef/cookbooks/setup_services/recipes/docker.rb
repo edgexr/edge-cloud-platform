@@ -19,14 +19,14 @@ docker_image "#{node['edgeCloudImage']}" do
   Chef::Log.info("Pull edge cloud image #{node['edgeCloudImage']}:#{edgeCloudVersion}")
   action :pull
   tag "#{edgeCloudVersion}"
-  notifies :prune, 'docker_image_prune[prune-old-images]', :delayed
+  notifies :run, 'execute[prune-old-images]', :delayed
 end
 
 docker_image "docker.mobiledgex.net/mobiledgex/mobiledgex_public/#{node['prometheusImage']}" do
   Chef::Log.info("Pull prometheus image #{node['prometheusImage']}:#{node['prometheusVersion']}")
   action :pull
   tag "#{node['prometheusVersion']}"
-  notifies :prune, 'docker_image_prune[prune-old-images]', :delayed
+  notifies :run, 'execute[prune-old-images]', :delayed
 end
 
 directory '/root/accesskey' do
@@ -96,8 +96,7 @@ docker_container "cloudletPrometheus" do
 end
 
 # Prune old docker images only when a new docker image is pulled
-docker_image_prune "prune-old-images" do
-  dangling false
-  prune_until '1h'
-  action :prune
+execute "prune-old-images" do
+    command 'docker image prune -a --force --filter "until=24h"'
+    action :nothing
 end
