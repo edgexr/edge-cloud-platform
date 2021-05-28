@@ -574,7 +574,7 @@ type Reporter struct {
 	Email string `json:",omitempty"`
 	// Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth
 	Schedule edgeproto.ReportSchedule `json:",omitempty"`
-	// Start date when the report is scheduled to be generated (Default: today)
+	// Start date (in RFC3339 format with intended timezone) when the report is scheduled to be generated (Default: today)
 	StartScheduleDate string `json:",omitempty"`
 	// Date when the next report is scheduled to be generated (for internal use only)
 	// read only: true
@@ -600,10 +600,10 @@ type GenerateReport struct {
 	// Organization name
 	// required: true
 	Org string
-	// Absolute time to start report capture
+	// Absolute time (in RFC3339 format with intended timezone) to start report capture
 	// required: true
 	StartTime time.Time `json:",omitempty"`
-	// Absolute time to end report capture
+	// Absolute time (in RFC3339 format with intended timezone) to end report capture
 	// required: true
 	EndTime time.Time `json:",omitempty"`
 	// Region name (for internal use only)
