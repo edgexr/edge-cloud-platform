@@ -31,7 +31,7 @@ func (v *VMPlatform) setupForwardingIptables(ctx context.Context, client ssh.Cli
 	masqueradeRule := fmt.Sprintf("-t nat %s %s", option, masqueradeRuleMatch)
 	forwardExternalRuleMatch := fmt.Sprintf("FORWARD -i %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT", externalIfname, internalIfname)
 	forwardExternalRule := fmt.Sprintf("%s %s", option, forwardExternalRuleMatch)
-	forwardInternalRuleMatch := fmt.Sprintf("FORWARD -i %s -j ACCEPT", internalIfname)
+	forwardInternalRuleMatch := fmt.Sprintf("FORWARD -i %s -o %s -j ACCEPT", internalIfname, externalIfname)
 	forwardInternalRule := fmt.Sprintf("%s %s", option, forwardInternalRuleMatch)
 
 	masqueradeRuleExists := false

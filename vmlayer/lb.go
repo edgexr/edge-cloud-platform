@@ -64,6 +64,12 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 	return pc.WriteFile(client, udevRulesFile, newFileContents, "udev-rules", pc.SudoOn)
 }
 
+func (v *VMPlatform) GetInterfaceNameForMac(ctx context.Context, client ssh.Client, mac string) string {
+	cmd := fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", mac)
+	out, _ := client.Output(cmd)
+	return out
+}
+
 // configureInternalInterfaceAndExternalForwarding sets up the new internal interface and then creates iptables rules to forward
 // traffic out the external interface.  Returns the name of the internal interface
 func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context.Context, client ssh.Client, subnetName, internalPortName string, serverDetails *ServerDetail, action *infracommon.InterfaceActionsOp) (string, error) {
@@ -90,16 +96,8 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	}
 
 	// discover the interface names matching our macs
-	externalIfname := ""
-	internalIfname := ""
-	cmd := fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", internalIP.MacAddress)
-	out, _ := client.Output(cmd)
-	internalIfname = out
-	log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", internalIfname, "mac", internalIP.MacAddress)
-	cmd = fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", externalIP.MacAddress)
-	out, _ = client.Output(cmd)
-	externalIfname = out
-	log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", externalIfname, "mac", externalIP.MacAddress)
+	externalIfname := v.GetInterfaceNameForMac(ctx, client, externalIP.MacAddress)
+	internalIfname := v.GetInterfaceNameForMac(ctx, client, internalIP.MacAddress)
 
 	if externalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", externalIP.MacAddress)
@@ -120,7 +118,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if action.AddInterface {
 		// cleanup any interfaces files that may be sitting around with our new interface, perhaps from some old failure
 		cmd := fmt.Sprintf("grep -l ' %s ' %s", fileMatch, internalIfname)
-		out, err = client.Output(cmd)
+		out, err := client.Output(cmd)
 		log.SpanLog(ctx, log.DebugLevelInfra, "cleanup old interface files with interface", "internalIfname", internalIfname, "out", out, "err", err)
 		if err == nil {
 			files := strings.Split(out, "\n")
@@ -149,7 +147,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		ipcmds = append(ipcmds, addrCmd)
 		for _, c := range ipcmds {
 			log.SpanLog(ctx, log.DebugLevelInfra, "bringing up interface", "internalIfname", internalIfname, "cmd", c)
-			out, err = client.Output(c)
+			out, err := client.Output(c)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to run", "cmd", c, "out", out, "err", err)
 				return "", fmt.Errorf("unable to run ip command: %s - %v", out, err)
@@ -372,6 +370,7 @@ func (v *VMPlatform) SetupRootLB(
 	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
 	TrustPolicy *edgeproto.TrustPolicy,
+	fixForwardingRules bool,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupRootLB", "rootLBName", rootLBName)
@@ -455,6 +454,18 @@ func (v *VMPlatform) SetupRootLB(
 	ip, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", sd)
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
+	}
+	if fixForwardingRules {
+		// fixForwardingRules is needed for short term only to tweak forwarding rules which were
+		// previously created
+		externalIf := v.GetInterfaceNameForMac(ctx, client, ip.MacAddress)
+		if externalIf == "" {
+			return fmt.Errorf("Unable to find external interface for rootlb")
+		}
+		err = infracommon.FixForwardingRules(ctx, client, externalIf)
+		if err != nil {
+			return err
+		}
 	}
 	// just for test as this is taking too long
 	if v.VMProperties.GetSkipInstallResourceTracker() {
