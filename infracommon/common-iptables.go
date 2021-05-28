@@ -212,7 +212,11 @@ func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, labe
 	}
 	lines := strings.Split(out, "\n")
 	for _, line := range lines {
-		if strings.Contains(line, "\"label "+label+"\"") && strings.HasPrefix(line, "-A") {
+		if label == "" {
+			if strings.HasPrefix(line, "-A") {
+				rules[line] = line
+			}
+		} else if strings.Contains(line, "\"label "+label+"\"") && strings.HasPrefix(line, "-A") {
 			rules[line] = line
 		}
 	}
@@ -251,6 +255,49 @@ func removeIptablesRule(ctx context.Context, client ssh.Client, direction string
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// FixForwardingRules fixes rules which had allowed inter-cluster forwarding and replaces
+// then with rules that allow only forwarding to the external interface
+func FixForwardingRules(ctx context.Context, client ssh.Client, externalIf string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "FixForwardingRules", "externalIf", externalIf)
+	currentRules, err := getCurrentIptableRulesForLabel(ctx, client, "")
+	if err != nil {
+		return err
+	}
+	changeMade := false
+	forwardingPatternNoExtIf := "FORWARD -i (\\w+) -j ACCEPT"
+	reg := regexp.MustCompile(forwardingPatternNoExtIf)
+	for _, r := range currentRules {
+		if reg.MatchString(r) {
+			matches := reg.FindStringSubmatch(r)
+			if len(matches) != 2 { // one match for the whole string, one for the interface grouping
+				return fmt.Errorf("Unexpected regex match count %d for forwarding rule: %s", len(matches), r)
+			}
+			internalIf := matches[1]
+			// delete the rule with no external IF
+			delCmd := strings.Replace(r, "-A ", "-D ", 1)
+			action := InterfaceActionsOp{DeleteIptables: true}
+			log.SpanLog(ctx, log.DebugLevelInfra, "Removing forwarding rule with no external interface", "delCmd", delCmd)
+			err := DoIptablesCommand(ctx, client, delCmd, true, &action)
+			if err != nil {
+				return err
+			}
+			// add the rule back with the external IF
+			addCmd := strings.Replace(r, "FORWARD -i "+internalIf+" -j ACCEPT", "FORWARD -i "+internalIf+" -o "+externalIf+" -j ACCEPT", 1)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Adding back forwarding rule with external interface", "addCmd", addCmd)
+
+			err = DoIptablesCommand(ctx, client, addCmd, true, &action)
+			if err != nil {
+				return err
+			}
+			changeMade = true
+		}
+	}
+	if changeMade {
+		return PersistIptablesRules(ctx, client)
 	}
 	return nil
 }
