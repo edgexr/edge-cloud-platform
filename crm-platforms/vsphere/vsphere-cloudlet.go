@@ -52,7 +52,6 @@ func (v *VSpherePlatform) CreateImageFromUrl(ctx context.Context, imageName, ima
 func (v *VSpherePlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
 	// we don't currently have the ability to download and setup the template, but we will verify it is there
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddCloudletImageIfNotPresent", "imgPathPrefix", imgPathPrefix, "imgVersion", imgVersion)
-
 	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion, v.GetCloudletImageSuffix(ctx))
 	// Fetch platform base image name
 	pfImageName, err := cloudcommon.GetFileName(imgPath)
@@ -89,7 +88,8 @@ func (v *VSpherePlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgP
 }
 
 func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*edgeproto.FlavorInfo, error) {
-	flavs, err := v.GetFlavorList(ctx)
+
+	flavs, err := v.vmProperties.GetFlavorListInternal(ctx, v.caches)
 	if err != nil {
 		return nil, err
 	}
@@ -102,58 +102,9 @@ func (v *VSpherePlatform) GetFlavor(ctx context.Context, flavorName string) (*ed
 }
 
 func (v *VSpherePlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList")
-	// we just send the controller back the same list of flavors it gave us, because VSphere has no flavor concept.
-	// Make sure each flavor is at least a minimum size to run the platform
 	var flavors []*edgeproto.FlavorInfo
-	if v.caches == nil {
-		log.WarnLog("flavor cache is nil")
-		return nil, fmt.Errorf("Flavor cache is nil")
-	}
-	flavorkeys := make(map[edgeproto.FlavorKey]struct{})
-	v.caches.FlavorCache.GetAllKeys(ctx, func(k *edgeproto.FlavorKey, modRev int64) {
-		flavorkeys[*k] = struct{}{}
-	})
-	for k := range flavorkeys {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList found flavor", "key", k)
-		var flav edgeproto.Flavor
-		if v.caches.FlavorCache.Get(&k, &flav) {
-			var flavInfo edgeproto.FlavorInfo
-			flavInfo.Name = flav.Key.Name
-			if flav.Ram >= vmlayer.MINIMUM_RAM_SIZE {
-				flavInfo.Ram = flav.Ram
-			} else {
-				flavInfo.Ram = vmlayer.MINIMUM_RAM_SIZE
-			}
-			if flav.Vcpus >= vmlayer.MINIMUM_VCPUS {
-				flavInfo.Vcpus = flav.Vcpus
-			} else {
-				flavInfo.Vcpus = vmlayer.MINIMUM_VCPUS
-			}
-			if flav.Disk >= vmlayer.MINIMUM_DISK_SIZE {
-				flavInfo.Disk = flav.Disk
-			} else {
-				flavInfo.Disk = vmlayer.MINIMUM_DISK_SIZE
-			}
-			flavors = append(flavors, &flavInfo)
-		} else {
-			return nil, fmt.Errorf("fail to fetch flavor %s", k)
-		}
-	}
-
-	// add the default platform flavor as well
-	var rlbFlav edgeproto.Flavor
-	err := v.vmProperties.GetCloudletSharedRootLBFlavor(&rlbFlav)
-	if err != nil {
-		return nil, err
-	}
-	rootlbFlavorInfo := edgeproto.FlavorInfo{
-		Name:  "mex-rootlb-flavor",
-		Vcpus: rlbFlav.Vcpus,
-		Ram:   rlbFlav.Ram,
-		Disk:  rlbFlav.Disk,
-	}
-	flavors = append(flavors, &rootlbFlavorInfo)
+	// by returning no flavors, we signal to the controller this platform supports no native flavors
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList return empty", "len", len(flavors))
 	return flavors, nil
 }
 

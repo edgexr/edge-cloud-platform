@@ -160,7 +160,7 @@ func (v *VSpherePlatform) populateOrchestrationParams(ctx context.Context, vmgp 
 	masterIP := ""
 	var flavors []*edgeproto.FlavorInfo
 	var err error
-	flavors, err = v.GetFlavorList(ctx)
+	flavors, err = v.vmProperties.GetFlavorListInternal(ctx, v.caches)
 	if err != nil {
 		return err
 	}
