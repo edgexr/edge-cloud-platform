@@ -9,8 +9,10 @@ import (
 	"github.com/go-chef/chef"
 	"github.com/mobiledgex/edge-cloud-infra/chefmgmt"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 type VMProperties struct {
@@ -29,6 +31,11 @@ type VMProperties struct {
 	CloudletAccessToken        string
 }
 
+const MEX_ROOTLB_FLAVOR_NAME = "mex-rootlb-flavor"
+const MINIMUM_DISK_SIZE uint64 = 20
+const MINIMUM_RAM_SIZE uint64 = 2048
+const MINIMUM_VCPUS uint64 = 2
+
 // note that qcow2 must be understood by vsphere and vmdk must
 // be known by openstack so they can be converted back and forth
 var ImageFormatQcow2 = "qcow2"
@@ -37,10 +44,6 @@ var ImageFormatVmdk = "vmdk"
 var MEXInfraVersion = "4.3.5"
 var ImageNamePrefix = "mobiledgex-v"
 var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
-
-const MINIMUM_DISK_SIZE uint64 = 20
-const MINIMUM_RAM_SIZE uint64 = 2048
-const MINIMUM_VCPUS uint64 = 2
 
 // NoSubnetDNS means that DNS servers are not specified when creating the subnet
 var NoSubnetDNS = "NONE"
@@ -193,40 +196,6 @@ func GetCloudletVMImagePath(imgPath, imgVersion string, imgSuffix string) string
 	return vmRegistryPath + GetCloudletVMImageName(imgVersion) + imgSuffix
 }
 
-// GetCloudletSharedRootLBFlavor gets the flavor from defaults
-// or environment variables
-func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) error {
-	ram, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_RAM")
-	var err error
-	if ram != "" {
-		flavor.Ram, err = strconv.ParseUint(ram, 10, 64)
-		if err != nil {
-			return err
-		}
-	} else {
-		flavor.Ram = 4096
-	}
-	vcpus, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_VCPUS")
-	if vcpus != "" {
-		flavor.Vcpus, err = strconv.ParseUint(vcpus, 10, 64)
-		if err != nil {
-			return err
-		}
-	} else {
-		flavor.Vcpus = 2
-	}
-	disk, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_DISK")
-	if disk != "" {
-		flavor.Disk, err = strconv.ParseUint(disk, 10, 64)
-		if err != nil {
-			return err
-		}
-	} else {
-		flavor.Disk = 40
-	}
-	return nil
-}
-
 // GetCloudletSecurityGroupName overrides cloudlet wide security group if set in
 // envvars, but normally is derived from the cloudlet name.  It is not exported
 // as providers should use VMProperties.CloudletSecgrpName
@@ -366,4 +335,100 @@ func (vp *VMProperties) GetRegion() string {
 
 func (vp *VMProperties) GetDeploymentTag() string {
 	return vp.CommonPf.DeploymentTag
+}
+
+// For platforms without native flavor support, just use our meta flavors
+// Adjust flavor size if subpar.
+func (vp *VMProperties) GetFlavorListInternal(ctx context.Context, caches *platform.Caches) ([]*edgeproto.FlavorInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorListInternal")
+
+	var flavors []*edgeproto.FlavorInfo
+	if caches == nil {
+		log.WarnLog("flavor cache is nil")
+		return nil, fmt.Errorf("Flavor cache is nil")
+	}
+	flavorkeys := make(map[edgeproto.FlavorKey]struct{})
+	caches.FlavorCache.GetAllKeys(ctx, func(k *edgeproto.FlavorKey, modRev int64) {
+
+		flavorkeys[*k] = struct{}{}
+	})
+
+	for k := range flavorkeys {
+		var flav edgeproto.Flavor
+		if caches.FlavorCache.Get(&k, &flav) {
+			var flavInfo edgeproto.FlavorInfo
+			flavInfo.Name = flav.Key.Name
+			if flav.Ram >= MINIMUM_RAM_SIZE {
+				flavInfo.Ram = flav.Ram
+			} else {
+				flavInfo.Ram = MINIMUM_RAM_SIZE
+			}
+			if flav.Vcpus >= MINIMUM_VCPUS {
+				flavInfo.Vcpus = flav.Vcpus
+			} else {
+				flavInfo.Vcpus = MINIMUM_VCPUS
+			}
+			if flav.Disk >= MINIMUM_DISK_SIZE {
+				flavInfo.Disk = flav.Disk
+			} else {
+				flavInfo.Disk = MINIMUM_DISK_SIZE
+			}
+			flavors = append(flavors, &flavInfo)
+		} else {
+			return nil, fmt.Errorf("fail to fetch flavor %s", k)
+		}
+	}
+
+	// add the default platform flavor as well
+	var rlbFlav edgeproto.Flavor
+	// in props today can't get there from here...
+	err := vp.GetCloudletSharedRootLBFlavor(&rlbFlav)
+	if err != nil {
+		return nil, err
+	}
+	rootlbFlavorInfo := edgeproto.FlavorInfo{
+		Name:  MEX_ROOTLB_FLAVOR_NAME,
+		Vcpus: rlbFlav.Vcpus,
+		Ram:   rlbFlav.Ram,
+		Disk:  rlbFlav.Disk,
+	}
+	flavors = append(flavors, &rootlbFlavorInfo)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorListInternal added SharedRootLB", "flavor", rootlbFlavorInfo)
+	return flavors, nil
+}
+
+// GetCloudletSharedRootLBFlavor gets the flavor from defaults
+// or environment variables
+func (vp *VMProperties) GetCloudletSharedRootLBFlavor(flavor *edgeproto.Flavor) error {
+
+	ram, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_RAM")
+	var err error
+	if ram != "" {
+		flavor.Ram, err = strconv.ParseUint(ram, 10, 64)
+		if err != nil {
+			return err
+		}
+	} else {
+		flavor.Ram = 4096
+	}
+	vcpus, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_VCPUS")
+	if vcpus != "" {
+		flavor.Vcpus, err = strconv.ParseUint(vcpus, 10, 64)
+		if err != nil {
+			return err
+		}
+	} else {
+		flavor.Vcpus = 2
+	}
+	disk, _ := vp.CommonPf.Properties.GetValue("MEX_SHARED_ROOTLB_DISK")
+	if disk != "" {
+		flavor.Disk, err = strconv.ParseUint(disk, 10, 64)
+		if err != nil {
+			return err
+		}
+	} else {
+		flavor.Disk = 40
+	}
+	flavor.Key.Name = MEX_ROOTLB_FLAVOR_NAME
+	return nil
 }

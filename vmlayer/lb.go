@@ -269,6 +269,27 @@ func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client
 var rootLBLock sync.Mutex
 var MaxRootLBWait = 5 * time.Minute
 
+// used by cloudlet.go currently
+func (v *VMPlatform) GetDefaultRootLBFlavor(ctx context.Context) (*edgeproto.FlavorInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDefaultRootLBFlavor cloudlet flavor list empty use default")
+	var rlbFlav edgeproto.Flavor
+	// must be a platform with no native flavor support, use our default LB flavor from props
+	err := v.VMProperties.GetCloudletSharedRootLBFlavor(&rlbFlav)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetDefaultRootLBFlavor GetCloudletSharedRootLBFlavor", "error", err)
+		return nil, err
+	}
+
+	rootlbFlavorInfo := edgeproto.FlavorInfo{
+		Name:  MEX_ROOTLB_FLAVOR_NAME,
+		Vcpus: rlbFlav.Vcpus,
+		Ram:   rlbFlav.Ram,
+		Disk:  rlbFlav.Disk,
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetDefaultRootLBFlavor", "default", rootlbFlavorInfo)
+	return &rootlbFlavorInfo, nil
+}
+
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
 func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, tags []string, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
@@ -284,14 +305,23 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	cli := edgeproto.CloudletInfo{}
 	cli.Key = *v.VMProperties.CommonPf.PlatformConfig.CloudletKey
 	cli.Flavors = v.FlavorList
-	restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
-	vmspec, err := vmspec.GetVMSpec(ctx, rootlbFlavor, cli, restbls)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", v.FlavorList, "rootlbFlavor", rootlbFlavor, "err", err)
-		return nil, fmt.Errorf("unable to find VM spec for RootLB: %v", err)
+
+	spec := &vmspec.VMCreationSpec{}
+	if len(cli.Flavors) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB clouldlet flavor list emtpy use default", "rootLbName", rootLbName)
+		// must be a platform with no native flavor support, just use the default
+		spec.FlavorName = rootlbFlavor.Key.Name
+		// The platform has the definition of the name in its internal flavors list for the actual create
+	} else {
+		restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
+		spec, err = vmspec.GetVMSpec(ctx, rootlbFlavor, cli, restbls)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", v.FlavorList, "rootlbFlavor", rootlbFlavor, "err", err)
+			return nil, fmt.Errorf("unable to find VM spec for RootLB: %v", err)
+		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpec returned", "flavor", vmspec.FlavorName, "for mex flavor", rootlbFlavor)
-	az := vmspec.AvailabilityZone
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpec returned", "flavor", spec.FlavorName, "for mex flavor", rootlbFlavor)
+	az := spec.AvailabilityZone
 	if az == "" {
 		az = v.VMProperties.GetCloudletComputeAvailabilityZone()
 	}
@@ -307,10 +337,10 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	return v.GetVMRequestSpec(ctx,
 		cloudcommon.VMTypeRootLB,
 		rootLbName,
-		vmspec.FlavorName,
+		spec.FlavorName,
 		imageName,
 		true,
-		WithExternalVolume(vmspec.ExternalVolumeSize),
+		WithExternalVolume(spec.ExternalVolumeSize),
 		WithSubnetConnection(subnetConnect),
 		WithChefParams(chefParams),
 		WithAdditionalNetworks(v.VMProperties.GetCloudletAdditionalRootLbNetworks()))
