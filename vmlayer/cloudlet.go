@@ -535,7 +535,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			return nil, err
 		}
 		if cloudlet.InfraConfig.FlavorName == "" {
-			var spec *vmspec.VMCreationSpec
+			var spec *vmspec.VMCreationSpec = &vmspec.VMCreationSpec{}
 			cli := edgeproto.CloudletInfo{}
 			cli.Flavors = flavorList
 			cli.Key = cloudlet.Key

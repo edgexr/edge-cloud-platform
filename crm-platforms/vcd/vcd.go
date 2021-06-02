@@ -91,6 +91,13 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 
 	if stage == vmlayer.ProviderInitPlatformStartCrm {
 
+		mexInternalNetRange, err = v.getMexInternalNetRange(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider NetRange failed", "stage", stage, "err", err)
+			return err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider", "mexInternalNetRange", mexInternalNetRange)
+
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider RebuildMaps", "stage", stage)
 		err := v.RebuildIsoNamesAndFreeMaps(ctx)
 		if err != nil {
