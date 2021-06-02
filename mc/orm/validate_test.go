@@ -9,6 +9,8 @@ import (
 func TestValidName(t *testing.T) {
 	var err error
 
+	var NameMax90Chars = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+
 	gname := GitlabGroupSanitize("atlantic, inc.")
 	require.Equal(t, "atlantic--inc", gname)
 
@@ -41,4 +43,11 @@ func TestValidName(t *testing.T) {
 
 	err = ValidName("username_123dev&test")
 	require.NotNil(t, err, "invalid user name")
+
+	err = ValidName(NameMax90Chars + "1")
+	require.NotNil(t, err, "invalid org name")
+
+	err = ValidName(NameMax90Chars)
+	require.Nil(t, err)
+
 }
