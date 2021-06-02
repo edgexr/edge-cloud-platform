@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -45,7 +46,7 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	// test targets file
 	*promTargetsFile = "/tmp/testTargets.json"
 	myPlatform = &shepherd_unittest.Platform{}
-	InitProxyScraper()
+	InitProxyScraper(time.Second, time.Second)
 	edgeproto.InitAppInstCache(&AppInstCache)
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)

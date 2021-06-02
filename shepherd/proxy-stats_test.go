@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform/shepherd_unittest"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -16,7 +17,7 @@ func TestCollectProxyStats(t *testing.T) {
 	ctx := setupLog()
 	defer log.FinishTracer()
 	myPlatform = &shepherd_unittest.Platform{}
-	InitProxyScraper()
+	InitProxyScraper(time.Second, time.Second)
 	edgeproto.InitAppInstCache(&AppInstCache)
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitClusterInstCache(&ClusterInstCache)

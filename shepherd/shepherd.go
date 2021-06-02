@@ -49,10 +49,13 @@ var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/tmp/prom_targets.json", "Prometheus targets file")
 var appDNSRoot = flag.String("appDNSRoot", "mobiledgex.net", "App domain name root")
 var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
+var promScrapeInterval = flag.Duration("promScrapeInterval", defaultScrapeInterval, "Prometheus Scraping Interval")
+
+var metricsScrapingInterval time.Duration
 
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
-//map keeping track of all the currently running prometheuses
+// map keeping track of all the currently running prometheuses
 var workerMap map[string]*ClusterWorker
 var workerMapMutex *sync.Mutex
 var vmAppWorkerMap map[string]*AppInstWorker
@@ -157,7 +160,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
 		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
 		if !exists {
-			stats, err = NewClusterWorker(ctx, promAddress, collectInterval, MetricSender.Update, &clusterInst, myPlatform)
+			stats, err = NewClusterWorker(ctx, promAddress, metricsScrapingInterval, collectInterval, MetricSender.Update, &clusterInst, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -208,7 +211,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
-		stats, err := NewClusterWorker(ctx, "", collectInterval, MetricSender.Update, new, myPlatform)
+		stats, err := NewClusterWorker(ctx, "", metricsScrapingInterval, collectInterval, MetricSender.Update, new, myPlatform)
 		if err == nil {
 			workerMap[mapKey] = stats
 			stats.Start(ctx)
@@ -233,6 +236,15 @@ func autoProvPolicyCb(ctx context.Context, old *edgeproto.AutoProvPolicy, new *e
 	}
 }
 
+func updateClusterWorkers(ctx context.Context, newInterval edgeproto.Duration) {
+	workerMapMutex.Lock()
+	for _, worker := range workerMap {
+		worker.UpdateIntervals(ctx, metricsScrapingInterval, time.Duration(newInterval))
+	}
+	workerMapMutex.Unlock()
+	updateProxyScraperIntervals(ctx, metricsScrapingInterval, time.Duration(newInterval))
+}
+
 func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Settings) {
 	old := settings
 	settings = *new
@@ -248,6 +260,12 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 			reloadCloudletProm(ctx)
 		}
 	}
+
+	if old.ShepherdMetricsCollectionInterval !=
+		new.ShepherdMetricsCollectionInterval {
+		updateClusterWorkers(ctx, new.ShepherdMetricsCollectionInterval)
+	}
+
 	if old.AutoDeployIntervalSec != new.AutoDeployIntervalSec {
 		// re-write undeploy rules since they all depend on AutoDeployIntervalSec
 		s := &AppInstByAutoProvPolicy
@@ -350,6 +368,7 @@ func main() {
 	nodeMgr.InitFlags()
 	nodeMgr.AccessKeyClient.InitFlags()
 	flag.Parse()
+	metricsScrapingInterval = *promScrapeInterval
 	start()
 	defer stop()
 
@@ -410,6 +429,10 @@ func start() {
 		log.FatalLog("Failed to start prometheus metrics proxy", "err", err)
 	}
 
+	workerMap = make(map[string]*ClusterWorker)
+	workerMapMutex = &sync.Mutex{}
+	vmAppWorkerMap = make(map[string]*AppInstWorker)
+
 	// register shepherd to receive appinst and clusterinst notifications from crm
 	edgeproto.InitFlavorCache(&FlavorCache)
 	edgeproto.InitAppInstCache(&AppInstCache)
@@ -462,6 +485,9 @@ func start() {
 
 	nodeMgr.RegisterClient(notifyClient)
 	notifyClient.RegisterSendAllRecv(&sendAllRecv{})
+
+	// Add debug commands
+	InitDebug(&nodeMgr)
 
 	notifyClient.Start()
 
@@ -522,11 +548,8 @@ func start() {
 	if err != nil {
 		log.FatalLog("Failed to initialize platform", "platformName", platformName, "err", err)
 	}
-	workerMap = make(map[string]*ClusterWorker)
-	workerMapMutex = &sync.Mutex{}
-	vmAppWorkerMap = make(map[string]*AppInstWorker)
 	// LB metrics are not supported in fake mode
-	InitProxyScraper()
+	InitProxyScraper(metricsScrapingInterval, settings.ShepherdMetricsCollectionInterval.TimeDuration())
 	if pf.GetType(*platformName) != "fake" {
 		StartProxyScraper(stopCh)
 	}

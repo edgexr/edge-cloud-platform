@@ -13,14 +13,14 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var testMetricSent = 0
+var (
+	testMetricSent = 0
 
-var testPayloadData = map[string]string{
-	promQCpuClust: `{
+	testPayloadData = map[string]string{
+		promQCpuClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -35,7 +35,7 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-	promQMemClust: `{
+		promQMemClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -50,7 +50,7 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-	promQDiskClust: `{
+		promQDiskClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -65,7 +65,7 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-	promQSentBytesRateClust: `{
+		promQSentBytesRateClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -80,7 +80,7 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-	promQRecvBytesRateClust: `{
+		promQRecvBytesRateClust: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -95,9 +95,9 @@ var testPayloadData = map[string]string{
 		  ]
 		}
 	  }`,
-}
+	}
 
-var testAlertsData = `
+	testAlertsData = `
 {
   "status": "success",
   "data": {
@@ -136,33 +136,59 @@ var testAlertsData = `
 }
 `
 
-var expectedTestAlerts = []edgeproto.Alert{
-	edgeproto.Alert{
-		Labels: map[string]string{
-			"alertname": "KubeControllerManagerDown",
-			"severity":  "critical",
+	expectedTestAlerts = []edgeproto.Alert{
+		edgeproto.Alert{
+			Labels: map[string]string{
+				"alertname": "KubeControllerManagerDown",
+				"severity":  "critical",
+			},
+			Annotations: map[string]string{
+				"message":     "KubeControllerManager has disappeared from Prometheus target discovery.",
+				"runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontrollermanagerdown",
+			},
+			State: "firing",
 		},
-		Annotations: map[string]string{
-			"message":     "KubeControllerManager has disappeared from Prometheus target discovery.",
-			"runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontrollermanagerdown",
+		edgeproto.Alert{
+			Labels: map[string]string{
+				"alertname":      "CPUThrottlingHigh",
+				"container_name": "config-reloader",
+				"namespace":      "default",
+				"pod":            "alertmanager-mexprometheusappname-prome-alertmanager-0",
+				"severity":       "warning",
+			},
+			Annotations: map[string]string{
+				"message":     "33% throttling of CPU in namespace default for container config-reloader in pod alertmanager-mexprometheusappname-prome-alertmanager-0.",
+				"runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh",
+			},
+			State: "pending",
 		},
-		State: "firing",
-	},
-	edgeproto.Alert{
-		Labels: map[string]string{
-			"alertname":      "CPUThrottlingHigh",
-			"container_name": "config-reloader",
-			"namespace":      "default",
-			"pod":            "alertmanager-mexprometheusappname-prome-alertmanager-0",
-			"severity":       "warning",
-		},
-		Annotations: map[string]string{
-			"message":     "33% throttling of CPU in namespace default for container config-reloader in pod alertmanager-mexprometheusappname-prome-alertmanager-0.",
-			"runbook_url": "https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-cputhrottlinghigh",
-		},
-		State: "pending",
-	},
-}
+	}
+
+	testDeveloperOrg = "testdeveloperorg"
+	testCloudletKey  = edgeproto.CloudletKey{
+		Organization: "testoper",
+		Name:         "testcloudlet",
+	}
+	testClusterKey     = edgeproto.ClusterKey{Name: "testcluster"}
+	testClusterInstKey = edgeproto.ClusterInstKey{
+		ClusterKey:   testClusterKey,
+		CloudletKey:  testCloudletKey,
+		Organization: "MobiledgeX",
+	}
+	testClusterInst = edgeproto.ClusterInst{
+		Key:        testClusterInstKey,
+		Deployment: cloudcommon.DeploymentTypeKubernetes,
+		Reservable: true,
+		ReservedBy: testDeveloperOrg,
+	}
+	testClusterInstUnsupported = edgeproto.ClusterInst{
+		Key:        testClusterInstKey,
+		Deployment: cloudcommon.DeploymentTypeHelm,
+	}
+	testAppKey = shepherd_common.MetricAppInstKey{
+		ClusterInstKey: testClusterInstKey,
+	}
+)
 
 func initAppInstTestData() {
 	q := fmt.Sprintf(promQAppDetailWrapperFmt, promQCpuPod)
@@ -272,36 +298,54 @@ func testMetricSend(ctx context.Context, metric *edgeproto.Metric) bool {
 	return true
 }
 
+func TestClusterWorkerTimers(t *testing.T) {
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+	*platformName = "PLATFORM_TYPE_FAKEINFRA"
+	testPlatform, _ := getPlatform()
+
+	testClusterWorker, err := NewClusterWorker(ctx, "", time.Second*1, time.Second*1,
+		testMetricSend, &testClusterInst, testPlatform)
+	require.Nil(t, err)
+	require.NotNil(t, testClusterWorker)
+	require.True(t, testClusterWorker.checkAndSetLastPushMetrics(time.Now().Add(time.Second)))
+	testClusterWorker.UpdateIntervals(ctx, 2*time.Minute, time.Minute)
+	require.Equal(t, testClusterWorker.scrapeInterval, testClusterWorker.pushInterval)
+	require.Equal(t, time.Minute, testClusterWorker.scrapeInterval)
+	testClusterWorker.UpdateIntervals(ctx, 2*time.Second, time.Minute)
+	require.NotEqual(t, testClusterWorker.scrapeInterval, testClusterWorker.pushInterval)
+	require.Equal(t, 2*time.Second, testClusterWorker.scrapeInterval)
+	require.Equal(t, time.Minute, testClusterWorker.pushInterval)
+	// We push metric every pushInterval not scrapeInterval
+	require.False(t, testClusterWorker.checkAndSetLastPushMetrics(time.Now().Add(testClusterWorker.scrapeInterval)))
+	require.True(t, testClusterWorker.checkAndSetLastPushMetrics(time.Now().Add(testClusterWorker.pushInterval)))
+}
+
+// Tests are identical to the ones in TestClusterWorkerTimers
+func TestProxyScraperTimers(t *testing.T) {
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	InitProxyScraper(time.Second, time.Second)
+	require.True(t, checkAndSetLastPushLbMetrics(time.Now().Add(time.Second)))
+	updateProxyScraperIntervals(ctx, 2*time.Minute, time.Minute)
+	require.Equal(t, rootLbScrapeInterval, rootLbMetricsPushInterval)
+	require.Equal(t, time.Minute, rootLbScrapeInterval)
+	updateProxyScraperIntervals(ctx, 2*time.Second, time.Minute)
+	require.NotEqual(t, rootLbScrapeInterval, rootLbMetricsPushInterval)
+	require.Equal(t, 2*time.Second, rootLbScrapeInterval)
+	require.Equal(t, time.Minute, rootLbMetricsPushInterval)
+	require.False(t, checkAndSetLastPushLbMetrics(time.Now().Add(rootLbScrapeInterval)))
+	require.True(t, checkAndSetLastPushLbMetrics(time.Now().Add(rootLbMetricsPushInterval)))
+}
+
 func TestPromStats(t *testing.T) {
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 	initAppInstTestData()
-
-	testDeveloperOrg := "testdeveloperorg"
-	testCloudletKey := edgeproto.CloudletKey{
-		Organization: "testoper",
-		Name:         "testcloudlet",
-	}
-	testClusterKey := edgeproto.ClusterKey{Name: "testcluster"}
-	testClusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey:   testClusterKey,
-		CloudletKey:  testCloudletKey,
-		Organization: "MobiledgeX",
-	}
-	testClusterInst := edgeproto.ClusterInst{
-		Key:        testClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeKubernetes,
-		Reservable: true,
-		ReservedBy: testDeveloperOrg,
-	}
-	testClusterInstUnsupported := edgeproto.ClusterInst{
-		Key:        testClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeHelm,
-	}
-	testAppKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: testClusterInstKey,
-	}
 
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
 	testPlatform, _ := getPlatform()
@@ -323,60 +367,60 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats, err := NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
-	assert.NotNil(t, err, "Unsupported deployment type")
-	assert.Contains(t, err.Error(), "Unsupported deployment")
-	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, testMetricSend, &testClusterInst, testPlatform)
-	assert.Nil(t, err, "Get a platform client for fake cloudlet")
+	testPromStats, err := NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
+	require.NotNil(t, err, "Unsupported deployment type")
+	require.Contains(t, err.Error(), "Unsupported deployment")
+	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, time.Second*1, testMetricSend, &testClusterInst, testPlatform)
+	require.Nil(t, err, "Get a platform client for fake cloudlet")
 	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
 	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
 	alerts := testPromStats.clusterStat.GetAlerts(ctx)
-	assert.NotNil(t, clusterMetrics, "Fill stats from json")
-	assert.NotNil(t, appsMetrics, "Fill stats from json")
-	assert.NotNil(t, alerts, "Fill metrics from json")
+	require.NotNil(t, clusterMetrics, "Fill stats from json")
+	require.NotNil(t, appsMetrics, "Fill stats from json")
+	require.NotNil(t, alerts, "Fill metrics from json")
 	testAppKey.Pod = "testPod1"
 	testAppKey.App = "testPod1"
 	testAppKey.Version = "10"
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
-	assert.True(t, found, "Pod testPod1 is not found")
+	require.True(t, found, "Pod testPod1 is not found")
 	if found {
-		assert.Equal(t, float64(5.0), stat.Cpu)
-		assert.Equal(t, uint64(100000000), stat.Mem)
-		assert.Equal(t, uint64(300000000), stat.Disk)
-		assert.Equal(t, uint64(111111), stat.NetSent)
-		assert.Equal(t, uint64(222222), stat.NetRecv)
+		require.Equal(t, float64(5.0), stat.Cpu)
+		require.Equal(t, uint64(100000000), stat.Mem)
+		require.Equal(t, uint64(300000000), stat.Disk)
+		require.Equal(t, uint64(111111), stat.NetSent)
+		require.Equal(t, uint64(222222), stat.NetRecv)
 	}
 	// Check ClusterStats
-	assert.Equal(t, float64(10.01), clusterMetrics.Cpu)
-	assert.Equal(t, float64(99.99), clusterMetrics.Mem)
-	assert.Equal(t, float64(50.0), clusterMetrics.Disk)
-	assert.Equal(t, uint64(11111), clusterMetrics.NetSent)
-	assert.Equal(t, uint64(22222), clusterMetrics.NetRecv)
+	require.Equal(t, float64(10.01), clusterMetrics.Cpu)
+	require.Equal(t, float64(99.99), clusterMetrics.Mem)
+	require.Equal(t, float64(50.0), clusterMetrics.Disk)
+	require.Equal(t, uint64(11111), clusterMetrics.NetSent)
+	require.Equal(t, uint64(22222), clusterMetrics.NetRecv)
 	// Check Alerts - should not return pending alert
 	require.Equal(t, len(expectedTestAlerts)-1, len(alerts))
 	for ii := 0; ii < len(alerts); ii++ {
 		expected := expectedTestAlerts[ii]
 		alert := alerts[ii]
-		assert.Equal(t, expected.Labels, alert.Labels)
-		assert.Equal(t, expected.Annotations, alert.Annotations)
-		assert.Equal(t, expected.State, alert.State)
+		require.Equal(t, expected.Labels, alert.Labels)
+		require.Equal(t, expected.Annotations, alert.Annotations)
+		require.Equal(t, expected.State, alert.State)
 	}
 
 	// Check callback is called
-	assert.Equal(t, int(0), testMetricSent)
+	require.Equal(t, int(0), testMetricSent)
 	clusterMetricsData := testPromStats.MarshalClusterMetrics(clusterMetrics)
 	testPromStats.send(ctx, clusterMetricsData[0])
-	assert.Equal(t, int(1), testMetricSent)
+	require.Equal(t, int(1), testMetricSent)
 	// Test the autoprov cluster - marshalled clusterorg should be the same as apporg
 	for _, metric := range clusterMetricsData {
 		for _, tag := range metric.Tags {
 			if tag.Name == "clusterorg" {
-				assert.Equal(t, testDeveloperOrg, tag.Val)
+				require.Equal(t, testDeveloperOrg, tag.Val)
 			}
 		}
 	}
 	// Check null handling for Marshal functions
-	assert.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
-	assert.Nil(t, MarshalAppMetrics(&testAppKey, nil, ""), "Nil metrics should marshal into a nil")
+	require.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
+	require.Nil(t, MarshalAppMetrics(&testAppKey, nil, ""), "Nil metrics should marshal into a nil")
 }
