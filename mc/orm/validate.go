@@ -10,6 +10,12 @@ import (
 
 func ValidName(name string) error {
 	err := util.ValidObjName(name)
+
+	// Gorm DB create works only for name <= 90
+	const (
+		GormMaxName = 90
+	)
+
 	if err != nil {
 		return err
 	}
@@ -36,6 +42,9 @@ func ValidName(name string) error {
 	}
 	if strings.HasSuffix(name, "-cache") {
 		return fmt.Errorf("Name cannot end with '-cache'")
+	}
+	if len(name) > GormMaxName {
+		return fmt.Errorf("Name too long")
 	}
 	return nil
 }
