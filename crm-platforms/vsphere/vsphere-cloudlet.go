@@ -25,6 +25,19 @@ func (v *VSpherePlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *
 }
 
 func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
+	// we use a common image as of 4.4.0 and beyond
+	vers := v.vmProperties.CommonPf.PlatformConfig.VMImageVersion
+	if vers == "" {
+		vers = vmlayer.MEXInfraVersion
+	}
+	// note this string compare would fail for something like 4.10.x, but is only intended for short term purposes
+	// and should be removed after 4.4.0 has time to soak
+	if vers >= "4.4.0" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletImageSuffix returning generic suffix post 4.4.0", "vers", vers)
+		return ".qcow2"
+	}
+	// older loads are specific per platform
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletImageSuffix returning vsphere specific suffix pre 4.4.0", "vers", vers)
 	return "-vsphere.qcow2"
 }
 
