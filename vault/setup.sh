@@ -8,6 +8,7 @@ set -e
 
 vault secrets enable -path=jwtkeys kv
 vault kv enable-versioning jwtkeys
+sleep 1
 vault write jwtkeys/config max_versions=2
 
 # these are commented out but are used to set the mcorm secrets

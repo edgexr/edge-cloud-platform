@@ -75,7 +75,7 @@ tests:
 - includefile: find_cloudlet.yml
 
 - name: sleep, allow time for metrics to collect
-  actions: [sleep=2]
+  actions: [sleep=3]
 
 - name: Check client api metrics
   actions: [mcapi-showclientapimetrics]
