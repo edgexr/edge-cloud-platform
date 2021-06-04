@@ -991,6 +991,11 @@ func ReadConn(c echo.Context, in interface{}) (bool, error) {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			return false, fmt.Errorf("Invalid data")
 		}
+		// echo returns HTTPError which may include "code: ..., message:", chop code
+		if errObj, ok := err.(*echo.HTTPError); ok {
+			err = fmt.Errorf("%v", errObj.Message)
+		}
+
 		errStr := checkForTimeError(fmt.Sprintf("Invalid data: %v", err))
 		return false, fmt.Errorf(errStr)
 	}
