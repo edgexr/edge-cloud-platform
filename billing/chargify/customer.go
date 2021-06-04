@@ -133,7 +133,7 @@ func (bs *BillingService) DeleteCustomer(ctx context.Context, customer *ormapi.A
 func (bs *BillingService) UpdateCustomer(ctx context.Context, account *ormapi.AccountInfo, customerDetails *billing.CustomerDetails) error {
 	update := billingToChargifyCustomer(customerDetails) // any fields that actually contain a value will be the ones that are updated
 	endpoint := "/customers/" + account.AccountId + ".json"
-	resp, err := newChargifyReq("POST", endpoint, CustomerWrapper{Customer: &update})
+	resp, err := newChargifyReq("PUT", endpoint, CustomerWrapper{Customer: &update})
 	if err != nil {
 		return fmt.Errorf("Error sending request: %v\n", err)
 	}
