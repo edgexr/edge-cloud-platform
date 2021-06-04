@@ -50,7 +50,7 @@ func TestRetry(t *testing.T) {
 	failure := retry.hasFailure(ctx, key.AppKey, key.ClusterInstKey.CloudletKey)
 	require.True(t, failure)
 
-	cacheData.init()
+	cacheData.init(nil)
 	minmax := newMinMaxChecker(&cacheData)
 	runCount := 0
 	minmax.workers.Init("test-retry", func(ctx context.Context, k interface{}) {

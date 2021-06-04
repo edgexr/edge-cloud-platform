@@ -146,7 +146,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, fmt.Errorf("Missing deployment tag")
 	}
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeMC, node.CertIssuerGlobal, node.WithName(config.Hostname), node.WithCloudletPoolLookup(&allRegionCaches))
+	ctx, span, err := nodeMgr.Init(node.NodeTypeMC, node.CertIssuerGlobal, node.WithName(config.Hostname), node.WithCloudletPoolLookup(&allRegionCaches), node.WithCloudletLookup(&allRegionCaches))
 	if err != nil {
 		return nil, err
 	}

@@ -624,6 +624,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// ResourceQuotasAlertThreshold: 39.3
 	// DefaultResourceAlertThreshold: 40
 	// HostController: 41
+	// KafkaCluster: 42
+	// KafkaUser: 43
+	// KafkaPassword: 44
 	// ```
 	// Security:
 	//   Bearer:

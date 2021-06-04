@@ -24,7 +24,7 @@ func TestChoose(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	// init
-	cacheData.init()
+	cacheData.init(&nodeMgr)
 	autoProvAggr = NewAutoProvAggr(300, 0, &cacheData)
 	autoProvAggr.allStats = make(map[edgeproto.AppKey]*apAppStats)
 
@@ -142,7 +142,7 @@ func TestAppChecker(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	// init
-	cacheData.init()
+	cacheData.init(&nodeMgr)
 	autoProvAggr = NewAutoProvAggr(300, 0, &cacheData)
 	autoProvAggr.allStats = make(map[edgeproto.AppKey]*apAppStats)
 	// forward AppInsts created by the test to cacheData

@@ -23,6 +23,7 @@ type AllRegionCaches struct {
 type RegionCache struct {
 	client            *notify.Client
 	cloudletPoolCache node.CloudletPoolCache
+	cloudletCache     node.CloudletCache
 }
 
 func (s *AllRegionCaches) init() {
@@ -73,7 +74,8 @@ func (s *AllRegionCaches) refreshRegions(ctx context.Context) error {
 		rc.init(notifyClient)
 		s.caches[ctrl.Region] = &rc
 
-		notifyClient.RegisterRecvCloudletPoolCache(rc.cloudletPoolCache.GetCloudletPoolCache(""))
+		notifyClient.RegisterRecvCloudletCache(rc.cloudletCache.GetCloudletCache(node.NoRegion))
+		notifyClient.RegisterRecvCloudletPoolCache(rc.cloudletPoolCache.GetCloudletPoolCache(node.NoRegion))
 		notifyClient.Start()
 	}
 
@@ -89,7 +91,7 @@ func (s *AllRegionCaches) refreshRegions(ctx context.Context) error {
 	return nil
 }
 
-// AllRegionCaches implements node.CloudletPoolLookup
+// AllRegionCaches implements node.CloudletPoolLookup and node.CloudletLookup
 
 func (s *AllRegionCaches) InPool(region string, key edgeproto.CloudletKey) bool {
 	s.mux.Lock()
@@ -123,11 +125,34 @@ func (s *AllRegionCaches) Dumpable() map[string]interface{} {
 	return allregions
 }
 
+func (s *AllRegionCaches) GetCloudlet(region string, key *edgeproto.CloudletKey, buf *edgeproto.Cloudlet) bool {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	cd, found := s.caches[region]
+	if !found {
+		return false
+	}
+	return cd.cloudletCache.GetCloudlet(region, key, buf)
+}
+
+func (s *AllRegionCaches) GetCloudletCache(region string) *edgeproto.CloudletCache {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	cd, found := s.caches[region]
+	if !found {
+		return nil
+	}
+	return cd.cloudletCache.GetCloudletCache(region)
+}
+
 // Per-region data
 
 func (s *RegionCache) init(client *notify.Client) {
 	s.client = client
 	s.cloudletPoolCache.Init()
+	s.cloudletCache.Init()
 }
 
 func (s *RegionCache) Dumpable() map[string]interface{} {
