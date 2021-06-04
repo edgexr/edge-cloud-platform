@@ -229,7 +229,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		scrapePoint := ProxyScrapePoint{
 			Key:        appInst.Key,
 			App:        k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
-			Cluster:    appInst.Key.ClusterInstKey.ClusterKey.Name,
+			Cluster:    appInst.ClusterInstKey().ClusterKey.Name,
 			ClusterOrg: appInst.Key.ClusterInstKey.Organization,
 			TcpPorts:   make([]int32, 0),
 			UdpPorts:   make([]int32, 0),

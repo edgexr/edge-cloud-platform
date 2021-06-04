@@ -99,11 +99,12 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
 		appInstAlertWorkers.NeedsWork(ctx, new.Key)
 	}
-	ChangeSinceLastPlatformStats = true
+
 	var port int32
 	var exists bool
 	var mapKey string
 
+	ChangeSinceLastPlatformStats = true
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	// check cluster name if this is a VM App
 	app := edgeproto.App{}
