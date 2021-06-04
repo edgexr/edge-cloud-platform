@@ -76,7 +76,7 @@ func start() error {
 	}
 	dialOpts = tls.GetGrpcDialOption(clientTlsConfig)
 
-	cacheData.init()
+	cacheData.init(&nodeMgr)
 	retryTracker = newRetryTracker()
 	autoProvAggr = NewAutoProvAggr(settings.AutoDeployIntervalSec, settings.AutoDeployOffsetSec, &cacheData)
 	minMaxChecker = newMinMaxChecker(&cacheData)
