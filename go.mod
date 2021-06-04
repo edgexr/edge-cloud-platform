@@ -296,3 +296,5 @@ replace github.com/cloudflare/cloudflare-go => github.com/cloudflare/cloudflare-
 replace github.com/jaegertracing/jaeger => github.com/jaegertracing/jaeger v1.21.0
 
 replace github.com/uber/jaeger-lib => github.com/uber/jaeger-lib v2.4.0+incompatible
+
+replace github.com/Shopify/sarama => github.com/Shopify/sarama v1.22.2-0.20190604114437-cd910a683f9f
