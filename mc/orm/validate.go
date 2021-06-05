@@ -12,8 +12,10 @@ func ValidName(name string) error {
 	err := util.ValidObjName(name)
 
 	// Gorm DB create works only for name <= 90
+	// Also, JFrog Artifactory repo name is created from OrgName and it must be <= 64
+	// In future, if we move away from artifactory, this limitation needs to be revisited.
 	const (
-		GormMaxName = 90
+		orgNameMax = 64
 	)
 
 	if err != nil {
@@ -43,7 +45,7 @@ func ValidName(name string) error {
 	if strings.HasSuffix(name, "-cache") {
 		return fmt.Errorf("Name cannot end with '-cache'")
 	}
-	if len(name) > GormMaxName {
+	if len(getArtifactoryRepoName(name)) > orgNameMax {
 		return fmt.Errorf("Name too long")
 	}
 	return nil
