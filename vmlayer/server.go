@@ -274,3 +274,21 @@ func DeleteServerIpFromCache(ctx context.Context, serverName string) {
 	defer serverCacheLock.Unlock()
 	delete(serverExternalIpCache, serverName)
 }
+
+func GetVmwareMappedOsType(osType edgeproto.VmAppOsType) (string, error) {
+	switch osType {
+	case edgeproto.VmAppOsType_VM_APP_OS_UNKNOWN:
+		return "otherGuest64", nil
+	case edgeproto.VmAppOsType_VM_APP_OS_LINUX:
+		return "otherLinux64Guest", nil
+	case edgeproto.VmAppOsType_VM_APP_OS_WINDOWS_10:
+		return "windows9_64Guest", nil
+	case edgeproto.VmAppOsType_VM_APP_OS_WINDOWS_2012:
+		return "windows8Server64Guest", nil
+	case edgeproto.VmAppOsType_VM_APP_OS_WINDOWS_2016:
+		fallthrough // shows as 2016 in vcenter
+	case edgeproto.VmAppOsType_VM_APP_OS_WINDOWS_2019:
+		return "windows9Server64Guest", nil
+	}
+	return "", fmt.Errorf("Invalid value for VmAppOsType %v", osType)
+}

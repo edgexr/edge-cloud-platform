@@ -388,7 +388,11 @@ func (v *VSpherePlatform) CreateVM(ctx context.Context, vm *vmlayer.VMOrchestrat
 			netname = vm.Ports[0].PortGroup
 		}
 		image := vm.Volumes[0].ImageName
-		out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", "ubuntu64Guest", "-pool", poolName, "-ds", ds, "-dc", dcName, "-disk", image, "-net", netname, vm.Name)
+		mappedGuestType, err := vmlayer.GetVmwareMappedOsType(vm.VmAppOsType)
+		if err != nil {
+			return err
+		}
+		out, err := v.TimedGovcCommand(ctx, "govc", "vm.create", "-version", vmVersion, "-g", mappedGuestType, "-pool", poolName, "-ds", ds, "-dc", dcName, "-disk", image, "-net", netname, vm.Name)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to create template VM", "out", string(out), "err", err)
 			return fmt.Errorf("Failed to create template VM: %s - %v", string(out), err)
@@ -573,7 +577,7 @@ func (v *VSpherePlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOr
 			updateCallback(edgeproto.UpdateTask, "Cleaning up after failure")
 			err := v.DeleteResourcesForGroup(ctx, vmgp.GroupName)
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "cleanup failed: %v", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "cleanup failed", "err", err)
 			}
 		}
 		return fmt.Errorf("CreateVMs failed: %s", errFound)

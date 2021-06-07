@@ -112,6 +112,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		WithDeploymentManifest(app.DeploymentManifest),
 		WithCommand(app.Command),
 		WithImageFolder(cloudcommon.GetAppFQN(&app.Key)),
+		WithVmAppOsType(app.VmAppOsType),
 	)
 	if err != nil {
 		return &orchVals, err

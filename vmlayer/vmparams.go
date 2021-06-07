@@ -131,6 +131,7 @@ type VMRequestSpec struct {
 	OptionalResource        string
 	AccessKey               string
 	AdditionalNetworks      []string
+	VmAppOsType             edgeproto.VmAppOsType
 }
 
 type VMReqOp func(vmp *VMRequestSpec) error
@@ -218,6 +219,12 @@ func WithAccessKey(accessKey string) VMReqOp {
 func WithAdditionalNetworks(networks []string) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.AdditionalNetworks = networks
+		return nil
+	}
+}
+func WithVmAppOsType(osType edgeproto.VmAppOsType) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.VmAppOsType = osType
 		return nil
 	}
 }
@@ -470,6 +477,7 @@ type VMOrchestrationParams struct {
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
 	AttachExternalDisk      bool
 	CloudConfigParams       VMCloudConfigParams
+	VmAppOsType             edgeproto.VmAppOsType
 }
 
 var (
@@ -970,6 +978,9 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			}
 			if newVM.Role == RoleVMApplication {
 				newVM.AttachExternalDisk = true
+				newVM.VmAppOsType = vm.VmAppOsType
+			} else {
+				newVM.VmAppOsType = edgeproto.VmAppOsType_VM_APP_OS_LINUX
 			}
 			for _, p := range newPorts {
 				if !p.SkipAttachVM {
