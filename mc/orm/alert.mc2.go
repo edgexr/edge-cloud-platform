@@ -454,6 +454,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ServerlessConfigVcpus: 40.1
 	// ServerlessConfigRam: 40.2
 	// ServerlessConfigMinReplicas: 40.3
+	// VmAppOsType: 41
 	// ```
 	// Security:
 	//   Bearer:
