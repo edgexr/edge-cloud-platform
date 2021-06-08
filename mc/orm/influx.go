@@ -838,7 +838,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	if _, found := authDevOrgs[""]; found {
 		// admin
 		devOrgPermOk = true
-	} else {
+	} else if len(devOrgs) > 0 {
 		devOrgPermOk = true
 		for _, devOrg := range devOrgs {
 			_, devOrgPermOk = authDevOrgs[devOrg]
@@ -856,7 +856,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	if _, found := authOperOrgs[""]; found {
 		// admin
 		operOrgPermOk = true
-	} else {
+	} else if len(cloudletKeys) > 0 {
 		operOrgPermOk = true
 		for _, cloudletKey := range cloudletKeys {
 			_, operOrgPermOk = authOperOrgs[cloudletKey.Organization]

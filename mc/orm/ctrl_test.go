@@ -388,11 +388,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// dev3 will be not be able to create clusterinst/appinst on org3 cloudlet
 		_, status, err := ormtestutil.TestPermCreateAppInst(mcClient, uri, tokenDev3, ctrl.Region, org1, tc3)
 		require.NotNil(t, err)
-		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets")
+		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact MobiledgeX support")
 		require.Equal(t, http.StatusBadRequest, status)
 		_, status, err = ormtestutil.TestPermCreateClusterInst(mcClient, uri, tokenDev3, ctrl.Region, org1, tc3)
 		require.NotNil(t, err)
-		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets")
+		require.Equal(t, err.Error(), "Billing Org must be set up to deploy to public cloudlets, please contact MobiledgeX support")
 		require.Equal(t, http.StatusBadRequest, status)
 		// cleanup created cloudlet
 		goodPermDeleteCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, org3)
@@ -566,6 +566,9 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 			[]edgeproto.CloudletKey{}, []string{})
 		testPassCheckPermissionsAndGetCloudletList(t, ctx, dev.Name, ctrl.Region, []string{org1}, ResourceAppAnalytics,
 			[]edgeproto.CloudletKey{emptyKey}, []string{})
+		// test that a check with no developer and a cloudlet for a developer returns an error
+		testFailCheckPermissionsAndGetCloudletList(t, ctx, dev.Name, ctrl.Region, []string{}, ResourceAppAnalytics,
+			[]edgeproto.CloudletKey{org3Cloudlet.Key}, "Developers please specify the App Organization")
 		// test multiple apps looking at multiple cloudlets(dev is part of org1 and org3)
 		org4CloudletKey := edgeproto.CloudletKey{Name: "1", Organization: org4}
 		testPassCheckPermissionsAndGetCloudletList(t, ctx, dev.Name, ctrl.Region, []string{org1, org1}, ResourceAppAnalytics,
@@ -771,8 +774,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		poolCache.Update(ctx, &list[ii], 0)
 	}
 	// make sure there is at least one cloudletKey org is specified here
-	testFailCheckPermissionsAndGetCloudletList(t, ctx, oper.Name, ctrl.Region, []string{org1}, ResourceAppAnalytics,
-		[]edgeproto.CloudletKey{}, "No non-empty CloudletPools to show")
+	testFailCheckPermissionsAndGetCloudletList(t, ctx, oper.Name, ctrl.Region, []string{"invalidDeveloper"}, ResourceAppAnalytics,
+		[]edgeproto.CloudletKey{}, "Operators please specify the Cloudlet Organization")
 
 	// operator can see dev resources on cloudlet pool(returned list contains all cloudlets that operator is allowed to see)
 	// NOTE: there is a generated pool with three cloudlets - cloudlet1,cloudlet2,cloudlet3
