@@ -179,7 +179,7 @@ func getComments(doc *ast.CommentGroup) string {
 	for _, comment := range doc.List {
 		str := comment.Text
 		if strings.HasPrefix(str, "// read only: true") {
-			return ""
+			continue
 		}
 		if strings.HasPrefix(str, "// required: true") {
 			continue
