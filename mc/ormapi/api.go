@@ -16,6 +16,7 @@ type User struct {
 	Name string `gorm:"primary_key;type:citext"`
 	// User email
 	Email string `gorm:"unique;not null"`
+	// Email address has been verified
 	// read only: true
 	EmailVerified bool
 	// read only: true
@@ -36,6 +37,7 @@ type User struct {
 	CreatedAt time.Time `json:",omitempty"`
 	// read only: true
 	UpdatedAt time.Time `json:",omitempty"`
+	// Account is locked
 	// read only: true
 	Locked bool
 	// read only: true
@@ -262,7 +264,9 @@ type OrgCloudlet struct {
 
 type ShowUser struct {
 	User `json:",inline"`
-	Org  string `form:"org" json:"org"`
+	// Organization name
+	Org string `form:"org" json:"org"`
+	// Role name
 	Role string `form:"role" json:"role"`
 }
 
