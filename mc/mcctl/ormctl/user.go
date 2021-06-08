@@ -155,6 +155,9 @@ var EmbeddedUserAliasArgs = []string{
 	"password=user.passhash",
 	"enabletotp=user.enabletotp",
 	"metadata=user.metadata",
+	"emailverified=user.emailverified",
+	"locked=user.locked",
+	"orgname=org",
 }
 
 var CreateUserAliasArgs = append(EmbeddedUserAliasArgs, []string{

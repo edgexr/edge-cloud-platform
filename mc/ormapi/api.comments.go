@@ -3,13 +3,15 @@ package ormapi
 // This is an auto-generated file. DO NOT EDIT directly.
 
 var UserComments = map[string]string{
-	"name":       `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"email":      `User email`,
-	"familyname": `Family Name`,
-	"givenname":  `Given Name`,
-	"nickname":   `Nick Name`,
-	"enabletotp": `Enable or disable temporary one-time passwords for the account`,
-	"metadata":   `Metadata`,
+	"name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"email":         `User email`,
+	"emailverified": `Email address has been verified`,
+	"familyname":    `Family Name`,
+	"givenname":     `Given Name`,
+	"nickname":      `Nick Name`,
+	"locked":        `Account is locked`,
+	"enabletotp":    `Enable or disable temporary one-time passwords for the account`,
+	"metadata":      `Metadata`,
 }
 
 var CreateUserApiKeyComments = map[string]string{
@@ -111,13 +113,17 @@ var RoleComments = map[string]string{
 }
 
 var ShowUserComments = map[string]string{
-	"user.name":       `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":      `User email`,
-	"user.familyname": `Family Name`,
-	"user.givenname":  `Given Name`,
-	"user.nickname":   `Nick Name`,
-	"user.enabletotp": `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":   `Metadata`,
+	"user.name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":         `User email`,
+	"user.emailverified": `Email address has been verified`,
+	"user.familyname":    `Family Name`,
+	"user.givenname":     `Given Name`,
+	"user.nickname":      `Nick Name`,
+	"user.locked":        `Account is locked`,
+	"user.enabletotp":    `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":      `Metadata`,
+	"org":                `Organization name`,
+	"role":               `Role name`,
 }
 
 var UserLoginComments = map[string]string{
@@ -126,13 +132,15 @@ var UserLoginComments = map[string]string{
 }
 
 var CreateUserComments = map[string]string{
-	"user.name":       `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
-	"user.email":      `User email`,
-	"user.familyname": `Family Name`,
-	"user.givenname":  `Given Name`,
-	"user.nickname":   `Nick Name`,
-	"user.enabletotp": `Enable or disable temporary one-time passwords for the account`,
-	"user.metadata":   `Metadata`,
+	"user.name":          `User name. Can only contain letters, digits, underscore, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
+	"user.email":         `User email`,
+	"user.emailverified": `Email address has been verified`,
+	"user.familyname":    `Family Name`,
+	"user.givenname":     `Given Name`,
+	"user.nickname":      `Nick Name`,
+	"user.locked":        `Account is locked`,
+	"user.enabletotp":    `Enable or disable temporary one-time passwords for the account`,
+	"user.metadata":      `Metadata`,
 }
 
 var EmailRequestComments = map[string]string{
@@ -169,8 +177,8 @@ var ReporterComments = map[string]string{
 	"startscheduledate": `Start date (in RFC3339 format with intended timezone) when the report is scheduled to be generated (Default: today)`,
 	"nextscheduledate":  `Date when the next report is scheduled to be generated (for internal use only)`,
 	"username":          `User name (for internal use only)`,
-	"status":            `Last report status`,
 	"timezone":          `Timezone in which to show the reports, defaults to UTC`,
+	"status":            `Last report status`,
 }
 
 var DownloadReportComments = map[string]string{
