@@ -15,11 +15,11 @@ const (
 	Microsecond       = 1000 * Millisecond
 	Nanosecond        = 1000 * Microsecond
 
-	TimeFormatDate        = "2006/01/02"
-	TimeFormatDateName    = "20060102"
-	TimeFormatDateTZ      = "2006/01/02 (GMTZ07:00)"
-	TimeFormatDateTime    = "01-02 15:04:05"
-	TimeFormatDayDateTime = "Mon Jan 2 15:04:05"
+	TimeFormatDate         = "2006/01/02"
+	TimeFormatDateName     = "20060102"
+	TimeFormatDateTime     = "01-02 15:04:05"
+	TimeFormatFullDateTime = "2006/01/02 15:04:05"
+	TimeFormatDayDateTime  = "Mon Jan 2 15:04:05"
 )
 
 // It is intentional to not define custom marshalers for JSON.

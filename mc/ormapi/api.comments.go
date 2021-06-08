@@ -162,10 +162,12 @@ var ReporterComments = map[string]string{
 	"email":             `Email to send generated reports`,
 	"schedule":          `Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth`,
 	"startscheduledate": `Start date (in RFC3339 format with intended timezone) when the report is scheduled to be generated (Default: today)`,
+	"timezone":          `Timezone in which to show the reports, defaults to UTC`,
 }
 
 var DownloadReportComments = map[string]string{
 	"org":      `Organization name`,
+	"reporter": `Reporter name`,
 	"filename": `Name of the report file to be downloaded`,
 }
 
@@ -173,4 +175,5 @@ var GenerateReportComments = map[string]string{
 	"org":       `Organization name`,
 	"starttime": `Absolute time (in RFC3339 format with intended timezone) to start report capture`,
 	"endtime":   `Absolute time (in RFC3339 format with intended timezone) to end report capture`,
+	"timezone":  `Timezone in which to show the reports, defaults to UTC`,
 }

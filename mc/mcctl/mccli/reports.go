@@ -48,7 +48,7 @@ func (s *RootCommand) runGenerateReport(path string) func(c *cli.Command, args [
 			return fmt.Errorf("unable to fetch report args: %v", c.ReqData)
 		}
 
-		filename := ormapi.GetReportFileName("", report)
+		filename := ormapi.GetReportFileName(report)
 		st, err := s.sendReqAndDownloadPDF(path, filename, in)
 		return check(c, st, err, nil)
 	}
@@ -105,6 +105,7 @@ func (s *RootCommand) sendReqAndDownloadPDF(path, filename string, reqData inter
 		return http.StatusBadRequest, err
 	}
 	// Save blob to file
+	filename = strings.ReplaceAll(filename, "/", "_")
 	err = ioutil.WriteFile(filename, body, 0666)
 	if err != nil {
 		return http.StatusBadRequest, fmt.Errorf("failed to created file %s, %v", filename, err)
