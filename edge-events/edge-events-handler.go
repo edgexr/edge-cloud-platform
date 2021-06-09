@@ -45,12 +45,12 @@ type Client struct {
 // Client info contains the client's specific Send function, last location, and carrier
 type ClientInfo struct {
 	sendFunc func(event *dme.ServerEdgeEvent)
-	lastLoc  *dme.Loc
+	lastLoc  dme.Loc
 	carrier  string
 }
 
 // Add Client connected to specified AppInst to Map
-func (e *EdgeEventsHandlerPlugin) AddClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc *dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent)) {
+func (e *EdgeEventsHandlerPlugin) AddClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent)) {
 	e.Lock()
 	defer e.Unlock()
 	// Initialize CloudletsMap
@@ -84,7 +84,7 @@ func (e *EdgeEventsHandlerPlugin) AddClientKey(ctx context.Context, appInstKey e
 }
 
 // Update Client's last location
-func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc *dme.Loc) {
+func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc dme.Loc) {
 	e.Lock()
 	defer e.Unlock()
 	// Update lastLoc field in cliientinfo for specified client
@@ -162,7 +162,7 @@ func (e *EdgeEventsHandlerPlugin) SendLatencyRequestEdgeEvent(ctx context.Contex
 }
 
 // Send a AppInstState EdgeEvent with specified Event to all clients connected to specified AppInst (and also have initiated persistent connection)
-func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appInst *dmecommon.DmeAppInst, appInstKey edgeproto.AppInstKey, eventType dme.ServerEdgeEvent_ServerEventType) {
+func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, eventType dme.ServerEdgeEvent_ServerEventType) {
 	e.Lock()
 	defer e.Unlock()
 	// Get clients on specified appinst
@@ -172,18 +172,18 @@ func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context,
 		return
 	}
 	// Check if appinst is usable. If not do a FindCloudlet for each client
-	usability := getUsability(appInst.MaintenanceState, appInst.CloudletState, appInst.AppInstHealth)
+	usability := getUsability(appinstState)
 	// Build map of AppInstStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for _, clientinfo := range clients.ClientsMap {
-		appInstStateEdgeEvent := e.createAppInstStateEdgeEvent(ctx, appInst, appInstKey, clientinfo, eventType, usability)
+		appInstStateEdgeEvent := e.createAppInstStateEdgeEvent(ctx, appinstState, appInstKey, clientinfo, eventType, usability)
 		m[appInstStateEdgeEvent] = clientinfo.sendFunc
 	}
 	// Send appinst state event to each client on affected appinst
 	go e.sendEdgeEventsToClients(m)
 }
 
-func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, cloudletKey edgeproto.CloudletKey) {
+func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
 	e.Lock()
 	defer e.Unlock()
 	// Get appinsts on specified cloudlet
@@ -193,12 +193,14 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context
 		return
 	}
 	// Check if cloudlet is usable. If not do a FindCloudlet for each client (only use cloudlet.State)
-	usability := getUsability(dme.MaintenanceState_NORMAL_OPERATION, cloudlet.State, dme.HealthCheck_HEALTH_CHECK_OK)
+	appinstState.MaintenanceState = dme.MaintenanceState_NORMAL_OPERATION
+	appinstState.AppInstHealth = dme.HealthCheck_HEALTH_CHECK_OK
+	usability := getUsability(appinstState)
 	// Build map of CloudletStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for key, clients := range appinsts.AppInstsMap {
 		for _, clientinfo := range clients.ClientsMap {
-			cloudletStateEdgeEvent := e.createCloudletStateEdgeEvent(ctx, cloudlet, key, clientinfo, usability)
+			cloudletStateEdgeEvent := e.createCloudletStateEdgeEvent(ctx, appinstState, key, clientinfo, usability)
 			m[cloudletStateEdgeEvent] = clientinfo.sendFunc
 		}
 	}
@@ -206,7 +208,7 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context
 	go e.sendEdgeEventsToClients(m)
 }
 
-func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, cloudletKey edgeproto.CloudletKey) {
+func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
 	e.Lock()
 	defer e.Unlock()
 	// Get appinsts on specified cloudlet
@@ -216,12 +218,14 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx cont
 		return
 	}
 	// Check if cloudlet is usable. If not do a FindCloudlet for each client (only use cloudlet.MaintenanceState)
-	usability := getUsability(cloudlet.MaintenanceState, dme.CloudletState_CLOUDLET_STATE_READY, dme.HealthCheck_HEALTH_CHECK_OK)
+	appinstState.CloudletState = dme.CloudletState_CLOUDLET_STATE_READY
+	appinstState.AppInstHealth = dme.HealthCheck_HEALTH_CHECK_OK
+	usability := getUsability(appinstState)
 	// Build map of CloudletMaintenanceStateEdgeEvents mapped to the sendFunc that will send the event to the correct client
 	m := make(map[*dme.ServerEdgeEvent]func(event *dme.ServerEdgeEvent))
 	for key, clients := range appinsts.AppInstsMap {
 		for _, clientinfo := range clients.ClientsMap {
-			cloudletMaintenanceStateEdgeEvent := e.createCloudletMaintenanceStateEdgeEvent(ctx, cloudlet, key, clientinfo, usability)
+			cloudletMaintenanceStateEdgeEvent := e.createCloudletMaintenanceStateEdgeEvent(ctx, appinstState, key, clientinfo, usability)
 			m[cloudletMaintenanceStateEdgeEvent] = clientinfo.sendFunc
 		}
 	}

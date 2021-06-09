@@ -8,6 +8,7 @@ import (
 	"time"
 
 	dmecommon "github.com/mobiledgex/edge-cloud/d-match-engine/dme-common"
+	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/stretchr/testify/require"
@@ -130,6 +131,8 @@ var client5 = dmecommon.CookieKey{
 }
 var clients = [6]dmecommon.CookieKey{client0, client1, client2, client3, client4, client5}
 
+var emptyLoc = dme.Loc{}
+
 func TestEdgeEventsHandlerPlugin(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelInfra)
 	log.InitTracer(nil)
@@ -145,26 +148,26 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	e := new(EdgeEventsHandlerPlugin)
 	e.EdgeEventsCookieExpiration = 00 * time.Minute
 	// Add clients
-	e.AddClientKey(ctx, appinst0, client0, nil, "", nil)
-	e.AddClientKey(ctx, appinst1, client1, nil, "", nil)
-	e.AddClientKey(ctx, appinst2, client2, nil, "", nil)
-	e.AddClientKey(ctx, appinst3, client3, nil, "", nil)
-	e.AddClientKey(ctx, appinst4, client4, nil, "", nil)
-	e.AddClientKey(ctx, appinst5, client5, nil, "", nil)
+	e.AddClientKey(ctx, appinst0, client0, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst1, client1, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst2, client2, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst3, client3, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst4, client4, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst5, client5, emptyLoc, "", nil)
 
-	e.AddClientKey(ctx, appinst0, client1, nil, "", nil)
-	e.AddClientKey(ctx, appinst1, client2, nil, "", nil)
-	e.AddClientKey(ctx, appinst2, client3, nil, "", nil)
-	e.AddClientKey(ctx, appinst3, client4, nil, "", nil)
-	e.AddClientKey(ctx, appinst4, client5, nil, "", nil)
-	e.AddClientKey(ctx, appinst5, client0, nil, "", nil)
+	e.AddClientKey(ctx, appinst0, client1, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst1, client2, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst2, client3, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst3, client4, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst4, client5, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst5, client0, emptyLoc, "", nil)
 
-	e.AddClientKey(ctx, appinst0, client2, nil, "", nil)
-	e.AddClientKey(ctx, appinst1, client3, nil, "", nil)
-	e.AddClientKey(ctx, appinst2, client4, nil, "", nil)
-	e.AddClientKey(ctx, appinst3, client5, nil, "", nil)
-	e.AddClientKey(ctx, appinst4, client0, nil, "", nil)
-	e.AddClientKey(ctx, appinst5, client1, nil, "", nil)
+	e.AddClientKey(ctx, appinst0, client2, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst1, client3, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst2, client4, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst3, client5, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst4, client0, emptyLoc, "", nil)
+	e.AddClientKey(ctx, appinst5, client1, emptyLoc, "", nil)
 
 	// Check that all Cloudlets, AppInsts, and Clients were added to maps
 	require.Equal(t, 3, len(e.CloudletsMap))
@@ -216,7 +219,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[idx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, nil, "", nil)
+			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
 			e.RemoveClientKey(ctx, appinst, client)
@@ -228,7 +231,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[appinstidx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, nil, "", nil)
+			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
 			e.RemoveClientKey(ctx, appinst, client)
@@ -240,7 +243,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[appinstidx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, nil, "", nil)
+			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
 			e.RemoveClientKey(ctx, appinst, client)
