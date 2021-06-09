@@ -15,7 +15,6 @@
     max: 5.33
     min: 1.12
     numsamples: 5
-    signalstrength: 5
     stddev: 1.6512211238958883
     variance: 2.7265312
 - name: device-metric

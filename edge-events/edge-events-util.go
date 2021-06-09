@@ -17,8 +17,8 @@ const (
 	Usable
 )
 
-func getUsability(maintenanceState dme.MaintenanceState, cloudletState dme.CloudletState, appInstHealth dme.HealthCheck) Usability {
-	isUsable := dmecommon.AreStatesUsable(maintenanceState, cloudletState, appInstHealth)
+func getUsability(appinstState *dmecommon.DmeAppInstState) Usability {
+	isUsable := dmecommon.AreStatesUsable(appinstState.MaintenanceState, appinstState.CloudletState, appinstState.AppInstHealth)
 	if isUsable {
 		return Usable
 	} else {
@@ -27,17 +27,17 @@ func getUsability(maintenanceState dme.MaintenanceState, cloudletState dme.Cloud
 }
 
 // Helper function to create the ServerEdgeEvent when AppInst state is bad
-func (e *EdgeEventsHandlerPlugin) createAppInstStateEdgeEvent(ctx context.Context, appInst *dmecommon.DmeAppInst, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, eventType dme.ServerEdgeEvent_ServerEventType, usability Usability) *dme.ServerEdgeEvent {
+func (e *EdgeEventsHandlerPlugin) createAppInstStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, eventType dme.ServerEdgeEvent_ServerEventType, usability Usability) *dme.ServerEdgeEvent {
 	serverEdgeEvent := new(dme.ServerEdgeEvent)
 	serverEdgeEvent.EventType = eventType
 	// Populate the corresponding ServerEdgeEvent field based on eventType
 	switch eventType {
 	case dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE:
-		serverEdgeEvent.CloudletState = appInst.CloudletState
+		serverEdgeEvent.CloudletState = appinstState.CloudletState
 	case dme.ServerEdgeEvent_EVENT_CLOUDLET_MAINTENANCE:
-		serverEdgeEvent.MaintenanceState = appInst.MaintenanceState
+		serverEdgeEvent.MaintenanceState = appinstState.MaintenanceState
 	case dme.ServerEdgeEvent_EVENT_APPINST_HEALTH:
-		serverEdgeEvent.HealthCheck = appInst.AppInstHealth
+		serverEdgeEvent.HealthCheck = appinstState.AppInstHealth
 	default:
 	}
 	// Look for a new cloudlet if the appinst is not usable
@@ -48,10 +48,10 @@ func (e *EdgeEventsHandlerPlugin) createAppInstStateEdgeEvent(ctx context.Contex
 }
 
 // Helper function to create the ServerEdgeEvent when CloudletState is bad
-func (e *EdgeEventsHandlerPlugin) createCloudletStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, usability Usability) *dme.ServerEdgeEvent {
+func (e *EdgeEventsHandlerPlugin) createCloudletStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, usability Usability) *dme.ServerEdgeEvent {
 	serverEdgeEvent := new(dme.ServerEdgeEvent)
 	serverEdgeEvent.EventType = dme.ServerEdgeEvent_EVENT_CLOUDLET_STATE
-	serverEdgeEvent.CloudletState = cloudlet.State
+	serverEdgeEvent.CloudletState = appinstState.CloudletState
 	// Look for a new cloudlet if the appinst is not usable
 	if usability == Unusable {
 		e.addNewCloudletToServerEdgeEvent(ctx, serverEdgeEvent, appInstKey, clientinfo)
@@ -60,10 +60,10 @@ func (e *EdgeEventsHandlerPlugin) createCloudletStateEdgeEvent(ctx context.Conte
 }
 
 // Helper function to create the ServerEdgeEvent when CloudletMaintenanceState is bad
-func (e *EdgeEventsHandlerPlugin) createCloudletMaintenanceStateEdgeEvent(ctx context.Context, cloudlet *dmecommon.DmeCloudlet, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, usability Usability) *dme.ServerEdgeEvent {
+func (e *EdgeEventsHandlerPlugin) createCloudletMaintenanceStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, clientinfo *ClientInfo, usability Usability) *dme.ServerEdgeEvent {
 	serverEdgeEvent := new(dme.ServerEdgeEvent)
 	serverEdgeEvent.EventType = dme.ServerEdgeEvent_EVENT_CLOUDLET_MAINTENANCE
-	serverEdgeEvent.MaintenanceState = cloudlet.MaintenanceState
+	serverEdgeEvent.MaintenanceState = appinstState.MaintenanceState
 	// Look for a new cloudlet if the appinst is not usable
 	if usability == Unusable {
 		e.addNewCloudletToServerEdgeEvent(ctx, serverEdgeEvent, appInstKey, clientinfo)
@@ -77,7 +77,7 @@ func (e *EdgeEventsHandlerPlugin) addNewCloudletToServerEdgeEvent(ctx context.Co
 	// Look for a new cloudlet if the appinst is not usable
 	newCloudlet := new(dme.FindCloudletReply)
 	var err error
-	err = dmecommon.FindCloudlet(ctx, &appInstKey.AppKey, clientinfo.carrier, clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
+	err = dmecommon.FindCloudlet(ctx, &appInstKey.AppKey, clientinfo.carrier, &clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Current appinst is unusable. Unable to find alternate cloudlet", "err", err)
 		err = fmt.Errorf("Current appinst is unusable. Unable to find alternate cloudlet doing FindCloudlet - error is %s", err.Error())
