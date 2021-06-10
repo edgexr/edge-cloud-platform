@@ -3,6 +3,7 @@ package vmlayer
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
@@ -79,6 +80,8 @@ type VMPlatform struct {
 	VMProperties VMProperties
 	FlavorList   []*edgeproto.FlavorInfo
 	Caches       *platform.Caches
+	GPUConfig    edgeproto.GPUConfig
+	CacheDir     string
 	infracommon.CommonEmbedded
 }
 
@@ -349,6 +352,13 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	v.Caches = caches
 	v.VMProperties.Domain = VMDomainCompute
+	if platformConfig.GPUConfig != nil {
+		v.GPUConfig = *platformConfig.GPUConfig
+	}
+	v.CacheDir = platformConfig.CacheDir
+	if _, err := os.Stat(v.CacheDir); os.IsNotExist(err) {
+		return fmt.Errorf("CacheDir doesn't exist, please create one")
+	}
 
 	if !platformConfig.TestMode {
 		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)

@@ -279,6 +279,13 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 			Name:         org3,
 		},
 		EnvVar: map[string]string{"key1": "val1"},
+		GpuConfig: edgeproto.GPUConfig{
+			Driver: edgeproto.GPUDriverKey{
+				Name:         "0gpudriver",
+				Organization: org3,
+			},
+			GpuType: edgeproto.GPUType_GPU_TYPE_PASSTHROUGH,
+		},
 	}
 	ds.CloudletCache.Update(ctx, &org3Cloudlet, 0)
 	org3CloudletInfo := edgeproto.CloudletInfo{
@@ -525,7 +532,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	userPermTestAlertReceivers(t, mcClient, uri, dev.Name, tokenDev, dev3.Name, tokenDev3, ctrl.Region, org1, org3)
 
 	{
-		// developers can't create AppInsts on other developemar's ClusterInsts
+		// developers can't create AppInsts on other developer's ClusterInsts
 		appinst := edgeproto.AppInst{}
 		appinst.Key.AppKey.Organization = org1
 		appinst.Key.ClusterInstKey.Organization = org2
@@ -764,6 +771,68 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// operator should not able able to access appinsts/clusterinsts of developer who has not confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
+
+	// Test GPU driver access
+	{
+		// setup:
+		// =====:
+		// add oper3 as OperatorViewer of org3
+		testAddUserRole(t, mcClient, uri, tokenOper, org3, "OperatorViewer", oper3.Name, Success)
+		// add public GPU driver
+		gpuDriver := ormapi.RegionGPUDriver{
+			Region: ctrl.Region,
+			GPUDriver: edgeproto.GPUDriver{
+				Key: edgeproto.GPUDriverKey{
+					Name: "testgpudriver",
+				},
+				Type: edgeproto.GPUType_GPU_TYPE_PASSTHROUGH,
+			},
+		}
+		// operator-manager cannot create a public GPU driver
+		_, status, err = mcClient.CreateGPUDriver(uri, tokenOper, &gpuDriver)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+		// only admin can create a public GPU driver
+		_, status, err = mcClient.CreateGPUDriver(uri, tokenAd, &gpuDriver)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		// gpu driver counts
+		orgDriverCount := 3
+		publicDriverCount := 1
+		tc3DriverCount := 1
+		allDriverCount := 4*orgDriverCount + publicDriverCount
+
+		// test developers/operator-viewer cannot create/update/delete gpu drivers
+		badPermTestGPUDriver(t, mcClient, uri, tokenDev, ctrl.Region, org3)
+		badPermTestGPUDriver(t, mcClient, uri, tokenOper3, ctrl.Region, org3)
+		// admin is able to see all gpu drivers
+		goodPermTestShowGPUDriver(t, mcClient, uri, tokenAd, ctrl.Region, "", allDriverCount)
+		// test operator-manager/contributor is able to create/update/delete gpu drivers
+		goodPermTestGPUDriver(t, mcClient, uri, tokenOper, ctrl.Region, org3, orgDriverCount)
+		// test operator-viewer is able to see gpu drivers
+		goodPermTestShowGPUDriver(t, mcClient, uri, tokenOper3, ctrl.Region, "", orgDriverCount+publicDriverCount)
+		// test developer can see gpu drivers:
+		//    * It can see its own org drivers (org1)
+		//    * It can see those drivers which are used by all the GPU cloudlets (tc3, part of pool) it has access to
+		//    * It can see public drivers
+		goodPermTestShowGPUDriver(t, mcClient, uri, tokenDev, ctrl.Region, "", orgDriverCount+tc3DriverCount+publicDriverCount)
+		// test developer cannot see tc3Driver as it has no access to tc3 (private cloudlet)
+		goodPermTestShowGPUDriver(t, mcClient, uri, tokenDev2, ctrl.Region, "", orgDriverCount+publicDriverCount)
+
+		// cleanup:
+		// ========
+		// operator-manager cannot delete a public GPU driver
+		_, status, err = mcClient.DeleteGPUDriver(uri, tokenOper, &gpuDriver)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+		// only admin can delete a public GPU driver
+		_, status, err = mcClient.DeleteGPUDriver(uri, tokenAd, &gpuDriver)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		// remove user role
+		testRemoveUserRole(t, mcClient, uri, tokenOper, org3, "OperatorViewer", oper3.Name, Success)
+	}
 
 	// Prior to testing cloudletPool metrics permissions, need to fake-populate allregioncache
 	list, _, err := ormtestutil.TestPermShowCloudletPool(mcClient, uri, tokenAd, ctrl.Region, "")

@@ -787,7 +787,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 	}
 	filePath := "/var/tmp/" + fileExt
 
-	err = cloudcommon.DownloadFile(ctx, accessApi, imageUrl, filePath, nil)
+	err = cloudcommon.DownloadFile(ctx, accessApi, imageUrl, cloudcommon.NoCreds, filePath, nil)
 	if err != nil {
 		return "", fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
 	}

@@ -15,11 +15,11 @@ import (
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/gcs"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/gcs"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
@@ -35,6 +35,10 @@ var (
 	OutputDataNoPDF = true
 	OutputPDF       = false
 )
+
+func getOperatorReportsBucketName(deploymentTag string) string {
+	return fmt.Sprintf("mobiledgex-%s-operator-reports", deploymentTag)
+}
 
 func getScheduleDayMonthCount(schedule edgeproto.ReportSchedule) (int, int, error) {
 	var err error
@@ -161,7 +165,7 @@ func GenerateReports() {
 			continue
 		}
 
-		storageClient, err := gcs.NewClient(ctx, serverConfig.vaultConfig, serverConfig.DeploymentTag)
+		storageClient, err := getGCSStorageClient(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to setup GCS storage client", "err", err)
 			// retry again in few minutes
@@ -1584,6 +1588,20 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 	return nil, nil
 }
 
+// Must call GCSClient.Close() when done
+func getGCSStorageClient(ctx context.Context) (*gcs.GCSClient, error) {
+	bucketName := getOperatorReportsBucketName(serverConfig.DeploymentTag)
+	credsObj, err := gcs.GetGCSCreds(ctx, serverConfig.vaultConfig)
+	if err != nil {
+		return nil, err
+	}
+	storageClient, err := gcs.NewClient(ctx, credsObj, bucketName, gcs.ShortTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to setup GCS client: %v", err)
+	}
+	return storageClient, nil
+}
+
 func ShowReport(c echo.Context) error {
 	// get list of generated reports from cloud
 	ctx := GetContext(c)
@@ -1604,9 +1622,9 @@ func ShowReport(c echo.Context) error {
 		return err
 	}
 
-	storageClient, err := gcs.NewClient(ctx, serverConfig.vaultConfig, serverConfig.DeploymentTag)
+	storageClient, err := getGCSStorageClient(ctx)
 	if err != nil {
-		return fmt.Errorf("Unable to setup GCS client: %v", err)
+		return err
 	}
 	defer storageClient.Close()
 	objs, err := storageClient.ListObjects(ctx)
@@ -1663,9 +1681,9 @@ func DownloadReport(c echo.Context) error {
 		return err
 	}
 
-	storageClient, err := gcs.NewClient(ctx, serverConfig.vaultConfig, serverConfig.DeploymentTag)
+	storageClient, err := getGCSStorageClient(ctx)
 	if err != nil {
-		return fmt.Errorf("Unable to setup GCS client: %v", err)
+		return err
 	}
 	defer storageClient.Close()
 	objs, err := storageClient.ListObjects(ctx)

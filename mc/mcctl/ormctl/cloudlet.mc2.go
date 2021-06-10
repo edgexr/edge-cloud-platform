@@ -24,6 +24,208 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+var CreateGPUDriverCmd = &ApiCommand{
+	Name:                 "CreateGPUDriver",
+	Use:                  "create",
+	Short:                "Create GPU Driver. Creates GPU driver with all the config required to install it.",
+	RequiredArgs:         "region " + strings.Join(GPUDriverRequiredArgs, " "),
+	OptionalArgs:         strings.Join(GPUDriverOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
+	SpecialArgs:          &GPUDriverSpecialArgs,
+	Comments:             addRegionComment(GPUDriverComments),
+	NoConfig:             "State",
+	ReqData:              &ormapi.RegionGPUDriver{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/CreateGPUDriver",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+var DeleteGPUDriverCmd = &ApiCommand{
+	Name:                 "DeleteGPUDriver",
+	Use:                  "delete",
+	Short:                "Delete GPU Driver. Deletes GPU driver given that it is not used by any cloudlet.",
+	RequiredArgs:         "region " + strings.Join(GPUDriverRequiredArgs, " "),
+	OptionalArgs:         strings.Join(GPUDriverOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
+	SpecialArgs:          &GPUDriverSpecialArgs,
+	Comments:             addRegionComment(GPUDriverComments),
+	NoConfig:             "State",
+	ReqData:              &ormapi.RegionGPUDriver{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/DeleteGPUDriver",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+var UpdateGPUDriverCmd = &ApiCommand{
+	Name:                 "UpdateGPUDriver",
+	Use:                  "update",
+	Short:                "Update GPU Driver. Updates GPU driver config.",
+	RequiredArgs:         "region " + strings.Join(UpdateGPUDriverRequiredArgs, " "),
+	OptionalArgs:         strings.Join(UpdateGPUDriverOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
+	SpecialArgs:          &GPUDriverSpecialArgs,
+	Comments:             addRegionComment(GPUDriverComments),
+	NoConfig:             "State,Builds",
+	ReqData:              &ormapi.RegionGPUDriver{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/UpdateGPUDriver",
+	SetFieldsFunc:        SetUpdateGPUDriverFields,
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+func SetUpdateGPUDriverFields(in map[string]interface{}) {
+	// get map for edgeproto object in region struct
+	obj := in["GPUDriver"]
+	if obj == nil {
+		return
+	}
+	objmap, ok := obj.(map[string]interface{})
+	if !ok {
+		return
+	}
+	fields := cli.GetSpecifiedFields(objmap, &edgeproto.GPUDriver{}, cli.JsonNamespace)
+	// include fields already specified
+	if inFields, found := objmap["fields"]; found {
+		if fieldsArr, ok := inFields.([]string); ok {
+			fields = append(fields, fieldsArr...)
+		}
+	}
+	objmap["fields"] = fields
+}
+
+var ShowGPUDriverCmd = &ApiCommand{
+	Name:                 "ShowGPUDriver",
+	Use:                  "show",
+	Short:                "Show GPU Drivers. Lists all the MobiledgeX created GPU drivers and operator created GPU drivers.",
+	RequiredArgs:         "region",
+	OptionalArgs:         strings.Join(append(GPUDriverRequiredArgs, GPUDriverOptionalArgs...), " "),
+	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
+	SpecialArgs:          &GPUDriverSpecialArgs,
+	Comments:             addRegionComment(GPUDriverComments),
+	NoConfig:             "State",
+	ReqData:              &ormapi.RegionGPUDriver{},
+	ReplyData:            &edgeproto.GPUDriver{},
+	Path:                 "/auth/ctrl/ShowGPUDriver",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+var AddGPUDriverBuildCmd = &ApiCommand{
+	Name:                 "AddGPUDriverBuild",
+	Use:                  "addbuild",
+	Short:                "Add GPU Driver Build. Adds new build to GPU driver.",
+	RequiredArgs:         "region " + strings.Join(AddGPUDriverBuildRequiredArgs, " "),
+	OptionalArgs:         strings.Join(AddGPUDriverBuildOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverBuildMemberAliasArgs, " "),
+	SpecialArgs:          &GPUDriverBuildMemberSpecialArgs,
+	Comments:             addRegionComment(GPUDriverBuildMemberComments),
+	ReqData:              &ormapi.RegionGPUDriverBuildMember{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/AddGPUDriverBuild",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+var RemoveGPUDriverBuildCmd = &ApiCommand{
+	Name:                 "RemoveGPUDriverBuild",
+	Use:                  "removebuild",
+	Short:                "Remove GPU Driver Build. Removes build from GPU driver.",
+	RequiredArgs:         "region " + strings.Join(RemoveGPUDriverBuildRequiredArgs, " "),
+	OptionalArgs:         strings.Join(RemoveGPUDriverBuildOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverBuildMemberAliasArgs, " "),
+	SpecialArgs:          &GPUDriverBuildMemberSpecialArgs,
+	Comments:             addRegionComment(GPUDriverBuildMemberComments),
+	NoConfig:             "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo",
+	ReqData:              &ormapi.RegionGPUDriverBuildMember{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/RemoveGPUDriverBuild",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
+var GetGPUDriverBuildURLCmd = &ApiCommand{
+	Name:         "GetGPUDriverBuildURL",
+	Use:          "getbuildurl",
+	Short:        "Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.",
+	RequiredArgs: "region " + strings.Join(GetGPUDriverBuildURLRequiredArgs, " "),
+	OptionalArgs: strings.Join(GetGPUDriverBuildURLOptionalArgs, " "),
+	AliasArgs:    strings.Join(GPUDriverBuildMemberAliasArgs, " "),
+	SpecialArgs:  &GPUDriverBuildMemberSpecialArgs,
+	Comments:     addRegionComment(GPUDriverBuildMemberComments),
+	NoConfig:     "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo",
+	ReqData:      &ormapi.RegionGPUDriverBuildMember{},
+	ReplyData:    &edgeproto.GPUDriverBuildURL{},
+	Path:         "/auth/ctrl/GetGPUDriverBuildURL",
+	ProtobufApi:  true,
+}
+
+var GPUDriverApiCmds = []*ApiCommand{
+	CreateGPUDriverCmd,
+	DeleteGPUDriverCmd,
+	UpdateGPUDriverCmd,
+	ShowGPUDriverCmd,
+	AddGPUDriverBuildCmd,
+	RemoveGPUDriverBuildCmd,
+	GetGPUDriverBuildURLCmd,
+}
+
+const GPUDriverGroup = "GPUDriver"
+
+func init() {
+	AllApis.AddGroup(GPUDriverGroup, "Manage GPUDrivers", GPUDriverApiCmds)
+}
+
+var UpdateGPUDriverRequiredArgs = []string{
+	"gpudrivername",
+}
+var UpdateGPUDriverOptionalArgs = []string{
+	"gpudriver-org",
+	"type",
+	"licenseconfig",
+	"properties",
+	"ignorestate",
+}
+var AddGPUDriverBuildRequiredArgs = []string{
+	"gpudrivername",
+	"gpudriver-org",
+	"build.name",
+	"build.driverpath",
+	"build.operatingsystem",
+}
+var AddGPUDriverBuildOptionalArgs = []string{
+	"build.driverpathcreds",
+	"build.kernelversion",
+	"build.hypervisorinfo",
+	"ignorestate",
+}
+var RemoveGPUDriverBuildRequiredArgs = []string{
+	"gpudrivername",
+	"gpudriver-org",
+	"build.name",
+}
+var RemoveGPUDriverBuildOptionalArgs = []string{
+	"build.driverpathcreds",
+	"ignorestate",
+}
+var GetGPUDriverBuildURLRequiredArgs = []string{
+	"gpudrivername",
+	"gpudriver-org",
+	"build.name",
+}
+var GetGPUDriverBuildURLOptionalArgs = []string{
+	"build.driverpathcreds",
+	"ignorestate",
+}
+
 var CreateCloudletCmd = &ApiCommand{
 	Name:                 "CreateCloudlet",
 	Use:                  "create",
@@ -33,7 +235,7 @@ var CreateCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,GpuConfig.GpuType,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateCloudlet",
@@ -51,7 +253,7 @@ var DeleteCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,GpuConfig.GpuType,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteCloudlet",
@@ -69,7 +271,7 @@ var UpdateCloudletCmd = &ApiCommand{
 	AliasArgs:            strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:          &CloudletSpecialArgs,
 	Comments:             addRegionComment(CloudletComments),
-	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
+	NoConfig:             "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,GpuConfig.GpuType,PlatformType,DeploymentLocal,Flavor,PhysicalName,ContainerVersion,ResTagMap,VmImageVersion,Deployment,InfraApiAccess,InfraConfig,OverridePolicyContainerVersion,VmPool,ResTagMap",
 	ReqData:              &ormapi.RegionCloudlet{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateCloudlet",
@@ -108,7 +310,7 @@ var ShowCloudletCmd = &ApiCommand{
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
 	Comments:     addRegionComment(CloudletComments),
-	NoConfig:     "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,ResTagMap",
+	NoConfig:     "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Status,Config,NotifySrvAddr,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,GpuConfig.GpuType,ResTagMap",
 	ReqData:      &ormapi.RegionCloudlet{},
 	ReplyData:    &edgeproto.Cloudlet{},
 	Path:         "/auth/ctrl/ShowCloudlet",
@@ -317,6 +519,9 @@ var CreateCloudletOptionalArgs = []string{
 	"kafkacluster",
 	"kafkauser",
 	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -359,6 +564,9 @@ var DeleteCloudletOptionalArgs = []string{
 	"kafkacluster",
 	"kafkauser",
 	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -389,6 +597,9 @@ var UpdateCloudletOptionalArgs = []string{
 	"kafkacluster",
 	"kafkauser",
 	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -431,6 +642,9 @@ var ShowCloudletOptionalArgs = []string{
 	"kafkacluster",
 	"kafkauser",
 	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -598,6 +812,7 @@ var PlatformConfigOptionalArgs = []string{
 	"deploymenttag",
 	"crmaccessprivatekey",
 	"accessapiaddr",
+	"cachedir",
 }
 var PlatformConfigAliasArgs = []string{
 	"containerregistrypath=platformconfig.containerregistrypath",
@@ -620,6 +835,7 @@ var PlatformConfigAliasArgs = []string{
 	"deploymenttag=platformconfig.deploymenttag",
 	"crmaccessprivatekey=platformconfig.crmaccessprivatekey",
 	"accessapiaddr=platformconfig.accessapiaddr",
+	"cachedir=platformconfig.cachedir",
 }
 var PlatformConfigComments = map[string]string{
 	"containerregistrypath": "Path to Docker registry holding edge-cloud image",
@@ -642,6 +858,7 @@ var PlatformConfigComments = map[string]string{
 	"deploymenttag":         "Deployment Tag",
 	"crmaccessprivatekey":   "crm access private key",
 	"accessapiaddr":         "controller access API address",
+	"cachedir":              "cache dir",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"platformconfig.envvar": "StringToString",
@@ -696,6 +913,170 @@ var ResourceQuotaComments = map[string]string{
 	"alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 }
 var ResourceQuotaSpecialArgs = map[string]string{}
+var GPUDriverKeyRequiredArgs = []string{}
+var GPUDriverKeyOptionalArgs = []string{
+	"name",
+	"organization",
+}
+var GPUDriverKeyAliasArgs = []string{
+	"name=gpudriverkey.name",
+	"organization=gpudriverkey.organization",
+}
+var GPUDriverKeyComments = map[string]string{
+	"name":         "Name of the driver",
+	"organization": "Organization to which the driver belongs to",
+}
+var GPUDriverKeySpecialArgs = map[string]string{}
+var GPUDriverBuildRequiredArgs = []string{}
+var GPUDriverBuildOptionalArgs = []string{
+	"name",
+	"driverpath",
+	"driverpathcreds",
+	"operatingsystem",
+	"kernelversion",
+	"hypervisorinfo",
+}
+var GPUDriverBuildAliasArgs = []string{
+	"name=gpudriverbuild.name",
+	"driverpath=gpudriverbuild.driverpath",
+	"driverpathcreds=gpudriverbuild.driverpathcreds",
+	"operatingsystem=gpudriverbuild.operatingsystem",
+	"kernelversion=gpudriverbuild.kernelversion",
+	"hypervisorinfo=gpudriverbuild.hypervisorinfo",
+}
+var GPUDriverBuildComments = map[string]string{
+	"name":            "Unique identifier key",
+	"driverpath":      "Path where the driver package is located, if it is authenticated path, then credentials must be passed as part of URL (one-time download path)",
+	"driverpathcreds": "Optional credentials (username:password) to access driver path",
+	"operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
+	"kernelversion":   "Kernel Version supported by GPU driver build",
+	"hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
+}
+var GPUDriverBuildSpecialArgs = map[string]string{}
+var GPUDriverBuildMemberRequiredArgs = []string{
+	"gpudrivername",
+	"gpudriver-org",
+}
+var GPUDriverBuildMemberOptionalArgs = []string{
+	"build.name",
+	"build.driverpath",
+	"build.driverpathcreds",
+	"build.operatingsystem",
+	"build.kernelversion",
+	"build.hypervisorinfo",
+	"ignorestate",
+}
+var GPUDriverBuildMemberAliasArgs = []string{
+	"gpudrivername=gpudriverbuildmember.key.name",
+	"gpudriver-org=gpudriverbuildmember.key.organization",
+	"build.name=gpudriverbuildmember.build.name",
+	"build.driverpath=gpudriverbuildmember.build.driverpath",
+	"build.driverpathcreds=gpudriverbuildmember.build.driverpathcreds",
+	"build.operatingsystem=gpudriverbuildmember.build.operatingsystem",
+	"build.kernelversion=gpudriverbuildmember.build.kernelversion",
+	"build.hypervisorinfo=gpudriverbuildmember.build.hypervisorinfo",
+	"ignorestate=gpudriverbuildmember.ignorestate",
+}
+var GPUDriverBuildMemberComments = map[string]string{
+	"gpudrivername":         "Name of the driver",
+	"gpudriver-org":         "Organization to which the driver belongs to",
+	"build.name":            "Unique identifier key",
+	"build.driverpath":      "Path where the driver package is located, if it is authenticated path, then credentials must be passed as part of URL (one-time download path)",
+	"build.driverpathcreds": "Optional credentials (username:password) to access driver path",
+	"build.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
+	"build.kernelversion":   "Kernel Version supported by GPU driver build",
+	"build.hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
+	"ignorestate":           "Ignore state will ignore any action in-progress on the GPU driver",
+}
+var GPUDriverBuildMemberSpecialArgs = map[string]string{}
+var GPUDriverBuildURLRequiredArgs = []string{}
+var GPUDriverBuildURLOptionalArgs = []string{
+	"buildurlpath",
+	"validity",
+}
+var GPUDriverBuildURLAliasArgs = []string{
+	"buildurlpath=gpudriverbuildurl.buildurlpath",
+	"validity=gpudriverbuildurl.validity",
+}
+var GPUDriverBuildURLComments = map[string]string{
+	"buildurlpath": "Build URL path",
+	"validity":     "Build URL path validity",
+}
+var GPUDriverBuildURLSpecialArgs = map[string]string{}
+var GPUDriverRequiredArgs = []string{
+	"gpudrivername",
+}
+var GPUDriverOptionalArgs = []string{
+	"gpudriver-org",
+	"type",
+	"builds:#.name",
+	"builds:#.driverpath",
+	"builds:#.driverpathcreds",
+	"builds:#.operatingsystem",
+	"builds:#.kernelversion",
+	"builds:#.hypervisorinfo",
+	"licenseconfig",
+	"properties",
+	"ignorestate",
+}
+var GPUDriverAliasArgs = []string{
+	"fields=gpudriver.fields",
+	"gpudrivername=gpudriver.key.name",
+	"gpudriver-org=gpudriver.key.organization",
+	"type=gpudriver.type",
+	"builds:#.name=gpudriver.builds:#.name",
+	"builds:#.driverpath=gpudriver.builds:#.driverpath",
+	"builds:#.driverpathcreds=gpudriver.builds:#.driverpathcreds",
+	"builds:#.operatingsystem=gpudriver.builds:#.operatingsystem",
+	"builds:#.kernelversion=gpudriver.builds:#.kernelversion",
+	"builds:#.hypervisorinfo=gpudriver.builds:#.hypervisorinfo",
+	"licenseconfig=gpudriver.licenseconfig",
+	"properties=gpudriver.properties",
+	"state=gpudriver.state",
+	"ignorestate=gpudriver.ignorestate",
+}
+var GPUDriverComments = map[string]string{
+	"fields":                   "Fields are used for the Update API to specify which fields to apply",
+	"gpudrivername":            "Name of the driver",
+	"gpudriver-org":            "Organization to which the driver belongs to",
+	"type":                     "Type of GPU hardware, one of GpuTypeNone, GpuTypePassthrough, GpuTypeVgpu",
+	"builds:#.name":            "Unique identifier key",
+	"builds:#.driverpath":      "Path where the driver package is located, if it is authenticated path, then credentials must be passed as part of URL (one-time download path)",
+	"builds:#.driverpathcreds": "Optional credentials (username:password) to access driver path",
+	"builds:#.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
+	"builds:#.kernelversion":   "Kernel Version supported by GPU driver build",
+	"builds:#.hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
+	"licenseconfig":            "License config to setup license (will be stored in secure storage)",
+	"properties":               "Additional properties associated with GPU driver build For example: license server information, driver release date, etc",
+	"state":                    "State to figure out if any action on the GPU driver is in-progress",
+	"ignorestate":              "Ignore state will ignore any action in-progress on the GPU driver",
+}
+var GPUDriverSpecialArgs = map[string]string{
+	"gpudriver.fields":     "StringArray",
+	"gpudriver.properties": "StringToString",
+}
+var GPUConfigRequiredArgs = []string{}
+var GPUConfigOptionalArgs = []string{
+	"driver.name",
+	"driver.organization",
+	"gputype",
+	"properties",
+}
+var GPUConfigAliasArgs = []string{
+	"driver.name=gpuconfig.driver.name",
+	"driver.organization=gpuconfig.driver.organization",
+	"gputype=gpuconfig.gputype",
+	"properties=gpuconfig.properties",
+}
+var GPUConfigComments = map[string]string{
+	"driver.name":         "Name of the driver",
+	"driver.organization": "Organization to which the driver belongs to",
+	"gputype":             "Type of GPU hardware supported by the Cloudlet, one of GpuTypeNone, GpuTypePassthrough, GpuTypeVgpu",
+	"properties":          "Properties to identify specifics of GPU",
+}
+var GPUConfigSpecialArgs = map[string]string{
+	"gpuconfig.properties": "StringToString",
+}
 var CloudletRequiredArgs = []string{
 	"cloudlet-org",
 	"cloudlet",
@@ -740,6 +1121,9 @@ var CloudletOptionalArgs = []string{
 	"kafkacluster",
 	"kafkauser",
 	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -799,6 +1183,7 @@ var CloudletAliasArgs = []string{
 	"config.deploymenttag=cloudlet.config.deploymenttag",
 	"config.crmaccessprivatekey=cloudlet.config.crmaccessprivatekey",
 	"config.accessapiaddr=cloudlet.config.accessapiaddr",
+	"config.cachedir=cloudlet.config.cachedir",
 	"restagmap:#.key=cloudlet.restagmap:#.key",
 	"restagmap:#.value.name=cloudlet.restagmap:#.value.name",
 	"restagmap:#.value.organization=cloudlet.restagmap:#.value.organization",
@@ -828,6 +1213,10 @@ var CloudletAliasArgs = []string{
 	"kafkacluster=cloudlet.kafkacluster",
 	"kafkauser=cloudlet.kafkauser",
 	"kafkapassword=cloudlet.kafkapassword",
+	"gpuconfig.driver.name=cloudlet.gpuconfig.driver.name",
+	"gpuconfig.driver.organization=cloudlet.gpuconfig.driver.organization",
+	"gpuconfig.gputype=cloudlet.gpuconfig.gputype",
+	"gpuconfig.properties=cloudlet.gpuconfig.properties",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -879,6 +1268,7 @@ var CloudletComments = map[string]string{
 	"config.deploymenttag":                "Deployment Tag",
 	"config.crmaccessprivatekey":          "crm access private key",
 	"config.accessapiaddr":                "controller access API address",
+	"config.cachedir":                     "cache dir",
 	"restagmap:#.value.name":              "Resource Table Name",
 	"restagmap:#.value.organization":      "Operator organization of the cloudlet site.",
 	"accessvars":                          "Variables required to access cloudlet",
@@ -903,15 +1293,20 @@ var CloudletComments = map[string]string{
 	"kafkacluster":                        "operator provided kafka cluster endpoint to push events to",
 	"kafkauser":                           "username for kafka SASL/PLAIN authentification, stored securely in secret storage and never visible externally",
 	"kafkapassword":                       "password for kafka SASL/PLAIN authentification, stored securely in secret storage and never visible externally",
+	"gpuconfig.driver.name":               "Name of the driver",
+	"gpuconfig.driver.organization":       "Organization to which the driver belongs to",
+	"gpuconfig.gputype":                   "Type of GPU hardware supported by the Cloudlet, one of GpuTypeNone, GpuTypePassthrough, GpuTypeVgpu",
+	"gpuconfig.properties":                "Properties to identify specifics of GPU",
 }
 var CloudletSpecialArgs = map[string]string{
-	"cloudlet.accessvars":    "StringToString",
-	"cloudlet.chefclientkey": "StringToString",
-	"cloudlet.config.envvar": "StringToString",
-	"cloudlet.envvar":        "StringToString",
-	"cloudlet.errors":        "StringArray",
-	"cloudlet.fields":        "StringArray",
-	"cloudlet.status.msgs":   "StringArray",
+	"cloudlet.accessvars":           "StringToString",
+	"cloudlet.chefclientkey":        "StringToString",
+	"cloudlet.config.envvar":        "StringToString",
+	"cloudlet.envvar":               "StringToString",
+	"cloudlet.errors":               "StringArray",
+	"cloudlet.fields":               "StringArray",
+	"cloudlet.gpuconfig.properties": "StringToString",
+	"cloudlet.status.msgs":          "StringArray",
 }
 var FlavorMatchRequiredArgs = []string{
 	"cloudlet-org",

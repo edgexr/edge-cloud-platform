@@ -495,6 +495,103 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RemoveAppAutoProvPolicy", RemoveAppAutoProvPolicy)
+	// swagger:route POST /auth/ctrl/CreateGPUDriver GPUDriver CreateGPUDriver
+	// Create GPU Driver.
+	//  Creates GPU driver with all the config required to install it.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateGPUDriver", CreateGPUDriver)
+	// swagger:route POST /auth/ctrl/DeleteGPUDriver GPUDriver DeleteGPUDriver
+	// Delete GPU Driver.
+	//  Deletes GPU driver given that it is not used by any cloudlet.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteGPUDriver", DeleteGPUDriver)
+	// swagger:route POST /auth/ctrl/UpdateGPUDriver GPUDriver UpdateGPUDriver
+	// Update GPU Driver.
+	//  Updates GPU driver config.
+	// The following values should be added to `GPUDriver.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyName: 2.1
+	// KeyOrganization: 2.2
+	// Type: 3
+	// Builds: 4
+	// BuildsName: 4.1
+	// BuildsDriverPath: 4.2
+	// BuildsDriverPathCreds: 4.3
+	// BuildsOperatingSystem: 4.4
+	// BuildsKernelVersion: 4.5
+	// BuildsHypervisorInfo: 4.6
+	// LicenseConfig: 5
+	// Properties: 6
+	// PropertiesKey: 6.1
+	// PropertiesValue: 6.2
+	// State: 7
+	// IgnoreState: 8
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateGPUDriver", UpdateGPUDriver)
+	// swagger:route POST /auth/ctrl/ShowGPUDriver GPUDriver ShowGPUDriver
+	// Show GPU Drivers.
+	//  Lists all the MobiledgeX created GPU drivers and operator created GPU drivers.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowGPUDriver", ShowGPUDriver)
+	// swagger:route POST /auth/ctrl/AddGPUDriverBuild GPUDriverBuildMember AddGPUDriverBuild
+	// Add GPU Driver Build.
+	//  Adds new build to GPU driver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/AddGPUDriverBuild", AddGPUDriverBuild)
+	// swagger:route POST /auth/ctrl/RemoveGPUDriverBuild GPUDriverBuildMember RemoveGPUDriverBuild
+	// Remove GPU Driver Build.
+	//  Removes build from GPU driver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RemoveGPUDriverBuild", RemoveGPUDriverBuild)
+	// swagger:route POST /auth/ctrl/GetGPUDriverBuildURL GPUDriverBuildMember GetGPUDriverBuildURL
+	// Get GPU Driver Build URL.
+	//  Returns a time-limited signed URL to download GPU driver.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetGPUDriverBuildURL", GetGPUDriverBuildURL)
 	// swagger:route POST /auth/ctrl/CreateCloudlet Cloudlet CreateCloudlet
 	// Create Cloudlet.
 	//  Sets up Cloudlet services on the Operators compute resources, and integrated as part of MobiledgeX edge resource portfolio. These resources are managed from the Edge Controller.
@@ -589,6 +686,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ConfigDeploymentTag: 21.19
 	// ConfigCrmAccessPrivateKey: 21.22
 	// ConfigAccessApiAddr: 21.23
+	// ConfigCacheDir: 21.24
 	// ResTagMap: 22
 	// ResTagMapKey: 22.1
 	// ResTagMapValue: 22.2
@@ -628,6 +726,14 @@ func addControllerApis(method string, group *echo.Group) {
 	// KafkaCluster: 42
 	// KafkaUser: 43
 	// KafkaPassword: 44
+	// GpuConfig: 45
+	// GpuConfigDriver: 45.1
+	// GpuConfigDriverName: 45.1.1
+	// GpuConfigDriverOrganization: 45.1.2
+	// GpuConfigGpuType: 45.2
+	// GpuConfigProperties: 45.3
+	// GpuConfigPropertiesKey: 45.3.1
+	// GpuConfigPropertiesValue: 45.3.2
 	// ```
 	// Security:
 	//   Bearer:

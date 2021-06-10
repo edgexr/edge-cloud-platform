@@ -171,6 +171,30 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
+		} else if strings.Contains(req.RequestURI, "/auth/ctrl/CreateGPUDriver") ||
+			strings.Contains(req.RequestURI, "/auth/ctrl/UpdateGPUDriver") {
+			regionGPUDriver := ormapi.RegionGPUDriver{}
+			err := json.Unmarshal(reqBody, &regionGPUDriver)
+			if err == nil {
+				regionGPUDriver.GPUDriver.LicenseConfig = ""
+				for ii, _ := range regionGPUDriver.GPUDriver.Builds {
+					regionGPUDriver.GPUDriver.Builds[ii].DriverPathCreds = ""
+				}
+				reqBody, err = json.Marshal(regionGPUDriver)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
+		} else if strings.Contains(req.RequestURI, "/auth/ctrl/AddGPUDriverBuild") {
+			regionMember := ormapi.RegionGPUDriverBuildMember{}
+			err := json.Unmarshal(reqBody, &regionMember)
+			if err == nil {
+				regionMember.GPUDriverBuildMember.Build.DriverPathCreds = ""
+				reqBody, err = json.Marshal(regionMember)
+			}
+			if err != nil {
+				reqBody = []byte{}
+			}
 		}
 		span.SetTag("request", string(reqBody))
 		eventErr := nexterr

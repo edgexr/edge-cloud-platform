@@ -262,7 +262,7 @@ func (v *VcdPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *in
 			body := bufio.NewReader(file)
 			reqConfig.Headers = make(map[string]string)
 			reqConfig.Headers["Content-Type"] = "application/octet-stream"
-			resp, err := cloudcommon.SendHTTPReq(ctx, "PUT", uploadPath, v.vmProperties.CommonPf.PlatformConfig.AccessApi, &reqConfig, body)
+			resp, err := cloudcommon.SendHTTPReq(ctx, "PUT", uploadPath, v.vmProperties.CommonPf.PlatformConfig.AccessApi, cloudcommon.NoCreds, &reqConfig, body)
 			log.SpanLog(ctx, log.DebugLevelInfra, "File uploaded", "file", file, "resp", resp, "err", err)
 			file.Close()
 			if err != nil {

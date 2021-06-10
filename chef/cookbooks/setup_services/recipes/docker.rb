@@ -36,6 +36,13 @@ directory '/root/accesskey' do
   action :create
 end
 
+directory '/root/crm_cache' do
+  owner 'root'
+  group 'root'
+  mode '0700'
+  action :create
+end
+
 cmd = crmserver_cmd
 docker_container "crmserver" do
   Chef::Log.info("Start crmserver container, cmd: #{cmd}")
@@ -45,7 +52,7 @@ docker_container "crmserver" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['crmserver']['env']
-  volumes ['/var/tmp:/var/tmp', '/root/accesskey:/root/accesskey']
+  volumes ['/var/tmp:/var/tmp', '/root/accesskey:/root/accesskey', '/root/crm_cache:/root/crm_cache']
   command cmd
 end
 
