@@ -8,6 +8,7 @@ orgs:
 controllers:
 - region: local
   address: "127.0.0.1:55001"
+  notifyaddr: "127.0.0.1:37001"
   influxdb: "http://127.0.0.1:8086"
 
 regiondata:
