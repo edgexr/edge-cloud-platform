@@ -25,7 +25,7 @@ const (
 	ChefPolicyK8s    = "k8s_crm"
 
 	DefaultChefServerPath = "https://chef.mobiledgex.net/organizations/mobiledgex"
-	DefaultCacheDir       = "/root/cache_dir"
+	DefaultCacheDir       = "/root/crm_cache"
 )
 
 const (
