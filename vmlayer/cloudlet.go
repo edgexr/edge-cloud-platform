@@ -239,6 +239,10 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// save caches needed for flavors
 	v.Caches = caches
 
+	if cloudlet.GpuConfig.GpuType != edgeproto.GPUType_GPU_TYPE_NONE {
+		v.GPUConfig = cloudlet.GpuConfig
+	}
+
 	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
 	if err != nil {
 		return err
@@ -323,6 +327,8 @@ func (v *VMPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *
 func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
 	// Update envvars
 	v.VMProperties.CommonPf.Properties.UpdatePropsFromVars(ctx, cloudlet.EnvVar)
+	// Update GPU config
+	v.GPUConfig = cloudlet.GpuConfig
 	return nil
 }
 

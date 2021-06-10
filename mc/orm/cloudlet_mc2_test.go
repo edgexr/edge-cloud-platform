@@ -28,6 +28,220 @@ var _ = math.Inf
 
 var _ = edgeproto.GetFields
 
+func badPermCreateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermCreateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badCreateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, st, err := testutil.TestPermCreateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermCreateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermCreateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermDeleteGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermDeleteGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badDeleteGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, st, err := testutil.TestPermDeleteGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermDeleteGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermDeleteGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermUpdateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermUpdateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badUpdateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, st, err := testutil.TestPermUpdateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermUpdateGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermUpdateGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermShowGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermShowGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, st, err := testutil.TestPermShowGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermShowGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	_, status, err := testutil.TestPermShowGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermAddGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermAddGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badAddGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, st, err := testutil.TestPermAddGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermAddGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermAddGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermRemoveGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermRemoveGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRemoveGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, st, err := testutil.TestPermRemoveGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermRemoveGPUDriverBuild(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermRemoveGPUDriverBuild(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermGetGPUDriverBuildURL(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermGetGPUDriverBuildURL(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badGetGPUDriverBuildURL(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, st, err := testutil.TestPermGetGPUDriverBuildURL(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermGetGPUDriverBuildURL(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverBuildMember)) {
+	_, status, err := testutil.TestPermGetGPUDriverBuildURL(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) {
+	badPermCreateGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+func badPermTestShowGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	list, status, err := testutil.TestPermShowGPUDriver(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	goodPermCreateGPUDriver(t, mcClient, uri, token, region, org)
+	goodPermUpdateGPUDriver(t, mcClient, uri, token, region, org)
+	goodPermDeleteGPUDriver(t, mcClient, uri, token, region, org)
+
+	// make sure region check works
+	_, status, err := testutil.TestPermCreateGPUDriver(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
+	require.Equal(t, http.StatusBadRequest, status)
+	_, status, err = testutil.TestPermUpdateGPUDriver(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
+	require.Equal(t, http.StatusBadRequest, status)
+	_, status, err = testutil.TestPermDeleteGPUDriver(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
+	require.Equal(t, http.StatusBadRequest, status)
+
+	goodPermTestShowGPUDriver(t, mcClient, uri, token, region, org, showcount)
+}
+
+func goodPermTestShowGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	list, status, err := testutil.TestPermShowGPUDriver(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list))
+
+	// make sure region check works
+	list, status, err = testutil.TestPermShowGPUDriver(mcClient, uri, token, "bad region", org)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "\"bad region\" not found")
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, 0, len(list))
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.GPUDriver)) {
+	badPermTestGPUDriver(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestShowGPUDriver(t, mcClient, uri, token1, region, org2)
+	badPermTestGPUDriver(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowGPUDriver(t, mcClient, uri, token2, region, org1)
+
+	goodPermTestGPUDriver(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestGPUDriver(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+var _ = edgeproto.GetFields
+
 func badPermCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
 	_, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)

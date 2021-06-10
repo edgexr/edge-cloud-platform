@@ -21,6 +21,69 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
+// Request summary for CreateGPUDriver
+// swagger:parameters CreateGPUDriver
+type swaggerCreateGPUDriver struct {
+	// in: body
+	Body RegionGPUDriver
+}
+
+type RegionGPUDriver struct {
+	// required: true
+	// Region name
+	Region    string
+	GPUDriver edgeproto.GPUDriver
+}
+
+// Request summary for DeleteGPUDriver
+// swagger:parameters DeleteGPUDriver
+type swaggerDeleteGPUDriver struct {
+	// in: body
+	Body RegionGPUDriver
+}
+
+// Request summary for UpdateGPUDriver
+// swagger:parameters UpdateGPUDriver
+type swaggerUpdateGPUDriver struct {
+	// in: body
+	Body RegionGPUDriver
+}
+
+// Request summary for ShowGPUDriver
+// swagger:parameters ShowGPUDriver
+type swaggerShowGPUDriver struct {
+	// in: body
+	Body RegionGPUDriver
+}
+
+// Request summary for AddGPUDriverBuild
+// swagger:parameters AddGPUDriverBuild
+type swaggerAddGPUDriverBuild struct {
+	// in: body
+	Body RegionGPUDriverBuildMember
+}
+
+type RegionGPUDriverBuildMember struct {
+	// required: true
+	// Region name
+	Region               string
+	GPUDriverBuildMember edgeproto.GPUDriverBuildMember
+}
+
+// Request summary for RemoveGPUDriverBuild
+// swagger:parameters RemoveGPUDriverBuild
+type swaggerRemoveGPUDriverBuild struct {
+	// in: body
+	Body RegionGPUDriverBuildMember
+}
+
+// Request summary for GetGPUDriverBuildURL
+// swagger:parameters GetGPUDriverBuildURL
+type swaggerGetGPUDriverBuildURL struct {
+	// in: body
+	Body RegionGPUDriverBuildMember
+}
+
 // Request summary for CreateCloudlet
 // swagger:parameters CreateCloudlet
 type swaggerCreateCloudlet struct {

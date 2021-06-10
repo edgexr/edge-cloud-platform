@@ -220,6 +220,7 @@ func (s *AuthzCloudlet) Filter(obj *edgeproto.Cloudlet) {
 	obj.ResTagMap = output.ResTagMap
 	obj.TrustPolicy = output.TrustPolicy
 	obj.TrustPolicyState = output.TrustPolicyState
+	obj.GpuConfig = output.GpuConfig
 }
 
 func authzCreateCloudlet(ctx context.Context, region, username string, obj *edgeproto.Cloudlet, resource, action string) error {

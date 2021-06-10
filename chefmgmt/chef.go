@@ -25,6 +25,7 @@ const (
 	ChefPolicyK8s    = "k8s_crm"
 
 	DefaultChefServerPath = "https://chef.mobiledgex.net/organizations/mobiledgex"
+	DefaultCacheDir       = "/root/cache_dir"
 )
 
 const (
@@ -447,6 +448,8 @@ func GetChefCloudletAttributes(ctx context.Context, cloudlet *edgeproto.Cloudlet
 	if cloudlet.NotifySrvAddr == "127.0.0.1:0" {
 		cloudlet.NotifySrvAddr = ""
 	}
+
+	pfConfig.CacheDir = DefaultCacheDir
 
 	for _, serviceType := range PlatformServices {
 		serviceObj := make(map[string]interface{})

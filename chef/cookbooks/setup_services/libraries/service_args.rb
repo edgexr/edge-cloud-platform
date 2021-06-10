@@ -48,7 +48,8 @@ class Chef
         "deploymentTag" => true,
         "upgrade" => false,
         "accessKeyFile" => true,
-        "accessApiAddr" => true
+        "accessApiAddr" => true,
+        "cacheDir" => true
       }
       cmd = extract_cmd("crmserver", argsmap, false, false) 
       cmd
