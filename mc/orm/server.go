@@ -362,11 +362,71 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/user/create/apikey", CreateUserApiKey)
 	auth.POST("/user/delete/apikey", DeleteUserApiKey)
 	auth.POST("/user/show/apikey", ShowUserApiKey)
+	// swagger:route POST /auth/role/assignment/show Role ShowRoleAssignment
+	// Show Role Assignment.
+	// Show roles for the current user.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listRoles
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/assignment/show", ShowRoleAssignment)
+	// swagger:route POST /auth/role/perms/show Role ShowRolePerm
+	// Show Role Permissions.
+	// Show permissions associated with each role.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listPerms
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/perms/show", ShowRolePerms)
+	// swagger:route POST /auth/role/show Role ShowRoleNames
+	// Show Role Names.
+	// Show role names.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/show", ShowRole)
+	// swagger:route POST /auth/role/adduser Role AddUserRole
+	// Add User Role.
+	// Add a role for the organization to the user.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/adduser", AddUserRole)
+	// swagger:route POST /auth/role/removeuser Role RemoveUserRole
+	// Remove User Role.
+	// Remove the role for the organization from the user.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/removeuser", RemoveUserRole)
+	// swagger:route POST /auth/role/showuser Role ShowUserRole
+	// Show User Role.
+	// Show roles for the organizations the current user can add or remove roles to
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: listRoles
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
 	auth.POST("/role/showuser", ShowUserRole)
 	// swagger:route POST /auth/org/create Organization CreateOrg
 	// Create Organization.

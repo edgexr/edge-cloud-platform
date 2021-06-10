@@ -29,6 +29,18 @@ type swaggerShowUser struct {
 	Body ormapi.Organization
 }
 
+// swagger:parameters AddUserRole RemoveUserRole ShowUserRole ShowRoleAssignment
+type swaggerRole struct {
+	// in: body
+	Body ormapi.Role
+}
+
+// swagger:parameters ShowRolePerm
+type swaggerRolePerm struct {
+	// in: body
+	Body ormapi.RolePerm
+}
+
 // swagger:parameters PasswdReset
 type swaggerPasswdReset struct {
 	// in: body

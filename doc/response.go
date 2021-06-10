@@ -59,6 +59,20 @@ type swaggerListUsers struct {
 	Body []ormapi.User
 }
 
+// List of Roles
+// swagger:response listRoles
+type swaggerListRoles struct {
+	// in: body
+	Body []ormapi.Role
+}
+
+// List of Permissions
+// swagger:response listPerms
+type swaggerListPerms struct {
+	// in: body
+	Body []ormapi.RolePerm
+}
+
 // List of Orgs
 // swagger:response listOrgs
 type swaggerListOrgs struct {

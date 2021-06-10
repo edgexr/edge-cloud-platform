@@ -2,7 +2,7 @@
         "x-tagGroups": [
                 {
                         "name": "Auth & User Management API",
-                        "tags": ["Security", "User", "Organization"]
+                        "tags": ["Security", "User", "Role", "Organization"]
                 },
                 {
                         "name": "Operator API",
@@ -21,6 +21,10 @@
 		{
 			"name": "User",
 			"description": "Users can be assigned roles for Organizations, allowing them to view or manage resources associated with the Organizations."
+		},
+		{
+			"name": "Role",
+			"description": "Roles can be assigned to users for Organizations, allowing the users to view or manage resources associated with the Organizations."
 		},
 		{
 			"name": "Organization",
