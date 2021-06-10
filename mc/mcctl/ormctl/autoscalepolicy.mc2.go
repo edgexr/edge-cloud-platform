@@ -129,20 +129,6 @@ var CreateAutoScalePolicyOptionalArgs = []string{
 	"scaledowncputhresh",
 	"triggertimesec",
 }
-var PolicyKeyRequiredArgs = []string{}
-var PolicyKeyOptionalArgs = []string{
-	"organization",
-	"name",
-}
-var PolicyKeyAliasArgs = []string{
-	"organization=policykey.organization",
-	"name=policykey.name",
-}
-var PolicyKeyComments = map[string]string{
-	"organization": "Name of the organization for the cluster that this policy will apply to",
-	"name":         "Policy name",
-}
-var PolicyKeySpecialArgs = map[string]string{}
 var AutoScalePolicyRequiredArgs = []string{
 	"cluster-org",
 	"name",

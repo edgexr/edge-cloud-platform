@@ -124,26 +124,6 @@ func init() {
 	AllApis.AddGroup(TrustPolicyGroup, "Manage TrustPolicys", TrustPolicyApiCmds)
 }
 
-var SecurityRuleRequiredArgs = []string{}
-var SecurityRuleOptionalArgs = []string{
-	"protocol",
-	"portrangemin",
-	"portrangemax",
-	"remotecidr",
-}
-var SecurityRuleAliasArgs = []string{
-	"protocol=securityrule.protocol",
-	"portrangemin=securityrule.portrangemin",
-	"portrangemax=securityrule.portrangemax",
-	"remotecidr=securityrule.remotecidr",
-}
-var SecurityRuleComments = map[string]string{
-	"protocol":     "tcp, udp, icmp",
-	"portrangemin": "TCP or UDP port range start",
-	"portrangemax": "TCP or UDP port range end",
-	"remotecidr":   "remote CIDR X.X.X.X/X",
-}
-var SecurityRuleSpecialArgs = map[string]string{}
 var TrustPolicyRequiredArgs = []string{
 	"cloudlet-org",
 	"name",

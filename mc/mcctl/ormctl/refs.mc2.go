@@ -99,50 +99,6 @@ func init() {
 	AllApis.AddGroup(AppInstRefsGroup, "Manage AppInstRefs", AppInstRefsApiCmds)
 }
 
-var VMResourceRequiredArgs = []string{
-	"key.clusterkey.name",
-	"key.cloudletkey.organization",
-	"key.cloudletkey.name",
-	"key.organization",
-}
-var VMResourceOptionalArgs = []string{
-	"vmflavor.name",
-	"vmflavor.vcpus",
-	"vmflavor.ram",
-	"vmflavor.disk",
-	"vmflavor.propmap",
-	"type",
-	"appaccesstype",
-}
-var VMResourceAliasArgs = []string{
-	"key.clusterkey.name=vmresource.key.clusterkey.name",
-	"key.cloudletkey.organization=vmresource.key.cloudletkey.organization",
-	"key.cloudletkey.name=vmresource.key.cloudletkey.name",
-	"key.organization=vmresource.key.organization",
-	"vmflavor.name=vmresource.vmflavor.name",
-	"vmflavor.vcpus=vmresource.vmflavor.vcpus",
-	"vmflavor.ram=vmresource.vmflavor.ram",
-	"vmflavor.disk=vmresource.vmflavor.disk",
-	"vmflavor.propmap=vmresource.vmflavor.propmap",
-	"type=vmresource.type",
-	"appaccesstype=vmresource.appaccesstype",
-}
-var VMResourceComments = map[string]string{
-	"key.clusterkey.name":          "Cluster name",
-	"key.cloudletkey.organization": "Organization of the cloudlet site",
-	"key.cloudletkey.name":         "Name of the cloudlet",
-	"key.organization":             "Name of Developer organization that this cluster belongs to",
-	"vmflavor.name":                "Name of the flavor on the Cloudlet",
-	"vmflavor.vcpus":               "Number of VCPU cores on the Cloudlet",
-	"vmflavor.ram":                 "Ram in MB on the Cloudlet",
-	"vmflavor.disk":                "Amount of disk in GB on the Cloudlet",
-	"vmflavor.propmap":             "OS Flavor Properties, if any",
-	"type":                         "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
-	"appaccesstype":                "Access type for resource of type App VM, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
-}
-var VMResourceSpecialArgs = map[string]string{
-	"vmresource.vmflavor.propmap": "StringToString",
-}
 var CloudletRefsRequiredArgs = []string{
 	"key.organization",
 	"key.name",

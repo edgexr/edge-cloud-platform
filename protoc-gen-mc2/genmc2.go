@@ -23,6 +23,7 @@ type GenMC2 struct {
 	tmplMethodCtl      *template.Template
 	tmplMessageTest    *template.Template
 	regionStructs      map[string]struct{}
+	inputMessages      map[string]*generator.Descriptor
 	firstFile          bool
 	genapi             bool
 	gentest            bool
@@ -147,6 +148,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.gentest = g.hasParam("gentest")
 	g.gentestutil = g.hasParam("gentestutil")
 	g.genctl = g.hasParam("genctl")
+	g.inputMessages = gensupport.GetInputMessages(g.Generator, &g.support)
 	if !g.genFile(file) {
 		return
 	}
@@ -172,6 +174,10 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	}
 	if g.genctl {
 		for ii, msg := range file.Messages() {
+			_, found := g.inputMessages[*msg.DescriptorProto.Name]
+			if !found {
+				continue
+			}
 			gensupport.GenerateMessageArgs(g.Generator, &g.support, msg, true, ii)
 		}
 	}
@@ -204,6 +210,14 @@ func (g *GenMC2) genFile(file *generator.FileDescriptor) bool {
 				if GetMc2Api(method) != "" {
 					return true
 				}
+			}
+		}
+	}
+	if g.genctl {
+		for _, msg := range file.Messages() {
+			_, found := g.inputMessages[*msg.DescriptorProto.Name]
+			if found {
+				return true
 			}
 		}
 	}
