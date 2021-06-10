@@ -80,8 +80,24 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
 		return imgFromProps, nil
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "CloudletVMImagePath", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, "version", v.VMProperties.CommonPf.PlatformConfig.VMImageVersion)
-	return v.VMProvider.AddCloudletImageIfNotPresent(ctx, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, updateCallback)
+
+	// imageBasePath is the path minus the file
+	imageBasePath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	if imageBasePath != "" {
+		imageBasePath = DefaultCloudletVMImagePath
+	}
+	imageVersion := v.VMProperties.CommonPf.PlatformConfig.VMImageVersion
+	if imageVersion == "" {
+		imageVersion = MEXInfraVersion
+	}
+	imageName := GetCloudletVMImageName(imageVersion)
+	cloudletImagePath := GetCloudletVMImagePath(imageBasePath, imageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
+	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageName", imageName, "imageVersion", imageVersion)
+	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
+	if err != nil {
+		return "", fmt.Errorf("unable to get URL info for cloudlet image: %s - %v", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, err)
+	}
+	return imageName, v.VMProvider.AddCloudletImageIfNotPresent(ctx, cloudletImagePath, md5Sum, updateCallback)
 }
 
 // setupPlatformVM:
