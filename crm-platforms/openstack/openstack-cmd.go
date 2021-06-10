@@ -1016,36 +1016,42 @@ func (o *OpenstackPlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
 }
 
-func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPathPrefix, imgVersion string, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
-	imgPath := vmlayer.GetCloudletVMImagePath(imgPathPrefix, imgVersion, s.GetCloudletImageSuffix(ctx))
+func (s *OpenstackPlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPath, imgMd5sum string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddCloudletImageIfNotPresent", "imgPath", imgPath, "imgMd5sum", imgMd5sum)
 
 	// Fetch platform base image name
 	pfImageName, err := cloudcommon.GetFileName(imgPath)
 	if err != nil {
-		return "", err
+		return err
+	}
+	_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imgPath)
+	if err != nil {
+		return err
 	}
 	// Use PlatformBaseImage, if not present then fetch it from MobiledgeX VM registry
 	imageDetail, err := s.GetImageDetail(ctx, pfImageName)
-	if err == nil && imageDetail.Status != "active" {
-		return "", fmt.Errorf("image %s is not active", pfImageName)
+	if err == nil {
+		if imageDetail.Status != "active" {
+			return fmt.Errorf("image %s is not active", pfImageName)
+		}
+		if imageDetail.Checksum != imgMd5sum {
+			return fmt.Errorf("mismatch in md5sum for baseimage %s in glance -- expected md5sum: %s, actual md5sum: %s", pfImageName, imgMd5sum, imageDetail.Checksum)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "image md5sum validated ok")
+
 	}
 	if err != nil {
 		if !strings.Contains(err.Error(), ResourceNotFound) {
-			return "", err
-		}
-		// Validate if pfImageName is same as we expected
-		_, md5Sum, err := infracommon.GetUrlInfo(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imgPath)
-		if err != nil {
-			return "", err
+			return err
 		}
 		// Download platform base image and Add to Openstack Glance
 		updateCallback(edgeproto.UpdateTask, "Downloading platform base image: "+pfImageName)
 		err = s.CreateImageFromUrl(ctx, pfImageName, imgPath, md5Sum)
 		if err != nil {
-			return "", fmt.Errorf("Error downloading platform base image %s: %v", pfImageName, err)
+			return fmt.Errorf("Error downloading platform base image %s: %v", pfImageName, err)
 		}
 	}
-	return pfImageName, nil
+	return nil
 }
 
 func (s *OpenstackPlatform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
