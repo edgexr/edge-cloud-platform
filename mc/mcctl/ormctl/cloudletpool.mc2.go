@@ -155,20 +155,6 @@ func init() {
 	AllApis.AddGroup(CloudletPoolGroup, "Manage CloudletPools", CloudletPoolApiCmds)
 }
 
-var CloudletPoolKeyRequiredArgs = []string{}
-var CloudletPoolKeyOptionalArgs = []string{
-	"organization",
-	"name",
-}
-var CloudletPoolKeyAliasArgs = []string{
-	"organization=cloudletpoolkey.organization",
-	"name=cloudletpoolkey.name",
-}
-var CloudletPoolKeyComments = map[string]string{
-	"organization": "Name of the organization this pool belongs to",
-	"name":         "CloudletPool Name",
-}
-var CloudletPoolKeySpecialArgs = map[string]string{}
 var CloudletPoolRequiredArgs = []string{
 	"org",
 	"name",

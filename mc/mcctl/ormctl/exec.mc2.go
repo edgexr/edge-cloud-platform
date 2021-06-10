@@ -147,68 +147,6 @@ var AccessCloudletOptionalArgs = []string{
 	"node-type",
 	"node-name",
 }
-var CloudletMgmtNodeRequiredArgs = []string{}
-var CloudletMgmtNodeOptionalArgs = []string{
-	"type",
-	"name",
-}
-var CloudletMgmtNodeAliasArgs = []string{
-	"type=cloudletmgmtnode.type",
-	"name=cloudletmgmtnode.name",
-}
-var CloudletMgmtNodeComments = map[string]string{
-	"type": "Type of Cloudlet Mgmt Node",
-	"name": "Name of Cloudlet Mgmt Node",
-}
-var CloudletMgmtNodeSpecialArgs = map[string]string{}
-var RunCmdRequiredArgs = []string{}
-var RunCmdOptionalArgs = []string{
-	"command",
-	"cloudletmgmtnode.type",
-	"cloudletmgmtnode.name",
-}
-var RunCmdAliasArgs = []string{
-	"command=runcmd.command",
-	"cloudletmgmtnode.type=runcmd.cloudletmgmtnode.type",
-	"cloudletmgmtnode.name=runcmd.cloudletmgmtnode.name",
-}
-var RunCmdComments = map[string]string{
-	"command":               "Command or Shell",
-	"cloudletmgmtnode.type": "Type of Cloudlet Mgmt Node",
-	"cloudletmgmtnode.name": "Name of Cloudlet Mgmt Node",
-}
-var RunCmdSpecialArgs = map[string]string{}
-var RunVMConsoleRequiredArgs = []string{}
-var RunVMConsoleOptionalArgs = []string{
-	"url",
-}
-var RunVMConsoleAliasArgs = []string{
-	"url=runvmconsole.url",
-}
-var RunVMConsoleComments = map[string]string{
-	"url": "VM Console URL",
-}
-var RunVMConsoleSpecialArgs = map[string]string{}
-var ShowLogRequiredArgs = []string{}
-var ShowLogOptionalArgs = []string{
-	"since",
-	"tail",
-	"timestamps",
-	"follow",
-}
-var ShowLogAliasArgs = []string{
-	"since=showlog.since",
-	"tail=showlog.tail",
-	"timestamps=showlog.timestamps",
-	"follow=showlog.follow",
-}
-var ShowLogComments = map[string]string{
-	"since":      "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
-	"tail":       "Show only a recent number of lines",
-	"timestamps": "Show timestamps",
-	"follow":     "Stream data",
-}
-var ShowLogSpecialArgs = map[string]string{}
 var ExecRequestRequiredArgs = []string{
 	"app-org",
 	"appname",

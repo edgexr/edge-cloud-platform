@@ -155,54 +155,6 @@ func init() {
 	AllApis.AddGroup(AppGroup, "Manage Apps", AppApiCmds)
 }
 
-var RemoteConnectionRequiredArgs = []string{}
-var RemoteConnectionOptionalArgs = []string{
-	"protocol",
-	"port",
-	"remoteip",
-}
-var RemoteConnectionAliasArgs = []string{
-	"protocol=remoteconnection.protocol",
-	"port=remoteconnection.port",
-	"remoteip=remoteconnection.remoteip",
-}
-var RemoteConnectionComments = map[string]string{
-	"protocol": "tcp, udp or icmp",
-	"port":     "TCP or UDP port",
-	"remoteip": "remote IP X.X.X.X",
-}
-var RemoteConnectionSpecialArgs = map[string]string{}
-var AppKeyRequiredArgs = []string{}
-var AppKeyOptionalArgs = []string{
-	"organization",
-	"name",
-	"version",
-}
-var AppKeyAliasArgs = []string{
-	"organization=appkey.organization",
-	"name=appkey.name",
-	"version=appkey.version",
-}
-var AppKeyComments = map[string]string{
-	"organization": "App developer organization",
-	"name":         "App name",
-	"version":      "App version",
-}
-var AppKeySpecialArgs = map[string]string{}
-var ConfigFileRequiredArgs = []string{}
-var ConfigFileOptionalArgs = []string{
-	"kind",
-	"config",
-}
-var ConfigFileAliasArgs = []string{
-	"kind=configfile.kind",
-	"config=configfile.config",
-}
-var ConfigFileComments = map[string]string{
-	"kind":   "Kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
-	"config": "Config file contents or URI reference",
-}
-var ConfigFileSpecialArgs = map[string]string{}
 var AppRequiredArgs = []string{
 	"app-org",
 	"appname",
@@ -329,23 +281,6 @@ var AppSpecialArgs = map[string]string{
 	"app.autoprovpolicies": "StringArray",
 	"app.fields":           "StringArray",
 }
-var ServerlessConfigRequiredArgs = []string{}
-var ServerlessConfigOptionalArgs = []string{
-	"vcpus",
-	"ram",
-	"minreplicas",
-}
-var ServerlessConfigAliasArgs = []string{
-	"vcpus=serverlessconfig.vcpus",
-	"ram=serverlessconfig.ram",
-	"minreplicas=serverlessconfig.minreplicas",
-}
-var ServerlessConfigComments = map[string]string{
-	"vcpus":       "Virtual CPUs allocation per container when serverless, may be fractional in increments of 0.001",
-	"ram":         "RAM allocation in megabytes per container when serverless",
-	"minreplicas": "Minimum number of replicas when serverless",
-}
-var ServerlessConfigSpecialArgs = map[string]string{}
 var AppAutoProvPolicyRequiredArgs = []string{
 	"app-org",
 	"appname",

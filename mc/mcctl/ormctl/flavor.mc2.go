@@ -159,17 +159,6 @@ var CreateFlavorRequiredArgs = []string{
 var CreateFlavorOptionalArgs = []string{
 	"optresmap",
 }
-var FlavorKeyRequiredArgs = []string{}
-var FlavorKeyOptionalArgs = []string{
-	"name",
-}
-var FlavorKeyAliasArgs = []string{
-	"name=flavorkey.name",
-}
-var FlavorKeyComments = map[string]string{
-	"name": "Flavor name",
-}
-var FlavorKeySpecialArgs = map[string]string{}
 var FlavorRequiredArgs = []string{
 	"name",
 }

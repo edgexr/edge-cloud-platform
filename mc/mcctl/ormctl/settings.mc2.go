@@ -206,14 +206,3 @@ var SettingsComments = map[string]string{
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",
 }
-var CollectionIntervalRequiredArgs = []string{}
-var CollectionIntervalOptionalArgs = []string{
-	"interval",
-}
-var CollectionIntervalAliasArgs = []string{
-	"interval=collectioninterval.interval",
-}
-var CollectionIntervalComments = map[string]string{
-	"interval": "Collection interval for Influxdb (Specifically used for continuous query intervals)",
-}
-var CollectionIntervalSpecialArgs = map[string]string{}

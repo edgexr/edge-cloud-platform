@@ -125,20 +125,6 @@ var DeviceReportComments = map[string]string{
 	"end.nanos":        "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
 }
 var DeviceReportSpecialArgs = map[string]string{}
-var DeviceKeyRequiredArgs = []string{}
-var DeviceKeyOptionalArgs = []string{
-	"uniqueidtype",
-	"uniqueid",
-}
-var DeviceKeyAliasArgs = []string{
-	"uniqueidtype=devicekey.uniqueidtype",
-	"uniqueid=devicekey.uniqueid",
-}
-var DeviceKeyComments = map[string]string{
-	"uniqueidtype": "Type of unique ID provided by the client",
-	"uniqueid":     "Unique identification of the client device or user. May be overridden by the server.",
-}
-var DeviceKeySpecialArgs = map[string]string{}
 var DeviceRequiredArgs = []string{
 	"key.uniqueidtype",
 	"key.uniqueid",
@@ -171,37 +157,4 @@ var DeviceComments = map[string]string{
 }
 var DeviceSpecialArgs = map[string]string{
 	"device.fields": "StringArray",
-}
-var DeviceDataRequiredArgs = []string{}
-var DeviceDataOptionalArgs = []string{
-	"devices:#.fields",
-	"devices:#.key.uniqueidtype",
-	"devices:#.key.uniqueid",
-	"devices:#.firstseen.seconds",
-	"devices:#.firstseen.nanos",
-	"devices:#.lastseen.seconds",
-	"devices:#.lastseen.nanos",
-	"devices:#.notifyid",
-}
-var DeviceDataAliasArgs = []string{
-	"devices:#.fields=devicedata.devices:#.fields",
-	"devices:#.key.uniqueidtype=devicedata.devices:#.key.uniqueidtype",
-	"devices:#.key.uniqueid=devicedata.devices:#.key.uniqueid",
-	"devices:#.firstseen.seconds=devicedata.devices:#.firstseen.seconds",
-	"devices:#.firstseen.nanos=devicedata.devices:#.firstseen.nanos",
-	"devices:#.lastseen.seconds=devicedata.devices:#.lastseen.seconds",
-	"devices:#.lastseen.nanos=devicedata.devices:#.lastseen.nanos",
-	"devices:#.notifyid=devicedata.devices:#.notifyid",
-}
-var DeviceDataComments = map[string]string{
-	"devices:#.key.uniqueidtype":  "Type of unique ID provided by the client",
-	"devices:#.key.uniqueid":      "Unique identification of the client device or user. May be overridden by the server.",
-	"devices:#.firstseen.seconds": "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"devices:#.firstseen.nanos":   "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"devices:#.lastseen.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"devices:#.lastseen.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"devices:#.notifyid":          "Id of client assigned by server (internal use only)",
-}
-var DeviceDataSpecialArgs = map[string]string{
-	"devicedata.devices:#.fields": "StringArray",
 }

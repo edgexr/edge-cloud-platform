@@ -245,26 +245,6 @@ func init() {
 	AllApis.AddGroup(AppInstLatencyGroup, "Manage AppInstLatencys", AppInstLatencyApiCmds)
 }
 
-var VirtualClusterInstKeyRequiredArgs = []string{}
-var VirtualClusterInstKeyOptionalArgs = []string{
-	"clusterkey.name",
-	"cloudletkey.organization",
-	"cloudletkey.name",
-	"organization",
-}
-var VirtualClusterInstKeyAliasArgs = []string{
-	"clusterkey.name=virtualclusterinstkey.clusterkey.name",
-	"cloudletkey.organization=virtualclusterinstkey.cloudletkey.organization",
-	"cloudletkey.name=virtualclusterinstkey.cloudletkey.name",
-	"organization=virtualclusterinstkey.organization",
-}
-var VirtualClusterInstKeyComments = map[string]string{
-	"clusterkey.name":          "Cluster name",
-	"cloudletkey.organization": "Organization of the cloudlet site",
-	"cloudletkey.name":         "Name of the cloudlet",
-	"organization":             "Name of Developer organization that this cluster belongs to",
-}
-var VirtualClusterInstKeySpecialArgs = map[string]string{}
 var AppInstKeyRequiredArgs = []string{}
 var AppInstKeyOptionalArgs = []string{
 	"appkey.organization",
@@ -423,19 +403,6 @@ var AppInstSpecialArgs = map[string]string{
 	"appinst.runtimeinfo.containerids": "StringArray",
 	"appinst.status.msgs":              "StringArray",
 }
-var AppInstRuntimeRequiredArgs = []string{}
-var AppInstRuntimeOptionalArgs = []string{
-	"containerids",
-}
-var AppInstRuntimeAliasArgs = []string{
-	"containerids=appinstruntime.containerids",
-}
-var AppInstRuntimeComments = map[string]string{
-	"containerids": "List of container names",
-}
-var AppInstRuntimeSpecialArgs = map[string]string{
-	"appinstruntime.containerids": "StringArray",
-}
 var AppInstInfoRequiredArgs = []string{
 	"key.appkey.organization",
 	"key.appkey.name",
@@ -514,78 +481,6 @@ var AppInstMetricsComments = map[string]string{
 	"something": "what goes here? Note that metrics for grpc calls can be done by a prometheus interceptor in grpc, so adding call metrics here may be redundant unless theyre needed for billing.",
 }
 var AppInstMetricsSpecialArgs = map[string]string{}
-var AppInstLookupRequiredArgs = []string{
-	"key.appkey.organization",
-	"key.appkey.name",
-	"key.appkey.version",
-	"key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization",
-}
-var AppInstLookupOptionalArgs = []string{
-	"policykey.organization",
-	"policykey.name",
-}
-var AppInstLookupAliasArgs = []string{
-	"key.appkey.organization=appinstlookup.key.appkey.organization",
-	"key.appkey.name=appinstlookup.key.appkey.name",
-	"key.appkey.version=appinstlookup.key.appkey.version",
-	"key.clusterinstkey.clusterkey.name=appinstlookup.key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization=appinstlookup.key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name=appinstlookup.key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization=appinstlookup.key.clusterinstkey.organization",
-	"policykey.organization=appinstlookup.policykey.organization",
-	"policykey.name=appinstlookup.policykey.name",
-}
-var AppInstLookupComments = map[string]string{
-	"key.appkey.organization":                     "App developer organization",
-	"key.appkey.name":                             "App name",
-	"key.appkey.version":                          "App version",
-	"key.clusterinstkey.clusterkey.name":          "Cluster name",
-	"key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
-	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
-	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
-	"policykey.organization":                      "Name of the organization for the cluster that this policy will apply to",
-	"policykey.name":                              "Policy name",
-}
-var AppInstLookupSpecialArgs = map[string]string{}
-var AppInstLookup2RequiredArgs = []string{
-	"key.appkey.organization",
-	"key.appkey.name",
-	"key.appkey.version",
-	"key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization",
-}
-var AppInstLookup2OptionalArgs = []string{
-	"cloudletkey.organization",
-	"cloudletkey.name",
-}
-var AppInstLookup2AliasArgs = []string{
-	"key.appkey.organization=appinstlookup2.key.appkey.organization",
-	"key.appkey.name=appinstlookup2.key.appkey.name",
-	"key.appkey.version=appinstlookup2.key.appkey.version",
-	"key.clusterinstkey.clusterkey.name=appinstlookup2.key.clusterinstkey.clusterkey.name",
-	"key.clusterinstkey.cloudletkey.organization=appinstlookup2.key.clusterinstkey.cloudletkey.organization",
-	"key.clusterinstkey.cloudletkey.name=appinstlookup2.key.clusterinstkey.cloudletkey.name",
-	"key.clusterinstkey.organization=appinstlookup2.key.clusterinstkey.organization",
-	"cloudletkey.organization=appinstlookup2.cloudletkey.organization",
-	"cloudletkey.name=appinstlookup2.cloudletkey.name",
-}
-var AppInstLookup2Comments = map[string]string{
-	"key.appkey.organization":                     "App developer organization",
-	"key.appkey.name":                             "App name",
-	"key.appkey.version":                          "App version",
-	"key.clusterinstkey.clusterkey.name":          "Cluster name",
-	"key.clusterinstkey.cloudletkey.organization": "Organization of the cloudlet site",
-	"key.clusterinstkey.cloudletkey.name":         "Name of the cloudlet",
-	"key.clusterinstkey.organization":             "Name of Developer organization that this cluster belongs to",
-	"cloudletkey.organization":                    "Organization of the cloudlet site",
-	"cloudletkey.name":                            "Name of the cloudlet",
-}
-var AppInstLookup2SpecialArgs = map[string]string{}
 var AppInstLatencyRequiredArgs = []string{
 	"app-org",
 	"appname",
