@@ -176,11 +176,6 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 	metric.AddTag("cloudletorg", clusterInstKey.CloudletKey.Organization)
 	metric.AddTag("cloudlet", clusterInstKey.CloudletKey.Name)
 	metric.AddTag("cluster", clusterInstKey.ClusterKey.Name)
-	if reservedBy != "" {
-		metric.AddTag("clusterorg", reservedBy)
-	} else {
-		metric.AddTag("clusterorg", clusterInstKey.Organization)
-	}
 	if key != nil {
 		metric.AddStringVal("pod", key.Pod)
 		metric.AddTag("app", key.App)
@@ -190,6 +185,13 @@ func newMetric(clusterInstKey edgeproto.ClusterInstKey, reservedBy string, name 
 			metric.AddTag("apporg", reservedBy)
 		} else {
 			metric.AddTag("apporg", clusterInstKey.Organization)
+		}
+		metric.AddTag("clusterorg", clusterInstKey.Organization)
+	} else {
+		if reservedBy != "" {
+			metric.AddTag("clusterorg", reservedBy)
+		} else {
+			metric.AddTag("clusterorg", clusterInstKey.Organization)
 		}
 	}
 	return &metric
