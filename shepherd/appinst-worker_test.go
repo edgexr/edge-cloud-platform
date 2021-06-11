@@ -54,8 +54,8 @@ func TestVmStats(t *testing.T) {
 		VmAppInstMetrics: string(buf),
 	}
 	edgeproto.InitAppInstCache(&AppInstCache)
-	worker, err := NewAppInstWorker(ctx, time.Second*1, nil, &testAppInstVm, &pf)
-	assert.Nil(t, err, "Get worker for unit test Vm")
+	worker := NewAppInstWorker(ctx, time.Second*1, nil, &testAppInstVm, &pf)
+	assert.NotNil(t, worker, "Get worker for unit test Vm")
 	appsMetrics, err := worker.pf.GetVmStats(ctx, &testAppInstVm.Key)
 
 	assert.Nil(t, err, "Fill stats from json")

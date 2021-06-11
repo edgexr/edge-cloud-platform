@@ -3,8 +3,13 @@ package vcd
 import (
 	"context"
 	"fmt"
+	"math"
+	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
+	prototypes "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 
@@ -12,12 +17,32 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	vcdtypes "github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 type VcdResources struct {
 	VmsUsed         uint64
 	ExternalIpsUsed uint64
+}
+
+// cachedVdc is used for VM app metrics
+var cachedVdc *govcd.Vdc
+var lastCachedVdcRefreshTime time.Time
+
+var ChangeSinceLastVmAppStats bool
+
+const CurrentVmMetrics string = "application/vnd.vmware.vcloud.metrics.currentUsageSpec+xml"
+
+type GovcdMetric struct {
+	Name  string `xml:"name,attr,omitempty"`
+	Unit  string `xml:"unit,attr,omitempty"`
+	Value string `xml:"value,attr,omitempty"`
+}
+type GovcdMetricList []*GovcdMetric
+type GovcdMetricsResponse struct {
+	Link   types.LinkList  `xml:"Link,omitempty"`
+	Metric GovcdMetricList `xml:"Metric,omitempty"`
 }
 
 func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
@@ -225,4 +250,104 @@ func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cl
 	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, vRes.ExternalIpsUsed)
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterAdditionalResourceMetric Reports", "numVmsUsed", vRes.VmsUsed, "external IPsUsed", vRes.ExternalIpsUsed)
 	return nil
+}
+
+// GetVdcFromCacheForVmStats gets a cached VDC object pointer or get a new one if the cache is stale, i.e.
+// it changed since last accessed or if the cached pointer is older than GetVmAppVdcMaxCacheTime.  This allows
+// the VDC and Org APIs to be done only once per collection interval for all VM Apps.
+func (v *VcdPlatform) GetVdcFromCacheForVmStats(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.Vdc, error) {
+	m, err := v.GetVmAppStatsVdcMaxCacheTime()
+	if err != nil {
+		return nil, err
+	}
+	maxCacheTime := time.Second * time.Duration(m)
+	elapsed := time.Since(lastCachedVdcRefreshTime)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats", "maxCacheTime", maxCacheTime, "lastCachedVdcRefreshTime", lastCachedVdcRefreshTime, "elapsed", elapsed, "changed", ChangeSinceLastVmAppStats)
+
+	if elapsed < maxCacheTime && cachedVdc != nil && !ChangeSinceLastVmAppStats {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats return cached vdc")
+		return cachedVdc, nil
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats get new VDC")
+	cachedVdc, err = v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "GetVdcFromCacheForVmStats failed to get new VDC", "err", err)
+		return nil, fmt.Errorf("GetVdc Failed - %v", err)
+	}
+	ChangeSinceLastVmAppStats = false
+	lastCachedVdcRefreshTime = time.Now()
+	return cachedVdc, nil
+}
+
+func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context) {
+	ChangeSinceLastVmAppStats = true
+}
+
+func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats", "key", key)
+
+	vm := &govcd.VM{}
+	metrics := vmlayer.VMMetrics{}
+	var err error
+
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
+		return nil, fmt.Errorf(NoVCDClientInContext, err)
+	}
+	vdc, err := v.GetVdcFromCacheForVmStats(ctx, vcdClient)
+	if err != nil {
+		return nil, fmt.Errorf("GetVdcFromCacheForVmStats Failed - %v", err)
+	}
+
+	vmName := cloudcommon.GetAppFQN(&key.AppKey)
+	if vmName == "" {
+		return nil, fmt.Errorf("GetAppFQN failed to return vmName for AppInst %s\n", key.AppKey.Name)
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats for", "vm", vmName)
+
+	vm, err = v.FindVMByName(ctx, vmName, vcdClient, vdc)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats vm not found", "vnname", vmName)
+		return nil, err
+	}
+	link := vm.VM.Link.ForType(CurrentVmMetrics, types.RelMetrics)
+	if link == nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics for VM", "vmName", vmName)
+		return nil, fmt.Errorf("Unable to get metrics for VM: %s", vmName)
+	}
+	var metricsResponse GovcdMetricsResponse
+	response, err := vcdClient.Client.ExecuteRequest(link.HREF, http.MethodGet, "", "error GET retriving metrics link: %s", nil, &metricsResponse)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "VCD Get VM Metrics results", "statusCode", response.StatusCode, "metricsResponse", metricsResponse, "err", err)
+	if err != nil || response.StatusCode != http.StatusOK {
+		log.ForceLogSpan(log.SpanFromContext(ctx))
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Error getting VCD metrics", "statusCode", response.StatusCode, "err", err)
+	}
+	ts, _ := prototypes.TimestampProto(time.Now())
+
+	for _, m := range metricsResponse.Metric {
+		switch m.Name {
+		case "cpu.usage.average":
+			f, err := strconv.ParseFloat(m.Value, 64)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats error parse float for cpu usage", "value", m.Value, "err", err)
+				continue
+			}
+			metrics.Cpu = f
+			metrics.CpuTS = ts
+		case "mem.usage.average":
+			f, err := strconv.ParseFloat(m.Value, 64)
+			if err != nil {
+				log.ForceLogSpan(log.SpanFromContext(ctx))
+				log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats error parse float for mem usage", "value", m.Value, "err", err)
+				continue
+			}
+			metrics.Mem = uint64(math.Round(f))
+			metrics.MemTS = ts
+		}
+		// note disk stats are available in vmware, but they are useless for our purposes, as they do not reflect
+		// OS usage inside the VM, rather the disk metrics measure the size of various VM files on the datastore
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats returns", "metrics", metrics)
+	return &metrics, nil
 }

@@ -73,8 +73,11 @@ func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (s
 	return metrics, nil
 }
 
+func (s *Platform) VmAppChangedCallback(ctx context.Context) {
+}
+
 func (s *Platform) GetMetricsCollectInterval() time.Duration {
-	return 0
+	return 60
 }
 
 // UTClient hijacks a set of commands and returns predetermined output

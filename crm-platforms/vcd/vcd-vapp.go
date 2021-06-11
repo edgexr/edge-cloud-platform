@@ -419,7 +419,7 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 			if !strings.Contains(child.Name, vmlayer.ClusterTypeKubernetesMasterLabel) {
 				continue
 			}
-			tvm, err := vapp.GetVMByName(child.Name, true)
+			tvm, err := vapp.GetVMByName(child.Name, false)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "GetVMByName failed for", "vm", child.Name, "err", err)
 				return nil, err

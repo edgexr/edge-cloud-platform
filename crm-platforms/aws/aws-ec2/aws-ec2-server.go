@@ -389,6 +389,9 @@ func (a *AwsEc2Platform) GetVMStats(ctx context.Context, key *edgeproto.AppInstK
 	return &vmlayer.VMMetrics{}, nil
 }
 
+func (a *AwsEc2Platform) VmAppChangedCallback(ctx context.Context) {
+}
+
 func (a *AwsEc2Platform) SetPowerState(ctx context.Context, serverName, serverAction string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetPowerState not supported")
 	return nil

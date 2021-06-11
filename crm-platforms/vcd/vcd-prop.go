@@ -63,6 +63,11 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Value:       "false",
 		Internal:    true,
 	},
+	"VCD_VM_APP_STATS_MAX_VDC_CACHE_TIME": {
+		Description: "How long to cache VDC objects for VM App stat collection, in seconds",
+		Internal:    true,
+		Value:       "3600",
+	},
 }
 
 func (v *VcdPlatform) GetVaultCloudletAccessPath(key *edgeproto.CloudletKey, region, physicalName string) string {
@@ -200,6 +205,18 @@ func (v *VcdPlatform) GetNsxType() string {
 func (v *VcdPlatform) GetCleanupOrphanedNetworks() bool {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_CLEANUP_ORPHAN_NETS")
 	return strings.ToLower(val) == "true"
+}
+
+func (v *VcdPlatform) GetVmAppStatsVdcMaxCacheTime() (uint64, error) {
+	val, ok := v.vmProperties.CommonPf.Properties.GetValue("VCD_VM_APP_STATS_MAX_VDC_CACHE_TIME")
+	if !ok {
+		return 0, nil
+	}
+	vi, err := strconv.ParseUint(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("ERROR: unable to parse VCD_VM_APP_STATS_MAX_VDC_CACHE_TIME %s - %v", val, err)
+	}
+	return vi, nil
 }
 
 // start fetching access  bits from vault
