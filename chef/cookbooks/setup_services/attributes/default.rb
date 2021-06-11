@@ -28,4 +28,12 @@ services.each { |service|
     Chef::Log.info("Setting useVaultPki flag for #{service}...")
     node.normal[service]['args']['useVaultPki'] = ""
   end
+
+  # Set cacheDir attribute for crmserver
+  if service == "crmserver"
+    unless node.normal[service]['args'].any? { |s| s.include?('cacheDir') }
+      Chef::Log.info("Setting cacheDir for #{service}...")
+      node.normal[service]['args']['cacheDir'] = "/root/crm_cache"
+    end
+  end
 }

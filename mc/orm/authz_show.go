@@ -208,6 +208,7 @@ func (s *AuthzGPUDriverShow) Filter(obj *edgeproto.GPUDriver) {
 	output := *obj
 	*obj = edgeproto.GPUDriver{}
 	obj.Key = output.Key
+	obj.Type = output.Type
 	obj.Properties = output.Properties
 	obj.Builds = output.Builds
 	for ii := range obj.Builds {
