@@ -227,14 +227,17 @@ func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *g
 	}
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s: Copying GPU driver %s (%s)", nodeName, driver.Key.Name, reqdBuild.Name))
 	// Upload driver and license config to target node
-	err = infracommon.SCPFilePath(client, pkgPath, "/tmp/")
+	outPkgPath := "/tmp" + strings.TrimPrefix(pkgPath, v.CacheDir)
+	err = infracommon.SCPFilePath(client, pkgPath, outPkgPath)
 	if err != nil {
-		return fmt.Errorf("")
+		return fmt.Errorf("Failed to copy GPU driver from %s to %s on cluster node %s, %v", pkgPath, outPkgPath, nodeName, err)
 	}
+	outLicPath := ""
 	if licenseConfigPath != "" {
-		err = infracommon.SCPFilePath(client, licenseConfigPath, "/tmp/")
+		outLicPath = "/tmp" + strings.TrimPrefix(licenseConfigPath, v.CacheDir)
+		err = infracommon.SCPFilePath(client, licenseConfigPath, outLicPath)
 		if err != nil {
-			return fmt.Errorf("")
+			return fmt.Errorf("Failed to copy GPU driver license config from %s to %s on cluster node %s, %v", licenseConfigPath, outLicPath, nodeName, err)
 		}
 	}
 	// Install GPU driver, setup license and verify it
@@ -242,11 +245,11 @@ func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *g
 	cmd := fmt.Sprintf(
 		"sudo bash /etc/mobiledgex/install-gpu-driver.sh -n %s -d %s -t %s",
 		driver.Key.Name,
-		pkgPath,
+		outPkgPath,
 		edgeproto.GPUType_CamelName[int32(v.GPUConfig.GpuType)],
 	)
 	if licenseConfigPath != "" {
-		cmd += " -l " + licenseConfigPath
+		cmd += " -l " + outLicPath
 	}
 	out, err = client.Output(cmd)
 	if err != nil {

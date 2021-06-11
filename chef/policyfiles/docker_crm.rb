@@ -13,7 +13,7 @@ run_list 'recipe[runstatus_handler]', 'recipe[run_cmd]', 'recipe[setup_infra]', 
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.0.28'
+cookbook 'setup_services', '= 1.0.29'
 cookbook 'docker', '= 6.0.3'
 cookbook 'run_diagnostics', '= 1.0.0'
 cookbook 'run_cmd', '= 1.0.0'
