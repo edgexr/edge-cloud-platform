@@ -474,6 +474,7 @@ func UpdateReporter(c echo.Context) error {
 		reporter.Timezone = "UTC"
 	}
 
+	schedDateUpdated := false
 	if reporter.Schedule != oldReporter.Schedule {
 		// validate report schedule
 		if _, ok := edgeproto.ReportSchedule_name[int32(reporter.Schedule)]; !ok {
@@ -486,6 +487,7 @@ func UpdateReporter(c echo.Context) error {
 				return fmt.Errorf("Invalid timezone %s, %v", reporter.Timezone, err)
 			}
 			reporter.StartScheduleDate = ormapi.TimeToStr(time.Now().In(location))
+			schedDateUpdated = true
 		}
 		applyUpdate = true
 	}
@@ -504,6 +506,7 @@ func UpdateReporter(c echo.Context) error {
 		reporter.NextScheduleDate = reporter.StartScheduleDate
 		validateTZ = true
 		applyUpdate = true
+		schedDateUpdated = true
 	}
 
 	if reporter.Timezone != oldReporter.Timezone {
@@ -531,7 +534,7 @@ func UpdateReporter(c echo.Context) error {
 	if err != nil {
 		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
 	}
-	if reporter.StartScheduleDate != oldReporter.StartScheduleDate {
+	if schedDateUpdated {
 		// trigger report generation if schedule date is today as it may have passed our internal report schedule
 		if ormapi.DateCmp(scheduleDate, time.Now()) == 0 {
 			triggerReporter()
