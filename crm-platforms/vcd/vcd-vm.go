@@ -53,7 +53,7 @@ func (v *VcdPlatform) FindVMByName(ctx context.Context, serverName string, vcdCl
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetVappByHref failed", "vapp.HREF", vappRef.HREF, "err", err)
 			continue
 		}
-		vm, err = vapp.GetVMByName(serverName, true)
+		vm, err = vapp.GetVMByName(serverName, false)
 		if err == nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "FindVMByName found", "vmName", serverName, "vappName", vapp.VApp.Name, "err", err)
 			return vm, nil
@@ -821,63 +821,6 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 			return fmt.Errorf("Unexpected error in FindVApp - %v", err)
 		}
 	}
-}
-
-func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
-
-	vm := &govcd.VM{}
-	metrics := vmlayer.VMMetrics{}
-	var err error
-
-	vcdClient := v.GetVcdClientFromContext(ctx)
-	if vcdClient == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return nil, fmt.Errorf(NoVCDClientInContext, err)
-	}
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		return nil, fmt.Errorf("GetVdc Failed - %v", err)
-	}
-
-	vmName := cloudcommon.GetAppFQN(&key.AppKey)
-	if vmName == "" {
-		return nil, fmt.Errorf("GetAppFQN failed to return vmName for AppInst %s\n", key.AppKey.Name)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats for", "vm", vmName)
-
-	vm, err = v.FindVMByName(ctx, vmName, vcdClient, vdc)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMStats vm not found", "vnname", vmName)
-		return nil, err
-	}
-	status, err := vm.GetStatus()
-	if err == nil && status == "POWERED_ON" {
-		// Check vdc_vm_test.go for the metric links
-		// They don't seem to work with nsx-t boxes
-		//
-		/*  get these for the VM running AppInst TBI
-		type VMMetrics struct {
-			// Cpu is a percentage
-			Cpu   float64
-			CpuTS *types.Timestamp
-			// Mem is bytes used
-			Mem   uint64
-			MemTS *types.Timestamp
-			// Disk is bytes used
-			Disk   uint64
-			DiskTS *types.Timestamp
-			// NetSent is bytes/second average
-			NetSent   uint64
-			NetSentTS *types.Timestamp
-			// NetRecv is bytes/second average
-			NetRecv   uint64
-			NetRecvTS *types.Timestamp
-		}
-		*/
-	} else {
-		return nil, fmt.Errorf("No stats available for %s", vm.VM.Name)
-	}
-	return &metrics, nil
 }
 
 // always sync.

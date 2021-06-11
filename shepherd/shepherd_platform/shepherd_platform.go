@@ -28,4 +28,6 @@ type Platform interface {
 	GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error)
 	// Get Platform Specific collection time. If the platform doesn't have periodic collection, it will return 0
 	GetMetricsCollectInterval() time.Duration
+	// Inform the platform that a VM App was added or deleted
+	VmAppChangedCallback(ctx context.Context)
 }

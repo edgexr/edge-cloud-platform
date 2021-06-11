@@ -116,10 +116,11 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		mapKey = new.Key.GetKeyString()
 		stats, exists := vmAppWorkerMap[mapKey]
+		myPlatform.VmAppChangedCallback(ctx)
 		if new.State == edgeproto.TrackedState_READY && !exists {
 			// Add/Create
-			stats, err := NewAppInstWorker(ctx, collectInterval, MetricSender.Update, new, myPlatform)
-			if err == nil {
+			stats := NewAppInstWorker(ctx, collectInterval, MetricSender.Update, new, myPlatform)
+			if stats != nil {
 				vmAppWorkerMap[mapKey] = stats
 				stats.Start(ctx)
 			}

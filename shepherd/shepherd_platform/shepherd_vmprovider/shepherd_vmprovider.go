@@ -17,7 +17,6 @@ import (
 )
 
 // Default Ceilometer granularity is 300 secs(5 mins)
-var VmScrapeInterval = time.Minute * 5
 var sharedRootLBWait = time.Minute * 5
 
 var caches *platform.Caches
@@ -97,8 +96,12 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 		return err
 	}
 
-	s.collectInterval = VmScrapeInterval
-	log.SpanLog(ctx, log.DebugLevelInfra, "init shepherd done", "rootLB", s.rootLbName, "physicalName", pc.PhysicalName)
+	intervalMins, err := s.VMPlatform.VMProperties.GetVmAppMetricsCollectInterval()
+	if err != nil {
+		return fmt.Errorf("Unable to get VM app collection interval - %v", err)
+	}
+	s.collectInterval = time.Minute * time.Duration(intervalMins)
+	log.SpanLog(ctx, log.DebugLevelInfra, "init shepherd done", "rootLB", s.rootLbName, "physicalName", pc.PhysicalName, "VM App collect interval", s.collectInterval)
 	return nil
 }
 
@@ -213,4 +216,8 @@ func (s *ShepherdPlatform) GetVmStats(ctx context.Context, key *edgeproto.AppIns
 	}
 	appMetrics = shepherd_common.AppMetrics(*vmMetrics)
 	return appMetrics, nil
+}
+
+func (s *ShepherdPlatform) VmAppChangedCallback(ctx context.Context) {
+	s.VMPlatform.VMProvider.VmAppChangedCallback(ctx)
 }

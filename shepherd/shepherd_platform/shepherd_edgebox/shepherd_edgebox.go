@@ -87,3 +87,6 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
 	return shepherd_common.AppMetrics{}, fmt.Errorf("VM on DIND is unsupported")
 }
+
+func (s *Platform) VmAppChangedCallback(ctx context.Context) {
+}

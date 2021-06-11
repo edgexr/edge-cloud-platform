@@ -22,18 +22,18 @@ type AppInstWorker struct {
 	stop       chan struct{}
 }
 
-func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, appinst *edgeproto.AppInst, pf platform.Platform) (*AppInstWorker, error) {
+func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, appinst *edgeproto.AppInst, pf platform.Platform) *AppInstWorker {
 	p := AppInstWorker{}
 	p.pf = pf
-	if int64(interval) > int64(pf.GetMetricsCollectInterval()) {
-		p.interval = interval
-	} else {
-		p.interval = pf.GetMetricsCollectInterval()
+	p.interval = pf.GetMetricsCollectInterval()
+	if p.interval == 0 {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Platform Collection interval is 0, will not create appinst worker", "app", appinst)
+		return nil
 	}
 	p.send = send
 	p.appInstKey = appinst.Key
 	log.SpanLog(ctx, log.DebugLevelMetrics, "NewAppInstWorker", "app", appinst)
-	return &p, nil
+	return &p
 }
 
 func (p *AppInstWorker) Start(ctx context.Context) {

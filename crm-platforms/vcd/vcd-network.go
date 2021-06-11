@@ -287,7 +287,7 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName, subnet
 		return err
 	}
 	vmName := vapp.VApp.Children.VM[0].Name
-	vm, err := vapp.GetVMByName(vmName, true)
+	vm, err := vapp.GetVMByName(vmName, false)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer server not found", "vm", vmName, "for server", serverName)
 		return err

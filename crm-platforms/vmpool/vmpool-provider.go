@@ -603,6 +603,9 @@ func (s *VMPoolPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstK
 	return &vmlayer.VMMetrics{}, nil
 }
 
+func (s *VMPoolPlatform) VmAppChangedCallback(ctx context.Context) {
+}
+
 func (s *VMPoolPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.PlatformResources, error) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "GetPlatformResourceInfo not supported")
 	return &vmlayer.PlatformResources{}, nil

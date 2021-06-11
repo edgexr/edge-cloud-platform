@@ -107,6 +107,9 @@ func (v *VSpherePlatform) GetResourceID(ctx context.Context, resourceType vmlaye
 	return "", fmt.Errorf("GetResourceID not implemented for resource type: %s ", resourceType)
 }
 
+func (v *VSpherePlatform) VmAppChangedCallback(ctx context.Context) {
+}
+
 func (v *VSpherePlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
 	log.DebugLog(log.DebugLevelSampled, "GetVMStats")
 	vmName := cloudcommon.GetAppFQN(&key.AppKey)
