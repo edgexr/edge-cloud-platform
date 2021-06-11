@@ -205,7 +205,7 @@ func (p *Sql) StartLocal(logfile string, opts ...process.StartOp) error {
 		"postgres"})
 	if err != nil {
 		p.StopLocal()
-		return fmt.Errorf("sql: failed to list databases, %s", err.Error())
+		return fmt.Errorf("sql: failed to list databases, %s, %s", string(out), err.Error())
 	}
 	if !strings.Contains(string(out), p.Dbname) {
 		out, err = p.runPsql([]string{"-c",
@@ -224,8 +224,8 @@ func (p *Sql) StartLocal(logfile string, opts ...process.StartOp) error {
 		fmt.Println(string(out))
 		if err != nil {
 			p.StopLocal()
-			return fmt.Errorf("sql: failed to enable citext %s, %s",
-				p.Dbname, err.Error())
+			return fmt.Errorf("sql: failed to enable citext %s, %s, %s",
+				p.Dbname, string(out), err.Error())
 		}
 	}
 	return nil
@@ -243,8 +243,11 @@ func (p *Sql) InitDataDir() error {
 	if err != nil {
 		return err
 	}
-	_, err = exec.Command("initdb", p.DataDir).CombinedOutput()
-	return err
+	out, err := exec.Command("initdb", "--locale", "en_US.UTF-8", p.DataDir).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("sql initdb failed: %s, %v", string(out), err)
+	}
+	return nil
 }
 func (p *Sql) runPsql(args []string) ([]byte, error) {
 	if p.HttpAddr != "" {
