@@ -533,7 +533,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// BuildsOperatingSystem: 4.4
 	// BuildsKernelVersion: 4.5
 	// BuildsHypervisorInfo: 4.6
+	// BuildsMd5Sum: 4.7
 	// LicenseConfig: 5
+	// LicenseConfigMd5Sum: 9
 	// Properties: 6
 	// PropertiesKey: 6.1
 	// PropertiesValue: 6.2
