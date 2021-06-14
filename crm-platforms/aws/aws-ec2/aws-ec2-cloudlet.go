@@ -33,11 +33,6 @@ func (a *AwsEc2Platform) DeleteImage(ctx context.Context, folder, imageName stri
 	return fmt.Errorf("DeleteImage not implemented")
 }
 
-func (a *AwsEc2Platform) AddCloudletImageIfNotPresent(ctx context.Context, imgPath, md5Sum string, updateCallback edgeproto.CacheUpdateCallback) error {
-	// we don't currently have the ability to download and setup the template, but we will verify it is there
-	return fmt.Errorf("AddCloudletImageIfNotPresent not implemented")
-}
-
 func (a *AwsEc2Platform) GetApiEndpointAddr(ctx context.Context) (string, error) {
 	return fmt.Sprintf("https://ec2.%s.amazonaws.com:443", a.awsGenPf.GetAwsRegion()), nil
 }

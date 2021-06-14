@@ -32,8 +32,7 @@ type VMProvider interface {
 	InitProvider(ctx context.Context, caches *platform.Caches, stage ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error
 	GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error)
 	GetNetworkList(ctx context.Context) ([]string, error)
-	AddCloudletImageIfNotPresent(ctx context.Context, imgPath, md5Sum string, updateCallback edgeproto.CacheUpdateCallback) error
-	AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error
+	AddImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback) error
 	GetCloudletImageSuffix(ctx context.Context) string
 	DeleteImage(ctx context.Context, folder, image string) error
 	GetServerDetail(ctx context.Context, serverName string) (*ServerDetail, error)

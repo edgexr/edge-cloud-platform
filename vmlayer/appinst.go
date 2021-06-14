@@ -51,6 +51,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
+	objName := cloudcommon.GetAppFQN(&app.Key)
 	var imageInfo infracommon.ImageInfo
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
 	imageInfo.LocalImageName = imageName + "-" + md5Sum
@@ -59,16 +60,21 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	imageInfo.Md5sum = md5Sum
 	imageInfo.SourceImageTime = sourceImageTime
+	imageInfo.OsType = app.VmAppOsType
+	imageInfo.ImagePath = app.ImagePath
+	imageInfo.ImageType = app.ImageType
+	imageInfo.VmName = objName
+	imageInfo.Flavor = appInst.Flavor.Name
+	imageInfo.ImageCategory = infracommon.ImageCategoryVmApp
 	if err != nil {
 		return &orchVals, err
 	}
 
-	err = v.VMProvider.AddAppImageIfNotPresent(ctx, &imageInfo, app, appInst.Flavor.Name, updateCallback)
+	err = v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
 	if err != nil {
 		return &orchVals, err
 	}
 
-	objName := cloudcommon.GetAppFQN(&app.Key)
 	usesLb := app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER
 
 	deploymentVars := crmutil.DeploymentReplaceVars{
@@ -802,6 +808,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 			return "", fmt.Errorf("mismatch in md5sum for downloaded image: %s", imageName)
 		}
 	}
+
 	return filePath, nil
 }
 

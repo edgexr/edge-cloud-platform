@@ -85,16 +85,8 @@ func (v *VcdPlatform) IsDhcpEnabled(ctx context.Context, net *govcd.OrgVDCNetwor
 	return false
 }
 
-func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
-
-	// Prefer an envVar, fall back to property
-	tmplName := v.GetTemplateNameFromProps()
-	if tmplName == "" {
-		tmplName = v.GetVDCTemplateName()
-		if tmplName == "" {
-			return nil, fmt.Errorf("VDCTEMPLATE not set")
-		}
-	}
+func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "RetrieveTemplate", "tmplName", tmplName)
 	tmpl, err := v.FindTemplate(ctx, tmplName, vcdClient)
 	if err != nil {
 		// Not found as a vdc.Resource, try direct from our catalog
@@ -113,21 +105,7 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, vcdClient *govcd.VCD
 		}
 		if catItem == emptyItem { // empty!
 			log.SpanLog(ctx, log.DebugLevelInfra, "find catalog item retured empty item")
-			url := v.GetTemplateUrl()
-			if url != "" {
-				err := v.ImportTemplateFromUrl(ctx, tmplName, url, cat)
-				if err != nil {
-					return nil, fmt.Errorf("Fail to import template from url: %s - %v", url, err)
-				}
-				cat.Refresh()
-				tmpl, err = v.FindTemplate(ctx, tmplName, vcdClient)
-				if err != nil {
-					return nil, fmt.Errorf("unable to find template after import - %v", err)
-				}
-				return tmpl, nil
-			} else {
-				return nil, fmt.Errorf("Template invalid - empty catalog item and no upload url specified")
-			}
+			return nil, fmt.Errorf("Template invalid - empty catalog item ")
 		}
 		tmpl, err := catItem.GetVAppTemplate()
 		if err != nil {
@@ -173,7 +151,8 @@ func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	if err != nil {
 		return fmt.Errorf("GetVdc Failed - %v", err)
 	}
-	tmpl, err := v.RetrieveTemplate(ctx, vcdClient)
+
+	tmpl, err := v.RetrieveTemplate(ctx, vmgp.VMs[0].ImageName, vcdClient)
 	if err != nil {
 		return err
 	}
@@ -410,7 +389,7 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 	vmMap := make(VMMap)
 	numExistingVMs := len(vapp.VApp.Children.VM)
 
-	tmpl, err := v.RetrieveTemplate(ctx, vcdClient)
+	tmpl, err := v.RetrieveTemplate(ctx, vmgp.VMs[0].ImageName, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVapp error retrieving vdc template", "err", err)
 		return vmMap, err

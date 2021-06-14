@@ -93,11 +93,19 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 	imageName := GetCloudletVMImageName(imageVersion)
 	cloudletImagePath := GetCloudletVMImagePath(imageBasePath, imageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
 	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageName", imageName, "imageVersion", imageVersion)
-	_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
+	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
 	if err != nil {
 		return "", fmt.Errorf("unable to get URL info for cloudlet image: %s - %v", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, err)
 	}
-	return imageName, v.VMProvider.AddCloudletImageIfNotPresent(ctx, cloudletImagePath, md5Sum, updateCallback)
+	var imageInfo infracommon.ImageInfo
+	imageInfo.Md5sum = md5Sum
+	imageInfo.SourceImageTime = sourceImageTime
+	imageInfo.OsType = edgeproto.VmAppOsType_VM_APP_OS_LINUX
+	imageInfo.ImagePath = cloudletImagePath
+	imageInfo.ImageType = edgeproto.ImageType_IMAGE_TYPE_QCOW
+	imageInfo.LocalImageName = imageName
+	imageInfo.ImageCategory = infracommon.ImageCategoryPlatform
+	return imageName, v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
 }
 
 // setupPlatformVM:

@@ -283,10 +283,10 @@ func TestCatItemTmpl(t *testing.T) {
 			queryResultRec.Deployed,
 			queryResultRec.Published)
 
-		stdTmp := tv.GetTemplateNameFromProps()
+		stdTmp := os.Getenv("MEX_OS_IMAGE")
 		// now fetch the darn template, and compare contents
 		// first look for it as a vdc.resource which if found we know works
-		tmpl, err := tv.RetrieveTemplate(ctx, testVcdClient) // this might not work now in TestMode
+		tmpl, err := tv.RetrieveTemplate(ctx, "", testVcdClient) // this might not work now in TestMode
 
 		if err != nil {
 			fmt.Printf("Std tmpl %s not found in vdc: %s\n", stdTmp, vdc.Vdc.Name)
