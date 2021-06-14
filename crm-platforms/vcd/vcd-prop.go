@@ -29,9 +29,6 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_EXTERNAL_NETWORK_EDGEGATEWAY": {
 		Description: "currently unused",
 	},
-	"MEX_VDC_TEMPLATE": {
-		Description: "The uploaded ova template name",
-	},
 	"MEX_ENABLE_VCD_DISK_RESIZE": {
 		Description: "VM disks cloned from the VDC template will be resized based on flavor if set to \"true\".  Must be set to \"false\" if fast provisioning is enabled in the VDC or VM creation will fail.",
 		Value:       "true",
@@ -50,10 +47,7 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Set value for vCPU Speed if unable to read from admin VCD",
 		Internal:    true,
 	},
-	"MEX_TEMPLATE_URL": {
-		Description: "Optional HTTP URL to retrieve template",
-		Internal:    true,
-	},
+
 	"VCD_NSX_TYPE": {
 		Description: "NSX-T or NSX-V",
 		Mandatory:   true,
@@ -137,15 +131,6 @@ func (v *VcdPlatform) GetVDCName() string {
 }
 func (v *VcdPlatform) GetVCDURL() string {
 	return v.vcdVars["VCD_URL"]
-}
-func (v *VcdPlatform) GetVDCTemplateName() string {
-	if v.TestMode {
-		tmplName := os.Getenv("VDCTEMPLATE")
-		if tmplName != "" {
-			return tmplName
-		}
-	}
-	return v.vcdVars["VDCTEMPLATE"]
 }
 func (v *VcdPlatform) GetVcdClientRefreshInterval(ctx context.Context) uint64 {
 	intervalStr := v.vcdVars["VCD_CLIENT_REFRESH_INTERVAL"]
@@ -263,10 +248,6 @@ func (v *VcdPlatform) GetProviderSpecificProps(ctx context.Context) (map[string]
 	return VcdProps, nil
 }
 
-func (v *VcdPlatform) GetTemplateNameFromProps() string {
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_VDC_TEMPLATE")
-	return val
-}
 func (v *VcdPlatform) GetVcpuSpeedOverride(ctx context.Context) int64 {
 	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_OVERRIDE_VCPU_SPEED")
 	if val == "" {
@@ -293,9 +274,4 @@ func (v *VcdPlatform) GetLeaseOverride() bool {
 	} else {
 		return false
 	}
-}
-
-func (v *VcdPlatform) GetTemplateUrl() string {
-	val, _ := v.vmProperties.CommonPf.Properties.GetValue("MEX_TEMPLATE_URL")
-	return val
 }

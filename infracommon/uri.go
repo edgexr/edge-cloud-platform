@@ -17,14 +17,26 @@ import (
 	"github.com/miekg/dns"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"gortc.io/stun"
 )
+
+type ImageCategoryType string
+
+const ImageCategoryVmApp ImageCategoryType = "vmapp"
+const ImageCategoryPlatform ImageCategoryType = "platform"
 
 type ImageInfo struct {
 	Md5sum          string
 	LocalImageName  string
 	SourceImageTime time.Time
+	OsType          edgeproto.VmAppOsType
+	ImageType       edgeproto.ImageType
+	ImagePath       string
+	ImageCategory   ImageCategoryType
+	Flavor          string
+	VmName          string // for use only if the image is to be imported directly into a VM
 }
 
 //validateDomain does strange validation, not strictly domain, due to the data passed from controller.

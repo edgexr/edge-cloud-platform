@@ -21,6 +21,9 @@ var sharedRootLBWait = time.Minute * 5
 
 var caches *platform.Caches
 
+// ChangeSinceLastCloudletStats means a VM appinst changed since last VM App stats collection
+var ChangeSinceLastVmAppStats bool
+
 type ShepherdPlatform struct {
 	rootLbName      string
 	SharedClient    ssh.Client

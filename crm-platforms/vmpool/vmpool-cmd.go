@@ -123,11 +123,6 @@ func (s *VMPoolPlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
 }
 
-func (s *VMPoolPlatform) AddCloudletImageIfNotPresent(ctx context.Context, imgPath, md5Sum string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddCloudletImageIfNotPresent not supported")
-	return nil
-}
-
 func (s *VMPoolPlatform) DeleteImage(ctx context.Context, folder, imageName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage not supported")
 	return nil

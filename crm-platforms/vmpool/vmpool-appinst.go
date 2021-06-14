@@ -13,7 +13,7 @@ func (o *VMPoolPlatform) GetConsoleUrl(ctx context.Context, serverName string) (
 	return "", nil
 }
 
-func (o *VMPoolPlatform) AddAppImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, app *edgeproto.App, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddAppImageIfNotPresent not supported")
+func (o *VMPoolPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddImageIfNotPresent not supported")
 	return nil
 }

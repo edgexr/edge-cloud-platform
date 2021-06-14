@@ -823,7 +823,7 @@ func (v *VSpherePlatform) DetachPortFromServer(ctx context.Context, serverName, 
 
 // CreateTemplateFromImage creates a vm template from the image file
 func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFolder string, imageFile string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateTemplateFromImage", "imageFile", imageFile)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateTemplateFromImage", "imageFolder", imageFolder, "imageFile", imageFile)
 	ds := v.GetDataStore()
 	dcName := v.GetDatacenterName(ctx)
 	templateName := imageFile
@@ -874,15 +874,9 @@ func (v *VSpherePlatform) CreateTemplateFromImage(ctx context.Context, imageFold
 
 // ImportImage imports the image file into the datastore
 func (v *VSpherePlatform) ImportImage(ctx context.Context, folder, imageFile string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "imageFile", imageFile)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage", "folder", folder, "imageFile", imageFile)
 	ds := v.GetDataStore()
 	dcName := v.GetDatacenterName(ctx)
-
-	// first delete anything that may be there for this image
-	err := v.DeleteImage(ctx, folder, imageFile)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage error", "err", err)
-	}
 
 	pool := fmt.Sprintf("/%s/host/%s/Resources", v.GetDatacenterName(ctx), v.GetHostCluster())
 	out, err := v.TimedGovcCommand(ctx, "govc", "import.vmdk", "-force", "-pool", pool, "-ds", ds, "-dc", dcName, imageFile, folder)
@@ -894,25 +888,4 @@ func (v *VSpherePlatform) ImportImage(ctx context.Context, folder, imageFile str
 		log.SpanLog(ctx, log.DebugLevelInfra, "ImportImage OK", "out", string(out))
 	}
 	return nil
-}
-
-// DeleteImage deletes the folder and image from the datastore
-func (v *VSpherePlatform) DeleteImage(ctx context.Context, folder, image string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage", "image", image)
-	ds := v.GetDataStore()
-	dcName := v.GetDatacenterName(ctx)
-
-	out, err := v.TimedGovcCommand(ctx, "govc", "datastore.rm", "-ds", ds, "-dc", dcName, folder)
-	if err != nil {
-		if strings.Contains(string(out), "not found") {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage -- dir does not exist", "out", string(out), "err", err)
-			err = nil
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage fail", "out", string(out), "err", err)
-		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteImage OK", "out", string(out))
-	}
-
-	return err
 }
