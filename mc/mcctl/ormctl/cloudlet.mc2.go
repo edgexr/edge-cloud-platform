@@ -33,7 +33,7 @@ var CreateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State",
+	NoConfig:             "State,LicenseConfigMd5sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateGPUDriver",
@@ -51,7 +51,7 @@ var DeleteGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State",
+	NoConfig:             "State,LicenseConfigMd5sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteGPUDriver",
@@ -69,7 +69,7 @@ var UpdateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,Builds",
+	NoConfig:             "State,LicenseConfigMd5sum,Builds",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateGPUDriver",
@@ -108,7 +108,7 @@ var ShowGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State",
+	NoConfig:             "State,LicenseConfigMd5sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.GPUDriver{},
 	Path:                 "/auth/ctrl/ShowGPUDriver",
@@ -191,6 +191,7 @@ var UpdateGPUDriverOptionalArgs = []string{
 	"gpudriver-org",
 	"type",
 	"licenseconfig",
+	"licenseconfigmd5sum",
 	"properties",
 	"ignorestate",
 }
@@ -200,6 +201,7 @@ var AddGPUDriverBuildRequiredArgs = []string{
 	"build.name",
 	"build.driverpath",
 	"build.operatingsystem",
+	"build.md5sum",
 }
 var AddGPUDriverBuildOptionalArgs = []string{
 	"build.driverpathcreds",
@@ -214,6 +216,7 @@ var RemoveGPUDriverBuildRequiredArgs = []string{
 }
 var RemoveGPUDriverBuildOptionalArgs = []string{
 	"build.driverpathcreds",
+	"build.md5sum",
 	"ignorestate",
 }
 var GetGPUDriverBuildURLRequiredArgs = []string{
@@ -223,6 +226,7 @@ var GetGPUDriverBuildURLRequiredArgs = []string{
 }
 var GetGPUDriverBuildURLOptionalArgs = []string{
 	"build.driverpathcreds",
+	"build.md5sum",
 	"ignorestate",
 }
 
@@ -771,6 +775,7 @@ var GPUDriverBuildMemberOptionalArgs = []string{
 	"build.operatingsystem",
 	"build.kernelversion",
 	"build.hypervisorinfo",
+	"build.md5sum",
 	"ignorestate",
 }
 var GPUDriverBuildMemberAliasArgs = []string{
@@ -782,6 +787,7 @@ var GPUDriverBuildMemberAliasArgs = []string{
 	"build.operatingsystem=gpudriverbuildmember.build.operatingsystem",
 	"build.kernelversion=gpudriverbuildmember.build.kernelversion",
 	"build.hypervisorinfo=gpudriverbuildmember.build.hypervisorinfo",
+	"build.md5sum=gpudriverbuildmember.build.md5sum",
 	"ignorestate=gpudriverbuildmember.ignorestate",
 }
 var GPUDriverBuildMemberComments = map[string]string{
@@ -793,6 +799,7 @@ var GPUDriverBuildMemberComments = map[string]string{
 	"build.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
 	"build.kernelversion":   "Kernel Version supported by GPU driver build",
 	"build.hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
+	"build.md5sum":          "Driver package md5sum to ensure package is not corrupted",
 	"ignorestate":           "Ignore state will ignore any action in-progress on the GPU driver",
 }
 var GPUDriverBuildMemberSpecialArgs = map[string]string{}
@@ -808,7 +815,9 @@ var GPUDriverOptionalArgs = []string{
 	"builds:#.operatingsystem",
 	"builds:#.kernelversion",
 	"builds:#.hypervisorinfo",
+	"builds:#.md5sum",
 	"licenseconfig",
+	"licenseconfigmd5sum",
 	"properties",
 	"ignorestate",
 }
@@ -823,7 +832,9 @@ var GPUDriverAliasArgs = []string{
 	"builds:#.operatingsystem=gpudriver.builds:#.operatingsystem",
 	"builds:#.kernelversion=gpudriver.builds:#.kernelversion",
 	"builds:#.hypervisorinfo=gpudriver.builds:#.hypervisorinfo",
+	"builds:#.md5sum=gpudriver.builds:#.md5sum",
 	"licenseconfig=gpudriver.licenseconfig",
+	"licenseconfigmd5sum=gpudriver.licenseconfigmd5sum",
 	"properties=gpudriver.properties",
 	"state=gpudriver.state",
 	"ignorestate=gpudriver.ignorestate",
@@ -839,7 +850,9 @@ var GPUDriverComments = map[string]string{
 	"builds:#.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
 	"builds:#.kernelversion":   "Kernel Version supported by GPU driver build",
 	"builds:#.hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
+	"builds:#.md5sum":          "Driver package md5sum to ensure package is not corrupted",
 	"licenseconfig":            "License config to setup license (will be stored in secure storage)",
+	"licenseconfigmd5sum":      "License config md5sum, to ensure integrity of license config",
 	"properties":               "Additional properties associated with GPU driver build For example: license server information, driver release date, etc",
 	"state":                    "State to figure out if any action on the GPU driver is in-progress",
 	"ignorestate":              "Ignore state will ignore any action in-progress on the GPU driver",
