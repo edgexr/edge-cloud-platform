@@ -843,8 +843,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		poolCache.Update(ctx, &list[ii], 0)
 	}
 	// make sure there is at least one cloudletKey org is specified here
-	testFailCheckPermissionsAndGetCloudletList(t, ctx, oper.Name, ctrl.Region, []string{"invalidDeveloper"}, ResourceAppAnalytics,
-		[]edgeproto.CloudletKey{}, "Operators please specify the Cloudlet Organization")
+	testFailCheckPermissionsAndGetCloudletList(t, ctx, oper.Name, ctrl.Region, []string{org1}, ResourceAppAnalytics,
+		[]edgeproto.CloudletKey{{}}, "Operators please specify the Cloudlet Organization")
 
 	// operator can see dev resources on cloudlet pool(returned list contains all cloudlets that operator is allowed to see)
 	// NOTE: there is a generated pool with three cloudlets - cloudlet1,cloudlet2,cloudlet3
