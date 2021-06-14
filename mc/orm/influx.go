@@ -801,7 +801,50 @@ func checkForTimeError(errStr string) string {
 	return errStr
 }
 
+// Check that the user is authorized to access all of the devOrgsPruned's devResource resources
+func isDeveloperAuthorized(ctx context.Context, username string, devOrgsPruned []string, devResource string) (bool, map[string]struct{}, error) {
+	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, devResource, ActionView)
+	if err != nil {
+		return false, nil, err
+	}
+	if _, found := authDevOrgs[""]; found {
+		// admin
+		return true, authDevOrgs, nil
+	}
+	// no args specified, so not authorized
+	if len(devOrgsPruned) == 0 {
+		return false, authDevOrgs, nil
+	}
+	// walk dev orgs and make sure that the developer is authorized for all the orgs passed in
+	for _, devOrg := range devOrgsPruned {
+		if _, devOrgPermOk := authDevOrgs[devOrg]; !devOrgPermOk {
+			// in case we find that any of the orgs passed are not authorized, this developer is not authorized
+			return false, authDevOrgs, nil
+		}
+	}
+	return true, authDevOrgs, nil
+}
+
+// helper function to convert keys in a map to a list
+func getListFromMap(mapIn map[string]struct{}) []string {
+	// collect all the list and return it
+	listOut := []string{}
+	for k, _ := range mapIn {
+		listOut = append(listOut, k)
+	}
+	return listOut
+}
+
+// Given a username, a list of devOrgs(from the api) and a list of cloudlets(from the api again)
+// get the list of allowed Cloudlets.
+// If this is a developer and it's authorized, the return list is either empty(all cloudlets allowed),
+// or a list of cloudlets that was passed in.
+// If this is an operator, the list of cloudlet keys passed in is checked against the cloudlet pools
+// owned by the operator, if no cloudlet names are passed, the list of returned cloudlets will be
+// a list of all cloudlets for an operator that are part of a cloudlet pool
 func checkPermissionsAndGetCloudletList(ctx context.Context, username, region string, devOrgsIn []string, devResource string, cloudletKeys []edgeproto.CloudletKey) ([]string, error) {
+	var err error
+
 	regionRc := &RegionContext{}
 	regionRc.username = username
 	regionRc.region = region
@@ -810,6 +853,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	operOrgPermOk := false
 	devOrgs := []string{}
 	cloudletOrgs := map[string]struct{}{}
+	authDevOrgs := map[string]struct{}{}
 
 	// remove all empty strings
 	for ii, devOrg := range devOrgsIn {
@@ -818,6 +862,8 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 		}
 	}
 
+	// since cloudletKeys is a slice, it could be an empty slice,
+	// or a slice with a cloudletKeys that are empty keys
 	// append to the list the specified cloudlets
 	for _, cloudletKey := range cloudletKeys {
 		if cloudletKey.Name != "" {
@@ -831,24 +877,28 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	if len(devOrgs) == 0 && len(cloudletOrgs) == 0 {
 		return []string{}, fmt.Errorf("Must provide either App organization or Cloudlet organization")
 	}
-	authDevOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, devResource, ActionView)
-	if err != nil {
+
+	// check if the developer is authorized
+	if devOrgPermOk, authDevOrgs, err = isDeveloperAuthorized(ctx, username, devOrgs, devResource); err != nil {
 		return []string{}, err
 	}
-	if _, found := authDevOrgs[""]; found {
-		// admin
-		devOrgPermOk = true
-	} else if len(devOrgs) > 0 {
-		devOrgPermOk = true
-		for _, devOrg := range devOrgs {
-			_, devOrgPermOk = authDevOrgs[devOrg]
-			if !devOrgPermOk {
-				// in case we find that any of the orgs passed are not authorized, break
-				devOrgPermOk = false
-				break
+	// if a developer is authorized, just return the list now
+	if devOrgPermOk {
+		return getListFromMap(uniqueCloudlets), nil
+	} else {
+		// no perms for specified orgs, or they forgot to specify an org that
+		// they have perms to (since there are two choices)
+		if len(devOrgs) == 0 && len(authDevOrgs) > 0 {
+			// developer but didn't specify App org
+			orgField := "App"
+			if devResource == ResourceClusterAnalytics {
+				orgField = "Cluster"
 			}
+			return []string{}, fmt.Errorf("Developers please specify the %s Organization", orgField)
 		}
 	}
+
+	// At this point we need to check what cloudlets(cloudletPool members) are allowed for this operator
 	authOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceCloudletAnalytics, ActionView)
 	if err != nil {
 		return []string{}, err
@@ -866,17 +916,9 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 			}
 		}
 	}
-	if !devOrgPermOk && !operOrgPermOk {
-		// no perms for specified orgs, or they forgot to specify an org that
-		// they have perms to (since there are two choices)
-		if len(devOrgs) == 0 && len(authDevOrgs) > 0 {
-			// developer but didn't specify App org
-			orgField := "App"
-			if devResource == ResourceClusterAnalytics {
-				orgField = "Cluster"
-			}
-			return []string{}, fmt.Errorf("Developers please specify the %s Organization", orgField)
-		} else if len(cloudletKeys) == 0 && len(authOperOrgs) > 0 {
+
+	if !operOrgPermOk {
+		if len(cloudletOrgs) == 0 && len(authOperOrgs) > 0 {
 			return []string{}, fmt.Errorf("Operators please specify the Cloudlet Organization")
 		} else {
 			return []string{}, echo.ErrForbidden
@@ -884,16 +926,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	}
 
 	// only grab the cloudletpools if no specific cloudlet was mentioned
-	getPools := false
 	if operOrgPermOk && len(uniqueCloudlets) == 0 {
-		getPools = true
-		// operator specified an apporg. If it is an org the user is a part of then just show everything tied to that org
-		// if the user is not part of the org, then only show the metrics of the org inside the operator's cloudletpools
-		if devOrgPermOk {
-			getPools = false
-		}
-	}
-	if getPools {
 		for cloudletOrg := range cloudletOrgs {
 			cloudletpoolQuery := edgeproto.CloudletPool{Key: edgeproto.CloudletPoolKey{Organization: cloudletOrg}}
 			cloudletPools, err := ShowCloudletPoolObj(ctx, regionRc, &cloudletpoolQuery)
@@ -908,7 +941,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 		}
 	} else if len(uniqueCloudlets) >= 1 {
 		//make sure the cloudlet is in a pool
-		if operOrgPermOk && !devOrgPermOk {
+		if operOrgPermOk {
 			for _, cloudletKey := range cloudletKeys {
 				if !allRegionCaches.InPool(region, cloudletKey) {
 					return []string{}, fmt.Errorf("Operators must specify a cloudlet in a cloudletPool")
@@ -916,13 +949,8 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 			}
 		}
 	}
-	if operOrgPermOk && !devOrgPermOk && len(uniqueCloudlets) == 0 {
+	if operOrgPermOk && len(uniqueCloudlets) == 0 {
 		return []string{}, fmt.Errorf("No non-empty CloudletPools to show")
 	}
-	// collect all the list and return it
-	cloudletList := []string{}
-	for k, _ := range uniqueCloudlets {
-		cloudletList = append(cloudletList, k)
-	}
-	return cloudletList, nil
+	return getListFromMap(uniqueCloudlets), nil
 }
