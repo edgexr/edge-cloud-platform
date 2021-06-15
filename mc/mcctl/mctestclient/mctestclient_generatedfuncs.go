@@ -2660,6 +2660,22 @@ func (s *Client) StreamCloudlet(uri string, token string, in *ormapi.RegionCloud
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) StreamGPUDriver(uri string, token string, in *ormapi.RegionGPUDriverKey) ([]edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("StreamGPUDriver")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group TrustPolicy
 
 func (s *Client) CreateTrustPolicy(uri string, token string, in *ormapi.RegionTrustPolicy) ([]edgeproto.Result, int, error) {

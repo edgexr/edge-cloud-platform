@@ -264,3 +264,83 @@ func StreamCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cl
 	})
 	return arr, err
 }
+
+func StreamGPUDriver(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionGPUDriverKey{}
+	success, err := ReadConn(c, &in)
+	if !success {
+		return err
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.GPUDriverKey.Organization)
+
+	err = StreamGPUDriverStream(ctx, rc, &in.GPUDriverKey, func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func StreamGPUDriverStream(ctx context.Context, rc *RegionContext, obj *edgeproto.GPUDriverKey, cb func(res *edgeproto.Result) error) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudletAnalytics, ActionView); err != nil {
+			return err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewStreamObjApiClient(rc.conn)
+	stream, err := api.StreamGPUDriver(ctx, obj)
+	if err != nil {
+		return err
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return err
+		}
+		err = cb(res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func StreamGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.GPUDriverKey) ([]edgeproto.Result, error) {
+	arr := []edgeproto.Result{}
+	err := StreamGPUDriverStream(ctx, rc, obj, func(res *edgeproto.Result) error {
+		arr = append(arr, *res)
+		return nil
+	})
+	return arr, err
+}

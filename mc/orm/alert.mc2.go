@@ -1704,4 +1704,14 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/StreamCloudlet", StreamCloudlet)
+	// swagger:route POST /auth/ctrl/StreamGPUDriver GPUDriverKey StreamGPUDriver
+	// Stream GPU driver current progress.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/StreamGPUDriver", StreamGPUDriver)
 }

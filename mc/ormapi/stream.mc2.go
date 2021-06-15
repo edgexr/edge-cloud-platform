@@ -54,3 +54,17 @@ type swaggerStreamCloudlet struct {
 	// in: body
 	Body RegionCloudletKey
 }
+
+// Request summary for StreamGPUDriver
+// swagger:parameters StreamGPUDriver
+type swaggerStreamGPUDriver struct {
+	// in: body
+	Body RegionGPUDriverKey
+}
+
+type RegionGPUDriverKey struct {
+	// required: true
+	// Region name
+	Region       string
+	GPUDriverKey edgeproto.GPUDriverKey
+}

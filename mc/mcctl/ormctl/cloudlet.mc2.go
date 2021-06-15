@@ -764,6 +764,20 @@ var CloudletResMapComments = map[string]string{
 var CloudletResMapSpecialArgs = map[string]string{
 	"cloudletresmap.mapping": "StringToString",
 }
+var GPUDriverKeyRequiredArgs = []string{}
+var GPUDriverKeyOptionalArgs = []string{
+	"name",
+	"organization",
+}
+var GPUDriverKeyAliasArgs = []string{
+	"name=gpudriverkey.name",
+	"organization=gpudriverkey.organization",
+}
+var GPUDriverKeyComments = map[string]string{
+	"name":         "Name of the driver",
+	"organization": "Organization to which the driver belongs to",
+}
+var GPUDriverKeySpecialArgs = map[string]string{}
 var GPUDriverBuildMemberRequiredArgs = []string{
 	"gpudrivername",
 	"gpudriver-org",
