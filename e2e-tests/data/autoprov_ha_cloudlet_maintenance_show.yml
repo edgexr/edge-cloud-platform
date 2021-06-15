@@ -23,9 +23,8 @@ regiondata:
       maintenancestate: UnderMaintenance
       resourcequotas:
       - name: RAM
-        alertthreshold: 50
+        alertthreshold: 100
       - name: vCPUs
-        value: 20
-        alertthreshold: 50
+        alertthreshold: 100
       - name: External IPs
-        alertthreshold: 10
+        alertthreshold: 100
