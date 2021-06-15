@@ -68,7 +68,7 @@ func (bs *BillingService) RemoveChild(ctx context.Context, parent, child *ormapi
 	return nil
 }
 
-func (bs *BillingService) RecordUsage(ctx context.Context, account *ormapi.AccountInfo, usageRecords []billing.UsageRecord) error {
+func (bs *BillingService) RecordUsage(ctx context.Context, region string, account *ormapi.AccountInfo, usageRecords []billing.UsageRecord) error {
 	return nil
 }
 

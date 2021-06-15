@@ -97,7 +97,7 @@ func recordRegionUsage(ctx context.Context, region string, start, end time.Time)
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error parsing app usage for billing", "region", region, "err", err)
 		return
 	}
-	recordAppUsages(ctx, appUsage, poolMap)
+	recordAppUsages(ctx, appUsage, poolMap, region)
 
 	clusterIn := ormapi.RegionClusterInstUsage{
 		Region:    region,
@@ -116,10 +116,10 @@ func recordRegionUsage(ctx context.Context, region string, start, end time.Time)
 		log.SpanLog(ctx, log.DebugLevelInfo, "Error parsing cluster usage for billing", "region", region, "err", err)
 		return
 	}
-	recordClusterUsages(ctx, clusterUsage, poolMap)
+	recordClusterUsages(ctx, clusterUsage, poolMap, region)
 }
 
-func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPoolMap map[string]string) {
+func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPoolMap map[string]string, region string) {
 	orgTracker := make(map[string][]billing.UsageRecord)
 	if len(usage.Series) == 0 {
 		// techincally if GetAppUsage doesnt fail, this should be impossible, but check anyway so we dont crash if it did happen
@@ -163,6 +163,7 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 			AppInst:    &newAppInst,
 			StartTime:  startTime,
 			EndTime:    endTime,
+			Region:     region,
 		}
 		records, _ := orgTracker[newAppInst.AppKey.Organization]
 		orgTracker[newAppInst.AppKey.Organization] = append(records, newRecord)
@@ -174,7 +175,7 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get account info", "org", org, "err", err)
 			continue
 		} else {
-			err = serverConfig.BillingService.RecordUsage(ctx, accountInfo, record)
+			err = serverConfig.BillingService.RecordUsage(ctx, region, accountInfo, record)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Unable to record app usage", "err", err)
 			}
@@ -182,7 +183,7 @@ func recordAppUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPool
 	}
 }
 
-func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPoolMap map[string]string) {
+func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudletPoolMap map[string]string, region string) {
 	orgTracker := make(map[string][]billing.UsageRecord)
 	if len(usage.Series) == 0 {
 		// techincally if GetClusterUsage doesnt fail, this should be impossible, but check anyway so we dont crash if it did happen
@@ -190,6 +191,9 @@ func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudlet
 		return
 	}
 	for _, value := range usage.Series[0].Values {
+		if len(value) != 12 {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Invalid cluster record", "record", value)
+		}
 		// ordering is from clusterInstDataColumns
 		newClusterInst := edgeproto.ClusterInstKey{
 			Organization: fmt.Sprintf("%v", value[2]),
@@ -224,6 +228,8 @@ func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudlet
 			ClusterInst: &newClusterInst,
 			StartTime:   startTime,
 			EndTime:     endTime,
+			IpAccess:    fmt.Sprintf("%v", value[7]),
+			Region:      region,
 		}
 		records, _ := orgTracker[newClusterInst.Organization]
 		orgTracker[newClusterInst.Organization] = append(records, newRecord)
@@ -235,7 +241,7 @@ func recordClusterUsages(ctx context.Context, usage *ormapi.MetricData, cloudlet
 			log.SpanLog(ctx, log.DebugLevelInfo, "Unable to get account info", "org", org, "err", err)
 			continue
 		} else {
-			err = serverConfig.BillingService.RecordUsage(ctx, accountInfo, record)
+			err = serverConfig.BillingService.RecordUsage(ctx, region, accountInfo, record)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Unable to record cluster usage", "err", err)
 			}
