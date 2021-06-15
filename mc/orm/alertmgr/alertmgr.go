@@ -137,19 +137,6 @@ func (s *AlertMgrServer) Stop() {
 	s.waitGrp.Wait()
 }
 
-func isInternalAlert(alert *edgeproto.Alert) bool {
-	name, ok := alert.Labels["alertname"]
-	if !ok {
-		return true
-	}
-	if name == cloudcommon.AlertAppInstDown ||
-		name == cloudcommon.AlertCloudletDown ||
-		name == cloudcommon.AlertCloudletResourceUsage {
-		return false
-	}
-	return true
-}
-
 func isLabelInternal(label string) bool {
 	if label == "instance" || label == "job" {
 		return true
@@ -159,7 +146,8 @@ func isLabelInternal(label string) bool {
 func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models.PostableAlerts {
 	openAPIAlerts := models.PostableAlerts{}
 	for _, a := range alerts {
-		if isInternalAlert(a) {
+		name, ok := a.Labels["alertname"]
+		if !ok || cloudcommon.IsInternalAlert(name) {
 			continue
 		}
 		start := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds, int64(a.ActiveAt.Nanos)))

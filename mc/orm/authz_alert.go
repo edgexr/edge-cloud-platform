@@ -33,6 +33,15 @@ func (s *AuthzAlert) Ok(obj *edgeproto.Alert) (bool, bool) {
 		return true, filterOutput
 	}
 
+	// if not an admin, we filter internal alerts
+	name, ok := obj.Labels["alertname"]
+	if !ok {
+		return false, filterOutput
+	}
+	if cloudcommon.IsInternalAlert(name) {
+		return false, filterOutput
+	}
+
 	org := obj.Labels["apporg"]
 	alertScope := obj.Labels["scope"]
 	if alertScope == cloudcommon.AlertScopeCloudlet {

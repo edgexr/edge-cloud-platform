@@ -2,6 +2,11 @@
 description: run auto-prov test. Assumes edge-cloud objects already present
 
 tests:
+  - name: disable resource quotas alerts by setting max threshold value
+    actions: [mcapi-update, mcapi-show]
+    apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+    curuserfile: '{{datadir2}}/mc_user1.yml'
+
   - name: set autodeployinterval setting fast for testing
     actions: [mcapi-update]
     apifile: '{{datadir2}}/autoprov_settings.yml'
@@ -86,6 +91,28 @@ tests:
       yaml1: '{{outputdir}}/cmds-output'
       yaml2: '{{datadir2}}/autoprov_prom_alert_check_exp'
       filetype: raw
+
+  - name: Check that admin can see the Autoprov Alert
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    retrycount: 15
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mc_admin_autoprov_alerts.yml'
+      filetype: mcalerts
+
+  - name: User should not see the internal Alerts
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    retrycount: 15
+    retryintervalsec: 0.2
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: mcalerts
 
   - name: sleep, allow alerts to go active and delete autoprovappd
     actions: [sleep=3]
