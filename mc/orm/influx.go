@@ -874,8 +874,14 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 		}
 	}
 
+	// orgField for better error string
+	orgField := "App"
+	if devResource == ResourceClusterAnalytics {
+		orgField = "Cluster"
+	}
+
 	if len(devOrgs) == 0 && len(cloudletOrgs) == 0 {
-		return []string{}, fmt.Errorf("Must provide either App organization or Cloudlet organization")
+		return []string{}, fmt.Errorf("Must provide either %s organization or Cloudlet organization", orgField)
 	}
 
 	// check if the developer is authorized
@@ -890,10 +896,6 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 		// they have perms to (since there are two choices)
 		if len(devOrgs) == 0 && len(authDevOrgs) > 0 {
 			// developer but didn't specify App org
-			orgField := "App"
-			if devResource == ResourceClusterAnalytics {
-				orgField = "Cluster"
-			}
 			return []string{}, fmt.Errorf("Developers please specify the %s Organization", orgField)
 		}
 	}
