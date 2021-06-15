@@ -39,6 +39,8 @@ type UsageRecord struct {
 	AppInst     *edgeproto.AppInstKey
 	StartTime   time.Time
 	EndTime     time.Time
+	IpAccess    string
+	Region      string
 }
 
 type InvoiceData struct {
@@ -212,7 +214,7 @@ type BillingService interface {
 	// Remove a child from a parent
 	RemoveChild(ctx context.Context, parent, child *ormapi.AccountInfo) error
 	// Records usage
-	RecordUsage(ctx context.Context, account *ormapi.AccountInfo, usageRecords []UsageRecord) error
+	RecordUsage(ctx context.Context, region string, account *ormapi.AccountInfo, usageRecords []UsageRecord) error
 	// Grab invoice data
 	GetInvoice(ctx context.Context, account *ormapi.AccountInfo, startDate, endDate string) ([]InvoiceData, error)
 	// Show payment profiles
