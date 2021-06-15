@@ -87,3 +87,24 @@ func goodPermStreamCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, to
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
+
+var _ = edgeproto.GetFields
+
+func badPermStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, status, err := testutil.TestPermStreamGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, st, err := testutil.TestPermStreamGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	_, status, err := testutil.TestPermStreamGPUDriver(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}

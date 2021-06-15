@@ -68,6 +68,21 @@ func TestPermStreamCloudlet(mcClient *mctestclient.Client, uri, token, region, o
 	return TestStreamCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestStreamGPUDriver(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.GPUDriverKey, modFuncs ...func(*edgeproto.GPUDriverKey)) ([]edgeproto.Result, int, error) {
+	dat := &ormapi.RegionGPUDriverKey{}
+	dat.Region = region
+	dat.GPUDriverKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.GPUDriverKey)
+	}
+	return mcClient.StreamGPUDriver(uri, token, dat)
+}
+func TestPermStreamGPUDriver(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) ([]edgeproto.Result, int, error) {
+	in := &edgeproto.GPUDriverKey{}
+	in.Organization = org
+	return TestStreamGPUDriver(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func (s *TestClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
 	inR := &ormapi.RegionAppInstKey{
 		Region:     s.Region,
@@ -102,6 +117,18 @@ func (s *TestClient) StreamClusterInst(ctx context.Context, in *edgeproto.Cluste
 		ClusterInstKey: *in,
 	}
 	out, status, err := s.McClient.StreamClusterInst(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) StreamGPUDriver(ctx context.Context, in *edgeproto.GPUDriverKey) ([]edgeproto.Result, error) {
+	inR := &ormapi.RegionGPUDriverKey{
+		Region:       s.Region,
+		GPUDriverKey: *in,
+	}
+	out, status, err := s.McClient.StreamGPUDriver(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

@@ -73,10 +73,28 @@ var StreamCloudletCmd = &ApiCommand{
 	ProtobufApi:          true,
 }
 
+var StreamGPUDriverCmd = &ApiCommand{
+	Name:                 "StreamGPUDriver",
+	Use:                  "streamgpudriver",
+	Short:                "Stream GPU driver current progress",
+	RequiredArgs:         "region " + strings.Join(GPUDriverKeyRequiredArgs, " "),
+	OptionalArgs:         strings.Join(GPUDriverKeyOptionalArgs, " "),
+	AliasArgs:            strings.Join(GPUDriverKeyAliasArgs, " "),
+	SpecialArgs:          &GPUDriverKeySpecialArgs,
+	Comments:             addRegionComment(GPUDriverKeyComments),
+	ReqData:              &ormapi.RegionGPUDriverKey{},
+	ReplyData:            &edgeproto.Result{},
+	Path:                 "/auth/ctrl/StreamGPUDriver",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
 var StreamObjApiCmds = []*ApiCommand{
 	StreamAppInstCmd,
 	StreamClusterInstCmd,
 	StreamCloudletCmd,
+	StreamGPUDriverCmd,
 }
 
 const StreamObjGroup = "StreamObj"
