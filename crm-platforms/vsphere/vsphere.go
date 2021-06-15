@@ -23,6 +23,13 @@ type VSpherePlatform struct {
 	caches       *platform.Caches
 }
 
+func (o *VSpherePlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+		SupportsSharedVolume:       true,
+	}
+}
+
 func (v *VSpherePlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
 	vmProperties.IptablesBasedFirewall = true

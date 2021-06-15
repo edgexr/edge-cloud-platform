@@ -11,6 +11,7 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	ssh "github.com/mobiledgex/golang-ssh"
@@ -39,6 +40,14 @@ type GCPFlavor struct {
 	MaximumPersistentDisksSizeGb string
 	MemoryMb                     int
 	Name                         string
+}
+
+func (o *GCPPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster:    true,
+		SupportsKubernetesOnly:        true,
+		KubernetesRequiresWorkerNodes: true,
+	}
 }
 
 func (g *GCPPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

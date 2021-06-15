@@ -13,10 +13,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/vault"
 )
 
-func (e *EdgeboxPlatform) IsCloudletServicesLocal() bool {
-	return e.generic.IsCloudletServicesLocal()
-}
-
 func (e *EdgeboxPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create cloudlet for edgebox")
 	err := e.generic.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, nil, accessApi, updateCallback)

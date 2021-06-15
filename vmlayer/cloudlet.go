@@ -498,6 +498,10 @@ func (v *VMPlatform) SaveCloudletAccessVars(ctx context.Context, cloudlet *edgep
 	return v.VMProvider.SaveCloudletAccessVars(ctx, cloudlet, accessVarsIn, pfConfig, vaultConfig, updateCallback)
 }
 
+func (v *VMPlatform) GetFeatures() *platform.Features {
+	return v.VMProvider.GetFeatures()
+}
+
 func (v *VMPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	var err error
 	var result OperationInitResult

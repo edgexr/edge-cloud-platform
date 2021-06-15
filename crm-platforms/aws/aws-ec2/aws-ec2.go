@@ -20,6 +20,12 @@ type AwsEc2Platform struct {
 	VpcCidr         string
 }
 
+func (o *AwsEc2Platform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+	}
+}
+
 func (a *AwsEc2Platform) NameSanitize(name string) string {
 	return name
 }
