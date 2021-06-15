@@ -11,6 +11,7 @@ regiondata:
       ipsupport: IpSupportDynamic
       numdynamicips: 254
       platformtype: PlatformTypeKindinfra
+      enabledefaultserverlesscluster: true
       envvar:
         foo: bar
       resourcequotas:

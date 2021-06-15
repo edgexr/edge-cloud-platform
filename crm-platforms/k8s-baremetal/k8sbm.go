@@ -31,6 +31,14 @@ func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.Clou
 	return fmt.Sprintf("%s-%s", cloudletKey.Name, "cloudlet-kubeconfig")
 }
 
+func (o *K8sBareMetalPlatform) GetFeatures() *platform.Features {
+	// Note: cannot support multi-tenant from Controller because they
+	// underlying bare-metal cluster is already multi-tenant.
+	return &platform.Features{
+		SupportsKubernetesOnly: true,
+	}
+}
+
 func (k *K8sBareMetalPlatform) IsCloudletServicesLocal() bool {
 	return false
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/kind"
-	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -22,7 +21,6 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	if info.Properties == nil {
 		info.Properties = make(map[string]string)
 	}
-	info.Properties[cloudcommon.CloudletSupportsMT] = "true"
 	info.OsMaxRam = 81920
 	info.OsMaxVcores = 100
 	info.OsMaxVolGb = 500

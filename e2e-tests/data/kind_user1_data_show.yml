@@ -80,6 +80,7 @@ regiondata:
         value: 20
         alertthreshold: 50
       defaultresourcealertthreshold: 80
+      enabledefaultserverlesscluster: true
     cloudletinfos:
     - key:
         organization: dmuus
@@ -110,8 +111,6 @@ regiondata:
         - name: local-mac
       trustpolicystate: NotPresent
       compatibilityversion: 1
-      properties:
-        supports-mt: "true"
 - region: locala
   appdata:
     flavors:

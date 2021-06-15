@@ -29,6 +29,13 @@ func (o *VMPoolPlatform) GetCloudletKey() *edgeproto.CloudletKey {
 	return o.VMProperties.CommonPf.PlatformConfig.CloudletKey
 }
 
+func (o *VMPoolPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+		IsVMPool:                   true,
+	}
+}
+
 func (o *VMPoolPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	o.caches = caches
 }

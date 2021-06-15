@@ -17,6 +17,14 @@ type AwsEksPlatform struct {
 	awsGenPf *awsgen.AwsGenericPlatform
 }
 
+func (o *AwsEksPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster:    true,
+		SupportsKubernetesOnly:        true,
+		KubernetesRequiresWorkerNodes: true,
+	}
+}
+
 func (a *AwsEksPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	return a.awsGenPf.GatherCloudletInfo(ctx, "", info)
 }

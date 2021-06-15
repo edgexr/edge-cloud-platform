@@ -736,6 +736,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// GpuConfigProperties: 45.3
 	// GpuConfigPropertiesKey: 45.3.1
 	// GpuConfigPropertiesValue: 45.3.2
+	// EnableDefaultServerlessCluster: 46
 	// ```
 	// Security:
 	//   Bearer:

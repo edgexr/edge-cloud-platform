@@ -80,6 +80,13 @@ func (e *EdgeboxPlatform) GetEdgeboxDockerCreds() (string, string) {
 	return user_val, pass_val
 }
 
+func (o *EdgeboxPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+		CloudletServicesLocal:      true,
+	}
+}
+
 func (e *EdgeboxPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	return e.generic.GatherCloudletInfo(ctx, info)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -39,6 +40,14 @@ type AZFlavor struct {
 	Name  string
 	RAM   int
 	VCPUs int
+}
+
+func (o *AzurePlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster:    true,
+		SupportsKubernetesOnly:        true,
+		KubernetesRequiresWorkerNodes: true,
+	}
 }
 
 func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

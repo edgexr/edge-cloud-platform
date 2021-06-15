@@ -22,6 +22,14 @@ func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) 
 	o.VMProperties = vmProperties
 }
 
+func (o *OpenstackPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+		SupportsSharedVolume:       true,
+		SupportsTrustPolicy:        true,
+	}
+}
+
 func (o *OpenstackPlatform) InitProvider(ctx context.Context, caches *platform.Caches, stage vmlayer.ProviderInitStage, updateCallback edgeproto.CacheUpdateCallback) error {
 	o.InitResourceReservations(ctx)
 	if stage == vmlayer.ProviderInitPlatformStartCrm {

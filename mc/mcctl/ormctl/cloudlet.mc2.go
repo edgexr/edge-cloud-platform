@@ -526,6 +526,7 @@ var CreateCloudletOptionalArgs = []string{
 	"gpuconfig.driver.name",
 	"gpuconfig.driver.organization",
 	"gpuconfig.properties",
+	"enabledefaultserverlesscluster",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -571,6 +572,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"gpuconfig.driver.name",
 	"gpuconfig.driver.organization",
 	"gpuconfig.properties",
+	"enabledefaultserverlesscluster",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -604,6 +606,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"gpuconfig.driver.name",
 	"gpuconfig.driver.organization",
 	"gpuconfig.properties",
+	"enabledefaultserverlesscluster",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudlet-org",
@@ -649,6 +652,7 @@ var ShowCloudletOptionalArgs = []string{
 	"gpuconfig.driver.name",
 	"gpuconfig.driver.organization",
 	"gpuconfig.properties",
+	"enabledefaultserverlesscluster",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -922,6 +926,7 @@ var CloudletOptionalArgs = []string{
 	"gpuconfig.driver.name",
 	"gpuconfig.driver.organization",
 	"gpuconfig.properties",
+	"enabledefaultserverlesscluster",
 }
 var CloudletAliasArgs = []string{
 	"fields=cloudlet.fields",
@@ -1015,6 +1020,7 @@ var CloudletAliasArgs = []string{
 	"gpuconfig.driver.organization=cloudlet.gpuconfig.driver.organization",
 	"gpuconfig.gputype=cloudlet.gpuconfig.gputype",
 	"gpuconfig.properties=cloudlet.gpuconfig.properties",
+	"enabledefaultserverlesscluster=cloudlet.enabledefaultserverlesscluster",
 }
 var CloudletComments = map[string]string{
 	"fields":                              "Fields are used for the Update API to specify which fields to apply",
@@ -1095,6 +1101,7 @@ var CloudletComments = map[string]string{
 	"gpuconfig.driver.organization":       "Organization to which the driver belongs to",
 	"gpuconfig.gputype":                   "Type of GPU hardware supported by the Cloudlet, one of GpuTypeNone, GpuTypePassthrough, GpuTypeVgpu",
 	"gpuconfig.properties":                "Properties to identify specifics of GPU",
+	"enabledefaultserverlesscluster":      "Enable experimental default multitenant (serverless) cluster",
 }
 var CloudletSpecialArgs = map[string]string{
 	"cloudlet.accessvars":           "StringToString",

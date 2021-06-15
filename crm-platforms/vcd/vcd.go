@@ -128,6 +128,15 @@ func (v *VcdPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	v.caches = caches
 }
 
+func (o *VcdPlatform) GetFeatures() *platform.Features {
+	return &platform.Features{
+		SupportsMultiTenantCluster: true,
+		SupportsSharedVolume:       true,
+		SupportsTrustPolicy:        true,
+		SupportsImageTypeOVF:       true,
+	}
+}
+
 func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.ResourceType, resourceName string) (string, error) {
 
 	vcdClient := v.GetVcdClientFromContext(ctx)

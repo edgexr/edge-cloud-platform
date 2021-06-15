@@ -14,6 +14,7 @@ import (
 
 // ManagedK8sProvider is an interface that platforms implement to perform the details of interfacing with managed kubernetes services
 type ManagedK8sProvider interface {
+	GetFeatures() *platform.Features
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	GetProviderSpecificProps(ctx context.Context) (map[string]*edgeproto.PropertyInfo, error)
 	SetProperties(props *infracommon.InfraProperties) error
@@ -57,6 +58,10 @@ func (m *ManagedK8sPlatform) Init(ctx context.Context, platformConfig *platform.
 		return err
 	}
 	return m.Provider.Login(ctx)
+}
+
+func (m *ManagedK8sPlatform) GetFeatures() *platform.Features {
+	return m.Provider.GetFeatures()
 }
 
 func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
