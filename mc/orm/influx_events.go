@@ -16,6 +16,7 @@ var clusterEventFields = []string{
 	"vcpu",
 	"ram",
 	"disk",
+	"nodecount",
 	"other",
 }
 
