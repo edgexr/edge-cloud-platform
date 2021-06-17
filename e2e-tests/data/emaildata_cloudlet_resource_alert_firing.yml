@@ -7,21 +7,21 @@
     from: alerts@mobiledgex.com
 - text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=CloudletResourceUsage\n\n
     \ cloudlet=dmuus-cloud-1\n\n  cloudletorg=dmuus\n\n  region=local\n\n  scope=Cloudlet\n\n
-    \ warning=[Infra] More than 50% of RAM is used\n\n\n  [1] Firing\n\n\n"
+    \ warning=More than 50% of RAM is used on the infra managed by the cloudlet\n\n\n  [1] Firing\n\n\n"
   headers:
     subject: '[FIRING:1] Alert for emailCloudletAlertReceiver: CloudletResourceUsage Cloudlet: dmuus-cloud-1'
     to: ops@mobiledgex.net
     from: alerts@mobiledgex.com
 - text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=CloudletResourceUsage\n\n
     \ cloudlet=dmuus-cloud-1\n\n  cloudletorg=dmuus\n\n  region=local\n\n  scope=Cloudlet\n\n
-    \ warning=More than 50% of RAM is used\n\n\n  [1] Firing\n\n\n"
+    \ warning=More than 50% of RAM is used by the cloudlet\n\n\n  [1] Firing\n\n\n"
   headers:
     subject: '[FIRING:1] Alert for emailCloudletAlertReceiver: CloudletResourceUsage Cloudlet: dmuus-cloud-1'
     to: ops@mobiledgex.net
     from: alerts@mobiledgex.com
 - text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=CloudletResourceUsage\n\n
     \ cloudlet=dmuus-cloud-1\n\n  cloudletorg=dmuus\n\n  region=local\n\n  scope=Cloudlet\n\n
-    \ warning=More than 50% of vCPUs is used\n\n\n  [1] Firing\n\n\n"
+    \ warning=More than 50% of vCPUs is used by the cloudlet\n\n\n  [1] Firing\n\n\n"
   headers:
     subject: '[FIRING:1] Alert for emailCloudletAlertReceiver: CloudletResourceUsage Cloudlet: dmuus-cloud-1'
     to: ops@mobiledgex.net
