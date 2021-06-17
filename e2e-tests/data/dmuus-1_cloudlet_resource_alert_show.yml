@@ -4,9 +4,9 @@
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
-    warning: More than 50% of vCPUs is used
+    warning: More than 50% of vCPUs is used by the cloudlet
   annotations:
-    description: More than 50% of vCPUs is used
+    description: More than 50% of vCPUs is used by the cloudlet
     title: CloudletResourceUsage
   state: firing
   activeat:
@@ -18,9 +18,9 @@
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
-    warning: '[Infra] More than 50% of RAM is used'
+    warning: 'More than 50% of RAM is used on the infra managed by the cloudlet'
   annotations:
-    description: '[Infra] More than 50% of RAM is used'
+    description: 'More than 50% of RAM is used on the infra managed by the cloudlet'
     title: CloudletResourceUsage
   state: firing
   activeat:
@@ -32,9 +32,9 @@
     cloudletorg: dmuus
     region: local
     scope: Cloudlet
-    warning: More than 50% of RAM is used
+    warning: More than 50% of RAM is used by the cloudlet
   annotations:
-    description: More than 50% of RAM is used
+    description: More than 50% of RAM is used by the cloudlet
     title: CloudletResourceUsage
   state: firing
   activeat:
