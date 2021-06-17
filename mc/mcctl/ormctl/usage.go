@@ -36,7 +36,7 @@ func init() {
 		Use:          "cloudletpool",
 		Short:        "View CloudletPool usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, CloudletPoolUsageRequiredArgs...), " "),
-		OptionalArgs: "shownonvmapps",
+		OptionalArgs: "showvmappsonly",
 		AliasArgs:    strings.Join(CloudletPoolUsageAliasArgs, " "),
 		Comments:     addRegionComment(CloudletPoolUsageComments),
 		ReqData:      &ormapi.RegionCloudletPoolUsage{},
@@ -127,5 +127,5 @@ var CloudletPoolUsageComments = map[string]string{
 	"cloudletpoolorg": "Organization or Company Name that a Operator is part of",
 	"starttime":       "Time to start displaying usage from",
 	"endtime":         "Time up to which to display usage",
-	"shownonvmapps":   "Display all appinsts instead of just vm based ones",
+	"showvmappsonly":  "Display only vm based appinsts",
 }
