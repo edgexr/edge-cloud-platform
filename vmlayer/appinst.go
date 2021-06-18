@@ -784,7 +784,7 @@ func (v *VMPlatform) GetContainerCommand(ctx context.Context, clusterInst *edgep
 	}
 }
 
-func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageName, imageUrl, md5Sum string) (string, error) {
+func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageName, imageUrl, md5Sum string) (outPath string, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DownloadVMImage", "imageName", imageName, "imageUrl", imageUrl)
 
 	fileExt, err := cloudcommon.GetFileNameWithExt(imageUrl)
@@ -792,6 +792,13 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 		return "", err
 	}
 	filePath := "/var/tmp/" + fileExt
+
+	defer func() {
+		if reterr != nil {
+			// Stale file might be present if download fails/succeeds, deleting it
+			infracommon.DeleteFile(filePath)
+		}
+	}()
 
 	err = cloudcommon.DownloadFile(ctx, accessApi, imageUrl, cloudcommon.NoCreds, filePath, nil)
 	if err != nil {
