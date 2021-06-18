@@ -173,7 +173,7 @@ var ReporterComments = map[string]string{
 	"name":              `Reporter name. Can only contain letters, digits, period, hyphen. It cannot have leading or trailing spaces or period. It cannot start with hyphen`,
 	"org":               `Organization name`,
 	"email":             `Email to send generated reports`,
-	"schedule":          `Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth`,
+	"schedule":          `Indicates how often a report should be generated, one of EveryWeek, Every15Days, EveryMonth`,
 	"startscheduledate": `Start date (in RFC3339 format with intended timezone) when the report is scheduled to be generated (Default: today)`,
 	"nextscheduledate":  `Date when the next report is scheduled to be generated (for internal use only)`,
 	"username":          `User name (for internal use only)`,
