@@ -3,6 +3,7 @@ package orm
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -352,6 +353,7 @@ func (r *PDFReport) AddTimeChart(chartPrefix, title string, multiChartData []Tim
 		}
 		allChartSeries = append(allChartSeries, chartSeries)
 		allChartSeries = append(allChartSeries, maxSeries)
+		allChartSeries = append(allChartSeries, chart.LastValueAnnotationSeries(maxSeries))
 	}
 
 	r.setChartPageBreak(float64(ChartHeight))
@@ -365,11 +367,6 @@ func (r *PDFReport) AddTimeChart(chartPrefix, title string, multiChartData []Tim
 	r.pdf.Ln(-1)
 
 	graph := chart.Chart{
-		YAxis: chart.YAxis{
-			Range: &chart.ContinuousRange{
-				Min: 0,
-			},
-		},
 		XAxis: chart.XAxis{
 			ValueFormatter: TimeValueFormatterWithFormatTZ(ormapi.TimeFormatDateTime, r.timezone),
 		},
@@ -378,8 +375,8 @@ func (r *PDFReport) AddTimeChart(chartPrefix, title string, multiChartData []Tim
 
 	if spec.YAxisValueFormat == AxisValueFormatInt {
 		graph.YAxis.ValueFormatter = chart.IntValueFormatter
-		graph.YAxis.Range = &chart.ContinuousRange{
-			Max: maxVal,
+		graph.YAxis.Range = &IntRange{
+			chart.ContinuousRange{Max: maxVal},
 		}
 	}
 
@@ -537,4 +534,42 @@ func LineSeries(r chart.Renderer, canvasBox chart.Box, xrange, yrange chart.Rang
 		}
 		r.Stroke()
 	}
+}
+
+type IntRange struct {
+	chart.ContinuousRange
+}
+
+func (ra IntRange) GetTicks(r chart.Renderer, defaults chart.Style, vf chart.ValueFormatter) []chart.Tick {
+	var ticks []chart.Tick
+
+	vf = chart.IntValueFormatter
+
+	min, max := ra.GetMin(), ra.GetMax()
+	minLabel := vf(min)
+	labelBox := r.MeasureText(minLabel)
+
+	tickSize := float64(labelBox.Height() + chart.DefaultMinimumTickVerticalSpacing)
+
+	domain := float64(ra.GetDomain())
+	domainRemainder := domain - (tickSize * 2)
+	intermediateTickCount := int(math.Floor(float64(domainRemainder) / float64(tickSize)))
+	intermediateTickCount = chart.MinInt(intermediateTickCount, chart.DefaultTickCountSanityCheck)
+
+	points := float64(intermediateTickCount)
+
+	unit := float64(1)
+	if max > points {
+		unit = chart.RoundUp(max, points) / points
+	}
+	val := float64(0)
+	for val <= max {
+		ticks = append(ticks, chart.Tick{
+			Value: val,
+			Label: vf(val),
+		})
+		val += unit
+	}
+
+	return ticks
 }

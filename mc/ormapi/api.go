@@ -576,7 +576,7 @@ type Reporter struct {
 	Org string `gorm:"primary_key;type:citext REFERENCES organizations(name)"`
 	// Email to send generated reports
 	Email string `json:",omitempty"`
-	// Indicates how often a report should be generated, one of EveryWeek, Every15Days, Every30Days, EveryMonth
+	// Indicates how often a report should be generated, one of EveryWeek, Every15Days, EveryMonth
 	Schedule edgeproto.ReportSchedule `json:",omitempty"`
 	// Start date (in RFC3339 format with intended timezone) when the report is scheduled to be generated (Default: today)
 	StartScheduleDate string `json:",omitempty"`

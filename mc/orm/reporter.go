@@ -49,8 +49,6 @@ func getScheduleDayMonthCount(schedule edgeproto.ReportSchedule) (int, int, erro
 		dayCount = 7
 	case edgeproto.ReportSchedule_Every15Days:
 		dayCount = 15
-	case edgeproto.ReportSchedule_Every30Days:
-		dayCount = 30
 	case edgeproto.ReportSchedule_EveryMonth:
 		monthCount = 1
 	default:
@@ -1515,7 +1513,7 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 		if len(cloudletpools) > 0 {
 			header = []string{"Name", "Associated Cloudlets", "Accepted Developers", "Pending Developers"}
 			columnsWidth = []float64{30, 60, 50, 50}
-			pdfReport.AddTable("CloudletPools", header, cloudletpools, columnsWidth)
+			pdfReport.AddTable("CloudletPools - Last Known Details", header, cloudletpools, columnsWidth)
 		}
 
 		// Sort cloudlet by name
@@ -1543,7 +1541,7 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 
 			// Get top flavors used per Cloudlet
 			if data, ok := flavorData[cloudletName]; ok {
-				err = pdfReport.AddPieChart(cloudletName, "Flavor Usage Count", data)
+				err = pdfReport.AddPieChart(cloudletName, "Flavor Usage - Count of maximum flavors used", data)
 				if err != nil {
 					return nil, err
 				}
@@ -1564,7 +1562,7 @@ func GenerateCloudletReport(ctx context.Context, username string, regions []stri
 
 			// Get app count by developer on cloudlet
 			if data, ok := appCountData[cloudletName]; ok {
-				err = pdfReport.AddPieChart(cloudletName, "App Count By Developer", data)
+				err = pdfReport.AddPieChart(cloudletName, "Developer App Deployments - Count of maximum apps deployed by developers", data)
 				if err != nil {
 					return nil, err
 				}
