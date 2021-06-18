@@ -103,6 +103,8 @@ var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 
+var unitTestNodeMgrOps []node.NodeOp
+
 func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server := Server{config: config}
 	// keep global pointer to config stored in server for easy access
@@ -146,7 +148,13 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		return nil, fmt.Errorf("Missing deployment tag")
 	}
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeMC, node.CertIssuerGlobal, node.WithName(config.Hostname), node.WithCloudletPoolLookup(&allRegionCaches), node.WithCloudletLookup(&allRegionCaches))
+	ops := []node.NodeOp{
+		node.WithName(config.Hostname),
+		node.WithCloudletPoolLookup(&allRegionCaches),
+		node.WithCloudletLookup(&allRegionCaches),
+	}
+	ops = append(ops, unitTestNodeMgrOps...)
+	ctx, span, err := nodeMgr.Init(node.NodeTypeMC, node.CertIssuerGlobal, ops...)
 	if err != nil {
 		return nil, err
 	}
@@ -257,6 +265,9 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server.initDataDone = make(chan error, 1)
 	go InitData(ctx, Superuser, superpass, config.PingInterval, &server.stopInitData, server.done, server.initDataDone)
 
+	if config.AlertCache != nil {
+		edgeproto.InitAlertCache(config.AlertCache)
+	}
 	if config.AlertMgrAddr != "" {
 		tlsConfig, err := nodeMgr.GetPublicClientTlsConfig(ctx)
 		if err != nil {
@@ -805,7 +816,6 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		if err != nil {
 			return nil, err
 		}
-		edgeproto.InitAlertCache(config.AlertCache)
 		// sets the callback to be the alertMgr thread callback
 		server.notifyServer.RegisterRecvAlertCache(config.AlertCache)
 		if AlertManagerServer != nil {
