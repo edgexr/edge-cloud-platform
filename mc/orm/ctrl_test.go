@@ -20,6 +20,8 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/nodetest"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -40,6 +42,7 @@ func TestController(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	addr := "127.0.0.1:9999"
 	uri := "http://" + addr + "/api/v1"
+	mockESUrl := "http://mock.es"
 
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
@@ -51,6 +54,8 @@ func TestController(t *testing.T) {
 	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 	testAlertMgrAddr, err := InitAlertmgrMock()
 	require.Nil(t, err)
+	de := &nodetest.DummyEventsES{}
+	de.InitHttpMock(mockESUrl)
 
 	config := ServerConfig{
 		ServAddr:                addr,
@@ -65,7 +70,14 @@ func TestController(t *testing.T) {
 		UsageCheckpointInterval: "MONTH",
 		BillingPlatform:         billing.BillingTypeFake,
 		DeploymentTag:           "local",
+		AlertCache:              &edgeproto.AlertCache{},
 	}
+	unitTestNodeMgrOps = []node.NodeOp{
+		node.WithESUrls(mockESUrl),
+	}
+	defer func() {
+		unitTestNodeMgrOps = []node.NodeOp{}
+	}()
 	server, err := RunServer(&config)
 	require.Nil(t, err, "run server")
 	defer server.Stop()
@@ -121,11 +133,11 @@ func TestController(t *testing.T) {
 	require.Nil(t, err, "server online")
 
 	for _, clientRun := range getUnitTestClientRuns() {
-		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, ds, &sds)
+		testControllerClientRun(t, ctx, clientRun, uri, addr, ctrlAddr, ctrlAddr2, influxServer, ds, &sds, de)
 	}
 }
 
-func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri, addr, ctrlAddr, ctrlAddr2 string, influxServer *httptest.Server, ds *testutil.DummyServer, sds *StreamDummyServer) {
+func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctestclient.ClientRun, uri, addr, ctrlAddr, ctrlAddr2 string, influxServer *httptest.Server, ds *testutil.DummyServer, sds *StreamDummyServer, de *nodetest.DummyEventsES) {
 	mcClient := mctestclient.NewClient(clientRun)
 
 	// login as super user
@@ -964,6 +976,62 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		[]edgeproto.CloudletKey{org3Cloudlet.Key}, "Operators must specify a cloudlet in a cloudletPool")
 
 	testEdgeboxOnlyCloudletCreate(t, ctx, mcClient, uri, ctrl.Region)
+
+	if restClient, ok := mcClient.ClientRun.(*ormclient.Client); ok {
+		// Test error capturing from streamed output for audit log.
+		// Because streamed JSON is really just sending in chunks,
+		// it needs to send back a 200 response before it can start
+		// sending chunks. Once it sends chunks, if we hit a grpc
+		// error, then the error is encapsulated in the chunks.
+		// However, the bug request is that the audit log display
+		// clearly that the API call failed (even though the http
+		// response was 200(OK).
+		// To simulate an error midstream, we need to play some tricks.
+		// Because of the way grpc buffers messages, and ignores
+		// any buffered messages on err, we need to sync between
+		// client and server to make sure client has received and
+		// processed messages before server sends an error. Only
+		// in this way will we trigger the condition that the
+		// client gets back a http status 200 to start streaming,
+		// before it gets an error. Then we can make sure that
+		// the audit log extracts the error from the streamed
+		// messages, instead of using the 200 sent in the http header.
+		syncChan := make(chan bool, 5)
+		api := "CreateAppInst"
+		apiUri := "/api/v1/auth/ctrl/CreateAppInst"
+		restClient.EnableMidstreamFailure(apiUri, syncChan)
+		ds.EnableMidstreamFailure(api, syncChan)
+		ds.ShowDummyCount = 3
+
+		appInst := &ormapi.RegionAppInst{}
+		appInst.Region = ctrl.Region
+		appInst.AppInst.Key.AppKey.Organization = org1
+		_, status, err = mcClient.CreateAppInst(uri, token, appInst)
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), "Midstream failure!")
+		// http status will be 200 since streaming already started.
+		require.Equal(t, http.StatusOK, status)
+		restClient.DisableMidstreamFailure(apiUri)
+		ds.DisableMidstreamFailure(api)
+		ds.ShowDummyCount = 0
+
+		// wait for event
+		matches := de.WaitLastEventMatches(func(event *node.EventData) bool {
+			if event.Name != apiUri {
+				return false
+			}
+			if event.Type != "audit" {
+				return false
+			}
+			for _, etag := range event.Tags {
+				if etag.Key == "status" && etag.Value == "400" {
+					return true
+				}
+			}
+			return false
+		})
+		require.True(t, matches, "wait last event matches")
+	}
 
 	// delete controller
 	status, err = mcClient.DeleteController(uri, token, &ctrl)

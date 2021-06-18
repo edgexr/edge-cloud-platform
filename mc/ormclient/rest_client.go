@@ -26,6 +26,10 @@ import (
 type Client struct {
 	SkipVerify bool
 	Debug      bool
+	// To allow testing of midstream failures, we need to wait until
+	// some stream messages have been received before signaling to the
+	// sender that it's ok to generate an error.
+	MidstreamFailChs map[string]chan bool
 }
 
 func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
@@ -193,6 +197,9 @@ func (s *Client) handleHttpStreamOut(uri, token string, reqData, replyData inter
 		}
 		return resp.StatusCode, errors.New(res.Message)
 	}
+	if ch, ok := s.MidstreamFailChs[uri]; ok {
+		ch <- true
+	}
 	payload := ormapi.StreamPayload{}
 	if replyData != nil {
 		payload.Data = replyData
@@ -334,4 +341,15 @@ func ClearObject(obj interface{}) {
 	// payload must be pointer to object.
 	p := reflect.ValueOf(obj).Elem()
 	p.Set(reflect.Zero(p.Type()))
+}
+
+func (s *Client) EnableMidstreamFailure(uri string, syncCh chan bool) {
+	if s.MidstreamFailChs == nil {
+		s.MidstreamFailChs = make(map[string]chan bool)
+	}
+	s.MidstreamFailChs[uri] = syncCh
+}
+
+func (s *Client) DisableMidstreamFailure(uri string) {
+	delete(s.MidstreamFailChs, uri)
 }

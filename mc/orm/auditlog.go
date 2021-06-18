@@ -249,7 +249,13 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		if logaudit {
 			// Create audit event from Span data.
 			eventTags := make(map[string]string)
-			eventTags["status"] = fmt.Sprintf("%d", res.Status)
+			code := res.Status
+			if nexterr != nil && code == http.StatusOK {
+				// override 200(OK) status if streaming error
+				eventTags["respstatus"] = fmt.Sprintf("%d", code)
+				code, _ = getErrorResult(nexterr)
+			}
+			eventTags["status"] = fmt.Sprintf("%d", code)
 			eventOrg := ""
 			for k, v := range log.GetTags(span) {
 				if k == "level" || k == "error" || log.IgnoreSpanTag(k) {
