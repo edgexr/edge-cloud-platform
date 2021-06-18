@@ -1,7 +1,7 @@
 alertreceivers:
 - name: emailClusterAlertReceiver
   type: email
-  severity: error
+  severity: info
   region: local
   user: mexadmin
   email: cluster-ops@mobiledgex.net
@@ -34,7 +34,7 @@ alertreceivers:
       organization: AcmeAppCo
 - name: emailAlertReceiver
   type: email
-  severity: error
+  severity: warning
   user: user2
   email: ops@mobiledgex.net
   appinst:
@@ -51,7 +51,7 @@ alertreceivers:
       organization: AcmeAppCo
 - name: emailSlackReceiver
   type: slack
-  severity: error
+  severity: info
   user: user2
   slackchannel: '#alerts'
   slackwebhook: <hidden>

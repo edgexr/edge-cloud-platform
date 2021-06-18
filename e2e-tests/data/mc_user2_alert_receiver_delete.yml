@@ -1,7 +1,7 @@
 alertreceivers:
 - name: emailAlertReceiver
   type: email
-  severity: error
+  severity: warning
   email: ops@mobiledgex.net
   appinst:
     appkey:

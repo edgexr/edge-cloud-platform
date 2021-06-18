@@ -1,7 +1,7 @@
 alertreceivers:
 - name: emailSlackReceiver
   type: slack
-  severity: error
+  severity: info
   user: user2
   slackchannel: "#alerts"
   appinst:

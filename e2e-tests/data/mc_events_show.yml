@@ -19,6 +19,7 @@
     status: UP
   values:
     disk: 2
+    nodecount: 2
     ram: 2048
     vcpu: 2
 - name: cloudlet

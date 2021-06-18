@@ -1,7 +1,7 @@
 alertreceivers:
 - name: emailAlertReceiver
   type: email
-  severity: error
+  severity: warning
   email: ops@mobiledgex.net
   appinst:
     appkey:
@@ -17,7 +17,7 @@ alertreceivers:
       organization: AcmeAppCo
 - name: emailSlackReceiver
   type: slack
-  severity: error
+  severity: info
   slackchannel: "alerts"
   slackwebhook: "http://host.docker.internal:9100/slack/webhook"
   appinst:

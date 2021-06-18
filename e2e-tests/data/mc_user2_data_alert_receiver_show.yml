@@ -1,7 +1,7 @@
 alertreceivers:
 - name: emailAlertReceiver
   type: email
-  severity: error
+  severity: warning
   email: ops@mobiledgex.net
   user: user2
   appinst:
@@ -18,7 +18,7 @@ alertreceivers:
       organization: AcmeAppCo
 - name: emailSlackReceiver
   type: slack
-  severity: error
+  severity: info
   user: user2
   slackchannel: "#alerts"
   slackwebhook: "<hidden>"

@@ -18,6 +18,7 @@
          clusterorg = AcmeAppCo
          region = local
          scope = Application
+         severity = error
          status = HealthCheckFailServerFail
       numfiring: "1"
       numresolved: "0"
@@ -46,6 +47,7 @@
          clusterorg = AcmeAppCo
          region = local
          scope = Application
+         severity = error
          status = HealthCheckFailServerFail
   client: MobiledgeX Monitoring
   clienturl: |
