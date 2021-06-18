@@ -31,6 +31,8 @@ var MaxDockerSeedWait = 1 * time.Minute
 
 var qcowConvertTimeout = 15 * time.Minute
 
+var FileDownloadDir = "/var/tmp/"
+
 type ProxyDnsSecOpts struct {
 	AddProxy              bool
 	AddDnsAndPatchKubeSvc bool
@@ -410,7 +412,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// Fetch image paths from zip file
 		if app.DeploymentManifest != "" && strings.HasSuffix(app.DeploymentManifest, ".zip") {
 			filename := util.DockerSanitize(app.Key.Name + app.Key.Organization + app.Key.Version)
-			zipfile := "/var/tmp/" + filename + ".zip"
+			zipfile := FileDownloadDir + filename + ".zip"
 			zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.DeploymentManifest, zipfile, cloudcommon.Download)
 			if err != nil {
 				return err
@@ -791,7 +793,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 	if err != nil {
 		return "", err
 	}
-	filePath := "/var/tmp/" + fileExt
+	filePath := FileDownloadDir + fileExt
 
 	defer func() {
 		if reterr != nil {
