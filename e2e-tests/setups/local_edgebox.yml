@@ -60,6 +60,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   vaultaddr: "http://127.0.0.1:8200"
+  edgeturnaddr: "127.0.0.1:8080"
   hostname: "127.0.0.1"
   testmode: false
   checkpointinterval: 3m
@@ -115,6 +116,16 @@ mcs:
   deploymenttag: "dev"
   envvars:
     E2ETEST_TLS: true
+
+edgeturns:
+- name: edgeturn
+  region: local
+  hostname: "127.0.0.1"
+  testmode: true
+  usevaultpki: true
+  vaultaddr: "http://127.0.0.1:8200"
+  listenaddr: "127.0.0.1:8080"
+  proxyaddr: "127.0.0.1:8443"
 
 sqls:
 - name: sql1
