@@ -21,6 +21,7 @@ import (
 	dme "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/yaml/v2"
 
 	//"github.com/prometheus/alertmanager/api/v2/models"
 	// TODO - below is to replace the above for right now - once we update go and modules we can use prometheus directly
@@ -169,6 +170,10 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 			}
 			labels[k] = v
 		}
+
+		// add severity label for this alert
+		labels[cloudcommon.AlertSeverityLabel] = cloudcommon.GetSeverityForAlert(name)
+
 		openAPIAlerts = append(openAPIAlerts, &models.PostableAlert{
 			Annotations: copyMap(a.Annotations),
 			StartsAt:    start,
@@ -294,6 +299,41 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 	return labels
 }
 
+// return a match expression for an alert severity - we want to match alerts of
+// configured, or higher severity
+// Example: configured severity is "warn", match will be "error"|"warn"
+func getAlertSeverityMatchString(severity string) string {
+	matchLabel := ""
+	// all the lower severity receivers will get higher severity alerts as well
+	switch severity {
+	case cloudcommon.AlertSeverityInfo:
+		matchLabel = matchLabel + cloudcommon.AlertSeverityInfo + "|"
+		fallthrough
+	case cloudcommon.AlertSeverityWarn:
+		matchLabel = matchLabel + cloudcommon.AlertSeverityWarn + "|"
+		fallthrough
+	case cloudcommon.AlertSeverityError:
+		matchLabel = matchLabel + cloudcommon.AlertSeverityError
+	}
+	return matchLabel
+}
+
+// helper function to convert severity label regular expression to alertmanager_config structure
+func getAlertSeverityMatchRE(alertSeverity string) (alertmanager_config.MatchRegexps, error) {
+	severityRegExp := &alertmanager_config.Regexp{}
+	severityRE := getAlertSeverityMatchString(alertSeverity)
+	// custom yaml unmarshal function alertmanager_config.Regexp::UnmarshalYAML() compiles the regexp
+	err := yaml.UnmarshalStrict([]byte(severityRE), severityRegExp)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to create a receiver for severity(%s)- [%s]",
+			alertSeverity, err.Error())
+	}
+	severityMatchRE := alertmanager_config.MatchRegexps{
+		cloudcommon.AlertSeverityLabel: *severityRegExp,
+	}
+	return severityMatchRE, nil
+}
+
 // Receiver includes a route and a receiver which will receive the alert
 // we create a route on the org tags for a given appInstance
 func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.AlertReceiver) error {
@@ -380,10 +420,16 @@ func (s *AlertMgrServer) CreateReceiver(ctx context.Context, receiver *ormapi.Al
 			"receiver", receiver)
 		return fmt.Errorf("Invalid receiver type - %s", receiver.Type)
 	}
+	alertSeverityMatchRE, err := getAlertSeverityMatchRE(receiver.Severity)
+	if err != nil {
+		return err
+	}
+
 	// add route - match labels passed in
 	route := alertmanager_config.Route{
 		Receiver: receiverName,
 		Match:    routeMatchLabels,
+		MatchRE:  alertSeverityMatchRE,
 		Continue: true,
 	}
 	sidecarRec := SidecarReceiverConfig{
