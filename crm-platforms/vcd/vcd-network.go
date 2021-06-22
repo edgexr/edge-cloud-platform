@@ -24,6 +24,13 @@ var mexInternalNetRange = "10.101"
 
 var CloudletIsoNamesMap = "CloudletIsoNamesMap"
 
+var dhcpLeaseTime int = 60 * 60 * 24 * 365 * 10 // 10 years
+
+type VappNetIpAllocationType string
+
+const VappNetIpAllocationStatic = "static"
+const VappNetIpAllocationDhcp = "dhcp"
+
 // Use MEX_NETWORK_SCHEME to derive sharedLB orgvdcnet cidr for this cloudlet
 func (v *VcdPlatform) getMexInternalNetRange(ctx context.Context) (string, error) {
 	ni, err := vmlayer.ParseNetSpec(ctx, v.vmProperties.GetCloudletNetworkScheme())
@@ -218,7 +225,13 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 				if len(vmgp.Subnets) == 0 {
 					return "", fmt.Errorf("No subnets specified in orch params")
 				}
-				_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, subnet, vmgp.Subnets[0].DNSServers)
+				var ipAllocation VappNetIpAllocationType = VappNetIpAllocationStatic
+				if !v.vmProperties.RunLbDhcpServerForVmApps {
+					if len(vmgp.VMs) == 2 && vmgp.VMs[1].Role == vmlayer.RoleVMApplication {
+						ipAllocation = VappNetIpAllocationDhcp
+					}
+				}
+				_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, subnet, vmgp.Subnets[0].DNSServers, ipAllocation)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "create internal net failed", "err", err)
 					return "", err
@@ -557,10 +570,10 @@ func (v *VcdPlatform) IncrCidr(a string, delta int) (string, error) {
 
 const InternalNetMax = 100
 
-func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *govcd.VApp, serverName, netName string, cidr string, dnsServers []string) (string, error) {
+func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *govcd.VApp, serverName, netName string, cidr string, dnsServers []string, ipAllocation VappNetIpAllocationType) (string, error) {
 	var iprange []*types.IPRange
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "create internal server net", "netname", netName, "dnsServers", dnsServers)
+	log.SpanLog(ctx, log.DebugLevelInfra, "create internal server net", "netname", netName, "dnsServers", dnsServers, "ipAllocation", ipAllocation)
 
 	description := fmt.Sprintf("internal-%s", cidr)
 	a := strings.Split(cidr, "/")
@@ -591,13 +604,6 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 	if v.Verbose {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateInternalNetwork ", "serverName", serverName, "netname", netName, "gateway", gateway, "StartIP", startAddr, "EndIP", endAddr)
 	}
-
-	addrRange := types.IPRange{
-		StartAddress: startAddr,
-		EndAddress:   endAddr,
-	}
-	iprange = append(iprange, &addrRange)
-
 	internalSettings := govcd.VappNetworkSettings{
 		Name:             netName,
 		Description:      description,
@@ -606,9 +612,30 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 		DNS1:             dns1,
 		DNS2:             dns2,
 		DNSSuffix:        "mobiledgex.net",
-		StaticIPRanges:   iprange,
 		VappFenceEnabled: TakeBoolPointer(true),
 	}
+	if ipAllocation == VappNetIpAllocationDhcp {
+		// DHCP is used only for VM Apps, and just one IP in the pool is used
+		addrRange := types.IPRange{
+			StartAddress: endAddr,
+			EndAddress:   endAddr,
+		}
+		iprange = append(iprange, &addrRange)
+		internalSettings.DhcpSettings = &govcd.DhcpSettings{
+			IsEnabled:        true,
+			MaxLeaseTime:     dhcpLeaseTime,
+			DefaultLeaseTime: dhcpLeaseTime,
+			IPRange:          &addrRange,
+		}
+	} else {
+		addrRange := types.IPRange{
+			StartAddress: startAddr,
+			EndAddress:   endAddr,
+		}
+		iprange = append(iprange, &addrRange)
+		internalSettings.StaticIPRanges = iprange
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "Creating Vapp Network", "settings", internalSettings)
 	_, err = vapp.CreateVappNetwork(&internalSettings, nil)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
