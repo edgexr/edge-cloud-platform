@@ -1418,14 +1418,3 @@ var CloudletInfoSpecialArgs = map[string]string{
 	"cloudletinfo.properties":        "StringToString",
 	"cloudletinfo.status.msgs":       "StringArray",
 }
-var CloudletMetricsRequiredArgs = []string{}
-var CloudletMetricsOptionalArgs = []string{
-	"foo",
-}
-var CloudletMetricsAliasArgs = []string{
-	"foo=cloudletmetrics.foo",
-}
-var CloudletMetricsComments = map[string]string{
-	"foo": "what goes here?",
-}
-var CloudletMetricsSpecialArgs = map[string]string{}
