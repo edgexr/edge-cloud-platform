@@ -33,7 +33,7 @@ var CreateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5sum",
+	NoConfig:             "State,LicenseConfigMd5Sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/CreateGPUDriver",
@@ -51,7 +51,7 @@ var DeleteGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5sum",
+	NoConfig:             "State,LicenseConfigMd5Sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/DeleteGPUDriver",
@@ -69,7 +69,7 @@ var UpdateGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5sum,Builds",
+	NoConfig:             "State,LicenseConfigMd5Sum,Builds,Type,IgnoreState",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateGPUDriver",
@@ -108,7 +108,7 @@ var ShowGPUDriverCmd = &ApiCommand{
 	AliasArgs:            strings.Join(GPUDriverAliasArgs, " "),
 	SpecialArgs:          &GPUDriverSpecialArgs,
 	Comments:             addRegionComment(GPUDriverComments),
-	NoConfig:             "State,LicenseConfigMd5sum",
+	NoConfig:             "State,LicenseConfigMd5Sum",
 	ReqData:              &ormapi.RegionGPUDriver{},
 	ReplyData:            &edgeproto.GPUDriver{},
 	Path:                 "/auth/ctrl/ShowGPUDriver",
@@ -161,7 +161,7 @@ var GetGPUDriverBuildURLCmd = &ApiCommand{
 	AliasArgs:    strings.Join(GPUDriverBuildMemberAliasArgs, " "),
 	SpecialArgs:  &GPUDriverBuildMemberSpecialArgs,
 	Comments:     addRegionComment(GPUDriverBuildMemberComments),
-	NoConfig:     "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo",
+	NoConfig:     "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo,Build.DriverPathCreds,Build.Md5Sum",
 	ReqData:      &ormapi.RegionGPUDriverBuildMember{},
 	ReplyData:    &edgeproto.GPUDriverBuildURL{},
 	Path:         "/auth/ctrl/GetGPUDriverBuildURL",
@@ -189,11 +189,8 @@ var UpdateGPUDriverRequiredArgs = []string{
 }
 var UpdateGPUDriverOptionalArgs = []string{
 	"gpudriver-org",
-	"type",
 	"licenseconfig",
-	"licenseconfigmd5sum",
 	"properties",
-	"ignorestate",
 }
 var AddGPUDriverBuildRequiredArgs = []string{
 	"gpudrivername",
@@ -225,8 +222,6 @@ var GetGPUDriverBuildURLRequiredArgs = []string{
 	"build.name",
 }
 var GetGPUDriverBuildURLOptionalArgs = []string{
-	"build.driverpathcreds",
-	"build.md5sum",
 	"ignorestate",
 }
 
@@ -835,7 +830,6 @@ var GPUDriverOptionalArgs = []string{
 	"builds:#.hypervisorinfo",
 	"builds:#.md5sum",
 	"licenseconfig",
-	"licenseconfigmd5sum",
 	"properties",
 	"ignorestate",
 }
