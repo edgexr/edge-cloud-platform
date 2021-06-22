@@ -380,10 +380,14 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 	}
 
 	if clusterInst.OptRes == "gpu" {
-		// setup GPU drivers
-		err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, action)
-		if err != nil {
-			return fmt.Errorf("failed to install GPU drivers on cluster VM: %v", err)
+		if v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
+			// setup GPU drivers
+			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, action)
+			if err != nil {
+				return fmt.Errorf("failed to install GPU drivers on cluster VM: %v", err)
+			}
+		} else {
+			updateCallback(edgeproto.UpdateTask, "Skip setting up GPU driver on Cluster nodes")
 		}
 	}
 

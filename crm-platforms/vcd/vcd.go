@@ -434,3 +434,7 @@ func (v *VcdPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *
 		v.replaceIsoNamesMap(ctx, isoMap)
 	}
 }
+
+func (v *VcdPlatform) GetGPUSetupStage(ctx context.Context) vmlayer.GPUSetupStage {
+	return vmlayer.AppInstStage
+}

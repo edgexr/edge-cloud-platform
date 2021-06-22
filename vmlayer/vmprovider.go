@@ -72,6 +72,7 @@ type VMProvider interface {
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal)
 	VmAppChangedCallback(ctx context.Context)
+	GetGPUSetupStage(ctx context.Context) GPUSetupStage
 }
 
 // VMPlatform contains the needed by all VM based platforms
@@ -171,6 +172,17 @@ const (
 	OperationNewlyInitialized   OperationInitResult = "OperationNewlyInitialized"
 	OperationInitFailed         OperationInitResult = "OperationInitFailed"
 	OperationAlreadyInitialized OperationInitResult = "OperationAlreadyInitialized"
+)
+
+// Some platforms like VCD needs an additional step to setup GPU driver.
+// Hence, GPU drivers should only be setup as part of AppInst bringup.
+// For other platforms like Openstack, GPU driver can be setup as part
+// of ClusterInst bringup
+type GPUSetupStage string
+
+const (
+	ClusterInstStage GPUSetupStage = "clusterinst"
+	AppInstStage     GPUSetupStage = "appinst"
 )
 
 type StringSanitizer func(value string) string

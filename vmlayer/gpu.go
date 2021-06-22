@@ -115,7 +115,6 @@ func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageC
 
 func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "setupGPUDrivers", "clusterInst", clusterInst.Key)
-	updateCallback(edgeproto.UpdateTask, "Setting up GPU drivers on all cluster nodes")
 	gpuDriver, err := v.GetCloudletGPUDriver(ctx)
 	if err != nil {
 		return err
@@ -124,6 +123,8 @@ func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Clien
 		// GPU not supported on this cloudlet, just return
 		return nil
 	}
+
+	updateCallback(edgeproto.UpdateTask, "Setting up GPU drivers on all cluster nodes")
 
 	targetNodes := []string{}
 	switch clusterInst.Deployment {
@@ -205,8 +206,14 @@ func (v *VMPlatform) GetCloudletGPUDriver(ctx context.Context) (*edgeproto.GPUDr
 
 func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *gcs.GCSClient, nodeName string, client ssh.Client, driver *edgeproto.GPUDriver, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "installGPUDriverBuild", "nodeName", nodeName, "driver", driver.Key)
+	// verify if GPU driver package is already installed
+	out, err := client.Output("nvidia-smi -L")
+	if err == nil && len(out) > 0 {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s: GPU driver is already installed", nodeName))
+		return nil
+	}
 	// fetch linux kernel version
-	out, err := client.Output("uname -sr")
+	out, err = client.Output("uname -sr")
 	if err != nil {
 		return fmt.Errorf("%s, %v", out, err)
 	}

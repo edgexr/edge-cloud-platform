@@ -90,3 +90,7 @@ func (o *VMPoolPlatform) GetClusterAdditionalResourceMetric(ctx context.Context,
 func (o *VMPoolPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
 }
+
+func (o *VMPoolPlatform) GetGPUSetupStage(ctx context.Context) vmlayer.GPUSetupStage {
+	return vmlayer.ClusterInstStage
+}

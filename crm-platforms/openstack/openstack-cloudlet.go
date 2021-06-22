@@ -303,3 +303,7 @@ func (o *OpenstackPlatform) GetClusterAdditionalResourceMetric(ctx context.Conte
 func (p *OpenstackPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
 }
+
+func (p *OpenstackPlatform) GetGPUSetupStage(ctx context.Context) vmlayer.GPUSetupStage {
+	return vmlayer.ClusterInstStage
+}
