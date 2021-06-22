@@ -287,3 +287,7 @@ func (a *AwsEc2Platform) GetClusterAdditionalResourceMetric(ctx context.Context,
 func (a *AwsEc2Platform) InternalCloudletUpdatedCallback(ctx context.Context, old *edgeproto.CloudletInternal, new *edgeproto.CloudletInternal) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InternalCloudletUpdatedCallback")
 }
+
+func (a *AwsEc2Platform) GetGPUSetupStage(ctx context.Context) vmlayer.GPUSetupStage {
+	return vmlayer.ClusterInstStage
+}
