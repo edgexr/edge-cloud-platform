@@ -47,7 +47,6 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Set value for vCPU Speed if unable to read from admin VCD",
 		Internal:    true,
 	},
-
 	"VCD_NSX_TYPE": {
 		Description: "NSX-T or NSX-V",
 		Mandatory:   true,
@@ -61,6 +60,11 @@ var VcdProps = map[string]*edgeproto.PropertyInfo{
 		Description: "How long to cache VDC objects for VM App stat collection, in seconds",
 		Internal:    true,
 		Value:       "3600",
+	},
+	"VCD_VM_APP_INTERNAL_DHCP_SERVER": {
+		Description: "If true sets up an internal DHCP server for VM Apps, otherwise uses VCD server",
+		Value:       "false",
+		Internal:    true,
 	},
 }
 
@@ -202,6 +206,11 @@ func (v *VcdPlatform) GetVmAppStatsVdcMaxCacheTime() (uint64, error) {
 		return 0, fmt.Errorf("ERROR: unable to parse VCD_VM_APP_STATS_MAX_VDC_CACHE_TIME %s - %v", val, err)
 	}
 	return vi, nil
+}
+
+func (v *VcdPlatform) GetVmAppInternalDhcpServer() bool {
+	val, _ := v.vmProperties.CommonPf.Properties.GetValue("VCD_VM_APP_INTERNAL_DHCP_SERVER")
+	return strings.ToLower(val) == "true"
 }
 
 // start fetching access  bits from vault

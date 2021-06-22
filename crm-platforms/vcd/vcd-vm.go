@@ -944,7 +944,7 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	v.vmProperties = vmProperties
 	vmProperties.IptablesBasedFirewall = true
-	vmProperties.RunLbDhcpServerForVmApps = true
+	vmProperties.RunLbDhcpServerForVmApps = v.GetVmAppInternalDhcpServer()
 	vmProperties.AppendFlavorToVmAppImage = true
 	vmProperties.ValidateExternalIPMapping = true
 }
