@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	ssh "github.com/mobiledgex/golang-ssh"
+
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -20,6 +22,6 @@ func (o *VMPoolPlatform) ValidateAdditionalNetworks(ctx context.Context, additio
 	return fmt.Errorf("Additional networks not supported in VMPool cloudlets")
 }
 
-func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPoolPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootlbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
