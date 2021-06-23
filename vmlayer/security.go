@@ -2,6 +2,7 @@ package vmlayer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/crmutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -23,5 +24,9 @@ func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action 
 		// use an empty policy
 		privPol = &edgeproto.TrustPolicy{}
 	}
-	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, privPol, action, edgeproto.DummyUpdateCallback)
+	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	if err != nil {
+		return fmt.Errorf("Unable to get rootlb clients - %v", err)
+	}
+	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, privPol, rootlbClients, action, edgeproto.DummyUpdateCallback)
 }

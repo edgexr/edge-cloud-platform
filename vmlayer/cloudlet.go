@@ -367,8 +367,11 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
-
-	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, ActionUpdate, edgeproto.DummyUpdateCallback)
+	rootlbClients, err := v.GetAllRootLBClients(ctx)
+	if err != nil {
+		return fmt.Errorf("Unable to get rootlb clients - %v", err)
+	}
+	return v.VMProvider.ConfigureCloudletSecurityRules(ctx, egressRestricted, TrustPolicy, rootlbClients, ActionUpdate, edgeproto.DummyUpdateCallback)
 }
 
 func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -439,7 +442,11 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Cloudlet Security Rules %s", rootLBName))
-		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, ActionDelete, edgeproto.DummyUpdateCallback)
+		rootlbClients, err := v.GetAllRootLBClients(ctx)
+		if err != nil {
+			return fmt.Errorf("Unable to get rootlb clients - %v", err)
+		}
+		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, rootlbClients, ActionDelete, edgeproto.DummyUpdateCallback)
 		if err != nil {
 			if v.VMProperties.IptablesBasedFirewall {
 				// iptables based security rules can fail on one clusterInst LB or other VM not responding

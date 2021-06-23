@@ -153,6 +153,13 @@ func getIpTablesEntriesForRule(ctx context.Context, direction string, label stri
 	cidrStr := ""
 	var chains []string
 	var rules []string
+	ranges := strings.Split(rule.PortRange, ":")
+	if len(ranges) == 2 {
+		if ranges[0] == ranges[1] {
+			// start and end port range are the same, collapse into one port
+			rule.PortRange = ranges[0]
+		}
+	}
 	if direction == "egress" {
 		chains = append(chains, "OUTPUT", "FORWARD")
 		if rule.RemoteCidr != "0.0.0.0/0" {
@@ -211,6 +218,7 @@ func getCurrentIptableRulesForLabel(ctx context.Context, client ssh.Client, labe
 		return nil, fmt.Errorf("Failed to run iptables-save to get current rules: %s - %v", out, err)
 	}
 	lines := strings.Split(out, "\n")
+
 	for _, line := range lines {
 		if label == "" {
 			if strings.HasPrefix(line, "-A") {

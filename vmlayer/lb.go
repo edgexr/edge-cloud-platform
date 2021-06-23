@@ -568,6 +568,22 @@ func GetChefRootLBTags(platformConfig *platform.PlatformConfig) []string {
 	}
 }
 
+// GetAllRootLBClients gets rootLb clients for both Shared and Dedicated LBs
+func (v *VMPlatform) GetAllRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
+	rootlbClients, err := v.GetRootLBClients(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get dedicated rootlb Clients - %v", err)
+	}
+	// GetRootLBClients gets only the dedicated rootlbs.  We need the shared one also
+	sharedClient, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName})
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get shared rootlb Client - %v", err)
+	}
+	rootlbClients[v.VMProperties.SharedRootLBName] = sharedClient
+	return rootlbClients, nil
+}
+
+// GetRootLBClients gets all RootLB Clients for dedicated LBs
 func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Client, error) {
 	if v.Caches == nil {
 		return nil, fmt.Errorf("caches is nil")

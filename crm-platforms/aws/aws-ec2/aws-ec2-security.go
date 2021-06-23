@@ -240,6 +240,6 @@ func (a *AwsEc2Platform) GetIamAccountForImage(ctx context.Context) (string, err
 	return a.awsGenPf.GetUserAccountIdFromArn(ctx, iamResult.User.Arn)
 }
 
-func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
+func (a *AwsEc2Platform) ConfigureCloudletSecurityRules(ctx context.Context, egressRestricted bool, TrustPolicy *edgeproto.TrustPolicy, rootLbClients map[string]ssh.Client, action vmlayer.ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
