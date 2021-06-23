@@ -197,6 +197,12 @@ func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) (
 			fipsMax = uint64(l.Value)
 		}
 	}
+	// Get external IP usage
+	pfRes := vmlayer.PlatformResources{}
+	err = o.addIpUsageDetails(ctx, &pfRes)
+	if err != nil {
+		return nil, err
+	}
 	resInfo := []edgeproto.InfraResource{
 		edgeproto.InfraResource{
 			Name:          cloudcommon.ResourceRamMb,
@@ -208,6 +214,11 @@ func (o *OpenstackPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) (
 			Name:          cloudcommon.ResourceVcpus,
 			Value:         vcpusUsed,
 			InfraMaxValue: vcpusMax,
+		},
+		edgeproto.InfraResource{
+			Name:          cloudcommon.ResourceExternalIPs,
+			Value:         pfRes.Ipv4Used,
+			InfraMaxValue: pfRes.Ipv4Max,
 		},
 		edgeproto.InfraResource{
 			Name:          cloudcommon.ResourceInstances,
