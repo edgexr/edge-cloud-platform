@@ -40,3 +40,17 @@
   activeat:
     seconds: 1614751830
     nanos: 96530000
+- labels:
+    alertname: CloudletResourceUsage
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    region: local
+    scope: Cloudlet
+    warning: More than 10% of External IPs is used by the cloudlet
+  annotations:
+    description: More than 10% of External IPs is used by the cloudlet
+    title: CloudletResourceUsage
+  state: firing
+  activeat:
+    seconds: 1624464693
+    nanos: 844407000

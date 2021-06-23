@@ -837,7 +837,12 @@ func GetCloudletResourceUsageData(ctx context.Context, username string, report *
 		EndTime:   report.EndTime,
 	}
 	rc.region = in.Region
-	cmd := CloudletUsageMetricsQuery(&in)
+
+	platformTypes, err := getCloudletPlatformTypes(ctx, username, report.Region, &in.Cloudlet)
+	if err != nil {
+		return nil, err
+	}
+	cmd := CloudletUsageMetricsQuery(&in, platformTypes)
 
 	// Check the operator against the username
 	if err := authorized(ctx, username, report.Org, ResourceCloudletAnalytics, ActionView); err != nil {
@@ -845,7 +850,7 @@ func GetCloudletResourceUsageData(ctx context.Context, username string, report *
 	}
 
 	chartMap := make(map[string]TimeChartDataMap)
-	err := influxStream(ctx, rc, dbNames, cmd, func(res interface{}) error {
+	err = influxStream(ctx, rc, dbNames, cmd, func(res interface{}) error {
 		results, ok := res.([]influxdb.Result)
 		if !ok {
 			return fmt.Errorf("result not expected type")
@@ -943,7 +948,7 @@ func GetCloudletFlavorUsageData(ctx context.Context, username string, report *or
 		EndTime:   report.EndTime,
 	}
 	rc.region = in.Region
-	cmd := CloudletUsageMetricsQuery(&in)
+	cmd := CloudletUsageMetricsQuery(&in, nil)
 
 	// Check the operator against the username
 	if err := authorized(ctx, username, report.Org, ResourceCloudletAnalytics, ActionView); err != nil {

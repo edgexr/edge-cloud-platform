@@ -195,6 +195,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: dmuus
         name: dmuus-cloud-2
@@ -243,6 +245,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: azure
         name: azure-cloud-4
@@ -291,6 +295,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: gcp
         name: gcp-cloud-5
@@ -339,6 +345,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: enterprise
         name: enterprise-1
@@ -387,6 +395,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     operatorcodes:
     - code: 31026
       organization: dmuus
@@ -511,6 +521,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: dmuus
         name: dmuus-cloud-4
@@ -559,6 +571,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     - key:
         organization: enterprise
         name: enterprise-2
@@ -607,6 +621,8 @@ regiondata:
         - name: External IPs
           value: 1
           inframaxvalue: 30
+        - name: Instances
+          value: 2
     cloudletpools:
     - key:
         organization: enterprise

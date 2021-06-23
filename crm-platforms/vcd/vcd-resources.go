@@ -22,8 +22,7 @@ import (
 )
 
 type VcdResources struct {
-	VmsUsed         uint64
-	ExternalIpsUsed uint64
+	VmsUsed uint64
 }
 
 // cachedVdc is used for VM app metrics
@@ -182,10 +181,6 @@ func (v *VcdPlatform) GetCloudletResourceQuotaProps(ctx context.Context) (*edgep
 	return &edgeproto.CloudletResourceQuotaProps{
 		Properties: []edgeproto.InfraResource{
 			{
-				Name:        cloudcommon.ResourceExternalIPs,
-				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceExternalIPs],
-			},
-			{
 				Name:        cloudcommon.ResourceInstances,
 				Description: cloudcommon.ResourceQuotaDesc[cloudcommon.ResourceInstances],
 			},
@@ -202,9 +197,6 @@ func getVcdResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resource
 
 		// Number of Instances = Number of resources
 		vRes.VmsUsed += 1
-		if vmRes.Type == cloudcommon.VMTypeRootLB || vmRes.Type == cloudcommon.VMTypePlatform {
-			vRes.ExternalIpsUsed += 1
-		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "getVcdResources", "vRes", vRes)
 	return &vRes
@@ -214,8 +206,7 @@ func getVcdResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resource
 func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
-		cloudcommon.ResourceInstances:   "",
-		cloudcommon.ResourceExternalIPs: "",
+		cloudcommon.ResourceInstances: "",
 	}
 	resInfo := make(map[string]edgeproto.InfraResource)
 	for resName, resUnits := range cloudletRes {
@@ -235,11 +226,6 @@ func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudle
 		outInfo.Value += vRes.VmsUsed
 		resInfo[cloudcommon.ResourceInstances] = outInfo
 	}
-	outInfo, ok = resInfo[cloudcommon.ResourceExternalIPs]
-	if ok {
-		outInfo.Value += vRes.ExternalIpsUsed
-		resInfo[cloudcommon.ResourceExternalIPs] = outInfo
-	}
 	return resInfo
 }
 
@@ -247,8 +233,7 @@ func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cl
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterAdditionalResourceMetric ")
 	vRes := getVcdResources(ctx, cloudlet, resources)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricInstances, vRes.VmsUsed)
-	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, vRes.ExternalIpsUsed)
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterAdditionalResourceMetric Reports", "numVmsUsed", vRes.VmsUsed, "external IPsUsed", vRes.ExternalIpsUsed)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterAdditionalResourceMetric Reports", "numVmsUsed", vRes.VmsUsed)
 	return nil
 }
 
