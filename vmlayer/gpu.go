@@ -3,7 +3,6 @@ package vmlayer
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -52,7 +51,7 @@ func (v *VMPlatform) getGPUDriverPackagePath(ctx context.Context, storageClient 
 	_, err := os.Stat(localFilePath)
 	if err == nil || !os.IsNotExist(err) {
 		// Verify if package is valid and not outdated/corrupted
-		md5sum, err := infracommon.Md5SumFile(localFilePath)
+		md5sum, err := cloudcommon.Md5SumFile(localFilePath)
 		if err != nil {
 			return "", err
 		}
@@ -63,13 +62,9 @@ func (v *VMPlatform) getGPUDriverPackagePath(ctx context.Context, storageClient 
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver pkg not found/corrupted in local cache, fetch it from GCS", "build.DriverPath", build.DriverPath)
 	// In not in local cache or is file corrupted/outdated, then fetch from cloud
-	outBytes, err := storageClient.DownloadObject(ctx, fileName)
+	err = storageClient.DownloadObject(ctx, fileName, localFilePath)
 	if err != nil {
-		return "", fmt.Errorf("Failed to download GPU driver package %s from GCS %v", fileName, err)
-	}
-	err = ioutil.WriteFile(localFilePath, outBytes, 0644)
-	if err != nil {
-		return "", fmt.Errorf("Failed to create local cache file %s, %v", localFilePath, err)
+		return "", fmt.Errorf("Failed to download GPU driver package %s from GCS to %s, %v", fileName, localFilePath, err)
 	}
 	return localFilePath, nil
 }
@@ -88,7 +83,7 @@ func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageC
 	_, err := os.Stat(localFilePath)
 	if err == nil || !os.IsNotExist(err) {
 		// Verify if license config is valid and not outdated/corrupted
-		md5sum, err := infracommon.Md5SumFile(localFilePath)
+		md5sum, err := cloudcommon.Md5SumFile(localFilePath)
 		if err != nil {
 			return "", err
 		}
@@ -98,17 +93,13 @@ func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageC
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver license not found in local cache/is outdated/corrupted, fetch it from GCS", "fileName", fileName)
-	outBytes, err := storageClient.DownloadObject(ctx, fileName)
+	err = storageClient.DownloadObject(ctx, fileName, localFilePath)
 	if err != nil {
 		if strings.Contains(err.Error(), gcs.NotFoundError) {
 			// license config doesn't exist
 			return "", nil
 		}
-		return "", fmt.Errorf("Failed to download GPU driver license config %s from GCS %v", fileName, err)
-	}
-	err = ioutil.WriteFile(localFilePath, outBytes, 0644)
-	if err != nil {
-		return "", fmt.Errorf("Failed to create local cache file %s, %v", localFilePath, err)
+		return "", fmt.Errorf("Failed to download GPU driver license config %s from GCS to %s, %v", fileName, localFilePath, err)
 	}
 	return localFilePath, nil
 }

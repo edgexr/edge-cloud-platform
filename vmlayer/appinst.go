@@ -815,7 +815,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 	defer func() {
 		if reterr != nil {
 			// Stale file might be present if download fails/succeeds, deleting it
-			infracommon.DeleteFile(filePath)
+			cloudcommon.DeleteFile(filePath)
 		}
 	}()
 
@@ -825,7 +825,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 	}
 	// Verify checksum
 	if md5Sum != "" {
-		fileMd5Sum, err := infracommon.Md5SumFile(filePath)
+		fileMd5Sum, err := cloudcommon.Md5SumFile(filePath)
 		if err != nil {
 			return "", err
 		}

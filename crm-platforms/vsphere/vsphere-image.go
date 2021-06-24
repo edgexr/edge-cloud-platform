@@ -9,6 +9,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -47,7 +48,7 @@ func (v *VSpherePlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *i
 	defer func() {
 		for _, file := range filesToCleanup {
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete file", "file", file)
-			if delerr := infracommon.DeleteFile(file); delerr != nil {
+			if delerr := cloudcommon.DeleteFile(file); delerr != nil {
 				if !os.IsNotExist(delerr) {
 					log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "file", file, "error", delerr)
 				}

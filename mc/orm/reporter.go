@@ -225,7 +225,7 @@ func GenerateReports() {
 				errStrs := []string{}
 				// Upload PDF report to cloudlet
 				filename := ormapi.GetReporterFileName(inReporter.Name, &genReport)
-				err = storageClient.UploadObject(ctx, filename, &output)
+				err = storageClient.UploadObject(ctx, filename, "", &output)
 				if err != nil {
 					nodeMgr.Event(ctx, "Cloudlet report upload failure", genReport.Org, tags, err)
 					log.SpanLog(ctx, log.DebugLevelInfo, "failed to upload cloudlet report to cloudlet", "org", genReport.Org, "err", err)
@@ -1706,9 +1706,16 @@ func DownloadReport(c echo.Context) error {
 	if !found {
 		return fmt.Errorf("Report with name %s does not exist", reportQuery.Filename)
 	}
-	outBytes, err := storageClient.DownloadObject(ctx, reportQuery.Filename)
+	outFilePath := "/tmp/" + strings.ReplaceAll(reportQuery.Filename, "/", "_")
+	err = storageClient.DownloadObject(ctx, reportQuery.Filename, outFilePath)
 	if err != nil {
-		return fmt.Errorf("Unable to download report %s: %v", reportQuery.Filename, err)
+		return fmt.Errorf("Unable to download report %s to %s: %v", reportQuery.Filename, outFilePath, err)
 	}
-	return c.HTMLBlob(http.StatusOK, outBytes)
+	defer cloudcommon.DeleteFile(outFilePath)
+	data, err := ioutil.ReadFile(outFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to read from downloaded report %s: %v", outFilePath, err)
+	}
+
+	return c.HTMLBlob(http.StatusOK, data)
 }
