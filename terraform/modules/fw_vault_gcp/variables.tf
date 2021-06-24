@@ -1,6 +1,6 @@
 variable "firewall_name" {
   description = "Name of the firewall"
-  type        = "string"
+  type        = string
 }
 
 variable "firewall_network" {
@@ -10,5 +10,5 @@ variable "firewall_network" {
 
 variable "target_tag" {
   description = "Target tag for the firewall"
-  type        = "string"
+  type        = string
 }

@@ -5,12 +5,12 @@ variable "cloudflare_zone_id" {
 
 variable "hostname" {
   description = "DNS record hostname"
-  type        = "string"
+  type        = string
 }
 
 variable "ip" {
   description = "DNS record IP"
-  type        = "string"
+  type        = string
 }
 
 variable "ttl" {
