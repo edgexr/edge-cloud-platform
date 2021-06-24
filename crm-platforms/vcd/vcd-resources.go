@@ -304,10 +304,17 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 	var metricsResponse GovcdMetricsResponse
 	response, err := vcdClient.Client.ExecuteRequest(link.HREF, http.MethodGet, "", "error GET retriving metrics link: %s", nil, &metricsResponse)
 	log.SpanLog(ctx, log.DebugLevelMetrics, "VCD Get VM Metrics results", "statusCode", response.StatusCode, "metricsResponse", metricsResponse, "err", err)
-	if err != nil || response.StatusCode != http.StatusOK {
+	if err != nil {
 		log.ForceLogSpan(log.SpanFromContext(ctx))
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Error getting VCD metrics", "statusCode", response.StatusCode, "err", err)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Error getting VCD metrics", "err", err)
+		return &metrics, err
 	}
+	if response.StatusCode != http.StatusOK {
+		log.ForceLogSpan(log.SpanFromContext(ctx))
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failure getting VCD metrics", "StatusCode", response.StatusCode)
+		return &metrics, fmt.Errorf("Failure getting VCD metrics code: %d", response.StatusCode)
+	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "VCD Get VM Metrics results", "metricsResponse", metricsResponse)
 	ts, _ := prototypes.TimestampProto(time.Now())
 
 	for _, m := range metricsResponse.Metric {
