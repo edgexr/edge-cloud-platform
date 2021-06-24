@@ -405,15 +405,6 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
-	if err := v.ConfigureCloudletSecurityRules(ctx, ActionCreate); err != nil {
-		if v.VMProperties.IptablesBasedFirewall {
-			// iptables based security rules can fail on one clusterInst LB, but we cannot treat
-			// this as a fatal error or it can cause the CRM to never initialize
-			log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
-		} else {
-			return err
-		}
-	}
 	// Set debug command to start crm upgrade
 	v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 
@@ -476,6 +467,16 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, SetupRootLB")
+
+	if err := v.ConfigureCloudletSecurityRules(ctx, ActionCreate); err != nil {
+		if v.VMProperties.IptablesBasedFirewall {
+			// iptables based security rules can fail on one clusterInst LB, but we cannot treat
+			// this as a fatal error or it can cause the CRM to never initialize
+			log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
+		} else {
+			return err
+		}
+	}
 
 	// deletes exisitng l7 proxies for backwards compatibility, since we got rid of http. can be removed later
 	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: v.VMProperties.SharedRootLBName}, pc.WithCachedIp(true))
