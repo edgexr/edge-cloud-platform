@@ -67,7 +67,7 @@ module "vault_b" {
   environ_tag    = var.environ_tag
   instance_size  = "custom-1-7680-ext"
   zone           = var.vault_b_gcp_zone
-  boot_disk_size = 20
+  boot_disk_size = 100
   tags = [
     "vault-ac",
     module.fw_vault_gcp.target_tag,
@@ -238,3 +238,42 @@ resource "google_compute_firewall" "postgres" {
   ]
 }
 
+# Kafka
+resource "google_compute_firewall" "kafka" {
+  name    = "kafka-${var.environ_tag}"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["9092", "9093"]
+  }
+
+  target_tags = ["kafka-${var.environ_tag}"]
+  source_ranges = [
+    "${module.console.external_ip}/32",
+  ]
+}
+
+module "kafka" {
+  source = "../../modules/vm_gcp"
+
+  instance_name  = var.kafka_instance_name
+  environ_tag    = var.environ_tag
+  instance_size  = "e2-custom-1-8192"
+  zone           = var.gcp_zone
+  boot_disk_size = 50
+  tags = [
+    "kafka-${var.environ_tag}",
+    "kafka-${var.environ_tag}-controllers",
+  ]
+  labels = {
+    "environ" = var.environ_tag
+    "owner"   = "qa"
+  }
+}
+
+module "kafka_dns" {
+  source                        = "../../modules/cloudflare_record"
+  hostname                      = "${var.kafka_domain_name}"
+  ip                            = "${module.kafka.external_ip}"
+}

@@ -144,6 +144,14 @@ variable "vault_c_domain_name" {
   default     = "vault-qa-c.mobiledgex.net"
 }
 
+variable "kafka_instance_name" {
+  default     = "kafka-qa"
+}
+
+variable "kafka_domain_name" {
+  default     = "kafka-qa.mobiledgex.net"
+}
+
 variable "ssh_public_key_file" {
   description = "SSH public key file for the ansible account"
   type        = string
