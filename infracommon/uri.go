@@ -2,18 +2,13 @@ package infracommon
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	sh "github.com/codeskyblue/go-sh"
 	"github.com/miekg/dns"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -93,29 +88,6 @@ func GetUrlInfo(ctx context.Context, accessApi platform.AccessApi, fileUrlPath s
 		md5Sum = resp.Header.Get("X-Checksum-Md5")
 	}
 	return lastMod, md5Sum, err
-}
-
-func Md5SumFile(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to open file %s, %v", filePath, err)
-	}
-	defer f.Close()
-
-	h := md5.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", fmt.Errorf("failed to calculate md5sum of file %s, %v", filePath, err)
-	}
-
-	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func DeleteFile(filePath string) error {
-	var err error
-	if _, err = os.Stat(filePath); !os.IsNotExist(err) {
-		_, err = sh.Command("rm", filePath).Output()
-	}
-	return err
 }
 
 // Get the externally visible public IP address

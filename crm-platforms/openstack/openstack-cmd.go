@@ -10,6 +10,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
+	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -683,7 +684,7 @@ func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, i
 	}
 	defer func() {
 		// Stale file might be present if download fails/succeeds, deleting it
-		if delerr := infracommon.DeleteFile(filePath); delerr != nil {
+		if delerr := cloudcommon.DeleteFile(filePath); delerr != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete file failed", "filePath", filePath)
 		}
 	}()
