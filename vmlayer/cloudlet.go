@@ -14,6 +14,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/mobiledgex/edge-cloud/vmspec"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 // VMDomain is to differentiate platform vs computing VMs and associated resources
@@ -442,10 +443,10 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Cloudlet Security Rules %s", rootLBName))
-		rootlbClients, err := v.GetAllRootLBClients(ctx)
-		if err != nil {
-			return fmt.Errorf("Unable to get rootlb clients - %v", err)
-		}
+
+		// as delete cloudlet is called from the controller only, there is no need for
+		// rootlb ssh clients so just pass an empty map.  We have deleted all rootLB VMs anyway.
+		rootlbClients := make(map[string]ssh.Client)
 		err = v.VMProvider.ConfigureCloudletSecurityRules(ctx, false, &edgeproto.TrustPolicy{}, rootlbClients, ActionDelete, edgeproto.DummyUpdateCallback)
 		if err != nil {
 			if v.VMProperties.IptablesBasedFirewall {
