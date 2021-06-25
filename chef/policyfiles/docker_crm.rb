@@ -13,7 +13,7 @@ run_list 'chef_client_updater::default', 'recipe[runstatus_handler]', 'recipe[ru
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'setup_infra', '= 1.0.0'
 cookbook 'preflight_crm_checks', '= 1.0.0'
-cookbook 'setup_services', '= 1.0.29'
+cookbook 'setup_services', '= 1.0.30'
 cookbook 'docker', '= 7.7.0'
 cookbook 'run_diagnostics', '= 1.0.0'
 cookbook 'run_cmd', '= 1.0.0'

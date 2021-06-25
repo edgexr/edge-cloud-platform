@@ -44,6 +44,14 @@ directory '/root/crm_cache' do
 end
 
 cmd = crmserver_cmd
+crmserver_volumes = [
+  '/var/tmp:/var/tmp',
+  '/root/accesskey:/root/accesskey',
+  '/root/crm_cache:/root/crm_cache'
+]
+if File.file? '/etc/mex-release'
+  crmserver_volumes.append('/etc/mex-release:/etc/mex-release')
+end
 docker_container "crmserver" do
   Chef::Log.info("Start crmserver container, cmd: #{cmd}")
   repo "#{node['edgeCloudImage']}"
@@ -52,7 +60,7 @@ docker_container "crmserver" do
   network_mode 'host'
   restart_policy 'unless-stopped'
   env node['crmserver']['env']
-  volumes ['/var/tmp:/var/tmp', '/root/accesskey:/root/accesskey', '/root/crm_cache:/root/crm_cache']
+  volumes crmserver_volumes
   command cmd
 end
 
