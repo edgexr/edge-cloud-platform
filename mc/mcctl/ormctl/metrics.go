@@ -60,7 +60,7 @@ func init() {
 		Short:        "View client API usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientApiUsageMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientApiUsageMetricOptionalArgs, " "),
-		AliasArgs:    strings.Join(ClientApiUsageMetricAliasArgs, " "),
+		AliasArgs:    strings.Join(append(ClientApiUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), ClientApiUsageMetricComments),
 		ReqData:      &ormapi.RegionClientApiUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
@@ -71,7 +71,7 @@ func init() {
 		Short:        "View client App usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientAppUsageMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientAppUsageMetricOptionalArgs, " "),
-		AliasArgs:    strings.Join(ClientAppUsageMetricAliasArgs, " "),
+		AliasArgs:    strings.Join(append(ClientAppUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("app")),
 		ReqData:      &ormapi.RegionClientAppUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
@@ -82,7 +82,7 @@ func init() {
 		Short:        "View client Cloudlet usage",
 		RequiredArgs: strings.Join(append([]string{"region"}, ClientCloudletUsageMetricRequiredArgs...), " "),
 		OptionalArgs: strings.Join(ClientCloudletUsageMetricOptionalArgs, " "),
-		AliasArgs:    strings.Join(ClientCloudletUsageMetricAliasArgs, " "),
+		AliasArgs:    strings.Join(append(ClientCloudletUsageMetricAliasArgs, MetricsCommonAliasArgs...), " "),
 		Comments:     mergeMetricComments(addRegionComment(MetricCommentsCommon), getClientTypeUsageMetricComments("cloudlet")),
 		ReqData:      &ormapi.RegionClientCloudletUsageMetrics{},
 		ReplyData:    &ormapi.AllMetrics{},
@@ -193,9 +193,12 @@ var ClientApiUsageMetricOptionalArgs = []string{
 	"cloudlet-org",
 	"method",
 	"cellid",
-	"last",
+	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var ClientApiUsageMetricAliasArgs = []string{
@@ -231,10 +234,12 @@ var ClientAppUsageMetricOptionalArgs = []string{
 	"devicemodel",
 	"devicecarrier",
 	"datanetworktype",
-	"rawdata",
-	"last",
+	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var ClientAppUsageMetricAliasArgs = []string{
@@ -259,10 +264,12 @@ var ClientCloudletUsageMetricOptionalArgs = []string{
 	"devicemodel",
 	"devicecarrier",
 	"datanetworktype",
-	"rawdata",
-	"last",
+	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var ClientCloudletUsageMetricAliasArgs = []string{
@@ -279,8 +286,19 @@ var MetricCommentsCommon = map[string]string{
 	"cloudlet":     "Name of the cloudlet",
 	"cluster-org":  "Organization or Company Name that a Cluster is used by",
 	"last":         "Display the last X metrics",
+	"limit":        "Display the last X metrics",
+	"numsamples":   "Display X samples spaced out evenly over start and end times",
 	"starttime":    "Time to start displaying stats from in RFC3339 format (ex. 2002-12-31T15:00:00Z)",
 	"endtime":      "Time up to which to display stats in RFC3339 format (ex. 2002-12-31T10:00:00-05:00)",
+	"startage":     "Relative age from now of search range start (default 48h)",
+	"endage":       "Relative age from now of search range end (default 0)",
+}
+
+var MetricsCommonAliasArgs = []string{
+	"limit=metricscommon.limit",
+	"numsamples=metricscommon.numsamples",
+	"starttime=metricscommon.timerange.starttime",
+	"endtime=metricscommon.timerange.endtime",
 }
 
 // merge two maps - entries in b will overwrite values in a
@@ -331,7 +349,6 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 		"devicemodel":     fmt.Sprintf("Device model. %s", devicemodelSelectorPermission),
 		"devicecarrier":   fmt.Sprintf("Device carrier. %s", devicecarrierSelectorPermission),
 		"datanetworktype": fmt.Sprintf("Data network type used by client device. %s", datanetworktypeSelectorPermission),
-		"rawdata":         "Set to true for additional raw data (not downsampled)",
 		"selector":        fmt.Sprintf("Comma separated list of metrics to view. Available metrics: \"%s\"", availableMetrics),
 	}
 }

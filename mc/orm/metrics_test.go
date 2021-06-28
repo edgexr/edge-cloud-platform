@@ -101,7 +101,7 @@ func getCloudletsFromAppInsts(apps *ormapi.RegionAppInstMetrics) []string {
 func TestFillTimeAndGetCmd(t *testing.T) {
 	// Single App, default time insterval
 	testSingleApp.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
-	timeDef := getTimeDefinition(&testSingleApp)
+	timeDef := getTimeDefinitionForAppInsts(&testSingleApp)
 	selectorFunction := getFuncForSelector("cpu", timeDef)
 	args := influxQueryArgs{
 		Selector:       getSelectorForMeasurement("cpu", selectorFunction),
@@ -116,7 +116,7 @@ func TestFillTimeAndGetCmd(t *testing.T) {
 	testSingleApp.EndTime = time.Time{}
 	testSingleApp.StartTime = time.Time{}
 	testSingleApp.Last = 1
-	timeDef = getTimeDefinition(&testSingleApp)
+	timeDef = getTimeDefinitionForAppInsts(&testSingleApp)
 	selectorFunction = getFuncForSelector("cpu", timeDef)
 	args = influxQueryArgs{
 		Selector:       getSelectorForMeasurement("cpu", selectorFunction),
@@ -131,7 +131,7 @@ func TestFillTimeAndGetCmd(t *testing.T) {
 	testApps.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testApps.StartTime = time.Time{}
 	testApps.Last = 0
-	timeDef = getTimeDefinition(&testApps)
+	timeDef = getTimeDefinitionForAppInsts(&testApps)
 	selectorFunction = getFuncForSelector("network", timeDef)
 	args = influxQueryArgs{
 		Selector:       getSelectorForMeasurement("network", selectorFunction),
@@ -146,7 +146,7 @@ func TestFillTimeAndGetCmd(t *testing.T) {
 	testApps.EndTime = time.Time{}
 	testApps.StartTime = time.Time{}
 	testApps.Last = 1
-	timeDef = getTimeDefinition(&testApps)
+	timeDef = getTimeDefinitionForAppInsts(&testApps)
 	selectorFunction = getFuncForSelector("network", timeDef)
 	args = influxQueryArgs{
 		Selector:       getSelectorForMeasurement("network", selectorFunction),
@@ -170,13 +170,13 @@ func TestGetAppInstQueryFilter(t *testing.T) {
 
 func TestGetFuncForSelector(t *testing.T) {
 	require.Empty(t, getFuncForSelector("cpu", ""))
-	require.Empty(t, getFuncForSelector("invalid", DefaultTimeWindow.String()))
-	require.Equal(t, "mean", getFuncForSelector("cpu", DefaultTimeWindow.String()))
-	require.Equal(t, "max", getFuncForSelector("mem", DefaultTimeWindow.String()))
-	require.Equal(t, "max", getFuncForSelector("disk", DefaultTimeWindow.String()))
-	require.Equal(t, "last", getFuncForSelector("network", DefaultTimeWindow.String()))
-	require.Equal(t, "last", getFuncForSelector("connections", DefaultTimeWindow.String()))
-	require.Equal(t, "last", getFuncForSelector("udp", DefaultTimeWindow.String()))
+	require.Empty(t, getFuncForSelector("invalid", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "mean", getFuncForSelector("cpu", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "max", getFuncForSelector("mem", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "max", getFuncForSelector("disk", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "last", getFuncForSelector("network", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "last", getFuncForSelector("connections", DefaultAppInstTimeWindow.String()))
+	require.Equal(t, "last", getFuncForSelector("udp", DefaultAppInstTimeWindow.String()))
 }
 
 func TestGetSelectorForMeasurement(t *testing.T) {
@@ -204,26 +204,26 @@ func TestGetTimeDefinition(t *testing.T) {
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
 	testApps.Last = 0
-	require.Equal(t, "7m12s", getTimeDefinition(&testApps))
-	require.Equal(t, MaxTimeDefinition, testApps.Last)
+	require.Equal(t, "7m12s", getTimeDefinitionForAppInsts(&testApps))
+	require.Equal(t, MaxNumSamples, testApps.Last)
 	// Reset time and set Last and nothing else
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
 	testApps.Last = 12
-	require.Empty(t, getTimeDefinition(&testApps))
+	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
 	require.Equal(t, 12, testApps.Last)
 	// invalid time range
 	testApps.StartTime = time.Now()
 	testApps.EndTime = time.Now().Add(-3 * time.Minute)
 	testApps.Last = 12
-	require.Empty(t, getTimeDefinition(&testApps))
+	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
 	require.Equal(t, 12, testApps.Last)
 	testApps.Last = 0
-	require.Empty(t, getTimeDefinition(&testApps))
-	require.Equal(t, MaxTimeDefinition, testApps.Last)
+	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
+	require.Equal(t, MaxNumSamples, testApps.Last)
 	// Check default time window of 15 secs
 	testApps.StartTime = time.Now().Add(-2 * time.Minute)
 	testApps.EndTime = time.Now()
-	require.Equal(t, DefaultTimeWindow.String(), getTimeDefinition(&testApps))
-	require.Equal(t, MaxTimeDefinition, testApps.Last)
+	require.Equal(t, DefaultAppInstTimeWindow.String(), getTimeDefinitionForAppInsts(&testApps))
+	require.Equal(t, MaxNumSamples, testApps.Last)
 }
