@@ -395,6 +395,12 @@ type RegionData struct {
 	AppData edgeproto.AllData `json:"appdata,omitempty"`
 }
 
+type MetricsCommon struct {
+	util.TimeRange `json:",inline"`
+	NumSamples     int `json:",omitempty"`
+	Limit          int `json:",omitempty"`
+}
+
 // Metrics data
 type AllMetrics struct {
 	Data []MetricData `json:"data"`
@@ -441,46 +447,38 @@ type RegionCloudletMetrics struct {
 }
 
 type RegionClientApiUsageMetrics struct {
-	Region    string
-	AppInst   edgeproto.AppInstKey
-	Method    string `json:",omitempty"`
-	CellId    int    `json:",omitempty"`
-	Selector  string
-	StartTime time.Time `json:",omitempty"`
-	EndTime   time.Time `json:",omitempty"`
-	Last      int       `json:",omitempty"`
+	Region        string
+	AppInst       edgeproto.AppInstKey
+	Method        string `json:",omitempty"`
+	CellId        int    `json:",omitempty"`
+	Selector      string
+	MetricsCommon `json:",inline"`
 }
 
 type RegionClientAppUsageMetrics struct {
 	Region          string
 	AppInst         edgeproto.AppInstKey
 	Selector        string
-	RawData         bool      `json:",omitempty"`
-	DeviceCarrier   string    `json:",omitempty"`
-	DataNetworkType string    `json:",omitempty"`
-	DeviceModel     string    `json:",omitempty"`
-	DeviceOs        string    `json:",omitempty"`
-	SignalStrength  string    `json:",omitempty"`
-	LocationTile    string    `json:",omitempty"`
-	StartTime       time.Time `json:",omitempty"`
-	EndTime         time.Time `json:",omitempty"`
-	Last            int       `json:",omitempty"`
+	DeviceCarrier   string `json:",omitempty"`
+	DataNetworkType string `json:",omitempty"`
+	DeviceModel     string `json:",omitempty"`
+	DeviceOs        string `json:",omitempty"`
+	SignalStrength  string `json:",omitempty"`
+	LocationTile    string `json:",omitempty"`
+	MetricsCommon   `json:",inline"`
 }
 
 type RegionClientCloudletUsageMetrics struct {
 	Region          string
 	Cloudlet        edgeproto.CloudletKey
 	Selector        string
-	RawData         bool      `json:",omitempty"`
-	DeviceCarrier   string    `json:",omitempty"`
-	DataNetworkType string    `json:",omitempty"`
-	DeviceModel     string    `json:",omitempty"`
-	DeviceOs        string    `json:",omitempty"`
-	SignalStrength  string    `json:",omitempty"`
-	LocationTile    string    `json:",omitempty"`
-	StartTime       time.Time `json:",omitempty"`
-	EndTime         time.Time `json:",omitempty"`
-	Last            int       `json:",omitempty"`
+	DeviceCarrier   string `json:",omitempty"`
+	DataNetworkType string `json:",omitempty"`
+	DeviceModel     string `json:",omitempty"`
+	DeviceOs        string `json:",omitempty"`
+	SignalStrength  string `json:",omitempty"`
+	LocationTile    string `json:",omitempty"`
+	MetricsCommon   `json:",inline"`
 }
 
 type RegionAppInstEvents struct {

@@ -837,7 +837,9 @@ func showMcClientApiMetrics(uri, token string, targets *MetricTargets, rc *bool)
 				AppKey: targets.AppInstKey.AppKey,
 			},
 			Method: method,
-			Last:   1,
+			MetricsCommon: ormapi.MetricsCommon{
+				Limit: 1,
+			},
 		}
 		for _, selector := range ormapi.ClientApiUsageSelectors {
 			clientApiUsageQuery.Selector = selector
@@ -854,8 +856,9 @@ func showMcClientAppMetrics(uri, token string, targets *MetricTargets, rc *bool)
 	clientAppUsageQuery := ormapi.RegionClientAppUsageMetrics{
 		Region:  "local",
 		AppInst: targets.AppInstKey,
-		RawData: true,
-		Last:    1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	for _, selector := range ormapi.ClientAppUsageSelectors {
 		if selector == "custom" {
@@ -880,8 +883,9 @@ func showMcClientCloudletMetrics(uri, token string, targets *MetricTargets, rc *
 		Region:       "local",
 		Cloudlet:     targets.CloudletKey,
 		LocationTile: targets.LocationTile,
-		RawData:      true,
-		Last:         1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	for _, selector := range ormapi.ClientCloudletUsageSelectors {
 		clientCloudletUsageQuery.Selector = selector

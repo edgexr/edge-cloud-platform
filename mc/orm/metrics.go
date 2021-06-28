@@ -5,19 +5,12 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/util"
-)
-
-const (
-	DefaultTimeWindow = 15 * time.Second
-	// Max 100 data points on the graph
-	MaxTimeDefinition = 100
 )
 
 var appInstGroupQueryTemplate *template.Template
@@ -92,39 +85,8 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	return nil
 }
 
-func getTimeDefinition(apps *ormapi.RegionAppInstMetrics) string {
-	// In case we are requesting last n number of entries and don't provide time window
-	// we should skip the function and time-based grouping
-	if apps.StartTime.IsZero() && apps.EndTime.IsZero() && apps.Last != 0 {
-		return ""
-	}
-	// set the max number of data points per grouping
-	if apps.Last == 0 {
-		apps.Last = MaxTimeDefinition
-	}
-	if apps.EndTime.IsZero() {
-		apps.EndTime = time.Now().UTC()
-	}
-	// Default time to last 12hrs
-	if apps.StartTime.IsZero() {
-		apps.StartTime = apps.EndTime.Add(-12 * time.Hour).UTC()
-	}
-
-	// If start time is past end time, cannot group by time
-	timeDiff := apps.EndTime.Sub(apps.StartTime)
-	if timeDiff < 0 {
-		return ""
-	}
-	// Make sure we don't have any fractional seconds in here
-	timeWindow := time.Duration(timeDiff / time.Duration(apps.Last)).Truncate(time.Second)
-	if timeWindow < DefaultTimeWindow {
-		return DefaultTimeWindow.String()
-	}
-	return timeWindow.String()
-}
-
 func GetAppInstsGroupQuery(ctx context.Context, apps *ormapi.RegionAppInstMetrics, cloudletList []string) string {
-	timeDef := getTimeDefinition(apps)
+	timeDef := getTimeDefinitionForAppInsts(apps)
 	selectorFunction := getFuncForSelector(apps.Selector, timeDef)
 	args := influxQueryArgs{
 		Selector:       getSelectorForMeasurement(apps.Selector, selectorFunction),
