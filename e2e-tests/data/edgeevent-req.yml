@@ -17,5 +17,4 @@ clientedgeevent:
     devicemodel: "SM-G920F"
   deviceinfodynamic:
     datanetworktype: 5G
-    signalstrength: 5
     carriername: dmuus

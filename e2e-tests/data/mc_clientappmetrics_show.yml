@@ -7,6 +7,7 @@
     cluster: SmallCluster
     clusterorg: AcmeAppCo
     locationtile: -90.998922,30.984896_-91.016888,31.002985_2
+    datanetworktype: 5G
   values:
     0s: 4
     5ms: 1
@@ -31,5 +32,6 @@
     devicecarrier: dmuus
     devicemodel: SM-G920F
     deviceos: Android
+    datanetworktype: 5G
   values:
     numsessions: 3

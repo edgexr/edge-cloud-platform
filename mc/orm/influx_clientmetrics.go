@@ -102,6 +102,7 @@ var LatencyFields = []string{
 
 var ClientAppUsageLatencyFields = []string{
 	"\"locationtile\"",
+	"\"datanetworktype\"",
 }
 
 var ClientCloudletUsageLatencyFields = []string{
@@ -296,9 +297,6 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 		}
 		if req.DeviceCarrier != "" {
 			return fmt.Errorf("DeviceCarrier not allowed for appinst latency metric")
-		}
-		if req.DataNetworkType != "" {
-			return fmt.Errorf("DataNetworkType not allowed for appinst latency metric")
 		}
 	case "deviceinfo":
 		if req.LocationTile != "" {
