@@ -172,7 +172,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 7777
         publicport: 10000
-        fqdnprefix: someappuser310-tcp.
+        fqdnprefix: someappuser310-tcp-
       flavor:
         name: x1.tiny
       state: Ready

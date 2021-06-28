@@ -534,15 +534,15 @@ regiondata:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: ep1-tcp.
+        fqdnprefix: ep1-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: ep1-tcp.
+        fqdnprefix: ep1-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: ep1-udp.
+        fqdnprefix: ep1-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -667,15 +667,15 @@ regiondata:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication1-tcp.
+        fqdnprefix: someapplication1-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: someapplication1-tcp.
+        fqdnprefix: someapplication1-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication1-udp.
+        fqdnprefix: someapplication1-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -704,7 +704,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication1-tcp.
+        fqdnprefix: someapplication1-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
@@ -712,7 +712,7 @@ regiondata:
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication1-udp.
+        fqdnprefix: someapplication1-udp-
       flavor:
         name: x1.small
       state: Ready
