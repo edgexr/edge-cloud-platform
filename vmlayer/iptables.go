@@ -83,7 +83,7 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 	var ppRules infracommon.FirewallRules
 
 	//First create the global rules on this LB
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating cloudlet-wide rules")
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupIptablesRulesForRootLB", "TrustPolicy", TrustPolicy)
 	err := v.CommonPf.CreateCloudletFirewallRules(ctx, client)
 	if err != nil {
 		return err
@@ -122,14 +122,14 @@ func (v *VMProperties) SetupIptablesRulesForRootLB(ctx context.Context, client s
 	// optionally add/update/delete Trust Policy
 	allowEgressAll := false
 	if TrustPolicy != nil {
+		// always delete the trust rules first, they will be re-added as required
+		err := infracommon.RemoveTrustPolicyIfExists(ctx, client)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
+		}
 		if len(TrustPolicy.OutboundSecurityRules) == 0 {
 			// a privacy policy with no rules means we need to open all egress traffic
 			log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB empty OutboundSecRules removeIfExist")
-			err := infracommon.RemoveTrustPolicyIfExists(ctx, client)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "SetupIpTablesRulesForRootLB removeTrustPolicyIfExists fail", "error", err)
-			}
-
 			allowEgressAll = true
 		}
 		for _, p := range TrustPolicy.OutboundSecurityRules {
