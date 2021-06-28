@@ -312,7 +312,7 @@ func getClientTypeUsageMetricComments(typ string) map[string]string {
 		deviceosSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicemodelSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
 		devicecarrierSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
-		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "deviceinfo")
+		datanetworktypeSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")
 		availableMetrics = strings.Join(ormapi.ClientAppUsageSelectors, "\", \"")
 	case "cloudlet":
 		locationtileSelectorPermission = fmt.Sprintf(baseSelectorPermission, "latency, deviceinfo")

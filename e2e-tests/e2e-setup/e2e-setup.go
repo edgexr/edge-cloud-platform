@@ -151,11 +151,11 @@ var TagValues = map[string]struct{}{
 	"status": struct{}{},
 	"flavor": struct{}{},
 	// edgeevents metrics tags
-	"deviceos":       struct{}{},
-	"devicemodel":    struct{}{},
-	"locationtile":   struct{}{},
-	"devicecarrier":  struct{}{},
-	"signalstrength": struct{}{},
+	"deviceos":        struct{}{},
+	"devicemodel":     struct{}{},
+	"locationtile":    struct{}{},
+	"devicecarrier":   struct{}{},
+	"datanetworktype": struct{}{},
 }
 
 // methods for dme-api metric
