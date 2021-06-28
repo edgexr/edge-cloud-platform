@@ -23,7 +23,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp.
+        fqdnprefix: autoprovha10-tcp-
       flavor:
         name: x1.small
       state: Ready
@@ -57,7 +57,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp.
+        fqdnprefix: autoprovha10-tcp-
       flavor:
         name: x1.small
       state: Ready
