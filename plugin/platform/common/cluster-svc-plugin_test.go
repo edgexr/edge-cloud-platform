@@ -23,108 +23,73 @@ func TestAutoScaleT(t *testing.T) {
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Organization = clusterInst.Key.Organization
 	policy.Key.Name = "test-policy"
-	policy.MinNodes = 1
-	policy.MaxNodes = 5
-	policy.ScaleUpCpuThresh = 80
-	policy.ScaleDownCpuThresh = 20
-	policy.TriggerTimeSec = 60
+	policy.TriggerTimeSec = 120
 
 	clusterInst.AutoScalePolicy = policy.Key.Name
+
+	settings := edgeproto.GetDefaultSettings()
 
 	configExpected := `additionalPrometheusRules:
 - name: autoscalepolicy
   groups:
   - name: autoscale.rules
     rules:
-    - expr: 1 - avg(rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[1m]))
-      record: :node_cpu_utilisation:avg1m
     - expr: |-
         1 - avg by (node) (
-          rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[1m])
+          rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[60s])
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:)
-      record: node:node_cpu_utilisation:avg1m
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"mex-k8s-node-.*"} > bool 0.80)
-      record: 'node_cpu_high_count'
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"mex-k8s-node-.*"} < bool 0.20)
-      record: 'node_cpu_low_count'
-    - expr: count(kube_node_info) - count(kube_node_spec_taint)
-      record: 'node_count'
-    - alert: AutoScaleUp
-      expr: node_cpu_high_count == node_count and node_count < 5
-      for: 60s
-      labels:
-        severity: none
-      annotations:
-        message: High cpu greater than 80% for all nodes
-        nodecount: '{{ with query "node_count" }}{{ . | first | value | humanize }}{{ end }}'
-    - alert: AutoScaleDown
-      expr: node_cpu_low_count > 0 and node_count > 1
-      for: 60s
-      labels:
-        severity: none
-      annotations:
-        message: Low cpu less than 20% for some nodes
-        lowcpunodecount: '{{ $value }}'
-        nodecount: '{{ with query "node_count" }}{{ . | first | value | humanize }}{{ end }}'
-        minnodes: '1'
-`
-	testAutoScaleT(t, ctx, &clusterInst, &policy, configExpected)
+      record: node:node_cpu_utilisation:avg
+    - expr: sum(node:node_cpu_utilisation:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
+      record: 'total_worker_node_cpu_utilisation'
+    - expr: max_over_time(total_worker_node_cpu_utilisation[120s])
+      record: 'stabilized_max_total_worker_node_cpu_utilisation'
 
-	policy.MinNodes = 5
-	policy.MaxNodes = 7
-	policy.ScaleUpCpuThresh = 5
-	policy.ScaleDownCpuThresh = 1
+    - expr: avg_over_time(instance:node_memory_utilisation:ratio[60s])
+      record: 'node_memory_utilisation:ratio:avg'
+    - expr: sum(node_memory_utilisation:ratio:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
+      record: 'total_worker_node_mem_utilisation'
+    - expr: max_over_time(total_worker_node_mem_utilisation[120s])
+      record: 'stabilized_max_total_worker_node_mem_utilisation'
+`
+	testAutoScaleT(t, ctx, &clusterInst, &policy, settings, configExpected)
+
+	policy.StabilizationWindowSec = 300
+	settings.ClusterAutoScaleAveragingDurationSec = 30
 
 	configExpected = `additionalPrometheusRules:
 - name: autoscalepolicy
   groups:
   - name: autoscale.rules
     rules:
-    - expr: 1 - avg(rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[1m]))
-      record: :node_cpu_utilisation:avg1m
     - expr: |-
         1 - avg by (node) (
-          rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[1m])
+          rate(node_cpu_seconds_total{job="node-exporter",mode="idle"}[30s])
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:)
-      record: node:node_cpu_utilisation:avg1m
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"mex-k8s-node-.*"} > bool 0.05)
-      record: 'node_cpu_high_count'
-    - expr: sum(node:node_cpu_utilisation:avg1m{node=~"mex-k8s-node-.*"} < bool 0.01)
-      record: 'node_cpu_low_count'
-    - expr: count(kube_node_info) - count(kube_node_spec_taint)
-      record: 'node_count'
-    - alert: AutoScaleUp
-      expr: node_cpu_high_count == node_count and node_count < 7
-      for: 60s
-      labels:
-        severity: none
-      annotations:
-        message: High cpu greater than 5% for all nodes
-        nodecount: '{{ with query "node_count" }}{{ . | first | value | humanize }}{{ end }}'
-    - alert: AutoScaleDown
-      expr: node_cpu_low_count > 0 and node_count > 5
-      for: 60s
-      labels:
-        severity: none
-      annotations:
-        message: Low cpu less than 1% for some nodes
-        lowcpunodecount: '{{ $value }}'
-        nodecount: '{{ with query "node_count" }}{{ . | first | value | humanize }}{{ end }}'
-        minnodes: '5'
+      record: node:node_cpu_utilisation:avg
+    - expr: sum(node:node_cpu_utilisation:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
+      record: 'total_worker_node_cpu_utilisation'
+    - expr: max_over_time(total_worker_node_cpu_utilisation[300s])
+      record: 'stabilized_max_total_worker_node_cpu_utilisation'
+
+    - expr: avg_over_time(instance:node_memory_utilisation:ratio[30s])
+      record: 'node_memory_utilisation:ratio:avg'
+    - expr: sum(node_memory_utilisation:ratio:avg unless (kube_node_spec_taint{effect="NoSchedule"} * on(node) kube_node_spec_taint))
+      record: 'total_worker_node_mem_utilisation'
+    - expr: max_over_time(total_worker_node_mem_utilisation[300s])
+      record: 'stabilized_max_total_worker_node_mem_utilisation'
 `
-	testAutoScaleT(t, ctx, &clusterInst, &policy, configExpected)
+	testAutoScaleT(t, ctx, &clusterInst, &policy, settings, configExpected)
 }
 
-func testAutoScaleT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, expected string) {
+func testAutoScaleT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, expected string) {
 	clusterSvc := ClusterSvc{}
 	appInst := edgeproto.AppInst{}
 
-	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy)
+	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(configs))
 	ioutil.WriteFile("foo", []byte(configs[0].Config), 0644)
-
 	require.Equal(t, expected, configs[0].Config)
 }

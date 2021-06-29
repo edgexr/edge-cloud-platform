@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 
@@ -68,7 +69,20 @@ var promHealthCheckAlerts = `groups:
       ` + cloudcommon.AlertScopeTypeTag + ": " + cloudcommon.AlertScopeApp + `
     annotations:
       ` + cloudcommon.AlertAnnotationTitle + ": " + cloudcommon.AlertAppInstDown + `
-      ` + cloudcommon.AlertAnnotationDescription + ": Application server port is not responding"
+      ` + cloudcommon.AlertAnnotationDescription + ": Application server port is not responding" + `
+  - expr: sum by (` + // basically sum over all ports
+	strings.Join([]string{edgeproto.AppKeyTagName,
+		edgeproto.AppKeyTagVersion,
+		edgeproto.AppKeyTagOrganization,
+		edgeproto.ClusterKeyTagName,
+		edgeproto.ClusterInstKeyTagOrganization,
+		edgeproto.CloudletKeyTagName,
+		edgeproto.CloudletKeyTagOrganization}, ",") +
+	`) (envoy_cluster_upstream_cx_active)
+    record: envoy_cluster_upstream_cx_active_total
+  - expr: avg_over_time(envoy_cluster_upstream_cx_active_total[%ds])
+    record: envoy_cluster_upstream_cx_active_total:avg
+`
 
 type targetData struct {
 	MetricsProxyAddr string
@@ -84,6 +98,8 @@ func getAppInstPrometheusTargetString(appInstKey *edgeproto.AppInstKey) (string,
 	host := *metricsAddr
 	switch *platformName {
 	case "PLATFORM_TYPE_EDGEBOX":
+		fallthrough
+	case "PLATFORM_TYPE_KINDINFRA":
 		fallthrough
 	case "PLATFORM_TYPE_FAKEINFRA":
 		host = "host.docker.internal:9091"
@@ -231,14 +247,23 @@ func getPrometheusFileName(name string) string {
 	return "/tmp/" + intprocess.PrometheusRulesPrefix + name + ".yml"
 }
 
+func writeCloudletPrometheusBaseRules(ctx context.Context, settings *edgeproto.Settings) error {
+	healthCheckFile := getPrometheusFileName(HealthCheckRulesPrefix)
+	rules := fmt.Sprintf(promHealthCheckAlerts, settings.ClusterAutoScaleAveragingDurationSec)
+	err := writeCloudletPrometheusAlerts(ctx, healthCheckFile, []byte(rules))
+	if err != nil {
+		return fmt.Errorf("Failed to write prometheus rules to %s, err: %s",
+			healthCheckFile, err.Error())
+	}
+	return nil
+}
+
 // Starts Cloudlet Prometheus MetricsProxy thread to serve as a target for metrics
 func startPrometheusMetricsProxy(ctx context.Context) error {
 	// Init prometheus targets and alert templates
-	healthCeckFile := getPrometheusFileName(HealthCheckRulesPrefix)
-	err := writeCloudletPrometheusAlerts(ctx, healthCeckFile, []byte(promHealthCheckAlerts))
+	err := writeCloudletPrometheusBaseRules(ctx, &settings)
 	if err != nil {
-		return fmt.Errorf("Failed to write prometheus rules to %s, err: %s",
-			healthCeckFile, err.Error())
+		return err
 	}
 	// Init http metricsProxy for Prometheus API endpoints
 	var nullLogger baselog.Logger

@@ -64,6 +64,7 @@ const (
 
 type ProxyScrapePoint struct {
 	Key                edgeproto.AppInstKey
+	ClusterInstKey     edgeproto.ClusterInstKey
 	FailedChecksCount  int
 	App                string
 	Cluster            string
@@ -227,12 +228,13 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 		ProxyMutex.Unlock()
 
 		scrapePoint := ProxyScrapePoint{
-			Key:        appInst.Key,
-			App:        k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
-			Cluster:    appInst.ClusterInstKey().ClusterKey.Name,
-			ClusterOrg: appInst.Key.ClusterInstKey.Organization,
-			TcpPorts:   make([]int32, 0),
-			UdpPorts:   make([]int32, 0),
+			Key:            appInst.Key,
+			ClusterInstKey: *appInst.ClusterInstKey(),
+			App:            k8smgmt.NormalizeName(appInst.Key.AppKey.Name),
+			Cluster:        appInst.ClusterInstKey().ClusterKey.Name,
+			ClusterOrg:     appInst.Key.ClusterInstKey.Organization,
+			TcpPorts:       make([]int32, 0),
+			UdpPorts:       make([]int32, 0),
 		}
 
 		for _, p := range appInst.MappedPorts {

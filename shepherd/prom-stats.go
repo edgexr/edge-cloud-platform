@@ -36,6 +36,9 @@ var promQDiskPod = "sum(container_fs_usage_bytes%7Bimage!%3D%22%22%7D)by(pod)"
 var promQNetRecvRate = "sum(irate(container_network_receive_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod)"
 var promQNetSentRate = "sum(irate(container_network_transmit_bytes_total%7Bimage!%3D%22%22%7D%5B1m%5D))by(pod)"
 
+var promQAutoScaleCpuTotalU = "stabilized_max_total_worker_node_cpu_utilisation"
+var promQAutoScaleMemTotalU = "stabilized_max_total_worker_node_mem_utilisation"
+
 type PromResp struct {
 	Status string   `json:"status,omitempty"`
 	Data   PromData `json:"data,omitempty"`
@@ -356,6 +359,34 @@ func collectClusterPrometheusMetrics(ctx context.Context, p *K8sClusterStats) er
 			//copy only if we can parse the value
 			if val, err := strconv.ParseUint(metric.Values[1].(string), 10, 64); err == nil {
 				p.UdpRecvErr = val
+				// We should have only one value here
+				break
+			}
+		}
+	}
+	return nil
+}
+
+func collectClusterAutoScaleMetrics(ctx context.Context, p *K8sClusterStats) error {
+	// Get Stabilized max total worker node cpu utilization
+	resp, err := getPromMetrics(ctx, p.promAddr, promQAutoScaleCpuTotalU, p.client)
+	if err == nil && resp.Status == "success" {
+		for _, metric := range resp.Data.Result {
+			//copy only if we can parse the value
+			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
+				p.AutoScaleCpu = val
+				// We should have only one value here
+				break
+			}
+		}
+	}
+	// Get Stabilized max total worker node memory utilization
+	resp, err = getPromMetrics(ctx, p.promAddr, promQAutoScaleMemTotalU, p.client)
+	if err == nil && resp.Status == "success" {
+		for _, metric := range resp.Data.Result {
+			//copy only if we can parse the value
+			if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
+				p.AutoScaleMem = val
 				// We should have only one value here
 				break
 			}

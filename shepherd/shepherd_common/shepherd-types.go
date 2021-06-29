@@ -23,7 +23,7 @@ type AppStats interface {
 // Common interface to deal with ClusterMetrics
 type ClusterStats interface {
 	// Returns current resource usage for a cluster instance
-	GetClusterStats(ctx context.Context) *ClusterMetrics
+	GetClusterStats(ctx context.Context, ops ...StatsOp) *ClusterMetrics
 	GetAppStats(ctx context.Context) map[MetricAppInstKey]*AppMetrics
 	GetAlerts(ctx context.Context) []edgeproto.Alert
 }
@@ -67,6 +67,8 @@ type ClusterMetrics struct {
 	UdpRecvTS    *types.Timestamp
 	UdpRecvErr   uint64
 	UdpRecvErrTS *types.Timestamp
+	AutoScaleCpu float64
+	AutoScaleMem float64
 }
 
 // This structure represents cloudlet utilization stats
@@ -143,4 +145,22 @@ type MetricAppInstKey struct {
 	Pod            string
 	App            string
 	Version        string
+}
+
+type StatsOptions struct {
+	GetAutoScaleStats bool
+}
+
+func GetStatsOptions(ops []StatsOp) *StatsOptions {
+	s := &StatsOptions{}
+	for _, op := range ops {
+		op(s)
+	}
+	return s
+}
+
+type StatsOp func(opts *StatsOptions)
+
+func WithAutoScaleStats() StatsOp {
+	return func(opts *StatsOptions) { opts.GetAutoScaleStats = true }
 }

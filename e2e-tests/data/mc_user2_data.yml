@@ -61,8 +61,6 @@ regiondata:
       deployment: "kubernetes"
       defaultflavor:
         name: x1.small
-      cluster:
-        name: SmallCluster
       accessports: "tcp:80,tcp:443,udp:10002"
       androidpackagename: com.acme.someapplication1
       permitsplatformapps: true
@@ -100,8 +98,6 @@ regiondata:
       deployment: "kubernetes"
       defaultflavor:
         name: x1.small
-      cluster:
-        name: SmallCluster
       accessports: "tcp:64000"
 
     appinstances:
@@ -153,10 +149,11 @@ regiondata:
         organization: AcmeAppCo
         name: scale1
       minnodes: 1
-      maxnodes: 3
-      scaleupcputhresh: 85
-      scaledowncputhresh: 20
-      triggertimesec: 60
+      maxnodes: 5
+      stabilizationwindowsec: 2
+      targetcpu: 0.7
+      targetmem: 0.7
+      targetactiveconnections: 100
 
     autoprovpolicies:
     - key:

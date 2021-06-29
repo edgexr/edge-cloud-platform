@@ -21,10 +21,12 @@ func alertChanged(ctx context.Context, old *edgeproto.Alert, new *edgeproto.Aler
 
 	var handler func(ctx context.Context, name string, alert *edgeproto.Alert) error
 	switch name {
+	case cloudcommon.AlertClusterAutoScale:
+		fallthrough
 	case cloudcommon.AlertAutoScaleUp:
 		fallthrough
 	case cloudcommon.AlertAutoScaleDown:
-		handler = autoScale
+		clusterAutoScaleWorkers.NeedsWork(ctx, new.GetKeyVal())
 	case cloudcommon.AlertAutoUndeploy:
 		handler = autoUndeploy
 	}

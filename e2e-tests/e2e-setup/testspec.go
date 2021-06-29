@@ -1,18 +1,15 @@
 package e2esetup
 
-type TestSpec struct {
-	Name             string      `json:"name" yaml:"name"`
-	ApiType          string      `json:"api" yaml:"api"`
-	ApiFile          string      `json:"apifile" yaml:"apifile"`
-	Actions          []string    `json:"actions" yaml:"actions"`
-	RetryCount       int         `json:"retrycount" yaml:"retrycount"`
-	RetryIntervalSec float64     `json:"retryintervalsec" yaml:"retryintervalsec"`
-	CurUserFile      string      `json:"curuserfile" yaml:"curuserfile"`
-	CompareYaml      CompareYaml `json:"compareyaml" yaml:"compareyaml"`
-}
+import "github.com/mobiledgex/edge-cloud/setup-env/util"
 
-type CompareYaml struct {
-	Yaml1    string `json:"yaml1" yaml:"yaml1"`
-	Yaml2    string `json:"yaml2" yaml:"yaml2"`
-	FileType string `json:"filetype" yaml:"filetype"`
+type TestSpec struct {
+	Name             string            `json:"name" yaml:"name"`
+	ApiType          string            `json:"api" yaml:"api"`
+	ApiFile          string            `json:"apifile" yaml:"apifile"`
+	ApiFileVars      map[string]string `json:"apifilevars" yaml:"apifilevars"`
+	Actions          []string          `json:"actions" yaml:"actions"`
+	RetryCount       int               `json:"retrycount" yaml:"retrycount"`
+	RetryIntervalSec float64           `json:"retryintervalsec" yaml:"retryintervalsec"`
+	CurUserFile      string            `json:"curuserfile" yaml:"curuserfile"`
+	CompareYaml      util.CompareYaml  `json:"compareyaml" yaml:"compareyaml"`
 }

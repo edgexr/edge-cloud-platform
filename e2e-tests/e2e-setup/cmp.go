@@ -62,19 +62,24 @@ func CmpSortOrgs(a ormapi.Organization, b ormapi.Organization) bool {
 //compares two yaml files for equivalence
 //TODO need to handle different types of interfaces besides appdata, currently using
 //that to sort
-func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType string) bool {
+func CompareYamlFiles(compare *util.CompareYaml) bool {
+	firstYamlFile := compare.Yaml1
+	secondYamlFile := compare.Yaml2
+	fileType := compare.FileType
+
 	var err1 error
 	var err2 error
 	var y1 interface{}
 	var y2 interface{}
 	copts := []cmp.Option{}
+	yaml1Ops, yaml2Ops := compare.GetReadYamlOps()
 
 	if fileType == "mcdata" || fileType == "mcdata-xind" {
 		var a1 ormapi.AllData
 		var a2 ormapi.AllData
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
@@ -99,8 +104,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []ormapi.User
 		var a2 []ormapi.User
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreTypes(time.Time{}),
@@ -113,12 +118,12 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []edgeproto.Alert
 		var a2 []edgeproto.Alert
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a1 == nil {
 			a1 = []edgeproto.Alert{}
 		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a2 == nil {
 			a2 = []edgeproto.Alert{}
@@ -137,8 +142,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []ormapi.AuditResponse
 		var a2 []ormapi.AuditResponse
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreFields(ormapi.AuditResponse{}, "StartTime", "Duration", "TraceID"),
@@ -149,8 +154,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []EventSearch
 		var a2 []EventSearch
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreFields(node.EventData{}, "Timestamp", "Error"),
@@ -165,8 +170,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []EventTerms
 		var a2 []EventTerms
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		cmpFilterEventTerms(a1)
 		cmpFilterEventTerms(a2)
@@ -186,8 +191,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []SpanTerms
 		var a2 []SpanTerms
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		cmpFilterSpanTerms(a1)
 		cmpFilterSpanTerms(a2)
@@ -206,8 +211,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []SpanSearch
 		var a2 []SpanSearch
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		cmpFilterSpans(a1)
 		cmpFilterSpans(a2)
@@ -224,8 +229,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []MetricsCompare
 		var a2 []MetricsCompare
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		sort.Slice(a1, func(i, j int) bool {
 			return a1[i].Name < a1[j].Name
@@ -240,8 +245,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []MetricsCompare
 		var a2 []MetricsCompare
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 
 		sort.Slice(a1, func(i, j int) bool {
 			return a1[i].Name < a1[j].Name
@@ -260,12 +265,12 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []MailDevEmail
 		var a2 []MailDevEmail
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a1 == nil {
 			a1 = []MailDevEmail{}
 		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a2 == nil {
 			a2 = []MailDevEmail{}
@@ -290,12 +295,12 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []TestSlackMsg
 		var a2 []TestSlackMsg
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a1 == nil {
 			a1 = []TestSlackMsg{}
 		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a2 == nil {
 			a2 = []TestSlackMsg{}
@@ -326,12 +331,12 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 []TestPagerDutyEvent
 		var a2 []TestPagerDutyEvent
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a1 == nil {
 			a1 = []TestPagerDutyEvent{}
 		}
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 		// If this is an empty file, treat it as an empty list
 		if a2 == nil {
 			a2 = []TestPagerDutyEvent{}
@@ -349,8 +354,8 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		var a1 AllStreamOutData
 		var a2 AllStreamOutData
 
-		err1 = util.ReadYamlFile(firstYamlFile, &a1)
-		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
 		copts = []cmp.Option{
 			cmpopts.IgnoreTypes(time.Time{}, dmeproto.Timestamp{}),
 			IgnoreAdminRole,
@@ -362,8 +367,7 @@ func CompareYamlFiles(firstYamlFile string, secondYamlFile string, fileType stri
 		y1 = a1
 		y2 = a2
 	} else {
-		return util.CompareYamlFiles(firstYamlFile,
-			secondYamlFile, fileType)
+		return util.CompareYamlFiles(compare)
 	}
 
 	util.PrintStepBanner("running compareYamlFiles")

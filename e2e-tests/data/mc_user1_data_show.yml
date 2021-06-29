@@ -65,6 +65,8 @@ regiondata:
       physicalname: dmuus-cloud-1
       envvar:
         foo: bar
+        FAKE_VCPUS_MAX: "500"
+        FAKE_RAM_MAX: "409600"
       containerversion: 2019-10-24
       resourcequotas:
       - name: RAM
@@ -153,8 +155,8 @@ regiondata:
       state: CloudletStateReady
       notifyid: 1
       controller: MCHU-MAC.local@127.0.0.1:55001
-      osmaxram: 40960
-      osmaxvcores: 50
+      osmaxram: 409600
+      osmaxvcores: 500
       osmaxvolgb: 5000
       flavors:
       - name: x1.tiny
@@ -187,11 +189,11 @@ regiondata:
         info:
         - name: RAM
           value: 8192
-          inframaxvalue: 40960
+          inframaxvalue: 409600
           units: MB
         - name: vCPUs
           value: 4
-          inframaxvalue: 50
+          inframaxvalue: 500
         - name: External IPs
           value: 1
           inframaxvalue: 30

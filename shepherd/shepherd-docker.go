@@ -60,7 +60,7 @@ type DockerClusterStats struct {
 	shepherd_common.ClusterMetrics
 }
 
-func (c *DockerClusterStats) GetClusterStats(ctx context.Context) *shepherd_common.ClusterMetrics {
+func (c *DockerClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
 	if err := collectDockerClusterMetrics(ctx, c); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster metrics", "Docker cluster", c)
 		return nil

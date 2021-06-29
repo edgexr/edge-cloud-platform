@@ -18,6 +18,8 @@ regiondata:
       physicalname: dmuus-cloud-1
       envvar:
         foo: bar
+        FAKE_VCPUS_MAX: "500"
+        FAKE_RAM_MAX: "409600"
       containerversion: "2019-10-24"
       deployment: docker
       resourcequotas:

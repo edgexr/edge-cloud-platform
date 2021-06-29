@@ -57,7 +57,7 @@ var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 // map keeping track of all the currently running prometheuses
 var workerMap map[string]*ClusterWorker
-var workerMapMutex *sync.Mutex
+var workerMapMutex sync.Mutex
 var vmAppWorkerMap map[string]*AppInstWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
 var FlavorCache edgeproto.FlavorCache
@@ -72,6 +72,7 @@ var CloudletInternalCache edgeproto.CloudletInternalCache
 var MetricSender *notify.MetricSend
 var AlertCache edgeproto.AlertCache
 var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
+var AutoScalePoliciesCache edgeproto.AutoScalePolicyCache
 var SettingsCache edgeproto.SettingsCache
 var settings edgeproto.Settings
 var AppInstByAutoProvPolicy edgeproto.AppInstLookupByPolicyKey
@@ -192,7 +193,7 @@ func clusterInstDeletedCb(ctx context.Context, old *edgeproto.ClusterInst) {
 
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
 	ChangeSinceLastPlatformStats = true
-	var mapKey = k8smgmt.GetK8sNodeNameSuffix(&new.Key)
+	var mapKey = getClusterWorkerMapKey(&new.Key)
 	workerMapMutex.Lock()
 	defer workerMapMutex.Unlock()
 	stats, exists := workerMap[mapKey]
@@ -201,8 +202,8 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 		if new.Reservable {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Update reserved-by setting")
 			stats.reservedBy = new.ReservedBy
-			workerMap[mapKey] = stats
 		}
+		stats.autoScaler.policyName = new.AutoScalePolicy
 		return
 	}
 	// This is for Docker deployments only
@@ -250,6 +251,7 @@ func updateClusterWorkers(ctx context.Context, newInterval edgeproto.Duration) {
 func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Settings) {
 	old := settings
 	settings = *new
+	reloadCProm := false
 	if old.ShepherdMetricsCollectionInterval !=
 		new.ShepherdMetricsCollectionInterval ||
 		old.ShepherdAlertEvaluationInterval !=
@@ -259,8 +261,19 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to write cloudlet prometheus config", "err", err)
 		} else {
-			reloadCloudletProm(ctx)
+			reloadCProm = true
 		}
+	}
+	if old.ClusterAutoScaleAveragingDurationSec != new.ClusterAutoScaleAveragingDurationSec {
+		err := writeCloudletPrometheusBaseRules(ctx, new)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to write cloudlet prometheus main rules", "err", err)
+		}
+		// reload done by above
+		reloadCProm = false
+	}
+	if reloadCProm {
+		reloadCloudletProm(ctx)
 	}
 
 	if old.ShepherdMetricsCollectionInterval !=
@@ -360,6 +373,8 @@ func getPlatform() (platform.Platform, error) {
 		}
 	case "PLATFORM_TYPE_FAKEINFRA":
 		plat = &shepherd_fake.Platform{}
+	case "PLATFORM_TYPE_KINDINFRA":
+		plat = &shepherd_fake.Platform{}
 	default:
 		err = fmt.Errorf("Platform %s not supported", *platformName)
 	}
@@ -423,7 +438,6 @@ func start() {
 	}
 
 	workerMap = make(map[string]*ClusterWorker)
-	workerMapMutex = &sync.Mutex{}
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 
 	// register shepherd to receive appinst and clusterinst notifications from crm
@@ -437,6 +451,7 @@ func start() {
 
 	edgeproto.InitAppCache(&AppCache)
 	edgeproto.InitAutoProvPolicyCache(&AutoProvPoliciesCache)
+	edgeproto.InitAutoScalePolicyCache(&AutoScalePoliciesCache)
 	AutoProvPoliciesCache.SetUpdatedCb(autoProvPolicyCb)
 	edgeproto.InitSettingsCache(&SettingsCache)
 	AppInstByAutoProvPolicy.Init()
@@ -461,6 +476,7 @@ func start() {
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)
 	notifyClient.RegisterRecvCloudletInternalCache(&CloudletInternalCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
+	notifyClient.RegisterRecvAutoScalePolicyCache(&AutoScalePoliciesCache)
 	SettingsCache.SetUpdatedCb(settingsCb)
 	VMPoolInfoCache.SetUpdatedCb(vmPoolInfoCb)
 	CloudletCache.SetUpdatedCb(cloudletCb)

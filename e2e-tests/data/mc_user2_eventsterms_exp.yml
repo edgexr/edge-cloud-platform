@@ -8,6 +8,8 @@
       count: 12
     - key: /api/v1/auth/ctrl/CreateApp
       count: 9
+    - key: ClusterAutoScale ClusterInst
+      count: 8
     - key: /api/v1/auth/ctrl/CreateAppInst
       count: 5
     - key: AutoProv delete AppInst
@@ -102,3 +104,5 @@
       count: 10
     - key: policyorg
       count: 10
+    - key: new nodecount
+      count: 8

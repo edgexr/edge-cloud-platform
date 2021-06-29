@@ -20,6 +20,8 @@
       count: 8
     - key: Cloudlet online
       count: 8
+    - key: ClusterAutoScale ClusterInst
+      count: 8
     - key: crm start
       count: 8
     - key: /api/v1/auth/org/delete
@@ -172,6 +174,8 @@
     - key: state
       count: 8
     - key: version
+      count: 8
+    - key: new nodecount
       count: 8
     - key: flavor
       count: 6

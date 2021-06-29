@@ -1,0 +1,162 @@
+##
+description: run auto-scale tests. Assumes edge-cloud data already present
+
+tests:
+- name: disable resource quotas by setting max threshold value
+  actions: [mcapi-update, mcapi-show]
+  apifile: '{{datadir2}}/mc_cloudlet_no_resource_quotas.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: initial state - check that autoscaled cluster has numnodes 1
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodesX.yml'
+    yaml2vars:
+      numnodes: "1"
+    filetype: mcdata
+
+- name: initial state - check number of active connections is 50
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 10
+  retryintervalsec: 0.1
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp'
+    yaml2vars:
+      activeconns: "50"
+    filetype: raw
+
+- name: set active connections to 200 to trigger scale up
+  actions: [cmds]
+  apifilevars:
+    activeconns: "200"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of active connections is 200
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 10
+  retryintervalsec: 0.1
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp'
+    yaml2vars:
+      activeconns: "200"
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 2
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodesX.yml'
+    yaml2vars:
+      numnodes: "2"
+    filetype: mcdata
+
+- name: set active connections to 400 to trigger scale up
+  actions: [cmds]
+  apifilevars:
+    activeconns: "400"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of active connections is 400
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 10
+  retryintervalsec: 0.1
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp'
+    yaml2vars:
+      activeconns: "400"
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 4
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodesX.yml'
+    yaml2vars:
+      numnodes: "4"
+    filetype: mcdata
+
+- name: set active connections to 300 to trigger scale down
+  actions: [cmds]
+  apifilevars:
+    activeconns: "300"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: check number of active connections is 300
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 10
+  retryintervalsec: 0.1
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp'
+    yaml2vars:
+      activeconns: "300"
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 3
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodesX.yml'
+    yaml2vars:
+      numnodes: "3"
+    filetype: mcdata
+
+- name: finished - set active connections back to 50
+  actions: [cmds]
+  apifilevars:
+    activeconns: "50"
+  apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+- name: finished - check number of active connections is 50
+  actions: [cmds]
+  apifile: '{{datadir2}}/autoscale_prom_check_active'
+  retrycount: 10
+  retryintervalsec: 0.1
+  compareyaml:
+    yaml1: '{{outputdir}}/cmds-output'
+    yaml2: '{{datadir2}}/autoscale_prom_check_active_exp'
+    yaml2vars:
+      activeconns: "50"
+    filetype: raw
+
+- name: check that autoscaled cluster has numnodes 1
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/autoscale_cluster.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 12
+  retryintervalsec: 0.5
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/autoscale_cluster_nodesX.yml'
+    yaml2vars:
+      numnodes: "1"
+    filetype: mcdata
+
+- name: enable resource quotas
+  actions: [mcapi-update, mcapi-show]
+  apifile: '{{datadir2}}/mc_cloudlet_resource_quotas.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'

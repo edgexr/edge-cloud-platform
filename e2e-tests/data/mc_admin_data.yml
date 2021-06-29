@@ -75,6 +75,8 @@ regiondata:
       influxdbdownsampledmetricsretention: 672h0m0s
       edgeeventsmetricscontinuousqueriescollectionintervals:
       - interval: 2s
+      clusterautoscaleaveragingdurationsec: 1
+      clusterautoscaleretrydelay: 1s
     flavors:
     - key:
         name: x1.tiny
@@ -127,6 +129,8 @@ regiondata:
       influxdbdownsampledmetricsretention: 672h0m0s
       edgeeventsmetricscontinuousqueriescollectionintervals:
       - interval: 2s
+      clusterautoscaleaveragingdurationsec: 1
+      clusterautoscaleretrydelay: 1s
     flavors:
     - key:
         name: x1.tiny
