@@ -90,10 +90,11 @@ type MetricsCompare struct {
 }
 
 type MetricTargets struct {
-	AppInstKey     edgeproto.AppInstKey
-	ClusterInstKey edgeproto.ClusterInstKey
-	CloudletKey    edgeproto.CloudletKey
-	LocationTile   string // used for clientappusage and clientcloudletusage metrics to guarantee correct metric
+	AppInstKey             edgeproto.AppInstKey
+	ClusterInstKey         edgeproto.ClusterInstKey
+	CloudletKey            edgeproto.CloudletKey
+	LocationTileLatency    string // used for clientappusage and clientcloudletusage metrics to guarantee correct metric
+	LocationTileDeviceInfo string // used for clientappusage and clientcloudletusage metrics to guarantee correct metric
 }
 
 type EventSearch struct {
