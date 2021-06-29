@@ -25,6 +25,6 @@
     devicecarrier: dmuus
     devicemodel: SM-G920F
     deviceos: Android
-    locationtile: -90.998922,30.984896_-91.016888,31.002985_2
+    locationtile: -94.987424,34.982364_-95.005390,35.000452_2
   values:
-    numsessions: 3
+    numsessions: 1

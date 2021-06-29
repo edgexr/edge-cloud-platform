@@ -34,4 +34,4 @@
     deviceos: Android
     datanetworktype: 5G
   values:
-    numsessions: 3
+    numsessions: 1
