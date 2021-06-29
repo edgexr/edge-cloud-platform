@@ -42,7 +42,7 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
-	externalNetname := o.VMProperties.GetCloudletExternalNetwork()
+	externalNetMap := o.VMProperties.GetExternalNetworks(vmlayer.ExternalNetworkAll)
 	its := strings.Split(addresses, ";")
 
 	for _, it := range its {
@@ -52,8 +52,8 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 		}
 		network := strings.TrimSpace(sits[0])
 		addr := sits[1]
-
-		if network == externalNetname {
+		_, isExternal := externalNetMap[network]
+		if isExternal {
 			var serverIP vmlayer.ServerIP
 			serverIP.Network = network
 			// multiple ips for an external network indicates a floating ip on a single port
@@ -401,9 +401,11 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 			Status:      svr.Status,
 			InfraFlavor: svr.Flavor,
 		}
+		externalNetMap := o.VMProperties.GetExternalNetworks(vmlayer.ExternalNetworkAll)
 		for _, sip := range sd.Addresses {
 			vmip := edgeproto.IpAddr{}
-			if sip.Network == o.VMProperties.GetCloudletExternalNetwork() {
+			_, isExternal := externalNetMap[sip.Network]
+			if isExternal {
 				vmip.ExternalIp = sip.ExternalAddr
 				if sip.InternalAddr != "" && sip.InternalAddr != sip.ExternalAddr {
 					vmip.InternalIp = sip.InternalAddr

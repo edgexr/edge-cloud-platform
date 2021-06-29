@@ -82,12 +82,19 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	if internalIP.MacAddress == "" {
 		return "", fmt.Errorf("No MAC address for internal interface: %s", internalPortName)
 	}
-	externalIP, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", serverDetails)
-	if err != nil {
-		return "", err
-	}
-	if externalIP.MacAddress == "" {
-		return "", fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
+	var externalIps []*ServerIP
+
+	externalNetworks := v.VMProperties.GetExternalNetworks(ExternalNetworkRootLb)
+	log.SpanLog(ctx, log.DebugLevelInfra, "external network list", "externalNetworks", externalNetworks)
+	for _, net := range externalNetworks {
+		externalIP, err := GetIPFromServerDetails(ctx, net, "", serverDetails)
+		if err != nil {
+			return "", err
+		}
+		if externalIP.MacAddress == "" {
+			return "", fmt.Errorf("No MAC address for external interface: %s", externalIP.Network)
+		}
+		externalIps = append(externalIps, externalIP)
 	}
 	err = WaitServerReady(ctx, v.VMProvider, client, serverDetails.Name, MaxRootLBWait)
 	if err != nil {
@@ -96,15 +103,20 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	}
 
 	// discover the interface names matching our macs
-	externalIfname := v.GetInterfaceNameForMac(ctx, client, externalIP.MacAddress)
+	var externalIfnames []string
 	internalIfname := v.GetInterfaceNameForMac(ctx, client, internalIP.MacAddress)
+	log.SpanLog(ctx, log.DebugLevelInfra, "found interface", "ifn", internalIfname, "mac", internalIP.MacAddress)
 
-	if externalIfname == "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", externalIP.MacAddress)
-		if action.AddInterface {
-			return "", fmt.Errorf("unable to find interface for external port mac: %s", externalIP.MacAddress)
+	for _, eip := range externalIps {
+		externalIfname := v.GetInterfaceNameForMac(ctx, client, eip.MacAddress)
+		externalIfnames = append(externalIfnames, externalIfname)
+		if externalIfname == "" {
+			log.SpanLog(ctx, log.DebugLevelInfra, "unable to find external interface via MAC", "mac", eip.MacAddress)
+			if action.AddInterface {
+				return "", fmt.Errorf("unable to find interface for external port mac: %s", eip.MacAddress)
+			}
+			// keep going on delete
 		}
-		// keep going on delete
 	}
 	if internalIfname == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find internal interface via MAC", "mac", internalIP.MacAddress)
@@ -147,7 +159,7 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		ipcmds = append(ipcmds, addrCmd)
 		for _, c := range ipcmds {
 			log.SpanLog(ctx, log.DebugLevelInfra, "bringing up interface", "internalIfname", internalIfname, "cmd", c)
-			out, err := client.Output(c)
+			out, err = client.Output(c)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to run", "cmd", c, "out", out, "err", err)
 				return "", fmt.Errorf("unable to run ip command: %s - %v", out, err)
@@ -177,14 +189,16 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 		if action.AddInterface || action.DeleteInterface {
 			err = persistInterfaceName(ctx, client, internalIfname, internalIP.MacAddress, action)
 			if err != nil {
-				return "", nil
+				return "", err
 			}
 		}
 		if action.CreateIptables || action.DeleteIptables {
-			if externalIfname != "" {
-				err = v.setupForwardingIptables(ctx, client, externalIfname, internalIfname, action)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "setupForwardingIptables failed", "err", err)
+			for _, externalIfname := range externalIfnames {
+				if externalIfname != "" {
+					err = v.setupForwardingIptables(ctx, client, externalIfname, internalIfname, action)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelInfra, "setupForwardingIptables failed", "err", err)
+					}
 				}
 			}
 		}

@@ -59,6 +59,12 @@ var NoExternalRouter = "NONE"
 
 var DefaultCloudletVMImagePath = "https://artifactory.mobiledgex.net/artifactory/baseimages/"
 
+type ExternalNetworkType string
+
+const ExternalNetworkRootLb = "rootlb"
+const ExternalNetworkPlatform = "platform"
+const ExternalNetworkAll = "all"
+
 // properties common to all VM providers
 var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	"MEX_EXT_NETWORK": {
@@ -242,6 +248,29 @@ func (vp *VMProperties) GetCloudletAdditionalRootLbNetworks() []string {
 	}
 	return strings.Split(value, ",")
 }
+
+func (vp *VMProperties) GetExternalNetworks(netType ExternalNetworkType) map[string]string {
+	externalNetMap := make(map[string]string)
+	// always return the main external network
+	externalNetname := vp.GetCloudletExternalNetwork()
+	var nets = []string{externalNetname}
+
+	// look for additional net based on netType
+	switch netType {
+	case ExternalNetworkPlatform:
+		nets = append(nets, vp.GetCloudletAdditionalPlatformNetworks()...)
+	case ExternalNetworkRootLb:
+		nets = append(nets, vp.GetCloudletAdditionalRootLbNetworks()...)
+	case ExternalNetworkAll:
+		nets = append(nets, vp.GetCloudletAdditionalRootLbNetworks()...)
+		nets = append(nets, vp.GetCloudletAdditionalPlatformNetworks()...)
+	}
+	for _, net := range nets {
+		externalNetMap[net] = net
+	}
+	return externalNetMap
+}
+
 func (vp *VMProperties) GetNtpServers() []string {
 	value, _ := vp.CommonPf.Properties.GetValue("MEX_NTP_SERVERS")
 	if value == "" {
