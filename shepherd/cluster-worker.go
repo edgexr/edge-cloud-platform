@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	platform "github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_platform"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -30,6 +31,7 @@ type ClusterWorker struct {
 	waitGrp        sync.WaitGroup
 	stop           chan struct{}
 	client         ssh.Client
+	autoScaler     ClusterAutoScaler
 }
 
 func NewClusterWorker(ctx context.Context, promAddr string, scrapeInterval time.Duration, pushInterval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*ClusterWorker, error) {
@@ -40,6 +42,9 @@ func NewClusterWorker(ctx context.Context, promAddr string, scrapeInterval time.
 	p.send = send
 	p.clusterInstKey = clusterInst.Key
 	p.UpdateIntervals(ctx, scrapeInterval, pushInterval)
+	if p.deployment == cloudcommon.DeploymentTypeKubernetes {
+		p.autoScaler.policyName = clusterInst.AutoScalePolicy
+	}
 	p.client, err = pf.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		// If we cannot get a platform client no point in trying to get metrics
@@ -73,6 +78,21 @@ func NewClusterWorker(ctx context.Context, promAddr string, scrapeInterval time.
 		p.reservedBy = clusterInst.ReservedBy
 	}
 	return &p, nil
+}
+
+func getClusterWorkerMapKey(key *edgeproto.ClusterInstKey) string {
+	return k8smgmt.GetK8sNodeNameSuffix(key)
+}
+
+func getClusterWorkerAutoScaler(key *edgeproto.ClusterInstKey) *ClusterAutoScaler {
+	workerMapMutex.Lock()
+	defer workerMapMutex.Unlock()
+	mapKey := getClusterWorkerMapKey(key)
+	clusterWorker, found := workerMap[mapKey]
+	if !found {
+		return nil
+	}
+	return &clusterWorker.autoScaler
 }
 
 func (p *ClusterWorker) Start(ctx context.Context) {
@@ -131,10 +151,17 @@ func (p *ClusterWorker) RunNotify() {
 			span := log.StartSpan(log.DebugLevelSampled, "send-metric")
 			log.SetTags(span, p.clusterInstKey.GetTags())
 			ctx := log.ContextWithSpan(context.Background(), span)
-			clusterStats := p.clusterStat.GetClusterStats(ctx)
+			statOps := []shepherd_common.StatsOp{}
+			if p.autoScaler.policyName != "" {
+				statOps = append(statOps, shepherd_common.WithAutoScaleStats())
+			}
+			clusterStats := p.clusterStat.GetClusterStats(ctx, statOps...)
 			appStatsMap := p.clusterStat.GetAppStats(ctx)
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Collected cluster metrics",
 				"cluster", p.clusterInstKey, "cluster stats", clusterStats)
+			if p.autoScaler.policyName != "" {
+				p.autoScaler.updateClusterStats(ctx, p.clusterInstKey, clusterStats)
+			}
 
 			// Marshaling and sending only every push interval
 			if p.checkAndSetLastPushMetrics(time.Now()) {

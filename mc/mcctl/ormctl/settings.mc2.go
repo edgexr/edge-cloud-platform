@@ -134,6 +134,8 @@ var SettingsOptionalArgs = []string{
 	"influxdbdownsampledmetricsretention",
 	"influxdbedgeeventsmetricsretention",
 	"appinstclientcleanupinterval",
+	"clusterautoscaleaveragingdurationsec",
+	"clusterautoscaleretrydelay",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -168,6 +170,8 @@ var SettingsAliasArgs = []string{
 	"influxdbdownsampledmetricsretention=settings.influxdbdownsampledmetricsretention",
 	"influxdbedgeeventsmetricsretention=settings.influxdbedgeeventsmetricsretention",
 	"appinstclientcleanupinterval=settings.appinstclientcleanupinterval",
+	"clusterautoscaleaveragingdurationsec=settings.clusterautoscaleaveragingdurationsec",
+	"clusterautoscaleretrydelay=settings.clusterautoscaleretrydelay",
 }
 var SettingsComments = map[string]string{
 	"fields":                                "Fields are used for the Update API to specify which fields to apply",
@@ -202,6 +206,8 @@ var SettingsComments = map[string]string{
 	"influxdbdownsampledmetricsretention":                              "Default retention policy for downsampled influx db (duration)",
 	"influxdbedgeeventsmetricsretention":                               "Default retention policy for edgeevents metrics influx db (duration)",
 	"appinstclientcleanupinterval":                                     "AppInstClient cleanup thread run interval",
+	"clusterautoscaleaveragingdurationsec":                             "Cluster auto scale averaging duration for stats to avoid spikes (seconds), avoid setting below 30s or it will not capture any measurements to average",
+	"clusterautoscaleretrydelay":                                       "Cluster auto scale retry delay if scaling failed",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",

@@ -14,7 +14,7 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    event: CREATED
+    event: UPDATE_COMPLETE
     flavor: x1.small
     status: UP
   values:

@@ -1,0 +1,23 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: SmallCluster
+        cloudletkey:
+          organization: dmuus
+          name: dmuus-cloud-1
+        organization: AcmeAppCo
+      flavor:
+        name: x1.small
+      liveness: LivenessStatic
+      state: Ready
+      ipaccess: IpAccessDedicated
+      allocatedip: dynamic
+      nodeflavor: x1.small
+      masterflavor: x1.small
+      deployment: kubernetes
+      nummasters: 1
+      numnodes: {{numnodes}}
+      autoscalepolicy: scale1

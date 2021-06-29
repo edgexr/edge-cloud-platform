@@ -3,6 +3,10 @@ package kindinfra
 import (
 	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/crm-platforms/fakeinfra"
+	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
+	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/kind"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
@@ -25,4 +29,24 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	info.OsMaxVcores = 100
 	info.OsMaxVolGb = 500
 	return nil
+}
+
+func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.Platform.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, caches, accessApi, updateCallback)
+	if err != nil {
+		return err
+	}
+	if err = fakeinfra.ShepherdStartup(ctx, cloudlet, pfConfig, updateCallback); err != nil {
+		return err
+	}
+	return fakeinfra.CloudletPrometheusStartup(ctx, cloudlet, pfConfig, caches, updateCallback)
+}
+
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.Platform.DeleteCloudlet(ctx, cloudlet, pfConfig, caches, accessApi, updateCallback)
+	if err != nil {
+		return err
+	}
+	updateCallback(edgeproto.UpdateTask, "Stopping Shepherd")
+	return intprocess.StopShepherdService(ctx, cloudlet)
 }

@@ -58,6 +58,18 @@ ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
             "alerts": [],
             "health": "ok",
             "type": "alerting"
+          },
+          {
+            "name": "envoy_cluster_upstream_cx_active_total",
+            "query": "sum by(app, appver, apporg, cluster, clusterorg, cloudlet, cloudletorg) (envoy_cluster_upstream_cx_active)",
+            "health": "ok",
+            "type": "recording"
+          },
+          {
+            "name": "envoy_cluster_upstream_cx_active_total:avg",
+            "query": "avg_over_time(envoy_cluster_upstream_cx_active_total[1s])",
+            "health": "ok",
+            "type": "recording"
           }
         ],
         "interval": 1,

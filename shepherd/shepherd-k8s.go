@@ -17,13 +17,21 @@ type K8sClusterStats struct {
 	shepherd_common.ClusterMetrics
 }
 
-func (c *K8sClusterStats) GetClusterStats(ctx context.Context) *shepherd_common.ClusterMetrics {
+func (c *K8sClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
 	if c.promAddr == "" {
 		return nil
 	}
+	opts := shepherd_common.GetStatsOptions(ops)
+
 	if err := collectClusterPrometheusMetrics(ctx, c); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster metrics", "K8s Cluster", c)
 		return nil
+	}
+	if opts.GetAutoScaleStats {
+		if err := collectClusterAutoScaleMetrics(ctx, c); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster auto-scale metrics", "K8s Cluster", c)
+			return nil
+		}
 	}
 	return &c.ClusterMetrics
 }

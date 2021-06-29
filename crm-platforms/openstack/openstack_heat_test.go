@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/stretchr/testify/require"
 )
@@ -98,7 +99,12 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	generatedFile := vmgp.GroupName + "-heat.yaml"
 	expectedResultsFile := vmgp.GroupName + "-heat-expected.yaml"
-	compareResult := e2esetup.CompareYamlFiles(generatedFile, expectedResultsFile, "heat-test")
+	compare := util.CompareYaml{
+		Yaml1:    generatedFile,
+		Yaml2:    expectedResultsFile,
+		FileType: "heat-test",
+	}
+	compareResult := e2esetup.CompareYamlFiles(&compare)
 	log.SpanLog(ctx, log.DebugLevelInfra, "yaml compare result", "compareResult", compareResult)
 
 	require.Equal(t, compareResult, true)

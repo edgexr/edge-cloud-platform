@@ -98,6 +98,8 @@ regiondata:
       influxdbdownsampledmetricsretention: 672h0m0s
       edgeeventsmetricscontinuousqueriescollectionintervals:
       - interval: 2s
+      clusterautoscaleaveragingdurationsec: 1
+      clusterautoscaleretrydelay: 1s
     cloudlets:
     - key:
         organization: dmuus

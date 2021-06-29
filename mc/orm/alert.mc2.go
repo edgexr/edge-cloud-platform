@@ -167,6 +167,8 @@ func addControllerApis(method string, group *echo.Group) {
 	// InfluxDbDownsampledMetricsRetention: 31
 	// InfluxDbEdgeEventsMetricsRetention: 32
 	// AppinstClientCleanupInterval: 33
+	// ClusterAutoScaleAveragingDurationSec: 34
+	// ClusterAutoScaleRetryDelay: 35
 	// ```
 	// Security:
 	//   Bearer:
@@ -1087,6 +1089,10 @@ func addControllerApis(method string, group *echo.Group) {
 	// ScaleUpCpuThresh: 5
 	// ScaleDownCpuThresh: 6
 	// TriggerTimeSec: 7
+	// StabilizationWindowSec: 8
+	// TargetCpu: 9
+	// TargetMem: 10
+	// TargetActiveConnections: 11
 	// ```
 	// Security:
 	//   Bearer:

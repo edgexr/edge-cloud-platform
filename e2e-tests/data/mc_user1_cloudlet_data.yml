@@ -23,6 +23,8 @@ regiondata:
       platformtype: PlatformTypeFakeinfra
       envvar:
         foo: bar
+        FAKE_VCPUS_MAX: "500"
+        FAKE_RAM_MAX: "409600"
       resourcequotas:
         - name: "RAM"
           alertthreshold: 50

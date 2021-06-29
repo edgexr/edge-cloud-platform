@@ -11,3 +11,8 @@ regiondata:
       createcloudlettimeout: 60s
       updatecloudlettimeout: 30s
       cloudletmaintenancetimeout: 30s
+      shepherdmetricscollectioninterval: 5s
+      shepherdalertevaluationinterval: 5s
+      shepherdhealthcheckinterval: 5s
+      clusterautoscaleaveragingdurationsec: 30
+      clusterautoscaleretrydelay: 30s

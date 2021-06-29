@@ -99,10 +99,11 @@ regiondata:
         organization: AcmeAppCo
         name: scale1
       minnodes: 1
-      maxnodes: 3
-      scaleupcputhresh: 85
-      scaledowncputhresh: 20
-      triggertimesec: 60
+      maxnodes: 5
+      stabilizationwindowsec: 2
+      targetcpu: 0.7
+      targetmem: 0.7
+      targetactiveconnections: 100
     clusterinsts:
     - key:
         clusterkey:

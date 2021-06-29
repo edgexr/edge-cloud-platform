@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
@@ -9,6 +13,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/pc"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
+	ssh "github.com/mobiledgex/golang-ssh"
 )
 
 var cloudletMetrics shepherd_common.CloudletMetrics
@@ -74,18 +79,56 @@ func CloudletPrometheusScraper(done chan bool) {
 			log.SetTags(aspan, cloudletKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			// platform client is a local ssh
-			alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, &pc.LocalClient{})
+			client := &pc.LocalClient{}
+			alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, client)
 			if err != nil {
 				log.SpanLog(actx, log.DebugLevelMetrics, "Could not collect alerts",
 					"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
 			}
 			// key is nil, since we just check against the predefined set of rules
 			UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
+			// query stats
+			getCloudletPrometheusStats(actx, CloudletPrometheusAddr, client)
 			aspan.Finish()
 		case <-done:
 			// process killed/interrupted, so quit
 			return
+		}
+	}
+}
 
+func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Client) {
+	autoScalers := make(map[edgeproto.ClusterInstKey]*ClusterAutoScaler)
+	workerMapMutex.Lock()
+	for _, worker := range workerMap {
+		if worker.autoScaler.policyName != "" {
+			autoScalers[worker.clusterInstKey] = &worker.autoScaler
+		}
+	}
+	workerMapMutex.Unlock()
+
+	for key, autoScaler := range autoScalers {
+		policy := edgeproto.AutoScalePolicy{}
+		policy.Key.Name = autoScaler.policyName
+		policy.Key.Organization = key.Organization
+		found := AutoScalePoliciesCache.Get(&policy.Key, &policy)
+		if !found {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet-worker autoscale policy not found", "policyKey", policy.Key)
+			continue
+		}
+		tags := make([]string, 0)
+		for k, v := range key.GetTags() {
+			tags = append(tags, k+`="`+v+`"`)
+		}
+		q := "max_over_time(envoy_cluster_upstream_cx_active_total:avg{" + strings.Join(tags, ",") + "}[" + fmt.Sprintf("%d", policy.StabilizationWindowSec) + "s])"
+		q = url.QueryEscape(q)
+		resp, err := getPromMetrics(ctx, addr, q, client)
+		if err == nil && resp.Status == "success" {
+			for _, metric := range resp.Data.Result {
+				if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {
+					autoScaler.updateConnStats(ctx, key, val)
+				}
+			}
 		}
 	}
 }

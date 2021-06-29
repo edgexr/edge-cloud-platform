@@ -138,4 +138,4 @@ requests:
         organization: dmuus
         name: dmuus-cloud-1
       region: local
-    output: infra,metrics
+    output: api,infra,metrics

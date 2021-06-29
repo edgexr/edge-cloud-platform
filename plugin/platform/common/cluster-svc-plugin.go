@@ -11,11 +11,11 @@ import (
 
 type ClusterSvc struct{}
 
-func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, policy *edgeproto.AutoScalePolicy) ([]*edgeproto.ConfigFile, error) {
+func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings) ([]*edgeproto.ConfigFile, error) {
 	if policy == nil {
 		return nil, fmt.Errorf("no auto-scale policy specified for GetAppInstConfigs")
 	}
-	file, err := autorules.GetAutoScaleRules(ctx, policy)
+	file, err := autorules.GetAutoScaleRules(ctx, policy, settings)
 	if err != nil {
 		return nil, err
 	}

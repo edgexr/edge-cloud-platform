@@ -166,6 +166,8 @@ tests:
     yaml2: '{{datadir2}}/mc_orgsinuse_error.yml'
     filetype: orgdata
 
+- includefile: autoscale.yml
+
 - includefile: autoprov.yml
   loops: 2
 

@@ -88,6 +88,11 @@ func UpdateAlerts(ctx context.Context, alerts []edgeproto.Alert, filterKey inter
 	for key, _ := range stale {
 		buf := edgeproto.Alert{}
 		buf.SetKey(&key)
+		alertName := buf.Labels["alertname"]
+		if alertName == cloudcommon.AlertClusterAutoScale {
+			// handled by cluster autoscaler
+			continue
+		}
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Delete alert that is no longer firing", "alert", buf)
 		AlertCache.Delete(ctx, &buf, 0)
 		changeCount++
