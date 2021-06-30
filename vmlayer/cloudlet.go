@@ -263,10 +263,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 	// save caches needed for flavors
 	v.Caches = caches
-
-	if cloudlet.GpuConfig.GpuType != edgeproto.GPUType_GPU_TYPE_NONE {
-		v.GPUConfig = cloudlet.GpuConfig
-	}
+	v.GPUConfig = cloudlet.GpuConfig
 
 	err = v.VMProvider.InitProvider(ctx, caches, stage, updateCallback)
 	if err != nil {

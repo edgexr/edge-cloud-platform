@@ -1,5 +1,5 @@
 {
-  "revision_id": "3e47739855e0ba4e14a07236ad61a5fb15bb6bcf24dafa4901a79ea150a26102",
+  "revision_id": "5e647c126ada47cc7981d73019de3bb0a507281bb9223baee7efb7b4be15221f",
   "name": "base",
   "run_list": [
     "recipe[chef_client_updater::default]",
@@ -45,14 +45,14 @@
       }
     },
     "upgrade_mobiledgex_package": {
-      "version": "1.0.8",
-      "identifier": "cdd66c063dd9433e125a8a88bb95e6a004eb5422",
-      "dotted_decimal_identifier": "57938129675213123.17471628636634005.253574951687202",
-      "cache_key": "upgrade_mobiledgex_package-1.0.8",
+      "version": "1.0.9",
+      "identifier": "e696a15e9a1e7672d9241e3613c9d70f18ad4a41",
+      "dotted_decimal_identifier": "64904864464510582.32326896493925321.236459838491201",
+      "cache_key": "upgrade_mobiledgex_package-1.0.9",
       "origin": "https://chef.mobiledgex.net/organizations/mobiledgex",
       "source_options": {
         "chef_server": "https://chef.mobiledgex.net/organizations/mobiledgex",
-        "version": "1.0.8"
+        "version": "1.0.9"
       }
     }
   },
@@ -80,7 +80,7 @@
       ],
       [
         "upgrade_mobiledgex_package",
-        "= 1.0.8"
+        "= 1.0.9"
       ]
     ],
     "dependencies": {
@@ -93,7 +93,7 @@
       "runstatus_handler (1.0.0)": [
 
       ],
-      "upgrade_mobiledgex_package (1.0.8)": [
+      "upgrade_mobiledgex_package (1.0.9)": [
 
       ]
     }
