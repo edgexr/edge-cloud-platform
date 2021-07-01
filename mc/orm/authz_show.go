@@ -210,6 +210,9 @@ func (s *AuthzGPUDriverShow) Filter(obj *edgeproto.GPUDriver) {
 	obj.Key = output.Key
 	obj.Properties = output.Properties
 	obj.Builds = output.Builds
+	if output.LicenseConfig != "" {
+		obj.LicenseConfig = "*****"
+	}
 	for ii := range obj.Builds {
 		obj.Builds[ii].DriverPath = ""
 		obj.Builds[ii].DriverPathCreds = ""
