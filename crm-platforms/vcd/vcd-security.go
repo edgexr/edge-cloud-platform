@@ -477,10 +477,16 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 		log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules", "action", action, "Cloudlet secgrp name", v.vmProperties.CloudletSecgrpName)
 		sshCidrsAllowed := []string{infracommon.RemoteCidrAll}
 		for clientName, sshClient := range rootlbClients {
-			log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
-			err := v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, TrustPolicy)
+			var err error
+			if sshClient == nil {
+				// in error conditions GetRootLbClients will populate with a nil client
+				err = fmt.Errorf("nil ssh client for rootlb: %s", clientName)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "configure rules for LB", "clientName", clientName)
+				err = v.vmProperties.SetupIptablesRulesForRootLB(ctx, sshClient, sshCidrsAllowed, TrustPolicy)
+			}
 			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules SetupIptablesRulesForRootLB  failed", "clientName", clientName, "sshClient", sshClient, "error", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureCloudletSecurityRules failed", "clientName", clientName, "sshClient", sshClient, "error", err)
 				errMap[clientName] = err
 			}
 		}
