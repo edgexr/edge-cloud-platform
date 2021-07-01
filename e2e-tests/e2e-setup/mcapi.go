@@ -249,9 +249,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "showclientapimetrics" {
 		var showClientApiMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
-		var parsedMetrics *[]MetricsCompare
+		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientApiMetrics = showMcClientApiMetrics(uri, token, targets, &rc)
-		parsedMetrics = parseMetrics(showClientApiMetrics)
+		parsedMetrics = parseOptimizedMetrics(showClientApiMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -260,9 +260,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "showclientappmetrics" {
 		var showClientAppMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
-		var parsedMetrics *[]MetricsCompare
+		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientAppMetrics = showMcClientAppMetrics(uri, token, targets, &rc)
-		parsedMetrics = parseMetrics(showClientAppMetrics)
+		parsedMetrics = parseOptimizedMetrics(showClientAppMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -271,9 +271,9 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 	if api == "showclientcloudletmetrics" {
 		var showClientCloudletMetrics *ormapi.AllMetrics
 		targets := readMCMetricTargetsFile(apiFile, vars)
-		var parsedMetrics *[]MetricsCompare
+		var parsedMetrics *[]OptimizedMetricsCompare
 		showClientCloudletMetrics = showMcClientCloudletMetrics(uri, token, targets, &rc)
-		parsedMetrics = parseMetrics(showClientCloudletMetrics)
+		parsedMetrics = parseOptimizedMetrics(showClientCloudletMetrics)
 		util.PrintToYamlFile("show-commands.yml", outputDir, parsedMetrics, true)
 		*retry = true
 		return rc
@@ -1290,6 +1290,50 @@ func parseMetrics(allMetrics *ormapi.AllMetrics) *[]MetricsCompare {
 				} else if intVal, ok := val.(int); ok {
 					measurement.Values[series.Columns[i]] = float64(intVal)
 				}
+			}
+			result = append(result, measurement)
+		}
+	}
+	return &result
+}
+
+// Parse optimized metrics (each MetricSeries include Columns, Name, Tags, and Values)
+func parseOptimizedMetrics(allMetrics *ormapi.AllMetrics) *[]OptimizedMetricsCompare {
+	result := make([]OptimizedMetricsCompare, 0)
+	for _, data := range allMetrics.Data {
+		for _, series := range data.Series {
+			measurement := OptimizedMetricsCompare{Name: series.Name, Columns: make([]string, 0), Tags: make(map[string]string), Values: make([][]float64, 0)}
+			// e2e tests only grabs the latest measurement so there should only be one
+			if len(series.Values) != 1 {
+				return nil
+			}
+
+			// add tags
+			for tag, val := range series.Tags {
+				// only add tags that are in TagValues
+				_, isTag := TagValues[tag]
+				if isTag {
+					measurement.Tags[tag] = val
+				}
+			}
+
+			// add values
+			for i, val := range series.Values[0] {
+				// ignore timestamps, metadata, or other
+				if series.Columns[i] == "time" || series.Columns[i] == "metadata" || series.Columns[i] == "other" {
+					continue
+				}
+				values := make([]float64, 0)
+				// add column associated with value
+				measurement.Columns = append(measurement.Columns, series.Columns[i])
+				// add value as a float64
+				if floatVal, ok := val.(float64); ok {
+					values = append(values, floatVal)
+				} else if intVal, ok := val.(int); ok {
+					// if its an int cast it to a float to make comparing easier
+					values = append(values, float64(intVal))
+				}
+				measurement.Values = append(measurement.Values, values)
 			}
 			result = append(result, measurement)
 		}

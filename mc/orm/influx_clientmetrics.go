@@ -43,23 +43,24 @@ type influxClientMetricsQueryArgs struct {
 	DeviceModel     string
 	DeviceOs        string
 	LocationTile    string
+	TagSet          string
 }
 
-// ClientApiUsageFields is DME metrics
-var ClientApiUsageFields = []string{
+// ClientApiUsageTags is DME metrics
+var ClientApiUsageTags = []string{
 	"\"apporg\"",
 	"\"app\"",
 	"\"ver\"",
 	"\"cloudletorg\"",
 	"\"cloudlet\"",
-}
-
-var ApiFields = []string{
 	"\"dmeId\"",
 	"\"cellID\"",
 	"\"method\"",
 	"\"foundCloudlet\"",
 	"\"foundOperator\"",
+}
+
+var ApiFields = []string{
 	"\"reqs\"",
 	"\"errs\"",
 	"\"0s\"",
@@ -81,7 +82,7 @@ var ClientApiAggregationFunctions = map[string]string{
 	"100ms": "sum(\"100ms\")",
 }
 
-var ClientAppUsageFields = []string{
+var ClientAppUsageTags = []string{
 	"\"app\"",
 	"\"apporg\"",
 	"\"ver\"",
@@ -91,9 +92,34 @@ var ClientAppUsageFields = []string{
 	"\"cloudletorg\"",
 }
 
-var ClientCloudletUsageFields = []string{
+var ClientCloudletUsageTags = []string{
 	"\"cloudlet\"",
 	"\"cloudletorg\"",
+}
+
+var ClientAppUsageLatencyTags = []string{
+	"\"locationtile\"",
+	"\"datanetworktype\"",
+}
+
+var ClientCloudletUsageLatencyTags = []string{
+	"\"locationtile\"",
+	"\"devicecarrier\"",
+	"\"datanetworktype\"",
+}
+
+var ClientAppUsageDeviceInfoTags = []string{
+	"\"deviceos\"",
+	"\"devicemodel\"",
+	"\"devicecarrier\"",
+	"\"datanetworktype\"",
+}
+
+var ClientCloudletUsageDeviceInfoTags = []string{
+	"\"deviceos\"",
+	"\"devicemodel\"",
+	"\"devicecarrier\"",
+	"\"locationtile\"",
 }
 
 var LatencyFields = []string{
@@ -112,30 +138,8 @@ var LatencyFields = []string{
 	"\"numsamples\"",
 }
 
-var ClientAppUsageLatencyFields = []string{
-	"\"locationtile\"",
-	"\"datanetworktype\"",
-}
-
-var ClientCloudletUsageLatencyFields = []string{
-	"\"locationtile\"",
-	"\"devicecarrier\"",
-	"\"datanetworktype\"",
-}
-
 var DeviceInfoFields = []string{
-	"\"deviceos\"",
-	"\"devicemodel\"",
-	"\"devicecarrier\"",
 	"\"numsessions\"",
-}
-
-var ClientAppUsageDeviceInfoFields = []string{
-	"\"datanetworktype\"",
-}
-
-var ClientCloudletUsageDeviceInfoFields = []string{
-	"\"locationtile\"",
 }
 
 const (
@@ -162,7 +166,8 @@ var devInfluxClientMetricsDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
 	`{{if .LocationTile}} AND "locationtile"='{{.LocationTile}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	`{{if .TimeDefinition}} group by time({{.TimeDefinition}}){{end}}` +
+	`{{if or .TimeDefinition .TagSet}} group by {{end}}` +
+	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}` +
 	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
 
 var operatorInfluxClientMetricsDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
@@ -175,7 +180,8 @@ var operatorInfluxClientMetricsDBT = `SELECT {{.Selector}} from /{{.Measurement}
 	`{{if .LocationTile}} AND "locationtile"='{{.LocationTile}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	`{{if .TimeDefinition}} group by time({{.TimeDefinition}}){{end}}` +
+	`{{if or .TimeDefinition .TagSet}} group by {{end}}` +
+	`{{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}{{.TagSet}}` +
 	` order by time desc{{if ne .Limit 0}} limit {{.Limit}}{{end}}`
 
 func init() {
@@ -209,6 +215,7 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 		CloudletList: generateCloudletList(cloudletList),
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		Method:       obj.Method,
+		TagSet:       getTagSet(CLIENT_APIUSAGE, obj.Selector),
 	}
 	if obj.AppInst.AppKey.Organization != "" {
 		arg.OrgField = "apporg"
@@ -252,6 +259,7 @@ func ClientAppUsageMetricsQuery(obj *ormapi.RegionClientAppUsageMetrics, cloudle
 		DeviceOs:        obj.DeviceOs,
 		DeviceModel:     obj.DeviceModel,
 		LocationTile:    obj.LocationTile,
+		TagSet:          getTagSet(CLIENT_APPUSAGE, obj.Selector),
 	}
 	if obj.AppInst.AppKey.Organization != "" {
 		arg.OrgField = "apporg"
@@ -288,10 +296,37 @@ func ClientCloudletUsageMetricsQuery(obj *ormapi.RegionClientCloudletUsageMetric
 		DeviceOs:        obj.DeviceOs,
 		DeviceModel:     obj.DeviceModel,
 		LocationTile:    obj.LocationTile,
+		TagSet:          getTagSet(CLIENT_CLOUDLETUSAGE, obj.Selector),
 	}
 	// set MetricsCommonQueryArgs
 	fillMetricsCommonQueryArgs(&arg.metricsCommonQueryArgs, devInfluxClientMetricsDBTemplate, &obj.MetricsCommon, definition.String(), 0) // TODO: PULL MIN from settings
 	return getInfluxClientMetricsQueryCmd(&arg, operatorInfluxClientMetricsDBTemplate), db
+}
+
+// Gets all the tags to group by (these will be put into the Tags map in MetricSeries)
+func getTagSet(measurementType string, selector string) string {
+	var tags []string
+	switch measurementType {
+	case CLIENT_APIUSAGE:
+		tags = ClientApiUsageTags
+	case CLIENT_APPUSAGE:
+		tags = ClientAppUsageTags
+		if selector == "latency" {
+			tags = append(tags, ClientAppUsageLatencyTags...)
+		} else if selector == "deviceinfo" {
+			tags = append(tags, ClientAppUsageDeviceInfoTags...)
+		}
+	case CLIENT_CLOUDLETUSAGE:
+		tags = ClientCloudletUsageTags
+		if selector == "latency" {
+			tags = append(tags, ClientCloudletUsageLatencyTags...)
+		} else if selector == "deviceinfo" {
+			tags = append(tags, ClientCloudletUsageDeviceInfoTags...)
+		}
+	default:
+		return ""
+	}
+	return strings.Join(tags, ",")
 }
 
 /*

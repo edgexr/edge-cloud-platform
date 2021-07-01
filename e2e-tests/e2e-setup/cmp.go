@@ -242,8 +242,8 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 		y1 = a1
 		y2 = a2
 	} else if fileType == "mcapimetrics" {
-		var a1 []MetricsCompare
-		var a2 []MetricsCompare
+		var a1 []OptimizedMetricsCompare
+		var a2 []OptimizedMetricsCompare
 
 		err1 = util.ReadYamlFile(firstYamlFile, &a1, yaml1Ops...)
 		err2 = util.ReadYamlFile(secondYamlFile, &a2, yaml2Ops...)
@@ -257,6 +257,22 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 
 		cmpFilterApiMetricData(a1)
 		cmpFilterApiMetricData(a2)
+
+		y1 = a1
+		y2 = a2
+	} else if fileType == "mcoptmetrics" {
+		var a1 []OptimizedMetricsCompare
+		var a2 []OptimizedMetricsCompare
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			return a1[i].Name < a1[j].Name
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			return a2[i].Name < a2[j].Name
+		})
 
 		y1 = a1
 		y2 = a2
@@ -435,17 +451,13 @@ func cmpFilterSpans(data []SpanSearch) {
 	}
 }
 
-func cmpFilterApiMetricData(data []MetricsCompare) {
+func cmpFilterApiMetricData(data []OptimizedMetricsCompare) {
 	for ii := 0; ii < len(data); ii++ {
-		vals := data[ii].Values
-		ignoreMapFloatVal(vals, "0s")
-		ignoreMapFloatVal(vals, "5ms")
-		ignoreMapFloatVal(vals, "10ms")
-		ignoreMapFloatVal(vals, "25ms")
-		ignoreMapFloatVal(vals, "50ms")
-		ignoreMapFloatVal(vals, "100ms")
-		ignoreMapFloatVal(vals, "errs")
-		ignoreMapFloatVal(vals, "reqs")
+		for i, _ := range data[ii].Values {
+			for j, _ := range data[ii].Values[i] {
+				data[ii].Values[i][j] = 0
+			}
+		}
 	}
 }
 

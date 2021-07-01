@@ -1,4 +1,13 @@
 - name: dme-api
+  columns:
+  - reqs
+  - errs
+  - 0s
+  - 5ms
+  - 10ms
+  - 25ms
+  - 50ms
+  - 100ms
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -6,15 +15,24 @@
     cloudletorg: dmuus
     method: FindCloudlet
   values:
-    0s: 1
-    5ms: 0
-    100ms: 0
-    10ms: 0
-    25ms: 0
-    50ms: 0
-    errs: 0
-    reqs: 1
+  - - 1
+  - - 0
+  - - 1
+  - - 0
+  - - 0
+  - - 0
+  - - 0
+  - - 0
 - name: dme-api
+  columns:
+  - reqs
+  - errs
+  - 0s
+  - 5ms
+  - 10ms
+  - 25ms
+  - 50ms
+  - 100ms
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -22,11 +40,11 @@
     cloudletorg: dmuus
     method: RegisterClient
   values:
-    0s: 1
-    5ms: 0
-    100ms: 0
-    10ms: 0
-    25ms: 0
-    50ms: 0
-    errs: 0
-    reqs: 1
+  - - 1
+  - - 0
+  - - 1
+  - - 0
+  - - 0
+  - - 0
+  - - 0
+  - - 0

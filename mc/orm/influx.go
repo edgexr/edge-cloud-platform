@@ -576,13 +576,10 @@ func getFieldsSlice(selector, measurementType string) []string {
 		fields = CloudletFields
 		selectors = ormapi.CloudletUsageSelectors
 	case CLIENT_APIUSAGE:
-		fields = ClientApiUsageFields
 		selectors = ormapi.ClientApiUsageSelectors
 	case CLIENT_APPUSAGE:
-		fields = ClientAppUsageFields
 		selectors = ormapi.ClientAppUsageSelectors
 	case CLIENT_CLOUDLETUSAGE:
-		fields = ClientCloudletUsageFields
 		selectors = ormapi.ClientCloudletUsageSelectors
 	default:
 		return []string{"*"}
@@ -626,18 +623,8 @@ func getFieldsSlice(selector, measurementType string) []string {
 			fields = append(fields, FlavorUsageFields...)
 		case "latency":
 			fields = append(fields, LatencyFields...)
-			if measurementType == CLIENT_APPUSAGE {
-				fields = append(fields, ClientAppUsageLatencyFields...)
-			} else {
-				fields = append(fields, ClientCloudletUsageLatencyFields...)
-			}
 		case "deviceinfo":
 			fields = append(fields, DeviceInfoFields...)
-			if measurementType == CLIENT_APPUSAGE {
-				fields = append(fields, ClientAppUsageDeviceInfoFields...)
-			} else {
-				fields = append(fields, ClientCloudletUsageDeviceInfoFields...)
-			}
 		case "custom":
 		}
 	}

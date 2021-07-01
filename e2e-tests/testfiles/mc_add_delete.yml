@@ -100,7 +100,7 @@ tests:
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_clientappmetrics_show.yml'
-    filetype: mcmetrics
+    filetype: mcoptmetrics
 
 - name: Check client cloudlet metrics
   actions: [mcapi-showclientcloudletmetrics]
@@ -109,7 +109,7 @@ tests:
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
     yaml2: '{{datadir2}}/mc_clientcloudletmetrics_show.yml'
-    filetype: mcmetrics
+    filetype: mcoptmetrics
 
 - name: admin creates reservable clusterinst on user1 cloudlet
   actions: [mcapi-create]

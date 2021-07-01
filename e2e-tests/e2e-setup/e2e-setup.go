@@ -89,6 +89,13 @@ type MetricsCompare struct {
 	Values map[string]float64
 }
 
+type OptimizedMetricsCompare struct {
+	Name    string
+	Tags    map[string]string
+	Values  [][]float64
+	Columns []string
+}
+
 type MetricTargets struct {
 	AppInstKey             edgeproto.AppInstKey
 	ClusterInstKey         edgeproto.ClusterInstKey
