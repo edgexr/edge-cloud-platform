@@ -285,6 +285,21 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 		return nil, fmt.Errorf("GetVdcFromCacheForVmStats Failed - %v", err)
 	}
 
+	// we need the flavor to do RAM conversion
+	appInst := edgeproto.AppInst{}
+	if !v.caches.AppInstCache.Get(key, &appInst) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "AppInst not in cache", "key", key)
+		return nil, fmt.Errorf("GetVMStats failed to find appinst in cache for AppInst %s", key)
+	}
+	flavor := edgeproto.Flavor{}
+	flavorKey := edgeproto.FlavorKey{
+		Name: appInst.Flavor.Name,
+	}
+	if !v.caches.FlavorCache.Get(&flavorKey, &flavor) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Flavor not in cache", "appkey", key, "flavorKey", flavorKey)
+		return nil, fmt.Errorf("GetVMStats failed to find flavor in cache for AppInst %s", key)
+	}
+
 	vmName := cloudcommon.GetAppFQN(&key.AppKey)
 	if vmName == "" {
 		return nil, fmt.Errorf("GetAppFQN failed to return vmName for AppInst %s\n", key.AppKey.Name)
@@ -334,7 +349,8 @@ func (v *VcdPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey)
 				log.SpanLog(ctx, log.DebugLevelMetrics, "GetVMStats error parse float for mem usage", "value", m.Value, "err", err)
 				continue
 			}
-			metrics.Mem = uint64(math.Round(f))
+			// mem.usage.average is a percent 0-100.  Multiply this by the flavor memory to get the results in bytes
+			metrics.Mem = uint64(math.Round(f / 100 * float64(flavor.Ram*1024*1024)))
 			metrics.MemTS = ts
 		}
 		// note disk stats are available in vmware, but they are useless for our purposes, as they do not reflect

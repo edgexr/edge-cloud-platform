@@ -549,6 +549,8 @@ func start() {
 
 	caches := pf.Caches{
 		CloudletInternalCache: &CloudletInternalCache,
+		AppInstCache:          &AppInstCache,
+		FlavorCache:           &FlavorCache,
 	}
 	// get access to infra properties
 	infraProps.Init()
