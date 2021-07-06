@@ -299,6 +299,8 @@ var MetricsCommonAliasArgs = []string{
 	"numsamples=metricscommon.numsamples",
 	"starttime=metricscommon.timerange.starttime",
 	"endtime=metricscommon.timerange.endtime",
+	"startage=metricscommon.timerange.startage",
+	"endage=metricscommon.timerange.endage",
 }
 
 // merge two maps - entries in b will overwrite values in a
