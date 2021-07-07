@@ -637,7 +637,7 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]ssh.Clien
 	for k := range apps {
 		var app edgeproto.App
 		if v.Caches.AppCache.Get(&k, &app) {
-			if app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+			if app.Deployment == cloudcommon.DeploymentTypeVM && app.AccessType != edgeproto.AccessType_ACCESS_TYPE_DIRECT {
 				continue
 			}
 		}
