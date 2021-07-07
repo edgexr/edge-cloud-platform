@@ -1304,6 +1304,85 @@ func FindFlavorMatchObj(ctx context.Context, rc *RegionContext, obj *edgeproto.F
 	return api.FindFlavorMatch(ctx, obj)
 }
 
+func ShowFlavorsForCloudlet(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionCloudletKey{}
+	success, err := ReadConn(c, &in)
+	if !success {
+		return err
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+
+	err = ShowFlavorsForCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.FlavorKey) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ShowFlavorsForCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey, cb func(res *edgeproto.FlavorKey) error) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.skipAuthz {
+		if err := authzShowFlavorsForCloudlet(ctx, rc.region, rc.username, obj,
+			ResourceCloudlets, ActionView); err != nil {
+			return err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewCloudletApiClient(rc.conn)
+	stream, err := api.ShowFlavorsForCloudlet(ctx, obj)
+	if err != nil {
+		return err
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return err
+		}
+		err = cb(res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ShowFlavorsForCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) ([]edgeproto.FlavorKey, error) {
+	arr := []edgeproto.FlavorKey{}
+	err := ShowFlavorsForCloudletStream(ctx, rc, obj, func(res *edgeproto.FlavorKey) error {
+		arr = append(arr, *res)
+		return nil
+	})
+	return arr, err
+}
+
 func RevokeAccessKey(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}
