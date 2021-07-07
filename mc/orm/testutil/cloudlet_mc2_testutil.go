@@ -377,6 +377,20 @@ func TestPermFindFlavorMatch(mcClient *mctestclient.Client, uri, token, region, 
 	return TestFindFlavorMatch(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestShowFlavorsForCloudlet(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.FlavorKey, int, error) {
+	dat := &ormapi.RegionCloudletKey{}
+	dat.Region = region
+	dat.CloudletKey = *in
+	for _, fn := range modFuncs {
+		fn(&dat.CloudletKey)
+	}
+	return mcClient.ShowFlavorsForCloudlet(uri, token, dat)
+}
+func TestPermShowFlavorsForCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) ([]edgeproto.FlavorKey, int, error) {
+	in := &edgeproto.CloudletKey{}
+	return TestShowFlavorsForCloudlet(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func TestRevokeAccessKey(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.CloudletKey)) (*edgeproto.Result, int, error) {
 	dat := &ormapi.RegionCloudletKey{}
 	dat.Region = region
@@ -465,6 +479,18 @@ func (s *TestClient) GetCloudletManifest(ctx context.Context, in *edgeproto.Clou
 		CloudletKey: *in,
 	}
 	out, status, err := s.McClient.GetCloudletManifest(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) ShowFlavorsForCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.FlavorKey, error) {
+	inR := &ormapi.RegionCloudletKey{
+		Region:      s.Region,
+		CloudletKey: *in,
+	}
+	out, status, err := s.McClient.ShowFlavorsForCloudlet(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

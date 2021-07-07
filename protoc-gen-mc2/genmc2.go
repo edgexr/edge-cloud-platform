@@ -564,8 +564,8 @@ func {{.MethodName}}(c echo.Context) error {
 
 {{- if and (not .SkipEnforce) (and .Show .CustomAuthz)}}
 type {{.MethodName}}Authz interface {
-	Ok(obj *edgeproto.{{.InName}}) (bool, bool)
-	Filter(obj *edgeproto.{{.InName}})
+	Ok(obj *edgeproto.{{.OutName}}) (bool, bool)
+	Filter(obj *edgeproto.{{.OutName}})
 }
 {{- end}}
 

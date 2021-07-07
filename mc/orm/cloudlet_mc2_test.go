@@ -473,6 +473,27 @@ func goodPermFindFlavorMatch(t *testing.T, mcClient *mctestclient.Client, uri, t
 
 var _ = edgeproto.GetFields
 
+func badPermShowFlavorsForCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermShowFlavorsForCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badShowFlavorsForCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, st, err := testutil.TestPermShowFlavorsForCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermShowFlavorsForCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	_, status, err := testutil.TestPermShowFlavorsForCloudlet(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
 func badPermRevokeAccessKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
 	_, status, err := testutil.TestPermRevokeAccessKey(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)

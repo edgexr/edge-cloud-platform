@@ -425,6 +425,23 @@ var FindFlavorMatchCmd = &ApiCommand{
 	ProtobufApi:  true,
 }
 
+var ShowFlavorsForCloudletCmd = &ApiCommand{
+	Name:                 "ShowFlavorsForCloudlet",
+	Use:                  "showflavorsfor",
+	Short:                "Find all meta flavors viable on cloudlet",
+	RequiredArgs:         "region " + strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs:         strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:            strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:          &CloudletKeySpecialArgs,
+	Comments:             addRegionComment(CloudletKeyComments),
+	ReqData:              &ormapi.RegionCloudletKey{},
+	ReplyData:            &edgeproto.FlavorKey{},
+	Path:                 "/auth/ctrl/ShowFlavorsForCloudlet",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
 var RevokeAccessKeyCmd = &ApiCommand{
 	Name:         "RevokeAccessKey",
 	Use:          "revokeaccesskey",
@@ -467,6 +484,7 @@ var CloudletApiCmds = []*ApiCommand{
 	AddCloudletResMappingCmd,
 	RemoveCloudletResMappingCmd,
 	FindFlavorMatchCmd,
+	ShowFlavorsForCloudletCmd,
 	RevokeAccessKeyCmd,
 	GenerateAccessKeyCmd,
 }
@@ -730,20 +748,6 @@ func init() {
 	AllApis.AddGroup(CloudletInfoGroup, "Manage CloudletInfos", CloudletInfoApiCmds)
 }
 
-var CloudletKeyRequiredArgs = []string{}
-var CloudletKeyOptionalArgs = []string{
-	"cloudlet-org",
-	"cloudlet",
-}
-var CloudletKeyAliasArgs = []string{
-	"cloudlet-org=cloudletkey.organization",
-	"cloudlet=cloudletkey.name",
-}
-var CloudletKeyComments = map[string]string{
-	"cloudlet-org": "Organization of the cloudlet site",
-	"cloudlet":     "Name of the cloudlet",
-}
-var CloudletKeySpecialArgs = map[string]string{}
 var CloudletResMapRequiredArgs = []string{
 	"cloudlet-org",
 	"cloudlet",

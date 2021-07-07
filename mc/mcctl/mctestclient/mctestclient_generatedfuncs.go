@@ -206,6 +206,22 @@ func (s *Client) RemoveAppAutoProvPolicy(uri string, token string, in *ormapi.Re
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) ShowCloudletsForAppDeployment(uri string, token string, in *ormapi.RegionDeploymentCloudletRequest) ([]edgeproto.CloudletKey, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.CloudletKey
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowCloudletsForAppDeployment")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group AppInst
 
 func (s *Client) CreateAppInst(uri string, token string, in *ormapi.RegionAppInst) ([]edgeproto.Result, int, error) {
@@ -912,6 +928,22 @@ func (s *Client) FindFlavorMatch(uri string, token string, in *ormapi.RegionFlav
 		return nil, rundata.RetStatus, rundata.RetError
 	}
 	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowFlavorsForCloudlet(uri string, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.FlavorKey, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.FlavorKey
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowFlavorsForCloudlet")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
 }
 
 func (s *Client) RevokeAccessKey(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {

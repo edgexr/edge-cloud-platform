@@ -223,6 +223,32 @@ func (s *AuthzCloudlet) Filter(obj *edgeproto.Cloudlet) {
 	obj.GpuConfig = output.GpuConfig
 }
 
+// Satisfy interface for ShowCloudletsForAppDeploymentAuthz which uses CloudletKey
+
+type AuthzCloudletKey struct {
+	authzCloudlet AuthzCloudlet
+}
+
+func (s *AuthzCloudletKey) Ok(key *edgeproto.CloudletKey) (bool, bool) {
+	cloudlet := edgeproto.Cloudlet{
+		Key: *key,
+	}
+	return s.authzCloudlet.Ok(&cloudlet)
+}
+
+func (s *AuthzCloudletKey) Filter(key *edgeproto.CloudletKey) {
+	cloudlet := edgeproto.Cloudlet{
+		Key: *key,
+	}
+	s.authzCloudlet.Filter(&cloudlet)
+}
+
+func (s *AuthzCloudletKey) populate(ctx context.Context, region, username, orgfilter, resource, action string, authops ...authOp) error {
+
+	err := s.authzCloudlet.populate(ctx, region, username, orgfilter, resource, action, authops...)
+	return err
+}
+
 func authzCreateCloudlet(ctx context.Context, region, username string, obj *edgeproto.Cloudlet, resource, action string) error {
 	ops := []authOp{withRequiresOrg(obj.Key.Organization)}
 	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX {
@@ -317,4 +343,27 @@ func newShowCloudletAuthz(ctx context.Context, region, username, resource, actio
 		return nil, err
 	}
 	return &authzCloudlet, nil
+}
+func newShowCloudletsForAppDeploymentAuthz(ctx context.Context, region, username string, resource, action string) (ShowCloudletsForAppDeploymentAuthz, error) {
+	authzCloudletKey := AuthzCloudletKey{}
+	err := authzCloudletKey.populate(ctx, region, username, "", resource, action)
+	if err != nil {
+		return nil, err
+	}
+	return &authzCloudletKey, nil
+}
+
+func authzShowFlavorsForCloudlet(ctx context.Context, region, username string, obj *edgeproto.CloudletKey, resource, action string) error {
+	authzCloudlet := AuthzCloudlet{}
+	err := authzCloudlet.populate(ctx, region, username, obj.Organization, resource, action, withRequiresOrg(obj.Organization))
+	if err != nil {
+		return err
+	}
+	cloudlet := edgeproto.Cloudlet{
+		Key: *obj,
+	}
+	if authzOk, _ := authzCloudlet.Ok(&cloudlet); !authzOk {
+		return fmt.Errorf("No permissions for Cloudlet %s", obj.GetKeyString())
+	}
+	return nil
 }
