@@ -178,6 +178,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				return fmt.Errorf("failed to install GPU drivers on appInst cluster VMs: %v", err)
 			}
+			// setup GPU operator helm repo
+			v.manageGPUOperator(ctx, client, clusterInst, updateCallback, ActionCreate)
 		}
 	}
 

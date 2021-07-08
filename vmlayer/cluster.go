@@ -226,6 +226,13 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cleanup cluster config failed", "err", err)
 			}
+			// cleanup GPU operator helm configs
+			if clusterInst.OptRes == "gpu" && v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
+				err = CleanupGPUOperatorConfigs(ctx, client)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup GPU operator configs", "err", err)
+				}
+			}
 		}
 	}
 
@@ -406,6 +413,10 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 
 		if err := infracommon.CreateClusterConfigMap(ctx, client, clusterInst); err != nil {
 			return err
+		}
+		// setup GPU operator helm repo
+		if clusterInst.OptRes == "gpu" && v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
+			v.manageGPUOperator(ctx, client, clusterInst, updateCallback, action)
 		}
 	} else if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		// ensure the docker node is ready before calling the cluster create done
