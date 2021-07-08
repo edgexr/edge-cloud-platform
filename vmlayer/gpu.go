@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/gcs"
@@ -19,6 +20,9 @@ import (
 type GPUDrivers map[edgeproto.GPUDriverKey][]edgeproto.GPUDriverBuild
 
 const DriverInstallationTimeout = 30 * time.Minute
+const GPUOperatorTimeout = 10 * time.Minute
+const GPUOperatorNamespace = "gpu-operator-resources"
+const GPUOperatorSelector = "app=nvidia-operator-validator"
 
 // Must call GCSClient.Close() when done.
 func (v *VMPlatform) getGCSStorageClient(ctx context.Context) (*gcs.GCSClient, error) {
@@ -275,4 +279,87 @@ func (v *VMPlatform) installGPUDriverBuild(ctx context.Context, storageClient *g
 	}
 	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("%s: Successfully installed GPU driver", nodeName))
 	return nil
+}
+
+var NvidiaGPUOperatorApp = edgeproto.App{
+	Key: edgeproto.AppKey{
+		Name:         "nvidia-gpu-operator",
+		Version:      "v1.7.0",
+		Organization: cloudcommon.OrganizationMobiledgeX,
+	},
+	ImagePath:     "https://nvidia.github.io/gpu-operator:nvidia/gpu-operator",
+	Deployment:    cloudcommon.DeploymentTypeHelm,
+	DelOpt:        edgeproto.DeleteType_AUTO_DELETE,
+	InternalPorts: true,
+	Trusted:       true,
+	Annotations:   "version=v1.7.0,wait=true,timeout=180s",
+	Configs: []*edgeproto.ConfigFile{
+		&edgeproto.ConfigFile{
+			Kind: edgeproto.AppConfigHelmYaml,
+			Config: `driver:
+  enabled: false
+`,
+		},
+	},
+}
+
+func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
+	appInst := edgeproto.AppInst{}
+	appInst.Key.AppKey = NvidiaGPUOperatorApp.Key
+	appInst.Key.ClusterInstKey = *clusterInst.Key.Virtual("")
+	appInst.Flavor = clusterInst.Flavor
+
+	kubeNames, err := k8smgmt.GetKubeNames(clusterInst, &NvidiaGPUOperatorApp, &appInst)
+	if err != nil {
+		return fmt.Errorf("Failed to get kubenames: %v", err)
+	}
+	waitFor := k8smgmt.WaitRunning
+	var timeoutErr error
+	switch action {
+	case ActionCreate:
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up GPU operator for k8s cluster"))
+		err = k8smgmt.CreateHelmAppInst(ctx, rootLBClient, kubeNames, clusterInst, &NvidiaGPUOperatorApp, &appInst)
+		if err != nil {
+			return err
+		}
+		waitFor = k8smgmt.WaitRunning
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Waiting for GPU operator validations to finish"))
+		timeoutErr = fmt.Errorf("Timed out waiting for NVIDIA GPU operator pods to be online")
+	case ActionDelete:
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Cleaning up GPU operator for k8s cluster"))
+		err = k8smgmt.DeleteHelmAppInst(ctx, rootLBClient, kubeNames, clusterInst)
+		if err != nil {
+			return err
+		}
+		err = CleanupGPUOperatorConfigs(ctx, rootLBClient)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup GPU operator configs", "err", err)
+		}
+		waitFor = k8smgmt.WaitDeleted
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Waiting for GPU operator resources to be cleaned up"))
+		timeoutErr = fmt.Errorf("Timed out waiting for NVIDIA GPU operator pods to be deleted")
+	default:
+		return nil
+	}
+	start := time.Now()
+	for {
+		done, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfEnv, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
+		if err != nil {
+			return err
+		}
+		if done {
+			break
+		}
+		elapsed := time.Since(start)
+		if elapsed >= (GPUOperatorTimeout) {
+			return timeoutErr
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return nil
+}
+
+func CleanupGPUOperatorConfigs(ctx context.Context, client ssh.Client) error {
+	gpuOperatorHelmAppName := k8smgmt.NormalizeName(NvidiaGPUOperatorApp.Key.Name)
+	return k8smgmt.CleanupHelmConfigs(ctx, client, gpuOperatorHelmAppName)
 }
