@@ -17,13 +17,12 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: dmuus-cloud-1.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-1.dmuus.mobiledgex.net
       liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
       flavor:
         name: x1.small
       state: Ready
@@ -51,13 +50,12 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
       liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
       flavor:
         name: x1.small
       state: Ready
@@ -85,13 +83,13 @@ regiondata:
       cloudletloc:
         latitude: 32
         longitude: -91
-      uri: reservable3.azure-cloud-4.azure.mobiledgex.net
+      uri: acmeappcoautoprovha10.reservable3.azure-cloud-4.azure.mobiledgex.net
       liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
+        fqdnprefix: autoprovha10-tcp.
       flavor:
         name: x1.small
       state: Ready

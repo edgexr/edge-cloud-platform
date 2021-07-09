@@ -358,7 +358,6 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"app.serverlessconfig.minreplicas",
 	"app.vmappostype",
 	"dryrundeploy",
-	"vmapptest",
 }
 var DeploymentCloudletRequestAliasArgs = []string{
 	"app.fields=deploymentcloudletrequest.app.fields",
@@ -404,7 +403,6 @@ var DeploymentCloudletRequestAliasArgs = []string{
 	"app.serverlessconfig.minreplicas=deploymentcloudletrequest.app.serverlessconfig.minreplicas",
 	"app.vmappostype=deploymentcloudletrequest.app.vmappostype",
 	"dryrundeploy=deploymentcloudletrequest.dryrundeploy",
-	"vmapptest=deploymentcloudletrequest.vmapptest",
 }
 var DeploymentCloudletRequestComments = map[string]string{
 	"app.fields":              "Fields are used for the Update API to specify which fields to apply",
@@ -431,7 +429,7 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.officialfqdn":        "Official FQDN is the FQDN that the app uses to connect by default",
 	"app.md5sum":              "MD5Sum of the VM-based app image",
 	"app.autoprovpolicy":      "(_deprecated_) Auto provisioning policy name",
-	"app.accesstype":          "Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
+	"app.accesstype":          "(Deprecated) Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
 	"app.deleteprepare":       "Preparing to be deleted",
 	"app.autoprovpolicies":    "Auto provisioning policy names, may be specified multiple times",
 	"app.templatedelimiter":   "Delimiter to be used for template parsing, defaults to [[ ]]",
@@ -446,7 +444,6 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.serverlessconfig.minreplicas":           "Minimum number of replicas when serverless",
 	"app.vmappostype":                            "OS Type for VM Apps, one of VmAppOsUnknown, VmAppOsLinux, VmAppOsWindows10, VmAppOsWindows2012, VmAppOsWindows2016, VmAppOsWindows2019",
 	"dryrundeploy":                               "Attempt to qualify cloudlet resources for deployment",
-	"vmapptest":                                  "True if requesting vmAppInset deployment check",
 }
 var DeploymentCloudletRequestSpecialArgs = map[string]string{
 	"deploymentcloudletrequest.app.autoprovpolicies": "StringArray",

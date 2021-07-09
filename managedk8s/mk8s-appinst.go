@@ -29,6 +29,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	if err != nil {
 		return err
 	}
+	features := m.GetFeatures()
 
 	updateCallback(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
@@ -68,7 +69,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 		} else {
 			return nil, fmt.Errorf("Did not get either an IP or a hostname from GetSvcExternalIpOrHost")
 		}
-		action.AddDNS = !app.InternalPorts
+		action.AddDNS = !app.InternalPorts && features.IPAllocatedPerService
 		return &action, nil
 	}
 	err = m.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)

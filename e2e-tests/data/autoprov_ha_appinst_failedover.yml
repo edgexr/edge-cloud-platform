@@ -17,13 +17,12 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: dmuus-cloud-1.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-1.dmuus.mobiledgex.net
       liveness: LivenessAutoprov
       mappedports:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
       flavor:
         name: x1.small
       state: Ready
@@ -57,7 +56,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
+        fqdnprefix: autoprovha10-tcp.
       flavor:
         name: x1.small
       state: Ready
@@ -91,7 +90,7 @@ regiondata:
       - proto: LProtoTcp
         internalport: 82
         publicport: 82
-        fqdnprefix: autoprovha10-tcp-
+        fqdnprefix: autoprovha10-tcp.
       flavor:
         name: x1.small
       state: Ready
