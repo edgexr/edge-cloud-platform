@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -69,30 +68,9 @@ var UpdateTrustPolicyCmd = &ApiCommand{
 	ReqData:              &ormapi.RegionTrustPolicy{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateTrustPolicy",
-	SetFieldsFunc:        SetUpdateTrustPolicyFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
-}
-
-func SetUpdateTrustPolicyFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["TrustPolicy"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.TrustPolicy{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
 }
 
 var ShowTrustPolicyCmd = &ApiCommand{
@@ -110,7 +88,6 @@ var ShowTrustPolicyCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var TrustPolicyApiCmds = []*ApiCommand{
 	CreateTrustPolicyCmd,
 	DeleteTrustPolicyCmd,
@@ -129,6 +106,7 @@ var TrustPolicyRequiredArgs = []string{
 	"name",
 }
 var TrustPolicyOptionalArgs = []string{
+	"outboundsecurityrules:empty",
 	"outboundsecurityrules:#.protocol",
 	"outboundsecurityrules:#.portrangemin",
 	"outboundsecurityrules:#.portrangemax",
@@ -138,6 +116,7 @@ var TrustPolicyAliasArgs = []string{
 	"fields=trustpolicy.fields",
 	"cloudlet-org=trustpolicy.key.organization",
 	"name=trustpolicy.key.name",
+	"outboundsecurityrules:empty=trustpolicy.outboundsecurityrules:empty",
 	"outboundsecurityrules:#.protocol=trustpolicy.outboundsecurityrules:#.protocol",
 	"outboundsecurityrules:#.portrangemin=trustpolicy.outboundsecurityrules:#.portrangemin",
 	"outboundsecurityrules:#.portrangemax=trustpolicy.outboundsecurityrules:#.portrangemax",
@@ -147,6 +126,7 @@ var TrustPolicyComments = map[string]string{
 	"fields":                               "Fields are used for the Update API to specify which fields to apply",
 	"cloudlet-org":                         "Name of the organization for the cluster that this policy will apply to",
 	"name":                                 "Policy name",
+	"outboundsecurityrules:empty":          "list of outbound security rules for whitelisting traffic, specify outboundsecurityrules:empty=true to clear",
 	"outboundsecurityrules:#.protocol":     "tcp, udp, icmp",
 	"outboundsecurityrules:#.portrangemin": "TCP or UDP port range start",
 	"outboundsecurityrules:#.portrangemax": "TCP or UDP port range end",

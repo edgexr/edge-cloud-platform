@@ -67,6 +67,7 @@ func TestUpdateAutoProvPolicy(mcClient *mctestclient.Client, uri, token, region 
 func TestPermUpdateAutoProvPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoProvPolicy)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoProvPolicy{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.AutoProvPolicyFieldKeyOrganization)
 	return TestUpdateAutoProvPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 

@@ -84,7 +84,6 @@ var AccessCloudletCmd = &ApiCommand{
 	Path:         "/auth/ctrl/AccessCloudlet",
 	ProtobufApi:  true,
 }
-
 var ExecApiCmds = []*ApiCommand{
 	RunCommandCmd,
 	RunConsoleCmd,

@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -37,8 +38,8 @@ func CreateClusterInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -121,8 +122,8 @@ func DeleteClusterInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -205,8 +206,8 @@ func UpdateClusterInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	dat, err := ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -214,6 +215,10 @@ func UpdateClusterInst(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 
 	err = UpdateClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -289,8 +294,8 @@ func ShowClusterInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -385,8 +390,9 @@ func DeleteIdleReservableClusterInsts(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionIdleReservableClusterInsts{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

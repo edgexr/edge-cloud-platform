@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -54,39 +53,18 @@ var DeleteAutoScalePolicyCmd = &ApiCommand{
 }
 
 var UpdateAutoScalePolicyCmd = &ApiCommand{
-	Name:          "UpdateAutoScalePolicy",
-	Use:           "update",
-	Short:         "Update an Auto Scale Policy",
-	RequiredArgs:  "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
-	OptionalArgs:  strings.Join(AutoScalePolicyOptionalArgs, " "),
-	AliasArgs:     strings.Join(AutoScalePolicyAliasArgs, " "),
-	SpecialArgs:   &AutoScalePolicySpecialArgs,
-	Comments:      addRegionComment(AutoScalePolicyComments),
-	ReqData:       &ormapi.RegionAutoScalePolicy{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateAutoScalePolicy",
-	SetFieldsFunc: SetUpdateAutoScalePolicyFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateAutoScalePolicyFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["AutoScalePolicy"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.AutoScalePolicy{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateAutoScalePolicy",
+	Use:          "update",
+	Short:        "Update an Auto Scale Policy",
+	RequiredArgs: "region " + strings.Join(AutoScalePolicyRequiredArgs, " "),
+	OptionalArgs: strings.Join(AutoScalePolicyOptionalArgs, " "),
+	AliasArgs:    strings.Join(AutoScalePolicyAliasArgs, " "),
+	SpecialArgs:  &AutoScalePolicySpecialArgs,
+	Comments:     addRegionComment(AutoScalePolicyComments),
+	ReqData:      &ormapi.RegionAutoScalePolicy{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateAutoScalePolicy",
+	ProtobufApi:  true,
 }
 
 var ShowAutoScalePolicyCmd = &ApiCommand{
@@ -104,7 +82,6 @@ var ShowAutoScalePolicyCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var AutoScalePolicyApiCmds = []*ApiCommand{
 	CreateAutoScalePolicyCmd,
 	DeleteAutoScalePolicyCmd,

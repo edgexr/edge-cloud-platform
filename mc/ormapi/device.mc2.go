@@ -35,6 +35,25 @@ type RegionDevice struct {
 	Device edgeproto.Device
 }
 
+func (s *RegionDevice) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionDevice) GetObj() interface{} {
+	return &s.Device
+}
+
+func (s *RegionDevice) GetObjName() string {
+	return "Device"
+}
+func (s *RegionDevice) GetObjFields() []string {
+	return s.Device.Fields
+}
+
+func (s *RegionDevice) SetObjFields(fields []string) {
+	s.Device.Fields = fields
+}
+
 // Request summary for ShowDevice
 // swagger:parameters ShowDevice
 type swaggerShowDevice struct {
@@ -61,4 +80,16 @@ type RegionDeviceReport struct {
 	// Region name
 	Region       string
 	DeviceReport edgeproto.DeviceReport
+}
+
+func (s *RegionDeviceReport) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionDeviceReport) GetObj() interface{} {
+	return &s.DeviceReport
+}
+
+func (s *RegionDeviceReport) GetObjName() string {
+	return "DeviceReport"
 }

@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -91,30 +90,9 @@ var UpdateAppInstCmd = &ApiCommand{
 	ReqData:              &ormapi.RegionAppInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateAppInst",
-	SetFieldsFunc:        SetUpdateAppInstFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
-}
-
-func SetUpdateAppInstFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["AppInst"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.AppInst{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
 }
 
 var ShowAppInstCmd = &ApiCommand{
@@ -133,7 +111,6 @@ var ShowAppInstCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var AppInstApiCmds = []*ApiCommand{
 	CreateAppInstCmd,
 	DeleteAppInstCmd,
@@ -213,6 +190,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"cluster",
 	"cluster-org",
 	"crmoverride",
+	"configs:empty",
 	"configs:#.kind",
 	"configs:#.config",
 	"privacypolicy",
@@ -234,7 +212,6 @@ var RequestAppInstLatencyCmd = &ApiCommand{
 	Path:         "/auth/ctrl/RequestAppInstLatency",
 	ProtobufApi:  true,
 }
-
 var AppInstLatencyApiCmds = []*ApiCommand{
 	RequestAppInstLatencyCmd,
 }
@@ -288,6 +265,7 @@ var AppInstOptionalArgs = []string{
 	"crmoverride",
 	"forceupdate",
 	"updatemultiple",
+	"configs:empty",
 	"configs:#.kind",
 	"configs:#.config",
 	"healthcheck",
@@ -315,6 +293,7 @@ var AppInstAliasArgs = []string{
 	"cloudletloc.timestamp.nanos=appinst.cloudletloc.timestamp.nanos",
 	"uri=appinst.uri",
 	"liveness=appinst.liveness",
+	"mappedports:empty=appinst.mappedports:empty",
 	"mappedports:#.proto=appinst.mappedports:#.proto",
 	"mappedports:#.internalport=appinst.mappedports:#.internalport",
 	"mappedports:#.publicport=appinst.mappedports:#.publicport",
@@ -339,6 +318,7 @@ var AppInstAliasArgs = []string{
 	"revision=appinst.revision",
 	"forceupdate=appinst.forceupdate",
 	"updatemultiple=appinst.updatemultiple",
+	"configs:empty=appinst.configs:empty",
 	"configs:#.kind=appinst.configs:#.kind",
 	"configs:#.config=appinst.configs:#.config",
 	"healthcheck=appinst.healthcheck",
@@ -370,6 +350,7 @@ var AppInstComments = map[string]string{
 	"cloudletloc.speed":              "speed (IOS) / velocity (Android) (meters/sec)",
 	"uri":                            "Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.",
 	"liveness":                       "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic, LivenessAutoprov",
+	"mappedports:empty":              "For instances accessible via a shared load balancer, defines the external ports on the shared load balancer that map to the internal ports External ports should be appended to the Uri for L4 access., specify mappedports:empty=true to clear",
 	"mappedports:#.proto":            "TCP (L4) or UDP (L4) protocol, one of LProtoUnknown, LProtoTcp, LProtoUdp",
 	"mappedports:#.internalport":     "Container port",
 	"mappedports:#.publicport":       "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
@@ -379,13 +360,14 @@ var AppInstComments = map[string]string{
 	"mappedports:#.nginx":            "use nginx proxy for this port if you really need a transparent proxy (udp only)",
 	"flavor":                         "Flavor name",
 	"state":                          "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet",
+	"errors":                         "Any errors trying to create, update, or delete the AppInst on the Cloudlet, specify errors:empty=true to clear",
 	"crmoverride":                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
-	"runtimeinfo.containerids":       "List of container names",
+	"runtimeinfo.containerids":       "List of container names, specify runtimeinfo.containerids:empty=true to clear",
 	"autoclusteripaccess":            "(Deprecated) IpAccess for auto-clusters. Ignored otherwise., one of IpAccessUnknown, IpAccessDedicated, IpAccessShared",
 	"revision":                       "Revision changes each time the App is updated.  Refreshing the App Instance will sync the revision with that of the App",
 	"forceupdate":                    "Force Appinst refresh even if revision number matches App revision number.",
 	"updatemultiple":                 "Allow multiple instances to be updated at once",
+	"configs:empty":                  "Customization files passed through to implementing services, specify configs:empty=true to clear",
 	"configs:#.kind":                 "Kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
 	"configs:#.config":               "Config file contents or URI reference",
 	"healthcheck":                    "Health Check status, one of HealthCheckUnknown, HealthCheckFailRootlbOffline, HealthCheckFailServerFail, HealthCheckOk",

@@ -35,6 +35,25 @@ type RegionClusterInst struct {
 	ClusterInst edgeproto.ClusterInst
 }
 
+func (s *RegionClusterInst) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionClusterInst) GetObj() interface{} {
+	return &s.ClusterInst
+}
+
+func (s *RegionClusterInst) GetObjName() string {
+	return "ClusterInst"
+}
+func (s *RegionClusterInst) GetObjFields() []string {
+	return s.ClusterInst.Fields
+}
+
+func (s *RegionClusterInst) SetObjFields(fields []string) {
+	s.ClusterInst.Fields = fields
+}
+
 // Request summary for DeleteClusterInst
 // swagger:parameters DeleteClusterInst
 type swaggerDeleteClusterInst struct {
@@ -68,4 +87,16 @@ type RegionIdleReservableClusterInsts struct {
 	// Region name
 	Region                     string
 	IdleReservableClusterInsts edgeproto.IdleReservableClusterInsts
+}
+
+func (s *RegionIdleReservableClusterInsts) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionIdleReservableClusterInsts) GetObj() interface{} {
+	return &s.IdleReservableClusterInsts
+}
+
+func (s *RegionIdleReservableClusterInsts) GetObjName() string {
+	return "IdleReservableClusterInsts"
 }

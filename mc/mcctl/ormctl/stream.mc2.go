@@ -89,7 +89,6 @@ var StreamGPUDriverCmd = &ApiCommand{
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
 }
-
 var StreamObjApiCmds = []*ApiCommand{
 	StreamAppInstCmd,
 	StreamClusterInstCmd,

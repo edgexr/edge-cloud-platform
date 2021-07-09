@@ -89,7 +89,6 @@ var RunDebugCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var DebugApiCmds = []*ApiCommand{
 	EnableDebugLevelsCmd,
 	DisableDebugLevelsCmd,

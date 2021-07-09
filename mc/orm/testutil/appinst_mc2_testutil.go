@@ -91,8 +91,13 @@ func TestPermUpdateAppInst(mcClient *mctestclient.Client, uri, token, region, or
 	in := &edgeproto.AppInst{}
 	if targetCloudlet != nil {
 		in.Key.ClusterInstKey.CloudletKey = *targetCloudlet
+		in.Fields = append(in.Fields,
+			edgeproto.AppInstFieldKeyClusterInstKeyCloudletKeyName,
+			edgeproto.AppInstFieldKeyClusterInstKeyCloudletKeyOrganization,
+		)
 	}
 	in.Key.AppKey.Organization = org
+	in.Fields = append(in.Fields, edgeproto.AppInstFieldKeyAppKeyOrganization)
 	return TestUpdateAppInst(mcClient, uri, token, region, in, modFuncs...)
 }
 

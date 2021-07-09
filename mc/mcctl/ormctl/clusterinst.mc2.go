@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -73,30 +72,9 @@ var UpdateClusterInstCmd = &ApiCommand{
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateClusterInst",
-	SetFieldsFunc:        SetUpdateClusterInstFields,
 	StreamOut:            true,
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
-}
-
-func SetUpdateClusterInstFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["ClusterInst"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.ClusterInst{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
 }
 
 var ShowClusterInstCmd = &ApiCommand{
@@ -130,7 +108,6 @@ var DeleteIdleReservableClusterInstsCmd = &ApiCommand{
 	Path:         "/auth/ctrl/DeleteIdleReservableClusterInsts",
 	ProtobufApi:  true,
 }
-
 var ClusterInstApiCmds = []*ApiCommand{
 	CreateClusterInstCmd,
 	DeleteClusterInstCmd,
@@ -236,12 +213,15 @@ var ClusterInstAliasArgs = []string{
 	"masternodeflavor=clusterinst.masternodeflavor",
 	"skipcrmcleanuponfailure=clusterinst.skipcrmcleanuponfailure",
 	"optres=clusterinst.optres",
+	"resources.vms:empty=clusterinst.resources.vms:empty",
 	"resources.vms:#.name=clusterinst.resources.vms:#.name",
 	"resources.vms:#.type=clusterinst.resources.vms:#.type",
 	"resources.vms:#.status=clusterinst.resources.vms:#.status",
 	"resources.vms:#.infraflavor=clusterinst.resources.vms:#.infraflavor",
+	"resources.vms:#.ipaddresses:empty=clusterinst.resources.vms:#.ipaddresses:empty",
 	"resources.vms:#.ipaddresses:#.externalip=clusterinst.resources.vms:#.ipaddresses:#.externalip",
 	"resources.vms:#.ipaddresses:#.internalip=clusterinst.resources.vms:#.ipaddresses:#.internalip",
+	"resources.vms:#.containers:empty=clusterinst.resources.vms:#.containers:empty",
 	"resources.vms:#.containers:#.name=clusterinst.resources.vms:#.containers:#.name",
 	"resources.vms:#.containers:#.type=clusterinst.resources.vms:#.containers:#.type",
 	"resources.vms:#.containers:#.status=clusterinst.resources.vms:#.containers:#.status",
@@ -265,7 +245,7 @@ var ClusterInstComments = map[string]string{
 	"liveness":                               "Liveness of instance (see Liveness), one of LivenessUnknown, LivenessStatic, LivenessDynamic, LivenessAutoprov",
 	"auto":                                   "Auto is set to true when automatically created by back-end (internal use only)",
 	"state":                                  "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                                 "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
+	"errors":                                 "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet., specify errors:empty=true to clear",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 	"ipaccess":                               "IP access type (RootLB Type), one of IpAccessUnknown, IpAccessDedicated, IpAccessShared",
 	"allocatedip":                            "Allocated IP for dedicated access",
@@ -283,10 +263,13 @@ var ClusterInstComments = map[string]string{
 	"masternodeflavor":                       "Generic flavor for k8s master VM when worker nodes > 0",
 	"skipcrmcleanuponfailure":                "Prevents cleanup of resources on failure within CRM, used for diagnostic purposes",
 	"optres":                                 "Optional Resources required by OS flavor if any",
+	"resources.vms:empty":                    "Virtual machine resources info, specify resources.vms:empty=true to clear",
 	"resources.vms:#.name":                   "Virtual machine name",
 	"resources.vms:#.type":                   "Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
 	"resources.vms:#.status":                 "Runtime status of the VM",
 	"resources.vms:#.infraflavor":            "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
+	"resources.vms:#.ipaddresses:empty":      "IP addresses allocated to the VM, specify resources.vms:#.ipaddresses:empty=true to clear",
+	"resources.vms:#.containers:empty":       "Information about containers running in the VM, specify resources.vms:#.containers:empty=true to clear",
 	"resources.vms:#.containers:#.name":      "Name of the container",
 	"resources.vms:#.containers:#.type":      "Type can be docker or kubernetes",
 	"resources.vms:#.containers:#.status":    "Runtime status of the container",

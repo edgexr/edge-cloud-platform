@@ -34,3 +34,15 @@ type RegionAppInstClientKey struct {
 	Region           string
 	AppInstClientKey edgeproto.AppInstClientKey
 }
+
+func (s *RegionAppInstClientKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAppInstClientKey) GetObj() interface{} {
+	return &s.AppInstClientKey
+}
+
+func (s *RegionAppInstClientKey) GetObjName() string {
+	return "AppInstClientKey"
+}

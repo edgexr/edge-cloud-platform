@@ -34,6 +34,25 @@ type RegionResTagTable struct {
 	ResTagTable edgeproto.ResTagTable
 }
 
+func (s *RegionResTagTable) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionResTagTable) GetObj() interface{} {
+	return &s.ResTagTable
+}
+
+func (s *RegionResTagTable) GetObjName() string {
+	return "ResTagTable"
+}
+func (s *RegionResTagTable) GetObjFields() []string {
+	return s.ResTagTable.Fields
+}
+
+func (s *RegionResTagTable) SetObjFields(fields []string) {
+	s.ResTagTable.Fields = fields
+}
+
 // Request summary for DeleteResTagTable
 // swagger:parameters DeleteResTagTable
 type swaggerDeleteResTagTable struct {
@@ -81,4 +100,16 @@ type RegionResTagTableKey struct {
 	// Region name
 	Region         string
 	ResTagTableKey edgeproto.ResTagTableKey
+}
+
+func (s *RegionResTagTableKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionResTagTableKey) GetObj() interface{} {
+	return &s.ResTagTableKey
+}
+
+func (s *RegionResTagTableKey) GetObjName() string {
+	return "ResTagTableKey"
 }

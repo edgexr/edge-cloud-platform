@@ -334,8 +334,8 @@ func ShowOrgCloudlet(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 	oc := ormapi.OrgCloudlet{}
-	success, err := ReadConn(c, &oc)
-	if !success {
+	_, err = ReadConn(c, &oc)
+	if err != nil {
 		return err
 	}
 
@@ -393,8 +393,8 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 	}
 	ctx := GetContext(c)
 	oc := ormapi.OrgCloudlet{}
-	success, err := ReadConn(c, &oc)
-	if !success {
+	_, err = ReadConn(c, &oc)
+	if err != nil {
 		return err
 	}
 

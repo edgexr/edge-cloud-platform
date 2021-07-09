@@ -36,7 +36,6 @@ var ShowCloudletRefsCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var CloudletRefsApiCmds = []*ApiCommand{
 	ShowCloudletRefsCmd,
 }
@@ -62,7 +61,6 @@ var ShowClusterRefsCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var ClusterRefsApiCmds = []*ApiCommand{
 	ShowClusterRefsCmd,
 }
@@ -88,7 +86,6 @@ var ShowAppInstRefsCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var AppInstRefsApiCmds = []*ApiCommand{
 	ShowAppInstRefsCmd,
 }

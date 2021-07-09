@@ -34,3 +34,15 @@ type RegionAlert struct {
 	Region string
 	Alert  edgeproto.Alert
 }
+
+func (s *RegionAlert) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAlert) GetObj() interface{} {
+	return &s.Alert
+}
+
+func (s *RegionAlert) GetObjName() string {
+	return "Alert"
+}

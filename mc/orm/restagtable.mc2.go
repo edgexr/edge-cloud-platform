@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -36,8 +37,9 @@ func CreateResTagTable(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -90,8 +92,9 @@ func DeleteResTagTable(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -144,14 +147,19 @@ func UpdateResTagTable(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	dat, err := ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
 	span.SetTag("org", in.ResTagTable.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 	resp, err := UpdateResTagTableObj(ctx, rc, &in.ResTagTable)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -198,8 +206,8 @@ func ShowResTagTable(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -285,8 +293,9 @@ func AddResTag(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -339,8 +348,9 @@ func RemoveResTag(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTable{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -393,8 +403,9 @@ func GetResTagTable(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionResTagTableKey{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

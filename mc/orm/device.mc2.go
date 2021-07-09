@@ -37,8 +37,9 @@ func InjectDevice(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDevice{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -90,8 +91,8 @@ func ShowDevice(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDevice{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -176,8 +177,9 @@ func EvictDevice(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDevice{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -229,8 +231,8 @@ func ShowDeviceReport(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDeviceReport{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

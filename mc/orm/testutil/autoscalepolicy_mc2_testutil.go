@@ -65,6 +65,7 @@ func TestUpdateAutoScalePolicy(mcClient *mctestclient.Client, uri, token, region
 func TestPermUpdateAutoScalePolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.AutoScalePolicy{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.AutoScalePolicyFieldKeyOrganization)
 	return TestUpdateAutoScalePolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 

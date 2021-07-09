@@ -12,6 +12,7 @@ import (
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -38,8 +39,9 @@ func CreateVMPool(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPool{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -92,8 +94,9 @@ func DeleteVMPool(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPool{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -146,14 +149,19 @@ func UpdateVMPool(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPool{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	dat, err := ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 	resp, err := UpdateVMPoolObj(ctx, rc, &in.VMPool)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -200,8 +208,8 @@ func ShowVMPool(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPool{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -287,8 +295,9 @@ func AddVMPoolMember(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPoolMember{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -341,8 +350,9 @@ func RemoveVMPoolMember(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionVMPoolMember{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

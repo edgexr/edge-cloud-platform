@@ -35,6 +35,25 @@ type RegionAppInst struct {
 	AppInst edgeproto.AppInst
 }
 
+func (s *RegionAppInst) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAppInst) GetObj() interface{} {
+	return &s.AppInst
+}
+
+func (s *RegionAppInst) GetObjName() string {
+	return "AppInst"
+}
+func (s *RegionAppInst) GetObjFields() []string {
+	return s.AppInst.Fields
+}
+
+func (s *RegionAppInst) SetObjFields(fields []string) {
+	s.AppInst.Fields = fields
+}
+
 // Request summary for DeleteAppInst
 // swagger:parameters DeleteAppInst
 type swaggerDeleteAppInst struct {
@@ -75,4 +94,16 @@ type RegionAppInstLatency struct {
 	// Region name
 	Region         string
 	AppInstLatency edgeproto.AppInstLatency
+}
+
+func (s *RegionAppInstLatency) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAppInstLatency) GetObj() interface{} {
+	return &s.AppInstLatency
+}
+
+func (s *RegionAppInstLatency) GetObjName() string {
+	return "AppInstLatency"
 }

@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -57,40 +56,19 @@ var DeleteCloudletPoolCmd = &ApiCommand{
 }
 
 var UpdateCloudletPoolCmd = &ApiCommand{
-	Name:          "UpdateCloudletPool",
-	Use:           "update",
-	Short:         "Update a CloudletPool",
-	RequiredArgs:  "region " + strings.Join(CloudletPoolRequiredArgs, " "),
-	OptionalArgs:  strings.Join(CloudletPoolOptionalArgs, " "),
-	AliasArgs:     strings.Join(CloudletPoolAliasArgs, " "),
-	SpecialArgs:   &CloudletPoolSpecialArgs,
-	Comments:      addRegionComment(CloudletPoolComments),
-	NoConfig:      "Members,CreatedAt,UpdatedAt",
-	ReqData:       &ormapi.RegionCloudletPool{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateCloudletPool",
-	SetFieldsFunc: SetUpdateCloudletPoolFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateCloudletPoolFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["CloudletPool"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.CloudletPool{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateCloudletPool",
+	Use:          "update",
+	Short:        "Update a CloudletPool",
+	RequiredArgs: "region " + strings.Join(CloudletPoolRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletPoolOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletPoolAliasArgs, " "),
+	SpecialArgs:  &CloudletPoolSpecialArgs,
+	Comments:     addRegionComment(CloudletPoolComments),
+	NoConfig:     "Members,CreatedAt,UpdatedAt",
+	ReqData:      &ormapi.RegionCloudletPool{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateCloudletPool",
+	ProtobufApi:  true,
 }
 
 var ShowCloudletPoolCmd = &ApiCommand{
@@ -139,7 +117,6 @@ var RemoveCloudletPoolMemberCmd = &ApiCommand{
 	Path:         "/auth/ctrl/RemoveCloudletPoolMember",
 	ProtobufApi:  true,
 }
-
 var CloudletPoolApiCmds = []*ApiCommand{
 	CreateCloudletPoolCmd,
 	DeleteCloudletPoolCmd,
@@ -176,7 +153,7 @@ var CloudletPoolComments = map[string]string{
 	"fields":    "Fields are used for the Update API to specify which fields to apply",
 	"org":       "Name of the organization this pool belongs to",
 	"name":      "CloudletPool Name",
-	"cloudlets": "Cloudlets part of the pool",
+	"cloudlets": "Cloudlets part of the pool, specify cloudlets:empty=true to clear",
 }
 var CloudletPoolSpecialArgs = map[string]string{
 	"cloudletpool.cloudlets": "StringArray",

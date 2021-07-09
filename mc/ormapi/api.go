@@ -377,6 +377,16 @@ type WSStreamPayload struct {
 	Data interface{} `json:"data"`
 }
 
+// RegionObj interface is for all protobuf-defined objects that
+// are wrapped with a region string.
+type RegionObjWithFields interface {
+	GetRegion() string
+	GetObj() interface{}
+	GetObjName() string
+	GetObjFields() []string
+	SetObjFields([]string)
+}
+
 // all data is for full create/delete
 
 type AllData struct {

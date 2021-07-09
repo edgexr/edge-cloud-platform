@@ -8,6 +8,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/stretchr/testify/require"
@@ -160,10 +161,13 @@ func ldapSearchCheck(t *testing.T, l *ldap.Conn, bindDN, bindPassword, baseDN, f
 }
 
 func unlockUser(t *testing.T, mcClient *mctestclient.Client, uri, token, username string) {
-	req := make(map[string]interface{})
-	req["name"] = username
-	req["locked"] = false
-	req["emailverified"] = true
+	req := &cli.MapData{
+		Namespace: cli.JsonNamespace,
+		Data:      make(map[string]interface{}),
+	}
+	req.Data["name"] = username
+	req.Data["locked"] = false
+	req.Data["emailverified"] = true
 	status, err := mcClient.RestrictedUpdateUser(uri, token, req)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)

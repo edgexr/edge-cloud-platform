@@ -10,7 +10,6 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -58,40 +57,19 @@ var DeleteAutoProvPolicyCmd = &ApiCommand{
 }
 
 var UpdateAutoProvPolicyCmd = &ApiCommand{
-	Name:          "UpdateAutoProvPolicy",
-	Use:           "update",
-	Short:         "Update an Auto Provisioning Policy",
-	RequiredArgs:  "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
-	OptionalArgs:  strings.Join(AutoProvPolicyOptionalArgs, " "),
-	AliasArgs:     strings.Join(AutoProvPolicyAliasArgs, " "),
-	SpecialArgs:   &AutoProvPolicySpecialArgs,
-	Comments:      addRegionComment(AutoProvPolicyComments),
-	NoConfig:      "Cloudlets:#.Loc",
-	ReqData:       &ormapi.RegionAutoProvPolicy{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateAutoProvPolicy",
-	SetFieldsFunc: SetUpdateAutoProvPolicyFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateAutoProvPolicyFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["AutoProvPolicy"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.AutoProvPolicy{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateAutoProvPolicy",
+	Use:          "update",
+	Short:        "Update an Auto Provisioning Policy",
+	RequiredArgs: "region " + strings.Join(AutoProvPolicyRequiredArgs, " "),
+	OptionalArgs: strings.Join(AutoProvPolicyOptionalArgs, " "),
+	AliasArgs:    strings.Join(AutoProvPolicyAliasArgs, " "),
+	SpecialArgs:  &AutoProvPolicySpecialArgs,
+	Comments:     addRegionComment(AutoProvPolicyComments),
+	NoConfig:     "Cloudlets:#.Loc",
+	ReqData:      &ormapi.RegionAutoProvPolicy{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateAutoProvPolicy",
+	ProtobufApi:  true,
 }
 
 var ShowAutoProvPolicyCmd = &ApiCommand{
@@ -140,7 +118,6 @@ var RemoveAutoProvPolicyCloudletCmd = &ApiCommand{
 	Path:         "/auth/ctrl/RemoveAutoProvPolicyCloudlet",
 	ProtobufApi:  true,
 }
-
 var AutoProvPolicyApiCmds = []*ApiCommand{
 	CreateAutoProvPolicyCmd,
 	DeleteAutoProvPolicyCmd,
@@ -177,6 +154,7 @@ var AutoProvPolicyRequiredArgs = []string{
 var AutoProvPolicyOptionalArgs = []string{
 	"deployclientcount",
 	"deployintervalcount",
+	"cloudlets:empty",
 	"cloudlets:#.key.organization",
 	"cloudlets:#.key.name",
 	"minactiveinstances",
@@ -190,6 +168,7 @@ var AutoProvPolicyAliasArgs = []string{
 	"name=autoprovpolicy.key.name",
 	"deployclientcount=autoprovpolicy.deployclientcount",
 	"deployintervalcount=autoprovpolicy.deployintervalcount",
+	"cloudlets:empty=autoprovpolicy.cloudlets:empty",
 	"cloudlets:#.key.organization=autoprovpolicy.cloudlets:#.key.organization",
 	"cloudlets:#.key.name=autoprovpolicy.cloudlets:#.key.name",
 	"cloudlets:#.loc.latitude=autoprovpolicy.cloudlets:#.loc.latitude",
@@ -212,6 +191,7 @@ var AutoProvPolicyComments = map[string]string{
 	"name":                               "Policy name",
 	"deployclientcount":                  "Minimum number of clients within the auto deploy interval to trigger deployment",
 	"deployintervalcount":                "Number of intervals to check before triggering deployment",
+	"cloudlets:empty":                    "Allowed deployment locations, specify cloudlets:empty=true to clear",
 	"cloudlets:#.key.organization":       "Organization of the cloudlet site",
 	"cloudlets:#.key.name":               "Name of the cloudlet",
 	"cloudlets:#.loc.latitude":           "latitude in WGS 84 coordinates",

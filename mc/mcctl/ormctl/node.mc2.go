@@ -36,7 +36,6 @@ var ShowNodeCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var NodeApiCmds = []*ApiCommand{
 	ShowNodeCmd,
 }

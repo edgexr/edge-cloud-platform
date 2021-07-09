@@ -34,6 +34,25 @@ type RegionAutoScalePolicy struct {
 	AutoScalePolicy edgeproto.AutoScalePolicy
 }
 
+func (s *RegionAutoScalePolicy) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAutoScalePolicy) GetObj() interface{} {
+	return &s.AutoScalePolicy
+}
+
+func (s *RegionAutoScalePolicy) GetObjName() string {
+	return "AutoScalePolicy"
+}
+func (s *RegionAutoScalePolicy) GetObjFields() []string {
+	return s.AutoScalePolicy.Fields
+}
+
+func (s *RegionAutoScalePolicy) SetObjFields(fields []string) {
+	s.AutoScalePolicy.Fields = fields
+}
+
 // Request summary for DeleteAutoScalePolicy
 // swagger:parameters DeleteAutoScalePolicy
 type swaggerDeleteAutoScalePolicy struct {

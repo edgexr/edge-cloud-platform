@@ -34,6 +34,18 @@ type RegionOperatorCode struct {
 	OperatorCode edgeproto.OperatorCode
 }
 
+func (s *RegionOperatorCode) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionOperatorCode) GetObj() interface{} {
+	return &s.OperatorCode
+}
+
+func (s *RegionOperatorCode) GetObjName() string {
+	return "OperatorCode"
+}
+
 // Request summary for DeleteOperatorCode
 // swagger:parameters DeleteOperatorCode
 type swaggerDeleteOperatorCode struct {

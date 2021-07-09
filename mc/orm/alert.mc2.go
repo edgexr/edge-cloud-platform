@@ -36,8 +36,8 @@ func ShowAlert(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAlert{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -498,7 +498,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RemoveAppAutoProvPolicy", RemoveAppAutoProvPolicy)
 	// swagger:route POST /auth/ctrl/ShowCloudletsForAppDeployment DeploymentCloudletRequest ShowCloudletsForAppDeployment
-	// Discover cloudlets supporting depoloyments of App.
+	// Discover cloudlets supporting deployments of App.
 	// DefaultFlavor
 	// Security:
 	//   Bearer:

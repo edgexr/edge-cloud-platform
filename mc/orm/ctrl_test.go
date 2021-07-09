@@ -1,12 +1,17 @@
 package orm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -15,10 +20,14 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/mobiledgex/edge-cloud-infra/billing"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/cliwrapper"
+	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mccli"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	ormtestutil "github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/nodetest"
@@ -34,6 +43,8 @@ import (
 
 var Success = true
 var Fail = false
+
+var ClientNoShowFilter = &cli.MapData{}
 
 func TestController(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
@@ -145,7 +156,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Nil(t, err, "login as superuser")
 
 	// make sure roles are as expected
-	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
+	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(roleAssignments))
@@ -153,7 +164,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Equal(t, DefaultSuperuser, roleAssignments[0].Username)
 
 	// test controller api
-	ctrls, status, err := mcClient.ShowController(uri, token, NoShowFilter)
+	ctrls, status, err := mcClient.ShowController(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
@@ -166,23 +177,29 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.CreateController(uri, token, &ctrl)
 	require.Nil(t, err, "create controller")
 	require.Equal(t, http.StatusOK, status)
-	ctrls, status, err = mcClient.ShowController(uri, token, NoShowFilter)
+	ctrls, status, err = mcClient.ShowController(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
 	require.Equal(t, ctrl.Region, ctrls[0].Region)
 	require.Equal(t, ctrl.Address, ctrls[0].Address)
 	// test show controller filtering
-	showController := map[string]interface{}{
-		"Region": "",
+	showController := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Region": "",
+		},
 	}
 	ctrls, status, err = mcClient.ShowController(uri, token, showController)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	fmt.Printf("controllers: %v\n", ctrls)
 	require.Equal(t, 0, len(ctrls))
-	showController = map[string]interface{}{
-		"Region": "USA",
+	showController = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Region": "USA",
+		},
 	}
 	ctrls, status, err = mcClient.ShowController(uri, token, showController)
 	require.Nil(t, err, "show controllers")
@@ -276,10 +293,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	require.Equal(t, http.StatusForbidden, status)
 	status, err = mcClient.CreateController(uri, tokenOper, &ctrlNew)
 	require.Equal(t, http.StatusForbidden, status)
-	ctrls, status, err = mcClient.ShowController(uri, tokenDev, NoShowFilter)
+	ctrls, status, err = mcClient.ShowController(uri, tokenDev, ClientNoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
-	ctrls, status, err = mcClient.ShowController(uri, tokenOper, NoShowFilter)
+	ctrls, status, err = mcClient.ShowController(uri, tokenOper, ClientNoShowFilter)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 1, len(ctrls))
 
@@ -385,8 +402,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// Test billing org related developer access to cloudlets
 	{
 		// Enable billing
-		configReq := make(map[string]interface{})
-		configReq["billingenable"] = true
+		configReq := &cli.MapData{
+			Namespace: cli.ArgsNamespace,
+			Data:      make(map[string]interface{}),
+		}
+		configReq.Data["billingenable"] = true
 		status, err = mcClient.UpdateConfig(uri, token, configReq)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
@@ -437,7 +457,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		// clean up billing org (TODO: change from tokenAd to tokenDev)
 		testDeleteBillingOrg(t, mcClient, uri, tokenAd, org1)
 		// Disable billing
-		configReq["billingenable"] = false
+		configReq.Data["billingenable"] = false
 		status, err = mcClient.UpdateConfig(uri, token, configReq)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
@@ -705,6 +725,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		in.Cloudlets = append(in.Cloudlets, &edgeproto.AutoProvCloudlet{
 			Key: *tc3,
 		})
+		in.Fields = append(in.Fields,
+			edgeproto.AutoProvPolicyFieldCloudletsKeyOrganization,
+			edgeproto.AutoProvPolicyFieldCloudletsKeyName,
+		)
 	}
 	autoProvAddTc3 := func(in *edgeproto.AutoProvPolicyCloudlet) {
 		in.CloudletKey = *tc3
@@ -1041,7 +1065,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.DeleteController(uri, token, &ctrl)
 	require.Nil(t, err, "delete controller")
 	require.Equal(t, http.StatusOK, status)
-	ctrls, status, err = mcClient.ShowController(uri, token, NoShowFilter)
+	ctrls, status, err = mcClient.ShowController(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show controllers")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, 0, len(ctrls))
@@ -1214,9 +1238,12 @@ func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgN
 	// For updates, must specify struct map directly so we can
 	// specify empty strings and false values. Otherwise json.Marshal()
 	// will just ignore them.
-	dat := map[string]interface{}{
-		"Name":         update.Name,
-		"PublicImages": update.PublicImages,
+	dat := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Name":         update.Name,
+			"PublicImages": update.PublicImages,
+		},
 	}
 	status, err := mcClient.UpdateOrg(uri, token, dat)
 	require.Nil(t, err, "update org ", org.Name)
@@ -1228,7 +1255,7 @@ func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgN
 	require.Equal(t, update, *check, "updated org should be as expected")
 
 	// change back
-	dat["PublicImages"] = org.PublicImages
+	dat.Data["PublicImages"] = org.PublicImages
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.Nil(t, err, "update org ", org.Name)
 	require.Equal(t, http.StatusOK, status)
@@ -1243,15 +1270,18 @@ func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgN
 	if org.Type == OrgTypeDeveloper {
 		typ = OrgTypeOperator
 	}
-	dat = map[string]interface{}{
-		"Name": org.Name,
-		"Type": typ,
+	dat = &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Name": org.Name,
+			"Type": typ,
+		},
 	}
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err, "update org type")
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "Cannot change Organization type")
-	dat["Type"] = OrgTypeAdmin
+	dat.Data["Type"] = OrgTypeAdmin
 	status, err = mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err, "update org type")
 	require.Equal(t, http.StatusBadRequest, status)
@@ -1259,9 +1289,12 @@ func testUpdateOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, orgN
 }
 
 func testUpdateOrgFail(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
-	dat := map[string]interface{}{
-		"Name":         orgName,
-		"PublicImages": false,
+	dat := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data: map[string]interface{}{
+			"Name":         orgName,
+			"PublicImages": false,
+		},
 	}
 	status, err := mcClient.UpdateOrg(uri, token, dat)
 	require.NotNil(t, err)
@@ -1269,7 +1302,7 @@ func testUpdateOrgFail(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 }
 
 func getOrg(t *testing.T, mcClient *mctestclient.Client, uri, token, name string) *ormapi.Organization {
-	orgs, status, err := mcClient.ShowOrg(uri, token, NoShowFilter)
+	orgs, status, err := mcClient.ShowOrg(uri, token, ClientNoShowFilter)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 	for _, org := range orgs {
@@ -1288,9 +1321,12 @@ func testCreateUserOrg(t *testing.T, mcClient *mctestclient.Client, uri, name, o
 }
 
 func setOperatorOrgNoEdgeboxOnly(t *testing.T, mcClient *mctestclient.Client, uri, token, orgName string) {
-	orgReq := make(map[string]interface{})
-	orgReq["name"] = orgName
-	orgReq["edgeboxonly"] = false
+	orgReq := &cli.MapData{
+		Namespace: cli.ArgsNamespace,
+		Data:      make(map[string]interface{}),
+	}
+	orgReq.Data["name"] = orgName
+	orgReq.Data["edgeboxonly"] = false
 	status, err := mcClient.RestrictedUpdateOrg(uri, token, orgReq)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
@@ -1336,7 +1372,7 @@ func testShowCloudletPoolAccessInvitation(t *testing.T, mcClient *mctestclient.C
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, NoShowFilter)
+	list, status, err := mcClient.ShowCloudletPoolAccessInvitation(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access invitation")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1346,7 +1382,7 @@ func testShowCloudletPoolAccessResponse(t *testing.T, mcClient *mctestclient.Cli
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, NoShowFilter)
+	list, status, err := mcClient.ShowCloudletPoolAccessResponse(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access response")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1356,7 +1392,7 @@ func testShowCloudletPoolAccessGranted(t *testing.T, mcClient *mctestclient.Clie
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessGranted(uri, token, NoShowFilter)
+	list, status, err := mcClient.ShowCloudletPoolAccessGranted(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access granted")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1366,7 +1402,7 @@ func testShowCloudletPoolAccessPending(t *testing.T, mcClient *mctestclient.Clie
 	if expected == nil {
 		expected = []ormapi.OrgCloudletPool{}
 	}
-	list, status, err := mcClient.ShowCloudletPoolAccessPending(uri, token, NoShowFilter)
+	list, status, err := mcClient.ShowCloudletPoolAccessPending(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show cloudlet pool access pending")
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, expected, list)
@@ -1656,7 +1692,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.NotEmpty(t, resp.ApiKey, "api key exists")
 
 	// verify role exists
-	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
+	roleAssignments, status, err := mcClient.ShowRoleAssignment(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
 	apiKeyRole := ormapi.Role{}
@@ -1669,7 +1705,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Equal(t, apiKeyRole.Role, getApiKeyRoleName(resp.Id))
 	require.Equal(t, apiKeyRole.Username, resp.Id)
 	require.Equal(t, apiKeyRole.Org, operOrg.Name)
-	policies, status, err := mcClient.ShowRolePerm(uri, token, NoShowFilter)
+	policies, status, err := mcClient.ShowRolePerm(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	apiKeyRoleViewPerm := ormapi.RolePerm{}
@@ -1768,7 +1804,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 	require.Nil(t, err, "delete user api key")
 
 	// verify role doesn't exist
-	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token, NoShowFilter)
+	roleAssignments, status, err = mcClient.ShowRoleAssignment(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show roles")
 	require.Equal(t, http.StatusOK, status, "show role status")
 	found := false
@@ -1780,7 +1816,7 @@ func testUserApiKeys(t *testing.T, ctx context.Context, ds *testutil.DummyServer
 		}
 	}
 	require.False(t, found, "role doesn't exist")
-	policies, status, err = mcClient.ShowRolePerm(uri, token, NoShowFilter)
+	policies, status, err = mcClient.ShowRolePerm(uri, token, ClientNoShowFilter)
 	require.Nil(t, err, "show role perms err")
 	require.Equal(t, http.StatusOK, status, "show role perms status")
 	found = false
@@ -2117,4 +2153,367 @@ func testDeleteBillingOrg(t *testing.T, mcClient *mctestclient.Client, uri, toke
 	status, err := mcClient.DeleteBillingOrg(uri, token, &org)
 	require.Nil(t, err, "delete billing org ", orgName)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func TestDataConversions(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	var args []string
+	var expectedObj ormapi.RegionObjWithFields
+	var err error
+	uri := "http://mock.mc"
+	token := ""
+
+	// This tests data conversion between args, maps, and structs,
+	// for the various test clients that convert data to be able
+	// to test REST/mcctl/cliwrapper clients all from the same data
+	// source.
+
+	// The first set of tests are for updates that must preserve empty values.
+	// They need to be preserved either by keeping the arg present
+	// in the set of command line args, keeping the key-value pair
+	// present in the map, or by specifying the associated field flag
+	// in the struct. This is needed for updates to distinguish between
+	// empty values that should be updated, versus empty values that
+	// were just initialized to empty by default (i.e. in structs).
+
+	// This responder emulates what is done in the auto-generated code
+	// for something like UpdateApp. The JSON data is parsed potentially
+	// twice, first to setup the data struct, and second to populate
+	// a map that is used to calculate the field flags, if they weren't
+	// set by the sender.
+	// We then check that data matches what is expected.
+	httpmock.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
+		func(req *http.Request) (*http.Response, error) {
+			// create buffer of expected type to unmarshal json
+			objType := reflect.TypeOf(expectedObj)
+			if objType.Kind() == reflect.Ptr {
+				objType = objType.Elem()
+			}
+			buf := reflect.New(objType).Interface()
+			fmt.Printf("Checking data for %T\n", buf)
+
+			// Unmarshal json data into buffer
+			dat, err := ioutil.ReadAll(req.Body)
+			require.Nil(t, err)
+			fmt.Printf("read json: %s\n", string(dat))
+			err = json.Unmarshal(dat, buf)
+			require.Nil(t, err)
+
+			regionObjBuf, ok := buf.(ormapi.RegionObjWithFields)
+			require.True(t, ok)
+
+			// temporarily remove fields for comparison
+			expectedFields := expectedObj.GetObjFields()
+			expectedObj.SetObjFields(nil)
+			defer func() {
+				expectedObj.SetObjFields(expectedFields)
+			}()
+
+			// Make sure they match
+			require.Equal(t, expectedObj, regionObjBuf)
+
+			// Emulate the back-end calculating the fields,
+			// and check if they match expected.
+			err = ormutil.SetRegionObjFields(dat, regionObjBuf)
+			require.Equal(t, expectedFields, regionObjBuf.GetObjFields())
+
+			fmt.Printf("  ...check done\n")
+			return httpmock.NewStringResponse(200, ""), nil
+		},
+	)
+
+	// This is core of the mcctl program.
+	// This tests args -> json
+	mcctl := mccli.GetRootCommand()
+	mcctl.ForceDefaultTransport(true) // needed for httpmock to work
+	mcctl.EnablePrintTransformations()
+	argsCommon := []string{"--addr", uri, "--skipverify"}
+
+	// Rest client.
+	// This tests obj -> json
+	restc := &ormclient.Client{}
+	restc.ForceDefaultTransport = true // needed for httpmock to work
+	restc.EnablePrintTransformations()
+	restClient := mctestclient.NewClient(restc)
+
+	// CLI wrapper client, used to test mcctl code
+	// This tests obj -> args -> json
+	// Here we don't have any way to verify what the actual args are,
+	// which is why we have the mcctl core test.
+	cliwrap := cliwrapper.NewClient()
+	cliwrap.SilenceUsage = true
+	cliwrap.RunInline = true
+	cliwrap.ForceDefaultTransport(true) // needed for httpmock
+	cliwrap.EnablePrintTransformations()
+	cliClient := mctestclient.NewClient(cliwrap)
+
+	// Some helper funcs
+	setupExpected := func(expected ormapi.RegionObjWithFields) {
+		// sort fields
+		expectedFields := expected.GetObjFields()
+		sort.Strings(expectedFields)
+		expected.SetObjFields(expectedFields)
+		// set expected obj
+		expectedObj = expected
+	}
+	mcctlTest := func() {
+		retBuf := bytes.Buffer{}
+		mcctl.CobraCmd.SetOutput(&retBuf) // we're just going to ignore returned data
+		mcctl.ClearState()
+		mcctl.CobraCmd.SetArgs(append(argsCommon, args...))
+		err := mcctl.CobraCmd.Execute()
+		require.Nil(t, err)
+	}
+
+	// UpdateApp
+	args = []string{
+		"app", "update",
+		"region=local",
+		"app-org=someorg",
+		"appname=foo",
+		"appvers=1.0",
+		`accessports=""`,
+		"internalports=false",
+		"configs:empty=true",
+		"autoprovpolicies:empty=true",
+		"requiredoutboundconnections:empty=true"}
+	obj := ormapi.RegionApp{}
+	obj.Region = "local"
+	obj.App.Key.Name = "foo"
+	obj.App.Key.Version = "1.0"
+	obj.App.Key.Organization = "someorg"
+	obj.App.Configs = []*edgeproto.ConfigFile{}
+	obj.App.AutoProvPolicies = []string{}
+	obj.App.RequiredOutboundConnections = []*edgeproto.RemoteConnection{}
+	obj.App.Fields = []string{
+		edgeproto.AppFieldKeyOrganization,
+		edgeproto.AppFieldKeyName,
+		edgeproto.AppFieldKeyVersion,
+		edgeproto.AppFieldAccessPorts,
+		edgeproto.AppFieldInternalPorts,
+		edgeproto.AppFieldConfigs,
+		edgeproto.AppFieldAutoProvPolicies,
+		edgeproto.AppFieldRequiredOutboundConnections,
+	}
+	out, err := json.Marshal(&obj)
+	require.Nil(t, err)
+	fmt.Printf("obj json is %s\n", string(out))
+
+	setupExpected(&obj)
+	mcctlTest()
+	_, _, err = restClient.UpdateApp(uri, token, &obj)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateApp(uri, token, &obj)
+	require.Nil(t, err)
+
+	// UpdateCloudlet
+	args = []string{
+		"cloudlet", "update",
+		"region=local",
+		"cloudlet=dmuus-cloud-1",
+		"cloudlet-org=dmuus",
+		"numdynamicips=0",
+		"envvar:empty=true",
+		"accessvars:empty=true",
+		"restagmap:empty=true",
+		"resourcequotas:empty=true"}
+	obj1 := ormapi.RegionCloudlet{}
+	obj1.Region = "local"
+	obj1.Cloudlet.Key.Name = "dmuus-cloud-1"
+	obj1.Cloudlet.Key.Organization = "dmuus"
+	obj1.Cloudlet.EnvVar = make(map[string]string)
+	obj1.Cloudlet.AccessVars = make(map[string]string)
+	obj1.Cloudlet.ResTagMap = make(map[string]*edgeproto.ResTagTableKey)
+	obj1.Cloudlet.ResourceQuotas = []edgeproto.ResourceQuota{}
+	obj1.Cloudlet.Fields = []string{
+		edgeproto.CloudletFieldKeyName,
+		edgeproto.CloudletFieldKeyOrganization,
+		edgeproto.CloudletFieldNumDynamicIps,
+		edgeproto.CloudletFieldEnvVar,
+		edgeproto.CloudletFieldAccessVars,
+		edgeproto.CloudletFieldResTagMap,
+		edgeproto.CloudletFieldResourceQuotas,
+	}
+	setupExpected(&obj1)
+	mcctlTest()
+	_, _, err = restClient.UpdateCloudlet(uri, token, &obj1)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateCloudlet(uri, token, &obj1)
+	require.Nil(t, err)
+
+	// UpdateCloudlet sublist data
+	args = []string{
+		"cloudlet", "update",
+		"region=local",
+		"cloudlet=dmuus-cloud-1",
+		"cloudlet-org=dmuus",
+		"resourcequotas:0.name=RAM",
+		"resourcequotas:0.alertthreshold=50",
+		"resourcequotas:1.name=vCPUs",
+		"resourcequotas:1.value=20",
+		"resourcequotas:1.alertthreshold=50",
+		"resourcequotas:2.name=\"External IPs\"",
+		"resourcequotas:2.alertthreshold=10",
+	}
+	obj1 = ormapi.RegionCloudlet{}
+	obj1.Region = "local"
+	obj1.Cloudlet.Key.Name = "dmuus-cloud-1"
+	obj1.Cloudlet.Key.Organization = "dmuus"
+	obj1.Cloudlet.ResourceQuotas = []edgeproto.ResourceQuota{
+		{
+			Name:           "RAM",
+			AlertThreshold: 50,
+		}, {
+			Name:           "vCPUs",
+			Value:          20,
+			AlertThreshold: 50,
+		}, {
+			Name:           "External IPs",
+			AlertThreshold: 10,
+		},
+	}
+	obj1.Cloudlet.Fields = []string{
+		edgeproto.CloudletFieldKeyName,
+		edgeproto.CloudletFieldKeyOrganization,
+		edgeproto.CloudletFieldResourceQuotas,
+		edgeproto.CloudletFieldResourceQuotasName,
+		edgeproto.CloudletFieldResourceQuotasValue,
+		edgeproto.CloudletFieldResourceQuotasAlertThreshold,
+	}
+	setupExpected(&obj1)
+	mcctlTest()
+	_, _, err = restClient.UpdateCloudlet(uri, token, &obj1)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateCloudlet(uri, token, &obj1)
+	require.Nil(t, err)
+
+	// UpdateFlavor
+	args = []string{
+		"flavor", "update",
+		"region=local",
+		"name=foo",
+		"optresmap:empty=true"}
+	obj2 := ormapi.RegionFlavor{}
+	obj2.Region = "local"
+	obj2.Flavor.Key.Name = "foo"
+	obj2.Flavor.OptResMap = make(map[string]string)
+	obj2.Flavor.Fields = []string{
+		edgeproto.FlavorFieldKeyName,
+		edgeproto.FlavorFieldOptResMap,
+	}
+	setupExpected(&obj2)
+	mcctlTest()
+	_, _, err = restClient.UpdateFlavor(uri, token, &obj2)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateFlavor(uri, token, &obj2)
+	require.Nil(t, err)
+
+	// UpdateTrustPolicy
+	args = []string{
+		"trustpolicy", "update",
+		"region=local",
+		"cloudlet-org=org",
+		"name=foo",
+		"outboundsecurityrules:empty=true"}
+	obj3 := ormapi.RegionTrustPolicy{}
+	obj3.Region = "local"
+	obj3.TrustPolicy.Key.Name = "foo"
+	obj3.TrustPolicy.Key.Organization = "org"
+	obj3.TrustPolicy.OutboundSecurityRules = []edgeproto.SecurityRule{}
+	obj3.TrustPolicy.Fields = []string{
+		edgeproto.TrustPolicyFieldKeyName,
+		edgeproto.TrustPolicyFieldKeyOrganization,
+		edgeproto.TrustPolicyFieldOutboundSecurityRules,
+	}
+	setupExpected(&obj3)
+	mcctlTest()
+	_, _, err = restClient.UpdateTrustPolicy(uri, token, &obj3)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateTrustPolicy(uri, token, &obj3)
+	require.Nil(t, err)
+
+	// UpdateSettings
+	args = []string{
+		"settings", "update",
+		"region=local",
+		"autodeployintervalsec=0",
+		"autodeployoffsetsec=0.0",
+		"cloudletmaintenancetimeout=2s",
+		"createappinsttimeout=1m",
+		"updatevmpooltimeout=20m0s",
+		"appinstclientcleanupinterval=24h",
+	}
+	obj4 := ormapi.RegionSettings{}
+	obj4.Region = "local"
+	obj4.Settings.CloudletMaintenanceTimeout = edgeproto.Duration(2 * time.Second)
+	obj4.Settings.CreateAppInstTimeout = edgeproto.Duration(time.Minute)
+	obj4.Settings.UpdateVmPoolTimeout = edgeproto.Duration(20 * time.Minute)
+	obj4.Settings.AppinstClientCleanupInterval = edgeproto.Duration(24 * time.Hour)
+	obj4.Settings.Fields = []string{
+		edgeproto.SettingsFieldAutoDeployIntervalSec,
+		edgeproto.SettingsFieldAutoDeployOffsetSec,
+		edgeproto.SettingsFieldCloudletMaintenanceTimeout,
+		edgeproto.SettingsFieldCreateAppInstTimeout,
+		edgeproto.SettingsFieldUpdateVmPoolTimeout,
+		edgeproto.SettingsFieldAppinstClientCleanupInterval,
+	}
+
+	setupExpected(&obj4)
+	mcctlTest()
+	_, _, err = restClient.UpdateSettings(uri, token, &obj4)
+	require.Nil(t, err)
+	_, _, err = cliClient.UpdateSettings(uri, token, &obj4)
+	require.Nil(t, err)
+
+	// ==========================================================
+	// The following are non-update API calls that do not
+	// necessarily use RegionObjs, so the checks are a little simpler.
+	// ==========================================================
+
+	var expectedObj2 interface{}
+
+	httpmock.Reset()
+	httpmock.RegisterResponder("POST", "=~^"+uri+`/.*\z`,
+		func(req *http.Request) (*http.Response, error) {
+			// create buffer of expected type
+			objType := reflect.TypeOf(expectedObj2)
+			if objType.Kind() == reflect.Ptr {
+				objType = objType.Elem()
+			}
+			buf := reflect.New(objType).Interface()
+			fmt.Printf("Checking data for %T\n", buf)
+
+			// unmarshal json data into buffer
+			dat, err := ioutil.ReadAll(req.Body)
+			require.Nil(t, err)
+			fmt.Printf("read json: %s\n", string(dat))
+			err = json.Unmarshal(dat, buf)
+			require.Nil(t, err)
+
+			// compare objs
+			require.Equal(t, expectedObj2, buf)
+			fmt.Printf("  ...check done\n")
+			return httpmock.NewStringResponse(200, ""), nil
+		},
+	)
+
+	// Test time conversion
+	startTimeStr := "2021-07-06T16:09:58-07:00"
+	startTime, err := time.Parse(time.RFC3339, startTimeStr)
+	require.Nil(t, err)
+
+	args = []string{
+		"events", "terms",
+		`starttime="` + startTimeStr + `"`,
+	}
+	search := node.EventSearch{}
+	search.StartTime = startTime
+	expectedObj2 = &search
+	mcctlTest()
+	_, _, err = restClient.EventTerms(uri, token, &search)
+	require.Nil(t, err)
+	_, _, err = cliClient.EventTerms(uri, token, &search)
+	require.Nil(t, err)
 }

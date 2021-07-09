@@ -28,7 +28,6 @@ type ApiCommand struct {
 	ReplyData            interface{}
 	Path                 string
 	ProtobufApi          bool
-	SetFieldsFunc        func(map[string]interface{})
 	StreamOut            bool
 	StreamOutIncremental bool
 	DataFlagOnly         bool

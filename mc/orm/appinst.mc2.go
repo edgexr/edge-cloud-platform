@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -37,8 +38,8 @@ func CreateAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -121,8 +122,8 @@ func DeleteAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -205,8 +206,8 @@ func RefreshAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -289,8 +290,8 @@ func UpdateAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	dat, err := ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -298,6 +299,10 @@ func UpdateAppInst(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
 	span.SetTag("org", in.AppInst.Key.AppKey.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 
 	err = UpdateAppInstStream(ctx, rc, &in.AppInst, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -373,8 +378,8 @@ func ShowAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInst{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -469,8 +474,9 @@ func RequestAppInstLatency(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInstLatency{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

@@ -36,8 +36,9 @@ func CreateOperatorCode(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionOperatorCode{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -89,8 +90,9 @@ func DeleteOperatorCode(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionOperatorCode{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -142,8 +144,8 @@ func ShowOperatorCode(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionOperatorCode{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

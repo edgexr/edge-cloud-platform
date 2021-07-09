@@ -34,6 +34,18 @@ type RegionAppInstKey struct {
 	AppInstKey edgeproto.AppInstKey
 }
 
+func (s *RegionAppInstKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAppInstKey) GetObj() interface{} {
+	return &s.AppInstKey
+}
+
+func (s *RegionAppInstKey) GetObjName() string {
+	return "AppInstKey"
+}
+
 // Request summary for StreamClusterInst
 // swagger:parameters StreamClusterInst
 type swaggerStreamClusterInst struct {
@@ -46,6 +58,18 @@ type RegionClusterInstKey struct {
 	// Region name
 	Region         string
 	ClusterInstKey edgeproto.ClusterInstKey
+}
+
+func (s *RegionClusterInstKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionClusterInstKey) GetObj() interface{} {
+	return &s.ClusterInstKey
+}
+
+func (s *RegionClusterInstKey) GetObjName() string {
+	return "ClusterInstKey"
 }
 
 // Request summary for StreamCloudlet
@@ -67,4 +91,16 @@ type RegionGPUDriverKey struct {
 	// Region name
 	Region       string
 	GPUDriverKey edgeproto.GPUDriverKey
+}
+
+func (s *RegionGPUDriverKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionGPUDriverKey) GetObj() interface{} {
+	return &s.GPUDriverKey
+}
+
+func (s *RegionGPUDriverKey) GetObjName() string {
+	return "GPUDriverKey"
 }

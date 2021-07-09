@@ -33,3 +33,22 @@ type RegionNode struct {
 	Region string
 	Node   edgeproto.Node
 }
+
+func (s *RegionNode) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionNode) GetObj() interface{} {
+	return &s.Node
+}
+
+func (s *RegionNode) GetObjName() string {
+	return "Node"
+}
+func (s *RegionNode) GetObjFields() []string {
+	return s.Node.Fields
+}
+
+func (s *RegionNode) SetObjFields(fields []string) {
+	s.Node.Fields = fields
+}

@@ -36,6 +36,25 @@ type RegionVMPool struct {
 	VMPool edgeproto.VMPool
 }
 
+func (s *RegionVMPool) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionVMPool) GetObj() interface{} {
+	return &s.VMPool
+}
+
+func (s *RegionVMPool) GetObjName() string {
+	return "VMPool"
+}
+func (s *RegionVMPool) GetObjFields() []string {
+	return s.VMPool.Fields
+}
+
+func (s *RegionVMPool) SetObjFields(fields []string) {
+	s.VMPool.Fields = fields
+}
+
 // Request summary for DeleteVMPool
 // swagger:parameters DeleteVMPool
 type swaggerDeleteVMPool struct {
@@ -69,6 +88,18 @@ type RegionVMPoolMember struct {
 	// Region name
 	Region       string
 	VMPoolMember edgeproto.VMPoolMember
+}
+
+func (s *RegionVMPoolMember) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionVMPoolMember) GetObj() interface{} {
+	return &s.VMPoolMember
+}
+
+func (s *RegionVMPoolMember) GetObjName() string {
+	return "VMPoolMember"
 }
 
 // Request summary for RemoveVMPoolMember

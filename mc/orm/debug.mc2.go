@@ -35,8 +35,8 @@ func EnableDebugLevels(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDebugRequest{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -117,8 +117,8 @@ func DisableDebugLevels(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDebugRequest{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -199,8 +199,8 @@ func ShowDebugLevels(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDebugRequest{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -278,8 +278,8 @@ func RunDebug(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDebugRequest{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

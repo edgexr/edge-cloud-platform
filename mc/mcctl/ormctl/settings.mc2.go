@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -24,39 +23,18 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 var UpdateSettingsCmd = &ApiCommand{
-	Name:          "UpdateSettings",
-	Use:           "update",
-	Short:         "Update settings",
-	RequiredArgs:  "region " + strings.Join(SettingsRequiredArgs, " "),
-	OptionalArgs:  strings.Join(SettingsOptionalArgs, " "),
-	AliasArgs:     strings.Join(SettingsAliasArgs, " "),
-	SpecialArgs:   &SettingsSpecialArgs,
-	Comments:      addRegionComment(SettingsComments),
-	ReqData:       &ormapi.RegionSettings{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateSettings",
-	SetFieldsFunc: SetUpdateSettingsFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateSettingsFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["Settings"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.Settings{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateSettings",
+	Use:          "update",
+	Short:        "Update settings",
+	RequiredArgs: "region " + strings.Join(SettingsRequiredArgs, " "),
+	OptionalArgs: strings.Join(SettingsOptionalArgs, " "),
+	AliasArgs:    strings.Join(SettingsAliasArgs, " "),
+	SpecialArgs:  &SettingsSpecialArgs,
+	Comments:     addRegionComment(SettingsComments),
+	ReqData:      &ormapi.RegionSettings{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateSettings",
+	ProtobufApi:  true,
 }
 
 var ResetSettingsCmd = &ApiCommand{
@@ -88,7 +66,6 @@ var ShowSettingsCmd = &ApiCommand{
 	Path:         "/auth/ctrl/ShowSettings",
 	ProtobufApi:  true,
 }
-
 var SettingsApiCmds = []*ApiCommand{
 	UpdateSettingsCmd,
 	ResetSettingsCmd,
@@ -130,6 +107,7 @@ var SettingsOptionalArgs = []string{
 	"createcloudlettimeout",
 	"updatecloudlettimeout",
 	"locationtilesidelengthkm",
+	"edgeeventsmetricscontinuousqueriescollectionintervals:empty",
 	"edgeeventsmetricscontinuousqueriescollectionintervals:#.interval",
 	"influxdbdownsampledmetricsretention",
 	"influxdbedgeeventsmetricsretention",
@@ -166,6 +144,7 @@ var SettingsAliasArgs = []string{
 	"createcloudlettimeout=settings.createcloudlettimeout",
 	"updatecloudlettimeout=settings.updatecloudlettimeout",
 	"locationtilesidelengthkm=settings.locationtilesidelengthkm",
+	"edgeeventsmetricscontinuousqueriescollectionintervals:empty=settings.edgeeventsmetricscontinuousqueriescollectionintervals:empty",
 	"edgeeventsmetricscontinuousqueriescollectionintervals:#.interval=settings.edgeeventsmetricscontinuousqueriescollectionintervals:#.interval",
 	"influxdbdownsampledmetricsretention=settings.influxdbdownsampledmetricsretention",
 	"influxdbedgeeventsmetricsretention=settings.influxdbedgeeventsmetricsretention",
@@ -174,34 +153,35 @@ var SettingsAliasArgs = []string{
 	"clusterautoscaleretrydelay=settings.clusterautoscaleretrydelay",
 }
 var SettingsComments = map[string]string{
-	"fields":                                "Fields are used for the Update API to specify which fields to apply",
-	"shepherdmetricscollectioninterval":     "Shepherd metrics collection interval for k8s and docker appInstances (duration)",
-	"shepherdalertevaluationinterval":       "Shepherd alert evaluation interval for k8s and docker appInstances (duration)",
-	"shepherdhealthcheckretries":            "Number of times Shepherd Health Check fails before we mark appInst down",
-	"shepherdhealthcheckinterval":           "Health Checking probing frequency (duration)",
-	"autodeployintervalsec":                 "Auto Provisioning Stats push and analysis interval (seconds)",
-	"autodeployoffsetsec":                   "Auto Provisioning analysis offset from interval (seconds)",
-	"autodeploymaxintervals":                "Auto Provisioning Policy max allowed intervals",
-	"createappinsttimeout":                  "Create AppInst timeout (duration)",
-	"updateappinsttimeout":                  "Update AppInst timeout (duration)",
-	"deleteappinsttimeout":                  "Delete AppInst timeout (duration)",
-	"createclusterinsttimeout":              "Create ClusterInst timeout (duration)",
-	"updateclusterinsttimeout":              "Update ClusterInst timeout (duration)",
-	"deleteclusterinsttimeout":              "Delete ClusterInst timeout (duration)",
-	"masternodeflavor":                      "Default flavor for k8s master VM and > 0  workers",
-	"maxtrackeddmeclients":                  "Max DME clients to be tracked at the same time.",
-	"chefclientinterval":                    "Default chef client interval (duration)",
-	"influxdbmetricsretention":              "Default influxDB metrics retention policy (duration)",
-	"cloudletmaintenancetimeout":            "Default Cloudlet Maintenance timeout (used twice for AutoProv and Cloudlet)",
-	"updatevmpooltimeout":                   "Update VM pool timeout (duration)",
-	"updatetrustpolicytimeout":              "Update Trust Policy timeout (duration)",
-	"dmeapimetricscollectioninterval":       "Metrics collection interval for DME API counts (duration)",
-	"edgeeventsmetricscollectioninterval":   "Collection interval for edgeevents metrics (latency, device, and custom)",
-	"cleanupreservableautoclusteridletime":  "Idle reservable ClusterInst clean up time",
-	"influxdbcloudletusagemetricsretention": "Default influxDB cloudlet usage metrics retention policy (duration)",
-	"createcloudlettimeout":                 "Create Cloudlet timeout (duration)",
-	"updatecloudlettimeout":                 "Update Cloudlet timeout (duration)",
-	"locationtilesidelengthkm":              "Length of location tiles side for latency metrics (km)",
+	"fields":                                                      "Fields are used for the Update API to specify which fields to apply",
+	"shepherdmetricscollectioninterval":                           "Shepherd metrics collection interval for k8s and docker appInstances (duration)",
+	"shepherdalertevaluationinterval":                             "Shepherd alert evaluation interval for k8s and docker appInstances (duration)",
+	"shepherdhealthcheckretries":                                  "Number of times Shepherd Health Check fails before we mark appInst down",
+	"shepherdhealthcheckinterval":                                 "Health Checking probing frequency (duration)",
+	"autodeployintervalsec":                                       "Auto Provisioning Stats push and analysis interval (seconds)",
+	"autodeployoffsetsec":                                         "Auto Provisioning analysis offset from interval (seconds)",
+	"autodeploymaxintervals":                                      "Auto Provisioning Policy max allowed intervals",
+	"createappinsttimeout":                                        "Create AppInst timeout (duration)",
+	"updateappinsttimeout":                                        "Update AppInst timeout (duration)",
+	"deleteappinsttimeout":                                        "Delete AppInst timeout (duration)",
+	"createclusterinsttimeout":                                    "Create ClusterInst timeout (duration)",
+	"updateclusterinsttimeout":                                    "Update ClusterInst timeout (duration)",
+	"deleteclusterinsttimeout":                                    "Delete ClusterInst timeout (duration)",
+	"masternodeflavor":                                            "Default flavor for k8s master VM and > 0  workers",
+	"maxtrackeddmeclients":                                        "Max DME clients to be tracked at the same time.",
+	"chefclientinterval":                                          "Default chef client interval (duration)",
+	"influxdbmetricsretention":                                    "Default influxDB metrics retention policy (duration)",
+	"cloudletmaintenancetimeout":                                  "Default Cloudlet Maintenance timeout (used twice for AutoProv and Cloudlet)",
+	"updatevmpooltimeout":                                         "Update VM pool timeout (duration)",
+	"updatetrustpolicytimeout":                                    "Update Trust Policy timeout (duration)",
+	"dmeapimetricscollectioninterval":                             "Metrics collection interval for DME API counts (duration)",
+	"edgeeventsmetricscollectioninterval":                         "Collection interval for edgeevents metrics (latency, device, and custom)",
+	"cleanupreservableautoclusteridletime":                        "Idle reservable ClusterInst clean up time",
+	"influxdbcloudletusagemetricsretention":                       "Default influxDB cloudlet usage metrics retention policy (duration)",
+	"createcloudlettimeout":                                       "Create Cloudlet timeout (duration)",
+	"updatecloudlettimeout":                                       "Update Cloudlet timeout (duration)",
+	"locationtilesidelengthkm":                                    "Length of location tiles side for latency metrics (km)",
+	"edgeeventsmetricscontinuousqueriescollectionintervals:empty": "List of collection intervals for Continuous Queries for EdgeEvents metrics, specify edgeeventsmetricscontinuousqueriescollectionintervals:empty=true to clear",
 	"edgeeventsmetricscontinuousqueriescollectionintervals:#.interval": "Collection interval for Influxdb (Specifically used for continuous query intervals) (Data from old continuous queries will be inaccessible if intervals are updated)",
 	"influxdbdownsampledmetricsretention":                              "Default retention policy for downsampled influx db (duration)",
 	"influxdbedgeeventsmetricsretention":                               "Default retention policy for edgeevents metrics influx db (duration)",
