@@ -378,15 +378,12 @@ regiondata:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication110-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -409,21 +406,18 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication110-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -446,21 +440,18 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      uri: dmuus-cloud-2.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTcp
         internalport: 80
         publicport: 10000
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 10001
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10000
-        fqdnprefix: someapplication110-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -839,15 +830,12 @@ regiondata:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication110-udp-
       flavor:
         name: x1.small
       state: Ready
@@ -874,21 +862,18 @@ regiondata:
       cloudletloc:
         latitude: 36
         longitude: -96
-      uri: dmuus-cloud-4.dmuus.mobiledgex.net
+      uri: shared.dmuus-cloud-4.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTcp
         internalport: 80
         publicport: 80
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoTcp
         internalport: 443
         publicport: 443
-        fqdnprefix: someapplication110-tcp-
       - proto: LProtoUdp
         internalport: 10002
         publicport: 10002
-        fqdnprefix: someapplication110-udp-
       flavor:
         name: x1.small
       state: Ready

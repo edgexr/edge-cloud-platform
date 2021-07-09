@@ -92,8 +92,6 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				action.PatchKube = true
 				action.PatchIP = lbinfo.InternalIpAddr
 				action.ExternalIP = lbinfo.ExternalIpAddr
-				// Should only add DNS for external ports
-				action.AddDNS = !app.InternalPorts
 				return &action, nil
 			}
 			// If this is all internal ports, all we need is patch of kube service

@@ -208,7 +208,6 @@ regiondata:
       - proto: LProtoTcp
         internalport: 7777
         publicport: 7777
-        fqdnprefix: devorgsdkdemo-tcp-
       flavor:
         name: x1.small
       state: Ready
@@ -240,7 +239,6 @@ regiondata:
       - proto: LProtoTcp
         internalport: 8008
         publicport: 8008
-        fqdnprefix: facedetectiondemo-tcp-
       flavor:
         name: x1.small
       state: Ready

@@ -141,13 +141,12 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      uri: kind-cloud-1.dmuus.mobiledgex.net
+      uri: shared.kind-cloud-1.dmuus.mobiledgex.net
       liveness: LivenessStatic
       mappedports:
       - proto: LProtoTcp
         internalport: 7777
         publicport: 7777
-        fqdnprefix: someapplication110-tcp-
       flavor:
         name: x1.tiny
       state: Ready
