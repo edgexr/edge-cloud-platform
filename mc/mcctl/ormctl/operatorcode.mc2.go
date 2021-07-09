@@ -67,7 +67,6 @@ var ShowOperatorCodeCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var OperatorCodeApiCmds = []*ApiCommand{
 	CreateOperatorCodeCmd,
 	DeleteOperatorCodeCmd,

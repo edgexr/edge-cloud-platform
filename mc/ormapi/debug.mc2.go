@@ -34,6 +34,18 @@ type RegionDebugRequest struct {
 	DebugRequest edgeproto.DebugRequest
 }
 
+func (s *RegionDebugRequest) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionDebugRequest) GetObj() interface{} {
+	return &s.DebugRequest
+}
+
+func (s *RegionDebugRequest) GetObjName() string {
+	return "DebugRequest"
+}
+
 // Request summary for DisableDebugLevels
 // swagger:parameters DisableDebugLevels
 type swaggerDisableDebugLevels struct {

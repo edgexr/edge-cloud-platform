@@ -36,6 +36,25 @@ type RegionAutoProvPolicy struct {
 	AutoProvPolicy edgeproto.AutoProvPolicy
 }
 
+func (s *RegionAutoProvPolicy) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAutoProvPolicy) GetObj() interface{} {
+	return &s.AutoProvPolicy
+}
+
+func (s *RegionAutoProvPolicy) GetObjName() string {
+	return "AutoProvPolicy"
+}
+func (s *RegionAutoProvPolicy) GetObjFields() []string {
+	return s.AutoProvPolicy.Fields
+}
+
+func (s *RegionAutoProvPolicy) SetObjFields(fields []string) {
+	s.AutoProvPolicy.Fields = fields
+}
+
 // Request summary for DeleteAutoProvPolicy
 // swagger:parameters DeleteAutoProvPolicy
 type swaggerDeleteAutoProvPolicy struct {
@@ -69,6 +88,18 @@ type RegionAutoProvPolicyCloudlet struct {
 	// Region name
 	Region                 string
 	AutoProvPolicyCloudlet edgeproto.AutoProvPolicyCloudlet
+}
+
+func (s *RegionAutoProvPolicyCloudlet) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAutoProvPolicyCloudlet) GetObj() interface{} {
+	return &s.AutoProvPolicyCloudlet
+}
+
+func (s *RegionAutoProvPolicyCloudlet) GetObjName() string {
+	return "AutoProvPolicyCloudlet"
 }
 
 // Request summary for RemoveAutoProvPolicyCloudlet

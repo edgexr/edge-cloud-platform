@@ -34,8 +34,9 @@ func RunCommand(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionExecRequest{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -87,8 +88,9 @@ func RunConsole(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionExecRequest{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -140,8 +142,9 @@ func ShowLogs(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionExecRequest{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -190,8 +193,9 @@ func AccessCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionExecRequest{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

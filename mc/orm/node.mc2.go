@@ -35,8 +35,8 @@ func ShowNode(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionNode{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

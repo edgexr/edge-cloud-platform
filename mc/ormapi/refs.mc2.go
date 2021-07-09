@@ -33,6 +33,18 @@ type RegionCloudletRefs struct {
 	CloudletRefs edgeproto.CloudletRefs
 }
 
+func (s *RegionCloudletRefs) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletRefs) GetObj() interface{} {
+	return &s.CloudletRefs
+}
+
+func (s *RegionCloudletRefs) GetObjName() string {
+	return "CloudletRefs"
+}
+
 // Request summary for ShowClusterRefs
 // swagger:parameters ShowClusterRefs
 type swaggerShowClusterRefs struct {
@@ -47,6 +59,18 @@ type RegionClusterRefs struct {
 	ClusterRefs edgeproto.ClusterRefs
 }
 
+func (s *RegionClusterRefs) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionClusterRefs) GetObj() interface{} {
+	return &s.ClusterRefs
+}
+
+func (s *RegionClusterRefs) GetObjName() string {
+	return "ClusterRefs"
+}
+
 // Request summary for ShowAppInstRefs
 // swagger:parameters ShowAppInstRefs
 type swaggerShowAppInstRefs struct {
@@ -59,4 +83,16 @@ type RegionAppInstRefs struct {
 	// Region name
 	Region      string
 	AppInstRefs edgeproto.AppInstRefs
+}
+
+func (s *RegionAppInstRefs) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionAppInstRefs) GetObj() interface{} {
+	return &s.AppInstRefs
+}
+
+func (s *RegionAppInstRefs) GetObjName() string {
+	return "AppInstRefs"
 }

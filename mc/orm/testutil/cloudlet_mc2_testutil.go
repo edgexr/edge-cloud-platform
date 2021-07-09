@@ -66,6 +66,7 @@ func TestUpdateGPUDriver(mcClient *mctestclient.Client, uri, token, region strin
 func TestPermUpdateGPUDriver(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriver)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.GPUDriver{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.GPUDriverFieldKeyOrganization)
 	return TestUpdateGPUDriver(mcClient, uri, token, region, in, modFuncs...)
 }
 
@@ -255,6 +256,7 @@ func TestUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region string
 func TestPermUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.CloudletFieldKeyOrganization)
 	return TestUpdateCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
 

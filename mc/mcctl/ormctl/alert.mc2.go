@@ -38,7 +38,6 @@ var ShowAlertCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var AlertApiCmds = []*ApiCommand{
 	ShowAlertCmd,
 }

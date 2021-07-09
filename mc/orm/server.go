@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -1040,26 +1041,29 @@ func (s *Server) websocketUpgrade(next echo.HandlerFunc) echo.HandlerFunc {
 
 const StreamAPITag = "StreamAPITag"
 
-func ReadConn(c echo.Context, in interface{}) (bool, error) {
+func ReadConn(c echo.Context, in interface{}) ([]byte, error) {
+	var dat []byte
 	var err error
 
 	// Mark stream API
 	c.Set(StreamAPITag, true)
 
 	if ws := GetWs(c); ws != nil {
-		err = ws.ReadJSON(in)
+		_, dat, err = ws.ReadMessage()
 		if err == nil {
-			out, err := json.Marshal(in)
-			if err == nil {
-				LogWsRequest(c, out)
-			}
+			LogWsRequest(c, dat)
 		}
 	} else {
-		err = c.Bind(in)
+		// This plus json.Umarshal is the equivalent of c.Bind()
+		dat, err = ioutil.ReadAll(c.Request().Body)
 	}
+	if err == nil {
+		err = json.Unmarshal(dat, in)
+	}
+
 	if err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			return false, fmt.Errorf("Invalid data")
+			return nil, fmt.Errorf("Invalid data")
 		}
 		// echo returns HTTPError which may include "code: ..., message:", chop code
 		if errObj, ok := err.(*echo.HTTPError); ok {
@@ -1067,10 +1071,10 @@ func ReadConn(c echo.Context, in interface{}) (bool, error) {
 		}
 
 		errStr := checkForTimeError(fmt.Sprintf("Invalid data: %v", err))
-		return false, fmt.Errorf(errStr)
+		return nil, fmt.Errorf(errStr)
 	}
 
-	return true, nil
+	return dat, nil
 }
 
 func WaitForConnClose(c echo.Context, serverClosed chan bool) {

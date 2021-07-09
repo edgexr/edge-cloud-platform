@@ -18,6 +18,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/testutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
@@ -113,7 +114,10 @@ func runMcUsersAPI(api, uri, apiFile, curUserFile, outputDir string, mods []stri
 		if !rc {
 			return false
 		}
-		filter := map[string]interface{}{}
+		filter := &cli.MapData{
+			Namespace: cli.StructNamespace,
+			Data:      map[string]interface{}{},
+		}
 		users, status, err := mcClient.ShowUser(uri, token, filter)
 		checkMcErr("ShowUser", status, err, &rc)
 		util.PrintToYamlFile("show-commands.yml", outputDir, users, true)
@@ -178,7 +182,17 @@ func runMcConfig(api, uri, apiFile, curUserFile, outputDir string, mods []string
 			log.Printf("error in unmarshal ormapi.Config for %s: %v\n", apiFile, err)
 			return false
 		}
-		st, err := mcClient.UpdateConfig(uri, token, data)
+		// Note: setting namespace to ArgsNamespace is strictly
+		// incorrect, as it should be YamlNamespace. But for our
+		// data, the yaml names and the arg names should be the
+		// same because we don't use yaml tags on fields.
+		// So they both end up as lowercased versions of the struct
+		// field names.
+		mdata := &cli.MapData{
+			Namespace: cli.ArgsNamespace,
+			Data:      data,
+		}
+		st, err := mcClient.UpdateConfig(uri, token, mdata)
 		checkMcErr("UpdateConfig", st, err, &rc)
 	}
 	return rc
@@ -338,7 +352,15 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 				log.Printf("error in unmarshal org for %s: %v\n", string(orgObj), err)
 				return false
 			}
-			st, err := mcClient.RestrictedUpdateOrg(uri, token, orgMap)
+			// Data is really in Yaml namespace, because json
+			// marshal/unmarshal is preserving the key names
+			// because there's no object to use tag names from.
+			// And we assume yaml and args are the same.
+			mdata := &cli.MapData{
+				Namespace: cli.ArgsNamespace,
+				Data:      orgMap,
+			}
+			st, err := mcClient.RestrictedUpdateOrg(uri, token, mdata)
 			outMcErr(output, fmt.Sprintf("RestrictedUpdateOrg[%d]", ii), st, err)
 		}
 		errs = output.Errors
@@ -500,7 +522,10 @@ func hasMod(mod string, mods []string) bool {
 }
 
 func showMcData(uri, token, tag string, rc *bool) *ormapi.AllData {
-	showFilter := map[string]interface{}{}
+	showFilter := &cli.MapData{
+		Namespace: cli.StructNamespace,
+		Data:      map[string]interface{}{},
+	}
 	ctrls, status, err := mcClient.ShowController(uri, token, showFilter)
 	checkMcErr("ShowControllers", status, err, rc)
 	orgs, status, err := mcClient.ShowOrg(uri, token, showFilter)

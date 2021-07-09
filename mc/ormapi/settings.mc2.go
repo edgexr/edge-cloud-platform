@@ -34,6 +34,25 @@ type RegionSettings struct {
 	Settings edgeproto.Settings
 }
 
+func (s *RegionSettings) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionSettings) GetObj() interface{} {
+	return &s.Settings
+}
+
+func (s *RegionSettings) GetObjName() string {
+	return "Settings"
+}
+func (s *RegionSettings) GetObjFields() []string {
+	return s.Settings.Fields
+}
+
+func (s *RegionSettings) SetObjFields(fields []string) {
+	s.Settings.Fields = fields
+}
+
 // Request summary for ResetSettings
 // swagger:parameters ResetSettings
 type swaggerResetSettings struct {

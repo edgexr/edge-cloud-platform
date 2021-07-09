@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -37,8 +38,8 @@ func CreateGPUDriver(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriver{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -121,8 +122,8 @@ func DeleteGPUDriver(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriver{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -205,8 +206,8 @@ func UpdateGPUDriver(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriver{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	dat, err := ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -214,6 +215,10 @@ func UpdateGPUDriver(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.GPUDriver.GetKey().GetTags())
 	span.SetTag("org", in.GPUDriver.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 
 	err = UpdateGPUDriverStream(ctx, rc, &in.GPUDriver, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -289,8 +294,8 @@ func ShowGPUDriver(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriver{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -385,8 +390,8 @@ func AddGPUDriverBuild(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriverBuildMember{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -469,8 +474,8 @@ func RemoveGPUDriverBuild(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriverBuildMember{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -553,8 +558,9 @@ func GetGPUDriverBuildURL(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriverBuildMember{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -604,8 +610,8 @@ func CreateCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudlet{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -688,8 +694,8 @@ func DeleteCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudlet{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -772,8 +778,8 @@ func UpdateCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudlet{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	dat, err := ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -781,6 +787,10 @@ func UpdateCloudlet(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Cloudlet.GetKey().GetTags())
 	span.SetTag("org", in.Cloudlet.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 
 	err = UpdateCloudletStream(ctx, rc, &in.Cloudlet, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -856,8 +866,8 @@ func ShowCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudlet{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -951,8 +961,9 @@ func GetCloudletManifest(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1004,8 +1015,9 @@ func GetCloudletProps(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletProps{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1054,8 +1066,9 @@ func GetCloudletResourceQuotaProps(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletResourceQuotaProps{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1104,8 +1117,9 @@ func GetCloudletResourceUsage(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletResourceUsage{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1155,8 +1169,9 @@ func AddCloudletResMapping(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletResMap{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1209,8 +1224,9 @@ func RemoveCloudletResMapping(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletResMap{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1263,8 +1279,9 @@ func FindFlavorMatch(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionFlavorMatch{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1314,8 +1331,8 @@ func ShowFlavorsForCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -1393,8 +1410,9 @@ func RevokeAccessKey(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1446,8 +1464,9 @@ func GenerateAccessKey(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1499,8 +1518,8 @@ func ShowCloudletInfo(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletInfo{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -1586,8 +1605,9 @@ func InjectCloudletInfo(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletInfo{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -1640,8 +1660,9 @@ func EvictCloudletInfo(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletInfo{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)

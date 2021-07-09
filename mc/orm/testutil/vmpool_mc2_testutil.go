@@ -67,6 +67,7 @@ func TestUpdateVMPool(mcClient *mctestclient.Client, uri, token, region string, 
 func TestPermUpdateVMPool(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.VMPool)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.VMPool{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.VMPoolFieldKeyOrganization)
 	return TestUpdateVMPool(mcClient, uri, token, region, in, modFuncs...)
 }
 

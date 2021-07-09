@@ -39,7 +39,6 @@ var ShowAppInstClientCmd = &ApiCommand{
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
 }
-
 var AppInstClientApiCmds = []*ApiCommand{
 	ShowAppInstClientCmd,
 }

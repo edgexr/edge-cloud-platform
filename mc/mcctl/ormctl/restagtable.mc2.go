@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -54,39 +53,18 @@ var DeleteResTagTableCmd = &ApiCommand{
 }
 
 var UpdateResTagTableCmd = &ApiCommand{
-	Name:          "UpdateResTagTable",
-	Use:           "update",
-	Short:         "Update TagTable",
-	RequiredArgs:  "region " + strings.Join(ResTagTableRequiredArgs, " "),
-	OptionalArgs:  strings.Join(ResTagTableOptionalArgs, " "),
-	AliasArgs:     strings.Join(ResTagTableAliasArgs, " "),
-	SpecialArgs:   &ResTagTableSpecialArgs,
-	Comments:      addRegionComment(ResTagTableComments),
-	ReqData:       &ormapi.RegionResTagTable{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateResTagTable",
-	SetFieldsFunc: SetUpdateResTagTableFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateResTagTableFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["ResTagTable"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.ResTagTable{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateResTagTable",
+	Use:          "update",
+	Short:        "Update TagTable",
+	RequiredArgs: "region " + strings.Join(ResTagTableRequiredArgs, " "),
+	OptionalArgs: strings.Join(ResTagTableOptionalArgs, " "),
+	AliasArgs:    strings.Join(ResTagTableAliasArgs, " "),
+	SpecialArgs:  &ResTagTableSpecialArgs,
+	Comments:     addRegionComment(ResTagTableComments),
+	ReqData:      &ormapi.RegionResTagTable{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateResTagTable",
+	ProtobufApi:  true,
 }
 
 var ShowResTagTableCmd = &ApiCommand{
@@ -149,7 +127,6 @@ var GetResTagTableCmd = &ApiCommand{
 	Path:         "/auth/ctrl/GetResTagTable",
 	ProtobufApi:  true,
 }
-
 var ResTagTableApiCmds = []*ApiCommand{
 	CreateResTagTableCmd,
 	DeleteResTagTableCmd,
@@ -198,7 +175,7 @@ var ResTagTableAliasArgs = []string{
 var ResTagTableComments = map[string]string{
 	"res":          "Resource Table Name",
 	"organization": "Operator organization of the cloudlet site.",
-	"tags":         "one or more string tags",
+	"tags":         "one or more string tags, specify tags:empty=true to clear",
 	"azone":        "availability zone(s) of resource if required",
 }
 var ResTagTableSpecialArgs = map[string]string{

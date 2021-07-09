@@ -10,7 +10,6 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -58,40 +57,19 @@ var DeleteVMPoolCmd = &ApiCommand{
 }
 
 var UpdateVMPoolCmd = &ApiCommand{
-	Name:          "UpdateVMPool",
-	Use:           "update",
-	Short:         "Update VMPool. Updates a VM pools VMs.",
-	RequiredArgs:  "region " + strings.Join(VMPoolRequiredArgs, " "),
-	OptionalArgs:  strings.Join(VMPoolOptionalArgs, " "),
-	AliasArgs:     strings.Join(VMPoolAliasArgs, " "),
-	SpecialArgs:   &VMPoolSpecialArgs,
-	Comments:      addRegionComment(VMPoolComments),
-	NoConfig:      "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor",
-	ReqData:       &ormapi.RegionVMPool{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateVMPool",
-	SetFieldsFunc: SetUpdateVMPoolFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateVMPoolFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["VMPool"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.VMPool{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateVMPool",
+	Use:          "update",
+	Short:        "Update VMPool. Updates a VM pools VMs.",
+	RequiredArgs: "region " + strings.Join(VMPoolRequiredArgs, " "),
+	OptionalArgs: strings.Join(VMPoolOptionalArgs, " "),
+	AliasArgs:    strings.Join(VMPoolAliasArgs, " "),
+	SpecialArgs:  &VMPoolSpecialArgs,
+	Comments:     addRegionComment(VMPoolComments),
+	NoConfig:     "Vms:#.GroupName,Vms:#.InternalName,Vms:#.UpdatedAt.Seconds,Vms:#.UpdatedAt.Nanos,State,Errors,Status,Vms:#.Flavor",
+	ReqData:      &ormapi.RegionVMPool{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateVMPool",
+	ProtobufApi:  true,
 }
 
 var ShowVMPoolCmd = &ApiCommand{
@@ -142,7 +120,6 @@ var RemoveVMPoolMemberCmd = &ApiCommand{
 	Path:         "/auth/ctrl/RemoveVMPoolMember",
 	ProtobufApi:  true,
 }
-
 var VMPoolApiCmds = []*ApiCommand{
 	CreateVMPoolCmd,
 	DeleteVMPoolCmd,
@@ -191,6 +168,7 @@ var VMPoolRequiredArgs = []string{
 	"vmpool",
 }
 var VMPoolOptionalArgs = []string{
+	"vms:empty",
 	"vms:#.name",
 	"vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip",
@@ -201,6 +179,7 @@ var VMPoolAliasArgs = []string{
 	"fields=vmpool.fields",
 	"vmpool-org=vmpool.key.organization",
 	"vmpool=vmpool.key.name",
+	"vms:empty=vmpool.vms:empty",
 	"vms:#.name=vmpool.vms:#.name",
 	"vms:#.netinfo.externalip=vmpool.vms:#.netinfo.externalip",
 	"vms:#.netinfo.internalip=vmpool.vms:#.netinfo.internalip",
@@ -228,6 +207,7 @@ var VMPoolComments = map[string]string{
 	"fields":                   "Fields are used for the Update API to specify which fields to apply",
 	"vmpool-org":               "Organization of the vmpool",
 	"vmpool":                   "Name of the vmpool",
+	"vms:empty":                "list of VMs to be part of VM pool, specify vms:empty=true to clear",
 	"vms:#.name":               "VM Name",
 	"vms:#.netinfo.externalip": "External IP",
 	"vms:#.netinfo.internalip": "Internal IP",
@@ -240,9 +220,9 @@ var VMPoolComments = map[string]string{
 	"vms:#.flavor.vcpus":       "Number of VCPU cores on the Cloudlet",
 	"vms:#.flavor.ram":         "Ram in MB on the Cloudlet",
 	"vms:#.flavor.disk":        "Amount of disk in GB on the Cloudlet",
-	"vms:#.flavor.propmap":     "OS Flavor Properties, if any",
+	"vms:#.flavor.propmap":     "OS Flavor Properties, if any, specify vms:#.flavor.propmap:empty=true to clear",
 	"state":                    "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
+	"errors":                   "Any errors trying to add/remove VM to/from VM Pool, specify errors:empty=true to clear",
 	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
 var VMPoolSpecialArgs = map[string]string{

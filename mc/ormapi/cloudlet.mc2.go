@@ -35,6 +35,25 @@ type RegionGPUDriver struct {
 	GPUDriver edgeproto.GPUDriver
 }
 
+func (s *RegionGPUDriver) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionGPUDriver) GetObj() interface{} {
+	return &s.GPUDriver
+}
+
+func (s *RegionGPUDriver) GetObjName() string {
+	return "GPUDriver"
+}
+func (s *RegionGPUDriver) GetObjFields() []string {
+	return s.GPUDriver.Fields
+}
+
+func (s *RegionGPUDriver) SetObjFields(fields []string) {
+	s.GPUDriver.Fields = fields
+}
+
 // Request summary for DeleteGPUDriver
 // swagger:parameters DeleteGPUDriver
 type swaggerDeleteGPUDriver struct {
@@ -70,6 +89,18 @@ type RegionGPUDriverBuildMember struct {
 	GPUDriverBuildMember edgeproto.GPUDriverBuildMember
 }
 
+func (s *RegionGPUDriverBuildMember) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionGPUDriverBuildMember) GetObj() interface{} {
+	return &s.GPUDriverBuildMember
+}
+
+func (s *RegionGPUDriverBuildMember) GetObjName() string {
+	return "GPUDriverBuildMember"
+}
+
 // Request summary for RemoveGPUDriverBuild
 // swagger:parameters RemoveGPUDriverBuild
 type swaggerRemoveGPUDriverBuild struct {
@@ -96,6 +127,25 @@ type RegionCloudlet struct {
 	// Region name
 	Region   string
 	Cloudlet edgeproto.Cloudlet
+}
+
+func (s *RegionCloudlet) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudlet) GetObj() interface{} {
+	return &s.Cloudlet
+}
+
+func (s *RegionCloudlet) GetObjName() string {
+	return "Cloudlet"
+}
+func (s *RegionCloudlet) GetObjFields() []string {
+	return s.Cloudlet.Fields
+}
+
+func (s *RegionCloudlet) SetObjFields(fields []string) {
+	s.Cloudlet.Fields = fields
 }
 
 // Request summary for DeleteCloudlet
@@ -133,6 +183,18 @@ type RegionCloudletKey struct {
 	CloudletKey edgeproto.CloudletKey
 }
 
+func (s *RegionCloudletKey) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletKey) GetObj() interface{} {
+	return &s.CloudletKey
+}
+
+func (s *RegionCloudletKey) GetObjName() string {
+	return "CloudletKey"
+}
+
 // Request summary for GetCloudletProps
 // swagger:parameters GetCloudletProps
 type swaggerGetCloudletProps struct {
@@ -145,6 +207,18 @@ type RegionCloudletProps struct {
 	// Region name
 	Region        string
 	CloudletProps edgeproto.CloudletProps
+}
+
+func (s *RegionCloudletProps) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletProps) GetObj() interface{} {
+	return &s.CloudletProps
+}
+
+func (s *RegionCloudletProps) GetObjName() string {
+	return "CloudletProps"
 }
 
 // Request summary for GetCloudletResourceQuotaProps
@@ -161,6 +235,18 @@ type RegionCloudletResourceQuotaProps struct {
 	CloudletResourceQuotaProps edgeproto.CloudletResourceQuotaProps
 }
 
+func (s *RegionCloudletResourceQuotaProps) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletResourceQuotaProps) GetObj() interface{} {
+	return &s.CloudletResourceQuotaProps
+}
+
+func (s *RegionCloudletResourceQuotaProps) GetObjName() string {
+	return "CloudletResourceQuotaProps"
+}
+
 // Request summary for GetCloudletResourceUsage
 // swagger:parameters GetCloudletResourceUsage
 type swaggerGetCloudletResourceUsage struct {
@@ -175,6 +261,18 @@ type RegionCloudletResourceUsage struct {
 	CloudletResourceUsage edgeproto.CloudletResourceUsage
 }
 
+func (s *RegionCloudletResourceUsage) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletResourceUsage) GetObj() interface{} {
+	return &s.CloudletResourceUsage
+}
+
+func (s *RegionCloudletResourceUsage) GetObjName() string {
+	return "CloudletResourceUsage"
+}
+
 // Request summary for AddCloudletResMapping
 // swagger:parameters AddCloudletResMapping
 type swaggerAddCloudletResMapping struct {
@@ -187,6 +285,18 @@ type RegionCloudletResMap struct {
 	// Region name
 	Region         string
 	CloudletResMap edgeproto.CloudletResMap
+}
+
+func (s *RegionCloudletResMap) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletResMap) GetObj() interface{} {
+	return &s.CloudletResMap
+}
+
+func (s *RegionCloudletResMap) GetObjName() string {
+	return "CloudletResMap"
 }
 
 // Request summary for RemoveCloudletResMapping
@@ -208,6 +318,18 @@ type RegionFlavorMatch struct {
 	// Region name
 	Region      string
 	FlavorMatch edgeproto.FlavorMatch
+}
+
+func (s *RegionFlavorMatch) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionFlavorMatch) GetObj() interface{} {
+	return &s.FlavorMatch
+}
+
+func (s *RegionFlavorMatch) GetObjName() string {
+	return "FlavorMatch"
 }
 
 // Request summary for ShowFlavorsForCloudlet
@@ -243,6 +365,25 @@ type RegionCloudletInfo struct {
 	// Region name
 	Region       string
 	CloudletInfo edgeproto.CloudletInfo
+}
+
+func (s *RegionCloudletInfo) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletInfo) GetObj() interface{} {
+	return &s.CloudletInfo
+}
+
+func (s *RegionCloudletInfo) GetObjName() string {
+	return "CloudletInfo"
+}
+func (s *RegionCloudletInfo) GetObjFields() []string {
+	return s.CloudletInfo.Fields
+}
+
+func (s *RegionCloudletInfo) SetObjFields(fields []string) {
+	s.CloudletInfo.Fields = fields
 }
 
 // Request summary for InjectCloudletInfo

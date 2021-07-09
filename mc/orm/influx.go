@@ -669,8 +669,8 @@ func GetMetricsCommon(c echo.Context) error {
 	dbNames := []string{}
 	if strings.HasSuffix(c.Path(), "metrics/app") {
 		in := ormapi.RegionAppInstMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// New metrics api request
@@ -691,8 +691,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cluster") {
 		dbNames = append(dbNames, cloudcommon.DeveloperMetricsDbName)
 		in := ormapi.RegionClusterInstMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		rc.region = in.Region
@@ -708,8 +708,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet") {
 		dbNames = append(dbNames, cloudcommon.DeveloperMetricsDbName)
 		in := ormapi.RegionCloudletMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Operator name has to be specified
@@ -730,8 +730,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/clientapiusage") {
 		dbNames = append(dbNames, cloudcommon.DeveloperMetricsDbName)
 		in := ormapi.RegionClientApiUsageMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		rc.region = in.Region
@@ -755,8 +755,8 @@ func GetMetricsCommon(c echo.Context) error {
 	} else if strings.HasSuffix(c.Path(), "metrics/cloudlet/usage") {
 		dbNames = append(dbNames, cloudcommon.CloudletResourceUsageDbName)
 		in := ormapi.RegionCloudletMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Operator name has to be specified
@@ -784,8 +784,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 	} else if strings.HasSuffix(c.Path(), "metrics/clientappusage") {
 		in := ormapi.RegionClientAppUsageMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		rc.region = in.Region
@@ -809,8 +809,8 @@ func GetMetricsCommon(c echo.Context) error {
 		dbNames = append(dbNames, db)
 	} else if strings.HasSuffix(c.Path(), "metrics/clientcloudletusage") {
 		in := ormapi.RegionClientCloudletUsageMetrics{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Operator name has to be specified

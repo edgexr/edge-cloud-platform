@@ -17,6 +17,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl"
 	"github.com/mobiledgex/edge-cloud/cli"
+	edgelog "github.com/mobiledgex/edge-cloud/log"
 	"github.com/spf13/cobra"
 )
 
@@ -25,13 +26,14 @@ import (
 // direct REST API calls or go through the mcctl CLI.
 
 type Client struct {
-	DebugLog           bool
-	SkipVerify         bool
-	SilenceUsage       bool
-	RunInline          bool
-	InjectRequiredArgs bool
-	rootCmd            *mccli.RootCommand
-	cliPaths           map[string][]string
+	DebugLog             bool
+	SkipVerify           bool
+	SilenceUsage         bool
+	RunInline            bool
+	InjectRequiredArgs   bool
+	rootCmd              *mccli.RootCommand
+	cliPaths             map[string][]string
+	PrintTransformations bool
 }
 
 func NewClient() *Client {
@@ -40,6 +42,15 @@ func NewClient() *Client {
 	s.cliPaths = make(map[string][]string)
 	s.addCliPaths(s.rootCmd.CobraCmd, []string{})
 	return s
+}
+
+func (s *Client) ForceDefaultTransport(enable bool) {
+	s.rootCmd.ForceDefaultTransport(enable)
+}
+
+func (s *Client) EnablePrintTransformations() {
+	s.PrintTransformations = true
+	s.rootCmd.EnablePrintTransformations()
 }
 
 func (s *Client) addCliPaths(cmd *cobra.Command, parent []string) {
@@ -94,9 +105,15 @@ func (s *Client) runObjs(uri, token string, args []string, in, out interface{}, 
 		// json data
 		args = append(args, "--data", str)
 	} else {
+		if s.PrintTransformations {
+			fmt.Printf("%s: transforming input %#v to args\n", edgelog.GetLineno(0), in)
+		}
 		objArgs, err := cli.MarshalArgs(in, opts.ignore, strings.Fields(apiCmd.AliasArgs))
 		if err != nil {
 			return 0, err
+		}
+		if s.PrintTransformations {
+			fmt.Printf("%s: transformed to args %v\n", edgelog.GetLineno(0), objArgs)
 		}
 		args = append(args, objArgs...)
 	}
@@ -220,7 +237,7 @@ func injectRequiredArgs(args []string, apiCmd *ormctl.ApiCommand) []string {
 		if hn, ok := unalias[req]; ok {
 			hierName = hn
 		}
-		field, found := cli.FindHierField(inType, hierName, cli.StructNamespace)
+		field, found := cli.FindHierField(inType, hierName, cli.ArgsNamespace)
 		if !found {
 			continue
 		}

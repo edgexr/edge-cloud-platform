@@ -66,6 +66,7 @@ func TestUpdateCloudletPool(mcClient *mctestclient.Client, uri, token, region st
 func TestPermUpdateCloudletPool(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletPool)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.CloudletPool{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.CloudletPoolFieldKeyOrganization)
 	return TestUpdateCloudletPool(mcClient, uri, token, region, in, modFuncs...)
 }
 

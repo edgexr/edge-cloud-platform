@@ -33,6 +33,18 @@ type RegionExecRequest struct {
 	ExecRequest edgeproto.ExecRequest
 }
 
+func (s *RegionExecRequest) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionExecRequest) GetObj() interface{} {
+	return &s.ExecRequest
+}
+
+func (s *RegionExecRequest) GetObjName() string {
+	return "ExecRequest"
+}
+
 // Request summary for RunConsole
 // swagger:parameters RunConsole
 type swaggerRunConsole struct {

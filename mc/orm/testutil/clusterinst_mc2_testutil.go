@@ -73,8 +73,13 @@ func TestPermUpdateClusterInst(mcClient *mctestclient.Client, uri, token, region
 	in := &edgeproto.ClusterInst{}
 	if targetCloudlet != nil {
 		in.Key.CloudletKey = *targetCloudlet
+		in.Fields = append(in.Fields,
+			edgeproto.ClusterInstFieldKeyCloudletKeyName,
+			edgeproto.ClusterInstFieldKeyCloudletKeyOrganization,
+		)
 	}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.ClusterInstFieldKeyOrganization)
 	return TestUpdateClusterInst(mcClient, uri, token, region, in, modFuncs...)
 }
 

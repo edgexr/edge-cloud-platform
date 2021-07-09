@@ -184,3 +184,12 @@ func printCommandGroup(out io.Writer, desc string, pad int, cmds []*cobra.Comman
 		fmt.Fprintf(out, "  %-*s%s\n", pad, c.Use, c.Short)
 	}
 }
+
+// For unit-testing, force default transport to allow http requests to be mocked
+func (s *RootCommand) ForceDefaultTransport(enable bool) {
+	s.client.ForceDefaultTransport = enable
+}
+
+func (s *RootCommand) EnablePrintTransformations() {
+	s.client.EnablePrintTransformations()
+}

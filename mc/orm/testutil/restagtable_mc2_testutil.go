@@ -65,6 +65,7 @@ func TestUpdateResTagTable(mcClient *mctestclient.Client, uri, token, region str
 func TestPermUpdateResTagTable(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.ResTagTable{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.ResTagTableFieldKeyOrganization)
 	return TestUpdateResTagTable(mcClient, uri, token, region, in, modFuncs...)
 }
 

@@ -34,6 +34,25 @@ type RegionTrustPolicy struct {
 	TrustPolicy edgeproto.TrustPolicy
 }
 
+func (s *RegionTrustPolicy) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionTrustPolicy) GetObj() interface{} {
+	return &s.TrustPolicy
+}
+
+func (s *RegionTrustPolicy) GetObjName() string {
+	return "TrustPolicy"
+}
+func (s *RegionTrustPolicy) GetObjFields() []string {
+	return s.TrustPolicy.Fields
+}
+
+func (s *RegionTrustPolicy) SetObjFields(fields []string) {
+	s.TrustPolicy.Fields = fields
+}
+
 // Request summary for DeleteTrustPolicy
 // swagger:parameters DeleteTrustPolicy
 type swaggerDeleteTrustPolicy struct {

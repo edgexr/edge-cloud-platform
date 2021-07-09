@@ -1,15 +1,15 @@
 # Master Controller CLI - Developer README
 
-The master controller CLI (mcctl) implements a command line interface to the master controller. It is intended as a developer-facing secondary tool, where the primary user interface is the web UI. Usage of the mcctl itself should be self-documenting, so usage is not covered here. Instead, this readme focuses on where code lives and what it does.
+The master controller CLI (mcctl) implements a command line interface to the master controller (MC). It is intended as a developer-facing secondary tool, where the primary user interface is the web UI. Usage of the mcctl itself should be self-documenting, so usage is not covered here. Instead, this readme focuses on where code lives and what it does.
 
 For MC API development, consider the following directories in the edge-cloud-infra repo:
 
 ```
-mc/orm                   MC code (echo framework)
+mc/orm                   MC server code (echo framework)
 mc/ormapi                MC api struct definitions (no functions)
+mc/ormutil               Common utility functions shared between client and server
 mc/ormclient             Rest client code for connecting to MC
 mc/mcctl/ormctl          MC client API definitions (no functions)
-mc/mcctl/cli             Cli library for parsing input args to objs/json
 mc/mcctl/mccli           Mcctl library to build cobra.Command hierarchy for mcctl
 mc/mcctl/cliwrapper      Client library wrapped around mcctl for testing
 mc/mcctl/genmctestclient Generator for object-specific client funcs
@@ -27,3 +27,25 @@ mc/ormclient/rest_client.go      POST JSON http functions
 mc/mcctl/ormctl/cmd.go           generate cobra commands for mcctl
 mc/mcctl/cliwrapper/wrapcli.go   convert objs to/from exec'ing mcctl cli
 ```
+
+## Test Clients
+
+As noted earlier, the mctestclient is the abstract interface for testing, which accepts a common set of functions and either uses the rest client or the cliwrapper underneath. For Creates and Deletes, the mctestclient functions take as input Structs. For Updates, the mctestclient functions take input as MapData, which is map[string]interface{} data with an associated Namespace. The MapData implicitly defines which fields to update and which to ignore, regardless of whether values are empty (0, nil, "", etc) or not.
+
+The mctestclient is used directly in unit-test code. However, layered on top of the mctestclient is the e2e-test code, which reads in YAML files and then calls the mctestclient APIs to send the data to MC under test.
+
+It is worth noting the various ways data is transformed in these scenarios. The goal is to allow the same input data to be used to test either the rest client or the mcctl client in both unit and e2e tests. Scenarios are noted below, with functions in parentheses. The final JSON is sent to the MC.
+
+Production:
+1. mcctl: args (ParseArgs) -> MapData (cli.JsonMap) -> JSON-MapData (json.Marshal) -> JSON
+
+Unit-Test scenarios:
+1. same as (1) above
+2. rest-client create/delete: Struct (json.Marshal) -> JSON
+3. rest-client update: MapData (rest_client.Run) -> JSON-MapData (json.Marshal) -> JSON
+4. cliwrapper create/delete: Struct (GetStructMap) -> MapData (cli.MarshalArgs) -> args -> (1)
+5. cliwrapper update: MapData (MarshalArgs) -> args -> (1)
+
+E2E-Test scenarios (mcapi.go)
+5. create/delete: YamlFile (yaml.Unmarshal) -> Struct -> (2) or (4) above
+6. update: YamlFile (yaml.Unmarshal) -> MapData -> (3) or (5) above

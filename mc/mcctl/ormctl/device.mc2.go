@@ -84,7 +84,6 @@ var ShowDeviceReportCmd = &ApiCommand{
 	StreamOut:    true,
 	ProtobufApi:  true,
 }
-
 var DeviceApiCmds = []*ApiCommand{
 	InjectDeviceCmd,
 	ShowDeviceCmd,

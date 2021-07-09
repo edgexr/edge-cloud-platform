@@ -44,6 +44,7 @@ type GenMC2 struct {
 	importStrings      bool
 	importLog          bool
 	importCli          bool
+	importOrmutil      bool
 }
 
 func (g *GenMC2) Name() string {
@@ -109,6 +110,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importGrpcStatus {
 		g.PrintImport("", "google.golang.org/grpc/status")
 	}
+	if g.importOrmutil {
+		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ormutil")
+	}
 }
 
 type ServiceProps struct {
@@ -139,6 +143,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importGrpcStatus = false
 	g.importLog = false
 	g.importCli = false
+	g.importOrmutil = false
 
 	g.support.InitFile()
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
@@ -155,12 +160,14 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 
 	g.P(gensupport.AutoGenComment)
 
+	methodGroups := gensupport.GetAllMethodGroups(g.Generator, &g.support)
+
 	for ii, service := range file.FileDescriptorProto.Service {
 		serviceProps := ServiceProps{}
 		serviceProps.Init(ii)
 		g.generateService(file, service, &serviceProps)
 		if g.genctl {
-			g.generateCtlGroup(service)
+			g.generateCtlGroup(service, methodGroups)
 		}
 		if len(service.Method) == 0 {
 			continue
@@ -178,7 +185,8 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 			if !found {
 				continue
 			}
-			gensupport.GenerateMessageArgs(g.Generator, &g.support, msg, true, ii)
+			methodGroup := methodGroups[*msg.DescriptorProto.Name]
+			gensupport.GenerateMessageArgs(g.Generator, &g.support, msg, methodGroup, true, ii)
 		}
 	}
 
@@ -346,6 +354,7 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		StreamOutIncremental: gensupport.GetStreamOutIncremental(method),
 		CustomAuthz:          GetMc2CustomAuthz(method),
 		HasMethodArgs:        gensupport.HasMethodArgs(method),
+		HasFields:            gensupport.HasGrpcFields(in.DescriptorProto),
 		NotifyRoot:           GetMc2ApiNotifyroot(method),
 	}
 	if gensupport.GetMessageKey(in.DescriptorProto) != nil || gensupport.GetObjAndKey(in.DescriptorProto) {
@@ -372,7 +381,9 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		if args.TargetCloudlet != "" {
 			args.TargetCloudletParam = ", targetCloudlet *edgeproto.CloudletKey"
 			args.TargetCloudletArg = ", targetCloudlet"
+			args.TargetCloudletFlag = strings.ReplaceAll(args.TargetCloudlet, ".", "")
 		}
+		args.OrgFieldFlag = strings.ReplaceAll(args.OrgField, ".", "")
 	}
 	authops := []string{}
 	requiresOrg := GetMc2ApiRequiresOrg(method)
@@ -407,6 +418,9 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		serviceProps.cliuses[cliuse] = *method.Name
 		args.CliUse = cliuse
 	}
+	if args.HasFields && strings.HasPrefix(*method.Name, "Update"+args.InName) {
+		args.SetFields = true
+	}
 
 	var tmpl *template.Template
 	if g.genapi {
@@ -432,10 +446,6 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto, method)
 		g.importOrmapi = true
 		g.importStrings = true
-		if strings.HasPrefix(*method.Name, "Update"+args.InName) && gensupport.HasGrpcFields(in.DescriptorProto) {
-			args.SetFields = true
-			g.importCli = true
-		}
 	} else {
 		tmpl = g.tmpl
 		g.importEcho = true
@@ -446,6 +456,9 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 			g.importIO = true
 		} else {
 			g.importGrpcStatus = true
+		}
+		if args.SetFields {
+			g.importOrmutil = true
 		}
 	}
 	err := tmpl.Execute(g, &args)
@@ -467,6 +480,7 @@ type tmplArgs struct {
 	Action               string
 	OrgField             string
 	Org                  string
+	OrgFieldFlag         string
 	ShowOrg              string
 	OrgValid             bool
 	Outstream            bool
@@ -476,10 +490,12 @@ type tmplArgs struct {
 	NoConfig             string
 	ReturnErrArg         string
 	SetFields            bool
+	HasFields            bool
 	CustomAuthz          bool
 	TargetCloudlet       string
 	TargetCloudletParam  string
 	TargetCloudletArg    string
+	TargetCloudletFlag   string
 	HasMethodArgs        bool
 	NotifyRoot           bool
 	AuthOps              string
@@ -506,6 +522,28 @@ type Region{{.InName}} struct {
 	{{.InName}} edgeproto.{{.InName}}
 }
 
+func (s *Region{{.InName}}) GetRegion() string {
+	return s.Region
+}
+
+func (s *Region{{.InName}}) GetObj() interface{} {
+	return &s.{{.InName}}
+}
+
+func (s *Region{{.InName}}) GetObjName() string {
+	return "{{.InName}}"
+}
+
+{{- if .HasFields}}
+func (s *Region{{.InName}}) GetObjFields() []string {
+	return s.{{.InName}}.Fields
+}
+
+func (s *Region{{.InName}}) SetObjFields(fields []string) {
+	s.{{.InName}}.Fields = fields
+}
+
+{{- end}}
 {{- end}}
 `
 
@@ -520,16 +558,14 @@ func {{.MethodName}}(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.Region{{.InName}}{}
-{{- if .Outstream}}
-	success, err := ReadConn(c, &in)
-	if !success {
+{{- if .SetFields}}
+	dat, err := ReadConn(c, &in)
+{{- else}}
+	_, err = ReadConn(c, &in)
+{{- end}}
+	if err != nil {
 		return err
 	}
-{{- else}}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
-	}
-{{- end}}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
@@ -538,6 +574,12 @@ func {{.MethodName}}(c echo.Context) error {
 {{- end}}
 {{- if .OrgValid}}
 	span.SetTag("org", in.{{.InName}}.{{.OrgField}})
+{{- end}}
+{{- if .SetFields}}
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 {{- end}}
 {{- if .Outstream}}
 
@@ -719,10 +761,19 @@ func TestPerm{{.MethodName}}(mcClient *mctestclient.Client, uri, token, region, 
 {{- if .TargetCloudlet}}
 	if targetCloudlet != nil {
 		in.{{.TargetCloudlet}} = *targetCloudlet
+{{- if .SetFields}}
+		in.Fields = append(in.Fields,
+			edgeproto.{{.InName}}Field{{.TargetCloudletFlag}}Name,
+			edgeproto.{{.InName}}Field{{.TargetCloudletFlag}}Organization,
+		)
+{{- end}}
 	}
 {{- end}}
 {{- if and (ne .OrgField "") (not .SkipEnforce)}}
 	in.{{.OrgField}} = org
+{{- if .SetFields}}
+	in.Fields = append(in.Fields, edgeproto.{{.InName}}Field{{.OrgFieldFlag}})
+{{- end}}
 {{- end}}
 	return Test{{.MethodName}}(mcClient, uri, token, region, in, modFuncs...)
 }
@@ -778,9 +829,6 @@ var {{.MethodName}}Cmd = &ApiCommand{
 	ReqData: &ormapi.Region{{.InName}}{},
 	ReplyData: &edgeproto.{{.OutName}}{},
 	Path: "/auth/ctrl/{{.MethodName}}",
-{{- if .SetFields}}
-	SetFieldsFunc: Set{{.MethodName}}Fields,
-{{- end}}
 {{- if .Outstream}}
 	StreamOut: true,
 {{- end}}
@@ -789,29 +837,6 @@ var {{.MethodName}}Cmd = &ApiCommand{
 {{- end}}
 	ProtobufApi: true,
 }
-
-{{if .SetFields}}
-func Set{{.MethodName}}Fields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["{{.InName}}"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.{{.InName}}{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
-}
-{{- end}}
-
 `
 
 func (g *GenMC2) generateTestApi(service *descriptor.ServiceDescriptorProto) {
@@ -990,7 +1015,7 @@ func permTest{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, toke
 }
 `
 
-func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
+func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto, methodGroups map[string]*gensupport.MethodGroup) {
 	if !hasMc2Api(service) {
 		return
 	}
@@ -1015,7 +1040,7 @@ func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto) {
 	g.P("}")
 	g.P()
 	for ii, method := range service.Method {
-		gensupport.GenerateMethodArgs(g.Generator, &g.support, method, true, ii)
+		gensupport.GenerateMethodArgs(g.Generator, &g.support, method, methodGroups, true, ii)
 	}
 }
 

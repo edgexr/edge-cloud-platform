@@ -21,6 +21,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 type Client struct {
@@ -30,6 +31,10 @@ type Client struct {
 	// some stream messages have been received before signaling to the
 	// sender that it's ok to generate an error.
 	MidstreamFailChs map[string]chan bool
+	// Force default transport (allows for http mocking for unit tests)
+	ForceDefaultTransport bool
+	// Print input data transformations
+	PrintTransformations bool
 }
 
 func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
@@ -37,25 +42,28 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 	var err error
 	uri := runData.Uri + apiCmd.Path
 
-	if structMap, ok := runData.In.(map[string]interface{}); ok {
-		// Passed in generic map must be in the StructNamespace,
-		// so we convert it to the json namespace then marshal it.
-		// It must be in the StructNamespace, because the cliwrapper
-		// client requires it in the StructNamespace. This is
-		// because unlike yaml/mapstructure/args processing, json
-		// collapses out embedded structs, making it incompatible
-		// with args process (i.e. cliwrapper converting the map
-		// to args). Instead json namespace is only used for the
-		// final PostJsonSend call.
-		// Note that because of the way reflect's FieldByNameFunc
-		// works, it handles collapsed embedded structs in the map.
-		jsonMap, err := cli.JsonMap(structMap, apiCmd.ReqData, cli.StructNamespace)
+	if structMap, ok := runData.In.(*cli.MapData); ok {
+		// Passed in generic map can be in any namespace,
+		// but embedded objects must not have been squashed,
+		// which is what json does. So it's recommended to
+		// avoid Json namespaces unless they are generated
+		// from objects without marshaling.
+		// The embedded hierarchy must be present, because the same
+		// map data gets passed to cliwrapper and ormclient clients
+		// in mctestclient generated funcs for Update/Show.
+		if s.PrintTransformations {
+			fmt.Printf("%s: transforming map (%s) %#v to map (JsonNamespace)\n", log.GetLineno(0), structMap.Namespace.String(), runData.In)
+		}
+		jsonMap, err := cli.JsonMap(structMap, apiCmd.ReqData)
 		if err != nil {
 			runData.RetStatus = 0
 			runData.RetError = err
 			return
 		}
-		runData.In = jsonMap
+		if s.PrintTransformations {
+			fmt.Printf("%s: transformed to map (JsonNamespace) %#v\n", log.GetLineno(0), jsonMap.Data)
+		}
+		runData.In = jsonMap.Data
 	}
 
 	if apiCmd.StreamOut {
@@ -95,12 +103,18 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 			body = bytes.NewBuffer([]byte(str))
 			datastr = str
 		} else {
+			if s.PrintTransformations {
+				fmt.Printf("%s: marshaling input %#v to json\n", log.GetLineno(0), reqData)
+			}
 			out, err := json.Marshal(reqData)
 			if err != nil {
 				return nil, fmt.Errorf("post %s marshal req failed, %s", uri, err.Error())
 			}
 			body = bytes.NewBuffer(out)
 			datastr = string(out)
+			if s.PrintTransformations {
+				fmt.Printf("%s: marshaled to json %s\n", log.GetLineno(0), datastr)
+			}
 		}
 	} else {
 		body = nil
@@ -119,9 +133,13 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	if s.SkipVerify {
 		tlsConfig.InsecureSkipVerify = true
 	}
-	tr := &http.Transport{
+	var tr http.RoundTripper
+	tr = &http.Transport{
 		TLSClientConfig: tlsConfig,
 		Proxy:           http.ProxyFromEnvironment,
+	}
+	if s.ForceDefaultTransport {
+		tr = http.DefaultTransport
 	}
 	if s.Debug {
 		curlcmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json"`, uri)
@@ -352,4 +370,8 @@ func (s *Client) EnableMidstreamFailure(uri string, syncCh chan bool) {
 
 func (s *Client) DisableMidstreamFailure(uri string) {
 	delete(s.MidstreamFailChs, uri)
+}
+
+func (s *Client) EnablePrintTransformations() {
+	s.PrintTransformations = true
 }

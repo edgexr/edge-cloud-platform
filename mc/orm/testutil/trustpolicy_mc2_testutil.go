@@ -65,6 +65,7 @@ func TestUpdateTrustPolicy(mcClient *mctestclient.Client, uri, token, region str
 func TestPermUpdateTrustPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.TrustPolicy{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.TrustPolicyFieldKeyOrganization)
 	return TestUpdateTrustPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 

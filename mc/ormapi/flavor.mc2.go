@@ -34,6 +34,25 @@ type RegionFlavor struct {
 	Flavor edgeproto.Flavor
 }
 
+func (s *RegionFlavor) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionFlavor) GetObj() interface{} {
+	return &s.Flavor
+}
+
+func (s *RegionFlavor) GetObjName() string {
+	return "Flavor"
+}
+func (s *RegionFlavor) GetObjFields() []string {
+	return s.Flavor.Fields
+}
+
+func (s *RegionFlavor) SetObjFields(fields []string) {
+	s.Flavor.Fields = fields
+}
+
 // Request summary for DeleteFlavor
 // swagger:parameters DeleteFlavor
 type swaggerDeleteFlavor struct {

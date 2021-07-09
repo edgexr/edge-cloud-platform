@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -37,8 +38,9 @@ func CreateApp(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionApp{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -91,8 +93,9 @@ func DeleteApp(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionApp{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -145,14 +148,19 @@ func UpdateApp(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionApp{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	dat, err := ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
 	span.SetTag("org", in.App.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 	resp, err := UpdateAppObj(ctx, rc, &in.App)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -199,8 +207,8 @@ func ShowApp(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionApp{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -286,8 +294,9 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppAutoProvPolicy{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -339,8 +348,9 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppAutoProvPolicy{}
-	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
 	}
 	rc.region = in.Region
 	span := log.SpanFromContext(ctx)
@@ -392,8 +402,8 @@ func ShowCloudletsForAppDeployment(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionDeploymentCloudletRequest{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

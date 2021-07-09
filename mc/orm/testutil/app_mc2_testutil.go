@@ -66,6 +66,7 @@ func TestUpdateApp(mcClient *mctestclient.Client, uri, token, region string, in 
 func TestPermUpdateApp(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) (*edgeproto.Result, int, error) {
 	in := &edgeproto.App{}
 	in.Key.Organization = org
+	in.Fields = append(in.Fields, edgeproto.AppFieldKeyOrganization)
 	return TestUpdateApp(mcClient, uri, token, region, in, modFuncs...)
 }
 

@@ -12,21 +12,23 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormclient"
 	"github.com/mobiledgex/edge-cloud/cli"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/spf13/cobra"
 )
 
 var LookupKey = "lookupkey"
 
-type setFieldsFunc func(in map[string]interface{})
-
-func (s *RootCommand) runRest(path string, ops ...runRestOp) func(c *cli.Command, args []string) error {
+func (s *RootCommand) runRest(path string) func(c *cli.Command, args []string) error {
 	return func(c *cli.Command, args []string) error {
 		if c.ReplyData == nil {
 			c.ReplyData = &ormapi.Result{}
 		}
 		c.CobraCmd.SilenceUsage = true
 
-		in, err := c.ParseInput(args)
+		if s.client.PrintTransformations {
+			fmt.Printf("%s: transform args %v to data\n", log.GetLineno(0), args)
+		}
+		mapData, err := c.ParseInput(args)
 		if err != nil {
 			if len(args) == 0 {
 				// Force print usage since no args specified,
@@ -35,10 +37,9 @@ func (s *RootCommand) runRest(path string, ops ...runRestOp) func(c *cli.Command
 			}
 			return err
 		}
-		opts := runRestOptions{}
-		opts.apply(ops)
-		if opts.setFieldsFunc != nil {
-			opts.setFieldsFunc(in)
+		in := mapData.Data
+		if s.client.PrintTransformations {
+			fmt.Printf("%s: transformed args to data %#v\n", log.GetLineno(0), in)
 		}
 
 		s.client.Debug = cli.Debug
@@ -163,22 +164,6 @@ func (s *RootCommand) getUri() string {
 	return prefix + s.addr + "/api/v1"
 }
 
-type runRestOptions struct {
-	setFieldsFunc func(in map[string]interface{})
-}
-
-type runRestOp func(opts *runRestOptions)
-
-func withSetFieldsFunc(fn func(in map[string]interface{})) runRestOp {
-	return func(opts *runRestOptions) { opts.setFieldsFunc = fn }
-}
-
-func (o *runRestOptions) apply(opts []runRestOp) {
-	for _, opt := range opts {
-		opt(o)
-	}
-}
-
 func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 	use := api.Use
 	if use == "" {
@@ -195,10 +180,6 @@ func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 			}
 		}
 		use = strings.ToLower(use)
-	}
-	ops := []runRestOp{}
-	if api.SetFieldsFunc != nil {
-		ops = append(ops, withSetFieldsFunc(api.SetFieldsFunc))
 	}
 	annotations := map[string]string{
 		LookupKey: api.Name,
@@ -219,7 +200,7 @@ func (s *RootCommand) ConvertCmd(api *ormctl.ApiCommand) *cli.Command {
 		StreamOutIncremental: api.StreamOutIncremental,
 		DataFlagOnly:         api.DataFlagOnly,
 		Annotations:          annotations,
-		Run:                  s.runRest(api.Path, ops...),
+		Run:                  s.runRest(api.Path),
 	}
 	return cmd
 }

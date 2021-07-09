@@ -35,6 +35,25 @@ type RegionCloudletPool struct {
 	CloudletPool edgeproto.CloudletPool
 }
 
+func (s *RegionCloudletPool) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletPool) GetObj() interface{} {
+	return &s.CloudletPool
+}
+
+func (s *RegionCloudletPool) GetObjName() string {
+	return "CloudletPool"
+}
+func (s *RegionCloudletPool) GetObjFields() []string {
+	return s.CloudletPool.Fields
+}
+
+func (s *RegionCloudletPool) SetObjFields(fields []string) {
+	s.CloudletPool.Fields = fields
+}
+
 // Request summary for DeleteCloudletPool
 // swagger:parameters DeleteCloudletPool
 type swaggerDeleteCloudletPool struct {
@@ -68,6 +87,18 @@ type RegionCloudletPoolMember struct {
 	// Region name
 	Region             string
 	CloudletPoolMember edgeproto.CloudletPoolMember
+}
+
+func (s *RegionCloudletPoolMember) GetRegion() string {
+	return s.Region
+}
+
+func (s *RegionCloudletPoolMember) GetObj() interface{} {
+	return &s.CloudletPoolMember
+}
+
+func (s *RegionCloudletPoolMember) GetObjName() string {
+	return "CloudletPoolMember"
 }
 
 // Request summary for RemoveCloudletPoolMember

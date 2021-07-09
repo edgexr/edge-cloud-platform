@@ -35,8 +35,8 @@ func StreamAppInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInstKey{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -115,8 +115,8 @@ func StreamClusterInst(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterInstKey{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -195,8 +195,8 @@ func StreamCloudlet(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -275,8 +275,8 @@ func StreamGPUDriver(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionGPUDriverKey{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

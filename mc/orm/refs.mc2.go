@@ -34,8 +34,8 @@ func ShowCloudletRefs(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionCloudletRefs{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -121,8 +121,8 @@ func ShowClusterRefs(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionClusterRefs{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -207,8 +207,8 @@ func ShowAppInstRefs(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionAppInstRefs{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

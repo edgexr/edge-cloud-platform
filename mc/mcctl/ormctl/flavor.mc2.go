@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	math "math"
@@ -54,39 +53,18 @@ var DeleteFlavorCmd = &ApiCommand{
 }
 
 var UpdateFlavorCmd = &ApiCommand{
-	Name:          "UpdateFlavor",
-	Use:           "update",
-	Short:         "Update a Flavor",
-	RequiredArgs:  "region " + strings.Join(FlavorRequiredArgs, " "),
-	OptionalArgs:  strings.Join(FlavorOptionalArgs, " "),
-	AliasArgs:     strings.Join(FlavorAliasArgs, " "),
-	SpecialArgs:   &FlavorSpecialArgs,
-	Comments:      addRegionComment(FlavorComments),
-	ReqData:       &ormapi.RegionFlavor{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateFlavor",
-	SetFieldsFunc: SetUpdateFlavorFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateFlavorFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["Flavor"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.Flavor{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateFlavor",
+	Use:          "update",
+	Short:        "Update a Flavor",
+	RequiredArgs: "region " + strings.Join(FlavorRequiredArgs, " "),
+	OptionalArgs: strings.Join(FlavorOptionalArgs, " "),
+	AliasArgs:    strings.Join(FlavorAliasArgs, " "),
+	SpecialArgs:  &FlavorSpecialArgs,
+	Comments:     addRegionComment(FlavorComments),
+	ReqData:      &ormapi.RegionFlavor{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateFlavor",
+	ProtobufApi:  true,
 }
 
 var ShowFlavorCmd = &ApiCommand{
@@ -134,7 +112,6 @@ var RemoveFlavorResCmd = &ApiCommand{
 	Path:         "/auth/ctrl/RemoveFlavorRes",
 	ProtobufApi:  true,
 }
-
 var FlavorApiCmds = []*ApiCommand{
 	CreateFlavorCmd,
 	DeleteFlavorCmd,
@@ -182,7 +159,7 @@ var FlavorComments = map[string]string{
 	"ram":       "RAM in megabytes",
 	"vcpus":     "Number of virtual CPUs",
 	"disk":      "Amount of disk space in gigabytes",
-	"optresmap": "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
+	"optresmap": "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify optresmap:empty=true to clear",
 }
 var FlavorSpecialArgs = map[string]string{
 	"flavor.fields":    "StringArray",

@@ -105,8 +105,8 @@ func GetEventsCommon(c echo.Context) error {
 
 	if strings.HasSuffix(c.Path(), "events/app") {
 		in := ormapi.RegionAppInstEvents{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Developer name has to be specified
@@ -124,8 +124,8 @@ func GetEventsCommon(c echo.Context) error {
 		}
 	} else if strings.HasSuffix(c.Path(), "events/cluster") {
 		in := ormapi.RegionClusterInstEvents{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Developer org name has to be specified
@@ -143,8 +143,8 @@ func GetEventsCommon(c echo.Context) error {
 		}
 	} else if strings.HasSuffix(c.Path(), "events/cloudlet") {
 		in := ormapi.RegionCloudletEvents{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Operator name has to be specified

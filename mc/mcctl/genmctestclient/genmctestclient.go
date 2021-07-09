@@ -25,7 +25,9 @@ func main() {
 	imports := []string{
 		"github.com/mobiledgex/edge-cloud-infra/billing",
 		"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/ormctl",
+		"github.com/mobiledgex/edge-cloud-infra/mc/ormutil",
 		"github.com/mobiledgex/edge-cloud-infra/mc/ormapi",
+		"github.com/mobiledgex/edge-cloud/cli",
 		"github.com/mobiledgex/edge-cloud/cloudcommon/node",
 		"github.com/mobiledgex/edge-cloud/edgeproto",
 		"github.com/mobiledgex/jaeger/plugin/storage/es/spanstore/dbmodel",
@@ -110,8 +112,11 @@ func printCommand(wr io.Writer, cmd *ormctl.ApiCommand) error {
 				inputMap = true
 			}
 		}
+		if cmd.ProtobufApi && strings.HasPrefix(cmd.Name, "Update") {
+			args.ProtobufUpdate = true
+		}
 		if inputMap {
-			args.InArg = ", in map[string]interface{}"
+			args.InArg = ", in *cli.MapData"
 		} else {
 			args.InArg = fmt.Sprintf(", in %T", cmd.ReqData)
 		}
@@ -148,14 +153,15 @@ func printCommand(wr io.Writer, cmd *ormctl.ApiCommand) error {
 }
 
 type funcArgs struct {
-	Name      string
-	TokenArg  string
-	InArg     string
-	OutArg    string
-	OutType   string
-	OutRef    string
-	StreamOut bool
-	NilOut    string
+	Name           string
+	TokenArg       string
+	InArg          string
+	OutArg         string
+	OutType        string
+	OutRef         string
+	StreamOut      bool
+	NilOut         string
+	ProtobufUpdate bool
 }
 
 var funcT = template.Must(template.New("func").Parse(`
@@ -166,7 +172,19 @@ func (s *Client) {{.Name}}(uri string{{.TokenArg}}{{.InArg}}) ({{.OutArg}}int, e
 	rundata.Token = token
 {{- end}}
 {{- if .InArg}}
+{{- if .ProtobufUpdate}}
+	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
+	if err != nil {
+{{- if.OutType}}
+		return {{.NilOut}}, 0, err
+{{- else}}
+		return 0, err
+{{- end}}
+	}
+	rundata.In = mm
+{{- else}}
 	rundata.In = in
+{{- end}}
 {{- end}}
 {{- if .OutType}}
 	var out {{.OutType}}

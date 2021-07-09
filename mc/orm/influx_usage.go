@@ -662,8 +662,8 @@ func GetUsageCommon(c echo.Context) error {
 
 	if strings.HasSuffix(c.Path(), "usage/app") {
 		in := ormapi.RegionAppInstUsage{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 
@@ -690,8 +690,8 @@ func GetUsageCommon(c echo.Context) error {
 		}
 	} else if strings.HasSuffix(c.Path(), "usage/cluster") {
 		in := ormapi.RegionClusterInstUsage{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 

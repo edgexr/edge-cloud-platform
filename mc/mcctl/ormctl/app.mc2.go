@@ -9,7 +9,6 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
-	"github.com/mobiledgex/edge-cloud/cli"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -57,40 +56,19 @@ var DeleteAppCmd = &ApiCommand{
 }
 
 var UpdateAppCmd = &ApiCommand{
-	Name:          "UpdateApp",
-	Use:           "update",
-	Short:         "Update Application. Updates the definition of an Application instance.",
-	RequiredArgs:  "region " + strings.Join(AppRequiredArgs, " "),
-	OptionalArgs:  strings.Join(AppOptionalArgs, " "),
-	AliasArgs:     strings.Join(AppAliasArgs, " "),
-	SpecialArgs:   &AppSpecialArgs,
-	Comments:      addRegionComment(AppComments),
-	NoConfig:      "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
-	ReqData:       &ormapi.RegionApp{},
-	ReplyData:     &edgeproto.Result{},
-	Path:          "/auth/ctrl/UpdateApp",
-	SetFieldsFunc: SetUpdateAppFields,
-	ProtobufApi:   true,
-}
-
-func SetUpdateAppFields(in map[string]interface{}) {
-	// get map for edgeproto object in region struct
-	obj := in["App"]
-	if obj == nil {
-		return
-	}
-	objmap, ok := obj.(map[string]interface{})
-	if !ok {
-		return
-	}
-	fields := cli.GetSpecifiedFields(objmap, &edgeproto.App{}, cli.JsonNamespace)
-	// include fields already specified
-	if inFields, found := objmap["fields"]; found {
-		if fieldsArr, ok := inFields.([]string); ok {
-			fields = append(fields, fieldsArr...)
-		}
-	}
-	objmap["fields"] = fields
+	Name:         "UpdateApp",
+	Use:          "update",
+	Short:        "Update Application. Updates the definition of an Application instance.",
+	RequiredArgs: "region " + strings.Join(AppRequiredArgs, " "),
+	OptionalArgs: strings.Join(AppOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
+	Comments:     addRegionComment(AppComments),
+	NoConfig:     "DeletePrepare,CreatedAt,UpdatedAt,DelOpt,AutoProvPolicy",
+	ReqData:      &ormapi.RegionApp{},
+	ReplyData:    &edgeproto.Result{},
+	Path:         "/auth/ctrl/UpdateApp",
+	ProtobufApi:  true,
 }
 
 var ShowAppCmd = &ApiCommand{
@@ -143,7 +121,7 @@ var RemoveAppAutoProvPolicyCmd = &ApiCommand{
 var ShowCloudletsForAppDeploymentCmd = &ApiCommand{
 	Name:                 "ShowCloudletsForAppDeployment",
 	Use:                  "showcloudletsfordeployment",
-	Short:                "Discover cloudlets supporting depoloyments of App.DefaultFlavor",
+	Short:                "Discover cloudlets supporting deployments of App.DefaultFlavor",
 	RequiredArgs:         "region",
 	OptionalArgs:         strings.Join(append(DeploymentCloudletRequestRequiredArgs, DeploymentCloudletRequestOptionalArgs...), " "),
 	AliasArgs:            strings.Join(DeploymentCloudletRequestAliasArgs, " "),
@@ -157,7 +135,6 @@ var ShowCloudletsForAppDeploymentCmd = &ApiCommand{
 	StreamOutIncremental: true,
 	ProtobufApi:          true,
 }
-
 var AppApiCmds = []*ApiCommand{
 	CreateAppCmd,
 	DeleteAppCmd,
@@ -191,6 +168,7 @@ var AppOptionalArgs = []string{
 	"deploymentmanifest",
 	"deploymentgenerator",
 	"androidpackagename",
+	"configs:empty",
 	"configs:#.kind",
 	"configs:#.config",
 	"scalewithcluster",
@@ -203,6 +181,7 @@ var AppOptionalArgs = []string{
 	"templatedelimiter",
 	"skiphcports",
 	"trusted",
+	"requiredoutboundconnections:empty",
 	"requiredoutboundconnections:#.protocol",
 	"requiredoutboundconnections:#.port",
 	"requiredoutboundconnections:#.remoteip",
@@ -229,6 +208,7 @@ var AppAliasArgs = []string{
 	"deploymentgenerator=app.deploymentgenerator",
 	"androidpackagename=app.androidpackagename",
 	"delopt=app.delopt",
+	"configs:empty=app.configs:empty",
 	"configs:#.kind=app.configs:#.kind",
 	"configs:#.config=app.configs:#.config",
 	"scalewithcluster=app.scalewithcluster",
@@ -247,6 +227,7 @@ var AppAliasArgs = []string{
 	"updatedat.seconds=app.updatedat.seconds",
 	"updatedat.nanos=app.updatedat.nanos",
 	"trusted=app.trusted",
+	"requiredoutboundconnections:empty=app.requiredoutboundconnections:empty",
 	"requiredoutboundconnections:#.protocol=app.requiredoutboundconnections:#.protocol",
 	"requiredoutboundconnections:#.port=app.requiredoutboundconnections:#.port",
 	"requiredoutboundconnections:#.remoteip=app.requiredoutboundconnections:#.remoteip",
@@ -273,6 +254,7 @@ var AppComments = map[string]string{
 	"deploymentgenerator":                    "Deployment generator target to generate a basic deployment manifest",
 	"androidpackagename":                     "Android package name used to match the App name from the Android package",
 	"delopt":                                 "Override actions to Controller, one of NoAutoDelete, AutoDelete",
+	"configs:empty":                          "Customization files passed through to implementing services, specify configs:empty=true to clear",
 	"configs:#.kind":                         "Kind (type) of config, i.e. envVarsYaml, helmCustomizationYaml",
 	"configs:#.config":                       "Config file contents or URI reference",
 	"scalewithcluster":                       "Option to run App on all nodes of the cluster",
@@ -283,10 +265,11 @@ var AppComments = map[string]string{
 	"autoprovpolicy":                         "(_deprecated_) Auto provisioning policy name",
 	"accesstype":                             "(Deprecated) Access type, one of AccessTypeDefaultForDeployment, AccessTypeDirect, AccessTypeLoadBalancer",
 	"deleteprepare":                          "Preparing to be deleted",
-	"autoprovpolicies":                       "Auto provisioning policy names, may be specified multiple times",
+	"autoprovpolicies":                       "Auto provisioning policy names, may be specified multiple times, specify autoprovpolicies:empty=true to clear",
 	"templatedelimiter":                      "Delimiter to be used for template parsing, defaults to [[ ]]",
 	"skiphcports":                            "Comma separated list of protocol:port pairs that we should not run health check on. Should be configured in case app does not always listen on these ports. all can be specified if no health check to be run for this app. Numerical values must be decimal format. i.e. tcp:80,udp:10002,http:443.",
 	"trusted":                                "Indicates that an instance of this app can be started on a trusted cloudlet",
+	"requiredoutboundconnections:empty":      "Connections this app require to determine if the app is compatible with a trust policy, specify requiredoutboundconnections:empty=true to clear",
 	"requiredoutboundconnections:#.protocol": "tcp, udp or icmp",
 	"requiredoutboundconnections:#.port":     "TCP or UDP port",
 	"requiredoutboundconnections:#.remoteip": "remote IP X.X.X.X",
@@ -358,6 +341,7 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"app.serverlessconfig.minreplicas",
 	"app.vmappostype",
 	"dryrundeploy",
+	"numnodes",
 }
 var DeploymentCloudletRequestAliasArgs = []string{
 	"app.fields=deploymentcloudletrequest.app.fields",
@@ -403,6 +387,7 @@ var DeploymentCloudletRequestAliasArgs = []string{
 	"app.serverlessconfig.minreplicas=deploymentcloudletrequest.app.serverlessconfig.minreplicas",
 	"app.vmappostype=deploymentcloudletrequest.app.vmappostype",
 	"dryrundeploy=deploymentcloudletrequest.dryrundeploy",
+	"numnodes=deploymentcloudletrequest.numnodes",
 }
 var DeploymentCloudletRequestComments = map[string]string{
 	"app.fields":              "Fields are used for the Update API to specify which fields to apply",
@@ -444,6 +429,7 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.serverlessconfig.minreplicas":           "Minimum number of replicas when serverless",
 	"app.vmappostype":                            "OS Type for VM Apps, one of VmAppOsUnknown, VmAppOsLinux, VmAppOsWindows10, VmAppOsWindows2012, VmAppOsWindows2016, VmAppOsWindows2019",
 	"dryrundeploy":                               "Attempt to qualify cloudlet resources for deployment",
+	"numnodes":                                   "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
 var DeploymentCloudletRequestSpecialArgs = map[string]string{
 	"deploymentcloudletrequest.app.autoprovpolicies": "StringArray",

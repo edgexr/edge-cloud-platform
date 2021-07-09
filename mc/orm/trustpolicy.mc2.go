@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -35,8 +36,8 @@ func CreateTrustPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionTrustPolicy{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -119,8 +120,8 @@ func DeleteTrustPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionTrustPolicy{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -203,8 +204,8 @@ func UpdateTrustPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionTrustPolicy{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	dat, err := ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region
@@ -212,6 +213,10 @@ func UpdateTrustPolicy(c echo.Context) error {
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
+	err = ormutil.SetRegionObjFields(dat, &in)
+	if err != nil {
+		return err
+	}
 
 	err = UpdateTrustPolicyStream(ctx, rc, &in.TrustPolicy, func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -287,8 +292,8 @@ func ShowTrustPolicy(c echo.Context) error {
 	rc.username = claims.Username
 
 	in := ormapi.RegionTrustPolicy{}
-	success, err := ReadConn(c, &in)
-	if !success {
+	_, err = ReadConn(c, &in)
+	if err != nil {
 		return err
 	}
 	rc.region = in.Region

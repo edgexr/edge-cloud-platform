@@ -81,8 +81,8 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 
 	if strings.HasSuffix(c.Path(), "usage/cloudletpool") {
 		in := ormapi.RegionCloudletPoolUsage{}
-		success, err := ReadConn(c, &in)
-		if !success {
+		_, err := ReadConn(c, &in)
+		if err != nil {
 			return err
 		}
 		// Operator and cloudletpool name has to be specified
