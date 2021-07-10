@@ -282,7 +282,8 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	log.SpanLog(ctx, log.DebugLevelInfra, "vapp Delete")
 	task, err = vapp.Delete()
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp GetVappIsoNetwork failed ignoring", "vapp", vappName, "netName", netName, "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp failed ", "vapp", vappName, "err", err)
+		return fmt.Errorf("Delete VApp %s Failed - %v", vappName, err)
 	} else {
 		err = task.WaitTaskCompletion()
 		if err != nil {
@@ -294,7 +295,7 @@ func (v *VcdPlatform) DeleteVapp(ctx context.Context, vapp *govcd.VApp, vcdClien
 	// check if we're using a isolated orgvdcnetwork /  sharedLB
 	if netName != "" {
 		if v.GetNsxType() == NSXV {
-			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing iosNetworks if exists", "vapp", vappName, "netName", netName, "isNsxt?", vdc.IsNsxt(), "isNsxv?", vdc.IsNsxv())
+			log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVapp nsx-v removing isoNetworks if exists", "vapp", vappName, "netName", netName, "isNsxt?", vdc.IsNsxt(), "isNsxv?", vdc.IsNsxv())
 			err = govcd.RemoveOrgVdcNetworkIfExists(*vdc, netName)
 			if err != nil {
 				if err != nil {
@@ -515,7 +516,8 @@ func (v *VcdPlatform) validateVMSpecSection(ctx context.Context, vapp govcd.VApp
 
 	vm, err := v.GetVMFromVAppByIdx(ctx, &vapp, 0)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "validateVMSpecSecion VM not found", "Vapp", vapp.VApp.Name, "idx", 0)
+		log.SpanLog(ctx, log.DebugLevelInfra, "validateVMSpecSecion VM not found", "Vapp", vapp.VApp.Name, "idx", 0, "err", err)
+		return fmt.Errorf("validateVMSpecSecion VM not found for Vapp %s", vapp.VApp.Name)
 	}
 	vmSpec := vm.VM.VmSpecSection
 	if vmSpec.MemoryResourceMb == nil {

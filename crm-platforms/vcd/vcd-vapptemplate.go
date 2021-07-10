@@ -19,6 +19,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
+const TemplateNotFoundError string = "Template Not Found"
+
 type OvfParams struct {
 	ImageBaseFileName string
 	DiskSizeInBytes   string
@@ -151,7 +153,7 @@ func (v *VcdPlatform) FindTemplate(ctx context.Context, tmplName string, vcdClie
 		}
 	}
 
-	return nil, fmt.Errorf("template %s not found", tmplName)
+	return nil, fmt.Errorf("%s - %s", TemplateNotFoundError, tmplName)
 }
 
 func (v *VcdPlatform) ImportTemplateFromUrl(ctx context.Context, name, templUrl string, catalog *govcd.Catalog) error {
@@ -238,6 +240,11 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Found existing image template: %s", imageInfo.LocalImageName))
 		return nil
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfra, "FindTemplate failed", "err", err)
+		if !strings.Contains(err.Error(), TemplateNotFoundError) {
+			return fmt.Errorf("unexpected error finding template %s - %v", imageInfo.LocalImageName, err)
+		}
 	}
 
 	filesToCleanup := []string{}

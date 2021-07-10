@@ -89,8 +89,11 @@ func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, tmplName string, vcd
 	log.SpanLog(ctx, log.DebugLevelInfra, "RetrieveTemplate", "tmplName", tmplName)
 	tmpl, err := v.FindTemplate(ctx, tmplName, vcdClient)
 	if err != nil {
+		if !strings.Contains(err.Error(), TemplateNotFoundError) {
+			return nil, fmt.Errorf("unexpected error finding template %s - %v", tmplName, err)
+		}
 		// Not found as a vdc.Resource, try direct from our catalog
-		log.SpanLog(ctx, log.DebugLevelInfra, "Template not vdc.Resource, Try fetch from catalog", "template", tmplName)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Template not vdc.Resource, Try fetch from catalog", "template", tmplName, "err", err)
 		cat, err := v.GetCatalog(ctx, v.GetCatalogName(), vcdClient)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed retrieving catalog", "cat", v.GetCatalogName())
@@ -732,9 +735,9 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 func (v *VcdPlatform) DeleteVM(ctx context.Context, vm *govcd.VM) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVM", "vmName", vm.VM.Name)
-
 	if vm == nil {
-		return fmt.Errorf("nil vm encountered")
+		log.SpanLog(ctx, log.DebugLevelInfra, "Nil VM", "vmName", vm.VM.Name)
+		return fmt.Errorf(vmlayer.ServerDoesNotExistError)
 	}
 	vapp, err := vm.GetParentVApp()
 	if err != nil {
@@ -886,8 +889,13 @@ func (v *VcdPlatform) GetVMAddresses(ctx context.Context, vm *govcd.VM, vcdClien
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMAddresses", "vmname", vm.VM.Name)
 
 	var serverIPs []vmlayer.ServerIP
-	if vm == nil || vm.VM == nil || vm.VM.NetworkConnectionSection == nil {
-		return serverIPs, fmt.Errorf("Nil vm received")
+	if vm == nil || vm.VM == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "nil VM", "vmname", vm.VM.Name)
+		return serverIPs, fmt.Errorf(vmlayer.ServerDoesNotExistError)
+	}
+	if vm.VM.NetworkConnectionSection == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "nil network section", "vmname", vm.VM.Name)
+		return serverIPs, fmt.Errorf(vmlayer.ServerIPNotFound)
 	}
 	vmName := vm.VM.Name
 	//parentVapp, err := vm.GetParentVApp()
@@ -947,6 +955,7 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	vmProperties.RunLbDhcpServerForVmApps = v.GetVmAppInternalDhcpServer()
 	vmProperties.AppendFlavorToVmAppImage = true
 	vmProperties.ValidateExternalIPMapping = true
+	vmProperties.NumCleanupRetries = 3
 }
 
 // Should always be a vapp/cluster/group name
