@@ -21,9 +21,10 @@ import (
 const (
 	MexSubnetPrefix = "mex-k8s-subnet-"
 
-	ActionAdd    = "add"
-	ActionRemove = "remove"
-	ActionNone   = "none"
+	ActionAdd               = "add"
+	ActionRemove            = "remove"
+	ActionNone              = "none"
+	cleanupRetryWaitSeconds = 30
 )
 
 //ClusterNodeFlavor contains details of flavor for the node
@@ -197,7 +198,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			return err
 		}
 	}
-	if !dedicatedRootLB {
+	if !dedicatedRootLB && client != nil {
 		clusterSnName := GetClusterSubnetName(ctx, clusterInst)
 		ip, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), clusterSnName, rootLBName)
 		if err != nil {
@@ -211,7 +212,9 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	}
 	err = v.VMProvider.DeleteVMs(ctx, name)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs failed", "name", name, "err", err)
 		return err
+
 	}
 
 	if dedicatedRootLB {
@@ -222,9 +225,11 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	} else {
 		// cleanup manifest config dir
 		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes || clusterInst.Deployment == cloudcommon.DeploymentTypeHelm {
-			err = k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "cleanup cluster config failed", "err", err)
+			if client != nil {
+				err = k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "cleanup cluster config failed", "err", err)
+				}
 			}
 			// cleanup GPU operator helm configs
 			if clusterInst.OptRes == "gpu" && v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
@@ -319,9 +324,20 @@ func (v *VMPlatform) createClusterInternal(ctx context.Context, rootLBName strin
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "error in CreateCluster", "err", reterr)
 		if !clusterInst.SkipCrmCleanupOnFailure {
-			delerr := v.deleteCluster(ctx, rootLBName, clusterInst, updateCallback)
-			if delerr != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "fail to cleanup cluster")
+			updateCallback(edgeproto.UpdateTask, "Cleaning up cluster due to errors")
+			// try at least one cleanup attempt, plus the number of retries specified by the provider
+			for tryNum := 0; tryNum <= v.VMProperties.NumCleanupRetries; tryNum++ {
+				delerr := v.deleteCluster(ctx, rootLBName, clusterInst, updateCallback)
+				if delerr != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup cluster", "clusterInst", clusterInst, "tryNum", tryNum, "retries", v.VMProperties.NumCleanupRetries, "delerr", delerr)
+					if tryNum < v.VMProperties.NumCleanupRetries {
+						log.SpanLog(ctx, log.DebugLevelInfra, "sleeping and retrying cleanup", "cleanupRetryWaitSeconds", cleanupRetryWaitSeconds)
+						time.Sleep(time.Second * cleanupRetryWaitSeconds)
+						updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
+					}
+				} else {
+					break
+				}
 			}
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "skipping cleanup on failure")

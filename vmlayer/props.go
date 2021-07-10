@@ -29,6 +29,7 @@ type VMProperties struct {
 	AppendFlavorToVmAppImage   bool
 	ValidateExternalIPMapping  bool
 	CloudletAccessToken        string
+	NumCleanupRetries          int
 }
 
 const MEX_ROOTLB_FLAVOR_NAME = "mex-rootlb-flavor"

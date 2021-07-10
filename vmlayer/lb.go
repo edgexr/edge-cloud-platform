@@ -428,18 +428,18 @@ func (v *VMPlatform) SetupRootLB(
 	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "server with same name as rootLB exists", "rootLBName", rootLBName)
-	}
-	// if the provider needs external IP mapping to be validated, do it now. We could consider
-	// doing this for all providers but need to verify it will not cause a problem with any existing
-	// deployments
-	if v.VMProperties.ValidateExternalIPMapping {
-		ip, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", sd)
-		if err != nil {
-			return err
-		}
-		err = v.VMProperties.CommonPf.ValidateExternalIPMapping(ctx, ip.ExternalAddr)
-		if err != nil {
-			return err
+		// if the provider needs external IP mapping to be validated, do it now. We could consider
+		// doing this for all providers but need to verify it will not cause a problem with any existing
+		// deployments
+		if v.VMProperties.ValidateExternalIPMapping {
+			ip, err := GetIPFromServerDetails(ctx, v.VMProperties.GetCloudletExternalNetwork(), "", sd)
+			if err != nil {
+				return err
+			}
+			err = v.VMProperties.CommonPf.ValidateExternalIPMapping(ctx, ip.ExternalAddr)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
