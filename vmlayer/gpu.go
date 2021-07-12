@@ -175,7 +175,6 @@ func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Clien
 	case <-wgDone:
 		break
 	case err := <-wgError:
-		close(wgError)
 		return err
 	case <-time.After(DriverInstallationTimeout):
 		return fmt.Errorf("Timed out installing GPU driver on cluster VMs")
