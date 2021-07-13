@@ -471,7 +471,8 @@ func (v *VMPlatform) Init(ctx context.Context, platformConfig *platform.Platform
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
-	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, true, updateCallback)
+	rootLBFQDN := v.GetRootLBFQDN(v.VMProperties.CommonPf.PlatformConfig.CloudletKey)
+	err = v.SetupRootLB(ctx, v.VMProperties.SharedRootLBName, rootLBFQDN, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, nil, true, updateCallback)
 	if err != nil {
 		return err
 	}
