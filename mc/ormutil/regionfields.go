@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cli"
@@ -37,15 +38,34 @@ func SetRegionObjFields(jsonData []byte, regionObj ormapi.RegionObjWithFields) e
 	if err != nil {
 		return err
 	}
-	objMap, ok := regionObjMap[regionObj.GetObjName()].(map[string]interface{})
-	if !ok {
+
+	objName := regionObj.GetObjName()
+	// json allows case insensitive matching so we can't just do
+	// a map lookup. Fortunately there should only be 2 entries.
+	// Note that json prefers case sensitive matching.
+	var objMap map[string]interface{}
+	var objMapCI map[string]interface{}
+	for k, i := range regionObjMap {
+		m, ok := i.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if k == objName {
+			// exact match
+			objMap = m
+			break
+		}
+		if strings.ToLower(k) == strings.ToLower(objName) {
+			// case insensitive match
+			objMapCI = m
+		}
+	}
+	if objMap == nil {
+		objMap = objMapCI
+	}
+	if objMap == nil {
 		return fmt.Errorf("Invalid object data for %s", regionObj.GetObjName())
 	}
-	// Json should be consistent with regionObj, but for unit-tests
-	// we delete the fields from regionObj, while the json data still has them.
-	// We don't want the Fields to be included as a flag in the new fields flags,
-	// so delete them if they exist. This should only happen for unit-tests.
-	delete(objMap, "fields")
 
 	// calculate fields from what is specified in objMap
 	md := &cli.MapData{
