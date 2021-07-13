@@ -316,7 +316,7 @@ func (v *VcdPlatform) WaitForOauthTokenViaNotify(ctx context.Context, ckey *edge
 			return
 		}
 		token, ok := cloudletInternal.Props[vmlayer.CloudletAccessToken]
-		if ok {
+		if ok && token != "" {
 			log.SpanLog(ctx, log.DebugLevelInfra, "found token in cloudlet cache")
 			v.vmProperties.CloudletAccessToken = token
 			select {
