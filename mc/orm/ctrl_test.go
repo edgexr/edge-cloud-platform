@@ -1006,6 +1006,17 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	testEdgeboxOnlyCloudletCreate(t, ctx, mcClient, uri, ctrl.Region)
 
 	if restClient, ok := mcClient.ClientRun.(*ormclient.Client); ok {
+		// Test that JSON unmarshal on MC allows case-insensitive matching
+		// Technically this should be "AutoScalePolicy", but we also
+		// allow "autoscalepolicy".
+		js := `{"Region":"` + ctrl.Region + `","autoscalepolicy":{"key":{"organization":"MobiledgeX"}}}`
+		res := edgeproto.Result{}
+		status, err := restClient.PostJson(uri+"/auth/ctrl/UpdateAutoScalePolicy", token, js, &res)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+	}
+
+	if restClient, ok := mcClient.ClientRun.(*ormclient.Client); ok {
 		// Test error capturing from streamed output for audit log.
 		// Because streamed JSON is really just sending in chunks,
 		// it needs to send back a 200 response before it can start
