@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -342,6 +343,11 @@ func (v *VcdPlatform) WaitForOauthTokenViaNotify(ctx context.Context, ckey *edge
 
 func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateOauthToken", "user", creds.User, "OauthSgwUrl", creds.OauthSgwUrl)
+
+	oauthFailReason := ""
+	oauthTokenReceived := ""
+	encToken := ""
+
 	u, err := url.ParseRequestURI(creds.OauthAgwUrl)
 	if err != nil {
 		return fmt.Errorf("Unable to parse request to org %s at %s err: %s", creds.Org, creds.VcdApiUrl, err)
@@ -352,38 +358,46 @@ func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigPara
 		govcd.WithClientTlsCerts(creds.ClientTlsCert, creds.ClientTlsKey),
 		govcd.WithOauthCreds(creds.OauthClientId, creds.OauthClientSecret))
 
-	_, err = cloudletClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
-
+	resp, err := cloudletClient.GetOauthResponse(creds.User, creds.Password, creds.Org)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "err", err)
-		return fmt.Errorf("failed oauth response %s at %s err: %s", creds.Org, creds.OauthSgwUrl, err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error oauth response", "org", creds.Org, "err", err)
+		oauthFailReason = fmt.Sprintf("O-Auth Error received - %v", err)
+	} else if resp.StatusCode != http.StatusOK {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed oauth response", "org", creds.Org, "StatusCode", resp.StatusCode)
+		oauthFailReason = fmt.Sprintf("O-Auth Failure Status received - %d", resp.StatusCode)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Got successful oauth response, now verify VCD login")
+	if oauthFailReason == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Got successful oauth response, now verify VCD login")
 
-	// now wait for the token to actually start working, which may not be immediate
-	start := time.Now()
-	// first wait for the rootlb to exist so we can get a client
-	for {
-		// start with a sleep to give the oauth token time to propagate
-		time.Sleep(3 * time.Second)
-		log.SpanLog(ctx, log.DebugLevelInfra, "Trying Oauth token", "url", creds.OauthAgwUrl)
-		elapsed := time.Since(start)
-		_, err := cloudletClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
-		if err == nil {
-			break
+		// now wait for the token to actually start working, which may not be immediate
+		start := time.Now()
+		// first wait for the rootlb to exist so we can get a client
+		for {
+			// start with a sleep to give the oauth token time to propagate
+			time.Sleep(3 * time.Second)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Trying Oauth token", "url", creds.OauthAgwUrl)
+			elapsed := time.Since(start)
+			_, err := cloudletClient.GetAuthResponse(creds.User, creds.Password, creds.Org)
+			if err == nil {
+				break
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get vcd token with oauth token", "err", err)
+			if elapsed > maxOauthTokenReady {
+				return fmt.Errorf("timed out waiting for oauth token to work -- %v", err)
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 3 seconds before retry")
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get vcd token with oauth token", "err", err)
-		if elapsed > maxOauthTokenReady {
-			return fmt.Errorf("timed out waiting for oauth token to work -- %v", err)
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "sleeping 3 seconds before retry")
+		log.SpanLog(ctx, log.DebugLevelInfra, "Got successful VCD auth response")
+		oauthTokenReceived = cloudletClient.Client.OauthAccessToken
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Got successful VCD auth response")
 	var cloudletInternal edgeproto.CloudletInternal
-
-	encToken, err := EncryptToken(ctx, cloudletClient.Client.OauthAccessToken, (v.vmProperties.CommonPf.PlatformConfig.CloudletKey))
-	if err != nil {
-		return err
+	// if we did not get an oauth token due to some error, leave encToken empty so it can be sent to shepherd
+	// so that shepherd can stop using its old token, if any
+	if oauthTokenReceived != "" {
+		encToken, err = EncryptToken(ctx, oauthTokenReceived, (v.vmProperties.CommonPf.PlatformConfig.CloudletKey))
+		if err != nil {
+			return fmt.Errorf("encrypt token error - %v", err)
+		}
 	}
 	// internal Cache can be nil when running on the controller
 	if v.caches.CloudletInternalCache != nil {
@@ -393,6 +407,9 @@ func (v *VcdPlatform) UpdateOauthToken(ctx context.Context, creds *VcdConfigPara
 		cloudletInternal.Props[vmlayer.CloudletAccessToken] = encToken
 		log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to cache")
 		v.caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
+	}
+	if oauthFailReason != "" {
+		return fmt.Errorf(oauthFailReason)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Saving encrypted Oauth token to vmProperties")
 	v.vmProperties.CloudletAccessToken = encToken

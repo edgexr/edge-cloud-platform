@@ -422,6 +422,12 @@ func (v *VcdPlatform) InternalCloudletUpdatedCallback(ctx context.Context, old *
 		log.SpanLog(ctx, log.DebugLevelInfra, "stored new cloudlet access token")
 		v.vmProperties.CloudletAccessToken = token
 	}
+	if token == "" {
+		// if an empty token is received, this means CRM lost the token and so shepherd no longer has a valid token.
+		// any futher API calls are blocked until a valid token is present.
+		log.SpanLog(ctx, log.DebugLevelInfra, "Empty token received from CRM")
+
+	}
 	// if we find an isoMap property use it to update the iso map cache which is a json string
 	isoMapStr, ok := new.Props[CloudletIsoNamesMap]
 	var isoMap map[string]string

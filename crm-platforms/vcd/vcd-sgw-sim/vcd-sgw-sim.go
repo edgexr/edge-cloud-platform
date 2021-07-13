@@ -27,6 +27,7 @@ var (
 	region    = flag.String("region", "", "region (US or EU)")
 	physname  = flag.String("physname", "", "cloudlet physical name")
 	org       = flag.String("org", "", "cloudlet org")
+	errorcode = flag.Int("errorcode", 0, "error code")
 
 	getTokenPath = flag.String("gettokenpath", "/openid/connect/auth/oauth/v2/t3/org/token", "path to gettoken")
 	indexpath    = "/"
@@ -34,6 +35,11 @@ var (
 	vcdPlatform  = vcd.VcdPlatform{} // used for creds
 	vcdUri       *url.URL
 )
+
+type TokenErrorResponse struct {
+	Error     string `json:"error"`
+	ErrorDesc string `json:"error_description"`
+}
 
 func showIndex(w http.ResponseWriter, r *http.Request) {
 	log.Printf("doing showIndex for request: %v\n", r)
@@ -85,6 +91,10 @@ func validateRequest(r *http.Request) int {
 		log.Printf("wrong client secret: %s", clientSecret)
 		return http.StatusUnauthorized
 	}
+	if *errorcode != 0 {
+		log.Printf("returning error code: %d", *errorcode)
+		return *errorcode
+	}
 	return http.StatusOK
 }
 
@@ -92,9 +102,14 @@ func getToken(w http.ResponseWriter, r *http.Request) {
 	log.Println("doing getToken")
 	code := validateRequest(r)
 	if code != http.StatusOK {
+		errResponse := TokenErrorResponse{
+			Error:     "Client Authentication Error",
+			ErrorDesc: "Client authentication failed!",
+		}
+		byt, _ := json.Marshal(errResponse)
 		log.Printf("request validation failed - code: %d", code)
-
 		w.WriteHeader(code)
+		w.Write(byt)
 		return
 	}
 	tokenResponse := vcd.TokenResponse{
