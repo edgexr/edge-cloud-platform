@@ -301,7 +301,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
 		pp := edgeproto.TrustPolicy{}
-		err = v.SetupRootLB(ctx, orchVals.lbName, &clusterInst.Key.CloudletKey, &pp, false, updateCallback)
+		err = v.SetupRootLB(ctx, orchVals.lbName, orchVals.lbName, &clusterInst.Key.CloudletKey, &pp, false, updateCallback)
 		if err != nil {
 			return err
 		}

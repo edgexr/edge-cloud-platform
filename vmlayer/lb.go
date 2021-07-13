@@ -244,7 +244,23 @@ func (v *VMPlatform) AttachAndEnableRootLBInterface(ctx context.Context, client 
 	return internalIfName, nil
 }
 
+// GetRootLBName uses the old rootLB name format to ensure backwards
+// compatibility. Ideally we'd have some check that could tell us
+// whether to use the old name (if the VM exists), or the new
+// name, but setting the VMProperties.SharedRootLBName is done
+// early in Init(), and it has many dependencies, and we cannot
+// actually check for VM existence until later after the
+// VMProvider is initialized. So for safety we're going to keep
+// the VM name the same, and only use the new RootLBFQDN name
+// for the DNS registration.
 func (v *VMPlatform) GetRootLBName(key *edgeproto.CloudletKey) string {
+	name := cloudcommon.GetRootLBFQDNOld(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
+	return v.VMProvider.NameSanitize(name)
+}
+
+// GetRootLBFQDN gets the FQDN for the shared root LB. It uses the new
+// name format, even for existing rootLB VMs.
+func (v *VMPlatform) GetRootLBFQDN(key *edgeproto.CloudletKey) string {
 	name := cloudcommon.GetRootLBFQDN(key, v.VMProperties.CommonPf.PlatformConfig.AppDNSRoot)
 	return v.VMProvider.NameSanitize(name)
 }
@@ -375,7 +391,8 @@ func (v *VMPlatform) GetVMSpecForRootLBPorts(ctx context.Context, rootLbName str
 	return rootlb, err
 }
 
-//CreateRootLB creates a rootLB.  It should not be called if the rootLB already exists, as to save time we don't check
+// CreateRootLB creates a rootLB. It will not create it if it
+// already exists.
 func (v *VMPlatform) CreateRootLB(
 	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
@@ -408,22 +425,21 @@ func (v *VMPlatform) CreateRootLB(
 
 }
 
-//SetupRootLB prepares the RootLB. It will optionally create the rootlb if the createRootLBFlavor
-// is not blank and no existing server found
+// SetupRootLB prepares the RootLB.
 func (v *VMPlatform) SetupRootLB(
-	ctx context.Context, rootLBName string,
+	ctx context.Context, rootLBName, rootLBFQDN string,
 	cloudletKey *edgeproto.CloudletKey,
 	TrustPolicy *edgeproto.TrustPolicy,
 	fixForwardingRules bool,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupRootLB", "rootLBName", rootLBName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupRootLB", "rootLBName", rootLBName, "fqdn", rootLBFQDN)
 	// ensure no entries exist in the ip cache for this rootlb
 	DeleteServerIpFromCache(ctx, rootLBName)
 
-	//fqdn is that of the machine/kvm-instance running the agent
-	if !valid.IsDNSName(rootLBName) {
-		return fmt.Errorf("fqdn %s is not valid", rootLBName)
+	// fqdn is that of the machine/kvm-instance running the agent
+	if !valid.IsDNSName(rootLBFQDN) {
+		return fmt.Errorf("fqdn %s is not valid", rootLBFQDN)
 	}
 	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
 	if err == nil {
@@ -541,7 +557,7 @@ func (v *VMPlatform) SetupRootLB(
 		return fmt.Errorf("failed to WhitelistSecurityRules %v", err)
 	}
 
-	if err = v.VMProperties.CommonPf.ActivateFQDNA(ctx, rootLBName, ip.ExternalAddr); err != nil {
+	if err = v.VMProperties.CommonPf.ActivateFQDNA(ctx, rootLBFQDN, ip.ExternalAddr); err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLBName)
