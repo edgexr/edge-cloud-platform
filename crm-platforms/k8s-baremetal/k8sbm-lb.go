@@ -25,7 +25,7 @@ type LbInfo struct {
 
 func (k *K8sBareMetalPlatform) GetSharedLBName(ctx context.Context, key *edgeproto.CloudletKey) string {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetSharedLBName", "key", key)
-	name := cloudcommon.GetRootLBFQDN(key, k.commonPf.PlatformConfig.AppDNSRoot)
+	name := cloudcommon.GetRootLBFQDNOld(key, k.commonPf.PlatformConfig.AppDNSRoot)
 	return name
 }
 

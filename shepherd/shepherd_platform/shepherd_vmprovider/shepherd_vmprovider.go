@@ -70,7 +70,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 		defer s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitComplete)
 	}
 	//need to have a separate one for dedicated rootlbs, see openstack.go line 111,
-	s.rootLbName = cloudcommon.GetRootLBFQDN(pc.CloudletKey, s.appDNSRoot)
+	s.rootLbName = s.VMPlatform.GetRootLBName(pc.CloudletKey)
 
 	start := time.Now()
 	// first wait for the rootlb to exist so we can get a client
