@@ -18,9 +18,9 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: shared.dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessAutoprov
+      liveness: Autoprov
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 82
         publicport: 82
       flavor:
@@ -51,9 +51,9 @@ regiondata:
         latitude: 35
         longitude: -95
       uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: LivenessAutoprov
+      liveness: Autoprov
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 82
         publicport: 82
       flavor:

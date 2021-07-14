@@ -32,7 +32,7 @@ cloudlets:
   location:
     latitude: 31
     longitude: -91
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: dmuus
@@ -40,7 +40,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: GDDT
@@ -48,7 +48,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: dmuus
@@ -56,7 +56,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: dmuus
@@ -64,7 +64,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: att
@@ -72,7 +72,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 - key:
     organization: dmuus
@@ -80,7 +80,7 @@ cloudlets:
   location:
     latitude: 35
     longitude: -95
-  ipsupport: IpSupportDynamic
+  ipsupport: Dynamic
   numdynamicips: 254
 
 apps:
@@ -89,7 +89,7 @@ apps:
     name: automation_api_app
     version: "1.0"
   imagepath: registry.mobiledgex.net:5000/automation_api/automation_api_app:1.0
-  imagetype: ImageTypeDocker
+  imagetype: Docker
   defaultflavor:
     name: automation_api_flavor
   cluster:
@@ -99,7 +99,7 @@ apps:
     name: automation_api_auth_app
     version: "1.0"
   imagepath: registry.mobiledgex.net:5000/automation_api/automation_api_auth_app:1.0
-  imagetype: ImageTypeDocker
+  imagetype: Docker
   defaultflavor:
     name: automation_api_flavor
   cluster:

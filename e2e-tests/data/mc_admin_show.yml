@@ -107,10 +107,10 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
       notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
@@ -129,7 +129,7 @@ regiondata:
       location:
         latitude: 35
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       notifysrvaddr: 127.0.0.1:51002
@@ -142,7 +142,7 @@ regiondata:
       location:
         latitude: 32
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       notifysrvaddr: 127.0.0.1:51004
@@ -155,7 +155,7 @@ regiondata:
       location:
         latitude: 36
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       notifysrvaddr: 127.0.0.1:51005
@@ -168,7 +168,7 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       notifysrvaddr: 127.0.0.1:51006
@@ -201,9 +201,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
@@ -219,9 +219,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessShared
+      ipaccess: Shared
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
@@ -235,9 +235,9 @@ regiondata:
         organization: enterprise
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
@@ -249,7 +249,7 @@ regiondata:
         name: MEXPrometheusAppName
         version: "1.0"
       imagepath: https://prometheus-community.github.io/helm-charts:prometheus-community/kube-prometheus-stack
-      imagetype: ImageTypeHelm
+      imagetype: Helm
       accessports: tcp:9090
       defaultflavor:
         name: x1.medium
@@ -304,7 +304,7 @@ regiondata:
         name: someapplication1
         version: "1.0"
       imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
@@ -391,7 +391,7 @@ regiondata:
         name: platosEnablingLayer
         version: "1.0"
       imagepath: registry.mobiledgex.net/dummyvalue
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:64000
       defaultflavor:
         name: x1.small
@@ -443,7 +443,7 @@ regiondata:
         name: ep1
         version: "1.0"
       imagepath: registry.mobiledgex.net/mobiledgex_AcmeAppCo/ep1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
@@ -531,15 +531,15 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: smallcluster.enterprise-1.enterprise.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -564,9 +564,9 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 9090
         publicport: 9090
       flavor:
@@ -631,9 +631,9 @@ regiondata:
       cloudletloc:
         latitude: 35
         longitude: -95
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 9090
         publicport: 9090
       flavor:
@@ -659,15 +659,15 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -693,16 +693,16 @@ regiondata:
         latitude: 35
         longitude: -95
       uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
         pathprefix: acmeappco/someapplication110/p443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -727,9 +727,9 @@ regiondata:
       cloudletloc:
         latitude: 31
         longitude: -91
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 9090
         publicport: 9090
       flavor:

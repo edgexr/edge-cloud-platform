@@ -47,17 +47,17 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
     - key:
         organization: dmuus
         name: dmuus-cloud-2
       location:
         latitude: 35
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
     - key:
@@ -66,7 +66,7 @@ regiondata:
       location:
         latitude: 32
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
     - key:
@@ -75,7 +75,7 @@ regiondata:
       location:
         latitude: 36
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
     flavors:
@@ -114,9 +114,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
       masterflavor: x1.small
@@ -133,9 +133,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessShared
+      ipaccess: Shared
       nodeflavor: x1.small
       masterflavor: x1.small
       deployment: kubernetes
@@ -147,9 +147,9 @@ regiondata:
         name: someapplication1
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
       defaultflavor:
         name: x1.small
       cluster:
@@ -238,9 +238,9 @@ regiondata:
         name: autoprovapp
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:81
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
       defaultflavor:
         name: x1.small
       deployment: kubernetes
@@ -293,22 +293,22 @@ regiondata:
         name: autoprovappd
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:81
       defaultflavor:
         name: x1.small
       deployment: docker
       autoprovpolicies:
       - autoprov1
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
     - key:
         organization: platos
         name: platosEnablingLayer
         version: "1.0"
       imagepath: registry.mobiledgex.net/platos/dummyvalue
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:64000
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
       defaultflavor:
         name: x1.small
       cluster:
@@ -373,15 +373,15 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: smallcluster.dmuus-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -407,15 +407,15 @@ regiondata:
         latitude: 35
         longitude: -95
       uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -441,15 +441,15 @@ regiondata:
         latitude: 35
         longitude: -95
       uri: shared.dmuus-cloud-2.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 10000
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 10001
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10000
       flavor:
@@ -531,17 +531,17 @@ regiondata:
       location:
         latitude: 32
         longitude: -92
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFake
+      platformtype: Fake
     - key:
         organization: dmuus
         name: dmuus-cloud-4
       location:
         latitude: 36
         longitude: -96
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
     autoprovpolicies:
@@ -584,9 +584,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
       deployment: kubernetes
@@ -603,9 +603,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessShared
+      ipaccess: Shared
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
@@ -617,7 +617,7 @@ regiondata:
         name: autoprovapp
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:81
       defaultflavor:
         name: x1.small
@@ -666,13 +666,13 @@ regiondata:
       deploymentgenerator: kubernetes-basic
       autoprovpolicies:
       - autoprov1
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
     - key:
         organization: platos
         name: platosEnablingLayer
         version: "1.0"
       imagepath: registry.mobiledgex.net/platos/dummyvalue
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:64000
       defaultflavor:
         name: x1.small
@@ -719,13 +719,13 @@ regiondata:
                 - containerPort: 64000
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
     - key:
         organization: AcmeAppCo
         name: someapplication1
         version: "1.0"
       imagepath: registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:80,tcp:443,udp:10002
       defaultflavor:
         name: x1.small
@@ -807,7 +807,7 @@ regiondata:
                   protocol: UDP
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
     appinstances:
     - key:
         appkey:
@@ -825,15 +825,15 @@ regiondata:
         latitude: 32
         longitude: -92
       uri: smallcluster.dmuus-cloud-3.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:
@@ -863,15 +863,15 @@ regiondata:
         latitude: 36
         longitude: -96
       uri: shared.dmuus-cloud-4.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 80
         publicport: 80
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 443
         publicport: 443
-      - proto: LProtoUdp
+      - proto: Udp
         internalport: 10002
         publicport: 10002
       flavor:

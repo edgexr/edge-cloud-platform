@@ -11,9 +11,9 @@ regiondata:
         organization: AcmeAppCo
       flavor:
         name: x1.small
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       allocatedip: dynamic
       nodeflavor: x1.small
       masterflavor: x1.small

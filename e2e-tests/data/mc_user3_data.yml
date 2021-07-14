@@ -23,7 +23,7 @@ regiondata:
         organization: user3org
       flavor:
         name: x1.small
-      ipaccess: IpAccessDedicated
+      ipaccess: Dedicated
       nummasters: 1
       numnodes: 1
     apps:
@@ -32,7 +32,7 @@ regiondata:
         name: ep1
         version: "1.0"
       imagepath: registry.mobiledgex.net/user3org/ep1:1.0
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       deployment: "kubernetes"
       defaultflavor:
         name: x1.small
