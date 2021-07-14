@@ -41,8 +41,17 @@ if node.normal['tags'].include?('vmtype/rootlb')
       returns 0
     end
     apt_update
-    apt_package 'mobiledgex' do
-      action :upgrade
+
+    bash 'install-mobiledgex-deb-pkg-with-appropriate-kernel' do
+      code <<-EOH
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq linux-image-virtual mobiledgex --allow-change-held-packages
+        if [[ $? -ne 0 ]]; then
+          apt --fix-broken install -yq
+          if [[ $? -eq 0 ]]; then
+            DEBIAN_FRONTEND=noninteractive apt-get install -yq linux-image-virtual mobiledgex --allow-change-held-packages
+          fi
+        fi
+      EOH
     end
   end
 end
