@@ -57,9 +57,9 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
       flavor:
         name: DefaultPlatformFlavor
       physicalname: dmuus-cloud-1
@@ -83,7 +83,7 @@ regiondata:
       location:
         latitude: 35
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       flavor:
         name: DefaultPlatformFlavor
@@ -96,7 +96,7 @@ regiondata:
       location:
         latitude: 32
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       flavor:
         name: DefaultPlatformFlavor
@@ -109,7 +109,7 @@ regiondata:
       location:
         latitude: 36
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       flavor:
         name: DefaultPlatformFlavor
@@ -122,9 +122,9 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: PlatformTypeFake
+      platformtype: Fake
       notifysrvaddr: 127.0.0.1:51006
       flavor:
         name: x1.small
@@ -152,7 +152,7 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-1
-      state: CloudletStateReady
+      state: Ready
       notifyid: 1
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 409600
@@ -202,7 +202,7 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-2
-      state: CloudletStateReady
+      state: Ready
       notifyid: 2
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 40960
@@ -252,7 +252,7 @@ regiondata:
     - key:
         organization: azure
         name: azure-cloud-4
-      state: CloudletStateReady
+      state: Ready
       notifyid: 3
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 40960
@@ -302,7 +302,7 @@ regiondata:
     - key:
         organization: gcp
         name: gcp-cloud-5
-      state: CloudletStateReady
+      state: Ready
       notifyid: 4
       controller: MCHU-MAC.local@127.0.0.1:55001
       osmaxram: 40960
@@ -352,7 +352,7 @@ regiondata:
     - key:
         organization: enterprise
         name: enterprise-1
-      state: CloudletStateReady
+      state: Ready
       notifyid: 6
       controller: Jon-Mex@127.0.0.1:55001
       osmaxram: 40960
@@ -436,10 +436,10 @@ regiondata:
       location:
         latitude: 32
         longitude: -92
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFake
+      platformtype: Fake
       notifysrvaddr: 127.0.0.1:51017
       flavor:
         name: DefaultPlatformFlavor
@@ -451,7 +451,7 @@ regiondata:
       location:
         latitude: 36
         longitude: -96
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       notifysrvaddr: 127.0.0.1:51018
@@ -465,9 +465,9 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
-      platformtype: PlatformTypeFake
+      platformtype: Fake
       notifysrvaddr: 127.0.0.1:51016
       flavor:
         name: x1.small
@@ -478,7 +478,7 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-3
-      state: CloudletStateReady
+      state: Ready
       notifyid: 2
       controller: Jon-Mex@127.0.0.1:55011
       osmaxram: 40960
@@ -528,7 +528,7 @@ regiondata:
     - key:
         organization: dmuus
         name: dmuus-cloud-4
-      state: CloudletStateReady
+      state: Ready
       notifyid: 3
       controller: Jon-Mex@127.0.0.1:55011
       osmaxram: 40960
@@ -578,7 +578,7 @@ regiondata:
     - key:
         organization: enterprise
         name: enterprise-2
-      state: CloudletStateReady
+      state: Ready
       notifyid: 3
       controller: Jon-Mex@127.0.0.1:55011
       osmaxram: 40960

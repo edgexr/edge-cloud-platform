@@ -36,10 +36,10 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
       notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
@@ -49,7 +49,7 @@ regiondata:
     - key:
         organization: mexdev
         name: chef-test-1
-      state: CloudletStateReady
+      state: Ready
       controller: Ashishs-MacBook-Pro-2.local@192.168.0.102:55001
       osmaxram: 500
       osmaxvcores: 50

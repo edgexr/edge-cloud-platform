@@ -12,10 +12,10 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
       deploymentlocal: false
       flavor:
         name: DefaultPlatformFlavor
@@ -26,7 +26,7 @@ regiondata:
       location:
         latitude: 35
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       deploymentlocal: false
@@ -39,7 +39,7 @@ regiondata:
       location:
         latitude: 32
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       deploymentlocal: false
@@ -52,7 +52,7 @@ regiondata:
       location:
         latitude: 36
         longitude: -95
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
       deploymentlocal: false

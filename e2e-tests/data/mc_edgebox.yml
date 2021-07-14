@@ -8,9 +8,9 @@ regiondata:
       location:
         latitude: {{latitude}}
         longitude: {{longitude}}
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       crmoverride: IgnoreCrmAndTransientState
-      platformtype: PlatformTypeEdgebox
+      platformtype: Edgebox
       flavor:
         name: x1.medium

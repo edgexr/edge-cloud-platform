@@ -57,10 +57,10 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeKindinfra
+      platformtype: Kindinfra
       trustpolicystate: NotPresent
     apps:
     - key:
@@ -68,7 +68,7 @@ regiondata:
         name: someapplication1
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:7777
       defaultflavor:
         name: x1.tiny
@@ -116,7 +116,7 @@ regiondata:
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.acme.someapplication1
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
       createdat:
         seconds: 1618357221
         nanos: 126849000
@@ -142,9 +142,9 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: shared.kind-cloud-1.dmuus.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 7777
         publicport: 7777
       flavor:
@@ -156,7 +156,7 @@ regiondata:
       createdat:
         seconds: 1618357221
         nanos: 212998000
-      healthcheck: HealthCheckOk
+      healthcheck: Ok
       powerstate: PowerOn
       vmflavor: x1.tiny
       realclustername: defaultmtclust

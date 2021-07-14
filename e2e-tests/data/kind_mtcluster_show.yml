@@ -11,9 +11,9 @@ regiondata:
         organization: MobiledgeX
       flavor:
         name: x1.medium
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessShared
+      ipaccess: Shared
       nodeflavor: x1.medium
       deployment: kubernetes
       nummasters: 1

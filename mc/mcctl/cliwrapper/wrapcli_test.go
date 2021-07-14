@@ -51,7 +51,7 @@ func TestObjToArgs(t *testing.T) {
 			IpSupport: edgeproto.IpSupport_IP_SUPPORT_DYNAMIC,
 		},
 	}
-	args = []string{"region=local", "cloudlet.ipsupport=IpSupportDynamic"}
+	args = []string{"region=local", "cloudlet.ipsupport=Dynamic"}
 	testObjToArgs(t, obj, args)
 }
 

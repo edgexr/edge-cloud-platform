@@ -38,7 +38,7 @@ regiondata:
         name: DevOrg SDK Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:7777
       defaultflavor:
         name: x1.small
@@ -52,7 +52,7 @@ regiondata:
         name: Face Detection Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:8008
       skiphcports: tcp:8008
       defaultflavor:

@@ -7,7 +7,7 @@ regiondata:
         name: someappuser3
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       deployment: "kubernetes"
       defaultflavor:
         name: x1.tiny

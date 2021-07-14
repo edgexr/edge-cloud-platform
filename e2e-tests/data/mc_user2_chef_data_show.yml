@@ -36,10 +36,10 @@ regiondata:
       location:
         latitude: 31
         longitude: -91
-      ipsupport: IpSupportDynamic
+      ipsupport: Dynamic
       numdynamicips: 254
       state: Ready
-      platformtype: PlatformTypeFakeinfra
+      platformtype: Fakeinfra
       notifysrvaddr: 127.0.0.1:51001
       flavor:
         name: DefaultPlatformFlavor
@@ -55,9 +55,9 @@ regiondata:
         organization: DevOrg
       flavor:
         name: x1.medium
-      liveness: LivenessStatic
+      liveness: Static
       state: Ready
-      ipaccess: IpAccessShared
+      ipaccess: Shared
       nodeflavor: x1.small
       deployment: kubernetes
       nummasters: 1
@@ -69,7 +69,7 @@ regiondata:
         name: DevOrg SDK Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/mobiledgexsdkdemo
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:7777
       defaultflavor:
         name: x1.small
@@ -117,13 +117,13 @@ regiondata:
                   protocol: TCP
       deploymentgenerator: kubernetes-basic
       androidpackagename: com.mobiledgex.sdkdemo
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
     - key:
         organization: DevOrg
         name: Face Detection Demo
         version: "1.0"
       imagepath: docker.mobiledgex.net/mobiledgex/mobiledgex_public/facedetection
-      imagetype: ImageTypeDocker
+      imagetype: Docker
       accessports: tcp:8008
       defaultflavor:
         name: x1.small
@@ -184,7 +184,7 @@ regiondata:
                 key: CloudletName
                 name: mexcluster-info
                 optional: true
-      accesstype: AccessTypeLoadBalancer
+      accesstype: LoadBalancer
       skiphcports: tcp:8008
     appinstances:
     - key:
@@ -203,9 +203,9 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: chef-test-1.mexdev.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 7777
         publicport: 7777
       flavor:
@@ -234,9 +234,9 @@ regiondata:
         latitude: 31
         longitude: -91
       uri: chef-test-1.mexdev.mobiledgex.net
-      liveness: LivenessStatic
+      liveness: Static
       mappedports:
-      - proto: LProtoTcp
+      - proto: Tcp
         internalport: 8008
         publicport: 8008
       flavor:
