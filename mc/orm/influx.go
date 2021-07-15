@@ -625,7 +625,6 @@ func getFieldsSlice(selector, measurementType string) []string {
 			fields = append(fields, LatencyFields...)
 		case "deviceinfo":
 			fields = append(fields, DeviceInfoFields...)
-		case "custom":
 		}
 	}
 	return fields

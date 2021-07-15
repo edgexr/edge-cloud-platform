@@ -36,7 +36,6 @@ var ClientApiUsageSelectors = []string{
 var ClientAppUsageSelectors = []string{
 	"latency",
 	"deviceinfo",
-	"custom",
 }
 
 var ClientCloudletUsageSelectors = []string{

@@ -434,8 +434,6 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 		if req.LocationTile != "" {
 			return fmt.Errorf("LocationTile not allowed for appinst deviceinfo metric")
 		}
-	case "custom":
-		return fmt.Errorf("Custom stat not implemented yet")
 	default:
 		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientAppUsageSelectors, "\", \""))
 	}
