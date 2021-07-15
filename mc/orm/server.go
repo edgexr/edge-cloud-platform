@@ -29,6 +29,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	edgetls "github.com/mobiledgex/edge-cloud/tls"
+	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
@@ -1059,19 +1060,22 @@ func ReadConn(c echo.Context, in interface{}) ([]byte, error) {
 	}
 	if err == nil {
 		err = json.Unmarshal(dat, in)
+		if err != nil {
+			// this is a copy of error handling from c.Bind()
+			if ute, ok := err.(*json.UnmarshalTypeError); ok {
+				err = echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unmarshal type error: expected=%v, got=%v, field=%v, offset=%v", ute.Type, ute.Value, ute.Field, ute.Offset))
+			} else if se, ok := err.(*json.SyntaxError); ok {
+				err = echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Syntax error: offset=%v, error=%v", se.Offset, se.Error()))
+			}
+		}
+		err = util.NiceTimeParseError(err)
 	}
 
 	if err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			return nil, fmt.Errorf("Invalid data")
 		}
-		// echo returns HTTPError which may include "code: ..., message:", chop code
-		if errObj, ok := err.(*echo.HTTPError); ok {
-			err = fmt.Errorf("%v", errObj.Message)
-		}
-
-		errStr := checkForTimeError(fmt.Sprintf("Invalid data: %v", err))
-		return nil, fmt.Errorf(errStr)
+		return nil, bindErr(err)
 	}
 
 	return dat, nil
