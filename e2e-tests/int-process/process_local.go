@@ -694,4 +694,6 @@ func (p *AlertmanagerSidecar) StopLocal() {
 
 func (p *AlertmanagerSidecar) GetExeName() string { return "alertmgr-sidecar" }
 
-func (p *AlertmanagerSidecar) LookupArgs() string { return "" }
+func (p *AlertmanagerSidecar) LookupArgs() string {
+	return fmt.Sprintf("--httpAddr %s --alertmgrAddr %s", p.HttpAddr, p.AlertmgrAddr)
+}

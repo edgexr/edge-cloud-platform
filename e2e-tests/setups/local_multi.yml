@@ -96,7 +96,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52001"
   notifyrootaddrs: "127.0.0.1:53001"
   usevaultpki: true
-  edgeturnaddr: "127.0.0.1:8080"
+  edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:41001"
@@ -116,7 +116,7 @@ controllers:
   notifyparentaddrs: "127.0.0.1:52002"
   notifyrootaddrs: "127.0.0.1:53001"
   usevaultpki: true
-  edgeturnaddr: "127.0.0.1:8080"
+  edgeturnaddr: "127.0.0.1:8081"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   accessapiaddr: "127.0.0.1:41002"
@@ -137,7 +137,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
   usevaultpki: true
-  edgeturnaddr: "127.0.0.1:8081"
+  edgeturnaddr: "127.0.0.1:8082"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
@@ -159,7 +159,7 @@ controllers:
   notifyrootaddrs: "127.0.0.1:53001"
   region: locala
   usevaultpki: true
-  edgeturnaddr: "127.0.0.1:8081"
+  edgeturnaddr: "127.0.0.1:8082"
   appdnsroot: mobiledgex.net
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
@@ -423,7 +423,7 @@ edgeturns:
   testmode: true
   usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
-  listenaddr: "127.0.0.1:8080"
+  listenaddr: "127.0.0.1:8081"
   proxyaddr: "127.0.0.1:8443"
   deploymenttag: dev
 
@@ -433,7 +433,7 @@ edgeturns:
   testmode: true
   usevaultpki: true
   vaultaddr: "http://127.0.0.1:8200"
-  listenaddr: "127.0.0.1:8081"
+  listenaddr: "127.0.0.1:8082"
   proxyaddr: "127.0.0.1:9443"
   deploymenttag: dev
 
