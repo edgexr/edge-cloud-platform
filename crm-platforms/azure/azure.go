@@ -47,6 +47,7 @@ func (o *AzurePlatform) GetFeatures() *platform.Features {
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
+		IPAllocatedPerService:         true,
 	}
 }
 

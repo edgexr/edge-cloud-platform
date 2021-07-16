@@ -22,6 +22,7 @@ func (o *AwsEksPlatform) GetFeatures() *platform.Features {
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
+		IPAllocatedPerService:         true,
 	}
 }
 
