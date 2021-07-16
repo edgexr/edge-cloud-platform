@@ -43,7 +43,8 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 	log.SpanLog(ctx, log.DebugLevelInfra, "createAppDNS")
 
 	if kubeNames.AppURI == "" {
-		return fmt.Errorf("URI not specified")
+		log.SpanLog(ctx, log.DebugLevelInfra, "URI not specified, no DNS entries to create")
+		return nil
 	}
 	if !kubeNames.IsUriIPAddr {
 		err := validateDomain(kubeNames.AppURI)
@@ -114,7 +115,8 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
 	if kubeNames.AppURI == "" {
-		return fmt.Errorf("URI not specified")
+		log.SpanLog(ctx, log.DebugLevelInfra, "URI not specified, no DNS entry to delete")
+		return nil
 	}
 	err := validateDomain(kubeNames.AppURI)
 	if err != nil {
