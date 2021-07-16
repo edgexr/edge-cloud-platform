@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/mobiledgex/edge-cloud-infra/promutils"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -20,7 +20,7 @@ var (
 	testMetricSent = 0
 
 	testPayloadData = map[string]string{
-		promQCpuClust: `{
+		promutils.PromQCpuClustUrlEncoded: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -35,7 +35,7 @@ var (
 		  ]
 		}
 	  }`,
-		promQMemClust: `{
+		promutils.PromQMemClustUrlEncoded: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -50,7 +50,7 @@ var (
 		  ]
 		}
 	  }`,
-		promQDiskClust: `{
+		promutils.PromQDiskClustUrlEncoded: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -65,7 +65,7 @@ var (
 		  ]
 		}
 	  }`,
-		promQSentBytesRateClust: `{
+		promutils.PromQSentBytesRateClustUrlEncoded: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -80,7 +80,7 @@ var (
 		  ]
 		}
 	  }`,
-		promQRecvBytesRateClust: `{
+		promutils.PromQRecvBytesRateClustUrlEncoded: `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -191,8 +191,7 @@ var (
 )
 
 func initAppInstTestData() {
-	q := fmt.Sprintf(promQAppDetailWrapperFmt, promQCpuPod)
-	testPayloadData[q] = `{
+	testPayloadData[promutils.PromQCpuPodUrlEncoded] = `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -211,8 +210,7 @@ func initAppInstTestData() {
 			]
 		  }
 		  }`
-	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQMemPod)
-	testPayloadData[q] = `{
+	testPayloadData[promutils.PromQMemPodUrlEncoded] = `{
 		"status": "success",
 		"data": {
   		"resultType": "vector",
@@ -231,8 +229,7 @@ func initAppInstTestData() {
   		]
 		}
 		}`
-	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQDiskPod)
-	testPayloadData[q] = `{
+	testPayloadData[promutils.PromQDiskPodUrlEncoded] = `{
 		"status": "success",
 		"data": {
 		  "resultType": "vector",
@@ -251,8 +248,7 @@ func initAppInstTestData() {
 		]
 		}
 		}`
-	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetSentRate)
-	testPayloadData[q] = `{
+	testPayloadData[promutils.PromQNetSentRateUrlEncoded] = `{
 		"status": "success",
 		"data": {
   		"resultType": "vector",
@@ -271,8 +267,7 @@ func initAppInstTestData() {
   		]
 		}
 		}`
-	q = fmt.Sprintf(promQAppDetailWrapperFmt, promQNetRecvRate)
-	testPayloadData[q] = `{
+	testPayloadData[promutils.PromQNetRecvRateUrlEncoded] = `{
 		"status": "success",
 		"data": {
   		"resultType": "vector",

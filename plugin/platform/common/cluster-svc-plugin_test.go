@@ -11,6 +11,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
+- name: userdefinedalerts
+  groups:
+  - name: useralerts.rules
+    rules:
+    - alert: testAlert1
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m]))by(pod)) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 70 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_fs_usage_bytes{image!=""})by(pod) / ignoring (pod) group_left sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})*100) > 70
+      for: 30s
+      labels:
+        severity: warning
+        type: "User Defined"
+        app: "Pillimo Go!"
+        apporg: "AtlanticInc"
+        appver: "1.0.0"
+        cloudlet: "San Jose Site"
+        cloudletorg: "UFGT Inc."
+        cluster: "Pillimos"
+        clusterorg: "AtlanticInc"
+        scope: "Application"
+        type: "UserDefined"
+    - alert: testAlert3
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m]))by(pod)) > 100
+      for: 30s
+      labels:
+        severity: error
+        type: "User Defined"
+        app: "Pillimo Go!"
+        apporg: "AtlanticInc"
+        appver: "1.0.0"
+        cloudlet: "San Jose Site"
+        cloudletorg: "UFGT Inc."
+        cluster: "Pillimos"
+        clusterorg: "AtlanticInc"
+        scope: "Application"
+        testLabel1: "testValue1"
+        testLabel2: "testValue2"
+        type: "UserDefined"
+      annotations:
+        testAnnotation1: "description1"
+        testAnnotation2: "description2"
+`
+
 // TestAutoScaleT primarily checks that AutoScale template parsing works, because
 // otherwise cluster-svc could crash during runtime if template has an issue.
 func TestAutoScaleT(t *testing.T) {
@@ -27,6 +69,7 @@ func TestAutoScaleT(t *testing.T) {
 
 	clusterInst.AutoScalePolicy = policy.Key.Name
 
+	userAlerts := testutil.UserAlertData
 	settings := edgeproto.GetDefaultSettings()
 
 	configExpected := `additionalPrometheusRules:
@@ -52,7 +95,7 @@ func TestAutoScaleT(t *testing.T) {
     - expr: max_over_time(total_worker_node_mem_utilisation[120s])
       record: 'stabilized_max_total_worker_node_mem_utilisation'
 `
-	testAutoScaleT(t, ctx, &clusterInst, &policy, settings, configExpected)
+	testClusterRulesT(t, ctx, &clusterInst, &policy, settings, userAlerts, configExpected, TestClusterUserDefAlertsRules)
 
 	policy.StabilizationWindowSec = 300
 	settings.ClusterAutoScaleAveragingDurationSec = 30
@@ -80,16 +123,18 @@ func TestAutoScaleT(t *testing.T) {
     - expr: max_over_time(total_worker_node_mem_utilisation[300s])
       record: 'stabilized_max_total_worker_node_mem_utilisation'
 `
-	testAutoScaleT(t, ctx, &clusterInst, &policy, settings, configExpected)
+	testClusterRulesT(t, ctx, &clusterInst, &policy, settings, userAlerts, configExpected, TestClusterUserDefAlertsRules)
 }
 
-func testAutoScaleT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, expected string) {
+func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, alerts []edgeproto.UserAlert, expectedAutoProvRules string, expectedUserAlertsRules string) {
 	clusterSvc := ClusterSvc{}
-	appInst := edgeproto.AppInst{}
+	appInst := testutil.AppInstData[0]
 
-	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings)
+	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings, alerts)
 	require.Nil(t, err)
-	require.Equal(t, 1, len(configs))
+	require.Equal(t, 2, len(configs))
 	ioutil.WriteFile("foo", []byte(configs[0].Config), 0644)
-	require.Equal(t, expected, configs[0].Config)
+	require.Equal(t, expectedAutoProvRules, configs[0].Config)
+	ioutil.WriteFile("bar", []byte(configs[1].Config), 0644)
+	require.Equal(t, expectedUserAlertsRules, configs[1].Config)
 }

@@ -392,6 +392,114 @@ func RemoveAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edg
 	return api.RemoveAppAutoProvPolicy(ctx, obj)
 }
 
+func AddAppUserDefinedAlert(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionAppUserDefinedAlert{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.AppUserDefinedAlert.AppKey.Organization)
+	resp, err := AddAppUserDefinedAlertObj(ctx, rc, &in.AppUserDefinedAlert)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return setReply(c, resp)
+}
+
+func AddAppUserDefinedAlertObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddAppUserDefinedAlert(); err != nil {
+		return nil, err
+	}
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
+			ResourceApps, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewAppApiClient(rc.conn)
+	return api.AddAppUserDefinedAlert(ctx, obj)
+}
+
+func RemoveAppUserDefinedAlert(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionAppUserDefinedAlert{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.AppUserDefinedAlert.AppKey.Organization)
+	resp, err := RemoveAppUserDefinedAlertObj(ctx, rc, &in.AppUserDefinedAlert)
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			err = fmt.Errorf("%s", st.Message())
+		}
+		return err
+	}
+	return setReply(c, resp)
+}
+
+func RemoveAppUserDefinedAlertObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveAppUserDefinedAlert(); err != nil {
+		return nil, err
+	}
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
+			ResourceApps, ActionManage); err != nil {
+			return nil, err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connectController(ctx, rc.region)
+		if err != nil {
+			return nil, err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn.Close()
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewAppApiClient(rc.conn)
+	return api.RemoveAppUserDefinedAlert(ctx, obj)
+}
+
 func ShowCloudletsForAppDeployment(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}

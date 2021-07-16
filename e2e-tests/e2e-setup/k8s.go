@@ -11,7 +11,7 @@ import (
 	"time"
 
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	restclient "k8s.io/client-go/rest"
@@ -73,7 +73,7 @@ func runCommand(actionType string, command string, args ...string) error {
 			return errors.New(summarizeError(string(output)))
 		}
 	} else {
-		log.Printf("K8s command OK: %s\n", output)
+		log.Printf("run command OK: %s\n", output)
 	}
 	return nil
 }

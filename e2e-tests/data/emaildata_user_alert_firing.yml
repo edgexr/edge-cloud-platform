@@ -1,0 +1,18 @@
+- text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=TooManyConnections\n\n
+    \ app=someapplication1\n\n  apporg=AcmeAppCo\n\n  appver=1.0\n\n  cloudlet=dmuus-cloud-1\n\n
+    \ cloudletorg=dmuus\n\n  cluster=SmallCluster\n\n  clusterorg=AcmeAppCo\n\n  env=testing\n\n
+    \ region=local\n\n  scope=Application\n\n  severity=warning\n\n\n  [1] Firing\n\n\n"
+  headers:
+    subject: '[FIRING:1] Alert for emailAlertReceiver: TooManyConnections Application:
+      someapplication1 Version: 1.0'
+    to: ops@mobiledgex.net
+    from: alerts@mobiledgex.com
+- text: "\nMobiledX Monitoring System: 1 alert for \n  alertname=TooManyConnections\n\n
+    \ app=someapplication1\n\n  apporg=AcmeAppCo\n\n  appver=1.0\n\n  cloudlet=dmuus-cloud-1\n\n
+    \ cloudletorg=dmuus\n\n  cluster=SmallCluster\n\n  clusterorg=AcmeAppCo\n\n  env=testing\n\n
+    \ region=local\n\n  scope=Application\n\n  severity=warning\n\n\n  [1] Firing\n\n\n"
+  headers:
+    subject: '[FIRING:1] Alert for emailClusterAlertReceiver: TooManyConnections Application:
+      someapplication1 Version: 1.0'
+    to: cluster-ops@mobiledgex.net
+    from: alerts@mobiledgex.com

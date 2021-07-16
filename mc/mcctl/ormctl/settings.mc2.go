@@ -114,6 +114,7 @@ var SettingsOptionalArgs = []string{
 	"appinstclientcleanupinterval",
 	"clusterautoscaleaveragingdurationsec",
 	"clusterautoscaleretrydelay",
+	"userdefinedalertmintriggertime",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -151,6 +152,7 @@ var SettingsAliasArgs = []string{
 	"appinstclientcleanupinterval=settings.appinstclientcleanupinterval",
 	"clusterautoscaleaveragingdurationsec=settings.clusterautoscaleaveragingdurationsec",
 	"clusterautoscaleretrydelay=settings.clusterautoscaleretrydelay",
+	"userdefinedalertmintriggertime=settings.userdefinedalertmintriggertime",
 }
 var SettingsComments = map[string]string{
 	"fields":                                                      "Fields are used for the Update API to specify which fields to apply",
@@ -188,6 +190,7 @@ var SettingsComments = map[string]string{
 	"appinstclientcleanupinterval":                                     "AppInstClient cleanup thread run interval",
 	"clusterautoscaleaveragingdurationsec":                             "Cluster auto scale averaging duration for stats to avoid spikes (seconds), avoid setting below 30s or it will not capture any measurements to average",
 	"clusterautoscaleretrydelay":                                       "Cluster auto scale retry delay if scaling failed",
+	"userdefinedalertmintriggertime":                                   "Minimmum user alert trigger time",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",

@@ -138,24 +138,25 @@ func (s *AlertMgrServer) Stop() {
 	s.waitGrp.Wait()
 }
 
+// Prune labels we don't want to show on the alerts sent to the external alert integrations
 func isLabelInternal(label string) bool {
-	if label == "instance" || label == "job" {
+	if label == "instance" || label == "job" || label == cloudcommon.AlertTypeLabel {
 		return true
 	}
 	return false
 }
 func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models.PostableAlerts {
 	openAPIAlerts := models.PostableAlerts{}
-	for _, a := range alerts {
-		name, ok := a.Labels["alertname"]
-		if !ok || cloudcommon.IsInternalAlert(name) {
+	for _, alert := range alerts {
+		name, ok := alert.Labels["alertname"]
+		if !ok || cloudcommon.IsInternalAlert(alert.Labels) {
 			continue
 		}
-		start := strfmt.DateTime(time.Unix(a.ActiveAt.Seconds, int64(a.ActiveAt.Nanos)))
+		start := strfmt.DateTime(time.Unix(alert.ActiveAt.Seconds, int64(alert.ActiveAt.Nanos)))
 		// Set endsAt to now + s.AlertResolutionTimout
 		end := strfmt.DateTime(time.Now().Add(s.AlertResolutionTimout))
 		labels := make(map[string]string)
-		for k, v := range a.Labels {
+		for k, v := range alert.Labels {
 			// drop labels we don't want to expose to the end-users
 			if isLabelInternal(k) {
 				continue
@@ -172,10 +173,14 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 		}
 
 		// add severity label for this alert
-		labels[cloudcommon.AlertSeverityLabel] = cloudcommon.GetSeverityForAlert(name)
+		if severity, ok := alert.Labels[cloudcommon.AlertSeverityLabel]; ok {
+			labels[cloudcommon.AlertSeverityLabel] = severity
+		} else {
+			labels[cloudcommon.AlertSeverityLabel] = cloudcommon.GetSeverityForAlert(name)
+		}
 
 		openAPIAlerts = append(openAPIAlerts, &models.PostableAlert{
-			Annotations: copyMap(a.Annotations),
+			Annotations: copyMap(alert.Annotations),
 			StartsAt:    start,
 			EndsAt:      end,
 			Alert: models.Alert{

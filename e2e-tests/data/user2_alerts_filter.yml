@@ -1,0 +1,6 @@
+regiondata:
+- region: local
+  appdata:
+    userdefinedalerts:
+    - key:
+        organization: AcmeAppCo

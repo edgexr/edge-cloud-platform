@@ -15,6 +15,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/mobiledgex/edge-cloud-infra/alerts"
 	"github.com/mobiledgex/edge-cloud-infra/autoprov/autorules"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
@@ -34,6 +35,7 @@ var CloudletPrometheusAddr = "0.0.0.0:" + intprocess.CloudletPrometheusPort
 
 var promTargetTemplate *template.Template
 var targetsLock sync.Mutex
+var alertRulesLock sync.Mutex
 
 var promTargetT = `
 {
@@ -169,12 +171,25 @@ func deleteCloudletPrometheusAlertFile(ctx context.Context, file string) error {
 
 // Write prometheus rules file and reload rules
 func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf []byte) error {
+	alertRulesLock.Lock()
+	defer alertRulesLock.Unlock()
 	// write alerting rules
 	log.SpanLog(ctx, log.DebugLevelInfo, "writing alerts file", "file", file)
 	err := ioutil.WriteFile(file, alertsBuf, 0644)
 	if err != nil {
 		return err
 	}
+	if runtime.GOOS == "darwin" {
+		// probably because of the way docker uses VMs on mac,
+		// the file watch doesn't detect changes done to the targets
+		// file in the host.
+		cmd := exec.Command("docker", "exec", intprocess.PrometheusContainer, "touch", file)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfo, "Failed to touch prom rules file in container to trigger refresh in Prometheus", "out", string(out), "err", err)
+		}
+	}
+
 	// need to force prometheus to re-read the rules file
 	reloadCloudletProm(ctx)
 	return nil
@@ -351,9 +366,33 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		}
 	}
 
+	// add user-defined alerts for this app Inst as well
+	if len(app.UserDefinedAlerts) > 0 {
+		userAlerts := []edgeproto.UserAlert{}
+		for _, alertName := range app.UserDefinedAlerts {
+			userAlert := edgeproto.UserAlert{
+				Key: edgeproto.UserAlertKey{
+					Name:         alertName,
+					Organization: app.Key.Organization,
+				},
+			}
+			found := UserAlertCache.Get(&userAlert.Key, &userAlert)
+			if !found {
+				continue
+			}
+			userAlerts = append(userAlerts, userAlert)
+		}
+		userGrp := alerts.GetCloudletAlertRules(ctx, &appInst, userAlerts)
+		if userGrp != nil {
+			grps.Groups = append(grps.Groups, *userGrp)
+		}
+	}
 	if len(grps.Groups) == 0 {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "no rules for AppInst", "AppInst", key)
-		// no rules
+		// no rules - rulefile should not exist for this
+		fileName := getAppInstRulesFileName(key)
+		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
+		}
 		return
 	}
 	byt, err := yaml.Marshal(grps)

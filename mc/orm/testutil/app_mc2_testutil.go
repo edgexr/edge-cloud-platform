@@ -115,6 +115,36 @@ func TestPermRemoveAppAutoProvPolicy(mcClient *mctestclient.Client, uri, token, 
 	return TestRemoveAppAutoProvPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
+func TestAddAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppUserDefinedAlert, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppUserDefinedAlert{}
+	dat.Region = region
+	dat.AppUserDefinedAlert = *in
+	for _, fn := range modFuncs {
+		fn(&dat.AppUserDefinedAlert)
+	}
+	return mcClient.AddAppUserDefinedAlert(uri, token, dat)
+}
+func TestPermAddAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppUserDefinedAlert{}
+	in.AppKey.Organization = org
+	return TestAddAppUserDefinedAlert(mcClient, uri, token, region, in, modFuncs...)
+}
+
+func TestRemoveAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppUserDefinedAlert, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppUserDefinedAlert{}
+	dat.Region = region
+	dat.AppUserDefinedAlert = *in
+	for _, fn := range modFuncs {
+		fn(&dat.AppUserDefinedAlert)
+	}
+	return mcClient.RemoveAppUserDefinedAlert(uri, token, dat)
+}
+func TestPermRemoveAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppUserDefinedAlert{}
+	in.AppKey.Organization = org
+	return TestRemoveAppUserDefinedAlert(mcClient, uri, token, region, in, modFuncs...)
+}
+
 func TestShowCloudletsForAppDeployment(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DeploymentCloudletRequest, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) ([]edgeproto.CloudletKey, int, error) {
 	dat := &ormapi.RegionDeploymentCloudletRequest{}
 	dat.Region = region
@@ -195,6 +225,30 @@ func (s *TestClient) RemoveAppAutoProvPolicy(ctx context.Context, in *edgeproto.
 		AppAutoProvPolicy: *in,
 	}
 	out, status, err := s.McClient.RemoveAppAutoProvPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) AddAppUserDefinedAlert(ctx context.Context, in *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppUserDefinedAlert{
+		Region:              s.Region,
+		AppUserDefinedAlert: *in,
+	}
+	out, status, err := s.McClient.AddAppUserDefinedAlert(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveAppUserDefinedAlert(ctx context.Context, in *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppUserDefinedAlert{
+		Region:              s.Region,
+		AppUserDefinedAlert: *in,
+	}
+	out, status, err := s.McClient.RemoveAppUserDefinedAlert(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

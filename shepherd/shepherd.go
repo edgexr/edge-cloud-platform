@@ -74,6 +74,7 @@ var AlertCache edgeproto.AlertCache
 var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
 var AutoScalePoliciesCache edgeproto.AutoScalePolicyCache
 var SettingsCache edgeproto.SettingsCache
+var UserAlertCache edgeproto.UserAlertCache
 var settings edgeproto.Settings
 var AppInstByAutoProvPolicy edgeproto.AppInstLookupByPolicyKey
 var targetFileWorkers tasks.KeyWorkers
@@ -171,8 +172,9 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		} else { //somehow this cluster's prometheus was already registered
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Error, Prometheus app already registered for this cluster")
 		}
-	} else { //if its anything other than ready just stop it
-		//try to remove it from the workerMap
+	} else if old != nil &&
+		old.State == edgeproto.TrackedState_NOT_PRESENT { // delete only if the prometheus appInst gets deleted
+		// try to remove it from the workerMap
 		if exists {
 			delete(workerMap, mapKey)
 			stats.Stop(ctx)
@@ -450,6 +452,7 @@ func start() {
 	ClusterInstCache.SetDeletedCb(clusterInstDeletedCb)
 
 	edgeproto.InitAppCache(&AppCache)
+	AppCache.SetUpdatedCb(appUpdateCb)
 	edgeproto.InitAutoProvPolicyCache(&AutoProvPoliciesCache)
 	edgeproto.InitAutoScalePolicyCache(&AutoScalePoliciesCache)
 	AutoProvPoliciesCache.SetUpdatedCb(autoProvPolicyCb)
@@ -459,6 +462,8 @@ func start() {
 	edgeproto.InitVMPoolCache(&VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&VMPoolInfoCache)
 	edgeproto.InitCloudletCache(&CloudletCache)
+	edgeproto.InitUserAlertCache(&UserAlertCache)
+	UserAlertCache.SetUpdatedCb(userAlertCb)
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(nodeMgr.Name(), addrs,
 		tls.GetGrpcDialOption(clientTlsConfig),
@@ -477,6 +482,7 @@ func start() {
 	notifyClient.RegisterRecvCloudletInternalCache(&CloudletInternalCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
 	notifyClient.RegisterRecvAutoScalePolicyCache(&AutoScalePoliciesCache)
+	notifyClient.RegisterRecvUserAlertCache(&UserAlertCache)
 	SettingsCache.SetUpdatedCb(settingsCb)
 	VMPoolInfoCache.SetUpdatedCb(vmPoolInfoCb)
 	CloudletCache.SetUpdatedCb(cloudletCb)
@@ -605,4 +611,72 @@ func (s *sendAllRecv) RecvAllStart() {}
 
 func (s *sendAllRecv) RecvAllEnd(ctx context.Context) {
 	targetFileWorkers.NeedsWork(ctx, targetsFileWorkerKey)
+}
+
+// update active connection alerts for cloudlet prometheus
+// walk appCache and check which apps use this alert
+func userAlertCb(ctx context.Context, old *edgeproto.UserAlert, new *edgeproto.UserAlert) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "User Alert update", "new", new, "old", old)
+	if new == nil || old == nil {
+		// deleted, so all the appInsts should've been cleaned up already
+		return
+	}
+	if new.ActiveConnLimit == old.ActiveConnLimit {
+		// nothing to update
+		return
+	}
+
+	apps := map[edgeproto.AppKey]struct{}{}
+	appKeyFilter := edgeproto.AppKey{
+		Organization: new.Key.Organization,
+	}
+	appAlertFilter := edgeproto.App{
+		Key: appKeyFilter,
+	}
+
+	AppCache.Show(&appAlertFilter, func(obj *edgeproto.App) error {
+		for _, alertName := range obj.UserDefinedAlerts {
+			if alertName == new.Key.Name {
+				apps[obj.Key] = struct{}{}
+				return nil
+			}
+		}
+		return nil
+	})
+	appInstFilter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: appKeyFilter,
+		},
+	}
+	AppInstCache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
+		if _, found := apps[obj.Key.AppKey]; found {
+			appInstAlertWorkers.NeedsWork(ctx, obj.Key)
+		}
+		return nil
+	})
+}
+
+// App Update callback
+func appUpdateCb(ctx context.Context, old *edgeproto.App, new *edgeproto.App) {
+	log.SpanLog(ctx, log.DebugLevelMetrics, "App update", "new", new, "old", old)
+	if new == nil || old == nil {
+		// deleted, so all the appInsts should've been cleaned up already
+		// or a new app - no appInsts on it yet
+		return
+	}
+	if !old.AppUserAlertsDifferent(new) {
+		// nothing to update
+		return
+	}
+
+	appInstFilter := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: new.Key,
+		},
+	}
+	// Update AppInst associated with this App
+	AppInstCache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
+		appInstAlertWorkers.NeedsWork(ctx, obj.Key)
+		return nil
+	})
 }

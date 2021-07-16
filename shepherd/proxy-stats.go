@@ -395,7 +395,7 @@ func ProxyScraper(done chan bool) {
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Error retrieving proxy metrics", "appinst", v.App, "error", err.Error())
 				} else if checkAndSetLastPushLbMetrics(time.Now()) {
-					log.DebugLog(log.DebugLevelInfo, "Pushing proxy metrics")
+					log.SpanLog(ctx, log.DebugLevelInfo, "Pushing proxy metrics")
 					// send to crm->controller->influx
 					influxData := MarshallTcpProxyMetric(v, metrics)
 					influxData = append(influxData, MarshallUdpProxyMetric(v, metrics)...)

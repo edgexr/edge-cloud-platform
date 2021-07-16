@@ -154,6 +154,48 @@ func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client
 
 var _ = edgeproto.GetFields
 
+func badPermAddAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, status, err := testutil.TestPermAddAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badAddAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, st, err := testutil.TestPermAddAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermAddAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, status, err := testutil.TestPermAddAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
+func badPermRemoveAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, status, err := testutil.TestPermRemoveAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Forbidden")
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+func badRemoveAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, st, err := testutil.TestPermRemoveAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.NotNil(t, err)
+	require.Equal(t, status, st)
+}
+
+func goodPermRemoveAppUserDefinedAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) {
+	_, status, err := testutil.TestPermRemoveAppUserDefinedAlert(mcClient, uri, token, region, org, modFuncs...)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+var _ = edgeproto.GetFields
+
 func badPermShowCloudletsForAppDeployment(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) {
 	_, status, err := testutil.TestPermShowCloudletsForAppDeployment(mcClient, uri, token, region, org, modFuncs...)
 	require.NotNil(t, err)
