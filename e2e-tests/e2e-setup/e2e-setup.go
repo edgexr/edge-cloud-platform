@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
@@ -370,6 +371,23 @@ func StartProcesses(processName string, args []string, outputDir string) bool {
 	return true
 }
 
+// Clean up leftover files
+func CleanupTmpFiles(ctx context.Context) error {
+	filesToRemove, err := filepath.Glob("/tmp/rulefile_*")
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	configFiles := []string{"/tmp/prom_targets.json", "/tmp/prometheus.yml", "/tmp/alertmanager.yml"}
+	filesToRemove = append(filesToRemove, configFiles...)
+	for ii := range filesToRemove {
+		err = os.Remove(filesToRemove[ii])
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
+}
+
 func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi.TestConfig, spec *TestSpec, specStr string, mods []string, vars map[string]string, sharedData map[string]string, retry *bool) []string {
 	var actionArgs []string
 	act, actionParam := setupmex.GetActionParam(actionSpec)
@@ -483,6 +501,10 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			errors = append(errors, err.Error())
 		}
 		err = intprocess.StopCloudletPrometheus(ctx)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+		err = CleanupTmpFiles(ctx)
 		if err != nil {
 			errors = append(errors, err.Error())
 		}

@@ -1,0 +1,7 @@
+- region: local
+  appuserdefinedalert:
+    appkey:
+      organization: AcmeAppCo
+      name: someapplication1
+      version: "1.0"
+    userdefinedalert: TooManyConnections

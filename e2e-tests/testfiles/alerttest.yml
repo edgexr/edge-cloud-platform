@@ -59,6 +59,117 @@ tests:
       yaml2: '{{datadir2}}/mc_user2_data_alert_receiver_show.yml'
       filetype: mcdata
 
+  - name: make sure no user alerts are defined
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/user2_alerts_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/useralert_alert_empty.yml'
+      filetype: mcdata
+
+  - name: create a new user-defined alert
+    actions: [mcapi-create]
+    apifile: '{{datadir2}}/user2_alert.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: add the alert to an app
+    actions: [mcapi-adduseralert]
+    apifile: '{{datadir2}}/user2_add_alert_to_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: set active connections to 101 to trigger an alert
+    actions: [cmds]
+    apifilevars:
+      activeconns: "101"
+    apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+  - name: check user defined alert
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/too_many_active_connections_alert_show.yml'
+      filetype: mcalerts
+
+  - name: verify that email notification about an alert was sent to both admin and user2
+    actions: [email-check]
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/emaildata_user_alert_firing.yml'
+      filetype: emaildata
+
+  - name: set active connections back to 50 to clear user alert
+    actions: [cmds]
+    apifilevars:
+      activeconns: "50"
+    apifile: '{{datadir2}}/autoscale_prom_set_active'
+
+  - name: check user defined alert is cleared
+    actions: [mcapi-showalerts]
+    apifile: '{{datadir2}}/show_local_region.yml'
+    curuserfile: '{{datadir2}}/mc_admin.yml'
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: mcalerts
+
+  - name: verify that email notification about an alert resolution was sent
+    actions: [email-check]
+    retrycount: 10
+    retryintervalsec: 0.5
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/emaildata_user_alert_resolved.yml'
+      filetype: emaildata
+
+  - name: remove alert from app
+    actions: [mcapi-removeuseralert]
+    apifile: '{{datadir2}}/user2_add_alert_to_app.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: delete user alert
+    actions: [mcapi-delete]
+    apifile: '{{datadir2}}/user2_alert.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+
+  - name: make sure no user alerts are defined
+    actions: [mcapi-showfiltered]
+    apifile: '{{datadir2}}/user2_alerts_filter.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/useralert_alert_empty.yml'
+      filetype: mcdata
+
+  - name: delete all emails and verify that mailbox is empty
+    actions: [email-deleteall, email-check]
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: emaildata
+
+  - name: delete all slack messages and verify that the channel is empty
+    actions: [slack-deleteall, slack-check]
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: slackdata
+
+  - name: delete all pagerduty events and verify that the channel is empty
+    actions: [pagerduty-deleteall, pagerduty-check]
+    compareyaml:
+      yaml1: '{{outputdir}}/show-commands.yml'
+      yaml2: '{{datadir2}}/mcappdata_empty.yml'
+      filetype: pagerdutydata
+
   - name: set healthy backend servers to 0
     actions: [cmds]
     apifile: "{{datadir2}}/alert_appinstdown"

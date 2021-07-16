@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/promutils"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 func addClusterDetailsToAlerts(alerts []edgeproto.Alert, clusterInstKey *edgeproto.ClusterInstKey) []edgeproto.Alert {
-	for ii, _ := range alerts {
+	for ii := range alerts {
 		alert := &alerts[ii]
 		alert.Labels[edgeproto.ClusterInstKeyTagOrganization] = clusterInstKey.Organization
 		alert.Labels[edgeproto.CloudletKeyTagOrganization] = clusterInstKey.CloudletKey.Organization
@@ -27,9 +28,14 @@ func pruneClusterForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]stru
 		return keys
 	}
 	alertFromKey := edgeproto.Alert{}
-	for key, _ := range keys {
+	for key := range keys {
 		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
-		if _, found := alertFromKey.Labels[edgeproto.AppKeyTagName]; found ||
+		if !isClusterMonitoredUserAlert(alertFromKey.Labels) {
+			delete(keys, key)
+			continue
+		}
+		// Skip health-check alerts here - envoy adds "job" label
+		if _, found := alertFromKey.Labels["job"]; found ||
 			alertFromKey.Labels[edgeproto.ClusterInstKeyTagOrganization] != clusterInstKey.Organization ||
 			alertFromKey.Labels[edgeproto.CloudletKeyTagOrganization] != clusterInstKey.CloudletKey.Organization ||
 			alertFromKey.Labels[edgeproto.CloudletKeyTagName] != clusterInstKey.CloudletKey.Name ||
@@ -40,13 +46,35 @@ func pruneClusterForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]stru
 	return keys
 }
 
+// Cluster Prometheus tracked user alerts are identified by pod label (label_mexAppName)
+func isClusterMonitoredUserAlert(labels map[string]string) bool {
+	if !cloudcommon.IsMonitoredAlert(labels) {
+		return false
+	}
+	if _, found := labels[promutils.ClusterPrometheusAppLabel]; found {
+		return true
+	}
+	return false
+}
+
+// Cloudlet Prometheus tracks active connection based user alerts
+func isCloudletMonitoredUserAlert(labels map[string]string) bool {
+	if !cloudcommon.IsMonitoredAlert(labels) {
+		return false
+	}
+	// on cloudlet alert label_mexAppName is not added
+	if _, found := labels[promutils.ClusterPrometheusAppLabel]; !found {
+		return true
+	}
+	return false
+}
+
 // We have only a pre-defined set of alerts that are available at the cloudlet level
 func pruneCloudletForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]struct{}) map[edgeproto.AlertKey]struct{} {
 	alertFromKey := edgeproto.Alert{}
-	for key, _ := range keys {
+	for key := range keys {
 		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
-		if alertName, found := alertFromKey.Labels["alertname"]; !found ||
-			!cloudcommon.IsMonitoredAlert(alertName) {
+		if !isCloudletMonitoredUserAlert(alertFromKey.Labels) {
 			delete(keys, key)
 		}
 	}
@@ -65,11 +93,11 @@ func UpdateAlerts(ctx context.Context, alerts []edgeproto.Alert, filterKey inter
 	})
 
 	changeCount := 0
-	for ii, _ := range alerts {
+	for ii := range alerts {
 		alert := &alerts[ii]
 		AlertCache.UpdateModFunc(ctx, alert.GetKey(), 0, func(old *edgeproto.Alert) (*edgeproto.Alert, bool) {
 			if old == nil {
-				log.SpanLog(ctx, log.DebugLevelMetrics, "Update new alert", "alert", alert)
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Update new alert", "alert", alert, "key", alert.GetKey())
 				changeCount++
 				return alert, true
 			}
@@ -85,7 +113,7 @@ func UpdateAlerts(ctx context.Context, alerts []edgeproto.Alert, filterKey inter
 	}
 	pruneFunc(filterKey, stale)
 	// delete our stale entries
-	for key, _ := range stale {
+	for key := range stale {
 		buf := edgeproto.Alert{}
 		buf.SetKey(&key)
 		alertName := buf.Labels["alertname"]

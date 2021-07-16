@@ -1,0 +1,22 @@
+- labels:
+    alertname: TooManyConnections
+    app: someapplication1
+    apporg: AcmeAppCo
+    appver: "1.0"
+    cloudlet: dmuus-cloud-1
+    cloudletorg: dmuus
+    cluster: SmallCluster
+    clusterorg: AcmeAppCo
+    env: testing
+    job: MobiledgeX Monitoring
+    region: local
+    scope: Application
+    severity: warning
+    type: UserDefined
+  annotations:
+    description: Too many connections at the same time
+  state: firing
+  activeat:
+    seconds: 1625943334
+    nanos: 527423538
+  value: 101

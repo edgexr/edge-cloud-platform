@@ -88,7 +88,12 @@ func RunMcAPI(api, mcname, apiFile string, apiFileVars map[string]string, curUse
 	} else if api == "showalertreceivers" {
 		*retry = true
 		return showMcAlertReceivers(uri, curUserFile, outputDir, vars, sharedData)
+	} else if api == "adduseralert" {
+		return runMcAddUserAlertToApp(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
+	} else if api == "removeuseralert" {
+		return runMcRemoveUserAlertFromApp(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData)
 	}
+
 	return runMcDataAPI(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, retry)
 }
 
@@ -1374,6 +1379,36 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 	appdata.Nodes = nodes
 	util.PrintToYamlFile("show-commands.yml", outputDir, appdata, true)
 	return rc
+}
+
+func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppUserDefinedAlert) (*edgeproto.Result, int, error)) bool {
+	rc := true
+	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
+	if !rc {
+		return false
+	}
+	userDefAlerts := []ormapi.RegionAppUserDefinedAlert{}
+	err := util.ReadYamlFile(apiFile, &userDefAlerts, util.WithVars(vars), util.ValidateReplacedVars())
+	if err != nil {
+		log.Printf("error in unmarshal for file %s, %v\n", apiFile, err)
+		return false
+	}
+	log.Printf("Found %d alerts, %v\n", len(userDefAlerts), userDefAlerts)
+	for _, alert := range userDefAlerts {
+		log.Printf("Processing userapp alert %v\n", alert)
+		output, status, err := apiFunc(uri, token, &alert)
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		checkMcErr("AddAppUserDefinedAlert", status, err, &rc)
+	}
+	return rc
+}
+
+func runMcAddUserAlertToApp(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
+	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.AddAppUserDefinedAlert)
+}
+
+func runMcRemoveUserAlertFromApp(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
+	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.RemoveAppUserDefinedAlert)
 }
 
 func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {

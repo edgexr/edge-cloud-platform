@@ -34,11 +34,11 @@ func (s *AuthzAlert) Ok(obj *edgeproto.Alert) (bool, bool) {
 	}
 
 	// if not an admin, we filter internal alerts
-	name, ok := obj.Labels["alertname"]
+	_, ok := obj.Labels["alertname"]
 	if !ok {
 		return false, filterOutput
 	}
-	if cloudcommon.IsInternalAlert(name) {
+	if cloudcommon.IsInternalAlert(obj.Labels) {
 		return false, filterOutput
 	}
 

@@ -1,0 +1,15 @@
+regiondata:
+- region: local
+  appdata:
+    userdefinedalerts:
+    - key:
+        name: TooManyConnections
+        organization: AcmeAppCo
+      severity: warning
+      activeconnlimit: 100
+      triggertime: 2s
+      labels:
+        env: testing
+      annotations:
+        description: "Too many connections at the same time"
+

@@ -99,6 +99,7 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.EventsGroup),
 		rc.getCmdGroup(ormctl.UsageGroup),
 		rc.getCmdGroup(ormctl.AlertReceiverGroup),
+		rc.getCmdGroup(ormctl.UserAlertGroup),
 	}
 	otherCommands := []*cobra.Command{
 		GetVersionCmd(),
