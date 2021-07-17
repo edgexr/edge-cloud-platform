@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
@@ -20,6 +21,16 @@ func showScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) string
 	return "shepherd scraping metrics every " + promScrapeInterval.String()
 }
 
+func setIntervalFromDbg(ctx context.Context, scrapeInterval *time.Duration) error {
+	// update cloudletPrometheus config file
+	err := updateCloudletPrometheusConfig(ctx, &metricsScrapingInterval, &settings.ShepherdAlertEvaluationInterval)
+	if err != nil {
+		return fmt.Errorf("unable to update cloudlet prometheus config: %s", err.Error())
+	}
+	updateClusterWorkers(ctx, settings.ShepherdMetricsCollectionInterval)
+	return nil
+}
+
 func setScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) string {
 	var err error
 	if req.Args == "" {
@@ -29,9 +40,11 @@ func setScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) string 
 	if err != nil {
 		return "cannot parse scrape interval duration(example: 15s)"
 	}
-	updateClusterWorkers(ctx, settings.ShepherdMetricsCollectionInterval)
-	return "set prometheus scrape interval to " + promScrapeInterval.String()
-
+	err = setIntervalFromDbg(ctx, &metricsScrapingInterval)
+	if err != nil {
+		return err.Error()
+	}
+	return "set prometheus scrape interval to " + metricsScrapingInterval.String()
 }
 
 func resetScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) string {
@@ -39,6 +52,9 @@ func resetScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) strin
 		return "reset command doesn't take any arguments"
 	}
 	metricsScrapingInterval = *promScrapeInterval
-	updateClusterWorkers(ctx, settings.ShepherdMetricsCollectionInterval)
+	err := setIntervalFromDbg(ctx, &metricsScrapingInterval)
+	if err != nil {
+		return err.Error()
+	}
 	return "reset promScrapeInterval for all workers"
 }

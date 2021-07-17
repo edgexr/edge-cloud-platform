@@ -68,6 +68,8 @@ func TestShepherdUpdate(t *testing.T) {
 	set := edgeproto.GetDefaultSettings()
 	set.ShepherdMetricsCollectionInterval = edgeproto.Duration(time.Second)
 	set.ShepherdAlertEvaluationInterval = edgeproto.Duration(3 * time.Second)
+	// scrape period for coudletPrometheus is a cmd line option
+	metricsScrapingInterval = (time.Duration)(set.ShepherdMetricsCollectionInterval)
 	crm.SettingsCache.Update(ctx, set, 0)
 
 	start()
