@@ -18,7 +18,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
-	"github.com/prometheus/common/model"
 )
 
 const (
@@ -220,7 +219,8 @@ func GetCloudletPrometheusDockerArgs(cloudlet *edgeproto.Cloudlet, cfgFile strin
 
 // Starts prometheus container and connects it to the default ports
 func StartCloudletPrometheus(ctx context.Context, cloudlet *edgeproto.Cloudlet, settings *edgeproto.Settings) error {
-	if err := WriteCloudletPromConfig(ctx, settings); err != nil {
+	if err := WriteCloudletPromConfig(ctx, (*time.Duration)(&settings.ShepherdMetricsCollectionInterval),
+		(*time.Duration)(&settings.ShepherdAlertEvaluationInterval)); err != nil {
 		return err
 	}
 	cfgFile := GetCloudletPrometheusConfigHostFilePath()
@@ -246,13 +246,10 @@ func StartCloudletPrometheus(ctx context.Context, cloudlet *edgeproto.Cloudlet, 
 	return nil
 }
 
-func WriteCloudletPromConfig(ctx context.Context, settings *edgeproto.Settings) error {
-	scrape := model.Duration(settings.ShepherdMetricsCollectionInterval)
-	eval := model.Duration(settings.ShepherdAlertEvaluationInterval)
-
+func WriteCloudletPromConfig(ctx context.Context, promScrapeInterval *time.Duration, alertEvalInterval *time.Duration) error {
 	args := prometheusConfigArgs{
-		ScrapeInterval: scrape.String(),
-		EvalInterval:   eval.String(),
+		ScrapeInterval: promScrapeInterval.String(),
+		EvalInterval:   alertEvalInterval.String(),
 	}
 	buf := bytes.Buffer{}
 	if err := prometheusConfigTemplate.Execute(&buf, &args); err != nil {

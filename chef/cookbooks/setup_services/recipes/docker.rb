@@ -80,7 +80,7 @@ end
 cookbook_file '/tmp/prometheus.yml' do
   source 'prometheus.yml'
   mode '0644'
-  action :create
+  action :create_if_missing
   force_unlink true
   notifies :restart, 'docker_container[cloudletPrometheus]', :delayed
 end
