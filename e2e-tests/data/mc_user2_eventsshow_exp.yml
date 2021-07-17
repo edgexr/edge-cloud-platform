@@ -210,7 +210,7 @@
       org: AcmeAppCo
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
+      request: '{"Region":"locala","App":{"key":{"organization":"AcmeAppCo","name":"someapplication1","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:80,tcp:443,udp:10002","default_flavor":{"name":"x1.small"},"auth_public_key":"-----BEGIN
         PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Spdynjh+MPcziCH2Gij\nTkK9fspTH4onMtPTgxo+MQC+OZTwetvYFJjGV8jnYebtuvWWUCctYmt0SIPmA0F0\nVU6qzSlrBOKZ9yA7Rj3jSQtNrI5vfBIzK1wPDm7zuy5hytzauFupyfboXf4qS4uC\nGJCm9EOzUSCLRryyh7kTxa4cYHhhTTKNTTy06lc7YyxBsRsN/4jgxjjkxe3J0SfS\nz3eaHmfFn/GNwIAqy1dddTJSPugRkK7ZjFR+9+sscY9u1+F5QPwxa8vTB0U6hh1m\nQnhVd1d9osRwbyALfBY8R+gMgGgEBCPYpL3u5iSjgD6+n4d9RQS5zYRpeMJ1fX0C\n/QIDAQAB\n-----END
         PUBLIC KEY-----\n","deployment":"kubernetes","android_package_name":"com.acme.someapplication1"}}'
       response: '{}'
@@ -241,7 +241,7 @@
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
+      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
       response: '{}'
       spanid: 20c7c1f2a300135d
       status: "200"
@@ -264,7 +264,7 @@
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
+      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
       response: '{}'
       spanid: 668c49ef5bff7d5e
       status: "200"
@@ -287,7 +287,7 @@
       org: platos
       region: locala
       remote-ip: 127.0.0.1
-      request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":"Docker","access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
+      request: '{"Region":"locala","App":{"key":{"organization":"platos","name":"platosEnablingLayer","version":"1.0"},"image_path":"registry.mobiledgex.net/platos/dummyvalue","image_type":1,"access_ports":"tcp:64000","default_flavor":{"name":"x1.small"},"deployment":"kubernetes"}}'
       response: '{}'
       spanid: 5c969d1e7e50802f
       status: "200"
@@ -654,7 +654,7 @@
       org: AcmeAppCo
       region: local
       remote-ip: 127.0.0.1
-      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":"Docker","access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
+      request: '{"Region":"local","App":{"key":{"organization":"AcmeAppCo","name":"autoprovHA","version":"1.0"},"image_path":"registry.mobiledgex.net/AcmeAppCo/someapplication1:1.0","image_type":1,"access_ports":"tcp:82","default_flavor":{"name":"x1.small"},"deployment":"kubernetes","auto_prov_policies":["autoprovHA"]}}'
       response: '{}'
       spanid: 64077fc143d6f50f
       status: "200"
