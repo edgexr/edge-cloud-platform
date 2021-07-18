@@ -89,6 +89,26 @@ var ConfigComments = map[string]string{
 	"maxmetricsdatapoints":         `InfluxDB max number of data points returned`,
 	"userapikeycreatelimit":        `Max number of API keys a user can create`,
 	"billingenable":                `Toggle for enabling billing (primarily for testing purposes)`,
+	"disableratelimit":             `Toggle to enable and disable MC API rate limiting`,
+	"maxnumperipratelimiters":      `Maximum number of PerIp rate limiters for an api`,
+	"maxnumperuserratelimiters":    `Maximum number of PerUser rate limiters for an api`,
+}
+
+var McRateLimitFlowSettingsComments = map[string]string{
+	"flowsettingsname": `Unique name for FlowSettings`,
+	"apiname":          `Name of API Path (eg. /api/v1/usercreate)`,
+	"reqspersecond":    `Number of requests per second`,
+	"burstsize":        `Number of requests allowed at once`,
+}
+
+var McRateLimitMaxReqsSettingsComments = map[string]string{
+	"maxreqssettingsname": `Unique name for MaxReqsSettings`,
+	"apiname":             `Name of API Path (eg. /api/v1/usercreate)`,
+	"maxrequests":         `Maximum number of requests for the specified interval`,
+}
+
+var McRateLimitSettingsComments = map[string]string{
+	"apiname": `Name of API Path (eg. /api/v1/usercreate)`,
 }
 
 var OrgCloudletPoolComments = map[string]string{

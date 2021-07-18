@@ -84,6 +84,20 @@
       count: 1
     - key: shepherd start
       count: 1
+    - key: /api/v1/auth/ctrl/ShowApp
+      count: 1
+    - key: /api/v1/auth/config/update
+      count: 2
+    - key: /api/v1/auth/ratelimitsettingsmc/createflow
+      count: 1
+    - key: /api/v1/auth/ratelimitsettingsmc/createmaxreqs
+      count: 1
+    - key: /api/v1/auth/ratelimitsettingsmc/deleteflow
+      count: 1
+    - key: /api/v1/auth/ratelimitsettingsmc/deletemaxreqs
+      count: 1
+    - key: /api/v1/auth/ratelimitsettingsmc/updateflow
+      count: 1
     orgs:
     - key: MobiledgeX
       count: 89

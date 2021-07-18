@@ -1,0 +1,6 @@
+- maxreqssettingsname: showappallreqs1
+  apiname: /api/v1/auth/ctrl/ShowApp
+  ratelimittarget: AllRequests
+  maxreqsalgorithm: FixedWindowAlgorithm
+  maxrequests: 1
+  interval: 3s

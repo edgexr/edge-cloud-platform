@@ -1,0 +1,168 @@
+description: test mc rate limiting
+
+tests:
+
+- name: setup config to enable rate limiting
+  actions: [mcapi-configupdate,mcapi-configshow]
+  apifile: '{{datadir2}}/mcconfig_ratelimit.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcconfig_ratelimit_show.yml'
+    filetype: mcconfig
+
+- name: show default mc rate limit settings
+  actions: [mcapi-mcratelimitshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_default_show.yml'
+    filetype: mcratelimit
+
+- name: create flow rate limit settings for ShowApp api
+  actions: [mcapi-mcratelimitflowcreate,mcapi-mcratelimitshow]
+  apifile: '{{datadir2}}/mc_ratelimit_flowcreate.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_flowcreate_show.yml'
+    filetype: mcratelimit
+
+- name: update flow rate limit settings for ShowApp api
+  actions: [mcapi-mcratelimitflowupdate,mcapi-mcratelimitshow]
+  apifile: '{{datadir2}}/mc_ratelimit_flowupdate.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_flowupdate_show.yml'
+    filetype: mcratelimit
+
+- name: show flow rate limit settings
+  actions: [mcapi-mcratelimitflowshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_flow_show.yml'
+    filetype: mcratelimitflow
+
+- name: ShowApp1 successful FlowRateLimit
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: ShowApp2 flow rate limited (fail)
+  actions: [mcapi-showfiltered-expecterr]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/api-output.yml'
+    yaml2: '{{datadir2}}/mc_ratelimitflow_showapp_fail_show.yml'
+    filetype: errs
+
+- name: sleep, allow time token bucket to refill
+  actions: [sleep=2]
+
+- name: ShowApp3 successful after token bucket refilled FlowRateLimit
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: delete flow rate limit settings for ShowApp api
+  actions: [mcapi-mcratelimitflowdelete,mcapi-mcratelimitshow]
+  apifile: '{{datadir2}}/mc_ratelimit_flowdelete.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_default_show.yml'
+    filetype: mcratelimit
+
+- name: ShowApp successful flow RateLimit deleted
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: ShowApp again still successful after flow rate limit settings deleted
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: create maxreqs rate limit settings for ShowApp api
+  actions: [mcapi-mcratelimitmaxreqscreate,mcapi-mcratelimitshow]
+  apifile: '{{datadir2}}/mc_ratelimit_maxreqscreate.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_maxreqscreate_show.yml'
+    filetype: mcratelimit
+
+- name: show maxreqs rate limit settings
+  actions: [mcapi-mcratelimitmaxreqsshow]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_maxreqs_show.yml'
+    filetype: mcratelimitmaxreqs
+
+- name: ShowApp1 successful MaxReqsRateLimit
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: ShowApp2 maxreqs rate limited (fail)
+  actions: [mcapi-showfiltered-expecterr]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/api-output.yml'
+    yaml2: '{{datadir2}}/mc_ratelimitmaxreqs_showapp_fail_show.yml'
+    filetype: errs
+
+- name: sleep, allow time for fixed window to reset
+  actions: [sleep=3]
+
+- name: ShowApp3 successful after fixed window reset MaxReqsRateLimit
+  actions: [mcapi-showfiltered]
+  apifile: '{{datadir2}}/mc_ratelimit_showapp.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_showapp_show.yml'
+    filetype: mcdata
+
+- name: delete maxreqs rate limit settings for ShowApp api
+  actions: [mcapi-mcratelimitmaxreqsdelete,mcapi-mcratelimitshow]
+  apifile: '{{datadir2}}/mc_ratelimit_maxreqsdelete.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_ratelimit_default_show.yml'
+    filetype: mcratelimit
+
+- name: reset config
+  actions: [mcapi-configupdate,mcapi-configshow]
+  apifile: '{{datadir2}}/mcconfig.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcconfig.yml'
+    filetype: mcconfig

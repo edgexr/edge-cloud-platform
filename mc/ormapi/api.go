@@ -210,6 +210,55 @@ type Config struct {
 	UserApiKeyCreateLimit int
 	// Toggle for enabling billing (primarily for testing purposes)
 	BillingEnable bool
+	// Toggle to enable and disable MC API rate limiting
+	DisableRateLimit bool
+	// Maximum number of PerIp rate limiters for an api
+	MaxNumPerIpRateLimiters int
+	// Maximum number of PerUser rate limiters for an api
+	MaxNumPerUserRateLimiters int
+}
+
+type McRateLimitFlowSettings struct {
+	// Unique name for FlowSettings
+	// required: true
+	FlowSettingsName string `gorm:"primary_key;type:citext"`
+	// Name of API Path (eg. /api/v1/usercreate)
+	ApiName string
+	// RateLimitTarget (AllRequests, PerIp, or PerUser)
+	RateLimitTarget edgeproto.RateLimitTarget
+	// Flow Algorithm (TokenBucketAlgorithm or LeakyBucketAlgorithm)
+	FlowAlgorithm edgeproto.FlowRateLimitAlgorithm
+	// Number of requests per second
+	ReqsPerSecond float64
+	// Number of requests allowed at once
+	BurstSize int64
+}
+
+type McRateLimitMaxReqsSettings struct {
+	// Unique name for MaxReqsSettings
+	// required: true
+	MaxReqsSettingsName string `gorm:"primary_key;type:citext"`
+	// Name of API Path (eg. /api/v1/usercreate)
+	ApiName string
+	// RateLimitTarget (AllRequests, PerIp, or PerUser)
+	RateLimitTarget edgeproto.RateLimitTarget
+	// MaxReqs Algorithm (FixedWindowAlgorithm)
+	MaxReqsAlgorithm edgeproto.MaxReqsRateLimitAlgorithm
+	// Maximum number of requests for the specified interval
+	MaxRequests int64
+	// Time interval
+	Interval edgeproto.Duration
+}
+
+type McRateLimitSettings struct {
+	// Name of API Path (eg. /api/v1/usercreate)
+	ApiName string
+	// RateLimitTarget (AllRequests, PerIp, or PerUser)
+	RateLimitTarget edgeproto.RateLimitTarget
+	// Map of Flow Settings name to FlowSettings
+	FlowSettings map[string]edgeproto.FlowSettings
+	// Map of MaxReqs Settings name to MaxReqsSettings
+	MaxReqsSettings map[string]edgeproto.MaxReqsSettings
 }
 
 type OrgCloudletPool struct {

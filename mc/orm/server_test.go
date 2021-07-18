@@ -37,6 +37,7 @@ func TestServer(t *testing.T) {
 
 	defaultConfig.PasswordMinCrackTimeSec = 30 * 86400
 	defaultConfig.AdminPasswordMinCrackTimeSec = 20 * 365 * 86400
+	defaultConfig.DisableRateLimit = true
 	BadAuthDelay = time.Millisecond
 
 	config := ServerConfig{

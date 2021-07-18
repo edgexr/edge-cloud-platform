@@ -306,3 +306,5 @@ replace golang.org/x/oauth2 => golang.org/x/oauth2 v0.0.0-20190604053449-0f29369
 replace github.com/Shopify/sarama => github.com/Shopify/sarama v1.22.2-0.20190604114437-cd910a683f9f
 
 replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
+
+replace golang.org/x/time => golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e

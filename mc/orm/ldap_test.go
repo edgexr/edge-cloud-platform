@@ -25,6 +25,8 @@ func TestLDAPServer(t *testing.T) {
 	vaultServer, vaultConfig := vault.DummyServer()
 	defer vaultServer.Close()
 
+	defaultConfig.DisableRateLimit = true
+
 	config := ServerConfig{
 		ServAddr:                addr,
 		SqlAddr:                 "127.0.0.1:5445",

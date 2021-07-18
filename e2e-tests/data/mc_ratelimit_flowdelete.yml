@@ -1,0 +1,3 @@
+flowsettingsname: showappallreqs1
+apiname: /api/v1/auth/ctrl/ShowApp
+ratelimittarget: AllRequests

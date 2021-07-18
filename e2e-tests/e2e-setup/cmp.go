@@ -1,8 +1,10 @@
 package e2esetup
 
 import (
+	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,6 +14,7 @@ import (
 	dmeproto "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
+	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
 	ecutil "github.com/mobiledgex/edge-cloud/util"
 )
 
@@ -382,6 +385,93 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 
 		y1 = a1
 		y2 = a2
+	} else if fileType == "mcratelimit" {
+		var a1 []ormapi.McRateLimitSettings
+		var a2 []ormapi.McRateLimitSettings
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			if a1[i].ApiName != a1[j].ApiName {
+				return a1[i].ApiName < a1[j].ApiName
+			}
+			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			if a2[i].ApiName != a2[j].ApiName {
+				return a2[i].ApiName < a2[j].ApiName
+			}
+			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
+		})
+
+		y1 = a1
+		y2 = a2
+	} else if fileType == "mcratelimitflow" {
+		var a1 []ormapi.McRateLimitFlowSettings
+		var a2 []ormapi.McRateLimitFlowSettings
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			if a1[i].ApiName != a1[j].ApiName {
+				return a1[i].ApiName < a1[j].ApiName
+			}
+			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			if a2[i].ApiName != a2[j].ApiName {
+				return a2[i].ApiName < a2[j].ApiName
+			}
+			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
+		})
+
+		y1 = a1
+		y2 = a2
+	} else if fileType == "mcratelimitmaxreqs" {
+		var a1 []ormapi.McRateLimitMaxReqsSettings
+		var a2 []ormapi.McRateLimitMaxReqsSettings
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			if a1[i].ApiName != a1[j].ApiName {
+				return a1[i].ApiName < a1[j].ApiName
+			}
+			return a1[i].RateLimitTarget < a1[j].RateLimitTarget
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			if a2[i].ApiName != a2[j].ApiName {
+				return a2[i].ApiName < a2[j].ApiName
+			}
+			return a2[i].RateLimitTarget < a2[j].RateLimitTarget
+		})
+
+		y1 = a1
+		y2 = a2
+	} else if fileType == "errs" {
+		var a1 []edgetestutil.Err
+		var a2 []edgetestutil.Err
+
+		err1 = util.ReadYamlFile(firstYamlFile, &a1)
+		err2 = util.ReadYamlFile(secondYamlFile, &a2)
+
+		sort.Slice(a1, func(i, j int) bool {
+			return a1[i].Desc < a1[j].Desc
+		})
+		sort.Slice(a2, func(i, j int) bool {
+			return a2[i].Desc < a2[j].Desc
+		})
+
+		if err := cmpFilterErrsData(a1, a2); err != nil {
+			log.Printf("Error filtering error data %v", err)
+			return false
+		}
+
+		y1 = a1
+		y2 = a2
 	} else {
 		return util.CompareYamlFiles(compare)
 	}
@@ -405,6 +495,20 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 	}
 	log.Println("Comparison success")
 	return true
+}
+
+func cmpFilterErrsData(errActual []edgetestutil.Err, errExpected []edgetestutil.Err) error {
+	if len(errExpected) != len(errActual) {
+		return fmt.Errorf("The number of expected errors %d is not equal to the number of actual errors %d", len(errExpected), len(errActual))
+	}
+	for ii := 0; ii < len(errActual); ii++ {
+		if !strings.Contains(errActual[ii].Msg, errExpected[ii].Msg) {
+			return fmt.Errorf("Expected error \"%s\" is not a substring of actual error \"%s\"", errExpected[ii].Msg, errActual[ii].Msg)
+		}
+		errExpected[ii].Msg = ""
+		errActual[ii].Msg = ""
+	}
+	return nil
 }
 
 func cmpFilterEventData(data []EventSearch) {
