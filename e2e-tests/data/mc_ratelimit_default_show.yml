@@ -1,0 +1,35 @@
+- apiname: Global
+  ratelimittarget: AllRequests
+  flowsettings:
+    mcglobalallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 10000
+      burstsize: 500
+- apiname: Global
+  ratelimittarget: PerIp
+  flowsettings:
+    mcglobalperip1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 1000
+      burstsize: 100
+- apiname: Global
+  ratelimittarget: PerUser
+  flowsettings:
+    mcglobalperuser1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 1000
+      burstsize: 100
+- apiname: /api/v1/usercreate
+  ratelimittarget: AllRequests
+  flowsettings:
+    usercreateallreqs1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 100
+      burstsize: 5
+- apiname: /api/v1/usercreate
+  ratelimittarget: PerIp
+  flowsettings:
+    usercreateperip1:
+      flowalgorithm: TokenBucketAlgorithm
+      reqspersecond: 2
+      burstsize: 2

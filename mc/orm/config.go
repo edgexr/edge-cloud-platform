@@ -20,6 +20,9 @@ var defaultConfig = ormapi.Config{
 	MaxMetricsDataPoints:         10000,
 	UserApiKeyCreateLimit:        10,
 	BillingEnable:                false, // TODO: eventually set the default to true?
+	DisableRateLimit:             false,
+	MaxNumPerIpRateLimiters:      10000,
+	MaxNumPerUserRateLimiters:    10000,
 }
 
 func InitConfig(ctx context.Context) error {
@@ -52,6 +55,16 @@ func InitConfig(ctx context.Context) error {
 	// set userapikeykeycreatelimit if not set
 	if config.UserApiKeyCreateLimit == 0 {
 		config.UserApiKeyCreateLimit = defaultConfig.UserApiKeyCreateLimit
+		save = true
+	}
+	// set maxnumperipratelimiters if not set
+	if config.MaxNumPerIpRateLimiters == 0 {
+		config.MaxNumPerIpRateLimiters = defaultConfig.MaxNumPerIpRateLimiters
+		save = true
+	}
+	// set maxnumperuserratelimiters if not set
+	if config.MaxNumPerUserRateLimiters == 0 {
+		config.MaxNumPerUserRateLimiters = defaultConfig.MaxNumPerUserRateLimiters
 		save = true
 	}
 	if save {
@@ -95,6 +108,17 @@ func UpdateConfig(c echo.Context) error {
 		}
 	}
 
+	// Update RateLimitMgr settings
+	if config.DisableRateLimit != oldConfig.DisableRateLimit {
+		rateLimitMgr.UpdateDisableRateLimit(config.DisableRateLimit)
+	}
+	if config.MaxNumPerIpRateLimiters != oldConfig.MaxNumPerIpRateLimiters {
+		rateLimitMgr.UpdateMaxNumPerIpRateLimiters(config.MaxNumPerIpRateLimiters)
+	}
+	if config.MaxNumPerUserRateLimiters != oldConfig.MaxNumPerUserRateLimiters {
+		rateLimitMgr.UpdateMaxNumPerUserRateLimiters(config.MaxNumPerUserRateLimiters)
+	}
+
 	db := loggedDB(ctx)
 	err = db.Save(&config).Error
 	if err != nil {
@@ -122,6 +146,12 @@ func ResetConfig(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Update RateLimitMgr settings
+	rateLimitMgr.UpdateDisableRateLimit(defaultConfig.DisableRateLimit)
+	rateLimitMgr.UpdateMaxNumPerIpRateLimiters(defaultConfig.MaxNumPerIpRateLimiters)
+	rateLimitMgr.UpdateMaxNumPerUserRateLimiters(defaultConfig.MaxNumPerUserRateLimiters)
+
 	return nil
 }
 

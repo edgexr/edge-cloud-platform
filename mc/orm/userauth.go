@@ -182,51 +182,55 @@ func getClaims(c echo.Context) (*UserClaims, error) {
 
 func AuthCookie(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		auth := c.Request().Header.Get(echo.HeaderAuthorization)
-		scheme := "Bearer"
-		l := len(scheme)
-		cookie := ""
-		if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
-			cookie = auth[l+1:]
-		} else {
-			// if no token provided as part of request headers,
-			// then check if it is part of http cookie
-			for _, httpCookie := range c.Request().Cookies() {
-				if httpCookie.Name == "token" {
-					cookie = httpCookie.Value
-					break
+		api := c.Path()
+		if strings.Contains(api, "/auth/") && !strings.Contains(api, "/ws/") {
+			auth := c.Request().Header.Get(echo.HeaderAuthorization)
+			scheme := "Bearer"
+			l := len(scheme)
+			cookie := ""
+			if len(auth) > len(scheme) && strings.HasPrefix(auth, scheme) {
+				cookie = auth[l+1:]
+			} else {
+				// if no token provided as part of request headers,
+				// then check if it is part of http cookie
+				for _, httpCookie := range c.Request().Cookies() {
+					if httpCookie.Name == "token" {
+						cookie = httpCookie.Value
+						break
+					}
 				}
 			}
-		}
 
-		if cookie == "" {
-			//if no token found, return a 400 err
-			return &echo.HTTPError{
-				Code:     http.StatusBadRequest,
-				Message:  "no bearer token found",
-				Internal: fmt.Errorf("no token found for Authorization Bearer"),
+			if cookie == "" {
+				//if no token found, return a 400 err
+				return &echo.HTTPError{
+					Code:     http.StatusBadRequest,
+					Message:  "no bearer token found",
+					Internal: fmt.Errorf("no token found for Authorization Bearer"),
+				}
 			}
-		}
 
-		claims := UserClaims{}
-		token, err := Jwks.VerifyCookie(cookie, &claims)
-		if err == nil && token.Valid {
-			c.Set("user", token)
-			return next(c)
-		}
-		// display error regarding token valid time/expired
-		if err != nil && strings.Contains(err.Error(), "expired") {
+			claims := UserClaims{}
+			token, err := Jwks.VerifyCookie(cookie, &claims)
+			if err == nil && token.Valid {
+				c.Set("user", token)
+				return next(c)
+			}
+			// display error regarding token valid time/expired
+			if err != nil && strings.Contains(err.Error(), "expired") {
+				return &echo.HTTPError{
+					Code:     http.StatusBadRequest,
+					Message:  err.Error(),
+					Internal: err,
+				}
+			}
 			return &echo.HTTPError{
-				Code:     http.StatusBadRequest,
-				Message:  err.Error(),
+				Code:     http.StatusUnauthorized,
+				Message:  "invalid or expired jwt",
 				Internal: err,
 			}
 		}
-		return &echo.HTTPError{
-			Code:     http.StatusUnauthorized,
-			Message:  "invalid or expired jwt",
-			Internal: err,
-		}
+		return next(c)
 	}
 }
 

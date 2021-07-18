@@ -1,0 +1,5 @@
+apiname: /api/v1/auth/ctrl/ShowApp
+ratelimittarget: AllRequests
+flowsettingsname: showappallreqs1
+reqspersecond: 1
+burstsize: 1

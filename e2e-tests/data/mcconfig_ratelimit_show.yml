@@ -1,3 +1,4 @@
+skipverifyemail: true
 notifyemailaddress: support@mobiledgex.com
 passwordmincracktimesec: 2.592e+06
 adminpasswordmincracktimesec: 6.3072e+07

@@ -1,0 +1,6 @@
+apiname: /api/v1/auth/ctrl/ShowApp
+ratelimittarget: AllRequests
+flowsettingsname: showappallreqs1
+flowalgorithm: TokenBucketAlgorithm
+reqspersecond: 100
+burstsize: 50

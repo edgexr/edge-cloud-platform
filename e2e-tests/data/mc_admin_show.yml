@@ -101,6 +101,8 @@ regiondata:
       clusterautoscaleaveragingdurationsec: 1
       clusterautoscaleretrydelay: 1s
       userdefinedalertmintriggertime: 1s
+      disableratelimit: true
+      maxnumperipratelimiters: 10000
     cloudlets:
     - key:
         organization: dmuus

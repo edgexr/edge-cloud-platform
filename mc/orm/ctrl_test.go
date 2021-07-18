@@ -68,6 +68,8 @@ func TestController(t *testing.T) {
 	de := &nodetest.DummyEventsES{}
 	de.InitHttpMock(mockESUrl)
 
+	defaultConfig.DisableRateLimit = true
+
 	config := ServerConfig{
 		ServAddr:                addr,
 		SqlAddr:                 "127.0.0.1:5445",
@@ -1915,6 +1917,7 @@ func TestUpgrade(t *testing.T) {
 	defer dc.Stop()
 
 	unitTest = true
+	defaultConfig.DisableRateLimit = true
 	config := ServerConfig{
 		ServAddr:                addr,
 		SqlAddr:                 "127.0.0.1:5445",

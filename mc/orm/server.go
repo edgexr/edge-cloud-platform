@@ -24,6 +24,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/version"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
+	"github.com/mobiledgex/edge-cloud/cloudcommon/ratelimit"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/integration/process"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -106,6 +107,7 @@ var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
 
 var unitTestNodeMgrOps []node.NodeOp
+var rateLimitMgr *ratelimit.RateLimitManager
 
 func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	server := Server{config: config}
@@ -291,7 +293,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "OK")
 	})
-	e.Use(logger)
+
+	// AuthCookie needs to be done here at the root so it can run before RateLimit and extract the user information needed by the RateLimit middleware.
+	// AuthCookie will only run for the /auth path.
+	e.Use(logger, AuthCookie, RateLimit)
 
 	// login route
 	root := "api/v1"
@@ -333,7 +338,6 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	e.POST(root+"/resendverify", ResendVerify)
 	// authenticated routes - jwt middleware
 	auth := e.Group(root + "/auth")
-	auth.Use(AuthCookie)
 	// refresh auth cookie
 	auth.POST("/refresh", RefreshAuthCookie)
 
@@ -572,6 +576,15 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/cloudletpoolaccesspending/show", ShowCloudletPoolAccessPending)
 	auth.POST("/orgcloudlet/show", ShowOrgCloudlet)
 	auth.POST("/orgcloudletinfo/show", ShowOrgCloudletInfo)
+	auth.POST("/ratelimitsettingsmc/show", ShowRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/createflow", CreateFlowRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/deleteflow", DeleteFlowRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/updateflow", UpdateFlowRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/showflow", ShowFlowRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/createmaxreqs", CreateMaxReqsRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/deletemaxreqs", DeleteMaxReqsRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/updatemaxreqs", UpdateMaxReqsRateLimitSettingsMc)
+	auth.POST("/ratelimitsettingsmc/showmaxreqs", ShowMaxReqsRateLimitSettingsMc)
 
 	// Support multiple connection types: HTTP(s), Websockets
 	addControllerApis("POST", auth)
