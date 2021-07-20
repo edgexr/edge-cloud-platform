@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	client "github.com/influxdata/influxdb/client/v2"
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -846,12 +847,36 @@ func GetMetricsCommon(c echo.Context) error {
 	err = influxStream(ctx, rc, dbNames, cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
+		filterInfluxPayload(ctx, &payload, c.Path())
 		return WriteStream(c, &payload)
 	})
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func filterInfluxPayload(ctx context.Context, payload *ormapi.StreamPayload, path string) {
+	switch results := payload.Data.(type) {
+	case []client.Result:
+		if strings.HasSuffix(path, "metrics/clientappusage") || strings.HasSuffix(path, "metrics/clientcloudletusage") {
+			// Set downsampled row.Name to "latency-metric" or "device-metric", because users don't care that data may have come from "latency-metric-10s"
+			for ii := range results {
+				for jj := range results[ii].Series {
+					name := results[ii].Series[jj].Name
+					if strings.Contains(name, cloudcommon.LatencyMetric) {
+						results[ii].Series[jj].Name = cloudcommon.LatencyMetric
+					} else if strings.Contains(name, cloudcommon.DeviceMetric) {
+						results[ii].Series[jj].Name = cloudcommon.DeviceMetric
+					} else {
+						log.SpanLog(ctx, log.DebugLevelMetrics, "Row name does not contain \"latency-metric\" or \"device-metric\"", "name", name)
+					}
+				}
+			}
+		}
+	default:
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Invalid type switch value. Expected []client.Result")
+	}
 }
 
 // Check that the user is authorized to access all of the devOrgsPruned's devResource resources
