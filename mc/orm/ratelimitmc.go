@@ -89,7 +89,7 @@ func InitRateLimitMc(ctx context.Context) error {
 	db := loggedDB(ctx)
 
 	createFunc := func(settings interface{}) error {
-		return db.Create(settings).Error
+		return db.FirstOrCreate(settings).Error
 	}
 
 	// Create Global RateLimitSettings and UserCreate RateLimitSettings entries in postgres
