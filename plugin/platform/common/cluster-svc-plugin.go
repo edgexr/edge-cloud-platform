@@ -11,7 +11,7 @@ import (
 
 type ClusterSvc struct{}
 
-func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, userAlerts []edgeproto.UserAlert) ([]*edgeproto.ConfigFile, error) {
+func (s *ClusterSvc) GetAppInstConfigs(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, userAlerts []edgeproto.AlertPolicy) ([]*edgeproto.ConfigFile, error) {
 	var configs []*edgeproto.ConfigFile
 	if policy != nil {
 		file, err := autorules.GetAutoScaleRules(ctx, policy, settings)

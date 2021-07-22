@@ -100,7 +100,7 @@ regiondata:
       - interval: 2s
       clusterautoscaleaveragingdurationsec: 1
       clusterautoscaleretrydelay: 1s
-      userdefinedalertmintriggertime: 1s
+      alertpolicymintriggertime: 1s
       disableratelimit: true
       maxnumperipratelimiters: 10000
     cloudlets:

@@ -115,34 +115,34 @@ func TestPermRemoveAppAutoProvPolicy(mcClient *mctestclient.Client, uri, token, 
 	return TestRemoveAppAutoProvPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestAddAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppUserDefinedAlert, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
-	dat := &ormapi.RegionAppUserDefinedAlert{}
+func TestAddAppAlertPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppAlertPolicy, modFuncs ...func(*edgeproto.AppAlertPolicy)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppAlertPolicy{}
 	dat.Region = region
-	dat.AppUserDefinedAlert = *in
+	dat.AppAlertPolicy = *in
 	for _, fn := range modFuncs {
-		fn(&dat.AppUserDefinedAlert)
+		fn(&dat.AppAlertPolicy)
 	}
-	return mcClient.AddAppUserDefinedAlert(uri, token, dat)
+	return mcClient.AddAppAlertPolicy(uri, token, dat)
 }
-func TestPermAddAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
-	in := &edgeproto.AppUserDefinedAlert{}
+func TestPermAddAppAlertPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppAlertPolicy{}
 	in.AppKey.Organization = org
-	return TestAddAppUserDefinedAlert(mcClient, uri, token, region, in, modFuncs...)
+	return TestAddAppAlertPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
-func TestRemoveAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppUserDefinedAlert, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
-	dat := &ormapi.RegionAppUserDefinedAlert{}
+func TestRemoveAppAlertPolicy(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.AppAlertPolicy, modFuncs ...func(*edgeproto.AppAlertPolicy)) (*edgeproto.Result, int, error) {
+	dat := &ormapi.RegionAppAlertPolicy{}
 	dat.Region = region
-	dat.AppUserDefinedAlert = *in
+	dat.AppAlertPolicy = *in
 	for _, fn := range modFuncs {
-		fn(&dat.AppUserDefinedAlert)
+		fn(&dat.AppAlertPolicy)
 	}
-	return mcClient.RemoveAppUserDefinedAlert(uri, token, dat)
+	return mcClient.RemoveAppAlertPolicy(uri, token, dat)
 }
-func TestPermRemoveAppUserDefinedAlert(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppUserDefinedAlert)) (*edgeproto.Result, int, error) {
-	in := &edgeproto.AppUserDefinedAlert{}
+func TestPermRemoveAppAlertPolicy(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) (*edgeproto.Result, int, error) {
+	in := &edgeproto.AppAlertPolicy{}
 	in.AppKey.Organization = org
-	return TestRemoveAppUserDefinedAlert(mcClient, uri, token, region, in, modFuncs...)
+	return TestRemoveAppAlertPolicy(mcClient, uri, token, region, in, modFuncs...)
 }
 
 func TestShowCloudletsForAppDeployment(mcClient *mctestclient.Client, uri, token, region string, in *edgeproto.DeploymentCloudletRequest, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) ([]edgeproto.CloudletKey, int, error) {
@@ -207,6 +207,30 @@ func (s *TestClient) ShowApp(ctx context.Context, in *edgeproto.App) ([]edgeprot
 	return out, err
 }
 
+func (s *TestClient) AddAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppAlertPolicy{
+		Region:         s.Region,
+		AppAlertPolicy: *in,
+	}
+	out, status, err := s.McClient.AddAppAlertPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
+func (s *TestClient) RemoveAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error) {
+	inR := &ormapi.RegionAppAlertPolicy{
+		Region:         s.Region,
+		AppAlertPolicy: *in,
+	}
+	out, status, err := s.McClient.RemoveAppAlertPolicy(s.Uri, s.Token, inR)
+	if err == nil && status != 200 {
+		err = fmt.Errorf("status: %d\n", status)
+	}
+	return out, err
+}
+
 func (s *TestClient) AddAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
 	inR := &ormapi.RegionAppAutoProvPolicy{
 		Region:            s.Region,
@@ -225,30 +249,6 @@ func (s *TestClient) RemoveAppAutoProvPolicy(ctx context.Context, in *edgeproto.
 		AppAutoProvPolicy: *in,
 	}
 	out, status, err := s.McClient.RemoveAppAutoProvPolicy(s.Uri, s.Token, inR)
-	if err == nil && status != 200 {
-		err = fmt.Errorf("status: %d\n", status)
-	}
-	return out, err
-}
-
-func (s *TestClient) AddAppUserDefinedAlert(ctx context.Context, in *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
-	inR := &ormapi.RegionAppUserDefinedAlert{
-		Region:              s.Region,
-		AppUserDefinedAlert: *in,
-	}
-	out, status, err := s.McClient.AddAppUserDefinedAlert(s.Uri, s.Token, inR)
-	if err == nil && status != 200 {
-		err = fmt.Errorf("status: %d\n", status)
-	}
-	return out, err
-}
-
-func (s *TestClient) RemoveAppUserDefinedAlert(ctx context.Context, in *edgeproto.AppUserDefinedAlert) (*edgeproto.Result, error) {
-	inR := &ormapi.RegionAppUserDefinedAlert{
-		Region:              s.Region,
-		AppUserDefinedAlert: *in,
-	}
-	out, status, err := s.McClient.RemoveAppUserDefinedAlert(s.Uri, s.Token, inR)
 	if err == nil && status != 200 {
 		err = fmt.Errorf("status: %d\n", status)
 	}

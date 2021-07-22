@@ -55,7 +55,7 @@ type AlertArgs struct {
 }
 
 // Walk the alerts and create a prometheus alert structure from them
-func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.UserAlert) AlertArgs {
+func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.AlertPolicy) AlertArgs {
 	alertArgs := AlertArgs{ClusterAlerts: []*PrometheusClusterAlert{}}
 
 	// filter the prom query to only include mexAppName
@@ -106,7 +106,7 @@ func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts [
 	return alertArgs
 }
 
-func GetAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.UserAlert) (string, error) {
+func GetAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.AlertPolicy) (string, error) {
 	// no user defined alerts
 	if len(alerts) == 0 {
 		return "", nil
@@ -124,7 +124,7 @@ func GetAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edg
 }
 
 // Get a set of cloudlet prometheus alerts for user-defined alerts on a given appInst
-func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.UserAlert) *prommgmt.RuleGroup {
+func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, alerts []edgeproto.AlertPolicy) *prommgmt.RuleGroup {
 	grp := prommgmt.NewRuleGroup("user-alerts", appInst.Key.AppKey.Organization)
 
 	for ii, _ := range alerts {

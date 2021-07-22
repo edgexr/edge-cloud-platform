@@ -1488,13 +1488,13 @@ func runMcShowNode(uri, curUserFile, outputDir string, vars, sharedData map[stri
 	return rc
 }
 
-func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppUserDefinedAlert) (*edgeproto.Result, int, error)) bool {
+func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string, apiFunc func(string, string, *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error)) bool {
 	rc := true
 	token, rc := loginCurUser(uri, curUserFile, vars, sharedData)
 	if !rc {
 		return false
 	}
-	userDefAlerts := []ormapi.RegionAppUserDefinedAlert{}
+	userDefAlerts := []ormapi.RegionAppAlertPolicy{}
 	err := util.ReadYamlFile(apiFile, &userDefAlerts, util.WithVars(vars), util.ValidateReplacedVars())
 	if err != nil {
 		log.Printf("error in unmarshal for file %s, %v\n", apiFile, err)
@@ -1511,11 +1511,11 @@ func runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir string, mods
 }
 
 func runMcAddUserAlertToApp(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
-	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.AddAppUserDefinedAlert)
+	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.AddAppAlertPolicy)
 }
 
 func runMcRemoveUserAlertFromApp(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {
-	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.RemoveAppUserDefinedAlert)
+	return runMcAppUserAlertApi(api, uri, apiFile, curUserFile, outputDir, mods, vars, sharedData, mcClient.RemoveAppAlertPolicy)
 }
 
 func runMcDebug(api, uri, apiFile, curUserFile, outputDir string, mods []string, vars, sharedData map[string]string) bool {

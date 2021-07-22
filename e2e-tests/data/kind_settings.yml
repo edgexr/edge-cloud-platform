@@ -16,4 +16,4 @@ regiondata:
       shepherdhealthcheckinterval: 5s
       clusterautoscaleaveragingdurationsec: 30
       clusterautoscaleretrydelay: 30s
-      userdefinedalertmintriggertime: 30s
+      alertpolicymintriggertime: 30s

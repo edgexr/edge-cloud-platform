@@ -377,16 +377,16 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 
 	// add user-defined alerts for this app Inst as well
-	if len(app.UserDefinedAlerts) > 0 {
-		userAlerts := []edgeproto.UserAlert{}
-		for _, alertName := range app.UserDefinedAlerts {
-			userAlert := edgeproto.UserAlert{
-				Key: edgeproto.UserAlertKey{
+	if len(app.AlertPolicies) > 0 {
+		userAlerts := []edgeproto.AlertPolicy{}
+		for _, alertName := range app.AlertPolicies {
+			userAlert := edgeproto.AlertPolicy{
+				Key: edgeproto.AlertPolicyKey{
 					Name:         alertName,
 					Organization: app.Key.Organization,
 				},
 			}
-			found := UserAlertCache.Get(&userAlert.Key, &userAlert)
+			found := AlertPolicyCache.Get(&userAlert.Key, &userAlert)
 			if !found {
 				continue
 			}
