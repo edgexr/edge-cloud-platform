@@ -1,7 +1,7 @@
 regiondata:
 - region: local
   appdata:
-    userdefinedalerts:
+    alertpolicies:
     - key:
         name: TooManyConnections
         organization: AcmeAppCo

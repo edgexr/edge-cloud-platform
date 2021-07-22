@@ -31,6 +31,76 @@ func (s *Client) ShowAlert(uri string, token string, in *ormapi.RegionAlert) ([]
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+// Generating group AlertPolicy
+
+func (s *Client) CreateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("CreateAlertPolicy")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) DeleteAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("DeleteAlertPolicy")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) UpdateAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
+	if err != nil {
+		return nil, 0, err
+	}
+	rundata.In = mm
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("UpdateAlertPolicy")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) ShowAlertPolicy(uri string, token string, in *ormapi.RegionAlertPolicy) ([]edgeproto.AlertPolicy, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.AlertPolicy
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("ShowAlertPolicy")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 // Generating group AlertReceiver
 
 func (s *Client) CreateAlertReceiver(uri string, token string, in *ormapi.AlertReceiver) (int, error) {
@@ -212,7 +282,7 @@ func (s *Client) RemoveAppAutoProvPolicy(uri string, token string, in *ormapi.Re
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) AddAppUserDefinedAlert(uri string, token string, in *ormapi.RegionAppUserDefinedAlert) (*edgeproto.Result, int, error) {
+func (s *Client) AddAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -220,7 +290,7 @@ func (s *Client) AddAppUserDefinedAlert(uri string, token string, in *ormapi.Reg
 	var out edgeproto.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("AddAppUserDefinedAlert")
+	apiCmd := ormctl.MustGetCommand("AddAppAlertPolicy")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -228,7 +298,7 @@ func (s *Client) AddAppUserDefinedAlert(uri string, token string, in *ormapi.Reg
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
-func (s *Client) RemoveAppUserDefinedAlert(uri string, token string, in *ormapi.RegionAppUserDefinedAlert) (*edgeproto.Result, int, error) {
+func (s *Client) RemoveAppAlertPolicy(uri string, token string, in *ormapi.RegionAppAlertPolicy) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
 	rundata.Token = token
@@ -236,7 +306,7 @@ func (s *Client) RemoveAppUserDefinedAlert(uri string, token string, in *ormapi.
 	var out edgeproto.Result
 	rundata.Out = &out
 
-	apiCmd := ormctl.MustGetCommand("RemoveAppUserDefinedAlert")
+	apiCmd := ormctl.MustGetCommand("RemoveAppAlertPolicy")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError
@@ -3338,76 +3408,6 @@ func (s *Client) ShowUserApiKey(uri string, token string, in *ormapi.CreateUserA
 	rundata.Out = &out
 
 	apiCmd := ormctl.MustGetCommand("ShowUserApiKey")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return out, rundata.RetStatus, rundata.RetError
-}
-
-// Generating group UserAlert
-
-func (s *Client) CreateUserAlert(uri string, token string, in *ormapi.RegionUserAlert) (*edgeproto.Result, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out edgeproto.Result
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("CreateUserAlert")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) DeleteUserAlert(uri string, token string, in *ormapi.RegionUserAlert) (*edgeproto.Result, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out edgeproto.Result
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("DeleteUserAlert")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) UpdateUserAlert(uri string, token string, in *ormapi.RegionUserAlert) (*edgeproto.Result, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	mm, err := ormutil.GetRegionObjStructMapForUpdate(in)
-	if err != nil {
-		return nil, 0, err
-	}
-	rundata.In = mm
-	var out edgeproto.Result
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("UpdateUserAlert")
-	s.ClientRun.Run(apiCmd, &rundata)
-	if rundata.RetError != nil {
-		return nil, rundata.RetStatus, rundata.RetError
-	}
-	return &out, rundata.RetStatus, rundata.RetError
-}
-
-func (s *Client) ShowUserAlert(uri string, token string, in *ormapi.RegionUserAlert) ([]edgeproto.UserAlert, int, error) {
-	rundata := RunData{}
-	rundata.Uri = uri
-	rundata.Token = token
-	rundata.In = in
-	var out []edgeproto.UserAlert
-	rundata.Out = &out
-
-	apiCmd := ormctl.MustGetCommand("ShowUserAlert")
 	s.ClientRun.Run(apiCmd, &rundata)
 	if rundata.RetError != nil {
 		return nil, rundata.RetStatus, rundata.RetError

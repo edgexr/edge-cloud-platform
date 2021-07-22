@@ -114,7 +114,7 @@ var SettingsOptionalArgs = []string{
 	"appinstclientcleanupinterval",
 	"clusterautoscaleaveragingdurationsec",
 	"clusterautoscaleretrydelay",
-	"userdefinedalertmintriggertime",
+	"alertpolicymintriggertime",
 	"disableratelimit",
 	"maxnumperipratelimiters",
 }
@@ -154,7 +154,7 @@ var SettingsAliasArgs = []string{
 	"appinstclientcleanupinterval=settings.appinstclientcleanupinterval",
 	"clusterautoscaleaveragingdurationsec=settings.clusterautoscaleaveragingdurationsec",
 	"clusterautoscaleretrydelay=settings.clusterautoscaleretrydelay",
-	"userdefinedalertmintriggertime=settings.userdefinedalertmintriggertime",
+	"alertpolicymintriggertime=settings.alertpolicymintriggertime",
 	"disableratelimit=settings.disableratelimit",
 	"maxnumperipratelimiters=settings.maxnumperipratelimiters",
 }
@@ -194,7 +194,7 @@ var SettingsComments = map[string]string{
 	"appinstclientcleanupinterval":                                     "AppInstClient cleanup thread run interval",
 	"clusterautoscaleaveragingdurationsec":                             "Cluster auto scale averaging duration for stats to avoid spikes (seconds), avoid setting below 30s or it will not capture any measurements to average",
 	"clusterautoscaleretrydelay":                                       "Cluster auto scale retry delay if scaling failed",
-	"userdefinedalertmintriggertime":                                   "Minimmum user alert trigger time",
+	"alertpolicymintriggertime":                                        "Minimmum trigger time for alert policies",
 	"disableratelimit":                                                 "Disable rate limiting for APIs (default is false)",
 	"maxnumperipratelimiters":                                          "Maximum number of perip rate limiters for an endpoint (ie. number of ips stored to rate limit)",
 }

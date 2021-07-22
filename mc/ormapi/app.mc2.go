@@ -108,37 +108,37 @@ type swaggerRemoveAppAutoProvPolicy struct {
 	Body RegionAppAutoProvPolicy
 }
 
-// Request summary for AddAppUserDefinedAlert
-// swagger:parameters AddAppUserDefinedAlert
-type swaggerAddAppUserDefinedAlert struct {
+// Request summary for AddAppAlertPolicy
+// swagger:parameters AddAppAlertPolicy
+type swaggerAddAppAlertPolicy struct {
 	// in: body
-	Body RegionAppUserDefinedAlert
+	Body RegionAppAlertPolicy
 }
 
-type RegionAppUserDefinedAlert struct {
+type RegionAppAlertPolicy struct {
 	// required: true
 	// Region name
-	Region              string
-	AppUserDefinedAlert edgeproto.AppUserDefinedAlert
+	Region         string
+	AppAlertPolicy edgeproto.AppAlertPolicy
 }
 
-func (s *RegionAppUserDefinedAlert) GetRegion() string {
+func (s *RegionAppAlertPolicy) GetRegion() string {
 	return s.Region
 }
 
-func (s *RegionAppUserDefinedAlert) GetObj() interface{} {
-	return &s.AppUserDefinedAlert
+func (s *RegionAppAlertPolicy) GetObj() interface{} {
+	return &s.AppAlertPolicy
 }
 
-func (s *RegionAppUserDefinedAlert) GetObjName() string {
-	return "AppUserDefinedAlert"
+func (s *RegionAppAlertPolicy) GetObjName() string {
+	return "AppAlertPolicy"
 }
 
-// Request summary for RemoveAppUserDefinedAlert
-// swagger:parameters RemoveAppUserDefinedAlert
-type swaggerRemoveAppUserDefinedAlert struct {
+// Request summary for RemoveAppAlertPolicy
+// swagger:parameters RemoveAppAlertPolicy
+type swaggerRemoveAppAlertPolicy struct {
 	// in: body
-	Body RegionAppUserDefinedAlert
+	Body RegionAppAlertPolicy
 }
 
 // Request summary for ShowCloudletsForAppDeployment

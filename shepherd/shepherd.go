@@ -74,7 +74,7 @@ var AlertCache edgeproto.AlertCache
 var AutoProvPoliciesCache edgeproto.AutoProvPolicyCache
 var AutoScalePoliciesCache edgeproto.AutoScalePolicyCache
 var SettingsCache edgeproto.SettingsCache
-var UserAlertCache edgeproto.UserAlertCache
+var AlertPolicyCache edgeproto.AlertPolicyCache
 var settings edgeproto.Settings
 var AppInstByAutoProvPolicy edgeproto.AppInstLookupByPolicyKey
 var targetFileWorkers tasks.KeyWorkers
@@ -466,8 +466,8 @@ func start() {
 	edgeproto.InitVMPoolCache(&VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&VMPoolInfoCache)
 	edgeproto.InitCloudletCache(&CloudletCache)
-	edgeproto.InitUserAlertCache(&UserAlertCache)
-	UserAlertCache.SetUpdatedCb(userAlertCb)
+	edgeproto.InitAlertPolicyCache(&AlertPolicyCache)
+	AlertPolicyCache.SetUpdatedCb(alertPolicyCb)
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClient = notify.NewClient(nodeMgr.Name(), addrs,
 		tls.GetGrpcDialOption(clientTlsConfig),
@@ -486,7 +486,7 @@ func start() {
 	notifyClient.RegisterRecvCloudletInternalCache(&CloudletInternalCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&AutoProvPoliciesCache)
 	notifyClient.RegisterRecvAutoScalePolicyCache(&AutoScalePoliciesCache)
-	notifyClient.RegisterRecvUserAlertCache(&UserAlertCache)
+	notifyClient.RegisterRecvAlertPolicyCache(&AlertPolicyCache)
 	SettingsCache.SetUpdatedCb(settingsCb)
 	VMPoolInfoCache.SetUpdatedCb(vmPoolInfoCb)
 	CloudletCache.SetUpdatedCb(cloudletCb)
@@ -619,7 +619,7 @@ func (s *sendAllRecv) RecvAllEnd(ctx context.Context) {
 
 // update active connection alerts for cloudlet prometheus
 // walk appCache and check which apps use this alert
-func userAlertCb(ctx context.Context, old *edgeproto.UserAlert, new *edgeproto.UserAlert) {
+func alertPolicyCb(ctx context.Context, old *edgeproto.AlertPolicy, new *edgeproto.AlertPolicy) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "User Alert update", "new", new, "old", old)
 	if new == nil || old == nil {
 		// deleted, so all the appInsts should've been cleaned up already
@@ -639,7 +639,7 @@ func userAlertCb(ctx context.Context, old *edgeproto.UserAlert, new *edgeproto.U
 	}
 
 	AppCache.Show(&appAlertFilter, func(obj *edgeproto.App) error {
-		for _, alertName := range obj.UserDefinedAlerts {
+		for _, alertName := range obj.AlertPolicies {
 			if alertName == new.Key.Name {
 				apps[obj.Key] = struct{}{}
 				return nil
@@ -668,7 +668,7 @@ func appUpdateCb(ctx context.Context, old *edgeproto.App, new *edgeproto.App) {
 		// or a new app - no appInsts on it yet
 		return
 	}
-	if !old.AppUserAlertsDifferent(new) {
+	if !old.AppAlertPoliciesDifferent(new) {
 		// nothing to update
 		return
 	}

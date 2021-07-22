@@ -69,7 +69,7 @@ func TestAutoScaleT(t *testing.T) {
 
 	clusterInst.AutoScalePolicy = policy.Key.Name
 
-	userAlerts := testutil.UserAlertData
+	userAlerts := testutil.AlertPolicyData
 	settings := edgeproto.GetDefaultSettings()
 
 	configExpected := `additionalPrometheusRules:
@@ -126,7 +126,7 @@ func TestAutoScaleT(t *testing.T) {
 	testClusterRulesT(t, ctx, &clusterInst, &policy, settings, userAlerts, configExpected, TestClusterUserDefAlertsRules)
 }
 
-func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, alerts []edgeproto.UserAlert, expectedAutoProvRules string, expectedUserAlertsRules string) {
+func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, alerts []edgeproto.AlertPolicy, expectedAutoProvRules string, expectedAlertPoliciesRules string) {
 	clusterSvc := ClusterSvc{}
 	appInst := testutil.AppInstData[0]
 
@@ -136,5 +136,5 @@ func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto
 	ioutil.WriteFile("foo", []byte(configs[0].Config), 0644)
 	require.Equal(t, expectedAutoProvRules, configs[0].Config)
 	ioutil.WriteFile("bar", []byte(configs[1].Config), 0644)
-	require.Equal(t, expectedUserAlertsRules, configs[1].Config)
+	require.Equal(t, expectedAlertPoliciesRules, configs[1].Config)
 }
