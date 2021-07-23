@@ -172,14 +172,16 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 		setupStage := v.VMProvider.GetGPUSetupStage(ctx)
-		if appInst.OptRes == "gpu" && setupStage == AppInstStage {
+		if appInst.OptRes == "gpu" && cloudcommon.IsSideCarApp(app) && setupStage == AppInstStage {
 			// setup GPU drivers
 			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, ActionCreate)
 			if err != nil {
 				return fmt.Errorf("failed to install GPU drivers on appInst cluster VMs: %v", err)
 			}
-			// setup GPU operator helm repo
-			v.manageGPUOperator(ctx, client, clusterInst, updateCallback, ActionCreate)
+			if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+				// setup GPU operator helm repo
+				v.manageGPUOperator(ctx, client, clusterInst, updateCallback, ActionCreate)
+			}
 		}
 	}
 
