@@ -89,7 +89,7 @@ var AlertReceiverArgsComments = map[string]string{
 	"region":                    "Region where alert originated",
 	"user":                      "User name, if not the same as the logged in user",
 	"name":                      "Unique name of this receiver",
-	"type":                      "Receiver type - email or slack",
+	"type":                      "Receiver type - email, slack or pagerduty",
 	"severity":                  "Alert severity level - one of " + cloudcommon.GetValidAlertSeverityString(),
 	"email":                     "Email address receiving the alert (by default email associated with the account)",
 	"slack-channel":             "Slack channel to be receiving the alert",
