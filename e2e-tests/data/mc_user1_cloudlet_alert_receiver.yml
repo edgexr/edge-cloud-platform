@@ -1,8 +1,8 @@
 alertreceivers:
 - name: emailCloudletAlertReceiver
   type: email
-  severity: warning
+  severity: {{severity}}
   email: ops@mobiledgex.net
   cloudlet:
-    organization: dmuus
-    name: dmuus-cloud-1
+    organization: {{cloudlet_org}}
+    name: {{cloudlet_name}}

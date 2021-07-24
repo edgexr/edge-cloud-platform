@@ -233,6 +233,7 @@ tests:
     filetype: mcmetrics
 
 - includefile: alerttest.yml
+- includefile: alerttest_clustersvc.yml
 
   #going to need a second one for operator, or just use mexadmin instead of user2
 - name: check developer shepherd metrics in influx (separate calls)

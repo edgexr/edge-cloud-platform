@@ -1,0 +1,20 @@
+- labels:
+    alertname: ClusterSvcAppInstFailure
+    app: MEXPrometheusAppName
+    apporg: MobiledgeX
+    appver: "1.0"
+    cloudlet: {{cloudlet_name}}
+    cloudletorg: {{cloudlet_org}}
+    cluster: {{cluster_name}}
+    clusterorg: {{cluster_org}}
+    region: local
+    scope: Platform
+  annotations:
+    description: Cluster-svc create AppInst failed
+    title: ClusterSvcAppInstFailure
+  state: firing
+  activeat:
+    seconds: 1626180851
+    nanos: 993740000
+  notifyid: 1
+
