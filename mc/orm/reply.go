@@ -47,7 +47,7 @@ func dbErr(err error) error {
 }
 
 func bindErr(err error) error {
-	return fmt.Errorf("invalid POST data, " + err.Error())
+	return err
 }
 
 // setReply sets the reply data on a successful API call

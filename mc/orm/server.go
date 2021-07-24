@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud-infra/version"
+	"github.com/mobiledgex/edge-cloud/cli"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/ratelimit"
@@ -30,7 +33,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/notify"
 	edgetls "github.com/mobiledgex/edge-cloud/tls"
-	"github.com/mobiledgex/edge-cloud/util"
 	"github.com/mobiledgex/edge-cloud/vault"
 	"github.com/nmcclain/ldap"
 	gitlab "github.com/xanzy/go-gitlab"
@@ -288,6 +290,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 
 	e := echo.New()
 	e.HideBanner = true
+	e.Binder = &CustomBinder{}
 	server.echo = e
 
 	e.GET("/", func(c echo.Context) error {
@@ -1072,26 +1075,76 @@ func ReadConn(c echo.Context, in interface{}) ([]byte, error) {
 		dat, err = ioutil.ReadAll(c.Request().Body)
 	}
 	if err == nil {
-		err = json.Unmarshal(dat, in)
-		if err != nil {
-			// this is a copy of error handling from c.Bind()
-			if ute, ok := err.(*json.UnmarshalTypeError); ok {
-				err = echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Unmarshal type error: expected=%v, got=%v, field=%v, offset=%v", ute.Type, ute.Value, ute.Field, ute.Offset))
-			} else if se, ok := err.(*json.SyntaxError); ok {
-				err = echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Syntax error: offset=%v, error=%v", se.Offset, se.Error()))
-			}
-		}
-		err = util.NiceTimeParseError(err)
+		err = BindJson(dat, in)
 	}
 
 	if err != nil {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			return nil, fmt.Errorf("Invalid data")
 		}
-		return nil, bindErr(err)
+		return nil, err
 	}
 
 	return dat, nil
+}
+
+// Override the echo.DefaultBinder so we can have better error messages.
+// It's also slightly more secure in that it only accepts JSON.
+type CustomBinder struct{}
+
+func (s *CustomBinder) Bind(i interface{}, c echo.Context) error {
+	// reference echo.DefaultBinder
+	req := c.Request()
+	if req.ContentLength == 0 {
+		return fmt.Errorf("Request body can't be empty")
+	}
+	// we only accept JSON
+	ctype := req.Header.Get(echo.HeaderContentType)
+	switch {
+	case strings.HasPrefix(ctype, echo.MIMEApplicationJSON):
+		dat, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return err
+		}
+		return BindJson(dat, i)
+	default:
+		return echo.ErrUnsupportedMediaType
+	}
+}
+
+func BindJson(js []byte, i interface{}) error {
+	err := json.Unmarshal(js, i)
+	if err == nil {
+		return nil
+	}
+	// Unfortunately, if the json library hits an error using
+	// a custom unmarshaler, it simply passes that error up instead
+	// of wrapping it in a custom error type that would include the
+	// field and offset. Therefore we have subpar error messages
+	// for custom unmarshalers (time, duration) that do not include
+	// the field and offset. The only way to fix this would be to
+	// fork the json package, and add a new CustomUnmarshalTypeError
+	// that would include the original time.ParseError plus the
+	// field and offset.
+
+	switch e := err.(type) {
+	case *json.UnmarshalTypeError:
+		errType, help, _ := cli.GetParseHelp(e.Type)
+		err = fmt.Errorf("Unmarshal error: expected %v, but got %v for field %q at offset %v%s", errType, e.Value, e.Field, e.Offset, help)
+	case *json.SyntaxError:
+		err = fmt.Errorf("Syntax error at offset %v, %v", e.Offset, e.Error())
+	case *time.ParseError:
+		val := e.Value
+		if valuq, err := strconv.Unquote(val); err == nil {
+			val = valuq
+		}
+		errType, help, _ := cli.GetParseHelp(reflect.TypeOf(time.Time{}))
+		err = fmt.Errorf("Unmarshal %s %q failed%s", errType, val, help)
+	case *edgeproto.DurationParseError:
+		errType, help, _ := cli.GetParseHelp(reflect.TypeOf(time.Duration(0)))
+		err = fmt.Errorf("Unmarshal %s %q failed%s", errType, e.Value, help)
+	}
+	return fmt.Errorf("Invalid JSON data: %v", err)
 }
 
 func WaitForConnClose(c echo.Context, serverClosed chan bool) {

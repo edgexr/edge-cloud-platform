@@ -15,7 +15,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/setup-env/util"
 	edgetestutil "github.com/mobiledgex/edge-cloud/testutil"
-	ecutil "github.com/mobiledgex/edge-cloud/util"
 )
 
 // go-cmp Options
@@ -162,7 +161,7 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreFields(node.EventData{}, "Timestamp", "Error"),
-			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
 		}
 		cmpFilterEventData(a1)
 		cmpFilterEventData(a2)
@@ -180,7 +179,7 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 		cmpFilterEventTerms(a2)
 
 		copts = []cmp.Option{
-			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
 			cmpopts.IgnoreFields(node.AggrVal{}, "DocCount"),
 			cmpopts.IgnoreSliceElements(func(aggr node.AggrVal) bool {
 				// no websocket equivalent so leads to
@@ -201,7 +200,7 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 		cmpFilterSpanTerms(a2)
 
 		copts = []cmp.Option{
-			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
 			cmpopts.IgnoreFields(node.AggrVal{}, "DocCount"),
 			// Ignore messages and tags because they will change often.
 			// Hostnames will depend on local machine name so have to
@@ -222,7 +221,7 @@ func CompareYamlFiles(compare *util.CompareYaml) bool {
 
 		copts = []cmp.Option{
 			cmpopts.IgnoreFields(node.SpanOutCondensed{}, "StartTime", "Duration", "TraceID", "SpanID", "Hostname"),
-			cmpopts.IgnoreFields(ecutil.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
+			cmpopts.IgnoreFields(edgeproto.TimeRange{}, "StartTime", "EndTime", "StartAge", "EndAge"),
 			cmpopts.IgnoreFields(node.SpanLogOut{}, "Timestamp", "Lineno"),
 		}
 

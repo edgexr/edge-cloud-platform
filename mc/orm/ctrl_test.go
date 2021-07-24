@@ -255,6 +255,8 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		ds.SetDummyOrgObjs(ctx, testutil.Delete, org4, dcnt)
 	}()
 
+	testMCParseJSONErrors(t, ctx, mcClient, uri, token)
+
 	// number of org objects total of each type (sum of above)
 	count := 4 * dcnt
 
@@ -2530,4 +2532,119 @@ func TestDataConversions(t *testing.T) {
 	require.Nil(t, err)
 	_, _, err = cliClient.EventTerms(uri, token, &search)
 	require.Nil(t, err)
+}
+
+func testMCParseJSONErrors(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, uri, token string) {
+	res := edgeproto.Result{}
+	restClient, ok := mcClient.ClientRun.(*ormclient.Client)
+	if !ok {
+		return
+	}
+	// parse int failure
+	js := `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"Limit":"x","Region":"US","Selector":"api"}`
+	status, err := restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, "Invalid JSON data: Unmarshal error: expected int, but got string for field \"Limit\" at offset 119", err.Error())
+
+	// parse time.Duration
+	js = `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"startage":"x","Region":"US","Selector":"api"}`
+	status, err = restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, "Invalid JSON data: Unmarshal duration \"x\" failed, valid values are 300ms, 1s, 1.5h, 2h45m, etc", err.Error())
+
+	// parse time.Time
+	js = `{"AppInst":{"cluster_inst_key":{"cloudlet_key":{"name":"cloudlet1625766808-699615","organization":"dmuus"}}},"starttime":"x","Region":"US","Selector":"api"}`
+	status, err = restClient.PostJson(uri+"/auth/metrics/clientapiusage", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, `Invalid JSON data: Unmarshal time "x" failed, valid values are RFC3339 format, i.e. "2006-01-02T15:04:05Z07:00"`, err.Error())
+
+	// parse bad syntax
+	js = `{"Cloudlet":{"organization":"dmuus"},"Last":","Region":"US","Selector":"utilization"}`
+	status, err = restClient.PostJson(uri+"/auth/metrics/cloudlet", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, "Invalid JSON data: Syntax error at offset 47, invalid character 'R' after object key:value pair", err.Error())
+
+	// test bool on CustomBinder
+	js = `{"skipverifyemail":"ff"}`
+	status, err = restClient.PostJson(uri+"/auth/config/update", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, "Invalid JSON data: Unmarshal error: expected bool, but got string for field \"SkipVerifyEmail\" at offset 23, valid values are true, false", err.Error())
+
+	// test duration on auto-generted code
+	js = `{"startage":"2xs"}`
+	status, err = restClient.PostJson(uri+"/auth/events/show", token, js, &res)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusBadRequest, status)
+	require.Equal(t, "Invalid JSON data: Unmarshal duration \"2xs\" failed, valid values are 300ms, 1s, 1.5h, 2h45m, etc", err.Error())
+}
+
+// This is like the testMCParseJSONErrors test above, but the invalid formats
+// are caught by the args parser. No MC is needed here.
+func TestMcctlParseErrors(t *testing.T) {
+	args := []string{}
+	mcctl := mccli.GetRootCommand()
+	mcctlTest := func() (string, error) {
+		retBuf := bytes.Buffer{}
+		mcctl.CobraCmd.SetOutput(&retBuf)
+		mcctl.ClearState()
+		mcctl.CobraCmd.SetArgs(args)
+		err := mcctl.CobraCmd.Execute()
+		return retBuf.String(), err
+	}
+
+	// test bool error
+	args = []string{
+		"config", "update", "skipverifyemail=fff",
+	}
+	out, err := mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"skipverifyemail=fff\" failed: unable to parse \"fff\" as bool: invalid syntax, valid values are true, false\n", out)
+
+	// test invalid key
+	args = []string{
+		"autoprovpolicy", "create", "region=EU",
+		"app-org=testmonitor",
+		"name=policy",
+		"minactiveinstances=1",
+		"cloudlets:.key.organization=GDDT",
+		"cloudlets:0.key.name=sunnydale",
+		"cloudlets:1.key.organization=GDDT",
+		"cloudlets:1.key.name=paradise",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"cloudlets:.key.organization=GDDT\" failed: invalid argument: key \"cloudlets:.key.organization\" not found\n", out)
+
+	// test time parse failure
+	args = []string{
+		"usage", "cluster", "region=EU",
+		"endtime=x",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"endtime=x\" failed: unable to parse \"x\" as time: invalid format, valid values are RFC3339 format, i.e. \"2006-01-02T15:04:05Z07:00\"\n", out)
+
+	// test int failure
+	args = []string{
+		"metrics", "clientapiusage", "region=US",
+		"selector=api",
+		"limit=-x",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"limit=-x\" failed: unable to parse \"-x\" as int: invalid syntax\n", out)
+
+	// test duration failure
+	args = []string{
+		"settings", "update", "region=US",
+		"updatevmpooltimeout=x",
+	}
+	out, err = mcctlTest()
+	require.NotNil(t, err)
+	require.Equal(t, "Error: parsing arg \"updatevmpooltimeout=x\" failed: unable to parse \"x\" as duration: invalid format, valid values are 300ms, 1s, 1.5h, 2h45m, etc\n", out)
 }
