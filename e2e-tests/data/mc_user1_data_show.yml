@@ -62,6 +62,7 @@ regiondata:
       platformtype: Fakeinfra
       flavor:
         name: DefaultPlatformFlavor
+      notifysrvaddr: 127.0.0.1:51001
       physicalname: dmuus-cloud-1
       envvar:
         foo: bar

@@ -58,7 +58,7 @@ tests:
     actions: [cmds]
     apifile: "{{datadir2}}/autoprov_prom_check_active"
     retrycount: 40
-    retryintervalsec: 0.2
+    retryintervalsec: 0.4
     compareyaml:
       yaml1: '{{outputdir}}/cmds-output'
       yaml2: '{{datadir2}}/autoprov_prom_check_active_exp'
@@ -71,8 +71,8 @@ tests:
   - name: check that Prometheus active connections is 0
     actions: [cmds]
     apifile: "{{datadir2}}/autoprov_prom_check_active"
-    retrycount: 10
-    retryintervalsec: 0.1
+    retrycount: 12
+    retryintervalsec: 0.4
     compareyaml:
       yaml1: '{{outputdir}}/cmds-output'
       yaml2: '{{datadir2}}/autoprov_prom_check_active_exp2'

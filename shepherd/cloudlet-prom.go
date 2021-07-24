@@ -145,6 +145,10 @@ func writePrometheusTargetsFile(ctx context.Context, key interface{}) {
 			targets += promTargetJson
 		}
 	}
+	if len(proxyScrapePoints) == 0 {
+		// empty set required
+		targets += "{}"
+	}
 	targets += "]"
 	err := ioutil.WriteFile(*promTargetsFile, []byte(targets), 0644)
 	if err != nil {
@@ -240,6 +244,15 @@ func metricsProxy(w http.ResponseWriter, r *http.Request) {
 	if app != "" {
 		// Search ProxyMap for the names
 		target := getProxyScrapePoint(app)
+		if target == nil {
+			// no corresponding AppInst proxy, this happens after
+			// deletion, because cache gets updated before prometheus
+			// gets reloaded without the target. Write back empty
+			// data so that prometheus doesn't generate spurious
+			// offline alert.
+			w.Write([]byte{})
+			return
+		}
 		if target.Client == nil {
 			// if client is not initialized trigger health-check failure
 			http.Error(w, "Client is not initialized", http.StatusInternalServerError)

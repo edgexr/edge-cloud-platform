@@ -82,6 +82,7 @@ var SettingsRequiredArgs = []string{}
 var SettingsOptionalArgs = []string{
 	"shepherdmetricscollectioninterval",
 	"shepherdalertevaluationinterval",
+	"shepherdmetricsscrapeinterval",
 	"shepherdhealthcheckretries",
 	"shepherdhealthcheckinterval",
 	"autodeployintervalsec",
@@ -122,6 +123,7 @@ var SettingsAliasArgs = []string{
 	"fields=settings.fields",
 	"shepherdmetricscollectioninterval=settings.shepherdmetricscollectioninterval",
 	"shepherdalertevaluationinterval=settings.shepherdalertevaluationinterval",
+	"shepherdmetricsscrapeinterval=settings.shepherdmetricsscrapeinterval",
 	"shepherdhealthcheckretries=settings.shepherdhealthcheckretries",
 	"shepherdhealthcheckinterval=settings.shepherdhealthcheckinterval",
 	"autodeployintervalsec=settings.autodeployintervalsec",
@@ -162,6 +164,7 @@ var SettingsComments = map[string]string{
 	"fields":                                                      "Fields are used for the Update API to specify which fields to apply",
 	"shepherdmetricscollectioninterval":                           "Shepherd metrics collection interval for k8s and docker appInstances (duration)",
 	"shepherdalertevaluationinterval":                             "Shepherd alert evaluation interval for k8s and docker appInstances (duration)",
+	"shepherdmetricsscrapeinterval":                               "Shepherd metrics scraping interval (how often metrics are pulled by prometheus, vs pushed to Controller by Shepherd collection)",
 	"shepherdhealthcheckretries":                                  "Number of times Shepherd Health Check fails before we mark appInst down",
 	"shepherdhealthcheckinterval":                                 "Health Checking probing frequency (duration)",
 	"autodeployintervalsec":                                       "Auto Provisioning Stats push and analysis interval (seconds)",

@@ -18,10 +18,13 @@ func InitDebug(nodeMgr *node.NodeMgr) {
 }
 
 func showScrapeInterval(ctx context.Context, req *edgeproto.DebugRequest) string {
-	return "shepherd scraping metrics every " + promScrapeInterval.String()
+	return "shepherd scraping metrics every " + metricsScrapingInterval.String()
 }
 
 func setIntervalFromDbg(ctx context.Context, scrapeInterval *time.Duration) error {
+	if settings.ShepherdAlertEvaluationInterval.TimeDuration() < *scrapeInterval {
+		return fmt.Errorf("evaluation interval %s cannot be less than scrape interval %s", settings.ShepherdAlertEvaluationInterval.TimeDuration().String(), scrapeInterval.String())
+	}
 	// update cloudletPrometheus config file
 	err := updateCloudletPrometheusConfig(ctx, &metricsScrapingInterval, &settings.ShepherdAlertEvaluationInterval)
 	if err != nil {

@@ -21,6 +21,7 @@ regiondata:
       ipsupport: Dynamic
       numdynamicips: 254
       platformtype: Fakeinfra
+      notifysrvaddr: 127.0.0.1:51001
       envvar:
         foo: bar
         FAKE_VCPUS_MAX: "500"

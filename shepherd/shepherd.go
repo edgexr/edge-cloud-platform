@@ -254,8 +254,16 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 	old := settings
 	settings = *new
 	reloadCProm := false
-	if old.ShepherdAlertEvaluationInterval !=
-		new.ShepherdAlertEvaluationInterval {
+	scrapeChanged := false
+	if old.ShepherdMetricsScrapeInterval != new.ShepherdMetricsScrapeInterval {
+		// we use a separate variable to store the scrape interval
+		// so that it can be changed on a per-cloudlet basis via the
+		// debug-cmd. It will only be overridden by the global setting
+		// if the global setting changes.
+		metricsScrapingInterval = new.ShepherdMetricsScrapeInterval.TimeDuration()
+		scrapeChanged = true
+	}
+	if old.ShepherdAlertEvaluationInterval != new.ShepherdAlertEvaluationInterval || scrapeChanged {
 		// re-write Cloudlet Prometheus config and reload
 		err := intprocess.WriteCloudletPromConfig(ctx, &metricsScrapingInterval, (*time.Duration)(&new.ShepherdAlertEvaluationInterval))
 		if err != nil {
@@ -277,7 +285,7 @@ func settingsCb(ctx context.Context, _ *edgeproto.Settings, new *edgeproto.Setti
 	}
 
 	if old.ShepherdMetricsCollectionInterval !=
-		new.ShepherdMetricsCollectionInterval {
+		new.ShepherdMetricsCollectionInterval || scrapeChanged {
 		updateClusterWorkers(ctx, new.ShepherdMetricsCollectionInterval)
 	}
 
