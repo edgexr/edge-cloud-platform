@@ -413,7 +413,7 @@ func UpdateReporter(c echo.Context) error {
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
 	in := ormapi.Reporter{}
-	err = json.Unmarshal(body, &in)
+	err = BindJson(body, &in)
 	if err != nil {
 		return bindErr(err)
 	}
@@ -448,7 +448,7 @@ func UpdateReporter(c echo.Context) error {
 
 	oldReporter := reporter
 	// apply specified fields
-	err = json.Unmarshal(body, &reporter)
+	err = BindJson(body, &reporter)
 	if err != nil {
 		return bindErr(err)
 	}
@@ -1041,7 +1041,7 @@ func GetCloudletEvents(ctx context.Context, username string, report *ormapi.Gene
 			Types:   []string{node.EventType},
 			Regions: []string{report.Region},
 		},
-		TimeRange: util.TimeRange{
+		TimeRange: edgeproto.TimeRange{
 			StartTime: report.StartTime,
 			EndTime:   report.EndTime,
 		},
@@ -1341,7 +1341,7 @@ func GetAppStateEvents(ctx context.Context, username string, report *ormapi.Gene
 				"cloudletorg": report.Org,
 			},
 		},
-		TimeRange: util.TimeRange{
+		TimeRange: edgeproto.TimeRange{
 			StartTime: report.StartTime,
 			EndTime:   report.EndTime,
 		},

@@ -3,7 +3,6 @@ package orm
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"image/png"
 	"io/ioutil"
@@ -826,7 +825,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 		return bindErr(err)
 	}
 	in := ormapi.User{}
-	err = json.Unmarshal(body, &in)
+	err = BindJson(body, &in)
 	if err != nil {
 		return bindErr(err)
 	}
@@ -847,7 +846,7 @@ func RestrictedUserUpdate(c echo.Context) error {
 	}
 	saveuser := user
 	// apply specified fields
-	err = json.Unmarshal(body, &user)
+	err = BindJson(body, &user)
 	if err != nil {
 		return bindErr(err)
 	}

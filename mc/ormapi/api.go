@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud/edgeproto"
-	"github.com/mobiledgex/edge-cloud/util"
 )
 
 // Data saved to persistent sql db, also used for API calls
@@ -344,12 +343,12 @@ type CreateUser struct {
 }
 
 type AuditQuery struct {
-	Username       string `json:"username"`
-	Org            string `form:"org" json:"org"`
-	Limit          int    `json:"limit"`
-	util.TimeRange `json:",inline"`
-	Operation      string            `json:"operation"`
-	Tags           map[string]string `json:"tags"`
+	Username            string `json:"username"`
+	Org                 string `form:"org" json:"org"`
+	Limit               int    `json:"limit"`
+	edgeproto.TimeRange `json:",inline"`
+	Operation           string            `json:"operation"`
+	Tags                map[string]string `json:"tags"`
 }
 
 type AuditResponse struct {
@@ -455,9 +454,9 @@ type RegionData struct {
 }
 
 type MetricsCommon struct {
-	util.TimeRange `json:",inline"`
-	NumSamples     int `json:",omitempty"`
-	Limit          int `json:",omitempty"`
+	edgeproto.TimeRange `json:",inline"`
+	NumSamples          int `json:",omitempty"`
+	Limit               int `json:",omitempty"`
 }
 
 // Metrics data

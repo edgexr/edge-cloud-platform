@@ -2,7 +2,6 @@ package orm
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -167,7 +166,7 @@ func UpdateBillingOrg(c echo.Context) error {
 	// modified fields.
 	body, err := ioutil.ReadAll(c.Request().Body)
 	in := ormapi.BillingOrganization{}
-	err = json.Unmarshal(body, &in)
+	err = BindJson(body, &in)
 	if err != nil {
 		return bindErr(err)
 	}
@@ -194,7 +193,7 @@ func UpdateBillingOrg(c echo.Context) error {
 	}
 
 	// apply specified fields
-	err = json.Unmarshal(body, &org)
+	err = BindJson(body, &org)
 	if err != nil {
 		return bindErr(err)
 	}

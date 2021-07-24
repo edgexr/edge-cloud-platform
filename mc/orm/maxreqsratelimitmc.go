@@ -1,7 +1,6 @@
 package orm
 
 import (
-	"encoding/json"
 	fmt "fmt"
 	"io/ioutil"
 	"net/http"
@@ -67,7 +66,7 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	in := ormapi.McRateLimitMaxReqsSettings{}
-	err = json.Unmarshal(body, &in)
+	err = BindJson(body, &in)
 	if err != nil {
 		return bindErr(err)
 	}
@@ -86,7 +85,7 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
 	}
 
-	err = json.Unmarshal(body, &maxreqs)
+	err = BindJson(body, &maxreqs)
 	if err != nil {
 		return bindErr(err)
 	}
