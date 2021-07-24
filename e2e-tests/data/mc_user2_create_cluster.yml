@@ -1,0 +1,17 @@
+regiondata:
+- region: local
+  appdata:
+    clusterinsts:
+    - key:
+        clusterkey:
+          name: {{cluster_name}}
+        cloudletkey:
+          organization: {{cloudlet_org}}
+          name: {{cloudlet_name}}
+        organization: {{cluster_org}}
+      flavor:
+        name: x1.small
+      ipaccess: IpAccessShared
+      nummasters: 1
+      numnodes: 1
+

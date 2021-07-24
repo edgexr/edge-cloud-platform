@@ -1,0 +1,142 @@
+##
+description: run Cluster-svc Alert tests
+
+tests:
+# user1 (operator) creates cloudlet with FAKE_CLUSTER_SVC_APPINST_FAIL envvar true
+- name: user1 creates cloudelet for creating ClusterSvcAppInstFailure alert
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_alert_clustersvc.yml'
+  apifilevars:
+    cloudlet_org: dmuus
+    cloudlet_name: dmuus-cloud-13
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: delete all emails and verify that mailbox is empty
+  actions: [email-deleteall, email-check]
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: emaildata
+
+# Admin creates an alert receiver 
+- name: Admin creates cloudlet alert receiver
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_admin_clustersvc_appinst_alert_receiver.yml'
+  apifilevars:
+    severity: error
+    alert_receiver_name: emailClusterInstPlatformAlertReceiver
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+# Admin verifies an alert receiver is created
+- name: Verify cloudlet alert receiver was created
+  actions: [mcapi-showalertreceivers]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_clustersvc_appinst_alert_receiver_show.yml'
+    yaml2vars:
+      alert_receiver_name: emailClusterInstPlatformAlertReceiver
+      severity: error
+      cloudlet_org: dmuus
+      cloudlet_name: dmuus-cloud-13
+
+# user2 (developer) creates cluster and thus creates ClusterSvcAppInstFailure alert
+- name: user2 creates clusterinst for creating ClusterSvcAppInstFailure alert
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user2_create_cluster.yml'
+  apifilevars:
+    cloudlet_org: dmuus
+    cloudlet_name: dmuus-cloud-13
+    cluster_name: dmuusSmallCluster
+    cluster_org: AcmeAppCo
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+
+# admin "show alert" - should match
+- name: admin checks for cluster-svc appInst failure alert
+  actions: [mcapi-showalerts]
+  apifile: '{{datadir2}}/show_local_region.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/clustersvc_appinst_fail_alerts_show.yml'
+    yaml2vars:
+      cloudlet_name: dmuus-cloud-13
+      cloudlet_org: dmuus
+      cluster_name: dmuusSmallCluster
+      cluster_org: AcmeAppCo
+    filetype: mcalerts
+
+# As a developer (user2), "show alert" - should be empty
+- name: user2 checks for cluster-svc appInst failure alert (empty)
+  actions: [mcapi-showalerts]
+  apifile: '{{datadir2}}/show_local_region.yml'
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+  retrycount: 5
+  retryintervalsec: 1
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcalerts
+
+# admin verify email for the alert
+- name: verify that email notification about the cloudlet alert was sent
+  actions: [email-check]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  retrycount: 5
+  retryintervalsec: 1
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/emaildata_clustersvc_appinst_alert_firing.yml'
+    yaml2vars:
+      cloudlet_org: dmuus
+      cloudlet_name: dmuus-cloud-13
+      cluster_name: dmuusSmallCluster
+      cluster_org: AcmeAppCo
+      alert_name: ClusterSvcAppInstFailure
+      alert_receiver_name: emailClusterInstPlatformAlertReceiver
+      scope: Platform
+      region: local
+      severity: error
+    filetype: emaildata
+
+# clean up emails
+- name: delete all emails and verify that mailbox is empty
+  actions: [email-deleteall, email-check]
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: emaildata
+
+# user2 (developer) deletes cluster
+- name: user2 deletes clusterinst for ClusterSvcAppInstFailure alert
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user2_create_cluster.yml'
+  apifilevars:
+    cloudlet_org: dmuus
+    cloudlet_name: dmuus-cloud-13
+    cluster_name: dmuusSmallCluster
+    cluster_org: AcmeAppCo
+  curuserfile: '{{datadir2}}/mc_user2.yml'
+
+# After deleting offending cluster, admin's "show alert" - should be empty
+- name: admin checks for cluster-svc appInst failure alert (empty)
+  actions: [mcapi-showalerts]
+  apifile: '{{datadir2}}/show_local_region.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcalerts
+
+# user1 (operator) deletes cloudlet
+- name: user1 deletes cloudelet for ClusterSvcAppInstFailure alert
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/mc_user1_alert_clustersvc.yml'
+  apifilevars:
+    cloudlet_org: dmuus
+    cloudlet_name: dmuus-cloud-13
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+#  It would be good to also test alert resolution as well.
+#  Though there isn't an easy way to change the env var on the cloudlet after the creation,
+#  this is just a note for future.

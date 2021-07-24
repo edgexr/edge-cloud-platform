@@ -300,6 +300,10 @@ func getRouteMatchLabelsFromAlertReceiver(in *ormapi.AlertReceiver) map[string]s
 		if in.AppInst.ClusterInstKey.ClusterKey.Name != "" {
 			labels[edgeproto.ClusterKeyTagName] = in.AppInst.ClusterInstKey.ClusterKey.Name
 		}
+	} else {
+		// Default to Platform scope when no org (from cloudlet/appkey/clusterinstkey) is specified
+		// Only admin can see platform scope alerts.
+		labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopePlatform
 	}
 	return labels
 }
@@ -585,9 +589,6 @@ func (s *AlertMgrServer) ShowReceivers(ctx context.Context, filter *ormapi.Alert
 			if cloudlet, ok := route.Match[edgeproto.CloudletKeyTagName]; ok {
 				receiver.Cloudlet.Name = cloudlet
 			}
-		} else {
-			log.SpanLog(ctx, log.DebugLevelApi, "Unexpected receiver map data for route", "route", route)
-			continue
 		}
 		// get the region if it was configured
 		if region, ok := route.Match["region"]; ok {

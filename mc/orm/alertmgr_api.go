@@ -49,7 +49,8 @@ func CreateAlertReceiver(c echo.Context) error {
 	in.User = claims.Username
 	if in.Cloudlet.Organization == "" &&
 		in.AppInst.AppKey.Organization == "" &&
-		in.AppInst.ClusterInstKey.Organization == "" {
+		in.AppInst.ClusterInstKey.Organization == "" &&
+		!isAdmin(ctx, claims.Username) {
 		return fmt.Errorf("Either cloudlet, cluster or app instance details have to be specified")
 	}
 	if in.Cloudlet.Organization != "" {

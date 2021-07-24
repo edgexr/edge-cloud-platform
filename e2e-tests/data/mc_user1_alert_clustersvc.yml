@@ -1,0 +1,25 @@
+regiondata:
+- region: local
+  appdata:
+    cloudlets:
+    - key:
+        organization: {{cloudlet_org}}
+        name: {{cloudlet_name}}
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: IpSupportDynamic
+      numdynamicips: 254
+      platformtype: PlatformTypeFake
+      envvar:
+        FAKE_PLATFORM_APPINST_CREATE_FAIL: true
+        FAKE_VCPUS_MAX: "500"
+        FAKE_RAM_MAX: "409600"
+      resourcequotas:
+        - name: "RAM"
+          alertthreshold: 50
+        - name: "vCPUs"
+          value: 20
+          alertthreshold: 50
+        - name: "External IPs"
+          alertthreshold: 10

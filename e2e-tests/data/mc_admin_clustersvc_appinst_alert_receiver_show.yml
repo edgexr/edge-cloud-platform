@@ -1,0 +1,6 @@
+alertreceivers:
+- name: {{alert_receiver_name}}
+  type: email
+  severity: {{severity}}
+  user: mexadmin
+  email: ops@mobiledgex.net
