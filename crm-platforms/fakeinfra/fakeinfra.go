@@ -47,6 +47,13 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if err != nil {
 		return err
 	}
+	// Cloudlet prometheus needs to be stopped when Shepherd is stopped,
+	// otherwise it can erroneously trigger alerts during e2e-tests, when
+	// it is unable to scrape Shepherd.
+	log.SpanLog(ctx, log.DebugLevelApi, "Stopping Cloudlet Prometheus")
+	if err := intprocess.StopCloudletPrometheus(ctx); err != nil {
+		return err
+	}
 	updateCallback(edgeproto.UpdateTask, "Stopping Shepherd")
 	return intprocess.StopShepherdService(ctx, cloudlet)
 }

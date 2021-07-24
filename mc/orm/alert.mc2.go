@@ -196,6 +196,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ```
 	// ShepherdMetricsCollectionInterval: 2
 	// ShepherdAlertEvaluationInterval: 20
+	// ShepherdMetricsScrapeInterval: 40
 	// ShepherdHealthCheckRetries: 3
 	// ShepherdHealthCheckInterval: 4
 	// AutoDeployIntervalSec: 5

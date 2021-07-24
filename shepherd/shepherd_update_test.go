@@ -225,7 +225,7 @@ scrape_configs:
 	// check targets file (should be empty)
 	fileContents, err = ioutil.ReadFile(*promTargetsFile)
 	require.Nil(t, err)
-	expected = `[]`
+	expected = `[{}]`
 	require.Equal(t, expected, string(fileContents))
 	// check rules file (should be removed)
 	_, err = os.Stat(rulesFile)
