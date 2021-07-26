@@ -1,0 +1,71 @@
+ran: curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
+{
+  "status": "success",
+  "data": {
+    "groups": [
+      {
+        "name": "StaticRules",
+        "file": "/tmp/rulefile_healthcheck.yml",
+        "rules": [
+          {
+            "state": "inactive",
+            "name": "AppInstDown",
+            "query": "up == 0",
+            "duration": 15,
+            "labels": {
+              "scope": "Application",
+              "status": "1"
+            },
+            "annotations": {
+              "description": "Root Load Balancer is not responding",
+              "title": "AppInstDown"
+            },
+            "alerts": [],
+            "health": "ok",
+            "type": "alerting"
+          },
+          {
+            "state": "inactive",
+            "name": "AppInstDown",
+            "query": "envoy_cluster_health_check_healthy == 0",
+            "duration": 0,
+            "labels": {
+              "scope": "Application",
+              "status": "2"
+            },
+            "annotations": {
+              "description": "Application server port is not responding",
+              "title": "AppInstDown"
+            },
+            "alerts": [],
+            "health": "ok",
+            "type": "alerting"
+          },
+          {
+            "name": "envoy_cluster_upstream_cx_active_total",
+            "query": "sum by(app, appver, apporg, cluster, clusterorg, cloudlet, cloudletorg) (envoy_cluster_upstream_cx_active)",
+            "health": "ok",
+            "type": "recording"
+          },
+          {
+            "name": "envoy_cluster_upstream_cx_active_total:avg",
+            "query": "avg_over_time(envoy_cluster_upstream_cx_active_total[1s])",
+            "health": "ok",
+            "type": "recording"
+          }
+        ],
+        "interval": 1,
+      }
+    ]
+  }
+}
+
+ran: curl -s http://127.0.0.1:9092/api/v1/targets | jq '. | del(.data.activeTargets[].lastScrape) | del(.data.activeTargets[].lastScrapeDuration) | del(.data.activeTargets[].health)'
+{
+  "status": "success",
+  "data": {
+    "activeTargets": [],
+    "droppedTargets": []
+  }
+}
+
