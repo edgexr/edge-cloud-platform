@@ -172,7 +172,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 		setupStage := v.VMProvider.GetGPUSetupStage(ctx)
-		if appInst.OptRes == "gpu" && cloudcommon.IsSideCarApp(app) && setupStage == AppInstStage {
+		if appInst.OptRes == "gpu" && !cloudcommon.IsSideCarApp(app) && setupStage == AppInstStage {
 			// setup GPU drivers
 			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, ActionCreate)
 			if err != nil {
