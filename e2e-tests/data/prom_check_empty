@@ -1,0 +1,2 @@
+curl -s http://127.0.0.1:9092/api/v1/rules | jq . | grep -v valuation
+curl -s http://127.0.0.1:9092/api/v1/targets | jq '. | del(.data.activeTargets[].lastScrape) | del(.data.activeTargets[].lastScrapeDuration) | del(.data.activeTargets[].health)'
