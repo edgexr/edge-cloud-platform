@@ -425,10 +425,13 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		errs = output.Errors
 	case "showfiltered":
 		dataOut, errs := showMcDataFiltered(uri, token, tag, data, &rc)
+		// write both files so we don't accidentally pick up older results
 		if errs == nil || len(errs) == 0 {
 			util.PrintToYamlFile("show-commands.yml", outputDir, dataOut, true)
+			util.PrintToYamlFile("api-output.yml", outputDir, "", true)
 		} else {
 			util.PrintToYamlFile("api-output.yml", outputDir, errs, true)
+			util.PrintToYamlFile("show-commands.yml", outputDir, "", true)
 		}
 		if tag != "expecterr" {
 			*retry = true
