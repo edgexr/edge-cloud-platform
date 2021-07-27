@@ -32,7 +32,7 @@ const (
 	// This is a template which takes a pod query and adds instance label to it
 	PromQAppLabelsWrapperFmt = "max(kube_pod_labels%s)by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(%s)"
 
-	PromQCpuPod         = `sum(rate(container_cpu_usage_seconds_total{image!=""}[1m]))by(pod)`
+	PromQCpuPod         = `sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 `
 	PromQMemPod         = `sum(container_memory_working_set_bytes{image!=""})by(pod)`
 	PromQMemPercentPod  = `sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100`
 	PromQDiskPod        = `sum(container_fs_usage_bytes{image!=""})by(pod)`
