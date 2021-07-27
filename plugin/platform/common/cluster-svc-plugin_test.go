@@ -17,7 +17,7 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
   - name: useralerts.rules
     rules:
     - alert: testAlert1
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m]))by(pod)) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 70 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_fs_usage_bytes{image!=""})by(pod) / ignoring (pod) group_left sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})*100) > 70
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 80 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_memory_working_set_bytes{image!=""})by(pod) / ignoring (pod) group_left sum( machine_memory_bytes{}) * 100) > 70 and max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(container_fs_usage_bytes{image!=""})by(pod) / ignoring (pod) group_left sum(container_fs_limit_bytes{device=~"^/dev/[sv]d[a-z][1-9]$",id="/"})*100) > 70
       for: 30s
       labels:
         severity: warning
@@ -32,7 +32,7 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         scope: "Application"
         type: "UserDefined"
     - alert: testAlert3
-      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m]))by(pod)) > 100
+      expr: max(kube_pod_labels{label_mexAppName="pillimogo",label_mexAppVersion="100"})by(label_mexAppName,label_mexAppVersion,pod)*on(pod)group_right(label_mexAppName,label_mexAppVersion)(sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod) / ignoring (pod) group_left sum(machine_cpu_cores) * 100 ) > 100
       for: 30s
       labels:
         severity: error
