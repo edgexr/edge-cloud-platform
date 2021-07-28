@@ -46,12 +46,11 @@ func init() {
 	AllApis.AddGroup(BillingEventsGroup, "View billing events ", cmds)
 }
 
-var AppEventRequiredArgs = []string{
-	"app-org",
-}
+var AppEventRequiredArgs = []string{}
 
 var AppEventOptionalArgs = []string{
 	"appname",
+	"app-org",
 	"appvers",
 	"cluster",
 	"cloudlet",
@@ -70,12 +69,11 @@ var AppEventAliasArgs = []string{
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
 
-var ClusterEventRequiredArgs = []string{
-	"cluster-org",
-}
+var ClusterEventRequiredArgs = []string{}
 
 var ClusterEventOptionalArgs = []string{
 	"cluster",
+	"cluster-org",
 	"cloudlet-org",
 	"cloudlet",
 	"last",
