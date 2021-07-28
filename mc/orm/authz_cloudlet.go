@@ -355,7 +355,7 @@ func newShowCloudletsForAppDeploymentAuthz(ctx context.Context, region, username
 
 func authzShowFlavorsForCloudlet(ctx context.Context, region, username string, obj *edgeproto.CloudletKey, resource, action string) error {
 	authzCloudlet := AuthzCloudlet{}
-	err := authzCloudlet.populate(ctx, region, username, obj.Organization, resource, action, withRequiresOrg(obj.Organization))
+	err := authzCloudlet.populate(ctx, region, username, "", resource, action, withRequiresOrg(obj.Organization))
 	if err != nil {
 		return err
 	}

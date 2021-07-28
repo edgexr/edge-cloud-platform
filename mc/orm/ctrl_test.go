@@ -393,6 +393,14 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	goodPermTestShowFlavor(t, mcClient, uri, tokenOper2, ctrl.Region, "", dcnt)
 	goodPermTestShowFlavor(t, mcClient, uri, tokenOper3, ctrl.Region, "", dcnt)
 	goodPermTestShowFlavor(t, mcClient, uri, tokenOper4, ctrl.Region, "", dcnt)
+	// Any operator should be able to get cloudlet flavors
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenOper4, ctrl.Region, &org3Cloudlet.Key)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// Any developer should be able to get cloudlet flavors
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, &org3Cloudlet.Key)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
 	// cloudlets are currently all public and can be seen by all
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev, ctrl.Region, "", ccount)
 	goodPermTestShowCloudlet(t, mcClient, uri, tokenDev2, ctrl.Region, "", ccount)
@@ -755,6 +763,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// but have not yet confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
+	// Any developer not part of cloudletpool should not be able to get cloudlet flavors
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, tc3)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+
 	// developer confirms invitation
 	op1accept := op1
 	op1accept.Decision = ormapi.CloudletPoolAccessDecisionAccept
@@ -816,6 +829,19 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// operator should not able able to access appinsts/clusterinsts of developer who has not confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
+
+	// Any developer part of cloudletpool should be able to get cloudlet flavors
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, tc3)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	// Developer not part of cloudletpool should not be able to get cloudlet flavors
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev2, ctrl.Region, tc3)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+	// Other operator cannot get cloudlet flavors for private cloudlet
+	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenOper2, ctrl.Region, tc3)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
 
 	// Test GPU driver access
 	{
