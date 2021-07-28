@@ -435,7 +435,7 @@ func validateClientAppUsageMetricReq(req *ormapi.RegionClientAppUsageMetrics, se
 			return fmt.Errorf("LocationTile not allowed for appinst deviceinfo metric")
 		}
 	default:
-		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientAppUsageSelectors, "\", \""))
+		return fmt.Errorf("Provided selector \"%s\" is not valid, must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientAppUsageSelectors, "\", \""))
 	}
 	return nil
 }
@@ -456,7 +456,7 @@ func validateClientCloudletUsageMetricReq(req *ormapi.RegionClientCloudletUsageM
 			return fmt.Errorf("DataNetworkType not allowed for cloudlet deviceinfo metric")
 		}
 	default:
-		return fmt.Errorf("Provided selector \"%s\" is not valid. Must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientCloudletUsageSelectors, "\", \""))
+		return fmt.Errorf("Provided selector \"%s\" is not valid, must provide only one of \"%s\"", selector, strings.Join(ormapi.ClientCloudletUsageSelectors, "\", \""))
 	}
 	return nil
 }
