@@ -923,6 +923,13 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// cloudlet pool operator wants to see metrics on one of the pool members
 	testPassCheckPermissionsAndGetCloudletList(t, ctx, oper.Name, ctrl.Region, []string{org1}, ResourceAppAnalytics,
 		[]edgeproto.CloudletKey{*tc3}, []string{tc3.Name})
+	// operator developer can see the cloudlet pool apps even if no app is specified
+	devOper, _, _ := testCreateUser(t, mcClient, uri, "devOper")
+	testAddUserRole(t, mcClient, uri, tokenAd, org3, "OperatorContributor", devOper.Name, Success)
+	testAddUserRole(t, mcClient, uri, tokenAd, org1, "DeveloperContributor", devOper.Name, Success)
+	testPassCheckPermissionsAndGetCloudletList(t, ctx, devOper.Name, ctrl.Region, []string{}, ResourceAppAnalytics,
+		[]edgeproto.CloudletKey{org3Cloudlet.Key}, []string{"org3"})
+	testDeleteUser(t, mcClient, uri, tokenAd, "devOper")
 
 	// developer2 confirms invitation
 	op2accept := op2
