@@ -58,7 +58,7 @@ func (s *AllRegionCaches) refreshRegions(ctx context.Context) error {
 			if len(addrObjs) != 2 {
 				return fmt.Errorf("Cannot derive controller notify address from api address, bad api address format, expected name:port but is %s, please fix or specify notifyAddr", ctrl.Address)
 			}
-			notifyAddr = addrObjs[0] + ":50001"
+			notifyAddr = addrObjs[0] + ":" + serverConfig.ControllerNotifyPort
 		}
 		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 			nodeMgr.CommonName(),
