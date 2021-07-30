@@ -81,10 +81,6 @@ var UserCreatePerIpMcRateLimitSettings = &ormapi.McRateLimitSettings{
  * Add RateLimitSettings to RateLimitMgr
  */
 func InitRateLimitMc(ctx context.Context) error {
-	if getDisableRateLimit(ctx) {
-		return nil
-	}
-
 	log.SpanLog(ctx, log.DebugLevelApi, "init ratelimit")
 	db := loggedDB(ctx)
 
