@@ -69,17 +69,18 @@ func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.CreateCloudletPool(ctx, obj)
 }
 
@@ -124,17 +125,18 @@ func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.DeleteCloudletPool(ctx, obj)
 }
 
@@ -183,17 +185,18 @@ func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.UpdateCloudletPool(ctx, obj)
 }
 
@@ -238,17 +241,18 @@ func ShowCloudletPoolStream(ctx context.Context, rc *RegionContext, obj *edgepro
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowCloudletPool(ctx, obj)
 	if err != nil {
 		return err
@@ -325,17 +329,18 @@ func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.AddCloudletPoolMember(ctx, obj)
 }
 
@@ -380,16 +385,17 @@ func RemoveCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *ed
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.RemoveCloudletPoolMember(ctx, obj)
 }

@@ -65,17 +65,18 @@ func ShowNodeStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Node,
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connCache.GetNotifyRootConn(ctx)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewNodeApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowNode(ctx, obj)
 	if err != nil {
 		return err

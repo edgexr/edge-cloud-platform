@@ -68,17 +68,18 @@ func CreateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoScalePolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.CreateAutoScalePolicy(ctx, obj)
 }
 
@@ -123,17 +124,18 @@ func DeleteAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoScalePolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.DeleteAutoScalePolicy(ctx, obj)
 }
 
@@ -182,17 +184,18 @@ func UpdateAutoScalePolicyObj(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoScalePolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.UpdateAutoScalePolicy(ctx, obj)
 }
 
@@ -237,17 +240,18 @@ func ShowAutoScalePolicyStream(ctx context.Context, rc *RegionContext, obj *edge
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoScalePolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowAutoScalePolicy(ctx, obj)
 	if err != nil {
 		return err

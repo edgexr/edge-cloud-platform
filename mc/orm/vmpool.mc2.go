@@ -70,17 +70,18 @@ func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.CreateVMPool(ctx, obj)
 }
 
@@ -125,17 +126,18 @@ func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.DeleteVMPool(ctx, obj)
 }
 
@@ -184,17 +186,18 @@ func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.UpdateVMPool(ctx, obj)
 }
 
@@ -239,17 +242,18 @@ func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMP
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowVMPool(ctx, obj)
 	if err != nil {
 		return err
@@ -326,17 +330,18 @@ func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.V
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.AddVMPoolMember(ctx, obj)
 }
 
@@ -381,16 +386,17 @@ func RemoveVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewVMPoolApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.RemoveVMPoolMember(ctx, obj)
 }

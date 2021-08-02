@@ -65,17 +65,18 @@ func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgepro
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewCloudletRefsApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowCloudletRefs(ctx, obj)
 	if err != nil {
 		return err
@@ -151,17 +152,18 @@ func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewClusterRefsApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowClusterRefs(ctx, obj)
 	if err != nil {
 		return err
@@ -238,17 +240,18 @@ func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAppInstRefsApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowAppInstRefs(ctx, obj)
 	if err != nil {
 		return err

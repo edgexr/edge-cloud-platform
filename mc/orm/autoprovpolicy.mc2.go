@@ -70,17 +70,18 @@ func CreateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.CreateAutoProvPolicy(ctx, obj)
 }
 
@@ -125,17 +126,18 @@ func DeleteAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.DeleteAutoProvPolicy(ctx, obj)
 }
 
@@ -184,17 +186,18 @@ func UpdateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.UpdateAutoProvPolicy(ctx, obj)
 }
 
@@ -239,17 +242,18 @@ func ShowAutoProvPolicyStream(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowAutoProvPolicy(ctx, obj)
 	if err != nil {
 		return err
@@ -326,17 +330,18 @@ func AddAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *e
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.AddAutoProvPolicyCloudlet(ctx, obj)
 }
 
@@ -381,16 +386,17 @@ func RemoveAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectController(ctx, rc.region)
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
 		if err != nil {
 			return nil, err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	return api.RemoveAutoProvPolicyCloudlet(ctx, obj)
 }

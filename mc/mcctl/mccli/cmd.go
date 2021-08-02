@@ -135,7 +135,7 @@ func (s *RootCommand) PreRunE(cmd *cobra.Command, args []string) error {
 		s.token = os.Getenv("TOKEN")
 	}
 	if s.token == "" {
-		tok, err := ioutil.ReadFile(getTokenFile())
+		tok, err := ioutil.ReadFile(GetTokenFile())
 		if err == nil {
 			s.token = strings.TrimSpace(string(tok))
 		}
@@ -146,7 +146,7 @@ func (s *RootCommand) PreRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getTokenFile() string {
+func GetTokenFile() string {
 	home := os.Getenv("HOME")
 	return home + "/.mctoken"
 }
