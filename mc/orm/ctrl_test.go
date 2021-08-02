@@ -1925,6 +1925,15 @@ type OrgCloudletPool struct {
 	CloudletPoolOrg string `gorm:"type:citext REFERENCES organizations(name)"`
 }
 
+// Used to test fixing of null values
+type User struct {
+	Name     string `gorm:"primary_key;type:citext"`
+	Email    string `gorm:"unique;not null"`
+	Passhash string `gorm:"not null"`
+	Salt     string `gorm:"not null"`
+	Iter     int    `gorm:"not null"`
+}
+
 func TestUpgrade(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 	log.InitTracer(nil)
@@ -1986,7 +1995,7 @@ func TestUpgrade(t *testing.T) {
 	database = initdb
 
 	db := loggedDB(ctx)
-	err = db.AutoMigrate(&ormapi.Organization{}, &ormapi.Controller{}, &OrgCloudletPool{}).Error
+	err = db.AutoMigrate(&ormapi.Organization{}, &ormapi.Controller{}, &OrgCloudletPool{}, &User{}).Error
 	require.Nil(t, err)
 	// add old data
 	ctrl := ormapi.Controller{
@@ -2061,6 +2070,20 @@ func TestUpgrade(t *testing.T) {
 	err = db.Exec(cmd).Error
 	require.Nil(t, err)
 
+	// add old users so automigrate will add null columns
+	numOldUsers := 3
+	for ii := 0; ii < numOldUsers; ii++ {
+		user := User{
+			Name:     fmt.Sprintf("user%d", ii),
+			Email:    fmt.Sprintf("email%d", ii),
+			Passhash: "1",
+			Salt:     "1",
+			Iter:     1,
+		}
+		err = db.Create(&user).Error
+		require.Nil(t, err)
+	}
+
 	// ============================================================
 	// start the server, will run all the upgrade functions
 	// ============================================================
@@ -2130,6 +2153,32 @@ func TestUpgrade(t *testing.T) {
 	// should have only found the one expected rule
 	require.True(t, foundExpected)
 	require.Equal(t, 1, found)
+
+	// check that users don't have any null values anymore
+	require.Equal(t, 0, getUsersNullCount(t, ctx))
+}
+
+func getUsersNullCount(t *testing.T, ctx context.Context) int {
+	db := loggedDB(ctx)
+	// refresh stats first
+	err := db.Exec("ANALYZE").Error
+	require.Nil(t, err)
+
+	cmd := "SELECT * FROM users WHERE NOT (users IS NOT NULL)"
+	res := db.Raw(cmd)
+	require.Nil(t, res.Error)
+	rows, err := res.Rows()
+	require.Nil(t, err)
+	defer rows.Close()
+	found := 0
+	for rows.Next() {
+		user := ormapi.User{}
+		err := db.ScanRows(rows, &user)
+		require.Nil(t, err)
+		fmt.Printf("user is %+v\n", user)
+		found++
+	}
+	return found
 }
 
 func testEdgeboxOnlyCloudletCreate(t *testing.T, ctx context.Context, mcClient *mctestclient.Client, uri, region string) {
