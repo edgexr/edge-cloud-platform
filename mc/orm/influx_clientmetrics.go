@@ -63,23 +63,11 @@ var ClientApiUsageTags = []string{
 var ApiFields = []string{
 	"\"reqs\"",
 	"\"errs\"",
-	"\"0s\"",
-	"\"5ms\"",
-	"\"10ms\"",
-	"\"25ms\"",
-	"\"50ms\"",
-	"\"100ms\"",
 }
 
 var ClientApiAggregationFunctions = map[string]string{
-	"reqs":  "sum(\"reqs\")",
-	"errs":  "sum(\"errs\")",
-	"0s":    "sum(\"0s\")",
-	"5ms":   "sum(\"5ms\")",
-	"10ms":  "sum(\"10ms\")",
-	"25ms":  "sum(\"25ms\")",
-	"50ms":  "sum(\"50ms\")",
-	"100ms": "sum(\"100ms\")",
+	"reqs": "sum(\"reqs\")",
+	"errs": "sum(\"errs\")",
 }
 
 var ClientAppUsageTags = []string{
