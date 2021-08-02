@@ -187,8 +187,6 @@ var ClientApiUsageMetricOptionalArgs = []string{
 	"appname",
 	"appvers",
 	"app-org",
-	"cluster",
-	"cluster-org",
 	"cloudlet",
 	"cloudlet-org",
 	"method",
@@ -205,8 +203,6 @@ var ClientApiUsageMetricAliasArgs = []string{
 	"app-org=appinst.appkey.organization",
 	"appname=appinst.appkey.name",
 	"appvers=appinst.appkey.version",
-	"cluster=appinst.clusterinstkey.clusterkey.name",
-	"cluster-org=appinst.clusterinstkey.organization",
 	"cloudlet-org=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
 }
