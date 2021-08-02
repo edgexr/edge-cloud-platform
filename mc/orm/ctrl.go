@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
@@ -18,6 +20,100 @@ type RegionContext struct {
 	username  string
 	conn      *grpc.ClientConn
 	skipAuthz bool
+}
+
+type ConnCache struct {
+	sync.Mutex
+	cache          map[string]*grpc.ClientConn
+	used           map[string]bool
+	notifyRootConn *grpc.ClientConn
+	stopCleanup    chan struct{}
+}
+
+var connCacheCleanupInterval = 30 * time.Minute
+
+func NewConnCache() *ConnCache {
+	rcc := &ConnCache{}
+	rcc.cache = make(map[string]*grpc.ClientConn)
+	rcc.used = make(map[string]bool)
+	return rcc
+}
+
+func (s *ConnCache) GetRegionConn(ctx context.Context, region string) (*grpc.ClientConn, error) {
+	// Although we hold the lock while doing the connect, the
+	// connect is non-blocking, so will not actually block us.
+	s.Lock()
+	defer s.Unlock()
+	conn, found := s.cache[region]
+	var err error
+	if !found {
+		conn, err = connectController(ctx, region)
+		if err != nil {
+			return nil, err
+		}
+		s.cache[region] = conn
+	}
+	s.used[region] = true
+	return conn, nil
+}
+
+func (s *ConnCache) GetNotifyRootConn(ctx context.Context) (*grpc.ClientConn, error) {
+	s.Lock()
+	defer s.Unlock()
+	if s.notifyRootConn == nil {
+		conn, err := connectNotifyRoot(ctx)
+		if err != nil {
+			return nil, err
+		}
+		s.notifyRootConn = conn
+	}
+	return s.notifyRootConn, nil
+}
+
+func (s *ConnCache) Cleanup() {
+	s.Lock()
+	defer s.Unlock()
+	for region, conn := range s.cache {
+		used := s.used[region]
+		if used {
+			s.used[region] = false
+		} else {
+			// cleanup
+			conn.Close()
+			delete(s.cache, region)
+			delete(s.used, region)
+		}
+	}
+}
+
+func (s *ConnCache) Start() {
+	s.stopCleanup = make(chan struct{})
+	go func() {
+		done := false
+		for !done {
+			select {
+			case <-time.After(connCacheCleanupInterval):
+				s.Cleanup()
+			case <-s.stopCleanup:
+				done = true
+			}
+		}
+	}()
+}
+
+func (s *ConnCache) Finish() {
+	close(s.stopCleanup)
+	s.Lock()
+	for region, conn := range s.cache {
+		conn.Close()
+		delete(s.cache, region)
+		delete(s.used, region)
+	}
+	if s.notifyRootConn != nil {
+		s.notifyRootConn.Close()
+		s.notifyRootConn = nil
+	}
+	s.Unlock()
 }
 
 func connectController(ctx context.Context, region string) (*grpc.ClientConn, error) {

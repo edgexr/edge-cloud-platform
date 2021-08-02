@@ -108,6 +108,7 @@ var artifactorySync *AppStoreSync
 var nodeMgr *node.NodeMgr
 var AlertManagerServer *alertmgr.AlertMgrServer
 var allRegionCaches AllRegionCaches
+var connCache *ConnCache
 
 var unitTestNodeMgrOps []node.NodeOp
 var rateLimitMgr *ratelimit.RateLimitManager
@@ -288,6 +289,9 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 			err = nil
 		}
 	}
+
+	connCache = NewConnCache()
+	connCache.Start()
 
 	e := echo.New()
 	e.HideBanner = true
@@ -945,6 +949,9 @@ func (s *Server) Stop() {
 	}
 	if s.echo != nil {
 		s.echo.Close()
+	}
+	if connCache != nil {
+		connCache.Finish()
 	}
 	if s.database != nil {
 		s.database.Close()

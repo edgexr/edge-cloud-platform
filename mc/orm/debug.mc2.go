@@ -66,17 +66,18 @@ func EnableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgepr
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connCache.GetNotifyRootConn(ctx)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewDebugApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.EnableDebugLevels(ctx, obj)
 	if err != nil {
 		return err
@@ -148,17 +149,18 @@ func DisableDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgep
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connCache.GetNotifyRootConn(ctx)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewDebugApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.DisableDebugLevels(ctx, obj)
 	if err != nil {
 		return err
@@ -227,17 +229,18 @@ func ShowDebugLevelsStream(ctx context.Context, rc *RegionContext, obj *edgeprot
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connCache.GetNotifyRootConn(ctx)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewDebugApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.ShowDebugLevels(ctx, obj)
 	if err != nil {
 		return err
@@ -309,17 +312,18 @@ func RunDebugStream(ctx context.Context, rc *RegionContext, obj *edgeproto.Debug
 		}
 	}
 	if rc.conn == nil {
-		conn, err := connectNotifyRoot(ctx)
+		conn, err := connCache.GetNotifyRootConn(ctx)
 		if err != nil {
 			return err
 		}
 		rc.conn = conn
 		defer func() {
-			rc.conn.Close()
 			rc.conn = nil
 		}()
 	}
 	api := edgeproto.NewDebugApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 	stream, err := api.RunDebug(ctx, obj)
 	if err != nil {
 		return err

@@ -47,12 +47,12 @@ func (s *RootCommand) runLogin(path string) func(c *cli.Command, args []string) 
 			return err
 		}
 		fmt.Fprintln(wr, "login successful")
-		err = ioutil.WriteFile(getTokenFile(), []byte(token), 0600)
+		err = ioutil.WriteFile(GetTokenFile(), []byte(token), 0600)
 		if err != nil {
-			fmt.Fprintf(wr, "warning, cannot save token file %s, %v\n", getTokenFile(), err)
+			fmt.Fprintf(wr, "warning, cannot save token file %s, %v\n", GetTokenFile(), err)
 			fmt.Fprintf(wr, "token: %s\n", token)
 		} else {
-			fmt.Fprintf(wr, "token saved to %s\n", getTokenFile())
+			fmt.Fprintf(wr, "token saved to %s\n", GetTokenFile())
 		}
 		if err == nil && admin {
 			ioutil.WriteFile(GetAdminFile(), []byte{}, 0600)
