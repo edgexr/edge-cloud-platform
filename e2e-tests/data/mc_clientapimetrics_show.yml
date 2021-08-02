@@ -2,12 +2,6 @@
   columns:
   - reqs
   - errs
-  - 0s
-  - 5ms
-  - 10ms
-  - 25ms
-  - 50ms
-  - 100ms
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -17,22 +11,10 @@
   values:
   - - 1
   - - 0
-  - - 1
-  - - 0
-  - - 0
-  - - 0
-  - - 0
-  - - 0
 - name: dme-api
   columns:
   - reqs
   - errs
-  - 0s
-  - 5ms
-  - 10ms
-  - 25ms
-  - 50ms
-  - 100ms
   tags:
     app: someapplication1
     apporg: AcmeAppCo
@@ -41,10 +23,4 @@
     method: RegisterClient
   values:
   - - 1
-  - - 0
-  - - 1
-  - - 0
-  - - 0
-  - - 0
-  - - 0
   - - 0
