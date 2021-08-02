@@ -147,11 +147,11 @@ func GetClusterUsage(event *client.Response, checkpoint *client.Response, start,
 	clusterTracker := make(map[edgeproto.ClusterInstKey]usageTracker)
 
 	// check to see if the influx output is empty or invalid
-	emptyEvents, err := checkInfluxOutput(event, EVENT_CLUSTERINST)
+	emptyEvents, err := isMeasurementOutputEmpty(event, EVENT_CLUSTERINST)
 	if err != nil {
 		return nil, err
 	}
-	emptyCheckpoints, err := checkInfluxOutput(checkpoint, cloudcommon.ClusterInstCheckpoints)
+	emptyCheckpoints, err := isMeasurementOutputEmpty(checkpoint, cloudcommon.ClusterInstCheckpoints)
 	if err != nil {
 		return nil, err
 	}
@@ -324,11 +324,11 @@ func GetAppUsage(event *client.Response, checkpoint *client.Response, start, end
 	appTracker := make(map[edgeproto.AppInstKey]usageTracker)
 
 	// check to see if the influx output is empty or invalid
-	emptyEvents, err := checkInfluxOutput(event, EVENT_APPINST)
+	emptyEvents, err := isMeasurementOutputEmpty(event, EVENT_APPINST)
 	if err != nil {
 		return nil, err
 	}
-	emptyCheckpoints, err := checkInfluxOutput(checkpoint, cloudcommon.AppInstCheckpoints)
+	emptyCheckpoints, err := isMeasurementOutputEmpty(checkpoint, cloudcommon.AppInstCheckpoints)
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +601,11 @@ func AppInstUsageEventsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
 
-func checkInfluxOutput(resp *client.Response, measurement string) (bool, error) {
+// Check if the response contains at least one value for the given measurement
+func isMeasurementOutputEmpty(resp *client.Response, measurement string) (bool, error) {
+	if resp == nil {
+		return false, fmt.Errorf("Error processing nil response")
+	}
 	// check to see if the influx output is empty or invalid
 	if len(resp.Results) == 0 || len(resp.Results[0].Series) == 0 {
 		// empty, no event logs at all

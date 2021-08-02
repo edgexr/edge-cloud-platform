@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/influxdata/influxdb/models"
 	"github.com/mobiledgex/edge-cloud-infra/mc/mcctl/mctestclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -203,4 +205,135 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Invalid dme selector: bad selector")
 	require.Equal(t, http.StatusBadRequest, status)
+}
+
+func TestIsMeasurementOutputEmpty(t *testing.T) {
+	// check for nil
+	empty, err := isMeasurementOutputEmpty(nil, EVENT_CLUSTERINST)
+	require.NotNil(t, err, "Null response is an error")
+	require.Contains(t, err.Error(), "Error processing nil response")
+	require.False(t, empty)
+
+	// check empty result
+	resp := client.Response{}
+	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	require.Nil(t, err, "Empty response should not trigger an error")
+	require.True(t, empty)
+
+	// check invalid series data - multiple results in the response
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{},
+			client.Result{},
+		},
+	}
+
+	// check invalid series data - multiple series in a response is not allowed
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{
+				Series: []models.Row{
+					models.Row{},
+					models.Row{},
+				},
+			},
+		},
+	}
+	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+
+	// check invalid series data - series value should not be empty
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{
+				Series: []models.Row{
+					models.Row{
+						Name:   EVENT_CLUSTERINST,
+						Values: [][]interface{}{},
+					},
+				},
+			},
+		},
+	}
+	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+
+	// check invalid series data - series value[0] should not be empty
+	vals := [][]uint8{{}}
+	valIf := [][]interface{}{}
+	for ii, _ := range vals {
+		ifArray := make([]interface{}, len(vals[ii]))
+		for jj, v := range vals[ii] {
+			ifArray[jj] = v
+		}
+		valIf = append(valIf, ifArray)
+	}
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{
+				Series: []models.Row{
+					models.Row{
+						Name:   EVENT_CLUSTERINST,
+						Values: valIf,
+					},
+				},
+			},
+		},
+	}
+	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+
+	// check invalid series data - series name should match
+	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
+	valIf = [][]interface{}{}
+	for ii, _ := range vals {
+		ifArray := make([]interface{}, len(vals[ii]))
+		for jj, v := range vals[ii] {
+			ifArray[jj] = v
+		}
+		valIf = append(valIf, ifArray)
+	}
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{
+				Series: []models.Row{
+					models.Row{
+						Name:   "invalidName",
+						Values: valIf,
+					},
+				},
+			},
+		},
+	}
+	testInvalidMeasurementData(t, &resp, EVENT_CLUSTERINST)
+
+	// check valid series data
+	vals = [][]uint8{{0, 1, 2, 3}, {0, 1, 2, 3}}
+	valIf = [][]interface{}{}
+	for ii, _ := range vals {
+		ifArray := make([]interface{}, len(vals[ii]))
+		for jj, v := range vals[ii] {
+			ifArray[jj] = v
+		}
+		valIf = append(valIf, ifArray)
+	}
+	resp = client.Response{
+		Results: []client.Result{
+			client.Result{
+				Series: []models.Row{
+					models.Row{
+						Name:   EVENT_CLUSTERINST,
+						Values: valIf,
+					},
+				},
+			},
+		},
+	}
+	empty, err = isMeasurementOutputEmpty(&resp, EVENT_CLUSTERINST)
+	require.Nil(t, err)
+	require.False(t, empty)
+}
+
+func testInvalidMeasurementData(t *testing.T, resp *client.Response, measurement string) {
+	empty, err := isMeasurementOutputEmpty(resp, measurement)
+	require.NotNil(t, err, "Invalid series data")
+	require.Contains(t, err.Error(), "Error parsing influx, unexpected format")
+	require.False(t, empty)
 }

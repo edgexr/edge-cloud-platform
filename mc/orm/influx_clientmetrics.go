@@ -211,9 +211,7 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 		AppInstName:  obj.AppInst.AppKey.Name,
 		AppVersion:   obj.AppInst.AppKey.Version,
 		ApiCallerOrg: obj.AppInst.AppKey.Organization,
-		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
 		CloudletList: generateCloudletList(cloudletList),
-		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
 		Method:       obj.Method,
 		TagSet:       getTagSet(CLIENT_APIUSAGE, obj.Selector),
 	}
