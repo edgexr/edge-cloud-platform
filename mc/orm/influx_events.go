@@ -9,6 +9,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 var clusterEventFields = []string{
@@ -129,6 +130,11 @@ func GetEventsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		// validate all the passed in arguments
+		if arg := util.ValidateNames(in.AppInst.GetTags()); arg != "" {
+			return fmt.Errorf("Invalid %s passed in", arg)
+		}
+
 		rc.region = in.Region
 
 		cmd = AppInstEventsQuery(&in, cloudletList)
@@ -138,6 +144,17 @@ func GetEventsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		// Developer org name has to be specified
+		if in.ClusterInst.Organization == "" {
+			return fmt.Errorf("Cluster details must be present")
+		}
+		// validate all the passed in arguments
+		if arg := util.ValidateNames(in.ClusterInst.GetTags()); arg != "" {
+			return fmt.Errorf("Invalid %s passed in", arg)
+		}
+
+		rc.region = in.Region
+		org = in.ClusterInst.Organization
 
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
@@ -157,6 +174,11 @@ func GetEventsCommon(c echo.Context) error {
 		if in.Cloudlet.Organization == "" {
 			return fmt.Errorf("Cloudlet details must be present")
 		}
+		// validate all the passed in arguments
+		if arg := util.ValidateNames(in.Cloudlet.GetTags()); arg != "" {
+			return fmt.Errorf("Invalid %s passed in", arg)
+		}
+
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 
