@@ -131,10 +131,10 @@ func (o *OpenstackPlatform) ValidateNetwork(ctx context.Context) error {
 
 // ValidateAdditionalNetworks ensures that any specified additional networks have
 // just one subnet with no default GW and DHCP must be enabled
-func (o *OpenstackPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+func (o *OpenstackPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]vmlayer.NetworkType) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ValidateAdditionalNetworks")
 
-	for _, n := range additionalNets {
+	for n, _ := range additionalNets {
 		subnets, err := o.ListSubnets(ctx, n)
 		if err != nil {
 			return err
@@ -176,7 +176,8 @@ func (o *OpenstackPlatform) PrepNetwork(ctx context.Context, updateCallback edge
 		return fmt.Errorf("cannot find ext net %s", o.VMProperties.GetCloudletExternalNetwork())
 	}
 
-	err = o.ValidateAdditionalNetworks(ctx, o.VMProperties.GetCloudletAdditionalRootLbNetworks())
+	netTypes := []vmlayer.NetworkType{vmlayer.NetworkTypeExternalAdditionalRootLb}
+	err = o.ValidateAdditionalNetworks(ctx, o.VMProperties.GetNetworksByType(ctx, netTypes))
 	if err != nil {
 		return err
 	}

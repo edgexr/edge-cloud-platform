@@ -331,7 +331,7 @@ func TestDumpNet(t *testing.T) {
 	if live {
 		fmt.Printf("TestNetworks\n")
 		// monitor.go
-		net, err := tv.GetExtNetwork(ctx, testVcdClient)
+		net, err := tv.GetExtNetwork(ctx, testVcdClient, tv.vmProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			fmt.Printf("GetExtNetwork error; %s\n", err.Error())
 			return

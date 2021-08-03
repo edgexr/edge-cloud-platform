@@ -31,6 +31,23 @@ type VappNetIpAllocationType string
 const VappNetIpAllocationStatic = "static"
 const VappNetIpAllocationDhcp = "dhcp"
 
+var InternalVappSubnet = "10.101.1.1"
+
+// VCD currently supports all network typesf
+var supportedVcdNetTypes = map[vmlayer.NetworkType]bool{
+	vmlayer.NetworkTypeExternalPrimary:            true,
+	vmlayer.NetworkTypeExternalAdditionalRootLb:   true,
+	vmlayer.NetworkTypeExternalAdditionalPlatform: true,
+	vmlayer.NetworkTypeInternalPrivate:            true,
+	vmlayer.NetworkTypeInternalSharedLb:           true,
+}
+
+type networkInfo struct {
+	Name        string
+	Gateway     string
+	NetworkType vmlayer.NetworkType
+}
+
 // Use MEX_NETWORK_SCHEME to derive sharedLB orgvdcnet cidr for this cloudlet
 func (v *VcdPlatform) getMexInternalNetRange(ctx context.Context) (string, error) {
 	ni, err := vmlayer.ParseNetSpec(ctx, v.vmProperties.GetCloudletNetworkScheme())
@@ -47,11 +64,8 @@ func (v *VcdPlatform) GetNetworkList(ctx context.Context) ([]string, error) {
 	}, nil
 }
 
-// fetch the OrgVDCNetwork referenced by MEX_EXT_NET our Primary external network
-func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDClient) (*govcd.OrgVDCNetwork, error) {
-
-	// infra propert from env
-	netName := v.vmProperties.GetCloudletExternalNetwork()
+// fetch the OrgVDCNetwork
+func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDClient, netName string) (*govcd.OrgVDCNetwork, error) {
 
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -62,7 +76,6 @@ func (v *VcdPlatform) GetExtNetwork(ctx context.Context, vcdClient *govcd.VCDCli
 		return nil, err
 	}
 	return orgvdcnet, nil
-
 }
 
 // No Router
@@ -94,7 +107,7 @@ func (v *VcdPlatform) GetExternalGateway(ctx context.Context, extNetname string)
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
 		return "", fmt.Errorf(NoVCDClientInContext)
 	}
-	vdcNet, err := v.GetExtNetwork(ctx, vcdClient)
+	vdcNet, err := v.GetExtNetwork(ctx, vcdClient, extNetname)
 	if err != nil {
 		return "", err
 	}
@@ -115,22 +128,6 @@ func (v *VcdPlatform) GetExternalGateway(ctx context.Context, extNetname string)
 
 func (v *VcdPlatform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolicy {
 	return vmlayer.AttachPortDuringCreate
-}
-
-func (v *VcdPlatform) haveSharedRootLB(ctx context.Context, vmgp vmlayer.VMGroupOrchestrationParams) bool {
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "haveSharedRoot", "GroupName", vmgp.GroupName)
-	// if no external ports, must be serviced by a shared load balancer.
-	// Only role agent needs an external net, so if any vm in this group has such a role, ShareRootLB = false
-	for _, vmparams := range vmgp.VMs {
-		if vmparams.Role == vmlayer.RoleAgent {
-			log.SpanLog(ctx, log.DebugLevelInfra, "haveSharedRoot false", "GroupName", vmgp.GroupName)
-			return false
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "haveSharedRoot true", "GroupName", vmgp.GroupName)
-	return true
-
 }
 
 var netLock sync.Mutex
@@ -160,7 +157,10 @@ func (v *VcdPlatform) createNextSharedLBSubnet(ctx context.Context, vapp *govcd.
 	return subnet, nil
 }
 
-func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback, vcdClient *govcd.VCDClient) (string, error) {
+// AddPortsToVapp returns netinfo map
+func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback, vcdClient *govcd.VCDClient) (map[string]networkInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp", "vapp", vapp.VApp.Name)
+
 	ports := vmgp.Ports
 	subnet := ""
 	numPorts := len(ports)
@@ -169,61 +169,70 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 	intAdded := false
 	vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
 
+	netMap := make(map[string]networkInfo)
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp", "VAppName", vmgp.GroupName, "role", vmparams.Role, "type", vmType, "numports", numPorts)
 
 	for n, port := range ports {
-		// External = 0
-		if port.NetworkType == vmlayer.NetTypeExternal {
-
-			desiredNetConfig := &types.NetworkConnectionSection{}
-			desiredNetConfig.PrimaryNetworkConnectionIndex = 0
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "ConIdx", 0)
-			_, err := v.AddVappNetwork(ctx, vapp, vcdClient)
-
-			desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
-				&types.NetworkConnection{
-					IsConnected:             true,
-					IPAddressAllocationMode: types.IPAllocationModePool,
-					Network:                 v.vmProperties.GetCloudletExternalNetwork(),
-					NetworkConnectionIndex:  desiredNetConfig.PrimaryNetworkConnectionIndex,
-				})
-
-			vmtmplName := vapp.VApp.Children.VM[0].Name
-			vm, err := vapp.GetVMByName(vmtmplName, false)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp unable to retrieve", "vm", vmtmplName, "vapp", vapp.VApp.Name)
-				return "", err
-			}
-			err = vm.UpdateNetworkConnectionSection(desiredNetConfig)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "update external  network failed", "VAppName", vmgp.GroupName, "err", err)
-				return "", err
+		if port.NetType != vmlayer.NetworkTypeInternalPrivate && port.NetType != vmlayer.NetworkTypeInternalSharedLb {
+			net, err := v.GetExtNetwork(ctx, vcdClient, port.NetworkName)
+			if err == nil {
+				gw, err := v.GetGatewayForOrgVDCNetwork(ctx, net.OrgVDCNetwork)
+				if err != nil {
+					return nil, fmt.Errorf("Error getting GW for network %s - %v", net.OrgVDCNetwork.Name, err)
+				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "Got external network gateway", "netName", port.NetworkName, "gw", gw)
+				if err == nil {
+					netMap[port.NetworkName] = networkInfo{
+						Name:        port.NetworkName,
+						Gateway:     gw,
+						NetworkType: port.NetType,
+					}
+				}
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "fail to get network", "NetworkName", port.NetworkName, "nettype", port.NetType, "err", err)
+				return nil, fmt.Errorf("Failed to get network %s - %v", port.NetworkName, err)
 			}
 		}
-		// Internal (isolated)
-		// Create isolated subnet for this vapp/clusterInst Vapp net for Dedicated, or OrgVDCNetwork for Shared LB
-		if port.NetworkType == vmlayer.NetTypeInternal && !intAdded {
+		// External = 0
+		switch port.NetType {
+		case vmlayer.NetworkTypeExternalPrimary:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalPlatform:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalRootLb:
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "NetworkName", port.NetworkName, "NetworkType", port.NetType)
+			vappNcs, err := v.AddVappNetwork(ctx, vapp, vcdClient, port.NetworkName)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Error adding vapp network", "vappNcs", vappNcs, "err", err)
+				return nil, fmt.Errorf("Error adding vapp net: %s to vapp %s -- %v", port.NetworkName, vapp.VApp.Name, err)
+			}
+		case vmlayer.NetworkTypeInternalPrivate:
+			fallthrough
+		case vmlayer.NetworkTypeInternalSharedLb:
+			if intAdded {
+				continue
+			}
 			var err error
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetowkName", port.SubnetId, "port.SubnetId", port.SubnetId)
 			// We've fenced our VApp isolated networks, so they can all use the same subnet
-			subnet = "10.101.1.1"
+			subnet = InternalVappSubnet
 			if v.Verbose {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "port.NetworkName", port.NetworkName, "IP subnet", subnet)
 			}
-			if v.haveSharedRootLB(ctx, vmgp) {
+			if vmgp.ConnectsToSharedRootLB {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net for SharedLB", "vapp", vapp.VApp.Name)
 				// This can return the next available cidr, or an existing cidr from the FreeIsoNets list
 				subnet, err = v.createNextSharedLBSubnet(ctx, vapp, port, updateCallback, vcdClient)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp createNextShareRootLBSubnet failed", "vapp", vapp.VApp.Name, "error", err)
-					return "", err
+					return nil, err
 				}
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp created iso vdcnet for SharedLB", "network", port.SubnetId, "vapp", vapp.VApp.Name, "IP subnet", subnet)
 			} else {
-
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding internal vapp net non-shared", "vapp", vapp.VApp.Name)
 				if len(vmgp.Subnets) == 0 {
-					return "", fmt.Errorf("No subnets specified in orch params")
+					return nil, fmt.Errorf("No subnets specified in orch params")
 				}
 				var ipAllocation VappNetIpAllocationType = VappNetIpAllocationStatic
 				if !v.vmProperties.RunLbDhcpServerForVmApps {
@@ -234,19 +243,25 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 				_, err = v.CreateInternalNetworkForNewVm(ctx, vapp, serverName, port.SubnetId, subnet, vmgp.Subnets[0].DNSServers, ipAllocation)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "create internal net failed", "err", err)
-					return "", err
+					return nil, err
 				}
 			}
 			if v.Verbose {
 				log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp add to vapp  internal", "network", port.Name)
 			}
 			intAdded = true
+			netMap[port.SubnetId] = networkInfo{
+				Name:        port.SubnetId,
+				Gateway:     subnet,
+				NetworkType: port.NetType,
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "added internal net to map", "Name", port.SubnetId)
 		}
 	}
 	if v.Verbose {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp return", "NextCidr", subnet, "NumPorts", numPorts)
 	}
-	return subnet, nil
+	return netMap, nil
 }
 
 // InsertConnectionIntoNcs replaces the network connection if the conIdx exists, otherwise appends it
@@ -513,6 +528,25 @@ func Octet(ctx context.Context, a string, n int) (int, error) {
 	return int(ip[n]), nil
 }
 
+func ReplaceLastOctet(ctx context.Context, addr string, o uint32) (string, error) {
+	parts := strings.Split(addr, "/")
+	if len(parts) > 1 {
+		addr = string(parts[0])
+	}
+
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return "", fmt.Errorf("%s failed to parse as IP", addr)
+	}
+	ip = ip.To4()
+	if ip == nil {
+		return "", fmt.Errorf("Ip %s Not a v4 address", ip)
+	}
+	ip[3] = byte(o)
+	return ip.String(), nil
+
+}
+
 func MaskToCidr(addr string) (string, error) {
 
 	ip := net.ParseIP(addr)
@@ -649,9 +683,9 @@ func (v *VcdPlatform) CreateInternalNetworkForNewVm(ctx context.Context, vapp *g
 	return netName, nil
 }
 
-func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdClient *govcd.VCDClient) (*types.NetworkConfigSection, error) {
+func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdClient *govcd.VCDClient, netName string) (*types.NetworkConfigSection, error) {
 
-	orgNet, err := v.GetExtNetwork(ctx, vcdClient)
+	orgNet, err := v.GetExtNetwork(ctx, vcdClient, netName)
 	if err != nil {
 		return nil, err
 	}
@@ -662,7 +696,7 @@ func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdC
 
 	VappNetworkSettings := govcd.VappNetworkSettings{
 		// now poke our changes into the new vapp
-		Name:           "vapp-external-2",
+		Name:           netName,
 		Gateway:        IPScope.Gateway,
 		NetMask:        IPScope.Netmask,
 		DNS1:           IPScope.DNS1,
@@ -671,6 +705,10 @@ func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdC
 		StaticIPRanges: iprange,
 	}
 
+	err = vapp.Refresh()
+	if err != nil {
+		return nil, err
+	}
 	netConfigSec, err := vapp.AddOrgNetwork(&VappNetworkSettings, orgNet.OrgVDCNetwork, false)
 	if err != nil {
 		return nil, err
@@ -681,6 +719,8 @@ func (v *VcdPlatform) AddVappNetwork(ctx context.Context, vapp *govcd.VApp, vcdC
 
 // return a list of internal nets, a shared LB may have several
 func (v *VcdPlatform) GetIntAddrsOfVM(ctx context.Context, vm *govcd.VM) ([]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetIntAddrsOfVM", "vm", vm.VM.Name)
+
 	addrs := []string{}
 	if vm == nil {
 		return addrs, fmt.Errorf("Invalid Arg")
@@ -821,32 +861,6 @@ func (v *VcdPlatform) GetNextInternalSubnet(ctx context.Context, vappName string
 	return "", false, err
 }
 
-// vm networks
-
-func (v *VcdPlatform) AddExtNetToVm(ctx context.Context, vm *govcd.VM, netName string, ip string) error {
-
-	ncs, err := vm.GetNetworkConnectionSection()
-	if err != nil {
-		return err
-	}
-
-	ncs.NetworkConnection = append(ncs.NetworkConnection,
-		&types.NetworkConnection{
-			IsConnected:             true,
-			IPAddressAllocationMode: types.IPAllocationModePool, //Manual,
-			Network:                 netName,
-			NetworkConnectionIndex:  1,
-			IPAddress:               ip,
-		})
-
-	err = vm.UpdateNetworkConnectionSection(ncs)
-	if err != nil {
-
-		return err
-	}
-	return nil
-}
-
 func (v *VcdPlatform) GetFirstOrgNetworkOfVdc(ctx context.Context, vdc *govcd.Vdc) (*govcd.OrgVDCNetwork, error) {
 	nets := vdc.Vdc.AvailableNetworks
 	for _, net := range nets {
@@ -878,8 +892,38 @@ func (v *VcdPlatform) AddSubnetIdToShareLBClientVapp(ctx context.Context, netNam
 	return nil
 }
 
-func (v *VcdPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
-	return fmt.Errorf("Additional networks not supported in vCD  cloudlets")
+func (v *VcdPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]vmlayer.NetworkType) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ValidateAdditionalNetworks", "additionalNets", additionalNets)
+
+	vcdClient := v.GetVcdClientFromContext(ctx)
+	if vcdClient == nil {
+		return fmt.Errorf(NoVCDClientInContext)
+	}
+	vdc, err := v.GetVdc(ctx, vcdClient)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateIsoVdcNetwork GetVdc failed ", "err", err)
+		return err
+	}
+
+	for net, netType := range additionalNets {
+		log.SpanLog(ctx, log.DebugLevelInfra, "validating network", "net", net, "netType", netType)
+		_, supported := supportedVcdNetTypes[netType]
+		if !supported {
+			return fmt.Errorf("Network type: %s not supported in VCD", netType)
+		}
+
+		network, err := vdc.GetOrgVdcNetworkByName(net, true)
+		if err != nil {
+			return fmt.Errorf("Error getting additional network: %s - %v", net, err)
+		}
+		if network.OrgVDCNetwork.Configuration.IPScopes == nil {
+			return fmt.Errorf("Nil IP Scope for additional network: %s", net)
+		}
+		if len(network.OrgVDCNetwork.Configuration.IPScopes.IPScope) == 0 {
+			return fmt.Errorf("Zero length IP Scope for additional network: %s", net)
+		}
+	}
+	return nil
 }
 
 func (v *VcdPlatform) getAvailableIsoNetwork(ctx context.Context) string {
@@ -1290,7 +1334,7 @@ func (v *VcdPlatform) vappNameToInternalSubnet(ctx context.Context, vappName str
 
 func (v *VcdPlatform) getVappToSubnetMap(ctx context.Context, vdc *govcd.Vdc, vcdClient *govcd.VCDClient, cleanup bool) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getVappToSubnetMap", "SharedRootLBName", v.vmProperties.SharedRootLBName)
-	netmap := make(map[string]string)
+	vappToSubnetMap := make(map[string]string)
 	sharedLbVappName := v.vmProperties.SharedRootLBName + "-vapp"
 	// For all vapps in vdc
 	for _, r := range vdc.Vdc.ResourceEntities {
@@ -1319,7 +1363,7 @@ func (v *VcdPlatform) getVappToSubnetMap(ctx context.Context, vdc *govcd.Vdc, vc
 					}
 					net, err := vdc.GetOrgVdcNetworkByName(n, false)
 					if err != nil {
-						log.InfoLog("Cannot get net by name", "netname", n, "err", err)
+						log.SpanLog(ctx, log.DebugLevelInfra, "Cannot get net by name", "netname", n, "err", err)
 						continue
 					}
 					if !strings.HasPrefix(net.OrgVDCNetwork.Name, mexInternalNetRange) {
@@ -1328,12 +1372,12 @@ func (v *VcdPlatform) getVappToSubnetMap(ctx context.Context, vdc *govcd.Vdc, vc
 					}
 					mexSubnetName := v.vappNameToInternalSubnet(ctx, vapp.VApp.Name)
 					log.SpanLog(ctx, log.DebugLevelInfra, "mapping vapp net to subnet", "netname", net.OrgVDCNetwork.Name, "mexSubnetName", mexSubnetName)
-					netmap[net.OrgVDCNetwork.Name] = mexSubnetName
+					vappToSubnetMap[net.OrgVDCNetwork.Name] = mexSubnetName
 				}
 			}
 		}
 	}
-	return netmap, nil
+	return vappToSubnetMap, nil
 
 }
 

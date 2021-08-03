@@ -84,9 +84,9 @@ func (v *VMPlatform) configureInternalInterfaceAndExternalForwarding(ctx context
 	}
 	var externalIps []*ServerIP
 
-	externalNetworks := v.VMProperties.GetExternalNetworks(ExternalNetworkRootLb)
-	log.SpanLog(ctx, log.DebugLevelInfra, "external network list", "externalNetworks", externalNetworks)
-	for _, net := range externalNetworks {
+	nets := v.VMProperties.GetNetworksByType(ctx, []NetworkType{NetworkTypeExternalPrimary, NetworkTypeExternalAdditionalRootLb})
+	log.SpanLog(ctx, log.DebugLevelInfra, "external network list", "externalNetworks", nets)
+	for net := range nets {
 		externalIP, err := GetIPFromServerDetails(ctx, net, "", serverDetails)
 		if err != nil {
 			return "", err
@@ -364,6 +364,8 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	clientName := v.GetChefClientName(rootLbName)
 	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
+	netTypes := []NetworkType{NetworkTypeExternalAdditionalRootLb}
+	addNets := v.VMProperties.GetNetworksByType(ctx, netTypes)
 	return v.GetVMRequestSpec(ctx,
 		cloudcommon.VMTypeRootLB,
 		rootLbName,
@@ -373,7 +375,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		WithExternalVolume(spec.ExternalVolumeSize),
 		WithSubnetConnection(subnetConnect),
 		WithChefParams(chefParams),
-		WithAdditionalNetworks(v.VMProperties.GetCloudletAdditionalRootLbNetworks()))
+		WithAdditionalNetworks(addNets))
 }
 
 // GetVMSpecForRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
@@ -561,7 +563,6 @@ func (v *VMPlatform) SetupRootLB(
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "DNS A record activated", "name", rootLBName)
-
 	// perform provider specific prep of the rootLB
 	return v.VMProvider.PrepareRootLB(ctx, client, rootLBName, infracommon.GetServerSecurityGroupName(rootLBName), TrustPolicy, updateCallback)
 }

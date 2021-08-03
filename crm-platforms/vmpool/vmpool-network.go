@@ -18,7 +18,7 @@ func (o *VMPoolPlatform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolic
 	return vmlayer.AttachPortNotSupported
 }
 
-func (o *VMPoolPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+func (o *VMPoolPlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]vmlayer.NetworkType) error {
 	return fmt.Errorf("Additional networks not supported in VMPool cloudlets")
 }
 

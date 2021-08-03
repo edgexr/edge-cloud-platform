@@ -561,7 +561,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 				return nil, fmt.Errorf("cannot find infra external network %s", cloudlet.InfraConfig.ExternalNetworkName)
 			}
 		}
-		additionalNets := v.VMProperties.GetCloudletAdditionalPlatformNetworks()
+		additionalNets := v.VMProperties.GetNetworksByType(ctx, []NetworkType{NetworkTypeExternalAdditionalPlatform})
 		if len(additionalNets) > 0 {
 			err = v.VMProvider.ValidateAdditionalNetworks(ctx, additionalNets)
 			if err != nil {
@@ -646,6 +646,8 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	clientName := v.GetChefClientName(platformVmName)
 	var vms []*VMRequestSpec
 	subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
+	netTypes := []NetworkType{NetworkTypeExternalAdditionalPlatform}
+	addNets := v.VMProperties.GetNetworksByType(ctx, netTypes)
 	if cloudlet.Deployment == cloudcommon.DeploymentTypeDocker {
 		chefParams := v.GetServerChefParams(clientName, cloudlet.ChefClientKey[clientName], chefmgmt.ChefPolicyDocker, chefAttributes)
 		platvm, err := v.GetVMRequestSpec(
@@ -657,7 +659,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			true, //connect external
 			WithChefParams(chefParams),
 			WithAccessKey(pfConfig.CrmAccessPrivateKey),
-			WithAdditionalNetworks(v.VMProperties.GetCloudletAdditionalPlatformNetworks()),
+			WithAdditionalNetworks(addNets),
 		)
 		if err != nil {
 			return nil, err
