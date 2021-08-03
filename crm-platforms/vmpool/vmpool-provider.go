@@ -324,7 +324,7 @@ func (o *VMPoolPlatform) CreateVMs(ctx context.Context, vmGroupOrchestrationPara
 		vmSpec := edgeproto.VMSpec{}
 		vmSpec.InternalName = vm.Name
 		for _, p := range vm.Ports {
-			if p.NetworkType == vmlayer.NetTypeExternal {
+			if p.NetType == vmlayer.NetworkTypeExternalPrimary {
 				vmSpec.ExternalNetwork = true
 				break
 			}
@@ -491,7 +491,7 @@ func (o *VMPoolPlatform) updateVMsInternal(ctx context.Context, vmGroupOrchestra
 		vmSpec := edgeproto.VMSpec{}
 		vmSpec.InternalName = vm.Name
 		for _, p := range vm.Ports {
-			if p.NetworkType == vmlayer.NetTypeExternal {
+			if p.NetType == vmlayer.NetworkTypeExternalPrimary {
 				vmSpec.ExternalNetwork = true
 				break
 			}

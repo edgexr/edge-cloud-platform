@@ -51,10 +51,13 @@ var RoleVMApplication VMRole = "vmapp"
 var RoleVMPlatform VMRole = "platform"
 var RoleMatchAny VMRole = "any" // not a real role, used for matching
 
-type NetType int
+type NetworkType string
 
-var NetTypeInternal NetType = 0
-var NetTypeExternal NetType = 1
+const NetworkTypeExternalPrimary NetworkType = "external-primary"
+const NetworkTypeExternalAdditionalRootLb NetworkType = "rootlb"
+const NetworkTypeExternalAdditionalPlatform NetworkType = "platform"
+const NetworkTypeInternalPrivate NetworkType = "internal-private"    // internal network for only one cluster
+const NetworkTypeInternalSharedLb NetworkType = "internal-shared-lb" // internal network connected to shared rootlb
 
 // NextAvailableResource means the orchestration code needs to find an available
 // resource of the given type as the calling code won't know what is free
@@ -77,7 +80,7 @@ type PortResourceReference struct {
 	NetworkId   string
 	SubnetId    string
 	Preexisting bool
-	NetworkType NetType
+	NetType     NetworkType
 	PortGroup   string
 }
 
@@ -107,8 +110,8 @@ func NewResourceReference(name string, id string, preexisting bool) ResourceRefe
 	return ResourceReference{Name: name, Id: id, Preexisting: preexisting}
 }
 
-func NewPortResourceReference(name string, id string, netid, subnetid string, preexisting bool, netType NetType) PortResourceReference {
-	return PortResourceReference{Name: name, Id: id, NetworkId: netid, SubnetId: subnetid, Preexisting: preexisting, NetworkType: netType}
+func NewPortResourceReference(name string, id string, netid, subnetid string, preexisting bool, netType NetworkType) PortResourceReference {
+	return PortResourceReference{Name: name, Id: id, NetworkId: netid, SubnetId: subnetid, Preexisting: preexisting, NetType: netType}
 }
 
 // VMRequestSpec has the infromation which the caller needs to provide when creating a VM.
@@ -130,7 +133,7 @@ type VMRequestSpec struct {
 	ChefParams              *chefmgmt.ServerChefParams
 	OptionalResource        string
 	AccessKey               string
-	AdditionalNetworks      []string
+	AdditionalNetworks      map[string]NetworkType
 	VmAppOsType             edgeproto.VmAppOsType
 }
 
@@ -216,7 +219,7 @@ func WithAccessKey(accessKey string) VMReqOp {
 		return nil
 	}
 }
-func WithAdditionalNetworks(networks []string) VMReqOp {
+func WithAdditionalNetworks(networks map[string]NetworkType) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.AdditionalNetworks = networks
 		return nil
@@ -340,7 +343,7 @@ type PortOrchestrationParams struct {
 	SubnetId       string
 	NetworkName    string
 	NetworkId      string
-	NetworkType    NetType
+	NetType        NetworkType
 	VnicType       string
 	SkipAttachVM   bool
 	FixedIPs       []FixedIPOrchestrationParams
@@ -519,7 +522,25 @@ type VMGroupOrchestrationParams struct {
 	SkipSubnetGateway      bool
 	InitOrchestrator       bool
 	ChefUpdateInfo         map[string]string
+	ConnectsToSharedRootLB bool
 	SkipCleanupOnFailure   bool
+}
+
+// connectsToSharedRootLB detects if the request spec is connecting to a shared rootLb.  To determine
+// this we look for an LB VM which has CreatePortsOnly.  This means the LB VM is not going to
+// be created and not included in the orch params, but ports are specified to connect to it.
+func (v *VMPlatform) connectsToSharedRootLB(ctx context.Context, groupSpec *VMGroupRequestSpec) bool {
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "connectsToSharedRootLB", "Name", groupSpec.GroupName)
+	for _, vm := range groupSpec.VMs {
+		if vm.Type == cloudcommon.VMTypeRootLB && vm.CreatePortsOnly {
+			log.SpanLog(ctx, log.DebugLevelInfra, "found shared rootlb ports", "GroupName", groupSpec.GroupName)
+			return true
+		}
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConnectsToSharedRootLB false", "GroupName", groupSpec.GroupName)
+	return false
+
 }
 
 func (v *VMPlatform) GetVMRequestSpec(ctx context.Context, vmtype string, serverName, flavorName string, imageName string, connectExternal bool, opts ...VMReqOp) (*VMRequestSpec, error) {
@@ -578,7 +599,11 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 	internalNetId := v.VMProvider.NameSanitize(internalNetName)
 	externalNetName := v.VMProperties.GetCloudletExternalNetwork()
 	ntpServers := strings.Join(v.VMProperties.GetNtpServers(), " ")
-
+	vmgp.ConnectsToSharedRootLB = v.connectsToSharedRootLB(ctx, spec)
+	internalNetworkType := NetworkTypeInternalPrivate
+	if vmgp.ConnectsToSharedRootLB {
+		internalNetworkType = NetworkTypeInternalSharedLb
+	}
 	var err error
 	vmDns := strings.Split(v.VMProperties.GetCloudletDNS(), ",")
 	if len(vmDns) > 2 {
@@ -746,6 +771,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					Name:        internalPortName,
 					Id:          v.VMProvider.NameSanitize(internalPortName),
 					NetworkName: internalNetName,
+					NetType:     internalNetworkType,
 					NetworkId:   internalNetId,
 					SubnetId:    internalPortSubnet,
 					VnicType:    vmgp.Netspec.VnicType,
@@ -770,6 +796,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					Id:          v.VMProvider.NameSanitize(internalPortName),
 					SubnetId:    v.VMProvider.NameSanitize(spec.NewSubnetName),
 					NetworkName: internalNetName,
+					NetType:     internalNetworkType,
 					NetworkId:   internalNetId,
 					VnicType:    vmgp.Netspec.VnicType,
 					FixedIPs: []FixedIPOrchestrationParams{
@@ -793,6 +820,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					SubnetId:    v.VMProvider.NameSanitize(spec.NewSubnetName),
 					NetworkId:   internalNetId,
 					NetworkName: internalNetName,
+					NetType:     internalNetworkType,
 					FixedIPs: []FixedIPOrchestrationParams{
 						{Address: NextAvailableResource,
 							LastIPOctet: 10,
@@ -827,6 +855,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 					Id:          v.VMProvider.IdSanitize(internalPortName),
 					SubnetId:    v.VMProvider.NameSanitize(spec.NewSubnetName),
 					NetworkName: internalNetName,
+					NetType:     internalNetworkType,
 					NetworkId:   internalNetId,
 					VnicType:    vmgp.Netspec.VnicType,
 					FixedIPs: []FixedIPOrchestrationParams{
@@ -859,66 +888,67 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				newPorts[i].SecurityGroups = append(newPorts[i].SecurityGroups, sec)
 			}
 		}
+		extNets := make(map[string]NetworkType)
 
 		if vm.ConnectToExternalNet {
+			extNets[externalNetName] = NetworkTypeExternalPrimary
+		}
 
-			extNets := []string{}
-			if vm.ConnectToExternalNet {
-				extNets = append(extNets, externalNetName)
+		if len(vm.AdditionalNetworks) > 0 {
+			err = v.VMProvider.ValidateAdditionalNetworks(ctx, vm.AdditionalNetworks)
+			if err != nil {
+				return nil, err
 			}
-			if len(vm.AdditionalNetworks) > 0 {
-				err = v.VMProvider.ValidateAdditionalNetworks(ctx, vm.AdditionalNetworks)
-				if err != nil {
-					return nil, err
-				}
-				extNets = append(extNets, vm.AdditionalNetworks...)
-			}
-			for _, net := range extNets {
-				portName := GetPortName(vm.Name, net)
-				if spec.NewSecgrpName == "" {
-					return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
-				}
-				var externalport PortOrchestrationParams
-				if vmgp.Netspec.FloatingIPNet != "" {
-					externalport = PortOrchestrationParams{
-						Name:        portName,
-						Id:          v.VMProvider.NameSanitize(portName),
-						NetworkName: vmgp.Netspec.FloatingIPNet,
-						NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
-						VnicType:    vmgp.Netspec.VnicType,
-						NetworkType: NetTypeExternal,
-					}
-					fip := FloatingIPOrchestrationParams{
-						Name:         portName + "-fip",
-						FloatingIpId: NextAvailableResource,
-						Port:         NewResourceReference(externalport.Name, externalport.Id, false),
-					}
-					if len(spec.VMs) == 1 {
-						fip.ParamName = "floatingIpId"
-					} else {
-						fip.ParamName = fmt.Sprintf("floatingIpId%d", ii+1)
-					}
-					vmgp.FloatingIPs = append(vmgp.FloatingIPs, fip)
-
-				} else {
-					externalport = PortOrchestrationParams{
-						Name:        portName,
-						Id:          v.VMProvider.IdSanitize(portName),
-						NetworkName: net,
-						NetworkId:   v.VMProvider.IdSanitize(net),
-						VnicType:    vmgp.Netspec.VnicType,
-						NetworkType: NetTypeExternal,
-					}
-				}
-				externalport.SecurityGroups = []ResourceReference{
-					NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
-				}
-				if !spec.SkipDefaultSecGrp {
-					externalport.SecurityGroups = append(externalport.SecurityGroups, NewResourceReference(cloudletSecGrpID, cloudletSecGrpID, true))
-				}
-				newPorts = append(newPorts, externalport)
+			for net, ntype := range vm.AdditionalNetworks {
+				extNets[net] = ntype
 			}
 		}
+		for netName, netType := range extNets {
+			portName := GetPortName(vm.Name, netName)
+			if spec.NewSecgrpName == "" {
+				return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
+			}
+			var externalport PortOrchestrationParams
+			if vmgp.Netspec.FloatingIPNet != "" {
+				externalport = PortOrchestrationParams{
+					Name:        portName,
+					Id:          v.VMProvider.NameSanitize(portName),
+					NetworkName: vmgp.Netspec.FloatingIPNet,
+					NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
+					VnicType:    vmgp.Netspec.VnicType,
+					NetType:     netType,
+				}
+				fip := FloatingIPOrchestrationParams{
+					Name:         portName + "-fip",
+					FloatingIpId: NextAvailableResource,
+					Port:         NewResourceReference(externalport.Name, externalport.Id, false),
+				}
+				if len(spec.VMs) == 1 {
+					fip.ParamName = "floatingIpId"
+				} else {
+					fip.ParamName = fmt.Sprintf("floatingIpId%d", ii+1)
+				}
+				vmgp.FloatingIPs = append(vmgp.FloatingIPs, fip)
+
+			} else {
+				externalport = PortOrchestrationParams{
+					Name:        portName,
+					Id:          v.VMProvider.IdSanitize(portName),
+					NetworkName: netName,
+					NetworkId:   v.VMProvider.IdSanitize(netName),
+					VnicType:    vmgp.Netspec.VnicType,
+					NetType:     netType,
+				}
+			}
+			externalport.SecurityGroups = []ResourceReference{
+				NewResourceReference(spec.NewSecgrpName, spec.NewSecgrpName, false),
+			}
+			if !spec.SkipDefaultSecGrp {
+				externalport.SecurityGroups = append(externalport.SecurityGroups, NewResourceReference(cloudletSecGrpID, cloudletSecGrpID, true))
+			}
+			newPorts = append(newPorts, externalport)
+		}
+
 		if !vm.CreatePortsOnly {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Defining new VM orch param", "vm.Name", vm.Name, "ports", newPorts)
 			hostName := util.HostnameSanitize(strings.Split(vm.Name, ".")[0])
@@ -984,7 +1014,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			}
 			for _, p := range newPorts {
 				if !p.SkipAttachVM {
-					newVM.Ports = append(newVM.Ports, NewPortResourceReference(p.Name, p.Id, p.NetworkId, p.SubnetId, false, p.NetworkType))
+					newVM.Ports = append(newVM.Ports, NewPortResourceReference(p.Name, p.Id, p.NetworkId, p.SubnetId, false, p.NetType))
 					newVM.FixedIPs = append(newVM.FixedIPs, p.FixedIPs...)
 				}
 			}

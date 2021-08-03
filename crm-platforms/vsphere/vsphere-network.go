@@ -107,7 +107,7 @@ func (v *VSpherePlatform) GetPortGroup(ctx context.Context, serverName, network 
 	return fmt.Sprintf("VLAN-%d", subnetTagContents.Vlan), nil
 }
 
-func (v *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+func (v *VSpherePlatform) ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]vmlayer.NetworkType) error {
 	return fmt.Errorf("Additional networks not supported in vSphere cloudlets")
 }
 

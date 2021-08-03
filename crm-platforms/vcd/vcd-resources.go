@@ -122,7 +122,7 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 	if err != nil {
 		return nil, fmt.Errorf("Failed to query VmList: %v", err)
 	}
-	extNet, err := v.GetExtNetwork(ctx, vcdClient)
+	extNet, err := v.GetExtNetwork(ctx, vcdClient, v.vmProperties.GetCloudletExternalNetwork())
 	if err != nil {
 		return nil, err
 	}

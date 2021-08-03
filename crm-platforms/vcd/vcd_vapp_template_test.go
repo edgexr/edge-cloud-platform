@@ -76,7 +76,7 @@ func popNetConfig(t *testing.T, ctx context.Context) *types.NetworkConfigSection
 	// This is the guy with the IPScopes /Features
 	// *Note SubInterface and DistributedInterface here, they are mutually exclusive
 	// When both are nil, the internal (default) interface is  used.
-	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient)
+	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient, tv.vmProperties.GetCloudletExternalNetwork())
 	if err != nil {
 		return nil
 	}
@@ -118,7 +118,7 @@ func popNetConfig(t *testing.T, ctx context.Context) *types.NetworkConfigSection
 }
 
 func popNetConnect(t *testing.T, ctx context.Context) *types.NetworkConnectionSection {
-	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient)
+	vdcnet, err := tv.GetExtNetwork(ctx, testVcdClient, tv.vmProperties.GetCloudletExternalNetwork())
 	if err != nil {
 		return nil
 	}

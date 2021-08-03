@@ -85,6 +85,90 @@ func (v *VcdPlatform) IsDhcpEnabled(ctx context.Context, net *govcd.OrgVDCNetwor
 	return false
 }
 
+func (v *VcdPlatform) getVmInternalIp(ctx context.Context, vmparams *vmlayer.VMOrchestrationParams, vmgp *vmlayer.VMGroupOrchestrationParams, vapp *govcd.VApp) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "getVmInternalIp", "vm", vmparams.Name, "ports", vmparams.Ports)
+
+	internalNetName := ""
+	gateway := ""
+	for _, p := range vmparams.Ports {
+		if p.NetType == vmlayer.NetworkTypeInternalPrivate || p.NetType == vmlayer.NetworkTypeInternalSharedLb {
+			internalNetName = p.SubnetId
+			log.SpanLog(ctx, log.DebugLevelInfra, "found internal subnet", "internalNetName", internalNetName)
+			break
+		}
+	}
+	if internalNetName == "" {
+		return "", fmt.Errorf("Could not find internal network for VM - %s", vmparams.Name)
+	}
+	netMap := make(map[string]networkInfo)
+	if vmgp.ConnectsToSharedRootLB {
+		// the name of the iso mapped network is the gateway for shared
+		netName, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, vmparams.Ports[0].SubnetId, "")
+		if err != nil || netName == "" {
+			return "", fmt.Errorf("error finding subnet %s in iso map - %v", vmparams.Ports[0].SubnetId, err)
+		}
+		gateway = netName
+	} else {
+		// for dedicated, if we find the network the gateway is the InternalVappSubnet
+		for _, n := range vapp.VApp.NetworkConfigSection.NetworkNames() {
+			log.SpanLog(ctx, log.DebugLevelInfra, "network name loop", "n", n, "internalNetName", internalNetName)
+			if n == internalNetName {
+				gateway = InternalVappSubnet
+				break
+			}
+		}
+		if gateway == "" {
+			return "", fmt.Errorf("error finding internal network: %s in vapp network config", vmparams.Ports[0].SubnetId)
+		}
+	}
+	internalNetType := vmlayer.NetworkTypeInternalPrivate
+	if vmgp.ConnectsToSharedRootLB {
+		internalNetType = vmlayer.NetworkTypeInternalSharedLb
+	}
+	netMap[internalNetName] = networkInfo{
+		Name:        internalNetName,
+		Gateway:     gateway,
+		NetworkType: internalNetType,
+	}
+	vmIp, err := v.getIpFromPortParams(ctx, vmparams, vmgp, netMap)
+	log.SpanLog(ctx, log.DebugLevelInfra, "getIpFromPortParams returns", "vmIp", vmIp, "err", err)
+	if err != nil {
+		return "", err
+	}
+	if vmIp == "" {
+		return "", fmt.Errorf("Internal IP not found")
+	}
+	return vmIp, nil
+}
+
+func (v *VcdPlatform) getIpFromPortParams(ctx context.Context, vmparams *vmlayer.VMOrchestrationParams, vmgp *vmlayer.VMGroupOrchestrationParams, netMap map[string]networkInfo) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "getIpFromPortParams", "netMap", netMap)
+
+	for _, port := range vmparams.Ports {
+		for _, p := range vmgp.Ports {
+			if p.Id == port.Id {
+				log.SpanLog(ctx, log.DebugLevelInfra, "Found Port within orch params", "id", port.Id, "fixedips", p.FixedIPs)
+
+				if len(p.FixedIPs) == 1 && p.FixedIPs[0].Address == vmlayer.NextAvailableResource {
+					net, ok := netMap[p.SubnetId]
+					if !ok {
+						return "", fmt.Errorf("Cannot find GW in map for network %s", p.SubnetId)
+					}
+					vmIp, err := ReplaceLastOctet(ctx, net.Gateway, p.FixedIPs[0].LastIPOctet)
+					if err != nil {
+						return "", fmt.Errorf("Failed to replace last octet of addr %s, octet %d - %v", vmIp, p.FixedIPs[0].LastIPOctet, err)
+					}
+					log.SpanLog(ctx, log.DebugLevelInfra, "Found VM IP", "vmIp", vmIp, "port", port.Id)
+					return vmIp, nil
+				}
+				log.SpanLog(ctx, log.DebugLevelInfra, "No fixd IPs for port", "id", port.Id)
+				return "", nil
+			}
+		}
+	}
+	return "", fmt.Errorf("unable to get IP from PortParams")
+}
+
 func (v *VcdPlatform) RetrieveTemplate(ctx context.Context, tmplName string, vcdClient *govcd.VCDClient) (*govcd.VAppTemplate, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RetrieveTemplate", "tmplName", tmplName)
 	tmpl, err := v.FindTemplate(ctx, tmplName, vcdClient)
@@ -207,32 +291,161 @@ func (v *VcdPlatform) updateVmDisk(vm *govcd.VM, size int64) error {
 	return nil
 }
 
+func (v *VcdPlatform) updateNetworksForVM(ctx context.Context, vcdClient *govcd.VCDClient, vm *govcd.VM, vmgp *vmlayer.VMGroupOrchestrationParams, vmparams *vmlayer.VMOrchestrationParams, vmIdx int, netMap map[string]networkInfo, masterIP string) (*govcd.VM, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateNetworksForVM", "vm", vm.VM.Name, "MasterIP", masterIP)
+
+	gwsToRemove := []string{}
+	// currrently only internal and additional networks on the LB need be removed, but this may
+	// be explanded in the future
+	if vmparams.Role == vmlayer.RoleAgent {
+		for netname, netinfo := range netMap {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Checking role and nettype for gw removal", "netname", netname, "NetworkType", netinfo.NetworkType)
+			if netinfo.NetworkType == vmlayer.NetworkTypeInternalPrivate || netinfo.NetworkType == vmlayer.NetworkTypeInternalSharedLb || netinfo.NetworkType == vmlayer.NetworkTypeExternalAdditionalRootLb {
+				gwsToRemove = append(gwsToRemove, netinfo.Gateway)
+			}
+		}
+	}
+
+	for _, gw := range gwsToRemove {
+		// Multiple GWs cause unpredictable behavior depending on the order they are processed. Since the timing
+		// may sometimes be unpredictable, remove also from the netplan file
+		log.SpanLog(ctx, log.DebugLevelInfra, "removing extra default gw from VM", "vm", vm.VM.Name, "gw", gw)
+		vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, "route del default gw "+gw)
+		netplanFile := "/etc/netplan/99-netcfg-vmware.yaml"
+		removeGwFromNetplan := fmt.Sprintf("sed -i /gateway4:.%s/d %s", gw, netplanFile)
+		vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, removeGwFromNetplan)
+	}
+	// some unique key within the vapp
+	key := fmt.Sprintf("%s-vm-%d", vmgp.GroupName, vmIdx)
+	vm.VM.OperationKey = key
+
+	ncs, err := vm.GetNetworkConnectionSection()
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkConnectionSection failed", "err", err)
+		return nil, err
+	}
+	ncs.NetworkConnection = []*types.NetworkConnection{}
+	// make sure all networks gone
+	err = vm.UpdateNetworkConnectionSection(ncs)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "UpdateNetworkConnectionSection failed", "err", err)
+		return nil, err
+	}
+	vmIp, err := v.getIpFromPortParams(ctx, vmparams, vmgp, netMap)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get ip from port params", "err", err)
+		return nil, err
+	}
+	for netConIdx, port := range vmparams.Ports {
+		netName := port.NetworkId
+		switch port.NetType {
+		case vmlayer.NetworkTypeInternalSharedLb:
+			netName = v.IsoNamesMap[port.SubnetId]
+		case vmlayer.NetworkTypeInternalPrivate:
+			netName = port.SubnetId
+		}
+
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateNetworksForVM add connection", "net", netName, "ip", vmIp, "VM", vmparams.Name)
+		networkAdapterType := "VMXNET3"
+		if vmparams.Role == vmlayer.RoleVMApplication {
+			// VM apps may not have VMTools installed so use the generic E1000 adapter
+			networkAdapterType = "E1000"
+		}
+		extNet := v.vmProperties.GetCloudletExternalNetwork()
+		switch port.NetType {
+		case vmlayer.NetworkTypeInternalPrivate:
+			fallthrough
+		case vmlayer.NetworkTypeInternalSharedLb:
+			if vmIp == "" {
+				return nil, fmt.Errorf("No IP found for internal net %s", netName)
+			}
+			ncs.NetworkConnection = append(ncs.NetworkConnection,
+				&types.NetworkConnection{
+					Network:                 netName,
+					NetworkConnectionIndex:  netConIdx,
+					IPAddress:               vmIp,
+					IsConnected:             true,
+					IPAddressAllocationMode: types.IPAllocationModeManual,
+					NetworkAdapterType:      networkAdapterType,
+				})
+		case vmlayer.NetworkTypeExternalPrimary:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalPlatform:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalRootLb:
+			if netName == extNet {
+				ncs.PrimaryNetworkConnectionIndex = netConIdx
+			}
+			ncs.NetworkConnection = append(ncs.NetworkConnection,
+				&types.NetworkConnection{
+					Network:                 netName,
+					NetworkConnectionIndex:  netConIdx,
+					IsConnected:             true,
+					IPAddressAllocationMode: types.IPAllocationModePool,
+					NetworkAdapterType:      networkAdapterType,
+				})
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp adding connection", "net", netName, "ip", vmIp, "VM", vmparams.Name, "networkAdapterType", networkAdapterType, "conidx", netConIdx, "netType", port.NetType, "ncs", ncs)
+		}
+	}
+	err = vm.UpdateNetworkConnectionSection(ncs)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed SLEEP 30 and Retry operation", "VM", vmparams.Name, "ncs", ncs, "error", err)
+		time.Sleep(30 * time.Second)
+		err = vm.UpdateNetworkConnectionSection(ncs)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "ncs", ncs, "error", err)
+			return nil, err
+		}
+	}
+	// finish vmUpdates
+	err = v.guestCustomization(ctx, vm, vmparams)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
+		return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
+	}
+
+	err = v.updateVM(ctx, vm, vmparams, masterIP)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
+		return nil, err
+	}
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateNetworksForVM complete")
+	return vm, nil
+}
+
 // For each vm spec defined in vmgp, add a new VM to vapp with those applicable attributes.  Returns a map of VMs which
 // should be powered on and customized
-func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, baseImgTmpl *govcd.VAppTemplate, nextCidr string, vdc *govcd.Vdc, vcdClient *govcd.VCDClient, updateCallback edgeproto.CacheUpdateCallback) (VMMap, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName)
+func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, baseImgTmpl *govcd.VAppTemplate, netMap map[string]networkInfo, vdc *govcd.Vdc, vcdClient *govcd.VCDClient, updateCallback edgeproto.CacheUpdateCallback) (VMMap, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp", "GroupName", vmgp.GroupName, "netMap", netMap)
 
 	vmsToCustomize := make(VMMap)
-	var err error
 	numVMs := len(vmgp.VMs)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp numVMs ", "count", numVMs, "GroupName", vmgp.GroupName, "Internal IP", nextCidr, "baseImgTmpl", baseImgTmpl.VAppTemplate.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp numVMs", "count", numVMs, "GroupName", vmgp.GroupName, "baseImgTmpl", baseImgTmpl.VAppTemplate.Name, "vmgp ports", vmgp.Ports)
 
-	vmIp := ""
-	var a []string
-	baseAddr := ""
-	if nextCidr != "" {
-		a = strings.Split(nextCidr, "/")
-		baseAddr = string(a[0])
+	//vmUpdateResults := make(chan vmUpdateResult, len(vmgp.VMs))
+	err := vapp.Refresh()
+	if err != nil {
+		return nil, fmt.Errorf("vApp refresh failed = %v", err)
 	}
+	masterIP := ""
 	for n, vmparams := range vmgp.VMs {
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Adding VM: %s", vmparams.Name))
+
 		vmName := vmparams.Name
 		vmRole := vmparams.Role
+		if vmRole == vmlayer.RoleMaster {
+			masterIP, err = v.getVmInternalIp(ctx, &vmparams, vmgp, vapp)
+			if err != nil {
+				return nil, fmt.Errorf("Fail to get Master internal IP - %v", err)
+			}
+		}
+
 		vmType := string(vmlayer.GetVmTypeForRole(string(vmparams.Role)))
-		vm := &govcd.VM{}
 		ncs := &types.NetworkConnectionSection{}
 		// check to see if this vm is already present
-		vm, err = vapp.GetVMByName(vmName, true)
+		vm, err := vapp.GetVMByName(vmName, false)
 		if err != nil && vm == nil {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Adding VM: %s", vmName))
 			template := baseImgTmpl
@@ -254,141 +467,28 @@ func (v *VcdPlatform) AddVMsToVApp(ctx context.Context, vapp *govcd.VApp, vmgp *
 				log.SpanLog(ctx, log.DebugLevelInfra, "wait add vm failed", "err", err)
 				return nil, err
 			}
-			// Make sure it's there
-			vm, err = vapp.GetVMByName(vmparams.Name, true)
+
+			vm, err = vapp.GetVMByName(vmName, true)
 			if err != nil {
-				// internal error
 				return nil, err
 			}
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp exists", "vmName", vmName, "vmRole", vmRole, "vmType", vmType)
 		}
-		if nextCidr != "" {
-			// Consider internal nextwork assignements,
-			sharedRootLB := v.haveSharedRootLB(ctx, *vmgp)
 
-			if vmparams.Role == vmlayer.RoleAgent {
-				// dedicated lb
-				vmIp = baseAddr
-				log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated RootLB", "vm", vm.VM.Name, "gateway", baseAddr)
-
-				// remove the RootLB's IP as a default GW because VCD inserts it and there is no way to specify otherwise.
-				// Multiple GWs cause unpredictable behavior depending on the order they are processed. Since the timing
-				// may sometimes be unpredictable, remove also from the netplan file
-				log.SpanLog(ctx, log.DebugLevelInfra, "removing extra default gw from dedicated rootLB", "gw", baseAddr)
-				vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, "route del default gw "+baseAddr)
-				netplanFile := "/etc/netplan/99-netcfg-vmware.yaml"
-				removeGwFromNetplan := fmt.Sprintf("sed -i /gateway4:.%s/d %s", baseAddr, netplanFile)
-				vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, removeGwFromNetplan)
-			} else {
-				if sharedRootLB {
-					log.SpanLog(ctx, log.DebugLevelInfra, "SharedLB", "vm", vm.VM.Name, "gateway", baseAddr)
-					vmIp, err = IncrIP(ctx, baseAddr, 101+(n-1))
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
-						return nil, err
-					}
-				} else {
-					log.SpanLog(ctx, log.DebugLevelInfra, "Dedicated", "vm", vm.VM.Name, "gateway", baseAddr)
-					// a single node docker cluster will need .101 here
-					vmIp, err = IncrIP(ctx, baseAddr, 100+(n-1))
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", 100+(n-1), "err", err)
-						return nil, err
-					}
-				}
-			}
-			// some unique key within the vapp
-			key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n)
-			vm.VM.OperationKey = key
-
-			ncs, err = vm.GetNetworkConnectionSection()
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "GetNetworkConnectionSection failed", "err", err)
-				return nil, err
-			}
-
-			ip, _ := v.GetAddrOfVM(ctx, vm, v.vmProperties.GetCloudletExternalNetwork())
-			if ip == "" {
-				ncs.PrimaryNetworkConnectionIndex = 1
-			} // else, it's already set to zero
-
-			internalNetName := ""
-			ports := vmgp.Ports
-			// Vapp private iso nets use SubnetId directly, while SharedLBs isolated networks shared by vapps
-			// used IsoNamesMapping.
-			for _, port := range ports {
-				if port.NetworkType == vmlayer.NetTypeInternal {
-
-					if sharedRootLB {
-						internalNetName = v.IsoNamesMap[port.SubnetId]
-					} else {
-						internalNetName = port.SubnetId
-					}
-					break
-				}
-			}
-			if internalNetName != "" {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add connection", "net", internalNetName, "ip", vmIp, "VM", vmName)
-				networkAdapterType := "VMXNET3"
-				if vmparams.Role == vmlayer.RoleVMApplication {
-					// VM apps may not have VMTools installed so use the generic E1000 adapter
-					networkAdapterType = "E1000"
-				}
-				netConIdx, err := GetNextAvailConIdx(ctx, ncs)
-				if err != nil {
-					// unlikely we've run out of connection ids
-					return nil, err
-				}
-				ncs.NetworkConnection = append(ncs.NetworkConnection,
-					&types.NetworkConnection{
-						Network:                 internalNetName,
-						NetworkConnectionIndex:  netConIdx,
-						IPAddress:               vmIp,
-						IsConnected:             true,
-						IPAddressAllocationMode: types.IPAllocationModeManual,
-						NetworkAdapterType:      networkAdapterType,
-					})
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp adding connection", "net", internalNetName, "ip", vmIp, "VM", vmName, "networkAdapterType", networkAdapterType, "conidx", netConIdx)
-				err = vm.UpdateNetworkConnectionSection(ncs)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed SLEEP 30 and Retry operation", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
-					time.Sleep(30 * time.Second)
-					err = vm.UpdateNetworkConnectionSection(ncs)
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add internal net failed", "VM", vm.VM.Name, "netName", internalNetName, "error", err)
-						return nil, err
-					}
-				}
-			} else {
-				log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp failed to find any internalNetName for", "vm", vm.VM.Name)
-			}
-		}
-		// finish vmUpdates
-		err = v.guestCustomization(ctx, *vm, vmparams)
+		vm, err = v.updateNetworksForVM(ctx, vcdClient, vm, vmgp, &vmparams, n, netMap, masterIP)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
-			return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
-		}
-
-		err = v.updateVM(ctx, vm, vmparams)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
 			return nil, err
+		} else if vmparams.Role != vmlayer.RoleVMApplication {
+			vmsToCustomize[vmparams.Name] = vm
 		}
+	} //for n, vmparams
 
-		if vmparams.Role != vmlayer.RoleVMApplication {
-			// VMApps do not get customized as they are unlikely to have VMTools.  If we want to support adding customization parms
-			// to VCD VMs then it would require additional metadata about the VMApp, or maybe the download of a custom OVF rather than
-			// generation of the OVF
-			vmsToCustomize[vm.VM.Name] = vm
-		}
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp complete")
 	return vmsToCustomize, nil
 }
 
 func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp, vmgp *vmlayer.VMGroupOrchestrationParams, vcdClient *govcd.VCDClient) (VMMap, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp", "vapp", vapp.VApp.Name)
+
 	vmMap := make(VMMap)
 	numExistingVMs := len(vapp.VApp.Children.VM)
 
@@ -402,30 +502,8 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 	netName := ports[0].SubnetId
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVapp", "network", netName, "vms", numVMs, "to existing vms", numExistingVMs)
 
-	// xxx keep an eye on this. Saw one instance of vapp losing all networks, but it's first born child remained sane. xxx
-	baseAddr, err := v.GetAddrOfVapp(ctx, vapp, netName)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp GetAddrOfVapp", "vapp", vapp.VApp.Name, "netName", netName, "err", err)
-	}
-	cName := vapp.VApp.Children.VM[0].Name
-	cvm, err := vapp.GetVMByName(cName, true)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp get vapp.vm[0] failed", "vapp", vapp.VApp.Name, "vmname", cName, "err", err)
-		return vmMap, err
-	}
-	if baseAddr == "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp WARN GetAddrOfVapp failed switching to vm", "vapp", vapp.VApp.Name, "vm", cName)
-	}
-	vmBaseAddr, err := v.GetAddrOfVM(ctx, cvm, netName)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp GetAddrOfVM", "vmname", cName, "netName", netName, "err", err)
-	}
-	if baseAddr == "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp vapp baseAddr empty using", "vmBaseAddr", vmBaseAddr)
-		baseAddr = vmBaseAddr
-	}
-
 	netConIdx := 0
+	masterIP := ""
 	for n, vmparams := range vmgp.VMs {
 		vmName := vmparams.Name
 		vmRole := vmparams.Role
@@ -457,31 +535,15 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 			}
 		}
 
-		lastOctet, err := Octet(ctx, baseAddr, 3)
-
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp Octet fail", "err", err)
 			return nil, err
 		}
 		if v.Verbose {
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp last octet of baseAddr", "baseAddr", baseAddr, "last octet", lastOctet)
-		}
-		offset := 0
-		if lastOctet == 1 {
-			offset = 100
+			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp", "vapp", vapp.VApp.Name, "network", netName, "existingsVMs", numExistingVMs, "n", n)
 		}
 
-		if v.Verbose {
-			log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToExistingVApp", "vapp", vapp.VApp.Name, "network", netName, "baseAddr", baseAddr, "existingsVMs", numExistingVMs, "n", n)
-		}
-
-		// Here we need to add numWorkerNodes to base
-		vmIp, err := IncrIP(ctx, baseAddr, (numExistingVMs+offset+n)-1)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "IncrIP failed", "baseAddr", baseAddr, "delta", numExistingVMs+offset+n, "err", err)
-			return vmMap, err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVmsToExstingVAppp", "vm", vmName, "IP", vmIp)
+		log.SpanLog(ctx, log.DebugLevelInfra, "AddVmsToExstingVAppp", "vm", vmName)
 		ncs.PrimaryNetworkConnectionIndex = 0
 		// some unique key within the vapp
 		key := fmt.Sprintf("%s-vm-%d", vapp.VApp.Name, n+numExistingVMs)
@@ -491,9 +553,14 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 		if err != nil {
 			return nil, err
 		}
-
-		log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp add connection", "net", netName, "ip", vmIp, "VM", vmName)
-
+		vmIp, err := v.getVmInternalIp(ctx, &vmparams, vmgp, vapp)
+		if err != nil {
+			return nil, err
+		}
+		if vmRole == vmlayer.RoleMaster {
+			masterIP = vmIp
+			log.SpanLog(ctx, log.DebugLevelInfra, "Got Master IP", "masterIP", masterIP)
+		}
 		ncs.NetworkConnection = append(ncs.NetworkConnection,
 			&types.NetworkConnection{
 				Network:                 netName,
@@ -509,17 +576,16 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 			return nil, err
 		}
 
-		err = v.guestCustomization(ctx, *vm, vmparams)
+		err = v.guestCustomization(ctx, vm, &vmparams)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
 			return nil, fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
 		}
-		err = v.updateVM(ctx, vm, vmparams)
+		err = v.updateVM(ctx, vm, &vmparams, masterIP)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "update vm failed ", "VAppName", vmgp.GroupName, "err", err)
 			return nil, err
 		}
-
 		vmMap[vm.VM.Name] = vm
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVMsToVApp complete")
@@ -527,7 +593,7 @@ func (v *VcdPlatform) AddVMsToExistingVApp(ctx context.Context, vapp *govcd.VApp
 }
 
 // guestCustomization updates some fields in the customization section, including the host name
-func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
+func (v *VcdPlatform) guestCustomization(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "guestCustomization ", "VM", vm.VM.Name, "HostName", vmparams.HostName)
 	vm.VM.GuestCustomizationSection.ComputerName = vmparams.HostName
 	vm.VM.GuestCustomizationSection.Enabled = TakeBoolPointer(true)
@@ -535,9 +601,9 @@ func (v *VcdPlatform) guestCustomization(ctx context.Context, vm govcd.VM, vmpar
 }
 
 // set vm params and call vm.UpdateVmSpecSection
-func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
+func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams, masterIP string) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM", "vm", vm.VM.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM", "vm", vm.VM.Name, "masterIP", masterIP)
 
 	flavorName := vmparams.FlavorName
 	flavor, err := v.GetFlavor(ctx, flavorName)
@@ -583,7 +649,7 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 		return err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "updateVM done", "vm", vm.VM.Name, "flavor", flavor)
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateVmSpecSection done", "vm", vm.VM.Name, "flavor", flavor)
 
 	err = v.AddMetadataToVM(ctx, vm, vmparams)
 	if err != nil {
@@ -594,7 +660,7 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 		log.SpanLog(ctx, log.DebugLevelInfra, "Skipping populateProductSection for VMApp", "vm", vm.VM.Name)
 		return nil
 	}
-	psl, err := v.populateProductSection(ctx, vm, &vmparams)
+	psl, err := v.populateProductSection(ctx, vm, vmparams, masterIP)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM populateProductSection failed", "vm", vm.VM.Name, "err", err)
 		return fmt.Errorf("updateVM-E-error from populateProductSection: %s", err.Error())
@@ -606,7 +672,7 @@ func (v *VcdPlatform) updateVM(ctx context.Context, vm *govcd.VM, vmparams vmlay
 		return fmt.Errorf("Error Setting product section %s", err.Error())
 	}
 
-	err = v.guestCustomization(ctx, *vm, vmparams)
+	err = v.guestCustomization(ctx, vm, vmparams)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "updateVM GuestCustomization   failed", "vm", vm.VM.Name, "err", err)
 		return fmt.Errorf("updateVM-E-error from guestCustomize: %s", err.Error())
@@ -960,6 +1026,8 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 
 // Should always be a vapp/cluster/group name
 func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) (*edgeproto.InfraResources, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResources", "groupname", name)
+
 	resources := &edgeproto.InfraResources{}
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
@@ -972,8 +1040,6 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	if err != nil {
 		return nil, err
 	}
-	extNetName := v.vmProperties.GetCloudletExternalNetwork()
-
 	vappName := name + "-vapp"
 	vapp, err := vdc.GetVAppByName(vappName, true)
 	if err != nil {
@@ -988,21 +1054,19 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	if vapp.VApp.Children == nil {
 		return nil, fmt.Errorf("ErrorEntityNotFound")
 	}
-
 	for _, cvm := range vapp.VApp.Children.VM {
+		flavor := ""
+		role := ""
 		vm, err := vapp.GetVMByName(cvm.Name, true)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Warn GetVMByName: vm not found in vapp ", "vapp", name, "vm", cvm.Name)
-			continue
+			log.SpanLog(ctx, log.DebugLevelInfra, "Warn GetVMByName: vm not found in vapp ", "vapp", vappName, "cvm", cvm)
+			return resources, fmt.Errorf("Warn GetVMByName: vm %s not found in vapp", cvm.Name)
 		}
 		metadata, err := vm.GetMetadata()
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResouce metadata not found for  vapp ", "vapp", name, "vm", cvm.Name, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetServerGroupResouce metadata not found for vapp ", "vapp", vappName, "vm", vm, "err", err)
 			return nil, err
 		}
-		flavor := ""
-		role := ""
-
 		for _, md := range metadata.MetadataEntry {
 			if md.Key == "FlavorName" {
 				flavor = md.TypedValue.Value
@@ -1017,37 +1081,36 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 			InfraFlavor: flavor,
 			Type:        string(vmlayer.GetVmTypeForRole(role)),
 		}
-		ipAddr := edgeproto.IpAddr{}
-
-		// Find addr of vm for the given network
-
-		// get from meta data now xxx
-		extAddr, err := v.GetAddrOfVM(ctx, vm, extNetName)
-		// It fine if some vm doesn't have an external net connection
+		netTypes := []vmlayer.NetworkType{
+			vmlayer.NetworkTypeExternalAdditionalPlatform,
+			vmlayer.NetworkTypeExternalAdditionalRootLb,
+			vmlayer.NetworkTypeExternalPrimary,
+		}
+		sd, err := v.GetServerDetail(ctx, vm.VM.Name)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetAddrOfVM No addr", "vm", vm.VM.Name, "network", extNetName, "error", err)
+			return resources, fmt.Errorf("Failed to get server detail - %v", err)
 		}
-
-		intAddrs, err := v.GetIntAddrsOfVM(ctx, vm)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "GetIntAddrOfVM failed", "error", err)
-			return nil, err
+		externalNetMap := v.vmProperties.GetNetworksByType(ctx, netTypes)
+		for _, sip := range sd.Addresses {
+			vmip := edgeproto.IpAddr{}
+			_, isExternal := externalNetMap[sip.Network]
+			if isExternal {
+				vmip.ExternalIp = sip.ExternalAddr
+				if sip.InternalAddr != "" && sip.InternalAddr != sip.ExternalAddr {
+					vmip.InternalIp = sip.InternalAddr
+				}
+			} else {
+				vmip.InternalIp = sip.InternalAddr
+			}
+			vminfo.Ipaddresses = append(vminfo.Ipaddresses, vmip)
 		}
-		// intAddrs could be 0, 1 or many depending on the node type
-		// checkipAddrs ability to return > 1 internal address
-		if len(intAddrs) > 0 {
-			ipAddr.InternalIp = intAddrs[0]
-		}
-		ipAddr.ExternalIp = extAddr
-
-		vminfo.Ipaddresses = append(vminfo.Ipaddresses, ipAddr)
 		resources.Vms = append(resources.Vms, vminfo)
 	}
 	return resources, nil
 }
 
 // Store attrs of vm for crmrestarts and resource fetching
-func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparams vmlayer.VMOrchestrationParams) error {
+func (v *VcdPlatform) AddMetadataToVM(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams) error {
 
 	addStart := time.Now()
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddMetadataToVm", "vm", vm.VM.Name)

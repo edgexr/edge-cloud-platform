@@ -23,8 +23,6 @@ var serverCacheLock sync.Mutex
 // map of group name to server name to ip
 var serverExternalIpCache map[string]*ServerIP
 
-type NetworkType string
-
 const ServerDoesNotExistError string = "Server does not exist"
 const ServerIPNotFound string = "unable to find IP"
 

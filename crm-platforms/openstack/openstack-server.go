@@ -42,7 +42,12 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses string, ports []OSPort, serverDetail *vmlayer.ServerDetail) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateServerIPs", "addresses", addresses, "serverDetail", serverDetail, "ports", ports)
 
-	externalNetMap := o.VMProperties.GetExternalNetworks(vmlayer.ExternalNetworkAll)
+	netTypes := []vmlayer.NetworkType{
+		vmlayer.NetworkTypeExternalAdditionalPlatform,
+		vmlayer.NetworkTypeExternalAdditionalRootLb,
+		vmlayer.NetworkTypeExternalPrimary,
+	}
+	externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
 	its := strings.Split(addresses, ";")
 
 	for _, it := range its {
@@ -401,7 +406,12 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 			Status:      svr.Status,
 			InfraFlavor: svr.Flavor,
 		}
-		externalNetMap := o.VMProperties.GetExternalNetworks(vmlayer.ExternalNetworkAll)
+		netTypes := []vmlayer.NetworkType{
+			vmlayer.NetworkTypeExternalAdditionalPlatform,
+			vmlayer.NetworkTypeExternalAdditionalRootLb,
+			vmlayer.NetworkTypeExternalPrimary,
+		}
+		externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
 		for _, sip := range sd.Addresses {
 			vmip := edgeproto.IpAddr{}
 			_, isExternal := externalNetMap[sip.Network]

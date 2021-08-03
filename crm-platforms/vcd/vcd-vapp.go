@@ -100,12 +100,12 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	updateCallback(edgeproto.UpdateTask, "Updating vApp Ports")
 	updatePortsStart := time.Now()
 	// Get the VApp network(s) in place.
-	nextCidr, err := v.AddPortsToVapp(ctx, vapp, *vmgp, updateCallback, vcdClient)
+	netMap, err := v.AddPortsToVapp(ctx, vapp, *vmgp, updateCallback, vcdClient)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp failed", "VAppName", vmgp.GroupName, "error", err)
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp nextCidr for vapp internal net", "Cidr", nextCidr, "vmRole", vmRole, "vmType", vmType)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVapp added ports", "vmRole", vmRole, "vmType", vmType)
 
 	vmtmplName := vapp.VApp.Children.VM[0].Name
 	_, err = vapp.GetVMByName(vmtmplName, false)
@@ -122,7 +122,7 @@ func (v *VcdPlatform) CreateVApp(ctx context.Context, vappTmpl *govcd.VAppTempla
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp composed adding VMs for ", "GroupName", vmgp.GroupName, "count", numVMs)
 	addVMStart := time.Now()
 
-	vmsToCustomize, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, nextCidr, vdc, vcdClient, updateCallback)
+	vmsToCustomize, err := v.AddVMsToVApp(ctx, vapp, vmgp, vappTmpl, netMap, vdc, vcdClient, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateVApp AddVMsToVApp failed", "error", err)
 		return nil, err
@@ -381,9 +381,9 @@ func makeMetaMap(ctx context.Context, mexmeta string) map[string]string {
 func vcdMetaDataFormatter(instring string) string {
 	return instring
 }
-func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams) (*types.ProductSectionList, error) {
+func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, vmparams *vmlayer.VMOrchestrationParams, masterIP string) (*types.ProductSectionList, error) {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "vm", vm.VM.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "vm", vm.VM.Name, "masterIP", masterIP)
 	command := ""
 	manifest := ""
 	// format vmparams.CloudConfigParams into yaml format, which we'll then base64 encode for the ovf datasource
@@ -405,38 +405,8 @@ func (v *VcdPlatform) populateProductSection(ctx context.Context, vm *govcd.VM, 
 		log.SpanLog(ctx, log.DebugLevelInfra, "SetGuestCustomizationSection failed", "err", err)
 		return nil, err
 	}
-	// find the master, which can be either the first or second vm in the vapp, or none
-	masterIP := ""
-	if vmparams.Role == vmlayer.RoleK8sNode { // k8s-node
-		log.SpanLog(ctx, log.DebugLevelInfra, "Have k8s-node find masterIP ", "vm", vm.VM.Name)
-		vapp, err := vm.GetParentVApp()
-
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Could not GetParentVapp for", "vm", vm.VM.Name, "err", err)
-			return nil, err
-		}
-		for _, child := range vapp.VApp.Children.VM {
-			log.SpanLog(ctx, log.DebugLevelInfra, "found child VM in vapp", "child", child.Name)
-			if !strings.Contains(child.Name, vmlayer.ClusterTypeKubernetesMasterLabel) {
-				continue
-			}
-			tvm, err := vapp.GetVMByName(child.Name, false)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "GetVMByName failed for", "vm", child.Name, "err", err)
-				return nil, err
-			}
-			ips, err := v.GetIntAddrsOfVM(ctx, tvm)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection failed to retrieve master ip for k8s-master", "vm", child.Name, "err", err)
-				return nil, err
-			}
-			if len(ips) != 0 {
-				log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection retrieve master ip for k8s-master", "vm", child.Name, "maserIP", masterIP)
-				masterIP = ips[0]
-			} else {
-				return nil, fmt.Errorf("No IPs on master: %s", child.Name)
-			}
-		}
+	if (vmparams.Role == vmlayer.RoleMaster || vmparams.Role == vmlayer.RoleK8sNode) && masterIP == "" {
+		return nil, fmt.Errorf("empty master IP provided")
 	}
 	mexMetadata := vmlayer.GetVMMetaData(vmparams.Role, masterIP, vcdMetaDataFormatter)
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateProductSection", "masterIP", masterIP, "vmMetadata", mexMetadata)

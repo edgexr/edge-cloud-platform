@@ -8,6 +8,7 @@ import (
 	"time"
 
 	awsgen "github.com/mobiledgex/edge-cloud-infra/crm-platforms/aws/aws-generic"
+	"github.com/mobiledgex/edge-cloud-infra/vmlayer"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -630,6 +631,6 @@ func (a *AwsEc2Platform) GetFreePrecreatedSubnet(ctx context.Context, subnetName
 	return fmt.Errorf("No free subnet found for type %s", subnetType)
 }
 
-func (o *AwsEc2Platform) ValidateAdditionalNetworks(ctx context.Context, additionalNets []string) error {
+func (o *AwsEc2Platform) ValidateAdditionalNetworks(ctx context.Context, additionalNets map[string]vmlayer.NetworkType) error {
 	return fmt.Errorf("Additional networks not supported in AWS EC2 cloudlets")
 }
