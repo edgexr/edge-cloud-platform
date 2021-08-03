@@ -112,14 +112,14 @@ func goodPermTestEvents(t *testing.T, mcClient *mctestclient.Client, uri, devTok
 	}
 	list, status, err = testPermShowAppInstEvents(mcClient, uri, devToken, region, devOrg, &appInst)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid app passed in")
+	require.Contains(t, err.Error(), "Invalid app")
 	require.Equal(t, http.StatusBadRequest, status)
 	cloudlet := edgeproto.CloudletKey{
 		Name: "select * from api",
 	}
 	list, status, err = testPermShowCloudletEvents(mcClient, uri, operToken, region, operOrg, &cloudlet)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid cloudlet passed in")
+	require.Contains(t, err.Error(), "Invalid cloudlet")
 	require.Equal(t, http.StatusBadRequest, status)
 	cluster := edgeproto.ClusterInstKey{
 		ClusterKey: edgeproto.ClusterKey{
@@ -128,7 +128,7 @@ func goodPermTestEvents(t *testing.T, mcClient *mctestclient.Client, uri, devTok
 	}
 	list, status, err = testPermShowClusterEvents(mcClient, uri, operToken, region, operOrg, &cluster)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Invalid cluster passed in")
+	require.Contains(t, err.Error(), "Invalid cluster")
 	require.Equal(t, http.StatusBadRequest, status)
 
 }

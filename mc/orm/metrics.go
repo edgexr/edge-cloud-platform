@@ -65,8 +65,8 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 			return fmt.Errorf("App org must be present")
 		}
 		// validate input
-		if arg := util.ValidateNames(app.GetTags()); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(app.GetTags()); err != nil {
+			return err
 		}
 
 		orgsToCheck = append(orgsToCheck, org)

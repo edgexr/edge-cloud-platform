@@ -710,8 +710,8 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		// validate all the passed in arguments
-		if arg := util.ValidateNames(in.AppInst.GetTags()); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(in.AppInst.GetTags()); err != nil {
+			return err
 		}
 
 		// New metrics api request
@@ -737,8 +737,8 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		// validate all the passed in arguments
-		if arg := util.ValidateNames(in.ClusterInst.GetTags()); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(in.ClusterInst.GetTags()); err != nil {
+			return err
 		}
 
 		rc.region = in.Region
@@ -763,8 +763,8 @@ func GetMetricsCommon(c echo.Context) error {
 			return fmt.Errorf("Cloudlet details must be present")
 		}
 		// validate all the passed in arguments
-		if arg := util.ValidateNames(in.Cloudlet.GetTags()); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(in.Cloudlet.GetTags()); err != nil {
+			return err
 		}
 
 		rc.region = in.Region
@@ -787,8 +787,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// validate all the passed in arguments
 		args := getClientApiUsageMetricsArgs(&in)
-		if arg := util.ValidateNames(args); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(args); err != nil {
+			return err
 		}
 
 		rc.region = in.Region
@@ -821,8 +821,8 @@ func GetMetricsCommon(c echo.Context) error {
 			return fmt.Errorf("Cloudlet details must be present")
 		}
 		// validate all the passed in arguments
-		if arg := util.ValidateNames(in.Cloudlet.GetTags()); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(in.Cloudlet.GetTags()); err != nil {
+			return err
 		}
 
 		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
@@ -852,8 +852,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// validate all the passed in arguments
 		args := getClientAppUsageMetricsArgs(&in)
-		if arg := util.ValidateNames(args); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(args); err != nil {
+			return err
 		}
 
 		rc.region = in.Region
@@ -887,8 +887,8 @@ func GetMetricsCommon(c echo.Context) error {
 		}
 		// validate all the passed in arguments
 		args := getClientCloudletUsageMetricsArgs(&in)
-		if arg := util.ValidateNames(args); arg != "" {
-			return fmt.Errorf("Invalid %s passed in", arg)
+		if err = util.ValidateNames(args); err != nil {
+			return err
 		}
 
 		rc.region = in.Region
