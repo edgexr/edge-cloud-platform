@@ -8,8 +8,10 @@ regiondata:
       severity: warning
       activeconnlimit: 100
       triggertime: 2s
+      description: "Should be overwritten by annotations:description"
       labels:
         env: testing
       annotations:
         description: "Too many connections at the same time"
+        title: UserDefinedAlert1
 
