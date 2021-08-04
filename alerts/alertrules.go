@@ -22,18 +22,16 @@ var MEXPrometheusUserAlertsT = `additionalPrometheusRules:
   - name: useralerts.rules
     rules:
     [[- range .ClusterAlerts ]]
-    - alert: [[ .Name ]]
-      expr: [[ .RuleExpression ]]
+    - alert: [[ .Rule.Alert ]]
+      expr: [[ .Rule.Expr ]]
       for: [[ .TriggerTimeString ]]
       labels:
-        severity: [[ .Severity ]]
-        type: "User Defined"
-        [[- range $key, $value := .Labels ]]
+        [[- range $key, $value := .Rule.Labels ]]
         [[ $key ]]: "[[ $value ]]"
         [[- end ]]
-      [[- if gt (len .Annotations) 0 ]]
+      [[- if gt (len .Rule.Annotations) 0 ]]
       annotations:
-        [[- range $key, $value := .Annotations ]]
+        [[- range $key, $value := .Rule.Annotations ]]
         [[ $key ]]: "[[ $value ]]"
         [[- end ]]
       [[- end ]]
@@ -42,12 +40,8 @@ var MEXPrometheusUserAlertsT = `additionalPrometheusRules:
 
 // alert definition for prometheus cluster
 type PrometheusClusterAlert struct {
-	Name              string
-	RuleExpression    string
-	Severity          string
+	prommgmt.Rule
 	TriggerTimeString string
-	Labels            map[string]string
-	Annotations       map[string]string
 }
 
 type AlertArgs struct {
@@ -67,12 +61,10 @@ func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts [
 		if alerts[ii].ActiveConnLimit != 0 {
 			continue
 		}
+		rule := getPromAlertFromEdgeprotoAlert(appInst, &alerts[ii])
 		promAlert := PrometheusClusterAlert{
-			Name:              alerts[ii].Key.Name,
-			Severity:          alerts[ii].Severity,
+			Rule:              rule,
 			TriggerTimeString: alerts[ii].TriggerTime.TimeDuration().String(),
-			Labels:            util.CopyStringMap(alerts[ii].Labels),
-			Annotations:       util.CopyStringMap(alerts[ii].Annotations),
 		}
 
 		// Create a prometheus expression for the alert rule
@@ -92,11 +84,7 @@ func getAlertRulesArgs(ctx context.Context, appInst *edgeproto.AppInst, alerts [
 			exp := fmt.Sprintf("%s > %d", diskQuery, alerts[ii].DiskUtilizationLimit)
 			expressions = append(expressions, exp)
 		}
-		promAlert.RuleExpression = strings.Join(expressions, " and ")
-		promAlert.Labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
-		promAlert.Labels[cloudcommon.AlertTypeLabel] = cloudcommon.AlertTypeUserDefined
-		// Add all the appinst labels
-		promAlert.Labels = util.AddMaps(promAlert.Labels, appInst.Key.GetTags())
+		promAlert.Rule.Expr = strings.Join(expressions, " and ")
 
 		log.SpanLog(ctx, log.DebugLevelInfo, "Adding Prometheus user alert rule", "appInst", appInst,
 			"alert", promAlert)
@@ -131,22 +119,12 @@ func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, aler
 		if alerts[ii].ActiveConnLimit == 0 {
 			continue
 		}
-		rule := prommgmt.Rule{}
-		rule.Alert = alerts[ii].Key.Name
+		rule := getPromAlertFromEdgeprotoAlert(appInst, &alerts[ii])
 		rule.Expr = `envoy_cluster_upstream_cx_active{` +
 			edgeproto.AppKeyTagName + `="` + appInst.Key.AppKey.Name + `",` +
 			edgeproto.AppKeyTagVersion + `="` + appInst.Key.AppKey.Version + `",` +
 			edgeproto.AppKeyTagOrganization + `="` + appInst.Key.AppKey.Organization +
 			`"} > ` + fmt.Sprintf("%d", alerts[ii].ActiveConnLimit)
-		rule.For = model.Duration(alerts[ii].TriggerTime)
-
-		// add labels
-		rule.Labels = util.CopyStringMap(alerts[ii].Labels)
-		rule.Labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
-		rule.Labels[cloudcommon.AlertTypeLabel] = cloudcommon.AlertTypeUserDefined
-		rule.Labels[cloudcommon.AlertSeverityLabel] = alerts[ii].Severity
-		rule.Labels = util.AddMaps(rule.Labels, appInst.Key.GetTags())
-		rule.Annotations = util.CopyStringMap(alerts[ii].Annotations)
 
 		log.SpanLog(ctx, log.DebugLevelInfo, "Adding Cloudlet Prometheus user alert rule", "appInst", appInst,
 			"rule", rule)
@@ -157,4 +135,52 @@ func GetCloudletAlertRules(ctx context.Context, appInst *edgeproto.AppInst, aler
 	}
 
 	return grp
+}
+
+func getPromAlertFromEdgeprotoAlert(appInst *edgeproto.AppInst, alert *edgeproto.AlertPolicy) prommgmt.Rule {
+	rule := prommgmt.Rule{}
+	rule.Alert = alert.Key.Name
+	rule.For = model.Duration(alert.TriggerTime)
+
+	// add labels
+	rule.Labels = util.CopyStringMap(alert.Labels)
+	rule.Labels[cloudcommon.AlertScopeTypeTag] = cloudcommon.AlertScopeApp
+	rule.Labels[cloudcommon.AlertTypeLabel] = cloudcommon.AlertTypeUserDefined
+	rule.Labels[cloudcommon.AlertSeverityLabel] = alert.Severity
+	rule.Labels = util.AddMaps(rule.Labels, appInst.Key.GetTags())
+	rule.Annotations = util.CopyStringMap(alert.Annotations)
+	// Add title annotation if one doesn't exist - our notification templates rely on it being present
+	if _, found := rule.Annotations[cloudcommon.AlertAnnotationTitle]; !found {
+		rule.Annotations[cloudcommon.AlertAnnotationTitle] = alert.Key.Name
+	}
+	// description annotation overwrites description in the definition
+	if _, found := rule.Annotations[cloudcommon.AlertAnnotationDescription]; !found {
+		rule.Annotations[cloudcommon.AlertAnnotationDescription] = getAlertPolicyDescription(alert)
+	}
+	return rule
+}
+
+func getAlertPolicyDescription(in *edgeproto.AlertPolicy) string {
+	if in.Description != "" {
+		return in.Description
+	}
+	// collect all configured thresholds
+	defaultDescription := []string{}
+	if in.CpuUtilizationLimit != 0 {
+		cpuStr := fmt.Sprintf("CPU Utilization > %d%%", in.CpuUtilizationLimit)
+		defaultDescription = append(defaultDescription, cpuStr)
+	}
+	if in.MemUtilizationLimit != 0 {
+		memStr := fmt.Sprintf("Memory Utilization > %d%%", in.MemUtilizationLimit)
+		defaultDescription = append(defaultDescription, memStr)
+	}
+	if in.DiskUtilizationLimit != 0 {
+		diskStr := fmt.Sprintf("Disk Utilization > %d%%", in.DiskUtilizationLimit)
+		defaultDescription = append(defaultDescription, diskStr)
+	}
+	if in.ActiveConnLimit != 0 {
+		connStr := fmt.Sprintf("Number of active connections > %d", in.ActiveConnLimit)
+		defaultDescription = append(defaultDescription, connStr)
+	}
+	return strings.Join(defaultDescription, " and ")
 }

@@ -171,6 +171,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// Annotations: 10
 	// AnnotationsKey: 10.1
 	// AnnotationsValue: 10.2
+	// Description: 11
 	// ```
 	// Security:
 	//   Bearer:
