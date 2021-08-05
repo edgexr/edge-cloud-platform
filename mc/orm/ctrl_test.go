@@ -817,9 +817,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// developer is able to create appinst/appinst on tc3 part of pool1
 	goodPermCreateAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
 	goodPermCreateClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
-	// operator should be able to see appInsts/clusterInsts of developer part of pool1
+	// operator should be able to see appInsts/clusterInsts/apps of developer part of pool1
 	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 1)
 	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org1, 1)
+	goodPermTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org1, dcnt)
 	// developer deletes appinst/clusterinst
 	goodPermDeleteAppInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
 	goodPermDeleteClusterInst(t, mcClient, uri, tokenDev, ctrl.Region, org1, tc3)
@@ -829,6 +830,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// operator should not able able to access appinsts/clusterinsts of developer who has not confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
+	badPermTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 
 	// Any developer part of cloudletpool should be able to get cloudlet flavors
 	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, tc3)
@@ -945,9 +947,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// developer2 is able to create appinst/clusterinst on tc3 part of pool1
 	goodPermCreateAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 	goodPermCreateClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
-	// operator should be able to see appInsts/clusterinsts of developer2 part of pool1
+	// operator should be able to see appInsts/clusterinsts/apps of developer2 part of pool1
 	goodPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 1)
 	goodPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2, 1)
+	goodPermTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org2, dcnt)
 	// developer2 deletes appinst/clusterinst
 	goodPermDeleteAppInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
 	goodPermDeleteClusterInst(t, mcClient, uri, tokenDev2, ctrl.Region, org2, tc3)
@@ -994,6 +997,10 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	status, err = mcClient.DeleteCloudletPoolAccessInvitation(uri, tokenOper, &op1)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+
+	// operator can no longer see developer apps
+	forbiddenTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org1)
+	forbiddenTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 
 	// developer can also remove response (should fail with not exist)
 	status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev, &op1)
@@ -1537,6 +1544,14 @@ func badPermAddAutoProvPolicyCloudlet400(t *testing.T, mcClient *mctestclient.Cl
 	_, status, err := ormtestutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+}
+
+func forbiddenTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	list, status, err := ormtestutil.TestPermShowApp(mcClient, uri, token, region, org)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	require.Equal(t, 0, len(list))
 }
 
 type StreamDummyServer struct {
