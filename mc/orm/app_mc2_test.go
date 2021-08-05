@@ -264,8 +264,12 @@ func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token
 	// make sure region check works
 	list, status, err = testutil.TestPermShowApp(mcClient, uri, token, "bad region", org)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
 	require.Equal(t, 0, len(list))
 }
 

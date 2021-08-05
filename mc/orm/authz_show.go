@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -40,13 +41,18 @@ func (s *AuthzShow) Ok(org string) bool {
 	return found
 }
 
+func getOperatorPermToViewDeveloperStuff() (string, string) {
+	return ResourceCloudletPools, ActionView
+}
+
 func (s *AuthzShow) setCloudletKeysFromPool(ctx context.Context, region, username string) error {
 	rc := RegionContext{
 		region:    region,
 		username:  username,
 		skipAuthz: true,
 	}
-	allowedOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, ResourceCloudletPools, ActionView)
+	operRes, operAction := getOperatorPermToViewDeveloperStuff()
+	allowedOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, operRes, operAction)
 	if err != nil {
 		return err
 	}
@@ -142,6 +148,85 @@ func (s *AuthzAppInstShow) Ok(obj *edgeproto.AppInst) (bool, bool) {
 }
 
 func (s *AuthzAppInstShow) Filter(obj *edgeproto.AppInst) {
+	// nothing to filter for Operator, show all fields for Developer & Operator
+}
+
+type AuthzAppShow struct {
+	allowedOrgs       map[string]struct{}
+	allowAll          bool
+	allowedOrgsByPool map[string]struct{}
+}
+
+func newShowAppAuthz(ctx context.Context, region, username string, resource, action string) (ShowAppAuthz, error) {
+	// this gets developer orgs that user can see
+	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
+	if err != nil {
+		return nil, err
+	}
+	authz := AuthzAppShow{}
+	authz.allowedOrgs = orgs
+	if _, found := orgs[""]; found {
+		// user is an admin
+		authz.allowAll = true
+		return &authz, nil
+	}
+	authz.allowedOrgsByPool = make(map[string]struct{})
+
+	// get operator orgs that user has perms for
+	operRes, operAction := getOperatorPermToViewDeveloperStuff()
+	operOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, operRes, operAction)
+	if err != nil {
+		return nil, err
+	}
+	if len(orgs) == 0 && len(operOrgs) == 0 {
+		return nil, echo.ErrForbidden
+	}
+
+	// get all operator orgs that have developer granted access
+	db := loggedDB(ctx)
+	op := ormapi.OrgCloudletPool{}
+	op.Region = region
+	ops := []ormapi.OrgCloudletPool{}
+	err = db.Where(&op).Find(&ops).Error
+	if err != nil {
+		return nil, err
+	}
+	ops = getAccessGranted(ops)
+
+	// get developer orgs that have been granted access by the
+	// cloudlet pools.
+	for _, op := range ops {
+		// skip cloudlet pools that user does not have operator perms for
+		if _, found := operOrgs[op.CloudletPoolOrg]; !found {
+			continue
+		}
+		// add developer org associated with cloudlet pool
+		authz.allowedOrgsByPool[op.Org] = struct{}{}
+	}
+
+	if len(orgs) == 0 && len(authz.allowedOrgsByPool) == 0 {
+		return nil, echo.ErrForbidden
+	}
+
+	return &authz, nil
+}
+
+func (s *AuthzAppShow) Ok(obj *edgeproto.App) (bool, bool) {
+	filterOutput := false
+	if s.allowAll {
+		return true, filterOutput
+	}
+	if _, found := s.allowedOrgs[obj.Key.Organization]; found {
+		return true, filterOutput
+	}
+	if _, found := s.allowedOrgsByPool[obj.Key.Organization]; found {
+		filterOutput = true
+		return true, filterOutput
+	}
+	return false, filterOutput
+}
+
+func (s *AuthzAppShow) Filter(obj *edgeproto.App) {
 	// nothing to filter for Operator, show all fields for Developer & Operator
 }
 

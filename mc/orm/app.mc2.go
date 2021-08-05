@@ -231,11 +231,16 @@ func ShowApp(c echo.Context) error {
 	return nil
 }
 
+type ShowAppAuthz interface {
+	Ok(obj *edgeproto.App) (bool, bool)
+	Filter(obj *edgeproto.App)
+}
+
 func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, cb func(res *edgeproto.App) error) error {
-	var authz *AuthzShow
+	var authz ShowAppAuthz
 	var err error
 	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceApps, ActionView)
+		authz, err = newShowAppAuthz(ctx, rc.region, rc.username, ResourceApps, ActionView)
 		if err != nil {
 			return err
 		}
@@ -267,8 +272,12 @@ func ShowAppStream(ctx context.Context, rc *RegionContext, obj *edgeproto.App, c
 			return err
 		}
 		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
+			authzOk, filterOutput := authz.Ok(res)
+			if !authzOk {
 				continue
+			}
+			if filterOutput {
+				authz.Filter(res)
 			}
 		}
 		err = cb(res)
