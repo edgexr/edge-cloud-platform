@@ -1,0 +1,32 @@
+status: Success
+cloudlets:
+- carriername: dmuus
+  cloudletname: dmuus-cloud-2
+  gpslocation:
+    latitude: 35
+    longitude: -95
+  distance: 433.7602713621871
+  appinstances:
+  - appname: someapplication1
+    appvers: "1.0"
+    fqdn: smallcluster.dmuus-cloud-2.dmuus.localtest.net
+    ports:
+    - proto: Tcp
+      internalport: 80
+      publicport: 80
+    - proto: Tcp
+      internalport: 443
+      publicport: 443
+    - proto: Udp
+      internalport: 10002
+      publicport: 10002
+    - proto: Tcp
+      internalport: 81
+      publicport: 81
+      tls: true
+    - proto: Tcp
+      internalport: 444
+      publicport: 444
+      tls: true
+    orgname: AcmeAppCo
+    edgeeventscookie: ***REMOVED***

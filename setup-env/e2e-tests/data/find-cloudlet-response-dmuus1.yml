@@ -1,0 +1,24 @@
+status: Found
+fqdn: shared.dmuus-cloud-1.dmuus.localtest.net
+ports:
+- proto: Tcp
+  internalport: 80
+  publicport: 80
+- proto: Tcp
+  internalport: 81
+  publicport: 81
+  tls: true
+- proto: Tcp
+  internalport: 443
+  publicport: 443
+- proto: Tcp
+  internalport: 444
+  publicport: 444
+  tls: true
+- proto: Udp
+  internalport: 10002
+  publicport: 10002
+cloudletlocation:
+  latitude: 31
+  longitude: -91
+edgeeventscookie: ***REMOVED***
