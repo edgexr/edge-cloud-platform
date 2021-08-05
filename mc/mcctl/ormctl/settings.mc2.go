@@ -118,6 +118,7 @@ var SettingsOptionalArgs = []string{
 	"alertpolicymintriggertime",
 	"disableratelimit",
 	"maxnumperipratelimiters",
+	"resourcesnapshotthreadinterval",
 }
 var SettingsAliasArgs = []string{
 	"fields=settings.fields",
@@ -159,6 +160,7 @@ var SettingsAliasArgs = []string{
 	"alertpolicymintriggertime=settings.alertpolicymintriggertime",
 	"disableratelimit=settings.disableratelimit",
 	"maxnumperipratelimiters=settings.maxnumperipratelimiters",
+	"resourcesnapshotthreadinterval=settings.resourcesnapshotthreadinterval",
 }
 var SettingsComments = map[string]string{
 	"fields":                                                      "Fields are used for the Update API to specify which fields to apply",
@@ -200,6 +202,7 @@ var SettingsComments = map[string]string{
 	"alertpolicymintriggertime":                                        "Minimmum trigger time for alert policies",
 	"disableratelimit":                                                 "Disable rate limiting for APIs (default is false)",
 	"maxnumperipratelimiters":                                          "Maximum number of perip rate limiters for an endpoint (ie. number of ips stored to rate limit)",
+	"resourcesnapshotthreadinterval":                                   "ResourceSnapshot Refresh thread run interval",
 }
 var SettingsSpecialArgs = map[string]string{
 	"settings.fields": "StringArray",
