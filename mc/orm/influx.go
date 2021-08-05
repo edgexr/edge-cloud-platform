@@ -187,7 +187,7 @@ const (
 	CLOUDLETUSAGE = "cloudletusage"
 )
 
-var devInfluxDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
+var devInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE "{{.OrgField}}"='{{.ApiCallerOrg}}'` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
 	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
@@ -201,7 +201,7 @@ var devInfluxDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
 	`{{if .CloudletList}} AND ({{.CloudletList}}){{end}}` +
 	` order by time desc{{if ne .Last 0}} limit {{.Last}}{{end}}`
 
-var operatorInfluxDBT = `SELECT {{.Selector}} from /{{.Measurement}}/` +
+var operatorInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE "cloudletorg"='{{.CloudletOrg}}'` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
@@ -341,6 +341,16 @@ func getInfluxQueryCmd(q *influxQueryArgs, tmpl *template.Template) string {
 	return buf.String()
 }
 
+func addQuotesToMeasurementNames(measurement string) string {
+	// add quotes to measurement names for exact matching
+	measurementNames := []string{}
+	measurements := strings.Split(measurement, ",")
+	for _, m := range measurements {
+		measurementNames = append(measurementNames, `"`+m+`"`)
+	}
+	return strings.Join(measurementNames, ",")
+}
+
 func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.Time, end *time.Time) string {
 	// Figure out the start/end time range for the query
 	if !start.IsZero() {
@@ -358,6 +368,9 @@ func fillTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.
 	// We set max number of responses we will get from InfluxDB
 	if q.Last == 0 {
 		q.Last = maxEntriesFromInfluxDb
+	}
+	if q.Measurement != "" {
+		q.Measurement = addQuotesToMeasurementNames(q.Measurement)
 	}
 	// now that we know all the details of the query - build it
 	buf := bytes.Buffer{}
@@ -539,7 +552,7 @@ func getMeasurementString(selector, measurementType string) string {
 		measurements = strings.Split(selector, ",")
 	}
 	prefix := measurementType + "-"
-	return prefix + strings.Join(measurements, "|"+prefix)
+	return prefix + strings.Join(measurements, ","+prefix)
 }
 
 func getCloudletUsageMeasurementString(selector string, platformTypes map[string]struct{}) string {
@@ -559,7 +572,7 @@ func getCloudletUsageMeasurementString(selector string, platformTypes map[string
 			measurements = append(measurements, cSelector)
 		}
 	}
-	return strings.Join(measurements, "|")
+	return strings.Join(measurements, ",")
 }
 
 func getFields(selector, measurementType string) string {

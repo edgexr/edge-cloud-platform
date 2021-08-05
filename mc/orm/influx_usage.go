@@ -83,7 +83,7 @@ var appInstDataColumns = []string{
 	"note",
 }
 
-var usageInfluxDBT = `SELECT {{.Selector}} from "{{.Measurement}}"` +
+var usageInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	` WHERE time >='{{.StartTime}}'` +
 	` AND time <= '{{.EndTime}}'` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +

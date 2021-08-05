@@ -144,17 +144,10 @@ func GetEventsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		// Developer org name has to be specified
-		if in.ClusterInst.Organization == "" {
-			return fmt.Errorf("Cluster details must be present")
-		}
 		// validate all the passed in arguments
 		if err = util.ValidateNames(in.ClusterInst.GetTags()); err != nil {
 			return err
 		}
-
-		rc.region = in.Region
-		org = in.ClusterInst.Organization
 
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})

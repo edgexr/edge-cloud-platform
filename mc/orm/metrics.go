@@ -16,7 +16,7 @@ import (
 var appInstGroupQueryTemplate *template.Template
 
 // select mean(cpu) from \"appinst-cpu\" where (apporg='DevOrg') and time >=now() -20m group by time(2m), app fill(previous)"
-var AppInstGroupQueryT = `SELECT {{.Selector}} FROM "{{.Measurement}}"` +
+var AppInstGroupQueryT = `SELECT {{.Selector}} FROM {{.Measurement}}` +
 	` WHERE ({{.QueryFilter}}{{if .CloudletList}} AND ({{.CloudletList}}){{end}})` +
 	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
 	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
