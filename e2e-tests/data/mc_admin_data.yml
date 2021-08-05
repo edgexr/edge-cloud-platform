@@ -81,6 +81,7 @@ regiondata:
       alertpolicymintriggertime: 1s
       disableratelimit: true
       maxnumperipratelimiters: 10000
+      resourcesnapshotthreadinterval: 10m
     flavors:
     - key:
         name: x1.tiny
@@ -139,6 +140,7 @@ regiondata:
       alertpolicymintriggertime: 1s
       disableratelimit: true
       maxnumperipratelimiters: 10000
+      resourcesnapshotthreadinterval: 10m
     flavors:
     - key:
         name: x1.tiny

@@ -40,3 +40,5 @@ regiondata:
       alertpolicymintriggertime: 1s
       disableratelimit: true
       maxnumperipratelimiters: 10000
+      resourcesnapshotthreadinterval: 10
+

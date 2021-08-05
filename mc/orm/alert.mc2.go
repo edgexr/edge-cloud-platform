@@ -234,6 +234,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// AlertPolicyMinTriggerTime: 36
 	// DisableRateLimit: 37
 	// MaxNumPerIpRateLimiters: 39
+	// ResourceSnapshotThreadInterval: 41
 	// ```
 	// Security:
 	//   Bearer:
