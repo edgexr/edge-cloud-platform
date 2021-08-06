@@ -38,6 +38,16 @@ func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 	// Create McRateLimitMaxReqsSettings entry
 	db := loggedDB(ctx)
+
+	// Check to make sure MaxReqsSettings doesn't already exist
+	search := &ormapi.McRateLimitMaxReqsSettings{
+		MaxReqsSettingsName: in.MaxReqsSettingsName,
+	}
+	res := db.Where(search).First(&ormapi.McRateLimitMaxReqsSettings{})
+	if !res.RecordNotFound() {
+		return fmt.Errorf("MaxReqsRateLimitSettings with MaxReqsSettingsName %s already exists", in.MaxReqsSettingsName)
+	}
+
 	if err := db.Create(&in).Error; err != nil {
 		return fmt.Errorf("Unable to create MaxReqsRateLimitSettings %v - error: %s", in, err.Error())
 	}
