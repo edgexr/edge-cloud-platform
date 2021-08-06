@@ -38,6 +38,16 @@ func CreateFlowRateLimitSettingsMc(c echo.Context) error {
 
 	// Create McRateLimitFlowSettings entry
 	db := loggedDB(ctx)
+
+	// Check to make sure FlowSettings doesn't already exist
+	search := &ormapi.McRateLimitFlowSettings{
+		FlowSettingsName: in.FlowSettingsName,
+	}
+	res := db.Where(search).First(&ormapi.McRateLimitFlowSettings{})
+	if !res.RecordNotFound() {
+		return fmt.Errorf("FlowRateLimitSettings with FlowSettingsName %s already exists", in.FlowSettingsName)
+	}
+
 	if err := db.Create(&in).Error; err != nil {
 		return fmt.Errorf("Unable to create FlowRateLimitSettings %v - error: %s", in, err.Error())
 	}

@@ -19,10 +19,21 @@ var FlowRateLimitSettingsMcRequiredArgs = []string{
 	"ratelimittarget",
 }
 
+var CreateFlowRateLimitSettingsMcRequiredArgs = []string{
+	"flowalgorithm",
+	"reqspersecond",
+}
+
 var MaxReqsRateLimitSettingsMcRequiredArgs = []string{
 	"maxreqssettingsname",
 	"apiname",
 	"ratelimittarget",
+}
+
+var CreateMaxReqsRateLimitSettingsMcRequiredArgs = []string{
+	"maxreqsalgorithm",
+	"maxrequests",
+	"interval",
 }
 
 func init() {
@@ -39,8 +50,8 @@ func init() {
 		Name:         "CreateFlowRateLimitSettingsMc",
 		Use:          "createflow",
 		Short:        "Create master controller flowratelimitsettings",
-		RequiredArgs: strings.Join(FlowRateLimitSettingsMcRequiredArgs, " "),
-		OptionalArgs: strings.Join(FlowRateLimitSettingsOptionalArgs, " "),
+		RequiredArgs: strings.Join(append(FlowRateLimitSettingsMcRequiredArgs, CreateFlowRateLimitSettingsMcRequiredArgs...), " "),
+		OptionalArgs: strings.Join(CreateFlowRateLimitSettingsOptionalArgs, " "),
 		Comments:     FlowRateLimitSettingsComments,
 		ReqData:      &ormapi.McRateLimitFlowSettings{},
 		Path:         "/auth/ratelimitsettingsmc/createflow",
@@ -75,8 +86,8 @@ func init() {
 		Name:         "CreateMaxReqsRateLimitSettingsMc",
 		Use:          "createmaxreqs",
 		Short:        "Create master controller maxreqsratelimitsettings",
-		RequiredArgs: strings.Join(MaxReqsRateLimitSettingsMcRequiredArgs, " "),
-		OptionalArgs: strings.Join(MaxReqsRateLimitSettingsOptionalArgs, " "),
+		RequiredArgs: strings.Join(append(MaxReqsRateLimitSettingsMcRequiredArgs, CreateMaxReqsRateLimitSettingsMcRequiredArgs...), " "),
+		OptionalArgs: strings.Join(CreateMaxReqsRateLimitSettingsOptionalArgs, " "),
 		Comments:     MaxReqsRateLimitSettingsComments,
 		ReqData:      &ormapi.McRateLimitMaxReqsSettings{},
 		Path:         "/auth/ratelimitsettingsmc/createmaxreqs",

@@ -42,8 +42,8 @@ var CreateFlowRateLimitSettingsCmd = &ApiCommand{
 	Name:         "CreateFlowRateLimitSettings",
 	Use:          "createflow",
 	Short:        "Create Flow RateLimit settings for an API endpoint and target",
-	RequiredArgs: "region " + strings.Join(FlowRateLimitSettingsRequiredArgs, " "),
-	OptionalArgs: strings.Join(FlowRateLimitSettingsOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(CreateFlowRateLimitSettingsRequiredArgs, " "),
+	OptionalArgs: strings.Join(CreateFlowRateLimitSettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(FlowRateLimitSettingsAliasArgs, " "),
 	SpecialArgs:  &FlowRateLimitSettingsSpecialArgs,
 	Comments:     addRegionComment(FlowRateLimitSettingsComments),
@@ -103,8 +103,8 @@ var CreateMaxReqsRateLimitSettingsCmd = &ApiCommand{
 	Name:         "CreateMaxReqsRateLimitSettings",
 	Use:          "createmaxreqs",
 	Short:        "Create MaxReqs RateLimit settings for an API endpoint and target",
-	RequiredArgs: "region " + strings.Join(MaxReqsRateLimitSettingsRequiredArgs, " "),
-	OptionalArgs: strings.Join(MaxReqsRateLimitSettingsOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(CreateMaxReqsRateLimitSettingsRequiredArgs, " "),
+	OptionalArgs: strings.Join(CreateMaxReqsRateLimitSettingsOptionalArgs, " "),
 	AliasArgs:    strings.Join(MaxReqsRateLimitSettingsAliasArgs, " "),
 	SpecialArgs:  &MaxReqsRateLimitSettingsSpecialArgs,
 	Comments:     addRegionComment(MaxReqsRateLimitSettingsComments),
@@ -177,6 +177,27 @@ func init() {
 	AllApis.AddGroup(RateLimitSettingsGroup, "Manage RateLimitSettings", RateLimitSettingsApiCmds)
 }
 
+var CreateFlowRateLimitSettingsRequiredArgs = []string{
+	"flowsettingsname",
+	"apiname",
+	"apiendpointtype",
+	"ratelimittarget",
+	"flowalgorithm",
+	"reqspersecond",
+}
+var CreateFlowRateLimitSettingsOptionalArgs = []string{
+	"burstsize",
+}
+var CreateMaxReqsRateLimitSettingsRequiredArgs = []string{
+	"maxreqssettingsname",
+	"apiname",
+	"apiendpointtype",
+	"ratelimittarget",
+	"maxreqsalgorithm",
+	"maxrequests",
+	"interval",
+}
+var CreateMaxReqsRateLimitSettingsOptionalArgs = []string{}
 var FlowRateLimitSettingsRequiredArgs = []string{
 	"flowsettingsname",
 	"apiname",
@@ -206,7 +227,7 @@ var FlowRateLimitSettingsComments = map[string]string{
 	"ratelimittarget":  "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
 	"flowalgorithm":    "Flow Rate Limit algorithm, one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm",
 	"reqspersecond":    "requests per second for flow rate limiting",
-	"burstsize":        "burst size for flow rate limiting",
+	"burstsize":        "burst size for flow rate limiting (required for TokenBucketAlgorithm)",
 }
 var FlowRateLimitSettingsSpecialArgs = map[string]string{
 	"flowratelimitsettings.fields": "StringArray",
@@ -279,7 +300,7 @@ var RateLimitSettingsComments = map[string]string{
 	"key.ratelimittarget":                      "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
 	"flowsettings:#.value.flowalgorithm":       "Flow Rate Limit algorithm, one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm",
 	"flowsettings:#.value.reqspersecond":       "requests per second for flow rate limiting",
-	"flowsettings:#.value.burstsize":           "burst size for flow rate limiting",
+	"flowsettings:#.value.burstsize":           "burst size for flow rate limiting (required for TokenBucketAlgorithm)",
 	"maxreqssettings:#.value.maxreqsalgorithm": "MaxReqs Rate Limit Algorithm, one of UnknownMaxReqsAlgorithm, FixedWindowAlgorithm",
 	"maxreqssettings:#.value.maxrequests":      "Maximum number of requests for the given Interval",
 	"maxreqssettings:#.value.interval":         "Time interval",
