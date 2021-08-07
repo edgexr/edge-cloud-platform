@@ -85,21 +85,24 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	if auth == nil {
 		return nil
 	}
-	// Note that the registry secret name must be per-app, since a developer
-	// may put multiple apps in the same ClusterInst and they may come
-	// from different registries.
-	cmd := fmt.Sprintf("kubectl create secret docker-registry %s "+
-		"--docker-server=%s --docker-username='%s' --docker-password='%s' "+
-		"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s",
-		secretName, dockerServer, auth.Username, auth.Password,
-		kconf)
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName)
-	out, err = client.Output(cmd)
-	if err != nil {
-		if !strings.Contains(out, "AlreadyExists") {
-			return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "warning, docker registry secret already exists.")
+	namespaces := append(names.DeveloperDefinedNamespaces, "default")
+	for _, namespace := range namespaces {
+		// Note that the registry secret name must be per-app, since a developer
+		// may put multiple apps in the same ClusterInst and they may come
+		// from different registries.
+		cmd := fmt.Sprintf("kubectl create secret -n %s docker-registry %s "+
+			"--docker-server=%s --docker-username='%s' --docker-password='%s' "+
+			"--docker-email=mobiledgex@mobiledgex.com --kubeconfig=%s", namespace,
+			secretName, dockerServer, auth.Username, auth.Password,
+			kconf)
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName, "namespace", namespace)
+		out, err = client.Output(cmd)
+		if err != nil {
+			if !strings.Contains(out, "AlreadyExists") {
+				return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
+			} else {
+				log.SpanLog(ctx, log.DebugLevelInfra, "warning, docker registry secret already exists.")
+			}
 		}
 	}
 	names.ImagePullSecrets = append(names.ImagePullSecrets, secretName)

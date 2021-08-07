@@ -67,6 +67,10 @@ func (e *EdgeboxPlatform) CreateAppInst(ctx context.Context, clusterInst *edgepr
 			if err != nil {
 				return err
 			}
+			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+			if err != nil {
+				return err
+			}
 			err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, e.commonPf.PlatformConfig.AccessApi, names, existingCreds)
 			if err != nil {
 				return err
@@ -147,6 +151,10 @@ func (e *EdgeboxPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgepr
 			}
 			// secret may have changed, so delete and re-create
 			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, e.commonPf.PlatformConfig.AccessApi, names, existingCreds)
+			if err != nil {
+				return err
+			}
+			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}
