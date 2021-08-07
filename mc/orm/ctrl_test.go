@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"reflect"
 	"sort"
@@ -43,6 +44,13 @@ import (
 
 var Success = true
 var Fail = false
+
+const (
+	// Developer part of same org
+	SameOrgDev int = iota
+	// Developer not part of same org
+	DiffOrgDev
+)
 
 var ClientNoShowFilter = &cli.MapData{}
 
@@ -107,7 +115,111 @@ func TestController(t *testing.T) {
 	// this will reply with empty json to everything
 	influxServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `{"data":[{"Messages": null,"Series": null}]}`)
+		emptyMsg := `{"results":[{"Series": null}]}`
+		if r.URL == nil {
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		vals, err := url.ParseQuery(r.URL.RawQuery)
+		if err != nil {
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		trimFunc := func(c rune) bool {
+			return c == '\\' ||
+				c == '(' ||
+				c == '"' ||
+				c == ')' ||
+				c == '\''
+		}
+		// Influx sends dbName & dbQuery as part of URL query
+		// Use that to mimic data response from InfluxDB
+		dbValKey := "db"
+		dbQueryKey := "q"
+		dbName, ok := vals[dbValKey]
+		if !ok || len(dbName) < 1 {
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		dbQuery, ok := vals[dbQueryKey]
+		if !ok || len(dbQuery) < 1 {
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		query := dbQuery[0]
+		qFields := strings.Split(query, " ")
+		if len(qFields) < 5 {
+			// unhandled query
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		cols := []string{`"time"`}
+		colsSplit := strings.Split(qFields[1], ",")
+		cols = append(cols, colsSplit...)
+		colValMap := make(map[string]string)
+		colValMap[`"time"`] = fmt.Sprintf(`"%s"`, time.Now().Format(time.RFC3339Nano))
+		for ii, _ := range cols {
+			// add quotes if missing
+			if !strings.Contains(cols[ii], `"`) {
+				cols[ii] = fmt.Sprintf(`"%s"`, cols[ii])
+			}
+			v, ok := colValMap[cols[ii]]
+			if !ok || v == "" {
+				switch cols[ii] {
+				case `"status"`:
+					colValMap[cols[ii]] = `"UP"`
+				case `"nodecount"`:
+					colValMap[cols[ii]] = `2`
+				default:
+					colValMap[cols[ii]] = `"dummyVal"`
+				}
+			}
+		}
+		measurements := strings.Split(qFields[3], ",")
+		for ii := 5; ii < len(qFields); ii++ {
+			qCheck := qFields[ii]
+			if qCheck == "AND" || qCheck == "OR" {
+				continue
+			}
+			if qCheck == "order" || qCheck == "desc" {
+				break
+			}
+			if !strings.Contains(qCheck, "=") {
+				break
+			}
+			check := strings.Split(qCheck, "=")
+			if len(check) != 2 {
+				break
+			}
+			col := strings.TrimFunc(check[0], trimFunc)
+			col = fmt.Sprintf(`"%s"`, col)
+			colVal := strings.TrimFunc(check[1], trimFunc)
+			colVal = fmt.Sprintf(`"%s"`, colVal)
+			colValMap[col] = colVal
+		}
+		if len(cols) == 0 {
+			fmt.Fprintln(w, emptyMsg)
+			return
+		}
+		colNames := []string{}
+		valNames := []string{}
+		for _, c := range cols {
+			colNames = append(colNames, c)
+			valNames = append(valNames, colValMap[c])
+		}
+
+		entries := []string{}
+		for _, measurement := range measurements {
+			measurement = strings.TrimFunc(measurement, trimFunc)
+			entries = append(entries, fmt.Sprintf(
+				`{"columns":[%s], "name":"%s", "values":[[%s]]}`,
+				strings.Join(colNames, ","),
+				measurement,
+				strings.Join(valNames, ","),
+			))
+		}
+		data := fmt.Sprintf(`{"results":[{"Series": [%s]}]}`, strings.Join(entries, ","))
+		fmt.Fprintln(w, data)
 	}))
 	defer influxServer.Close()
 
@@ -763,10 +875,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	// but have not yet confirmed invitation
 	badPermTestShowAppInst(t, mcClient, uri, tokenOper, ctrl.Region, org1)
 
-	// Any developer not part of cloudletpool should not be able to get cloudlet flavors
-	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, tc3)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+	developerBadPermCloudletPoolGroup(t, mcClient, uri, ctrl.Region, tokenDev, org1, pool.CloudletPool.Key.Name, tc3, SameOrgDev)
 
 	// developer confirms invitation
 	op1accept := op1
@@ -832,18 +941,11 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 	badPermTestShowClusterInst(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 	badPermTestShowApp(t, mcClient, uri, tokenOper, ctrl.Region, org2)
 
-	// Any developer part of cloudletpool should be able to get cloudlet flavors
-	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, ctrl.Region, tc3)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	// Developer not part of cloudletpool should not be able to get cloudlet flavors
-	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev2, ctrl.Region, tc3)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "No permissions for Cloudlet")
-	// Other operator cannot get cloudlet flavors for private cloudlet
-	_, status, err = ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenOper2, ctrl.Region, tc3)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+	// Cloudlet Pool access related tests
+	operatorGoodPermCloudletPoolGroup(t, mcClient, uri, ctrl.Region, tokenOper, org1, pool.CloudletPool.Key.Name, tc3)
+	operatorBadPermCloudletPoolGroup(t, mcClient, uri, ctrl.Region, tokenOper2, org1, org2, pool.CloudletPool.Key.Name, tc3)
+	developerGoodPermCloudletPoolGroup(t, mcClient, uri, ctrl.Region, tokenDev, org1, pool.CloudletPool.Key.Name, tc3)
+	developerBadPermCloudletPoolGroup(t, mcClient, uri, ctrl.Region, tokenDev2, org1, pool.CloudletPool.Key.Name, tc3, DiffOrgDev)
 
 	// Test GPU driver access
 	{
@@ -1544,6 +1646,678 @@ func badPermAddAutoProvPolicyCloudlet400(t *testing.T, mcClient *mctestclient.Cl
 	_, status, err := ormtestutil.TestPermAddAutoProvPolicyCloudlet(mcClient, uri, token, region, org, modFuncs...)
 	require.Equal(t, http.StatusBadRequest, status)
 	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+}
+
+// tokenOper is the token of the manager of the cloudlet pool
+// poolDevOrg is a developer org part of cloudlet pool
+// poolCloudletKey is the cloudlet key part of cloudlet pool
+func operatorGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Client, uri, region, tokenOper, poolDevOrg, poolName string, poolCloudletKey *edgeproto.CloudletKey) {
+	// Test ShowFlavorsFor
+	// ===================
+	// Operator should be able to get cloudlet flavors of cloudlet part of its pool
+	_, status, err := ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenOper, region, poolCloudletKey)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// Test Billing Events
+	// ===================
+	// Operator can query app billing events by just passing cloudlet-org along with region
+	appEventsData := &ormapi.RegionAppInstEvents{}
+	appEventsData.Region = region
+	appEventsData.AppInst = edgeproto.AppInstKey{}
+	appEventsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err := mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access app billing events of developers part of their cloudlet pool
+	appEventsData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cluster billing events by just passing cloudlet-org along with region
+	clusterEventsData := &ormapi.RegionClusterInstEvents{}
+	clusterEventsData.Region = region
+	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterEventsData.ClusterInst.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access cluster billing events of developers part of their cloudlet pool
+	clusterEventsData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cloudlet billing events by just passing cloudlet-org along with region
+	cloudletEventsData := &ormapi.RegionCloudletEvents{}
+	cloudletEventsData.Region = region
+	cloudletEventsData.Cloudlet = edgeproto.CloudletKey{}
+	cloudletEventsData.Cloudlet.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowCloudletEvents(uri, tokenOper, cloudletEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Metrics
+	// ===================
+	// Operator can query app metrics by just passing cloudlet-org along with region
+	appMetricsData := &ormapi.RegionAppInstMetrics{}
+	appMetricsData.Region = region
+	appMetricsData.Selector = "cpu"
+	appMetricsData.AppInst = edgeproto.AppInstKey{}
+	appMetricsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access app billingMetrics of developers part of their cloudlet pool
+	appMetricsData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cluster metrics by just passing cloudlet-org along with region
+	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
+	clusterMetricsData.Region = region
+	clusterMetricsData.Selector = "cpu"
+	clusterMetricsData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterMetricsData.ClusterInst.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access cluster billingMetrics of developers part of their cloudlet pool
+	clusterMetricsData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cloudlet metrics by just passing cloudlet-org along with region
+	cloudletMetricsData := &ormapi.RegionCloudletMetrics{}
+	cloudletMetricsData.Region = region
+	cloudletMetricsData.Selector = "network"
+	cloudletMetricsData.Cloudlet = edgeproto.CloudletKey{}
+	cloudletMetricsData.Cloudlet.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowCloudletMetrics(uri, tokenOper, cloudletMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Usage
+	// ===================
+	// Operator can query app usage by just passing cloudlet-org along with region
+	appUsageData := &ormapi.RegionAppInstUsage{}
+	appUsageData.Region = region
+	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	appUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	appUsageData.AppInst = edgeproto.AppInstKey{}
+	appUsageData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access app usage of developers part of their cloudlet pool
+	appUsageData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cluster usage by just passing cloudlet-org along with region
+	clusterUsageData := &ormapi.RegionClusterInstUsage{}
+	clusterUsageData.Region = region
+	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	clusterUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	clusterUsageData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterUsageData.ClusterInst.CloudletKey.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+	// Operator can access cluster usage of developers part of their cloudlet pool
+	clusterUsageData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Operator can query cloudlet usage by just passing cloudlet-org along with region
+	cloudletPoolUsageData := &ormapi.RegionCloudletPoolUsage{}
+	cloudletPoolUsageData.Region = region
+	cloudletPoolUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	cloudletPoolUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	cloudletPoolUsageData.CloudletPool = edgeproto.CloudletPoolKey{}
+	cloudletPoolUsageData.CloudletPool.Name = poolName
+	cloudletPoolUsageData.CloudletPool.Organization = poolCloudletKey.Organization
+	list, status, err = mcClient.ShowCloudletPoolUsage(uri, tokenOper, cloudletPoolUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Audit Events
+	// ===================
+	// Operator can access its developer events
+	eventData := &node.EventSearch{}
+	eventData.Match.Orgs = []string{poolDevOrg}
+	_, status, err = mcClient.ShowEvents(uri, tokenOper, eventData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+// tokenOper is another operator token, but has no permission to access cloudlet pool
+// poolDevOrg is a developer org part of cloudlet pool
+// poolCloudletKey is the cloudlet key part of cloudlet pool
+func operatorBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Client, uri, region, tokenOper, poolDevOrg, nonPoolDevOrg, poolName string, poolCloudletKey *edgeproto.CloudletKey) {
+	// Test ShowFlavorsFor
+	// ===================
+	// Other operator cannot get cloudlet flavors for private cloudlet
+	_, status, err := ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenOper, region, poolCloudletKey)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+
+	// Test Billing Events
+	// ===================
+	// Operator cannot query app billing events without passing cloudlet-org or app-org
+	appEventsData := &ormapi.RegionAppInstEvents{}
+	appEventsData.Region = region
+	appEventsData.AppInst = edgeproto.AppInstKey{}
+	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
+	// Operator cannot view app billing events by just passing app-org, it must specify cloudlet-org
+	appEventsData.AppInst.AppKey.Organization = poolDevOrg
+	appEventsData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view app billing events of cloudlet not part of the pool
+	appEventsData.AppInst.AppKey.Organization = ""
+	appEventsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access app billing events of another operator
+	appEventsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowAppEvents(uri, tokenOper, appEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cluster billing events without passing cloudlet-org or cluster-org
+	clusterEventsData := &ormapi.RegionClusterInstEvents{}
+	clusterEventsData.Region = region
+	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
+	// Operator cannot view cluster billing events by just passing app-org, it must specify cloudlet-org
+	clusterEventsData.ClusterInst.Organization = poolDevOrg
+	clusterEventsData.ClusterInst.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view cluster billing events of cloudlet not part of the pool
+	clusterEventsData.ClusterInst.Organization = ""
+	clusterEventsData.ClusterInst.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access cluster billing events of another operator
+	_, status, err = mcClient.ShowClusterEvents(uri, tokenOper, clusterEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cloudlet billing events without passing cloudlet-org
+	cloudletEventsData := &ormapi.RegionCloudletEvents{}
+	cloudletEventsData.Region = region
+	cloudletEventsData.Cloudlet = edgeproto.CloudletKey{}
+	_, status, err = mcClient.ShowCloudletEvents(uri, tokenOper, cloudletEventsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Cloudlet details must be present")
+	// Operator cannot access cloudlet billing events of another operator
+	cloudletEventsData.Cloudlet.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowCloudletEvents(uri, tokenOper, cloudletEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Test Metrics
+	// ===================
+	// Operator cannot query app metrics without passing cloudlet-org or app-org
+	appMetricsData := &ormapi.RegionAppInstMetrics{}
+	appMetricsData.Region = region
+	appMetricsData.Selector = "cpu"
+	appMetricsData.AppInst = edgeproto.AppInstKey{}
+	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
+	// Operator cannot view app metrics by just passing app-org, it must specify cloudlet-org
+	appMetricsData.AppInst.AppKey.Organization = poolDevOrg
+	appMetricsData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view app metrics of cloudlet not part of the pool
+	appMetricsData.AppInst.AppKey.Organization = ""
+	appMetricsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access app metrics of another operator
+	appMetricsData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowAppMetrics(uri, tokenOper, appMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cluster metrics without passing cloudlet-org or cluster-org
+	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
+	clusterMetricsData.Region = region
+	clusterMetricsData.Selector = "cpu"
+	clusterMetricsData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
+	// Operator cannot view cluster metrics by just passing app-org, it must specify cloudlet-org
+	clusterMetricsData.ClusterInst.Organization = poolDevOrg
+	clusterMetricsData.ClusterInst.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view cluster metrics of cloudlet not part of the pool
+	clusterMetricsData.ClusterInst.Organization = ""
+	clusterMetricsData.ClusterInst.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access cluster metrics of another operator
+	_, status, err = mcClient.ShowClusterMetrics(uri, tokenOper, clusterMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cloudlet metrics without passing cloudlet-org
+	cloudletMetricsData := &ormapi.RegionCloudletMetrics{}
+	cloudletMetricsData.Region = region
+	cloudletMetricsData.Selector = "network"
+	cloudletMetricsData.Cloudlet = edgeproto.CloudletKey{}
+	_, status, err = mcClient.ShowCloudletMetrics(uri, tokenOper, cloudletMetricsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Cloudlet details must be present")
+	// Operator cannot access cloudlet metrics of another operator
+	cloudletMetricsData.Cloudlet.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowCloudletMetrics(uri, tokenOper, cloudletMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Test Usage
+	// ===================
+	// Operator cannot query app usage without passing cloudlet-org or app-org
+	appUsageData := &ormapi.RegionAppInstUsage{}
+	appUsageData.Region = region
+	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	appUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	appUsageData.AppInst = edgeproto.AppInstKey{}
+	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization or Cloudlet organization")
+	// Operator cannot view app usage by just passing app-org, it must specify cloudlet-org
+	appUsageData.AppInst.AppKey.Organization = poolDevOrg
+	appUsageData.AppInst.ClusterInstKey.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view app usage of cloudlet not part of the pool
+	appUsageData.AppInst.AppKey.Organization = ""
+	appUsageData.AppInst.ClusterInstKey.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access app usage of another operator
+	appUsageData.AppInst.ClusterInstKey.CloudletKey.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowAppUsage(uri, tokenOper, appUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cluster usage without passing cloudlet-org or cluster-org
+	clusterUsageData := &ormapi.RegionClusterInstUsage{}
+	clusterUsageData.Region = region
+	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	clusterUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	clusterUsageData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization or Cloudlet organization")
+	// Operator cannot view cluster usage by just passing app-org, it must specify cloudlet-org
+	clusterUsageData.ClusterInst.Organization = poolDevOrg
+	clusterUsageData.ClusterInst.CloudletKey.Organization = ""
+	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, err.Error(), "Operators please specify the Cloudlet Organization")
+	// Operator cannot view cluster usage of cloudlet not part of the pool
+	clusterUsageData.ClusterInst.Organization = ""
+	clusterUsageData.ClusterInst.CloudletKey.Organization = poolDevOrg
+	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+	// Operator cannot access cluster usage of another operator
+	_, status, err = mcClient.ShowClusterUsage(uri, tokenOper, clusterUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Operator cannot query cloudlet usage without passing cloudlet-org
+	cloudletPoolUsageData := &ormapi.RegionCloudletPoolUsage{}
+	cloudletPoolUsageData.Region = region
+	cloudletPoolUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	cloudletPoolUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	cloudletPoolUsageData.CloudletPool = edgeproto.CloudletPoolKey{}
+	_, status, err = mcClient.ShowCloudletPoolUsage(uri, tokenOper, cloudletPoolUsageData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "CloudletPool details must be present")
+	// Operator cannot access cloudlet usage of another operator
+	cloudletPoolUsageData.CloudletPool.Name = poolName
+	cloudletPoolUsageData.CloudletPool.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowCloudletPoolUsage(uri, tokenOper, cloudletPoolUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+}
+
+// tokenDev is the token of the developer part of the cloudlet pool
+// poolDevOrg is a developer org part of cloudlet pool
+// poolCloudletKey is the cloudlet key part of cloudlet pool
+func developerGoodPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Client, uri, region, tokenDev, poolDevOrg, poolName string, poolCloudletKey *edgeproto.CloudletKey) {
+	// Test ShowFlavorsFor
+	// ===================
+	// Any developer part of cloudletpool should be able to get cloudlet flavors
+	_, status, err := ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, region, poolCloudletKey)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+
+	// Test Billing Events
+	// ===================
+	// Developer can query app billing events by just passing app-org along with region
+	appEventsData := &ormapi.RegionAppInstEvents{}
+	appEventsData.Region = region
+	appEventsData.AppInst = edgeproto.AppInstKey{}
+	appEventsData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err := mcClient.ShowAppEvents(uri, tokenDev, appEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access app billing events of the private cloudlet
+	appEventsData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowAppEvents(uri, tokenDev, appEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Developer can query cluster billing events by just passing cluster-org along with region
+	clusterEventsData := &ormapi.RegionClusterInstEvents{}
+	clusterEventsData.Region = region
+	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterEventsData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterEvents(uri, tokenDev, clusterEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access cluster billing events of the private cloudlet
+	clusterEventsData.ClusterInst.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowClusterEvents(uri, tokenDev, clusterEventsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Metrics
+	// ===================
+	// Developer can query app metrics by just passing app-org along with region
+	appMetricsData := &ormapi.RegionAppInstMetrics{}
+	appMetricsData.Region = region
+	appMetricsData.Selector = "cpu"
+	appMetricsData.AppInst = edgeproto.AppInstKey{}
+	appMetricsData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err = mcClient.ShowAppMetrics(uri, tokenDev, appMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access app metrics of the private cloudlet
+	appMetricsData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowAppMetrics(uri, tokenDev, appMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Developer can query cluster metrics by just passing cluster-org along with region
+	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
+	clusterMetricsData.Region = region
+	clusterMetricsData.Selector = "cpu"
+	clusterMetricsData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterMetricsData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterMetrics(uri, tokenDev, clusterMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access cluster metrics of the private cloudlet
+	clusterMetricsData.ClusterInst.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowClusterMetrics(uri, tokenDev, clusterMetricsData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Usage
+	// ===================
+	// Developer can query app usage by just passing app-org along with region
+	appUsageData := &ormapi.RegionAppInstUsage{}
+	appUsageData.Region = region
+	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	appUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	appUsageData.AppInst = edgeproto.AppInstKey{}
+	appUsageData.AppInst.AppKey.Organization = poolDevOrg
+	list, status, err = mcClient.ShowAppUsage(uri, tokenDev, appUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access app usage of the private cloudlet
+	appUsageData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowAppUsage(uri, tokenDev, appUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Developer can query cluster usage by just passing cluster-org along with region
+	clusterUsageData := &ormapi.RegionClusterInstUsage{}
+	clusterUsageData.Region = region
+	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	clusterUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	clusterUsageData.ClusterInst = edgeproto.ClusterInstKey{}
+	clusterUsageData.ClusterInst.Organization = poolDevOrg
+	list, status, err = mcClient.ShowClusterUsage(uri, tokenDev, clusterUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Greater(t, len(list.Data), 0)
+	// Developer can access cluster usage of the private cloudlet
+	clusterUsageData.ClusterInst.CloudletKey = *poolCloudletKey
+	list, status, err = mcClient.ShowClusterUsage(uri, tokenDev, clusterUsageData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.NotNil(t, list)
+	require.Greater(t, len(list.Data), 0)
+
+	// Test Audit Events
+	// ===================
+	// Developer can access its own events
+	eventData := &node.EventSearch{}
+	eventData.Match.Orgs = []string{poolDevOrg}
+	_, status, err = mcClient.ShowEvents(uri, tokenDev, eventData)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+}
+
+// tokenDev is the token of the developer NOT part of the cloudlet pool
+// poolDevOrg is a developer org part of cloudlet pool
+// poolCloudletKey is the cloudlet key part of cloudlet pool
+func developerBadPermCloudletPoolGroup(t *testing.T, mcClient *mctestclient.Client, uri, region, tokenDev, poolDevOrg, poolName string, poolCloudletKey *edgeproto.CloudletKey, devOrgAssociateType int) {
+	// Test ShowFlavorsFor
+	// ===================
+	// Developer not part of cloudletpool should not be able to get cloudlet flavors
+	_, _, err := ormtestutil.TestShowFlavorsForCloudlet(mcClient, uri, tokenDev, region, poolCloudletKey)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "No permissions for Cloudlet")
+
+	// Test Billing Events
+	// ===================
+	// Developer cannot query app billing events by just not passing app-org along with region
+	appEventsData := &ormapi.RegionAppInstEvents{}
+	appEventsData.Region = region
+	appEventsData.AppInst = edgeproto.AppInstKey{}
+	_, status, err := mcClient.ShowAppEvents(uri, tokenDev, appEventsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access app billing events of the private cloudlet which it does not belong to
+		appEventsData.AppInst.AppKey.Organization = poolDevOrg
+		appEventsData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowAppEvents(uri, tokenDev, appEventsData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot query cluster billing events by just not passing cluster-org along with region
+	clusterEventsData := &ormapi.RegionClusterInstEvents{}
+	clusterEventsData.Region = region
+	clusterEventsData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterEvents(uri, tokenDev, clusterEventsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access Cluster billing events of the private cloudlet which it does not belong to
+		clusterEventsData.ClusterInst.Organization = poolDevOrg
+		clusterEventsData.ClusterInst.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowClusterEvents(uri, tokenDev, clusterEventsData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot access cloudlet billing events
+	cloudletEventsData := &ormapi.RegionCloudletEvents{}
+	cloudletEventsData.Region = region
+	cloudletEventsData.Cloudlet = *poolCloudletKey
+	_, status, err = mcClient.ShowCloudletEvents(uri, tokenDev, cloudletEventsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Test Metrics
+	// ===================
+	// Developer cannot query app metrics by just not passing app-org along with region
+	appMetricsData := &ormapi.RegionAppInstMetrics{}
+	appMetricsData.Region = region
+	appMetricsData.Selector = "cpu"
+	appMetricsData.AppInst = edgeproto.AppInstKey{}
+	_, status, err = mcClient.ShowAppMetrics(uri, tokenDev, appMetricsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access app metrics of the private cloudlet which it does not belong to
+		appMetricsData.AppInst.AppKey.Organization = poolDevOrg
+		appMetricsData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowAppMetrics(uri, tokenDev, appMetricsData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot query cluster metrics by just not passing cluster-org along with region
+	clusterMetricsData := &ormapi.RegionClusterInstMetrics{}
+	clusterMetricsData.Region = region
+	clusterMetricsData.Selector = "cpu"
+	clusterMetricsData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterMetrics(uri, tokenDev, clusterMetricsData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access Cluster metrics of the private cloudlet which it does not belong to
+		clusterMetricsData.ClusterInst.Organization = poolDevOrg
+		clusterMetricsData.ClusterInst.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowClusterMetrics(uri, tokenDev, clusterMetricsData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot access cloudlet metrics
+	cloudletMetricsData := &ormapi.RegionCloudletMetrics{}
+	cloudletMetricsData.Region = region
+	cloudletMetricsData.Selector = "network"
+	cloudletMetricsData.Cloudlet = *poolCloudletKey
+	_, status, err = mcClient.ShowCloudletMetrics(uri, tokenDev, cloudletMetricsData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
+
+	// Test Usage
+	// ===================
+	// Developer cannot query app usage by just not passing app-org along with region
+	appUsageData := &ormapi.RegionAppInstUsage{}
+	appUsageData.Region = region
+	appUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	appUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	appUsageData.AppInst = edgeproto.AppInstKey{}
+	_, status, err = mcClient.ShowAppUsage(uri, tokenDev, appUsageData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either App organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access app usage of the private cloudlet which it does not belong to
+		appUsageData.AppInst.AppKey.Organization = poolDevOrg
+		appUsageData.AppInst.ClusterInstKey.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowAppUsage(uri, tokenDev, appUsageData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot query cluster usage by just not passing cluster-org along with region
+	clusterUsageData := &ormapi.RegionClusterInstUsage{}
+	clusterUsageData.Region = region
+	clusterUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	clusterUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	clusterUsageData.ClusterInst = edgeproto.ClusterInstKey{}
+	_, status, err = mcClient.ShowClusterUsage(uri, tokenDev, clusterUsageData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Must provide either Cluster organization")
+	if devOrgAssociateType == DiffOrgDev {
+		// Developer cannot access Cluster usage of the private cloudlet which it does not belong to
+		clusterUsageData.ClusterInst.Organization = poolDevOrg
+		clusterUsageData.ClusterInst.CloudletKey = *poolCloudletKey
+		_, status, err = mcClient.ShowClusterUsage(uri, tokenDev, clusterUsageData)
+		require.NotNil(t, err)
+		require.Equal(t, http.StatusForbidden, status)
+	}
+
+	// Developer cannot access cloudlet usage
+	cloudletPoolUsageData := &ormapi.RegionCloudletPoolUsage{}
+	cloudletPoolUsageData.Region = region
+	cloudletPoolUsageData.StartTime = time.Now().Add(-1 * time.Hour)
+	cloudletPoolUsageData.EndTime = time.Now().Add(1 * time.Hour)
+	cloudletPoolUsageData.CloudletPool.Name = poolName
+	cloudletPoolUsageData.CloudletPool.Organization = poolCloudletKey.Organization
+	_, status, err = mcClient.ShowCloudletPoolUsage(uri, tokenDev, cloudletPoolUsageData)
+	require.NotNil(t, err)
+	require.Equal(t, http.StatusForbidden, status)
 }
 
 func forbiddenTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
