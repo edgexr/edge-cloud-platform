@@ -92,8 +92,14 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		rc.region = in.Region
 		regionRc.region = in.Region
 
+		// Check the operator against who is logged in
+		if err := authorized(ctx, rc.claims.Username, in.CloudletPool.Organization, ResourceCloudletAnalytics, ActionView); err != nil {
+			return err
+		}
+
 		cloudletpoolQuery := edgeproto.CloudletPool{Key: in.CloudletPool}
-		// this also does an authorization check, so we dont have to
+		// Auth check is already performed above
+		regionRc.skipAuthz = true
 		cloudletPools, err := ShowCloudletPoolObj(ctx, regionRc, &cloudletpoolQuery)
 		// since we specify name, should only have at most 1 result
 		if err != nil {

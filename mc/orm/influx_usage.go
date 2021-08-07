@@ -688,6 +688,9 @@ func GetUsageCommon(c echo.Context) error {
 		checkpointCmd = AppInstCheckpointsQuery(&in, cloudletList)
 
 		eventResp, checkResp, err := GetEventAndCheckpoint(ctx, rc, eventCmd, checkpointCmd)
+		if err != nil {
+			return err
+		}
 		usage, err = GetAppUsage(eventResp, checkResp, in.StartTime, in.EndTime, in.Region)
 		if err != nil {
 			return err
