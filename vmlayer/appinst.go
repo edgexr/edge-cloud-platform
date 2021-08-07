@@ -200,6 +200,10 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
+		err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
+		if err != nil {
+			return err
+		}
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
 		kconf := k8smgmt.GetKconfName(clusterInst)
 		for _, imagePath := range names.ImagePaths {
@@ -703,6 +707,10 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		for _, imagePath := range names.ImagePaths {
 			// secret may have changed, so delete and re-create
 			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
+			if err != nil {
+				return err
+			}
+			err = k8smgmt.CreateDeveloperDefinedNamespaces(ctx, client, names)
 			if err != nil {
 				return err
 			}
