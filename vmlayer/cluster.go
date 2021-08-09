@@ -115,6 +115,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	start := time.Now()
 
 	chefUpdateInfo := make(map[string]string)
+	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
@@ -127,12 +128,12 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		}
 		allnodes := strings.Split(strings.TrimSpace(out), "\n")
 		toRemove := []string{}
-		numMaster := uint32(0)
-		numNodes := uint32(0)
+		numExistingMaster := uint32(0)
+		numExistingNodes := uint32(0)
 		for _, n := range allnodes {
 			if !strings.HasPrefix(n, cloudcommon.MexNodePrefix) {
 				// skip master
-				numMaster++
+				numExistingMaster++
 				continue
 			}
 			ok, num := ParseClusterNodePrefix(n)
@@ -140,7 +141,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				log.SpanLog(ctx, log.DebugLevelInfra, "unable to parse node name, ignoring", "name", n)
 				continue
 			}
-			numNodes++
+			numExistingNodes++
 			nodeName := GetClusterNodeName(ctx, clusterInst, num)
 			// heat will remove the higher-numbered nodes
 			if num > clusterInst.NumNodes {
@@ -163,16 +164,31 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				chefUpdateInfo[nodeName] = ActionAdd
 			}
 		}
-		if numMaster == clusterInst.NumMasters && numNodes == clusterInst.NumNodes {
+		if numExistingMaster == clusterInst.NumMasters && numExistingNodes == clusterInst.NumNodes {
 			// nothing changing
-			log.SpanLog(ctx, log.DebugLevelInfra, "no change in nodes", "ClusterInst", clusterInst.Key, "nummaster", numMaster, "numnodes", numNodes)
+			log.SpanLog(ctx, log.DebugLevelInfra, "no change in nodes", "ClusterInst", clusterInst.Key, "numExistingMaster", numExistingMaster, "numExistingNodes", numExistingNodes)
 			return nil
+		}
+		if clusterInst.NumNodes == 0 && numExistingNodes > 0 {
+			// we are removing all the nodes, remove the taint on the master
+			masterTaintAction = k8smgmt.NoScheduleMasterTaintRemove
+		} else if clusterInst.NumNodes > 0 && numExistingNodes == 0 {
+			// we are adding one or more nodes and there was previously none.  Add the taint to master.
+			masterTaintAction = k8smgmt.NoScheduleMasterTaintAdd
 		}
 	}
 	vmgp, err := v.PerformOrchestrationForCluster(ctx, imgName, clusterInst, ActionUpdate, chefUpdateInfo, updateCallback)
 	if err != nil {
 		return err
 	}
+	if masterTaintAction != k8smgmt.NoScheduleMasterTaintNone {
+		masterName := GetClusterMasterName(ctx, clusterInst)
+		err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
+		if err != nil {
+			return err
+		}
+	}
+
 	//todo: calculate timeouts instead of hardcoded value
 	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, time.Minute*15, vmgp, ActionUpdate)
 }
@@ -581,22 +597,10 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
-		// k8s nodes are limited to MaxK8sNodeNameLen chars
-		//remove the taint from the master if there are no nodes. This has potential side effects if the cluster
-		// becomes very busy but is useful for testing and PoC type clusters.
-		// TODO: if the cluster is subsequently increased in size do we need to add the taint?
-		//For now leaving that alone since an increased cluster size means we needed more capacity.
-		log.SpanLog(ctx, log.DebugLevelInfra, "removing NoSchedule taint from master", "master", masterString)
-		cmd := fmt.Sprintf("kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-", masterString)
-
-		out, err := masterClient.Output(cmd)
+		// untaint the master
+		err = k8smgmt.SetMasterNoscheduleTaint(ctx, rootLBClient, masterString, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
 		if err != nil {
-			if strings.Contains(out, "not found") {
-				log.SpanLog(ctx, log.DebugLevelInfra, "master taint already gone")
-			} else {
-				log.InfoLog("error removing master taint", "out", out, "err", err)
-				return false, 0, fmt.Errorf("Cannot remove NoSchedule taint from master, %v", err)
-			}
+			return false, 0, err
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster ready.")
