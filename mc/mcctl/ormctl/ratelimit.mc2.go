@@ -31,6 +31,7 @@ var ShowRateLimitSettingsCmd = &ApiCommand{
 	AliasArgs:    strings.Join(RateLimitSettingsAliasArgs, " "),
 	SpecialArgs:  &RateLimitSettingsSpecialArgs,
 	Comments:     addRegionComment(RateLimitSettingsComments),
+	NoConfig:     "FlowSettings,MaxReqsSettings",
 	ReqData:      &ormapi.RegionRateLimitSettings{},
 	ReplyData:    &edgeproto.RateLimitSettings{},
 	Path:         "/auth/ctrl/ShowRateLimitSettings",
@@ -267,24 +268,15 @@ var MaxReqsRateLimitSettingsSpecialArgs = map[string]string{
 	"maxreqsratelimitsettings.fields": "StringArray",
 }
 var RateLimitSettingsRequiredArgs = []string{
-	"key.apiname",
-	"key.apiendpointtype",
-	"key.ratelimittarget",
+	"apiname",
+	"apiendpointtype",
+	"ratelimittarget",
 }
-var RateLimitSettingsOptionalArgs = []string{
-	"flowsettings:#.key",
-	"flowsettings:#.value.flowalgorithm",
-	"flowsettings:#.value.reqspersecond",
-	"flowsettings:#.value.burstsize",
-	"maxreqssettings:#.key",
-	"maxreqssettings:#.value.maxreqsalgorithm",
-	"maxreqssettings:#.value.maxrequests",
-	"maxreqssettings:#.value.interval",
-}
+var RateLimitSettingsOptionalArgs = []string{}
 var RateLimitSettingsAliasArgs = []string{
-	"key.apiname=ratelimitsettings.key.apiname",
-	"key.apiendpointtype=ratelimitsettings.key.apiendpointtype",
-	"key.ratelimittarget=ratelimitsettings.key.ratelimittarget",
+	"apiname=ratelimitsettings.key.apiname",
+	"apiendpointtype=ratelimitsettings.key.apiendpointtype",
+	"ratelimittarget=ratelimitsettings.key.ratelimittarget",
 	"flowsettings:#.key=ratelimitsettings.flowsettings:#.key",
 	"flowsettings:#.value.flowalgorithm=ratelimitsettings.flowsettings:#.value.flowalgorithm",
 	"flowsettings:#.value.reqspersecond=ratelimitsettings.flowsettings:#.value.reqspersecond",
@@ -295,9 +287,9 @@ var RateLimitSettingsAliasArgs = []string{
 	"maxreqssettings:#.value.interval=ratelimitsettings.maxreqssettings:#.value.interval",
 }
 var RateLimitSettingsComments = map[string]string{
-	"key.apiname":                              "Name of API (eg. CreateApp or RegisterClient) (Use Global if not a specific API)",
-	"key.apiendpointtype":                      "API Endpoint type, one of UnknownApiEndpointType, Dme",
-	"key.ratelimittarget":                      "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
+	"apiname":                                  "Name of API (eg. CreateApp or RegisterClient) (Use Global if not a specific API)",
+	"apiendpointtype":                          "API Endpoint type, one of UnknownApiEndpointType, Dme",
+	"ratelimittarget":                          "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
 	"flowsettings:#.value.flowalgorithm":       "Flow Rate Limit algorithm, one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm",
 	"flowsettings:#.value.reqspersecond":       "requests per second for flow rate limiting",
 	"flowsettings:#.value.burstsize":           "burst size for flow rate limiting (required for TokenBucketAlgorithm)",
