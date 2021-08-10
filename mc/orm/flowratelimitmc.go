@@ -4,6 +4,7 @@ import (
 	fmt "fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
@@ -39,16 +40,10 @@ func CreateFlowRateLimitSettingsMc(c echo.Context) error {
 	// Create McRateLimitFlowSettings entry
 	db := loggedDB(ctx)
 
-	// Check to make sure FlowSettings doesn't already exist
-	search := &ormapi.McRateLimitFlowSettings{
-		FlowSettingsName: in.FlowSettingsName,
-	}
-	res := db.Where(search).First(&ormapi.McRateLimitFlowSettings{})
-	if !res.RecordNotFound() {
-		return fmt.Errorf("FlowRateLimitSettings with FlowSettingsName %s already exists", in.FlowSettingsName)
-	}
-
 	if err := db.Create(&in).Error; err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"mc_rate_limit_flow_settings_pkey") {
+			return fmt.Errorf("FlowRateLimitSettings with FlowSettingsName %s already exists", in.FlowSettingsName)
+		}
 		return fmt.Errorf("Unable to create FlowRateLimitSettings %v - error: %s", in, err.Error())
 	}
 
@@ -171,15 +166,9 @@ func ShowFlowRateLimitSettingsMc(c echo.Context) error {
 		return bindErr(err)
 	}
 
-	search := &ormapi.McRateLimitFlowSettings{
-		FlowSettingsName: in.FlowSettingsName,
-		ApiName:          in.ApiName,
-		RateLimitTarget:  in.RateLimitTarget,
-	}
-
 	// Search for all entries with specified primary keys (if fields are not specified, fields are left out of search)
 	db := loggedDB(ctx)
-	r := db.Where(search)
+	r := db.Where(&in)
 	if r.RecordNotFound() {
 		return fmt.Errorf("Specified Key not found")
 	}
@@ -204,7 +193,7 @@ func convertToFlowRateLimitSettings(f *ormapi.McRateLimitFlowSettings) *edgeprot
 				RateLimitTarget: f.RateLimitTarget,
 			},
 		},
-		Settings: &edgeproto.FlowSettings{
+		Settings: edgeproto.FlowSettings{
 			FlowAlgorithm: f.FlowAlgorithm,
 			ReqsPerSecond: f.ReqsPerSecond,
 			BurstSize:     f.BurstSize,

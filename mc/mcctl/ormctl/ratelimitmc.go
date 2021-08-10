@@ -41,7 +41,7 @@ func init() {
 		Name:         "ShowRateLimitSettingsMc",
 		Use:          "show",
 		Short:        "Show master controller ratelimitsettings",
-		OptionalArgs: strings.Join(append(RateLimitSettingsMcRequiredArgs, RateLimitSettingsOptionalArgs...), " "),
+		OptionalArgs: strings.Join(RateLimitSettingsMcRequiredArgs, " "),
 		Comments:     RateLimitSettingsComments,
 		ReqData:      &ormapi.McRateLimitSettings{},
 		ReplyData:    &[]ormapi.McRateLimitSettings{},
