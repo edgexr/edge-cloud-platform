@@ -96,6 +96,18 @@ func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, 
 	clientinfo.lastLoc = lastLoc
 }
 
+func (e *EdgeEventsHandlerPlugin) UpdateClientCarrier(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, carrier string) {
+	e.Lock()
+	defer e.Unlock()
+	// Update carrier field in cliientinfo for specified client
+	clientinfo, err := e.getClientInfo(ctx, appInstKey, cookieKey)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find client to update", "client", cookieKey, "error", err)
+		return
+	}
+	clientinfo.carrier = carrier
+}
+
 // Remove Client connected to specified AppInst from Map
 func (e *EdgeEventsHandlerPlugin) RemoveClientKey(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
 	e.Lock()
