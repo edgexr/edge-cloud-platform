@@ -192,6 +192,7 @@ var devInfluxDBT = `SELECT {{.Selector}} from {{.Measurement}}` +
 	`{{if .AppInstName}} AND "app"='{{.AppInstName}}'{{end}}` +
 	`{{if .AppOrg}} AND "apporg"='{{.AppOrg}}'{{end}}` +
 	`{{if .ClusterName}} AND "cluster"='{{.ClusterName}}'{{end}}` +
+	`{{if .ClusterOrg}} AND "clusterorg"='{{.ClusterOrg}}'{{end}}` +
 	`{{if .AppVersion}} AND "ver"='{{.AppVersion}}'{{end}}` +
 	`{{if .CloudletName}} AND "cloudlet"='{{.CloudletName}}'{{end}}` +
 	`{{if .CloudletOrg}} AND "cloudletorg"='{{.CloudletOrg}}'{{end}}` +
@@ -389,6 +390,7 @@ func AppInstMetricsQuery(obj *ormapi.RegionAppInstMetrics, cloudletList []string
 		AppInstName:  util.DNSSanitize(obj.AppInst.AppKey.Name),
 		AppVersion:   util.DNSSanitize(obj.AppInst.AppKey.Version),
 		ClusterName:  obj.AppInst.ClusterInstKey.ClusterKey.Name,
+		ClusterOrg:   obj.AppInst.ClusterInstKey.Organization,
 		CloudletList: generateCloudletList(cloudletList),
 		Last:         obj.Last,
 	}
@@ -676,6 +678,8 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, key 
 func getClientApiUsageMetricsArgs(in *ormapi.RegionClientApiUsageMetrics) map[string]string {
 	args := in.AppInst.GetTags()
 	args["method"] = in.Method
+	args["dme cloudlet"] = in.DmeCloudlet
+	args["dme cloudlet org"] = in.DmeCloudletOrg
 	return args
 }
 
@@ -811,6 +815,9 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 		if err = validateSelectorString(in.Selector, CLIENT_APIUSAGE); err != nil {
+			return err
+		}
+		if err = validateMethodString(&in); err != nil {
 			return err
 		}
 		if err = validateMetricsCommon(&in.MetricsCommon); err != nil {

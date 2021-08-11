@@ -36,8 +36,10 @@ type influxClientMetricsQueryArgs struct {
 	ClusterOrg   string
 	AppOrg       string
 	// ClientApi metric query args
-	Method string
-	CellId string
+	Method           string
+	CellId           string
+	FoundCloudlet    string
+	FoundCloudletOrg string
 	// ClientAppUsage and ClientCloudletUsage metric query args
 	DeviceCarrier   string
 	DataNetworkType string
@@ -192,6 +194,26 @@ func getInfluxClientMetricsQueryCmd(q *influxClientMetricsQueryArgs, tmpl *templ
 	return buf.String()
 }
 
+func validateMethodString(obj *ormapi.RegionClientApiUsageMetrics) error {
+	switch obj.Method {
+	case "RegisterClient":
+		fallthrough
+	case "VerifyLocation":
+		if obj.AppInst.ClusterInstKey.CloudletKey.Name != "" ||
+			obj.AppInst.ClusterInstKey.CloudletKey.Organization != "" {
+			return fmt.Errorf("Cloudlet and Cloudlet org can be specified only for FindCloudlet or PlatformFindCloudlet")
+		}
+		return nil
+	case "":
+		fallthrough
+	case "FindCloudlet":
+		fallthrough
+	case "PlatformFindCloudlet":
+		return nil
+	}
+	return fmt.Errorf("Method is invalid, must be one of FindCloudlet,PlatformFindCloudlet,RegisterClient,VerifyLocation")
+}
+
 func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudletList []string, settings *edgeproto.Settings) string {
 	// get time definition
 	minTimeDef := DefaultClientUsageTimeWindow
@@ -205,7 +227,9 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 		AppInstName:  obj.AppInst.AppKey.Name,
 		AppVersion:   obj.AppInst.AppKey.Version,
 		ApiCallerOrg: obj.AppInst.AppKey.Organization,
-		CloudletList: generateCloudletList(cloudletList),
+		CloudletList: generateDmeApiUsageCloudletList(cloudletList),
+		CloudletName: obj.DmeCloudlet,
+		CloudletOrg:  obj.DmeCloudletOrg,
 		Method:       obj.Method,
 		TagSet:       getTagSet(CLIENT_APIUSAGE, obj.Selector),
 	}
