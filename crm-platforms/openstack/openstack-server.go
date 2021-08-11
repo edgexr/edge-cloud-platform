@@ -159,11 +159,12 @@ func (s *OpenstackPlatform) goGetMetricforId(ctx context.Context, id string, mea
 }
 
 func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppInstKey) (*vmlayer.VMMetrics, error) {
-	var Cpu, Mem, Disk, NetSent, NetRecv OSMetricMeasurement
+	var Cpu, Mem, NetSent, NetRecv OSMetricMeasurement
 	netSentChan := make(chan string)
 	netRecvChan := make(chan string)
-	diskChan := make(chan string)
 	vmMetrics := vmlayer.VMMetrics{}
+	// note disk stats are available via disk.device.usage, but they are useless for our purposes, as they do not reflect
+	// OS usage inside the VM, rather the disk metrics measure the size of various VM files on the datastore
 
 	if key == nil {
 		return &vmMetrics, fmt.Errorf("Nil App passed")
@@ -178,16 +179,6 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	cpuChan := s.goGetMetricforId(ctx, server.ID, "cpu_util", &Cpu)
 	memChan := s.goGetMetricforId(ctx, server.ID, "memory.usage", &Mem)
 
-	// For disk we get all instance_disk type and vda one, that's associated with the instance
-	disk, err := s.OSFindResourceByInstId(ctx, "instance_disk", server.ID, "vda")
-	if err == nil {
-		diskChan = s.goGetMetricforId(ctx, disk.Id, "disk.device.usage", &Disk)
-	} else {
-		go func() {
-			diskChan <- "Unavailable"
-		}()
-	}
-
 	// For network we try to get the id of the instance_network_interface for an instance
 	netIf, err := s.OSFindResourceByInstId(ctx, "instance_network_interface", server.ID, "")
 	if err == nil {
@@ -201,7 +192,6 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 	}
 	cpuErr := <-cpuChan
 	memErr := <-memChan
-	diskErr := <-diskChan
 	netInErr := <-netRecvChan
 	netOutErr := <-netSentChan
 
@@ -219,13 +209,6 @@ func (s *OpenstackPlatform) GetVMStats(ctx context.Context, key *edgeproto.AppIn
 			// Openstack gives it to us in MB
 			vmMetrics.Mem = uint64(Mem.Value * 1024 * 1024)
 			vmMetrics.MemTS, _ = types.TimestampProto(time)
-		}
-	}
-	if diskErr == "" {
-		time, err := time.Parse(time.RFC3339, Disk.Timestamp)
-		if err == nil {
-			vmMetrics.Disk = uint64(Disk.Value)
-			vmMetrics.DiskTS, _ = types.TimestampProto(time)
 		}
 	}
 	if netInErr == "" {

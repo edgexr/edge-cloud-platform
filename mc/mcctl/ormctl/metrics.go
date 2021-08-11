@@ -189,6 +189,8 @@ var ClientApiUsageMetricOptionalArgs = []string{
 	"app-org",
 	"cloudlet",
 	"cloudlet-org",
+	"dme-cloudlet",
+	"dme-org",
 	"method",
 	"cellid",
 	"limit",
@@ -205,12 +207,16 @@ var ClientApiUsageMetricAliasArgs = []string{
 	"appvers=appinst.appkey.version",
 	"cloudlet-org=appinst.clusterinstkey.cloudletkey.organization",
 	"cloudlet=appinst.clusterinstkey.cloudletkey.name",
+	"dme-cloudlet=dmecloudlet",
+	"dme-org=dmecloudletorg",
 }
 
 var ClientApiUsageMetricComments = map[string]string{
-	"method":   "Api call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation",
-	"cellid":   "Cell tower Id(experimental)",
-	"selector": "Comma separated list of metrics to view. Currently only \"api\" is supported.",
+	"method":       "Api call method, one of: FindCloudlet, PlatformFindCloudlet, RegisterClient, VerifyLocation",
+	"cellid":       "Cell tower Id(experimental)",
+	"selector":     "Comma separated list of metrics to view. Currently only \"api\" is supported.",
+	"dme-cloudlet": "Cloudlet name where DME is running",
+	"dme-org":      "Operator org where DME is running",
 }
 
 var ClientAppUsageMetricRequiredArgs = []string{

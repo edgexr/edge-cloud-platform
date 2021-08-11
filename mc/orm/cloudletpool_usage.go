@@ -21,6 +21,17 @@ func generateCloudletList(cloudletList []string) string {
 	return new
 }
 
+// For Dme metrics cloudlets are stored in foundCloudlet field
+func generateDmeApiUsageCloudletList(cloudletList []string) string {
+	if len(cloudletList) == 0 {
+		return ""
+	}
+	// format needs to be: foundCloudlet='cloudlet1' OR foundCloudlet='cloudlet2' ... OR foundCloudlet='cloudlet3'
+	new := strings.Join(cloudletList, "' OR foundCloudlet='")
+	new = "foundCloudlet='" + new + "'"
+	return new
+}
+
 func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
 	arg := influxQueryArgs{
 		OrgField:     "cloudletorg",

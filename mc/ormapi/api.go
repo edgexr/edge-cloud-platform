@@ -505,12 +505,14 @@ type RegionCloudletMetrics struct {
 }
 
 type RegionClientApiUsageMetrics struct {
-	Region        string
-	AppInst       edgeproto.AppInstKey
-	Method        string `json:",omitempty"`
-	CellId        int    `json:",omitempty"`
-	Selector      string
-	MetricsCommon `json:",inline"`
+	Region         string
+	AppInst        edgeproto.AppInstKey
+	Method         string `json:",omitempty"`
+	CellId         int    `json:",omitempty"`
+	DmeCloudlet    string `json:",omitempty"`
+	DmeCloudletOrg string `json:",omitempty"`
+	Selector       string
+	MetricsCommon  `json:",inline"`
 }
 
 type RegionClientAppUsageMetrics struct {
