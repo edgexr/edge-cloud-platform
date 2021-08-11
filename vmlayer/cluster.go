@@ -21,10 +21,11 @@ import (
 const (
 	MexSubnetPrefix = "mex-k8s-subnet-"
 
-	ActionAdd               = "add"
-	ActionRemove            = "remove"
-	ActionNone              = "none"
-	cleanupRetryWaitSeconds = 30
+	ActionAdd                 = "add"
+	ActionRemove              = "remove"
+	ActionNone                = "none"
+	cleanupRetryWaitSeconds   = 30
+	updateClusterSetupMaxTime = time.Minute * 15
 )
 
 //ClusterNodeFlavor contains details of flavor for the node
@@ -116,6 +117,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 
 	chefUpdateInfo := make(map[string]string)
 	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
+	masterName := GetClusterMasterName(ctx, clusterInst)
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
@@ -152,6 +154,13 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			}
 		}
 		if len(toRemove) > 0 {
+			if clusterInst.NumNodes == 0 {
+				// We are removing all the nodes. Remove the master taint before deleting the node so the pods can migrate immediately
+				err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterName, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
+				if err != nil {
+					return err
+				}
+			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete nodes", "toRemove", toRemove)
 			err = k8smgmt.DeleteNodes(ctx, client, kconfName, toRemove)
 			if err != nil {
@@ -169,11 +178,9 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			log.SpanLog(ctx, log.DebugLevelInfra, "no change in nodes", "ClusterInst", clusterInst.Key, "numExistingMaster", numExistingMaster, "numExistingNodes", numExistingNodes)
 			return nil
 		}
-		if clusterInst.NumNodes == 0 && numExistingNodes > 0 {
-			// we are removing all the nodes, remove the taint on the master
-			masterTaintAction = k8smgmt.NoScheduleMasterTaintRemove
-		} else if clusterInst.NumNodes > 0 && numExistingNodes == 0 {
-			// we are adding one or more nodes and there was previously none.  Add the taint to master.
+		if clusterInst.NumNodes > 0 && numExistingNodes == 0 {
+			// we are adding one or more nodes and there was previously none.  Add the taint to master after we do orchestration.
+			// Note the case of removing the master taint is done earlier
 			masterTaintAction = k8smgmt.NoScheduleMasterTaintAdd
 		}
 	}
@@ -181,6 +188,11 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	if err != nil {
 		return err
 	}
+	err = v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, updateClusterSetupMaxTime, vmgp, ActionUpdate)
+	if err != nil {
+		return err
+	}
+	// now that all nodes are back, update master taint if needed
 	if masterTaintAction != k8smgmt.NoScheduleMasterTaintNone {
 		masterName := GetClusterMasterName(ctx, clusterInst)
 		err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
@@ -188,9 +200,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			return err
 		}
 	}
-
-	//todo: calculate timeouts instead of hardcoded value
-	return v.setupClusterRootLBAndNodes(ctx, rootLBName, clusterInst, updateCallback, start, time.Minute*15, vmgp, ActionUpdate)
+	return nil
 }
 
 //DeleteCluster deletes kubernetes cluster
@@ -597,7 +607,8 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
 	if clusterInst.NumNodes == 0 {
-		// untaint the master
+		// Untaint the master.  Note in the update case this has already been done when going from >0 nodes to 0 prior to node deletion but
+		// for the create case this is the earliest it can be done
 		err = k8smgmt.SetMasterNoscheduleTaint(ctx, rootLBClient, masterString, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
 		if err != nil {
 			return false, 0, err
