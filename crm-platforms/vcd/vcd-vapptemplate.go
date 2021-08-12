@@ -380,6 +380,10 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		defer resp.Body.Close()
 	}
 
+	if !v.GetTemplateArtifactoryImportEnabled() {
+		return fmt.Errorf("Template not found in catalog and import is disabled.  Please upload ovf from \"%s\" manually to catalog and name as \"%s\" and try again", artifactoryOvfPath, imageInfo.LocalImageName)
+	}
+
 	// get a token that VCD can use to pull from the artifactory
 	token, err := cloudcommon.GetAuthToken(ctx, artifactoryHost, v.vmProperties.CommonPf.PlatformConfig.AccessApi, vcdDirectUser)
 	if err != nil {
