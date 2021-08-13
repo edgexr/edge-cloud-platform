@@ -7,6 +7,7 @@
     customdetails:
       firing: |
         AppInstDown - Application server port is not responding
+        Started at: time-to-test
         Labels:
          alertname = AppInstDown
          app = someapplication1
@@ -36,6 +37,7 @@
       numresolved: "1"
       resolved: |
         AppInstDown - Application server port is not responding
+        Started at: time-to-test
         Labels:
          alertname = AppInstDown
          app = someapplication1
