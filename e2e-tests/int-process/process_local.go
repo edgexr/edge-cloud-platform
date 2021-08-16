@@ -469,12 +469,6 @@ func SetupVault(p *process.Vault, opts ...process.StartOp) (*VaultRoles, error) 
 	p.GetAppRole("", "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
 	p.PutSecret("", "mcorm", mcormSecret+"-old", &err)
 	p.PutSecret("", "mcorm", mcormSecret, &err)
-	// Set up local mexenv.json in the vault to allow local edgebox to run
-	localMexenv := gopath + "/src/github.com/mobiledgex/edge-cloud-infra/mgmt/cloudlets/mexenv.json"
-	p.Run("vault", fmt.Sprintf("write %s @%s", "/secret/data/cloudlet/openstack/mexenv.json", localMexenv), &err)
-	if err != nil {
-		return &roles, err
-	}
 
 	// Setup up dummy key to be used with local chef server to provision cloudlets
 	chefApiKeyPath := "/tmp/dummyChefApiKey.json"

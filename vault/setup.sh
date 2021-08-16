@@ -94,24 +94,3 @@ vault write auth/approle/role/rotator period="720h" policies="rotator"
 # get rotator app roleID and generate secretID
 vault read auth/approle/role/rotator/role-id
 vault write -f auth/approle/role/rotator/secret-id
-
-# mexenv approle
-# This is used by edgebox to access registry secrets only.
-# It does not have full access of crm role, so we can put it in
-# the local_dind.yml setup file. Once we make our demo
-# apps public, we can remove this app role.
-cat > /tmp/mexenv-pol.hcl <<EOF
-path "auth/approle/login" {
-  capabilities = [ "create", "read" ]
-}
-
-path "secret/data/cloudlet/openstack/mexenv.json" {
-  capabilities = [ "read" ]
-}
-EOF
-vault policy write mexenv /tmp/mexenv-pol.hcl
-rm /tmp/mexenv-pol.hcl
-vault write auth/approle/role/mexenv period="720h" policies="mexenv"
-# get mexenv app roleID and generate secretID
-vault read auth/approle/role/mexenv/role-id
-vault write -f auth/approle/role/mexenv/secret-id
