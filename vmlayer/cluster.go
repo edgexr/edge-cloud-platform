@@ -63,6 +63,23 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 	return namePrefix + "-" + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
 }
 
+// GetClusterMasterNameFromNodeList is used instead of GetClusterMasterName when getting the actual master name from
+// a running cluster, because the name can get truncated if it is too long
+func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNameFromNodeList")
+	kconfName := k8smgmt.GetKconfName(clusterInst)
+	cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --no-headers -l node-role.kubernetes.io/master -o custom-columns=Name:.metadata.name", kconfName)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return "", err
+	}
+	nodes := strings.Split(strings.TrimSpace(out), "\n")
+	if len(nodes) > 0 {
+		return nodes[0], nil
+	}
+	return "", fmt.Errorf("unable to find cluster master")
+}
+
 func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
 	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
 }
@@ -117,7 +134,10 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 
 	chefUpdateInfo := make(map[string]string)
 	masterTaintAction := k8smgmt.NoScheduleMasterTaintNone
-	masterName := GetClusterMasterName(ctx, clusterInst)
+	masterNodeName, err := GetClusterMasterNameFromNodeList(ctx, client, clusterInst)
+	if err != nil {
+		return err
+	}
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
@@ -156,7 +176,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		if len(toRemove) > 0 {
 			if clusterInst.NumNodes == 0 {
 				// We are removing all the nodes. Remove the master taint before deleting the node so the pods can migrate immediately
-				err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterName, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
+				err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterNodeName, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
 				if err != nil {
 					return err
 				}
@@ -194,8 +214,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 	}
 	// now that all nodes are back, update master taint if needed
 	if masterTaintAction != k8smgmt.NoScheduleMasterTaintNone {
-		masterName := GetClusterMasterName(ctx, clusterInst)
-		err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
+		err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterNodeName, k8smgmt.GetKconfName(clusterInst), masterTaintAction)
 		if err != nil {
 			return err
 		}
