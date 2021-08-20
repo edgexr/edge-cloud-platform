@@ -51,7 +51,7 @@ func cloudletPoolEventsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList [
 		return ""
 	}
 	queryStart := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
 
 func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletList []string, queryType string) string {
@@ -75,7 +75,7 @@ func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletL
 	// set endtime to start and back up starttime by a checkpoint interval to hit the most recent
 	// checkpoint that occurred before startTime
 	checkpointTime := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
 }
 
 func GetCloudletPoolUsageCommon(c echo.Context) error {

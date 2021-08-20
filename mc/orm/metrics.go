@@ -1,34 +1,39 @@
 package orm
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/util"
 )
 
 var appInstGroupQueryTemplate *template.Template
 
 // select mean(cpu) from \"appinst-cpu\" where (apporg='DevOrg') and time >=now() -20m group by time(2m), app fill(previous)"
-var AppInstGroupQueryT = `SELECT {{.Selector}} FROM {{.Measurement}}` +
-	` WHERE ({{.QueryFilter}}{{if .CloudletList}} AND ({{.CloudletList}}){{end}})` +
-	`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
-	`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
-	` group by {{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg` +
-	` fill(previous)` +
-	` order by time desc {{if ne .Last 0}}limit {{.Last}}{{end}}`
+var (
+	AppInstGroupQueryT = `SELECT {{.Selector}} FROM {{.Measurement}}` +
+		` WHERE ({{.QueryFilter}}{{if .CloudletList}} AND ({{.CloudletList}}){{end}})` +
+		`{{if .StartTime}} AND time >= '{{.StartTime}}'{{end}}` +
+		`{{if .EndTime}} AND time <= '{{.EndTime}}'{{end}}` +
+		` group by {{if .TimeDefinition}}time({{.TimeDefinition}}),{{end}}app,apporg,cluster,clusterorg,ver,cloudlet,cloudletorg` +
+		` fill(previous)` +
+		` order by time desc {{if ne .Limit 0}}limit {{.Limit}}{{end}}`
+)
 
 func init() {
 	appInstGroupQueryTemplate = template.Must(template.New("influxquery").Parse(AppInstGroupQueryT))
 }
 
-// Common method to handle both app and cluster metrics
+// handle app metrics
 func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	var cmd, org string
 
@@ -77,7 +82,12 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	if err != nil {
 		return err
 	}
-	cmd = GetAppInstsGroupQuery(ctx, in, cloudletList)
+	settings, err := getSettings(ctx, rc)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
+	}
+
+	cmd = GetAppInstsGroupQuery(ctx, in, cloudletList, settings)
 
 	err = influxStream(ctx, rc, []string{cloudcommon.DeveloperMetricsDbName}, cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
@@ -90,17 +100,21 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	return nil
 }
 
-func GetAppInstsGroupQuery(ctx context.Context, apps *ormapi.RegionAppInstMetrics, cloudletList []string) string {
-	timeDef := getTimeDefinitionForAppInsts(apps)
+func GetAppInstsGroupQuery(ctx context.Context, apps *ormapi.RegionAppInstMetrics, cloudletList []string, settings *edgeproto.Settings) string {
+	// get time definition
+	minTimeDef := DefaultAppInstTimeWindow
+	if settings != nil {
+		minTimeDef = time.Duration(settings.DmeApiMetricsCollectionInterval)
+	}
+	timeDef := getTimeDefinition(&apps.MetricsCommon, minTimeDef)
 	selectorFunction := getFuncForSelector(apps.Selector, timeDef)
 	args := influxQueryArgs{
-		Selector:       getSelectorForMeasurement(apps.Selector, selectorFunction),
-		Measurement:    getMeasurementString(apps.Selector, APPINST),
-		QueryFilter:    getAppInstQueryFilter(apps, cloudletList),
-		TimeDefinition: timeDef,
-		Last:           apps.Last,
+		Selector:    getSelectorForMeasurement(apps.Selector, selectorFunction),
+		Measurement: getMeasurementString(apps.Selector, APPINST),
+		QueryFilter: getAppInstQueryFilter(apps, cloudletList),
 	}
-	return fillTimeAndGetCmd(&args, appInstGroupQueryTemplate, &apps.StartTime, &apps.EndTime)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, appInstGroupQueryTemplate, &apps.MetricsCommon, timeDef, minTimeDef)
+	return getInfluxMetricsQueryCmd(&args, appInstGroupQueryTemplate)
 }
 
 // Combine appInst definitions into a filter string in influxDB
@@ -199,4 +213,16 @@ func getSelectorForMeasurement(selector, function string) string {
 		newSelectors = append(newSelectors, function+"("+field+") as "+field)
 	}
 	return strings.Join(newSelectors, ",")
+}
+
+func getInfluxMetricsQueryCmd(q *influxQueryArgs, tmpl *template.Template) string {
+	buf := bytes.Buffer{}
+	if q.Measurement != "" {
+		q.Measurement = addQuotesToMeasurementNames(q.Measurement)
+	}
+	if err := tmpl.Execute(&buf, q); err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to run template", "tmpl", tmpl, "args", q, "error", err)
+		return ""
+	}
+	return buf.String()
 }
