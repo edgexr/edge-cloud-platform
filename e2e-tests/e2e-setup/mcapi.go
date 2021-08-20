@@ -896,7 +896,9 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 		Region:   "local",
 		AppInst:  targets.AppInstKey,
 		Selector: "*",
-		Last:     1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	appMetrics, status, err := mcClient.ShowAppMetrics(uri, token, &appQuery)
 	checkMcErr("ShowAppMetrics", status, err, rc)
@@ -904,7 +906,9 @@ func showMcMetricsAll(uri, token string, targets *MetricTargets, rc *bool) *orma
 		Region:      "local",
 		ClusterInst: targets.ClusterInstKey,
 		Selector:    "*",
-		Last:        1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	clusterMetrics, status, err := mcClient.ShowClusterMetrics(uri, token, &clusterQuery)
 	checkMcErr("ShowClusterMetrics", status, err, rc)
@@ -917,21 +921,27 @@ func showMcEvents(uri, token string, targets *MetricTargets, rc *bool) *ormapi.A
 	appQuery := ormapi.RegionAppInstEvents{
 		Region:  "local",
 		AppInst: targets.AppInstKey,
-		Last:    1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	appMetrics, status, err := mcClient.ShowAppEvents(uri, token, &appQuery)
 	checkMcErr("ShowAppEvents", status, err, rc)
 	clusterQuery := ormapi.RegionClusterInstEvents{
 		Region:      "local",
 		ClusterInst: targets.ClusterInstKey,
-		Last:        1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	clusterMetrics, status, err := mcClient.ShowClusterEvents(uri, token, &clusterQuery)
 	checkMcErr("ShowClusterEvents", status, err, rc)
 	cloudletQuery := ormapi.RegionCloudletEvents{
 		Region:   "local",
 		Cloudlet: targets.CloudletKey,
-		Last:     1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	cloudletMetrics, status, err := mcClient.ShowCloudletEvents(uri, token, &cloudletQuery)
 	checkMcErr("ShowCloudletEvents", status, err, rc)
@@ -948,7 +958,9 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 	appQuery := ormapi.RegionAppInstMetrics{
 		Region:  "local",
 		AppInst: targets.AppInstKey,
-		Last:    1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	for _, selector := range E2eAppSelectors {
 		appQuery.Selector = selector
@@ -960,7 +972,9 @@ func showMcMetricsSep(uri, token string, targets *MetricTargets, rc *bool) *orma
 	clusterQuery := ormapi.RegionClusterInstMetrics{
 		Region:      "local",
 		ClusterInst: targets.ClusterInstKey,
-		Last:        1,
+		MetricsCommon: ormapi.MetricsCommon{
+			Limit: 1,
+		},
 	}
 	for _, selector := range E2eClusterSelectors {
 		clusterQuery.Selector = selector

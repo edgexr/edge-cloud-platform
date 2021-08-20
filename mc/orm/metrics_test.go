@@ -98,66 +98,72 @@ func getCloudletsFromAppInsts(apps *ormapi.RegionAppInstMetrics) []string {
 	return cloudlets
 }
 
-func TestFillTimeAndGetCmd(t *testing.T) {
+func TestGetInfluxMetricsQueryCmd(t *testing.T) {
 	// Single App, default time insterval
 	testSingleApp.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
-	timeDef := getTimeDefinitionForAppInsts(&testSingleApp)
+	err := validateMetricsCommon(&testSingleApp.MetricsCommon)
+	require.Nil(t, err)
+	timeDef := getTimeDefinition(&testSingleApp.MetricsCommon, 0)
 	selectorFunction := getFuncForSelector("cpu", timeDef)
 	args := influxQueryArgs{
-		Selector:       getSelectorForMeasurement("cpu", selectorFunction),
-		Measurement:    getMeasurementString("cpu", APPINST),
-		QueryFilter:    getAppInstQueryFilter(&testSingleApp, getCloudletsFromAppInsts(&testSingleApp)),
-		TimeDefinition: timeDef,
-		Last:           testSingleApp.Last,
+		Selector:    getSelectorForMeasurement("cpu", selectorFunction),
+		Measurement: getMeasurementString("cpu", APPINST),
+		QueryFilter: getAppInstQueryFilter(&testSingleApp, getCloudletsFromAppInsts(&testSingleApp)),
 	}
-	query := fillTimeAndGetCmd(&args, appInstGroupQueryTemplate, &testSingleApp.StartTime, &testSingleApp.EndTime)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, appInstGroupQueryTemplate, &testSingleApp.MetricsCommon, timeDef, 0)
+	query := getInfluxMetricsQueryCmd(&args, appInstGroupQueryTemplate)
 	require.Equal(t, testSingleAppQueryDefTime, query)
 	// Single App, just one last data points
 	testSingleApp.EndTime = time.Time{}
 	testSingleApp.StartTime = time.Time{}
-	testSingleApp.Last = 1
-	timeDef = getTimeDefinitionForAppInsts(&testSingleApp)
+	testSingleApp.NumSamples = 0
+	testSingleApp.Limit = 1
+	err = validateMetricsCommon(&testSingleApp.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(&testSingleApp.MetricsCommon, 0)
 	selectorFunction = getFuncForSelector("cpu", timeDef)
 	args = influxQueryArgs{
-		Selector:       getSelectorForMeasurement("cpu", selectorFunction),
-		Measurement:    getMeasurementString("cpu", APPINST),
-		QueryFilter:    getAppInstQueryFilter(&testSingleApp, getCloudletsFromAppInsts(&testSingleApp)),
-		TimeDefinition: timeDef,
-		Last:           testSingleApp.Last,
+		Selector:    getSelectorForMeasurement("cpu", selectorFunction),
+		Measurement: getMeasurementString("cpu", APPINST),
+		QueryFilter: getAppInstQueryFilter(&testSingleApp, getCloudletsFromAppInsts(&testSingleApp)),
 	}
-	query = fillTimeAndGetCmd(&args, appInstGroupQueryTemplate, &testSingleApp.StartTime, &testSingleApp.EndTime)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, appInstGroupQueryTemplate, &testSingleApp.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, appInstGroupQueryTemplate)
 	require.Equal(t, testSingleAppQueryLastPoint, query)
 	// Multiple Apps, default time interval
 	testApps.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testApps.StartTime = time.Time{}
-	testApps.Last = 0
-	timeDef = getTimeDefinitionForAppInsts(&testApps)
+	testApps.Limit = 0
+	testApps.NumSamples = 0
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(&testApps.MetricsCommon, 0)
 	selectorFunction = getFuncForSelector("network", timeDef)
 	args = influxQueryArgs{
-		Selector:       getSelectorForMeasurement("network", selectorFunction),
-		Measurement:    getMeasurementString("network", APPINST),
-		QueryFilter:    getAppInstQueryFilter(&testApps, getCloudletsFromAppInsts(&testApps)),
-		TimeDefinition: timeDef,
-		Last:           testApps.Last,
+		Selector:    getSelectorForMeasurement("network", selectorFunction),
+		Measurement: getMeasurementString("network", APPINST),
+		QueryFilter: getAppInstQueryFilter(&testApps, getCloudletsFromAppInsts(&testApps)),
 	}
-	query = fillTimeAndGetCmd(&args, appInstGroupQueryTemplate, &testApps.StartTime, &testApps.EndTime)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, appInstGroupQueryTemplate, &testApps.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, appInstGroupQueryTemplate)
 	require.Equal(t, testAppsQueryDefTime, query)
 	// Multiple Apps, just one last data points
 	testApps.EndTime = time.Time{}
 	testApps.StartTime = time.Time{}
-	testApps.Last = 1
-	timeDef = getTimeDefinitionForAppInsts(&testApps)
+	testApps.Limit = 1
+	testApps.NumSamples = 0
+	err = validateMetricsCommon(&testSingleApp.MetricsCommon)
+	require.Nil(t, err)
+	timeDef = getTimeDefinition(&testApps.MetricsCommon, 0)
 	selectorFunction = getFuncForSelector("network", timeDef)
 	args = influxQueryArgs{
-		Selector:       getSelectorForMeasurement("network", selectorFunction),
-		Measurement:    getMeasurementString("network", APPINST),
-		QueryFilter:    getAppInstQueryFilter(&testApps, getCloudletsFromAppInsts(&testApps)),
-		TimeDefinition: timeDef,
-		Last:           testApps.Last,
+		Selector:    getSelectorForMeasurement("network", selectorFunction),
+		Measurement: getMeasurementString("network", APPINST),
+		QueryFilter: getAppInstQueryFilter(&testApps, getCloudletsFromAppInsts(&testApps)),
 	}
-	query = fillTimeAndGetCmd(&args, appInstGroupQueryTemplate, &testApps.StartTime, &testApps.EndTime)
+	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, appInstGroupQueryTemplate, &testApps.MetricsCommon, timeDef, 0)
+	query = getInfluxMetricsQueryCmd(&args, appInstGroupQueryTemplate)
 	require.Equal(t, testAppsQueryLastPoint, query)
-
 }
 
 func TestGetAppInstQueryFilter(t *testing.T) {
@@ -200,30 +206,51 @@ func TestGetSelectorForMeasurement(t *testing.T) {
 }
 
 func TestGetTimeDefinition(t *testing.T) {
-	// With nothing set in testApps we look back 12hrs, so time definition will be 12hr/100 ~7m12s
+	// With nothing set in testApps we get last 100 data points
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
-	testApps.Last = 0
-	require.Equal(t, "7m12s", getTimeDefinitionForAppInsts(&testApps))
-	require.Equal(t, MaxNumSamples, testApps.Last)
+	testApps.Limit = 0
+	err := validateMetricsCommon(&testApps.MetricsCommon)
+	require.Nil(t, err)
+	require.Equal(t, "", getTimeDefinition(&testApps.MetricsCommon, 0))
+	require.Equal(t, MaxNumSamples, testApps.Limit)
+	// With end time set to now we look back 12hrs, so time definition will be 12hr/100 ~7m12s
+	testApps.StartTime = time.Time{}
+	testApps.EndTime = time.Now()
+	testApps.Limit = 0
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.Nil(t, err)
+	require.Equal(t, "7m12s", getTimeDefinition(&testApps.MetricsCommon, 0))
+	require.Equal(t, MaxNumSamples, testApps.NumSamples)
 	// Reset time and set Last and nothing else
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
-	testApps.Last = 12
-	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
-	require.Equal(t, 12, testApps.Last)
+	testApps.NumSamples = 0
+	testApps.Limit = 12
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.Nil(t, err)
+	require.Empty(t, getTimeDefinition(&testApps.MetricsCommon, 0))
+	require.Equal(t, 12, testApps.Limit)
 	// invalid time range
 	testApps.StartTime = time.Now()
 	testApps.EndTime = time.Now().Add(-3 * time.Minute)
-	testApps.Last = 12
-	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
-	require.Equal(t, 12, testApps.Last)
-	testApps.Last = 0
-	require.Empty(t, getTimeDefinitionForAppInsts(&testApps))
-	require.Equal(t, MaxNumSamples, testApps.Last)
+	testApps.NumSamples = 12
+	testApps.Limit = 0
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.NotNil(t, err)
+	require.Empty(t, getTimeDefinition(&testApps.MetricsCommon, 0))
+	require.Equal(t, 12, testApps.NumSamples)
+	testApps.Limit = 0
+	testApps.NumSamples = 0
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.NotNil(t, err)
+	require.Empty(t, getTimeDefinition(&testApps.MetricsCommon, 0))
+	require.Equal(t, MaxNumSamples, testApps.NumSamples)
 	// Check default time window of 15 secs
 	testApps.StartTime = time.Now().Add(-2 * time.Minute)
 	testApps.EndTime = time.Now()
-	require.Equal(t, DefaultAppInstTimeWindow.String(), getTimeDefinitionForAppInsts(&testApps))
-	require.Equal(t, MaxNumSamples, testApps.Last)
+	err = validateMetricsCommon(&testApps.MetricsCommon)
+	require.Nil(t, err)
+	require.Equal(t, DefaultAppInstTimeWindow.String(), getTimeDefinition(&testApps.MetricsCommon, DefaultAppInstTimeWindow))
+	require.Equal(t, MaxNumSamples, testApps.NumSamples)
 }

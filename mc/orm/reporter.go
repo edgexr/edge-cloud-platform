@@ -832,9 +832,13 @@ func GetCloudletResourceUsageData(ctx context.Context, username string, report *
 		Cloudlet: edgeproto.CloudletKey{
 			Organization: report.Org,
 		},
-		Selector:  "resourceusage",
-		StartTime: report.StartTime,
-		EndTime:   report.EndTime,
+		Selector: "resourceusage",
+		MetricsCommon: ormapi.MetricsCommon{
+			TimeRange: edgeproto.TimeRange{
+				StartTime: report.StartTime,
+				EndTime:   report.EndTime,
+			},
+		},
 	}
 	rc.region = in.Region
 
@@ -943,9 +947,13 @@ func GetCloudletFlavorUsageData(ctx context.Context, username string, report *or
 		Cloudlet: edgeproto.CloudletKey{
 			Organization: report.Org,
 		},
-		Selector:  "flavorusage",
-		StartTime: report.StartTime,
-		EndTime:   report.EndTime,
+		Selector: "flavorusage",
+		MetricsCommon: ormapi.MetricsCommon{
+			TimeRange: edgeproto.TimeRange{
+				StartTime: report.StartTime,
+				EndTime:   report.EndTime,
+			},
+		},
 	}
 	rc.region = in.Region
 	cmd := CloudletUsageMetricsQuery(&in, nil)
@@ -1168,9 +1176,13 @@ func GetAppResourceUsageData(ctx context.Context, username string, report *ormap
 				},
 			},
 		},
-		Selector:  "cpu,mem,disk,network",
-		StartTime: report.StartTime,
-		EndTime:   report.EndTime,
+		Selector: "cpu,mem,disk,network",
+		MetricsCommon: ormapi.MetricsCommon{
+			TimeRange: edgeproto.TimeRange{
+				StartTime: report.StartTime,
+				EndTime:   report.EndTime,
+			},
+		},
 	}
 	rc.region = in.Region
 	claims := &UserClaims{Username: username}

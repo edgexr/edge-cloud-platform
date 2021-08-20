@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/log"
 )
 
 var AppCheckpointFields = []string{
@@ -133,6 +135,33 @@ func prevCheckpoint(t time.Time) time.Time {
 	}
 	dur, _ := time.ParseDuration(serverConfig.UsageCheckpointInterval)
 	return t.Truncate(dur)
+}
+
+// This function sets start and end time separate from
+func fillUsageTimeAndGetCmd(q *influxQueryArgs, tmpl *template.Template, start *time.Time, end *time.Time) string {
+	// Figure out the start/end time range for the query
+	if !start.IsZero() {
+		buf, err := start.MarshalText()
+		if err == nil {
+			q.StartTime = string(buf)
+		}
+	}
+	if !end.IsZero() {
+		buf, err := end.MarshalText()
+		if err == nil {
+			q.EndTime = string(buf)
+		}
+	}
+	if q.Measurement != "" {
+		q.Measurement = addQuotesToMeasurementNames(q.Measurement)
+	}
+	// now that we know all the details of the query - build it
+	buf := bytes.Buffer{}
+	if err := tmpl.Execute(&buf, q); err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to run template", "tmpl", tmpl, "args", q, "error", err)
+		return ""
+	}
+	return buf.String()
 }
 
 func GetClusterUsage(event *client.Response, checkpoint *client.Response, start, end time.Time, region string) (*ormapi.MetricData, error) {
@@ -524,7 +553,7 @@ func ClusterCheckpointsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []
 	// set endtime to start and back up starttime by a checkpoint interval to hit the most recent
 	// checkpoint that occurred before startTime
 	checkpointTime := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
 }
 
 func ClusterUsageEventsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []string) string {
@@ -544,7 +573,7 @@ func ClusterUsageEventsQuery(obj *ormapi.RegionClusterInstUsage, cloudletList []
 		arg.ClusterOrg = obj.ClusterInst.Organization
 	}
 	queryStart := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
 
 func AppInstCheckpointsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []string) string {
@@ -572,7 +601,7 @@ func AppInstCheckpointsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 	// set endtime to start and back up starttime by a checkpoint interval to hit the most recent
 	// checkpoint that occurred before startTime
 	checkpointTime := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &checkpointTime, &checkpointTime)
 }
 
 func AppInstUsageEventsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []string) string {
@@ -598,7 +627,7 @@ func AppInstUsageEventsQuery(obj *ormapi.RegionAppInstUsage, cloudletList []stri
 		arg.DeploymentType = cloudcommon.DeploymentTypeVM
 	}
 	queryStart := prevCheckpoint(obj.StartTime)
-	return fillTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
+	return fillUsageTimeAndGetCmd(&arg, usageInfluxDBTemplate, &queryStart, &obj.EndTime)
 }
 
 // Check if the response contains at least one value for the given measurement
