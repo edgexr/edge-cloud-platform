@@ -226,6 +226,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// LocationTileSideLengthKm: 29
 	// EdgeEventsMetricsContinuousQueriesCollectionIntervals: 30
 	// EdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval: 30.1
+	// EdgeEventsMetricsContinuousQueriesCollectionIntervalsRetention: 30.2
 	// InfluxDbDownsampledMetricsRetention: 31
 	// InfluxDbEdgeEventsMetricsRetention: 32
 	// AppinstClientCleanupInterval: 33

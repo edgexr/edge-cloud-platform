@@ -184,9 +184,6 @@ func init() {
 
 func getInfluxClientMetricsQueryCmd(q *influxClientMetricsQueryArgs, tmpl *template.Template) string {
 	buf := bytes.Buffer{}
-	if q.Measurement != "" {
-		q.Measurement = addQuotesToMeasurementNames(q.Measurement)
-	}
 	if err := tmpl.Execute(&buf, q); err != nil {
 		log.DebugLog(log.DebugLevelApi, "Failed to run template", "tmpl", tmpl, "args", q, "error", err)
 		return ""
@@ -223,7 +220,7 @@ func ClientApiUsageMetricsQuery(obj *ormapi.RegionClientApiUsageMetrics, cloudle
 	definition := getTimeDefinitionDuration(&obj.MetricsCommon, minTimeDef)
 	arg := influxClientMetricsQueryArgs{
 		Selector:     getClientMetricsSelector(obj.Selector, CLIENT_APIUSAGE, definition, ClientApiAggregationFunctions),
-		Measurement:  getMeasurementString(obj.Selector, CLIENT_APIUSAGE),
+		Measurement:  fmt.Sprintf("%q", getMeasurementString(obj.Selector, CLIENT_APIUSAGE)),
 		AppInstName:  obj.AppInst.AppKey.Name,
 		AppVersion:   obj.AppInst.AppKey.Version,
 		ApiCallerOrg: obj.AppInst.AppKey.Organization,
@@ -363,7 +360,7 @@ func getClientMetricsSelector(selector string, measurementType string, definitio
 			field = strings.ReplaceAll(field, `"`, ``)
 			function, ok := selectorFuncMap[field]
 			if ok {
-				function = fmt.Sprintf("%s AS \"%s\"", function, field)
+				function = fmt.Sprintf("%s AS %q", function, field)
 				fieldsWithFuncs = append(fieldsWithFuncs, function)
 			}
 		}
@@ -387,48 +384,45 @@ func getMeasurementAndDbAndMapFromClientUsageReq(settings *edgeproto.Settings, s
 		lookupMap = influxq.DeviceInfoAggregationFunctions
 	}
 
-	// Get downsampled measurement if time definition is greater than a cq interval (ie. "latency-metric-10s")
-	measurement = basemeasurement
-	if definition != 0 {
-		measurement = getClientMetricsMeasurementString(settings, basemeasurement, definition)
+	optCi := getOptimalCollectionInterval(settings, basemeasurement, definition)
+	if optCi == nil { // raw data
+		db = cloudcommon.EdgeEventsMetricsDbName
+		measurement = fmt.Sprintf("%q", basemeasurement)
+	} else { // downsampled data
+		db = cloudcommon.DownsampledMetricsDbName
+		measurement = influxq.CreateInfluxFullyQualifiedMeasurementName(db, basemeasurement, time.Duration(optCi.Interval), time.Duration(optCi.Retention))
 	}
 
-	// Get db from measurement (either EdgeEventsMetricsDb or DownsampledMetricsDb)
-	if measurement == basemeasurement {
-		db = cloudcommon.EdgeEventsMetricsDbName
-	} else {
-		db = cloudcommon.DownsampledMetricsDbName
-	}
 	return measurement, db, lookupMap
 }
 
 /*
- * Get the correct measurement string for already downsampled data for specified time definition
- * For example, if the time definition is 1.5 hr and we have continuous queries that aggregate hourly, daily, and weekly, this function will return the hourly measurement.
- * If the duration is 25 hours, this function will return the daily measurement
+ * Get the correct collection interval for already downsampled data for specified time definition
+ * The optimal interval will be the interval that is less than the time definition and closest to the time definition
+ * For example, if the time definition is 1.5 hr and we have continuous queries that aggregate hourly, daily, and weekly, this function will return the hourly collection interval.
+ * If the duration is 25 hours, this function will return the daily collection interval
  */
-func getClientMetricsMeasurementString(settings *edgeproto.Settings, baseMeasurement string, definition time.Duration) string {
+func getOptimalCollectionInterval(settings *edgeproto.Settings, baseMeasurement string, definition time.Duration) *edgeproto.CollectionInterval {
 	if settings == nil {
-		return baseMeasurement
+		return nil
 	}
 	// Find Continuous Query interval that is closest to definition but less than definition (ie. finer granularity)
-	var optimalInterval time.Duration = 0
 	var minDiff time.Duration = 0
-	for _, cqs := range settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals {
-		diff := definition - time.Duration(cqs.Interval)
+	var optCi *edgeproto.CollectionInterval
+	for _, cq := range settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals {
+		diff := definition - time.Duration(cq.Interval)
 		if diff >= 0 {
 			if diff < minDiff || minDiff == 0 {
 				minDiff = diff
-				optimalInterval = time.Duration(cqs.Interval)
+				optCi = cq
 			}
 		}
 	}
 
-	if optimalInterval == 0 {
+	if optCi == nil {
 		log.DebugLog(log.DebugLevelMetrics, "Unable find interval with finer granularity than time definition - using raw data", "definition", definition)
-		return baseMeasurement
 	}
-	return cloudcommon.CreateInfluxMeasurementName(baseMeasurement, optimalInterval)
+	return optCi
 }
 
 // TODO: HANDLE selector == "*"
