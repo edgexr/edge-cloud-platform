@@ -235,6 +235,7 @@ func TestController(t *testing.T) {
 	lis, err := net.Listen("tcp", ctrlAddr)
 	require.Nil(t, err)
 	ds := testutil.RegisterDummyServer(dc)
+	ds.CustomData.Init()
 	go func() {
 		dc.Serve(lis)
 	}()
@@ -769,6 +770,93 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		[]edgeproto.CloudletKey{org3Cloudlet.Key}, "Forbidden")
 	testRemoveUserRole(t, mcClient, uri, tokenOper, org3, "OperatorContributor", oper3.Name, Success)
 	badPermTestCloudlet(t, mcClient, uri, tokenOper3, ctrl.Region, org3)
+
+	{
+		// Tests checks for adding cloudlets to cloudletpool that
+		// already have developer stuff on them.
+		cloudletName := "somecloudlet"
+		cloudletKey := edgeproto.CloudletKey{
+			Name:         cloudletName,
+			Organization: org3,
+		}
+		ds.OrgsOnCloudlet = map[edgeproto.CloudletKey][]string{
+			cloudletKey: []string{org1},
+		}
+		// cannot create cloudlet pool with cloudlet that already has
+		// developer objects on it.
+		badpool := ormapi.RegionCloudletPool{
+			Region: ctrl.Region,
+			CloudletPool: edgeproto.CloudletPool{
+				Key: edgeproto.CloudletPoolKey{
+					Name:         "orgspool",
+					Organization: org3,
+				},
+				Cloudlets: []string{cloudletName},
+			},
+		}
+		_, status, err = mcClient.CreateCloudletPool(uri, tokenOper, &badpool)
+		require.NotNil(t, err)
+		require.Equal(t, "Cannot create CloudletPool with cloudlet somecloudlet with existing developer org1 ClusterInsts or AppInsts. To include them as part of the pool, first create an empty pool, invite the developer to the pool, then add the cloudlet to the pool.", err.Error())
+
+		// create empty pool
+		pool := ormapi.RegionCloudletPool{
+			Region: ctrl.Region,
+			CloudletPool: edgeproto.CloudletPool{
+				Key: edgeproto.CloudletPoolKey{
+					Name:         "orgspool",
+					Organization: org3,
+				},
+			},
+		}
+		_, status, err = mcClient.CreateCloudletPool(uri, tokenOper, &pool)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		// cannot add cloudlet with stuff on it
+		member := ormapi.RegionCloudletPoolMember{
+			Region: ctrl.Region,
+			CloudletPoolMember: edgeproto.CloudletPoolMember{
+				Key:          pool.CloudletPool.Key,
+				CloudletName: cloudletName,
+			},
+		}
+		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
+		require.NotNil(t, err)
+		require.Equal(t, "Cannot add cloudlet somecloudlet to CloudletPool with existing developer org1 ClusterInsts or AppInsts which are not authorized to deploy to the CloudletPool. Please invite the developer first, or remove the developer from the Cloudlet.", err.Error())
+
+		// add org1 to pool
+		op1 := ormapi.OrgCloudletPool{
+			Org:             org1,
+			Region:          ctrl.Region,
+			CloudletPool:    pool.CloudletPool.Key.Name,
+			CloudletPoolOrg: pool.CloudletPool.Key.Organization, // org3
+		}
+		status, err = mcClient.CreateCloudletPoolAccessInvitation(uri, tokenOper, &op1)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		op1accept := op1
+		op1accept.Decision = ormapi.CloudletPoolAccessDecisionAccept
+
+		status, err = mcClient.CreateCloudletPoolAccessResponse(uri, tokenDev, &op1accept)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		// now add should succeed because developer has granted access
+		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+
+		// clean up
+		status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev, &op1accept)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		status, err = mcClient.DeleteCloudletPoolAccessInvitation(uri, tokenOper, &op1)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		_, status, err = mcClient.DeleteCloudletPool(uri, tokenOper, &pool)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, status)
+		ds.OrgsOnCloudlet = map[edgeproto.CloudletKey][]string{}
+	}
 
 	// operator create cloudlet pool for org3
 	pool := ormapi.RegionCloudletPool{

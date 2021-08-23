@@ -63,8 +63,8 @@ func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		return nil, err
 	}
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudletPools, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+		if err := authzCreateCloudletPool(ctx, rc.region, rc.username, obj,
+			ResourceCloudletPools, ActionManage); err != nil {
 			return nil, err
 		}
 	}
@@ -179,7 +179,7 @@ func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 		return nil, err
 	}
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
+		if err := authzUpdateCloudletPool(ctx, rc.region, rc.username, obj,
 			ResourceCloudletPools, ActionManage); err != nil {
 			return nil, err
 		}
@@ -323,7 +323,7 @@ func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgep
 		return nil, err
 	}
 	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
+		if err := authzAddCloudletPoolMember(ctx, rc.region, rc.username, obj,
 			ResourceCloudletPools, ActionManage); err != nil {
 			return nil, err
 		}

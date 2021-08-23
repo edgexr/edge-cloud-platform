@@ -398,6 +398,23 @@ var ShowFlavorsForCloudletCmd = &ApiCommand{
 	ProtobufApi:          true,
 }
 
+var GetOrganizationsOnCloudletCmd = &ApiCommand{
+	Name:                 "GetOrganizationsOnCloudlet",
+	Use:                  "getorganizationson",
+	Short:                "Get organizations of ClusterInsts and AppInsts on cloudlet",
+	RequiredArgs:         "region " + strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs:         strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:            strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:          &CloudletKeySpecialArgs,
+	Comments:             addRegionComment(CloudletKeyComments),
+	ReqData:              &ormapi.RegionCloudletKey{},
+	ReplyData:            &edgeproto.Organization{},
+	Path:                 "/auth/ctrl/GetOrganizationsOnCloudlet",
+	StreamOut:            true,
+	StreamOutIncremental: true,
+	ProtobufApi:          true,
+}
+
 var RevokeAccessKeyCmd = &ApiCommand{
 	Name:         "RevokeAccessKey",
 	Use:          "revokeaccesskey",
@@ -440,6 +457,7 @@ var CloudletApiCmds = []*ApiCommand{
 	RemoveCloudletResMappingCmd,
 	FindFlavorMatchCmd,
 	ShowFlavorsForCloudletCmd,
+	GetOrganizationsOnCloudletCmd,
 	RevokeAccessKeyCmd,
 	GenerateAccessKeyCmd,
 }

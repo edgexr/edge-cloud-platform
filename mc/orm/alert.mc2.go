@@ -940,6 +940,16 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowFlavorsForCloudlet", ShowFlavorsForCloudlet)
+	// swagger:route POST /auth/ctrl/GetOrganizationsOnCloudlet CloudletKey GetOrganizationsOnCloudlet
+	// Get organizations of ClusterInsts and AppInsts on cloudlet.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/GetOrganizationsOnCloudlet", GetOrganizationsOnCloudlet)
 	// swagger:route POST /auth/ctrl/RevokeAccessKey CloudletKey RevokeAccessKey
 	// Revoke crm access key.
 	// Security:
