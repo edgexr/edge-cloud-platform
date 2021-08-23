@@ -339,6 +339,13 @@ type swaggerShowFlavorsForCloudlet struct {
 	Body RegionCloudletKey
 }
 
+// Request summary for GetOrganizationsOnCloudlet
+// swagger:parameters GetOrganizationsOnCloudlet
+type swaggerGetOrganizationsOnCloudlet struct {
+	// in: body
+	Body RegionCloudletKey
+}
+
 // Request summary for RevokeAccessKey
 // swagger:parameters RevokeAccessKey
 type swaggerRevokeAccessKey struct {

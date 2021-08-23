@@ -1419,6 +1419,87 @@ func ShowFlavorsForCloudletObj(ctx context.Context, rc *RegionContext, obj *edge
 	return arr, err
 }
 
+func GetOrganizationsOnCloudlet(c echo.Context) error {
+	ctx := GetContext(c)
+	rc := &RegionContext{}
+	claims, err := getClaims(c)
+	if err != nil {
+		return err
+	}
+	rc.username = claims.Username
+
+	in := ormapi.RegionCloudletKey{}
+	_, err = ReadConn(c, &in)
+	if err != nil {
+		return err
+	}
+	rc.region = in.Region
+	span := log.SpanFromContext(ctx)
+	span.SetTag("region", in.Region)
+	span.SetTag("org", in.CloudletKey.Organization)
+
+	err = GetOrganizationsOnCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.Organization) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetOrganizationsOnCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey, cb func(res *edgeproto.Organization) error) error {
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if !rc.skipAuthz {
+		if err := authorized(ctx, rc.username, obj.Organization,
+			ResourceCloudlets, ActionView); err != nil {
+			return err
+		}
+	}
+	if rc.conn == nil {
+		conn, err := connCache.GetRegionConn(ctx, rc.region)
+		if err != nil {
+			return err
+		}
+		rc.conn = conn
+		defer func() {
+			rc.conn = nil
+		}()
+	}
+	api := edgeproto.NewCloudletApiClient(rc.conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	stream, err := api.GetOrganizationsOnCloudlet(ctx, obj)
+	if err != nil {
+		return err
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return err
+		}
+		err = cb(res)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetOrganizationsOnCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) ([]edgeproto.Organization, error) {
+	arr := []edgeproto.Organization{}
+	err := GetOrganizationsOnCloudletStream(ctx, rc, obj, func(res *edgeproto.Organization) error {
+		arr = append(arr, *res)
+		return nil
+	})
+	return arr, err
+}
+
 func RevokeAccessKey(c echo.Context) error {
 	ctx := GetContext(c)
 	rc := &RegionContext{}

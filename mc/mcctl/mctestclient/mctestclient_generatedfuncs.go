@@ -1070,6 +1070,22 @@ func (s *Client) ShowFlavorsForCloudlet(uri string, token string, in *ormapi.Reg
 	return out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) GetOrganizationsOnCloudlet(uri string, token string, in *ormapi.RegionCloudletKey) ([]edgeproto.Organization, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out []edgeproto.Organization
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("GetOrganizationsOnCloudlet")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return out, rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) RevokeAccessKey(uri string, token string, in *ormapi.RegionCloudletKey) (*edgeproto.Result, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri
