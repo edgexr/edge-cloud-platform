@@ -316,7 +316,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-		proxycerts.NewDedicatedLB(ctx, &appInst.Key.ClusterInstKey.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+		proxycerts.SetupTLSCerts(ctx, &appInst.Key.ClusterInstKey.CloudletKey, orchVals.lbName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 		// clusterInst is empty but that is ok here
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
@@ -571,7 +571,6 @@ func (v *VMPlatform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete client from Chef Server", "clientName", clientName, "err", err)
 		}
-		proxycerts.RemoveDedicatedLB(ctx, lbName)
 		DeleteServerIpFromCache(ctx, lbName)
 
 		imgName, err := cloudcommon.GetFileName(app.ImagePath)
