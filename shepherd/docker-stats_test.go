@@ -67,9 +67,9 @@ var testNetData = `  ens3: 448842077 3084030    0    0    0     0          0    
 var testDiskInvalidData = "0B (virtual invalid)"
 var testDiskData = "0B (virtual 55.5MB)"
 
-var testMultiContainerDiskData = `{"container":"DockerApp1","id":"1","disk":"0B (virtual 1KB)"}
-{"container":"DockerApp2Container1","id":"2","disk":"0B (virtual 2.0MB)"}
-{"container":"DockerApp2Container2","id":"3","disk":"0B (virtual 3GB)"}`
+var testMultiContainerDiskData = `{"container":"DockerApp1","id":"1","disk":"0B (virtual 1KB)","labels":"cluster=testcluster,mexAppName=dockerapp1,mexAppVersion=10"}
+{"container":"DockerApp2Container1","id":"2","disk":"0B (virtual 2.0MB)","labels":"cluster=testcluster,mexAppName=dockerapp2,mexAppVersion=10"}
+{"container":"DockerApp2Container2","id":"3","disk":"0B (virtual 3GB)","labels":"cluster=testcluster,mexAppName=dockerapp2,mexAppVersion=10"}`
 
 // Example output of resource-tracker
 var testDockerClusterData = shepherd_common.ClusterMetrics{
@@ -163,6 +163,7 @@ func TestDockerStats(t *testing.T) {
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.Pod = k8smgmt.NormalizeName("DockerApp1")
 	testAppKey.App = k8smgmt.NormalizeName("DockerApp1")
+	testAppKey.Version = k8smgmt.NormalizeName("10")
 	stat, found := appsMetrics[testAppKey]
 	// Check PodStats
 	assert.True(t, found, "Container DockerApp1 is not found")
