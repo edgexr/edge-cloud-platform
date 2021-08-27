@@ -789,19 +789,22 @@ func (v *VMPlatform) GetCloudletProps(ctx context.Context) (*edgeproto.CloudletP
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletProps")
 
 	props := edgeproto.CloudletProps{}
-	props.Properties = VMProviderProps
-
-	for k, v := range infracommon.InfraCommonProps {
-		props.Properties[k] = v
+	props.Properties = make(map[string]*edgeproto.PropertyInfo)
+	for k, v := range VMProviderProps {
+		val := *v
+		props.Properties[k] = &val
 	}
-
+	for k, v := range infracommon.InfraCommonProps {
+		val := *v
+		props.Properties[k] = &val
+	}
 	providerProps, err := v.VMProvider.GetProviderSpecificProps(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range providerProps {
-		props.Properties[k] = v
+		val := *v
+		props.Properties[k] = &val
 	}
-
 	return &props, nil
 }
