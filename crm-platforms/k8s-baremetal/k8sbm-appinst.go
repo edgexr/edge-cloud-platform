@@ -33,7 +33,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		if err != nil {
 			return err
 		}
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,6 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		}
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
-				ClusterIp:    lbinfo.InternalIpAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
@@ -89,12 +88,16 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				appWaitChan <- ""
 			}
 		}()
-
+		// get the lb IP provided by metalLb
+		err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)
+		if err != nil {
+			return err
+		}
 		if err == nil {
 			getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
 				action := infracommon.DnsSvcAction{}
-				action.PatchKube = true
-				action.PatchIP = lbinfo.InternalIpAddr
+				action.PatchKube = false
+				action.PatchIP = ""
 				action.ExternalIP = lbinfo.ExternalIpAddr
 				return &action, nil
 			}
@@ -103,7 +106,6 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				err = k.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
 			} else {
 				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules add DNS")
-
 				wlParams := infracommon.WhiteListParams{
 					ServerName:  rootLBName,
 					SecGrpName:  rootLBName,
@@ -113,7 +115,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 					DestIP:      lbinfo.ExternalIpAddr,
 				}
 				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true, ProxyNamePrefix: k8smgmt.GetKconfName(clusterInst) + "-"}
-				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, lbinfo.ExternalIpAddr, lbinfo.InternalIpAddr, ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
+				err = k.commonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, k.WhitelistSecurityRules, &wlParams, lbinfo.ExternalIpAddr, "", ops, proxy.WithDockerNetwork("host"), proxy.WithDockerUser(DockerUser), proxy.WithMetricIP(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
 			}
 		}
 
@@ -146,14 +148,13 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		if err != nil {
 			return err
 		}
-		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
 		if err != nil {
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 		// Add crm local replace variables
 		deploymentVars := crmutil.DeploymentReplaceVars{
 			Deployment: crmutil.CrmReplaceVars{
-				ClusterIp:    lbinfo.InternalIpAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
@@ -201,7 +202,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 
-	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
 	if err != nil {
 		return fmt.Errorf("get kube names failed: %s", err)
 	}
@@ -219,7 +220,7 @@ func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterIns
 	if err != nil {
 		return nil, err
 	}
-	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst, k8smgmt.WithVirtualClusterNamespace(k.GetNamespaceNameForCluster(ctx, clusterInst)))
 	if err != nil {
 		return nil, err
 	}

@@ -75,7 +75,7 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 			        ... get cert here
 			}*/
 			containerName := ops.ProxyNamePrefix + dockermgmt.GetContainerName(&app.Key)
-			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, listenIP, backendIP, appInst.MappedPorts, app.SkipHcPorts, proxyops...)
+			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, listenIP, backendIP, appInst, app.SkipHcPorts, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {

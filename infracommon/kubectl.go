@@ -85,7 +85,13 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	if auth == nil {
 		return nil
 	}
-	namespaces := append(names.DeveloperDefinedNamespaces, "default")
+	namespaces := append(names.DeveloperDefinedNamespaces, k8smgmt.DefaultNamespace)
+	if names.MultitenantNamespace != "" {
+		namespaces = append(namespaces, names.MultitenantNamespace)
+	}
+	if names.VirtualClusterNamespace != "" {
+		namespaces = append(namespaces, names.VirtualClusterNamespace)
+	}
 	for _, namespace := range namespaces {
 		// Note that the registry secret name must be per-app, since a developer
 		// may put multiple apps in the same ClusterInst and they may come

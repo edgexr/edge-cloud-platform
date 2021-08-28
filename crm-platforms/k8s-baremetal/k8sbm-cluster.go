@@ -109,7 +109,6 @@ func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterIns
 	}
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		externalDev := k.GetExternalEthernetInterface()
-		internalDev := k.GetInternalEthernetInterface()
 		rootLBName := k.GetLbNameForCluster(ctx, clusterInst)
 		lbinfo, err := k.GetLbInfo(ctx, client, rootLBName)
 		if err != nil {
@@ -121,10 +120,6 @@ func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterIns
 			}
 		} else {
 			err := k.RemoveIp(ctx, client, lbinfo.ExternalIpAddr, externalDev)
-			if err != nil {
-				return err
-			}
-			err = k.RemoveIp(ctx, client, lbinfo.InternalIpAddr, internalDev)
 			if err != nil {
 				return err
 			}

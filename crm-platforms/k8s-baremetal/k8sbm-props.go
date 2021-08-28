@@ -22,19 +22,9 @@ var k8sbmProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Range of External IP addresses for K8S LBs, Format: StartCIDR-EndCIDR,StartCIDR2-EndCIDR2,...",
 		Mandatory:   true,
 	},
-	"K8S_INTERNAL_IP_RANGES": {
-		Name:        "Internal IP Ranges(s) for K8S Control Plane",
-		Description: "Range of Internal IP addresses for BareMetal Control plane, Format: StartCIDR-EndCIDR,StartCIDR2-EndCIDR2,...",
-		Mandatory:   true,
-	},
 	"K8S_EXTERNAL_ETH_INTERFACE": {
 		Name:        "External Ethernet Interface",
 		Description: "Ethernet interface used for K8S LB, e.g. eno2",
-		Mandatory:   true,
-	},
-	"K8S_INTERNAL_ETH_INTERFACE": {
-		Name:        "Internal Ethernet Interface",
-		Description: "Ethernet interface used for K8S internal control plane",
 		Mandatory:   true,
 	},
 }
@@ -49,18 +39,8 @@ func (k *K8sBareMetalPlatform) GetExternalIpRanges() string {
 	return value
 }
 
-func (k *K8sBareMetalPlatform) GetInternalIpRanges() string {
-	value, _ := k.commonPf.Properties.GetValue("K8S_INTERNAL_IP_RANGES")
-	return value
-}
-
 func (k *K8sBareMetalPlatform) GetExternalEthernetInterface() string {
 	value, _ := k.commonPf.Properties.GetValue("K8S_EXTERNAL_ETH_INTERFACE")
-	return value
-}
-
-func (k *K8sBareMetalPlatform) GetInternalEthernetInterface() string {
-	value, _ := k.commonPf.Properties.GetValue("K8S_INTERNAL_ETH_INTERFACE")
 	return value
 }
 

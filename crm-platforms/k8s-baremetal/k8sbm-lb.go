@@ -19,13 +19,12 @@ var LbConfigDir = "lbconfig"
 type LbInfo struct {
 	Name            string
 	ExternalIpAddr  string
-	InternalIpAddr  string
 	LbListenDevName string
 }
 
 func (k *K8sBareMetalPlatform) GetSharedLBName(ctx context.Context, key *edgeproto.CloudletKey) string {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetSharedLBName", "key", key)
-	name := cloudcommon.GetRootLBFQDNOld(key, k.commonPf.PlatformConfig.AppDNSRoot)
+	name := cloudcommon.GetRootLBFQDN(key, k.commonPf.PlatformConfig.AppDNSRoot)
 	return name
 }
 
@@ -89,14 +88,13 @@ func (k *K8sBareMetalPlatform) SetupLb(ctx context.Context, client ssh.Client, l
 			return fmt.Errorf("Unable to create LB Dir: %s - %v", LbConfigDir, err)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "New LB, assign free IP")
-		dev, externalIp, internalIp, err := k.AssignFreeLbIp(ctx, client)
+		dev, externalIp, err := k.AssignFreeLbIp(ctx, client)
 		if err != nil {
 			return err
 		}
 		lbInfo := LbInfo{
 			Name:            lbname,
 			ExternalIpAddr:  externalIp,
-			InternalIpAddr:  internalIp,
 			LbListenDevName: dev,
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "creating lbinfo file", "lbdir", lfinfoFile)
