@@ -464,7 +464,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		timeout -= elapsed
 		updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Initialize")
 		k8sTime := time.Now()
-		err := v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
+		masterIP, err := v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
 		if err != nil {
 			return err
 		}
@@ -473,6 +473,15 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 
 		if err := infracommon.CreateClusterConfigMap(ctx, client, clusterInst); err != nil {
 			return err
+		}
+		if v.VMProperties.GetUsesMetalLb() {
+			lbIpRange, err := v.VMProperties.GetMetalLBIp3rdOctetRangeFromMasterIp(ctx, masterIP)
+			if err != nil {
+				return err
+			}
+			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
+				return err
+			}
 		}
 		// setup GPU operator helm repo
 		if clusterInst.OptRes == "gpu" && v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
@@ -525,7 +534,7 @@ func (v *VMPlatform) GetClusterAccessIP(ctx context.Context, clusterInst *edgepr
 	return mip.ExternalAddr, nil
 }
 
-func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBName string, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (string, error) {
 	start := time.Now()
 	masterName := ""
 	masterIP := ""
@@ -550,14 +559,14 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 			}
 			currReadyCount = readyCount
 			if err != nil {
-				return err
+				return masterIP, err
 			}
 			if ready {
 				log.SpanLog(ctx, log.DebugLevelInfra, "kubernetes cluster ready")
-				return nil
+				return masterIP, nil
 			}
 			if time.Since(start) > timeout {
-				return fmt.Errorf("cluster not ready (yet)")
+				return masterIP, fmt.Errorf("cluster not ready (yet)")
 			}
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "waiting for kubernetes cluster to be ready...")
@@ -567,7 +576,7 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 
 //IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
 func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName, masterIP string, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "checking if cluster is ready")
+	log.SpanLog(ctx, log.DebugLevelInfra, "checking if cluster is ready", "masterIP", masterIP)
 
 	// some commands are run on the rootlb and some on the master directly, so we use separate clients
 	rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)

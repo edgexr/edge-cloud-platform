@@ -1597,6 +1597,9 @@ func addControllerApis(method string, group *echo.Group) {
 	// UpdatedAtSeconds: 36.1
 	// UpdatedAtNanos: 36.2
 	// RealClusterName: 37
+	// InternalPortToLbIp: 38
+	// InternalPortToLbIpKey: 38.1
+	// InternalPortToLbIpValue: 38.2
 	// ```
 	// Security:
 	//   Bearer:

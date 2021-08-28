@@ -24,7 +24,6 @@ type K8sBareMetalPlatform struct {
 	sharedLBName       string
 	cloudletKubeConfig string
 	externalIps        []string
-	internalIps        []string
 }
 
 func (k *K8sBareMetalPlatform) GetCloudletKubeConfig(cloudletKey *edgeproto.CloudletKey) string {
@@ -54,15 +53,6 @@ func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platfor
 		return err
 	}
 	k.externalIps = externalIps
-	internalIps, err := infracommon.ParseIpRanges(k.GetInternalIpRanges())
-	if err != nil {
-		return err
-	}
-	if len(externalIps) > len(internalIps) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Not enough internal IPs", "numexternal", len(externalIps), "numinternal", len(internalIps))
-		return fmt.Errorf("Number of internal IPs defined in K8S_INTERNAL_IP_RANGES must be at least as many as K8S_EXTERNAL_IP_RANGES")
-	}
-	k.internalIps = internalIps
 	k.sharedLBName = k.GetSharedLBName(ctx, platformConfig.CloudletKey)
 	k.cloudletKubeConfig = k.GetCloudletKubeConfig(platformConfig.CloudletKey)
 
