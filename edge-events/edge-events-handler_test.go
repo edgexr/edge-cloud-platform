@@ -146,68 +146,84 @@ func TestEdgeEventsHandlerPlugin(t *testing.T) {
 func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
-	e.EdgeEventsCookieExpiration = 00 * time.Minute
+	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
+	e.EdgeEventsCookieExpiration = 10 * time.Minute
+	// Add appinsts
+	e.SendAvailableAppInst(ctx, nil, appinst0, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst1, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst2, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst3, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst4, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst5, nil, "")
 	// Add clients
-	e.AddClientKey(ctx, appinst0, client0, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst1, client1, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst2, client2, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst3, client3, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst4, client4, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst5, client5, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst0, client0, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst1, client1, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst2, client2, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst3, client3, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst4, client4, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst5, client5, emptyLoc, "", nil)
 
-	e.AddClientKey(ctx, appinst0, client1, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst1, client2, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst2, client3, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst3, client4, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst4, client5, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst5, client0, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst0, client1, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst1, client2, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst2, client3, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst3, client4, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst4, client5, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst5, client0, emptyLoc, "", nil)
 
-	e.AddClientKey(ctx, appinst0, client2, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst1, client3, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst2, client4, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst3, client5, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst4, client0, emptyLoc, "", nil)
-	e.AddClientKey(ctx, appinst5, client1, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst0, client2, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst1, client3, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst2, client4, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst3, client5, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst4, client0, emptyLoc, "", nil)
+	e.AddClient(ctx, appinst5, client1, emptyLoc, "", nil)
 
 	// Check that all Cloudlets, AppInsts, and Clients were added to maps
-	require.Equal(t, 3, len(e.CloudletsMap))
-	for _, appinsts := range e.CloudletsMap {
-		require.Equal(t, 2, len(appinsts.AppInstsMap))
-		for _, clients := range appinsts.AppInstsMap {
-			require.Equal(t, 3, len(clients.ClientsMap))
+	require.Equal(t, 3, len(e.Cloudlets))
+	for _, cloudletinfo := range e.Cloudlets {
+		require.Equal(t, 2, len(cloudletinfo.AppInsts))
+		for _, appinstinfo := range cloudletinfo.AppInsts {
+			require.Equal(t, 3, len(appinstinfo.Clients))
 		}
 	}
 
 	// Remove clients
-	e.RemoveClientKey(ctx, appinst0, client0)
-	e.RemoveClientKey(ctx, appinst1, client1)
-	e.RemoveClientKey(ctx, appinst2, client2)
-	e.RemoveClientKey(ctx, appinst3, client3)
-	e.RemoveClientKey(ctx, appinst4, client4)
-	e.RemoveClientKey(ctx, appinst5, client5)
+	e.RemoveClient(ctx, appinst0, client0)
+	e.RemoveClient(ctx, appinst1, client1)
+	e.RemoveClient(ctx, appinst2, client2)
+	e.RemoveClient(ctx, appinst3, client3)
+	e.RemoveClient(ctx, appinst4, client4)
+	e.RemoveClient(ctx, appinst5, client5)
 
-	e.RemoveClientKey(ctx, appinst0, client1)
-	e.RemoveClientKey(ctx, appinst1, client2)
-	e.RemoveClientKey(ctx, appinst2, client3)
-	e.RemoveClientKey(ctx, appinst3, client4)
-	e.RemoveClientKey(ctx, appinst4, client5)
-	e.RemoveClientKey(ctx, appinst5, client0)
+	e.RemoveClient(ctx, appinst0, client1)
+	e.RemoveClient(ctx, appinst1, client2)
+	e.RemoveClient(ctx, appinst2, client3)
+	e.RemoveClient(ctx, appinst3, client4)
+	e.RemoveClient(ctx, appinst4, client5)
+	e.RemoveClient(ctx, appinst5, client0)
 
-	e.RemoveClientKey(ctx, appinst0, client2)
-	e.RemoveClientKey(ctx, appinst1, client3)
-	e.RemoveClientKey(ctx, appinst2, client4)
-	e.RemoveClientKey(ctx, appinst3, client5)
-	e.RemoveClientKey(ctx, appinst4, client0)
-	e.RemoveClientKey(ctx, appinst5, client1)
+	e.RemoveClient(ctx, appinst0, client2)
+	e.RemoveClient(ctx, appinst1, client3)
+	e.RemoveClient(ctx, appinst2, client4)
+	e.RemoveClient(ctx, appinst3, client5)
+	e.RemoveClient(ctx, appinst4, client0)
+	e.RemoveClient(ctx, appinst5, client1)
 
 	// All Cloudlets, AppInsts, and Clients should have been removed
-	require.Equal(t, 0, len(e.CloudletsMap))
+	require.Equal(t, 0, len(e.Cloudlets))
 }
 
 func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
+	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
 	e.EdgeEventsCookieExpiration = 10 * time.Minute
+	// Add appinsts
+	e.SendAvailableAppInst(ctx, nil, appinst0, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst1, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst2, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst3, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst4, nil, "")
+	e.SendAvailableAppInst(ctx, nil, appinst5, nil, "")
 
 	numClients := len(clients)
 	numAppInstsPerClient := 3
@@ -219,10 +235,10 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[idx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
+			e.AddClient(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.RemoveClientKey(ctx, appinst, client)
+			e.RemoveClient(ctx, appinst, client)
 			done <- fmt.Sprintf("Client %d on Appinst %d", idx, idx)
 		}(c, i)
 		go func(client dmecommon.CookieKey, idx int) {
@@ -231,10 +247,10 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[appinstidx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
+			e.AddClient(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.RemoveClientKey(ctx, appinst, client)
+			e.RemoveClient(ctx, appinst, client)
 			done <- fmt.Sprintf("Client %d on Appinst %d", idx, appinstidx)
 		}(c, i)
 		go func(client dmecommon.CookieKey, idx int) {
@@ -243,10 +259,10 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			appinst := appinsts[appinstidx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.AddClientKey(ctx, appinst, client, emptyLoc, "", nil)
+			e.AddClient(ctx, appinst, client, emptyLoc, "", nil)
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
-			e.RemoveClientKey(ctx, appinst, client)
+			e.RemoveClient(ctx, appinst, client)
 			done <- fmt.Sprintf("Client %d on Appinst %d", idx, appinstidx)
 		}(c, i)
 	}
@@ -259,5 +275,5 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 	}
 
 	// All Cloudlets, AppInsts, and Clients should have been removed
-	require.Equal(t, 0, len(e.CloudletsMap))
+	require.Equal(t, 0, len(e.Cloudlets))
 }
