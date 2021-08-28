@@ -6,6 +6,7 @@ import (
 
 	edgeevents "github.com/mobiledgex/edge-cloud-infra/edge-events"
 	dmecommon "github.com/mobiledgex/edge-cloud/d-match-engine/dme-common"
+	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -13,6 +14,7 @@ func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.D
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetEdgeEventHandler")
 	edgeEventsHandlerPlugin := new(edgeevents.EdgeEventsHandlerPlugin)
 	edgeEventsHandlerPlugin.EdgeEventsCookieExpiration = edgeEventsCookieExpiration
+	edgeEventsHandlerPlugin.Cloudlets = make(map[edgeproto.CloudletKey]*edgeevents.CloudletInfo) // Initialize Cloudlets hashmap
 	return edgeEventsHandlerPlugin, nil
 }
 
