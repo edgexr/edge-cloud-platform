@@ -208,6 +208,14 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	e.RemoveClient(ctx, appinst4, client0)
 	e.RemoveClient(ctx, appinst5, client1)
 
+	// Remove AppInsts
+	e.RemoveAppInst(ctx, appinst0)
+	e.RemoveAppInst(ctx, appinst1)
+	e.RemoveAppInst(ctx, appinst2)
+	e.RemoveAppInst(ctx, appinst3)
+	e.RemoveAppInst(ctx, appinst4)
+	e.RemoveAppInst(ctx, appinst5)
+
 	// All Cloudlets, AppInsts, and Clients should have been removed
 	require.Equal(t, 0, len(e.Cloudlets))
 }
@@ -273,6 +281,14 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			fmt.Printf("%s completed add remove cycle\n", client)
 		}
 	}
+
+	// Remove AppInsts
+	e.RemoveAppInst(ctx, appinst0)
+	e.RemoveAppInst(ctx, appinst1)
+	e.RemoveAppInst(ctx, appinst2)
+	e.RemoveAppInst(ctx, appinst3)
+	e.RemoveAppInst(ctx, appinst4)
+	e.RemoveAppInst(ctx, appinst5)
 
 	// All Cloudlets, AppInsts, and Clients should have been removed
 	require.Equal(t, 0, len(e.Cloudlets))
