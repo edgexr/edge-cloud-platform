@@ -206,11 +206,20 @@ func TestGetSelectorForMeasurement(t *testing.T) {
 }
 
 func TestGetTimeDefinition(t *testing.T) {
+	// Invalid start end age
+	testApps.StartTime = time.Time{}
+	testApps.EndTime = time.Time{}
+	testApps.StartAge = edgeproto.Duration(time.Second)
+	testApps.EndAge = edgeproto.Duration(2 * time.Second)
+	testApps.Limit = 0
+	err := validateMetricsCommon(&testApps.MetricsCommon)
+	require.NotNil(t, err)
+	require.Equal(t, "start age must be before (older than) end age", err.Error())
 	// With nothing set in testApps we get last 100 data points
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
 	testApps.Limit = 0
-	err := validateMetricsCommon(&testApps.MetricsCommon)
+	err = validateMetricsCommon(&testApps.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, "", getTimeDefinition(&testApps.MetricsCommon, 0))
 	require.Equal(t, MaxNumSamples, testApps.Limit)
