@@ -61,8 +61,10 @@ func validateMetricsCommon(obj *ormapi.MetricsCommon) error {
 		}
 	}
 
-	// If the limit is set, and no start/end time, don't add it
-	if obj.Limit != 0 && obj.StartTime.IsZero() && obj.EndTime.IsZero() {
+	// If the limit is set, and no start/end time/age, don't add it
+	if obj.Limit != 0 &&
+		obj.StartTime.IsZero() && obj.EndTime.IsZero() &&
+		obj.StartAge == 0 && obj.EndAge == 0 {
 		return nil
 	}
 	// resolve and fill in time fields
