@@ -48,6 +48,7 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetPlatformResourceInfo")
 
 	var resources = vmlayer.PlatformResources{}
+	resources.CollectTime, _ = prototypes.TimestampProto(time.Now())
 	resinfo, err := v.GetCloudletInfraResourcesInfo(ctx)
 	if err != nil {
 		return nil, err

@@ -198,6 +198,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 	if err != nil {
 		return cloudletMetric, err
 	}
+	log.SpanLog(ctx, log.DebugLevelMetrics, "Got PlatformStats", "platformResources", platformResources, "err", err)
 	cloudletMetric = shepherd_common.CloudletMetrics(*platformResources)
 	return cloudletMetric, nil
 }
