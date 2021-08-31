@@ -796,7 +796,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		}
 		_, status, err = mcClient.CreateCloudletPool(uri, tokenOper, &badpool)
 		require.NotNil(t, err)
-		require.Equal(t, "Cannot create CloudletPool with cloudlet somecloudlet with existing developer org1 ClusterInsts or AppInsts. To include them as part of the pool, first create an empty pool, invite the developer to the pool, then add the cloudlet to the pool.", err.Error())
+		require.Equal(t, "Cannot add cloudlet somecloudlet to CloudletPool because it has AppInsts/ClusterInsts from developer org1, which are not authorized to deploy to the CloudletPool. To include them as part of the pool, first create an empty pool, invite the developer to the pool, then add the cloudlet to the pool.", err.Error())
 
 		// create empty pool
 		pool := ormapi.RegionCloudletPool{
@@ -821,7 +821,7 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		}
 		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
 		require.NotNil(t, err)
-		require.Equal(t, "Cannot add cloudlet somecloudlet to CloudletPool with existing developer org1 ClusterInsts or AppInsts which are not authorized to deploy to the CloudletPool. Please invite the developer first, or remove the developer from the Cloudlet.", err.Error())
+		require.Equal(t, "Cannot add cloudlet somecloudlet to CloudletPool because it has AppInsts/ClusterInsts from developer org1, which are not authorized to deploy to the CloudletPool. Please invite the developer first, or remove the developer from the Cloudlet.", err.Error())
 
 		// add org1 to pool
 		op1 := ormapi.OrgCloudletPool{
@@ -844,6 +844,12 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, status)
+
+		// negative test - add without cloudlet specified
+		member.CloudletPoolMember.CloudletName = ""
+		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
+		require.NotNil(t, err)
+		require.Equal(t, "Invalid Cloudlet name", err.Error())
 
 		// clean up
 		status, err = mcClient.DeleteCloudletPoolAccessResponse(uri, tokenDev, &op1accept)

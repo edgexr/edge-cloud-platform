@@ -92,8 +92,8 @@ var AddCloudletPoolMemberCmd = &ApiCommand{
 	Name:         "AddCloudletPoolMember",
 	Use:          "addmember",
 	Short:        "Add a Cloudlet to a CloudletPool",
-	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(AddCloudletPoolMemberRequiredArgs, " "),
+	OptionalArgs: strings.Join(AddCloudletPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolMemberComments),
@@ -107,8 +107,8 @@ var RemoveCloudletPoolMemberCmd = &ApiCommand{
 	Name:         "RemoveCloudletPoolMember",
 	Use:          "removemember",
 	Short:        "Remove a Cloudlet from a CloudletPool",
-	RequiredArgs: "region " + strings.Join(CloudletPoolMemberRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletPoolMemberOptionalArgs, " "),
+	RequiredArgs: "region " + strings.Join(RemoveCloudletPoolMemberRequiredArgs, " "),
+	OptionalArgs: strings.Join(RemoveCloudletPoolMemberOptionalArgs, " "),
 	AliasArgs:    strings.Join(CloudletPoolMemberAliasArgs, " "),
 	SpecialArgs:  &CloudletPoolMemberSpecialArgs,
 	Comments:     addRegionComment(CloudletPoolMemberComments),
@@ -132,6 +132,18 @@ func init() {
 	AllApis.AddGroup(CloudletPoolGroup, "Manage CloudletPools", CloudletPoolApiCmds)
 }
 
+var AddCloudletPoolMemberRequiredArgs = []string{
+	"org",
+	"pool",
+	"cloudlet",
+}
+var AddCloudletPoolMemberOptionalArgs = []string{}
+var RemoveCloudletPoolMemberRequiredArgs = []string{
+	"org",
+	"pool",
+	"cloudlet",
+}
+var RemoveCloudletPoolMemberOptionalArgs = []string{}
 var CloudletPoolRequiredArgs = []string{
 	"org",
 	"name",
@@ -174,6 +186,6 @@ var CloudletPoolMemberAliasArgs = []string{
 var CloudletPoolMemberComments = map[string]string{
 	"org":      "Name of the organization this pool belongs to",
 	"pool":     "CloudletPool Name",
-	"cloudlet": "Cloudlet key",
+	"cloudlet": "Cloudlet name",
 }
 var CloudletPoolMemberSpecialArgs = map[string]string{}
