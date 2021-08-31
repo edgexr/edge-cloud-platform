@@ -3,11 +3,13 @@ package orm
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
+	"github.com/mobiledgex/edge-cloud/util"
 )
 
 func authzDeleteCloudletPool(ctx context.Context, region, username string, obj *edgeproto.CloudletPool, resource, action string) error {
@@ -40,44 +42,33 @@ func authzCreateCloudletPool(ctx context.Context, region, username string, obj *
 	// OrgCloudletPool memberships cannot exist before the CloudletPool
 	// exists, so any developers on the cloudlets would not be part of
 	// the pool.
-	rc := RegionContext{}
-	rc.username = username
-	rc.region = region
-	rc.skipAuthz = true
-	for _, cloudletName := range obj.Cloudlets {
-		key := edgeproto.CloudletKey{
-			Name:         cloudletName,
-			Organization: obj.Key.Organization,
-		}
-		err := GetOrganizationsOnCloudletStream(ctx, &rc, &key, func(org *edgeproto.Organization) error {
-			if org.Name == cloudcommon.OrganizationMobiledgeX {
-				return nil
-			}
-			return fmt.Errorf("Cannot create CloudletPool with cloudlet %s with existing developer %s ClusterInsts or AppInsts. To include them as part of the pool, first create an empty pool, invite the developer to the pool, then add the cloudlet to the pool.", key.Name, org.Name)
-		})
-		if err != nil {
-			return err
-		}
+	allowedOrgs := make(map[string]struct{})
+	err := authzCloudletPoolMembers(ctx, region, username, obj, allowedOrgs)
+	if err != nil {
+		return fmt.Errorf("%s. To include them as part of the pool, first create an empty pool, invite the developer to the pool, then add the cloudlet to the pool.", err)
 	}
 	return nil
 }
 
-func authzUpdateCloudletPool(ctx context.Context, region, username string, pool *edgeproto.CloudletPool, resource, action string) error {
-	return authzCloudletPoolMembers(ctx, region, username, pool, resource, action)
-}
-
 func authzAddCloudletPoolMember(ctx context.Context, region, username string, obj *edgeproto.CloudletPoolMember, resource, action string) error {
+	if !util.ValidName(obj.CloudletName) {
+		return fmt.Errorf("Invalid Cloudlet name")
+	}
 	pool := &edgeproto.CloudletPool{}
 	pool.Key = obj.Key
 	pool.Cloudlets = []string{obj.CloudletName}
-	return authzCloudletPoolMembers(ctx, region, username, pool, resource, action)
+	return authzUpdateCloudletPool(ctx, region, username, pool, resource, action)
 }
 
-func authzCloudletPoolMembers(ctx context.Context, region, username string, pool *edgeproto.CloudletPool, resource, action string) error {
+func authzUpdateCloudletPool(ctx context.Context, region, username string, pool *edgeproto.CloudletPool, resource, action string) error {
+	if err := pool.Key.ValidateKey(); err != nil {
+		return err
+	}
 	if err := authorized(ctx, username, pool.Key.Organization, resource, action); err != nil {
 		return err
 	}
-	// find developers that are part of pool.
+
+	// find developers that are part of the existing pool.
 	filter := make(map[string]interface{})
 	filter["region"] = region
 	filter["cloudlet_pool"] = pool.Key.Name
@@ -86,10 +77,19 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 	if err != nil {
 		return err
 	}
-	orgPoolsMap := make(map[string]struct{})
+	allowedOrgs := make(map[string]struct{})
 	for _, orgPool := range orgPools {
-		orgPoolsMap[orgPool.Org] = struct{}{}
+		allowedOrgs[orgPool.Org] = struct{}{}
 	}
+
+	err = authzCloudletPoolMembers(ctx, region, username, pool, allowedOrgs)
+	if err != nil {
+		return fmt.Errorf("%s. Please invite the developer first, or remove the developer from the Cloudlet.", err)
+	}
+	return nil
+}
+
+func authzCloudletPoolMembers(ctx context.Context, region, username string, pool *edgeproto.CloudletPool, allowedOrgs map[string]struct{}) error {
 	// make sure that cloudlet being added to the pool does not
 	// have AppInsts/ClusterInsts from developers not part of the pool.
 	rc := RegionContext{}
@@ -97,21 +97,28 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 	rc.region = region
 	rc.skipAuthz = true
 	for _, cloudletName := range pool.Cloudlets {
+		if !util.ValidName(cloudletName) {
+			return fmt.Errorf("Invalid Cloudlet name %q", cloudletName)
+		}
 		key := edgeproto.CloudletKey{
 			Name:         cloudletName,
 			Organization: pool.Key.Organization,
 		}
-		err = GetOrganizationsOnCloudletStream(ctx, &rc, &key, func(org *edgeproto.Organization) error {
+		invalidOrgs := []string{}
+		GetOrganizationsOnCloudletStream(ctx, &rc, &key, func(org *edgeproto.Organization) error {
 			if org.Name == cloudcommon.OrganizationMobiledgeX {
 				return nil
 			}
-			if _, found := orgPoolsMap[org.Name]; found {
+			if _, found := allowedOrgs[org.Name]; found {
 				return nil
 			}
-			return fmt.Errorf("Cannot add cloudlet %s to CloudletPool with existing developer %s ClusterInsts or AppInsts which are not authorized to deploy to the CloudletPool. Please invite the developer first, or remove the developer from the Cloudlet.", key.Name, org.Name)
+			// build list so it can be sorted for deterministic output
+			invalidOrgs = append(invalidOrgs, org.Name)
+			return nil
 		})
-		if err != nil {
-			return err
+		if len(invalidOrgs) > 0 {
+			sort.Strings(invalidOrgs)
+			return fmt.Errorf("Cannot add cloudlet %s to CloudletPool because it has AppInsts/ClusterInsts from developer %s, which are not authorized to deploy to the CloudletPool", key.Name, strings.Join(invalidOrgs, ", "))
 		}
 	}
 	return nil
