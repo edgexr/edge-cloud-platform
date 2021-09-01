@@ -51,6 +51,7 @@ type influxQueryArgs struct {
 	DeploymentType string
 	CloudletList   string
 	QueryFilter    string
+	GroupFields    string
 }
 
 // TODO: embed this into influxQueryArgs
@@ -732,6 +733,11 @@ func GetMetricsCommon(c echo.Context) error {
 			return err
 		}
 
+		// New metrics api request
+		if len(in.ClusterInsts) > 0 {
+			return GetClusterMetrics(c, &in)
+		}
+
 		rc.region = in.Region
 		cloudletList, err := checkPermissionsAndGetCloudletList(ctx, claims.Username, in.Region, []string{in.ClusterInst.Organization},
 			ResourceClusterAnalytics, []edgeproto.CloudletKey{in.ClusterInst.CloudletKey})
@@ -749,10 +755,7 @@ func GetMetricsCommon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		// Operator name has to be specified
-		if in.Cloudlet.Organization == "" {
-			return fmt.Errorf("Cloudlet details must be present")
-		}
+
 		// validate all the passed in arguments
 		if err = util.ValidateNames(in.Cloudlet.GetTags()); err != nil {
 			return err
@@ -760,6 +763,16 @@ func GetMetricsCommon(c echo.Context) error {
 
 		if err = validateMetricsCommon(&in.MetricsCommon); err != nil {
 			return err
+		}
+
+		// New metrics api request
+		if len(in.Cloudlets) > 0 {
+			return GetCloudletMetrics(c, &in)
+		}
+
+		// Operator name has to be specified
+		if in.Cloudlet.Organization == "" {
+			return fmt.Errorf("Cloudlet details must be present")
 		}
 
 		rc.region = in.Region

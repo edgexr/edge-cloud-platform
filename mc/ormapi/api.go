@@ -485,14 +485,16 @@ type RegionAppInstMetrics struct {
 
 type RegionClusterInstMetrics struct {
 	Region        string
-	ClusterInst   edgeproto.ClusterInstKey
+	ClusterInst   edgeproto.ClusterInstKey   `json:",omitempty"`
+	ClusterInsts  []edgeproto.ClusterInstKey `json:",omitempty"`
 	Selector      string
 	MetricsCommon `json:",inline"`
 }
 
 type RegionCloudletMetrics struct {
 	Region        string
-	Cloudlet      edgeproto.CloudletKey
+	Cloudlet      edgeproto.CloudletKey   `json:",omitempty"`
+	Cloudlets     []edgeproto.CloudletKey `json:",omitempty"`
 	Selector      string
 	PlatformType  string
 	MetricsCommon `json:",inline"`

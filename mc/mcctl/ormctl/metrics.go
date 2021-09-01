@@ -103,9 +103,19 @@ var AppMetricOptionalArgs = []string{
 	"cluster-org",
 	"cloudlet",
 	"cloudlet-org",
+	"appinsts:#.app-org",
+	"appinsts:#.appname",
+	"appinsts:#.appvers",
+	"appinsts:#.cluster",
+	"appinsts:#.cluster-org",
+	"appinsts:#.cloudlet-org",
+	"appinsts:#.cloudlet",
 	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var AppMetricAliasArgs = []string{
@@ -126,7 +136,21 @@ var AppMetricAliasArgs = []string{
 }
 
 var AppMetricComments = map[string]string{
-	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(ormapi.AppSelectors, "\", \"") + "\"",
+	"app-org":                 "Organization or Company name of the App(Deprecated)",
+	"appname":                 "App name(Deprecated)",
+	"appvers":                 "App version(Deprecated)",
+	"cluster":                 "Cluster name(Deprecated)",
+	"cloudlet-org":            "Company or Organization name of the cloudlet(Deprecated)",
+	"cloudlet":                "Name of the cloudlet(Deprecated)",
+	"cluster-org":             "Organization or Company Name that a Cluster is used by(Deprecated)",
+	"appinsts:#.app-org":      "Organization or Company name of the App",
+	"appinsts:#.appname":      "App name",
+	"appinsts:#.appvers":      "App version",
+	"appinsts:#.cluster":      "Cluster name",
+	"appinsts:#.cluster-org":  "Organization or Company Name that a Cluster is used by",
+	"appinsts:#.cloudlet-org": "Company or Organization name of the cloudlet",
+	"appinsts:#.cloudlet":     "Name of the cloudlet",
+	"selector":                "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(ormapi.AppSelectors, "\", \"") + "\"",
 }
 
 var ClusterMetricRequiredArgs = []string{
@@ -138,9 +162,16 @@ var ClusterMetricOptionalArgs = []string{
 	"cluster-org",
 	"cloudlet-org",
 	"cloudlet",
+	"clusterinsts:#.cluster",
+	"clusterinsts:#.cluster-org",
+	"clusterinsts:#.cloudlet-org",
+	"clusterinsts:#.cloudlet",
 	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var ClusterMetricAliasArgs = []string{
@@ -148,30 +179,54 @@ var ClusterMetricAliasArgs = []string{
 	"cluster=clusterinst.clusterkey.name",
 	"cloudlet-org=clusterinst.cloudletkey.organization",
 	"cloudlet=clusterinst.cloudletkey.name",
+	"clusterinsts:#.cluster=clusterinsts:#.clusterkey.name",
+	"clusterinsts:#.cluster-org=clusterinsts:#.organization",
+	"clusterinsts:#.cloudlet-org=clusterinsts:#.cloudletkey.organization",
+	"clusterinsts:#.cloudlet=clusterinsts:#.cloudletkey.name",
 }
 
 var ClusterMetricComments = map[string]string{
-	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(ormapi.ClusterSelectors, "\", \"") + "\"",
+	"cluster":                     "Cluster name(Deprecated)",
+	"cloudlet-org":                "Company or Organization name of the cloudlet(Deprecated)",
+	"cloudlet":                    "Name of the cloudlet(Deprecated)",
+	"cluster-org":                 "Organization or Company Name that a Cluster is used by(Deprecated)",
+	"clusterinsts:#.cluster":      "Cluster name",
+	"clusterinsts:#.cluster-org":  "Organization or Company Name that a Cluster is used by",
+	"clusterinsts:#.cloudlet-org": "Company or Organization name of the cloudlet",
+	"clusterinsts:#.cloudlet":     "Name of the cloudlet",
+	"selector":                    "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(ormapi.ClusterSelectors, "\", \"") + "\"",
 }
 
 var CloudletMetricRequiredArgs = []string{
-	"cloudlet-org",
 	"selector",
 }
 
 var CloudletMetricOptionalArgs = []string{
 	"cloudlet",
+	"cloudlet-org",
+	"cloudlets:#.cloudlet-org",
+	"cloudlets:#.cloudlet",
 	"limit",
+	"numsamples",
 	"starttime",
 	"endtime",
+	"startage",
+	"endage",
 }
 
 var CloudletMetricAliasArgs = []string{
 	"cloudlet-org=cloudlet.organization",
 	"cloudlet=cloudlet.name",
+	"cloudlets:#.cloudlet-org=cloudlets:#.organization",
+	"cloudlets:#.cloudlet=cloudlets:#.name",
 }
 
 var CloudletMetricComments = map[string]string{
+	"cloudlet-org":             "Company or Organization name of the cloudlet(Deprecated)",
+	"cloudlet":                 "Name of the cloudlet(Deprecated)",
+	"cloudlets:#.cloudlet-org": "Company or Organization name of the cloudlet",
+	"cloudlets:#.cloudlet":     "Name of the cloudlet",
+
 	"selector": "Comma separated list of metrics to view. Available metrics: \"" + strings.Join(ormapi.CloudletSelectors, "\", \"") + "\"",
 }
 
