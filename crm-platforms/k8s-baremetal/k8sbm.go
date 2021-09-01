@@ -119,8 +119,15 @@ func (k *K8sBareMetalPlatform) GetClusterPlatformClient(ctx context.Context, clu
 
 func (k *K8sBareMetalPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNodePlatformClient", "node", node)
-	if node == nil || node.Name == "" {
-		return nil, fmt.Errorf("cannot GetNodePlatformClient, node details are empty")
+	if node == nil {
+		return nil, fmt.Errorf("cannot GetNodePlatformClient, as node details are empty")
+	}
+	nodeName := node.Name
+	if nodeName == "" && node.Type == cloudcommon.CloudletNodeSharedRootLB {
+		nodeName = k.GetSharedLBName(ctx, k.commonPf.PlatformConfig.CloudletKey)
+	}
+	if nodeName == "" {
+		return nil, fmt.Errorf("cannot GetNodePlatformClient, must specify node name")
 	}
 	controlIp := k.GetControlAccessIp()
 	return k.commonPf.GetSSHClientFromIPAddr(ctx, controlIp, ops...)
