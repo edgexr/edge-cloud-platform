@@ -51,8 +51,10 @@ var GlobalPerUserMcRateLimitSettings = &ormapi.McRateLimitSettings{
 	},
 }
 
+var userCreateApiName = "/api/v1/usercreate"
+
 var UserCreateAllRequestsMcRateLimitSettings = &ormapi.McRateLimitSettings{
-	ApiName:         "/api/v1/usercreate",
+	ApiName:         userCreateApiName,
 	RateLimitTarget: edgeproto.RateLimitTarget_ALL_REQUESTS,
 	FlowSettings: map[string]edgeproto.FlowSettings{
 		"usercreateallreqs1": edgeproto.FlowSettings{
@@ -64,7 +66,7 @@ var UserCreateAllRequestsMcRateLimitSettings = &ormapi.McRateLimitSettings{
 }
 
 var UserCreatePerIpMcRateLimitSettings = &ormapi.McRateLimitSettings{
-	ApiName:         "/api/v1/usercreate",
+	ApiName:         userCreateApiName,
 	RateLimitTarget: edgeproto.RateLimitTarget_PER_IP,
 	FlowSettings: map[string]edgeproto.FlowSettings{
 		"usercreateperip1": edgeproto.FlowSettings{
@@ -108,8 +110,8 @@ func InitRateLimitMc(ctx context.Context) error {
 
 	// Init RateLimitMgr and add Global RateLimitSettings and UserCreate RateLimitSettings
 	rateLimitMgr = ratelimit.NewRateLimitManager(getDisableRateLimit(ctx), getMaxNumPerIpRateLimiters(ctx), getMaxNumPerUserRateLimiters(ctx))
-	rateLimitMgr.CreateApiEndpointLimiter(convertToRateLimitSettings(GlobalAllRequestsMcRateLimitSettings), convertToRateLimitSettings(GlobalPerIpMcRateLimitSettings), convertToRateLimitSettings(GlobalPerUserMcRateLimitSettings))
-	rateLimitMgr.CreateApiEndpointLimiter(convertToRateLimitSettings(UserCreateAllRequestsMcRateLimitSettings), convertToRateLimitSettings(UserCreatePerIpMcRateLimitSettings), nil)
+	rateLimitMgr.CreateApiEndpointLimiter(edgeproto.GlobalApiName, convertToRateLimitSettings(GlobalAllRequestsMcRateLimitSettings), convertToRateLimitSettings(GlobalPerIpMcRateLimitSettings), convertToRateLimitSettings(GlobalPerUserMcRateLimitSettings))
+	rateLimitMgr.CreateApiEndpointLimiter(userCreateApiName, convertToRateLimitSettings(UserCreateAllRequestsMcRateLimitSettings), convertToRateLimitSettings(UserCreatePerIpMcRateLimitSettings), nil)
 	return nil
 }
 
