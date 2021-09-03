@@ -225,6 +225,7 @@ func getCloudletsFromClusterInsts(apps *ormapi.RegionClusterInstMetrics) []strin
 }
 
 func TestGetInfluxCloudletMetricsQueryCmd(t *testing.T) {
+	maxEntriesFromInfluxDb = 100
 	// Single Cloudlets, default time interval
 	testSingleCloudlet.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testSingleCloudlet.Selector = "utilization"
@@ -277,6 +278,7 @@ func TestGetInfluxCloudletMetricsQueryCmd(t *testing.T) {
 }
 
 func TestGetInfluxClusterMetricsQueryCmd(t *testing.T) {
+	maxEntriesFromInfluxDb = 100
 	// Single Cluster, default time interval
 	testSingleCluster.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testSingleCluster.Selector = "cpu"
@@ -329,6 +331,7 @@ func TestGetInfluxClusterMetricsQueryCmd(t *testing.T) {
 }
 
 func TestGetInfluxAppMetricsQueryCmd(t *testing.T) {
+	maxEntriesFromInfluxDb = 100
 	// Single App, default time insterval
 	testSingleApp.EndTime = time.Date(2020, 1, 1, 1, 1, 0, 0, time.UTC)
 	testSingleApp.Selector = "cpu"
@@ -440,6 +443,7 @@ func TestGetSelectorForMeasurement(t *testing.T) {
 }
 
 func TestGetTimeDefinition(t *testing.T) {
+	maxEntriesFromInfluxDb = 100
 	// Invalid start end age
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
@@ -456,7 +460,7 @@ func TestGetTimeDefinition(t *testing.T) {
 	err = validateMetricsCommon(&testApps.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, "", getTimeDefinition(&testApps.MetricsCommon, 0))
-	require.Equal(t, MaxNumSamples, testApps.Limit)
+	require.Equal(t, maxEntriesFromInfluxDb, testApps.Limit)
 	// With end time set to now we look back 12hrs, so time definition will be 12hr/100 ~7m12s
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Now()
@@ -464,7 +468,7 @@ func TestGetTimeDefinition(t *testing.T) {
 	err = validateMetricsCommon(&testApps.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, "7m12s", getTimeDefinition(&testApps.MetricsCommon, 0))
-	require.Equal(t, MaxNumSamples, testApps.NumSamples)
+	require.Equal(t, maxEntriesFromInfluxDb, testApps.NumSamples)
 	// Reset time and set Last and nothing else
 	testApps.StartTime = time.Time{}
 	testApps.EndTime = time.Time{}
@@ -488,12 +492,12 @@ func TestGetTimeDefinition(t *testing.T) {
 	err = validateMetricsCommon(&testApps.MetricsCommon)
 	require.NotNil(t, err)
 	require.Empty(t, getTimeDefinition(&testApps.MetricsCommon, 0))
-	require.Equal(t, MaxNumSamples, testApps.NumSamples)
+	require.Equal(t, maxEntriesFromInfluxDb, testApps.NumSamples)
 	// Check default time window of 15 secs
 	testApps.StartTime = time.Now().Add(-2 * time.Minute)
 	testApps.EndTime = time.Now()
 	err = validateMetricsCommon(&testApps.MetricsCommon)
 	require.Nil(t, err)
 	require.Equal(t, DefaultAppInstTimeWindow.String(), getTimeDefinition(&testApps.MetricsCommon, DefaultAppInstTimeWindow))
-	require.Equal(t, MaxNumSamples, testApps.NumSamples)
+	require.Equal(t, maxEntriesFromInfluxDb, testApps.NumSamples)
 }
