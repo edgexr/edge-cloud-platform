@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,6 +38,7 @@ type ClusterWorker struct {
 
 func NewClusterWorker(ctx context.Context, promAddr string, scrapeInterval time.Duration, pushInterval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, clusterInst *edgeproto.ClusterInst, pf platform.Platform) (*ClusterWorker, error) {
 	var err error
+	var nCores int
 	p := ClusterWorker{}
 	p.promAddr = promAddr
 	p.deployment = clusterInst.Deployment
@@ -66,10 +69,24 @@ func NewClusterWorker(ctx context.Context, promAddr string, scrapeInterval time.
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire clusterVM client", "cluster", clusterInst.Key, "error", err)
 			return nil, err
 		}
+		// cache the  number of cores on the docker node so we can use it in the future
+		vmCores, err := clusterClient.Output("nproc")
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to run <nproc> on ClusterVM", "err", err.Error())
+		} else {
+			nCores, err = strconv.Atoi(strings.TrimSpace(vmCores))
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse <nproc> output", "output", vmCores, "err", err.Error())
+			}
+		}
+		if nCores == 0 {
+			nCores = 1
+		}
 		p.clusterStat = &DockerClusterStats{
 			key:           p.clusterInstKey,
 			client:        p.client,
 			clusterClient: clusterClient,
+			vCPUs:         nCores,
 		}
 	} else {
 		return nil, fmt.Errorf("Unsupported deployment %s", clusterInst.Deployment)
