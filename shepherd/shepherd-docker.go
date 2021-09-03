@@ -40,7 +40,6 @@ type ContainerStats struct {
 	Memory    ContainerMem
 	Cpu       string
 	IO        ContainerIO
-	coreCount uint64
 }
 
 type DockerStats struct {
@@ -62,6 +61,7 @@ type ContainerSize struct {
 
 // Docker Cluster
 type DockerClusterStats struct {
+	vCPUs         int
 	key           edgeproto.ClusterInstKey
 	client        ssh.Client
 	clusterClient ssh.Client
@@ -130,10 +130,6 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 			cData, found = containers[cID]
 
 			if found {
-				flavor := edgeproto.Flavor{}
-				if FlavorCache.Get(&obj.Flavor, &flavor) {
-					cData.coreCount = flavor.Vcpus
-				}
 				cData.App = util.DNSSanitize(obj.Key.AppKey.Name)
 				cData.Version = util.DNSSanitize(obj.Key.AppKey.Version)
 				dockerResp.Containers = append(dockerResp.Containers, *cData)
@@ -385,11 +381,10 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 		stat.CpuTS, stat.MemTS, stat.DiskTS, stat.NetSentTS, stat.NetRecvTS = ts, ts, ts, ts, ts
 		// cpu is in the form "0.00%" - remove the % at the end and cast to float
 		cpu, err := parsePercentStr(containerStats.Cpu)
-		if containerStats.coreCount > 0 {
-			cpu = cpu / float64(containerStats.coreCount)
-		}
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to parse CPU usage", "App", appKey, "stats", containerStats, "err", err)
+		} else {
+			cpu = cpu / float64(c.vCPUs)
 		}
 		// TODO EDGECLOUD-1316 - add stats for all containers together
 		// since cpu is a percentage it needs to be averaged
