@@ -35,9 +35,19 @@ if node.normal['tags'].include?('vmtype/rootlb')
       distribution 'cirrus'
       components ['main']
     end
-    execute('Unhold the mobiledgex package, if held') do
-      action "run"
-      command "apt-mark unhold mobiledgex"
+    file '/etc/apt/auth.conf.d/mobiledgex.net.conf' do
+      content "machine artifactory.mobiledgex.net login apt password mobiledgex\nmachine apt.mobiledgex.net login apt password mobiledgex"
+      action :create_if_missing
+    end
+    bash 'Unhold the mobiledgex package if exists and held' do
+      code <<-EOH
+        dpkg -l | grep -i mobiledgex
+        if [[ $? -eq 0 ]]; then
+          apt-mark unhold mobiledgex
+        else
+          echo "mobiledgex package doesn't exist"
+        fi
+      EOH
       returns 0
     end
     apt_update
