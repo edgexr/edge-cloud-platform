@@ -13,7 +13,7 @@ run_list 'recipe[chef_client_updater]', 'recipe[runstatus_handler]', 'recipe[cop
 cookbook 'chef_client_updater', '= 3.11.0'
 cookbook 'runstatus_handler', '= 1.0.0'
 cookbook 'copy_resource_tracker', '= 1.0.1'
-cookbook 'upgrade_mobiledgex_package', '= 1.0.11'
+cookbook 'upgrade_mobiledgex_package', '= 1.0.13'
 
 # Set chef-client version
 default['chef_client_updater']['version'] = '17.2.29'
