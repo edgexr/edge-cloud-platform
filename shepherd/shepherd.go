@@ -150,10 +150,9 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return
 		}
-		clustIP, err := myPlatform.GetClusterIP(ctx, &clusterInst)
+		kubeNames, err := k8smgmt.GetKubeNames(&clusterInst, &app, new)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "error getting clusterIP", "err", err.Error())
-			return
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get kubeNames", "app", new.Key.AppKey.Name, "err", err)
 		}
 		// We don't actually expose prometheus ports - we should default to 9090
 		if len(new.MappedPorts) > 0 {
@@ -161,10 +160,12 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		} else {
 			port = defaultPrometheusPort
 		}
-		promAddress := fmt.Sprintf("%s:%d", clustIP, port)
-		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "promAddress", promAddress)
+		// set the prometheus address to undefined as the service may or may
+		// not have an IP address yet. Although we don't have an IP, we do need the port
+		log.SpanLog(ctx, log.DebugLevelMetrics, "prometheus found", "prom port", port)
 		if !exists {
-			stats, err = NewClusterWorker(ctx, promAddress, metricsScrapingInterval, collectInterval, MetricSender.Update, &clusterInst, myPlatform)
+			// sart the
+			stats, err = NewClusterWorker(ctx, "", port, metricsScrapingInterval, collectInterval, MetricSender.Update, &clusterInst, kubeNames, myPlatform)
 			if err == nil {
 				workerMap[mapKey] = stats
 				stats.Start(ctx)
@@ -216,7 +217,7 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
 	if new.State == edgeproto.TrackedState_READY {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Docker cluster detected", "clustername", mapKey, "clusterInst", new)
-		stats, err := NewClusterWorker(ctx, "", metricsScrapingInterval, collectInterval, MetricSender.Update, new, myPlatform)
+		stats, err := NewClusterWorker(ctx, "", 0, metricsScrapingInterval, collectInterval, MetricSender.Update, new, nil, myPlatform)
 		if err == nil {
 			workerMap[mapKey] = stats
 			stats.Start(ctx)

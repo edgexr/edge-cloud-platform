@@ -85,6 +85,7 @@ func getAppMetricFromPrometheusData(p *K8sClusterStats, appStatsMap map[shepherd
 
 func collectAppPrometheusMetrics(ctx context.Context, p *K8sClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
+	log.SpanLog(ctx, log.DebugLevelMetrics, "collectAppPrometheusMetrics")
 
 	// Get Pod CPU usage percentage
 	resp, err := getPromMetrics(ctx, p.promAddr, promutils.PromQCpuPodUrlEncoded, p.client)
