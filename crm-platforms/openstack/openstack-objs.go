@@ -1,5 +1,9 @@
 package openstack
 
+import (
+	"github.com/mobiledgex/edge-cloud/util"
+)
+
 type OSLimit struct {
 	Name  string
 	Value int
@@ -10,16 +14,16 @@ type OSServer struct {
 }
 
 type OSFlavorDetail struct {
-	Name        string `json:"name"`
-	ID          string `json:"id"`
-	RAM         int    `json:"ram"`
-	Ephemeral   int    `json:"OS-FLV-EXT-DATA:ephemeral"`
-	VCPUs       int    `json:"vcpus"`
-	Disk        int    `json:"disk"`
-	Public      bool   `json:"os-flavor-access:is_public"`
-	Properties  string `json:"properties"`
-	Swap        string `json:"swap"`
-	RXTX_Factor string `json:"RXTX_factor"`
+	Name        string                     `json:"name"`
+	ID          string                     `json:"id"`
+	RAM         int                        `json:"ram"`
+	Ephemeral   int                        `json:"OS-FLV-EXT-DATA:ephemeral"`
+	VCPUs       int                        `json:"vcpus"`
+	Disk        int                        `json:"disk"`
+	Public      bool                       `json:"os-flavor-access:is_public"`
+	Properties  string                     `json:"properties"`
+	Swap        util.EmptyStringJsonNumber `json:"swap"`
+	RXTX_Factor util.EmptyStringJsonNumber `json:"rxtx factor"`
 }
 
 type OSAZone struct {
