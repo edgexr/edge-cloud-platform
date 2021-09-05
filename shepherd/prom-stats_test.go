@@ -10,6 +10,7 @@ import (
 
 	"github.com/mobiledgex/edge-cloud-infra/promutils"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/k8smgmt"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -181,6 +182,22 @@ var (
 		Reservable: true,
 		ReservedBy: testDeveloperOrg,
 	}
+	testPrometheusApp = edgeproto.App{
+		Key: edgeproto.AppKey{
+			Name:         cloudcommon.MEXPrometheusAppName,
+			Version:      "1.0",
+			Organization: cloudcommon.OrganizationMobiledgeX,
+		},
+		Deployment: cloudcommon.DeploymentTypeHelm,
+	}
+	testPrometheusAppInst = edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			AppKey: testPrometheusApp.Key,
+			ClusterInstKey: edgeproto.VirtualClusterInstKey{
+				CloudletKey: testClusterInstKey.CloudletKey,
+			},
+		},
+	}
 	testClusterInstUnsupported = edgeproto.ClusterInst{
 		Key:        testClusterInstKey,
 		Deployment: cloudcommon.DeploymentTypeHelm,
@@ -300,8 +317,8 @@ func TestClusterWorkerTimers(t *testing.T) {
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
 	testPlatform, _ := getPlatform()
 
-	testClusterWorker, err := NewClusterWorker(ctx, "", time.Second*1, time.Second*1,
-		testMetricSend, &testClusterInst, testPlatform)
+	testClusterWorker, err := NewClusterWorker(ctx, "", 0, time.Second*1, time.Second*1,
+		testMetricSend, &testClusterInst, nil, testPlatform)
 	require.Nil(t, err)
 	require.NotNil(t, testClusterWorker)
 	require.True(t, testClusterWorker.checkAndSetLastPushMetrics(time.Now().Add(time.Second)))
@@ -362,10 +379,12 @@ func TestPromStats(t *testing.T) {
 	}))
 	defer tsProm.Close()
 	// Remove the leading "http://"
-	testPromStats, err := NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, time.Second*1, testMetricSend, &testClusterInstUnsupported, testPlatform)
+	testPromStats, err := NewClusterWorker(ctx, tsProm.URL[7:], 0, time.Second*1, time.Second*1, testMetricSend, &testClusterInstUnsupported, nil, testPlatform)
 	require.NotNil(t, err, "Unsupported deployment type")
 	require.Contains(t, err.Error(), "Unsupported deployment")
-	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], time.Second*1, time.Second*1, testMetricSend, &testClusterInst, testPlatform)
+	kubeNames, err := k8smgmt.GetKubeNames(&testClusterInst, &testPrometheusApp, &testPrometheusAppInst)
+	require.Nil(t, err, "Got kubeNames")
+	testPromStats, err = NewClusterWorker(ctx, tsProm.URL[7:], 0, time.Second*1, time.Second*1, testMetricSend, &testClusterInst, kubeNames, testPlatform)
 	require.Nil(t, err, "Get a platform client for fake cloudlet")
 	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
 	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
