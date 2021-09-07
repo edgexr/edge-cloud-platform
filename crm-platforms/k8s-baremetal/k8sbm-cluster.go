@@ -23,56 +23,34 @@ func (k *K8sBareMetalPlatform) GetNamespaceNameForCluster(ctx context.Context, c
 	return util.K8SSanitize(fmt.Sprintf("%s-%s", clusterInst.Key.Organization, clusterInst.Key.ClusterKey.Name))
 }
 
-func (k *K8sBareMetalPlatform) SetupVirtualCluster(ctx context.Context, client ssh.Client, namespace, kubeconfig, dir string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupVirtualCluster", "namespace", namespace)
+// GetKubenamesForCluster is a temporary fix as we evolve towards consistent MT support.  It is needed to use MT functions like CreateNamespace
+func (k *K8sBareMetalPlatform) GetKubenamesForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) *k8smgmt.KubeNames {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetKubenamesForCluster", "clusterInst", clusterInst)
+	namespace := k.GetNamespaceNameForCluster(ctx, clusterInst)
+	clusterKconf := k8smgmt.GetKconfName(clusterInst)
+	kubeNames := k8smgmt.KubeNames{
+		MultitenantNamespace: namespace,
+		BaseKconfName:        k.cloudletKubeConfig,
+		KconfName:            clusterKconf,
+	}
+	return &kubeNames
+}
 
-	err := k.CreateNamespace(ctx, client, namespace, kubeconfig)
+func (k *K8sBareMetalPlatform) SetupVirtualCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupVirtualCluster", "clusterInst", clusterInst)
 
+	kubeNames := k.GetKubenamesForCluster(ctx, clusterInst)
+	err := k8smgmt.CreateNamespace(ctx, client, kubeNames)
 	if err != nil {
 		return err
 	}
-	policyName := namespace + "-netpol"
-	manifest, err := infracommon.CreateK8sNetworkPolicyManifest(ctx, client, policyName, namespace, dir)
+	dir := k.GetClusterDir(clusterInst)
+	policyName := kubeNames.MultitenantNamespace + "-netpol"
+	manifest, err := infracommon.CreateK8sNetworkPolicyManifest(ctx, client, policyName, kubeNames.MultitenantNamespace, dir)
 	if err != nil {
 		return err
 	}
 	return infracommon.ApplyK8sNetworkPolicyManifest(ctx, client, manifest, k.cloudletKubeConfig)
-}
-
-func (k *K8sBareMetalPlatform) CreateNamespace(ctx context.Context, client ssh.Client, nameSpace, kubeconfig string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateNamespace", "lbname", nameSpace)
-
-	cmd := fmt.Sprintf("kubectl create namespace  %s --kubeconfig=%s", nameSpace, k.cloudletKubeConfig)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("Error in creating namespace: %s - %v", out, err)
-	}
-	// copy the kubeconfig add update the new one with the new namespace
-	log.SpanLog(ctx, log.DebugLevelInfra, "create new kubeconfig for cluster namespace", "cloudletKubeConfig", k.cloudletKubeConfig, "clustKubeConfig", kubeconfig)
-
-	err = pc.CopyFile(client, k.cloudletKubeConfig, kubeconfig)
-	if err != nil {
-		return fmt.Errorf("Failed to create new kubeconfig: %v", err)
-	}
-	// set the current context
-	cmd = fmt.Sprintf("KUBECONFIG=%s kubectl config set-context --current --namespace=%s", kubeconfig, nameSpace)
-	out, err = client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("Error in setting new namespace context: %s - %v", out, err)
-	}
-	return nil
-}
-
-func (k *K8sBareMetalPlatform) DeleteNamespace(ctx context.Context, client ssh.Client, nameSpace string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteNamespace", "nameSpace", nameSpace)
-	cmd := fmt.Sprintf("kubectl delete namespace  %s --kubeconfig=%s", nameSpace, k.cloudletKubeConfig)
-	out, err := client.Output(cmd)
-	if err != nil {
-		if !strings.Contains(out, "not found") {
-			return fmt.Errorf("Error in deleting namespace: %s - %v", out, err)
-		}
-	}
-	return nil
 }
 
 func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
@@ -82,7 +60,7 @@ func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterIns
 		return err
 	}
 	updateCallback(edgeproto.UpdateTask, "Setting up Virtual Cluster")
-	err = k.SetupVirtualCluster(ctx, client, k.GetNamespaceNameForCluster(ctx, clusterInst), k8smgmt.GetKconfName(clusterInst), k.GetClusterDir(clusterInst))
+	err = k.SetupVirtualCluster(ctx, client, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -134,8 +112,7 @@ func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterIns
 			}
 		}
 	}
-	namespace := k.GetNamespaceNameForCluster(ctx, clusterInst)
-	err = k.DeleteNamespace(ctx, client, namespace)
+	err = k8smgmt.DeleteNamespace(ctx, client, k.GetKubenamesForCluster(ctx, clusterInst))
 	if err != nil {
 		return err
 	}
