@@ -42,7 +42,7 @@ class Chef
         "cloudletVMImagePath" => true,
         "vmImageVersion" => true,
         "containerVersion" => true,
-        "commercialCerts" => false,
+        "commercialCerts" => true,
         "useVaultPki" => false,
         "chefServerPath" => true,
         "deploymentTag" => true,

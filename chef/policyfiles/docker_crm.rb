@@ -23,6 +23,4 @@ cookbook 'chef_client_updater', '= 3.11.0'
 default['chef_client_updater']['version'] = '17.2.29'
 
 # Set edgeCloudVersion (i.e. edge-cloud docker base image version) for all the cloudlets
-override['main']['edgeCloudVersion'] = '2021-04-15-1'
-# By default, commercialCerts is not on. Hence add override to turn it on for all the cloudlets
-override['main']['crmserver']['args']['commercialCerts'] = ""
+override['main']['edgeCloudVersion'] = '2021-08-14-5'
