@@ -36,4 +36,12 @@ services.each { |service|
       node.normal[service]['args']['cacheDir'] = "/root/crm_cache"
     end
   end
+
+  # Set commercialCerts attribute for all the services
+  if service == "crmserver"
+    unless node.normal[service]['args'].any? { |s| s.include?('commercialCerts') }
+      Chef::Log.info("Setting commericalCerts flag for #{service}...")
+      node.normal[service]['args']['commercialCerts'] = ""
+    end
+  end
 }
