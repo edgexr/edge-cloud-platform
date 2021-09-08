@@ -65,6 +65,9 @@ func (v *VcdPlatform) GetPlatformResourceInfo(ctx context.Context) (*vmlayer.Pla
 		case cloudcommon.ResourceExternalIPs:
 			resources.Ipv4Max = r.InfraMaxValue
 			resources.Ipv4Used = r.Value
+		case cloudcommon.ResourceDisk:
+			resources.DiskMax = r.InfraMaxValue
+			resources.DiskUsed = r.Value
 		}
 	}
 	return &resources, nil
@@ -91,6 +94,8 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 	// get the cpu speed to calculate number of VMs used.  When we create VMs we specify the number of VCPUs, but
 	// to find the quotas and numbers used, we have to search for the CPU speed and calculate.
 	cpuSpeed := v.GetVcpuSpeedOverride(ctx)
+	var storageLimit int64 = 0
+	var storageUsed int64 = 0
 	if cpuSpeed == 0 {
 		// retrieve from admin org
 		adminOrg, err := govcd.GetAdminOrgByName(vcdClient, org.Org.Name)
@@ -102,6 +107,14 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Unable to get AdminVdc", "adminOrgName", "adminOrg.Org.Name", "error", err)
 			return nil, fmt.Errorf("Unable to get AdminVcd named: %s - %v", v.GetVDCName(), err)
+		}
+		if len(adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile) > 0 {
+			foundStorageProfile, err := govcd.GetStorageProfileByHref(vcdClient, adminVdc.AdminVdc.VdcStorageProfiles.VdcStorageProfile[0].HREF)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to get storage profile - %v", err)
+			}
+			storageLimit = foundStorageProfile.Limit / 1024
+			storageUsed = foundStorageProfile.StorageUsedMB / 1024
 		}
 		// VMW stores the speed in 2 different places, the first of which is generally nil in our testing
 		if adminVdc.AdminVdc.VCpuInMhz != nil && *adminVdc.AdminVdc.VCpuInMhz != 0 {
@@ -160,6 +173,11 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 		Name:          cloudcommon.ResourceInstances,
 		InfraMaxValue: uint64(vdc.Vdc.VMQuota),
 		Value:         uint64(len(vmlist)),
+	})
+	resInfo = append(resInfo, edgeproto.InfraResource{
+		Name:          cloudcommon.ResourceDisk,
+		InfraMaxValue: uint64(storageLimit),
+		Value:         uint64(storageUsed),
 	})
 	for _, cap := range vdc.Vdc.ComputeCapacity {
 		resInfo = append(resInfo, edgeproto.InfraResource{
