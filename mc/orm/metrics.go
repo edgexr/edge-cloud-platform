@@ -35,7 +35,8 @@ var (
 type MetricsObject interface {
 	GetType() string
 	GetRegion() string
-	GetSelector() string
+	// Get Selectors either gives a single selector, or a list of all, if "*" is passed in
+	GetSelectors() []string
 	GetObjCount() int
 	GetMetricsCommon() *ormapi.MetricsCommon
 	ValidateSelector() error
@@ -55,8 +56,11 @@ func (m *appInstMetrics) GetType() string {
 	return APPINST
 }
 
-func (m *appInstMetrics) GetSelector() string {
-	return m.Selector
+func (m *appInstMetrics) GetSelectors() []string {
+	if m.Selector == "*" {
+		return ormapi.AppSelectors
+	}
+	return []string{m.Selector}
 }
 
 func (m *appInstMetrics) GetRegion() string {
@@ -80,9 +84,6 @@ func (m *appInstMetrics) GetMetricsCommon() *ormapi.MetricsCommon {
 }
 
 func (m *appInstMetrics) ValidateSelector() error {
-	if m.Selector == "*" {
-		return fmt.Errorf("MetricsV2 api does not allow for a wildcard selector")
-	}
 	return validateSelectorString(m.Selector, m.GetType())
 }
 
@@ -192,8 +193,11 @@ func (m *clusterInstMetrics) GetMetricsCommon() *ormapi.MetricsCommon {
 	return &m.MetricsCommon
 }
 
-func (m *clusterInstMetrics) GetSelector() string {
-	return m.Selector
+func (m *clusterInstMetrics) GetSelectors() []string {
+	if m.Selector == "*" {
+		return ormapi.ClusterSelectors
+	}
+	return []string{m.Selector}
 }
 
 func (m *clusterInstMetrics) ValidateObjects() error {
@@ -212,9 +216,6 @@ func (m *clusterInstMetrics) ValidateObjects() error {
 }
 
 func (m *clusterInstMetrics) ValidateSelector() error {
-	if m.Selector == "*" {
-		return fmt.Errorf("MetricsV2 api does not allow for a wildcard selector")
-	}
 	return validateSelectorString(m.Selector, m.GetType())
 }
 
@@ -281,8 +282,11 @@ func (m *cloudletMetrics) GetType() string {
 	return CLOUDLET
 }
 
-func (m *cloudletMetrics) GetSelector() string {
-	return m.Selector
+func (m *cloudletMetrics) GetSelectors() []string {
+	if m.Selector == "*" {
+		return ormapi.CloudletSelectors
+	}
+	return []string{m.Selector}
 }
 
 func (m *cloudletMetrics) GetRegion() string {
@@ -306,9 +310,6 @@ func (m *cloudletMetrics) GetMetricsCommon() *ormapi.MetricsCommon {
 }
 
 func (m *cloudletMetrics) ValidateSelector() error {
-	if m.Selector == "*" {
-		return fmt.Errorf("MetricsV2 api does not allow for a wildcard selector")
-	}
 	return validateSelectorString(m.Selector, m.GetType())
 }
 
@@ -398,7 +399,6 @@ func ShowMetricsCommon(c echo.Context, in MetricsObject) error {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to get metrics settings for region %v - error is %s", rc.region, err.Error())
 	}
 	cmd := in.GetGroupQuery(cloudletList, settings)
-
 	err = influxStream(ctx, rc, in.GetDbNames(), cmd, func(res interface{}) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
@@ -428,11 +428,11 @@ func GetAppMetrics(c echo.Context, in *ormapi.RegionAppInstMetrics) error {
 	return nil
 }
 
-func getMetricsTemplateArgs(obj MetricsObject, timeDef string, cloudletList []string) influxQueryArgs {
-	selectorFunction := getFuncForSelector(obj.GetSelector(), timeDef)
+func getMetricsTemplateArgs(obj MetricsObject, timeDef string, selector string, cloudletList []string) influxQueryArgs {
+	selectorFunction := getFuncForSelector(selector, timeDef)
 	args := influxQueryArgs{
-		Selector:    getSelectorForMeasurement(obj.GetSelector(), selectorFunction, obj.GetType()),
-		Measurement: getMeasurementString(obj.GetSelector(), obj.GetType()),
+		Selector:    getSelectorForMeasurement(selector, selectorFunction, obj.GetType()),
+		Measurement: getMeasurementString(selector, obj.GetType()),
 		QueryFilter: obj.GetQueryFilter(cloudletList),
 		GroupFields: obj.GetGroupFields(),
 	}
@@ -446,9 +446,13 @@ func GetDeveloperGroupQuery(obj MetricsObject, cloudletList []string, settings *
 		minTimeDef = time.Duration(settings.DmeApiMetricsCollectionInterval)
 	}
 	timeDef := getTimeDefinition(obj.GetMetricsCommon(), minTimeDef)
-	args := getMetricsTemplateArgs(obj, timeDef, cloudletList)
-	fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, obj.GetMetricsCommon(), timeDef, minTimeDef)
-	return getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate)
+	dbQueries := []string{}
+	for _, selector := range obj.GetSelectors() {
+		args := getMetricsTemplateArgs(obj, timeDef, selector, cloudletList)
+		fillMetricsCommonQueryArgs(&args.metricsCommonQueryArgs, metricsGroupQueryTemplate, obj.GetMetricsCommon(), timeDef, minTimeDef)
+		dbQueries = append(dbQueries, getInfluxMetricsQueryCmd(&args, metricsGroupQueryTemplate))
+	}
+	return strings.Join(dbQueries, ";")
 }
 
 func getFuncForSelector(selector, timeDefinition string) string {
