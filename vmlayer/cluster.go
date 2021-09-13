@@ -446,18 +446,6 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 		}
 	}
 
-	if clusterInst.OptRes == "gpu" {
-		if v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
-			// setup GPU drivers
-			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, action)
-			if err != nil {
-				return fmt.Errorf("failed to install GPU drivers on cluster VM: %v", err)
-			}
-		} else {
-			updateCallback(edgeproto.UpdateTask, "Skip setting up GPU driver on Cluster nodes")
-		}
-	}
-
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		elapsed := time.Since(start)
 		// subtract elapsed time from total time to get remaining time
@@ -483,10 +471,6 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 				return err
 			}
 		}
-		// setup GPU operator helm repo
-		if clusterInst.OptRes == "gpu" && v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
-			v.manageGPUOperator(ctx, client, clusterInst, updateCallback, action)
-		}
 	} else if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		// ensure the docker node is ready before calling the cluster create done
 		updateCallback(edgeproto.UpdateTask, "Waiting for Docker VM to Initialize")
@@ -501,6 +485,23 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			return err
 		}
 	}
+
+	if clusterInst.OptRes == "gpu" {
+		if v.VMProvider.GetGPUSetupStage(ctx) == ClusterInstStage {
+			// setup GPU drivers
+			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, action)
+			if err != nil {
+				return fmt.Errorf("failed to install GPU drivers on cluster VM: %v", err)
+			}
+			if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+				// setup GPU operator helm repo
+				v.manageGPUOperator(ctx, client, clusterInst, updateCallback, action)
+			}
+		} else {
+			updateCallback(edgeproto.UpdateTask, "Skip setting up GPU driver on Cluster nodes")
+		}
+	}
+
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		proxycerts.SetupTLSCerts(ctx, &clusterInst.Key.CloudletKey, rootLBName, client, v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
 	}
