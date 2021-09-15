@@ -56,6 +56,7 @@
     {"data":{"message":"Creating"}}
     {"data":{"message":"First Create Task"}}
     {"data":{"message":"Second Create Task"}}
+    {"data":{"message":"Getting Cluster Infra Resources"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created ClusterInst successfully"}}
     {"data":{"message":"Creating"}}
@@ -173,6 +174,7 @@
     {"data":{"message":"Creating"}}
     {"data":{"message":"First Create Task"}}
     {"data":{"message":"Second Create Task"}}
+    {"data":{"message":"Getting Cluster Infra Resources"}}
     {"data":{"message":"Ready"}}
     {"data":{"message":"Created ClusterInst successfully"}}
     {"data":{"message":"Creating"}}
