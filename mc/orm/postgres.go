@@ -154,10 +154,7 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 // allow any context to be passed in, so each function that
 // calls into the DB must first convert it to a loggedDB.
 func loggedDB(ctx context.Context) *gorm.DB {
-	db := database.New() // clone
-	db.SetLogger(&gormlog.Logger{Ctx: ctx})
-	db.LogMode(true)
-	return db
+	return gormlog.LoggedDB(ctx, database)
 }
 
 const sqlEventsChannel = "events"

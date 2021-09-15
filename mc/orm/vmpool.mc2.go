@@ -30,7 +30,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateVMPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -55,7 +55,7 @@ func CreateVMPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -86,7 +86,7 @@ func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 }
 
 func DeleteVMPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -111,7 +111,7 @@ func DeleteVMPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -142,7 +142,7 @@ func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 }
 
 func UpdateVMPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -171,7 +171,7 @@ func UpdateVMPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
@@ -202,7 +202,7 @@ func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPo
 }
 
 func ShowVMPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -290,7 +290,7 @@ func ShowVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool
 }
 
 func AddVMPoolMember(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -315,7 +315,7 @@ func AddVMPoolMember(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
@@ -346,7 +346,7 @@ func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.V
 }
 
 func RemoveVMPoolMember(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -371,7 +371,7 @@ func RemoveVMPoolMember(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {

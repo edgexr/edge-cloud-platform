@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -78,7 +79,7 @@ func InitConfig(ctx context.Context) error {
 }
 
 func UpdateConfig(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -94,7 +95,7 @@ func UpdateConfig(c echo.Context) error {
 	// calling bind after doing lookup will overwrite only the
 	// fields specified in the request body, keeping existing fields intact.
 	if err := c.Bind(&config); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	config.ID = defaultConfig.ID
 
@@ -128,7 +129,7 @@ func UpdateConfig(c echo.Context) error {
 }
 
 func ResetConfig(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -156,7 +157,7 @@ func ResetConfig(c echo.Context) error {
 }
 
 func ShowConfig(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -195,7 +196,7 @@ func resetUserPasswordCrackTimes(ctx context.Context) error {
 // UI consistent with the behavior of the back-end. This is an un-authenticated
 // API so only that which is needed should be revealed.
 func PublicConfig(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	config, err := getConfig(ctx)
 	if err != nil {
 		return err

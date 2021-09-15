@@ -1,4 +1,4 @@
-package orm
+package ormutil
 
 import (
 	"encoding/json"
@@ -19,14 +19,14 @@ import (
 type HTTPError struct {
 	Message  string `json:"message,omitempty"`
 	Code     int    `json:"code,omitempty"`
-	internal error
+	Internal error
 }
 
 func (s *HTTPError) Error() string {
 	return s.Message
 }
 
-func newHTTPError(code int, err string) *HTTPError {
+func NewHTTPError(code int, err string) *HTTPError {
 	return &HTTPError{
 		Message: err,
 		Code:    code,
@@ -42,23 +42,23 @@ func Msg(msg string) *ormapi.Result {
 	return &ormapi.Result{Message: msg}
 }
 
-func dbErr(err error) error {
+func DbErr(err error) error {
 	return fmt.Errorf("database error, " + err.Error())
 }
 
-func bindErr(err error) error {
+func BindErr(err error) error {
 	return err
 }
 
-// setReply sets the reply data on a successful API call
-func setReply(c echo.Context, data interface{}) error {
+// SetReply sets the reply data on a successful API call
+func SetReply(c echo.Context, data interface{}) error {
 	return c.JSON(http.StatusOK, data)
 }
 
-// streamReply funcs used by alldata always send back just a status
+// StreamReply funcs used by alldata always send back just a status
 // message, never an error - even if an error was generated. So they
 // never use payload.Result, which is used to convey an error.
-func streamReply(c echo.Context, desc string, err error, hadErr *bool) {
+func StreamReply(c echo.Context, desc string, err error, hadErr *bool) {
 	res := "ok"
 	if err == echo.ErrForbidden {
 		res = "forbidden"
@@ -81,7 +81,7 @@ func streamReplyMsg(c echo.Context, desc, res string) {
 	c.Response().Flush()
 }
 
-func streamErr(c echo.Context, msg string) {
+func StreamErr(c echo.Context, msg string) {
 	payload := ormapi.StreamPayload{
 		Result: &ormapi.Result{
 			Message: msg,

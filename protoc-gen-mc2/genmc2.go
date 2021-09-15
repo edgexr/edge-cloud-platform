@@ -452,13 +452,11 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		g.importContext = true
 		g.importOrmapi = true
 		g.importLog = true
+		g.importOrmutil = true
 		if args.Outstream {
 			g.importIO = true
 		} else {
 			g.importGrpcStatus = true
-		}
-		if args.SetFields {
-			g.importOrmutil = true
 		}
 	}
 	err := tmpl.Execute(g, &args)
@@ -549,7 +547,7 @@ func (s *Region{{.InName}}) SetObjFields(fields []string) {
 
 var tmpl = `
 func {{.MethodName}}(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -600,7 +598,7 @@ func {{.MethodName}}(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 {{- end}}
 }
 

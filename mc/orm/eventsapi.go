@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 )
 
@@ -22,11 +23,11 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if err := search.TimeRange.Resolve(48 * time.Hour); err != nil {
 		return err
@@ -49,7 +50,7 @@ func searchEvents(c echo.Context, searchFunc func(context.Context, *node.EventSe
 
 	events, err := searchFunc(ctx, &search)
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, events)
 }
@@ -59,11 +60,11 @@ func EventTerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	search := node.EventSearch{}
 	if err := c.Bind(&search); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if err := search.TimeRange.Resolve(node.DefaultTimeDuration); err != nil {
 		return err
@@ -86,7 +87,7 @@ func EventTerms(c echo.Context) error {
 
 	terms, err := nodeMgr.EventTerms(ctx, &search)
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, *terms)
 }
@@ -96,9 +97,9 @@ func SpanTerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.SpanTerms(GetContext(c), params)
+	out, err := nodeMgr.SpanTerms(ormutil.GetContext(c), params)
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -108,9 +109,9 @@ func ShowSpans(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.ShowSpansCondensed(GetContext(c), params)
+	out, err := nodeMgr.ShowSpansCondensed(ormutil.GetContext(c), params)
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -120,9 +121,9 @@ func ShowSpansVerbose(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	out, err := nodeMgr.ShowSpans(GetContext(c), params)
+	out, err := nodeMgr.ShowSpans(ormutil.GetContext(c), params)
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -132,11 +133,11 @@ func getSpanSearchParams(c echo.Context) (*node.SpanSearch, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	search := node.SpanSearch{}
 	if err := c.Bind(&search); err != nil {
-		return nil, bindErr(err)
+		return nil, ormutil.BindErr(err)
 	}
 	if err := search.TimeRange.Resolve(48 * time.Hour); err != nil {
 		return nil, err

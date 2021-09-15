@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/vault"
@@ -150,7 +151,7 @@ func GenerateCookie(user *ormapi.User, apiKeyId, domain string) (*http.Cookie, e
 
 func getClaims(c echo.Context) (*UserClaims, error) {
 	user := c.Get("user")
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	if user == nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "get claims: no user")
 		return nil, echo.ErrUnauthorized

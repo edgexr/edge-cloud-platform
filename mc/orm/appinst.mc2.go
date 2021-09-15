@@ -29,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateAppInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -114,7 +114,7 @@ func CreateAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App
 }
 
 func DeleteAppInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -199,7 +199,7 @@ func DeleteAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App
 }
 
 func RefreshAppInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -284,7 +284,7 @@ func RefreshAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Ap
 }
 
 func UpdateAppInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -373,7 +373,7 @@ func UpdateAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App
 }
 
 func ShowAppInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -470,7 +470,7 @@ func ShowAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppIn
 }
 
 func RequestAppInstLatency(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -495,7 +495,7 @@ func RequestAppInstLatency(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RequestAppInstLatencyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstLatency) (*edgeproto.Result, error) {

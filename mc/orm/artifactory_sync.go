@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -286,7 +287,7 @@ func ArtifactorySummary(c echo.Context) error {
 	var summary AppStoreSummary
 
 	// Get MC users
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	mcUsers, err := getMCUsers(ctx)
 	if err != nil {
 		return err

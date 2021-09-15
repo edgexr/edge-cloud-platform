@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/log"
 	"github.com/mobiledgex/edge-cloud/tls"
@@ -179,17 +180,17 @@ func CreateController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	err = CreateControllerObj(ctx, claims, &ctrl)
 	if err != nil {
 		return err
 	}
-	return setReply(c, Msg("Controller registered"))
+	return ormutil.SetReply(c, ormutil.Msg("Controller registered"))
 }
 
 func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
@@ -205,7 +206,7 @@ func CreateControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.C
 	db := loggedDB(ctx)
 	err := db.Create(ctrl).Error
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	return nil
 }
@@ -215,11 +216,11 @@ func DeleteController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	ctrl := ormapi.Controller{}
 	if err := c.Bind(&ctrl); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	err = DeleteControllerObj(ctx, claims, &ctrl)
 	if err != nil {
@@ -227,7 +228,7 @@ func DeleteController(c echo.Context) error {
 	}
 	// Close regional influxDB connection when controller is deleted
 	influxDbConnCache.DeleteClient(ctrl.Region)
-	return setReply(c, Msg("Controller deregistered"))
+	return ormutil.SetReply(c, ormutil.Msg("Controller deregistered"))
 }
 
 func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.Controller) error {
@@ -240,13 +241,13 @@ func DeleteControllerObj(ctx context.Context, claims *UserClaims, ctrl *ormapi.C
 	db := loggedDB(ctx)
 	err := db.Delete(ctrl).Error
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	return nil
 }
 
 func ShowController(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -259,7 +260,7 @@ func ShowController(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return setReply(c, ctrls)
+	return ormutil.SetReply(c, ctrls)
 }
 
 func ShowControllerObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Controller, error) {
@@ -267,7 +268,7 @@ func ShowControllerObj(ctx context.Context, claims *UserClaims, filter map[strin
 	db := loggedDB(ctx)
 	err := db.Where(filter).Find(&ctrls).Error
 	if err != nil {
-		return nil, dbErr(err)
+		return nil, ormutil.DbErr(err)
 	}
 	return ctrls, nil
 }

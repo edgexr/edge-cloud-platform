@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -23,7 +24,7 @@ func CreateAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelInfo, "Create Alertmanager Receiver", "context", c, "claims", claims)
 	in := ormapi.AlertReceiver{}
 	_, err = ReadConn(c, &in)
@@ -118,7 +119,7 @@ func CreateAlertReceiver(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to create a receiver", "err", err)
 		return fmt.Errorf("Unable to create a receiver - %s", err.Error())
 	}
-	return setReply(c, Msg("Alert receiver created successfully"))
+	return ormutil.SetReply(c, ormutil.Msg("Alert receiver created successfully"))
 }
 
 func getOrgForReceiver(in *ormapi.AlertReceiver) string {
@@ -143,7 +144,7 @@ func DeleteAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelInfo, "Delete Alertmanager Receiver", "context", c, "claims", claims)
 	in := ormapi.AlertReceiver{}
 	_, err = ReadConn(c, &in)
@@ -179,7 +180,7 @@ func DeleteAlertReceiver(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to delete a receiver", "err", err)
 		return fmt.Errorf("Unable to delete a receiver - %s", err.Error())
 	}
-	return setReply(c, Msg("Alert receiver deleted successfully"))
+	return ormutil.SetReply(c, ormutil.Msg("Alert receiver deleted successfully"))
 }
 
 // Show alert receivers api handler
@@ -189,13 +190,13 @@ func ShowAlertReceiver(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	log.SpanLog(ctx, log.DebugLevelApi, "Show Alertmanager Receivers", "context", c, "claims", claims)
 
 	filter := ormapi.AlertReceiver{}
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&filter); err != nil {
-			return bindErr(err)
+			return ormutil.BindErr(err)
 		}
 	}
 
@@ -230,5 +231,5 @@ func ShowAlertReceiver(c echo.Context) error {
 			alertRecs = append(alertRecs, receivers[ii])
 		}
 	}
-	return setReply(c, alertRecs)
+	return ormutil.SetReply(c, alertRecs)
 }

@@ -30,7 +30,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -55,7 +55,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -86,7 +86,7 @@ func CreateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func DeleteAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -111,7 +111,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -142,7 +142,7 @@ func DeleteAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func UpdateAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -171,7 +171,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
@@ -202,7 +202,7 @@ func UpdateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func ShowAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -290,7 +290,7 @@ func ShowAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func AddAutoProvPolicyCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -315,7 +315,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
@@ -346,7 +346,7 @@ func AddAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *e
 }
 
 func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -371,7 +371,7 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {

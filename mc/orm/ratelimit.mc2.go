@@ -28,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func ShowRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -115,7 +115,7 @@ func ShowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgep
 }
 
 func CreateFlowRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -139,7 +139,7 @@ func CreateFlowRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.FlowRateLimitSettings) (*edgeproto.Result, error) {
@@ -170,7 +170,7 @@ func CreateFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj 
 }
 
 func UpdateFlowRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -198,7 +198,7 @@ func UpdateFlowRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.FlowRateLimitSettings) (*edgeproto.Result, error) {
@@ -229,7 +229,7 @@ func UpdateFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj 
 }
 
 func DeleteFlowRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -253,7 +253,7 @@ func DeleteFlowRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.FlowRateLimitSettings) (*edgeproto.Result, error) {
@@ -284,7 +284,7 @@ func DeleteFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj 
 }
 
 func ShowFlowRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -371,7 +371,7 @@ func ShowFlowRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *e
 }
 
 func CreateMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -395,7 +395,7 @@ func CreateMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.MaxReqsRateLimitSettings) (*edgeproto.Result, error) {
@@ -426,7 +426,7 @@ func CreateMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, o
 }
 
 func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -454,7 +454,7 @@ func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.MaxReqsRateLimitSettings) (*edgeproto.Result, error) {
@@ -485,7 +485,7 @@ func UpdateMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, o
 }
 
 func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -509,7 +509,7 @@ func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.MaxReqsRateLimitSettings) (*edgeproto.Result, error) {
@@ -540,7 +540,7 @@ func DeleteMaxReqsRateLimitSettingsObj(ctx context.Context, rc *RegionContext, o
 }
 
 func ShowMaxReqsRateLimitSettings(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

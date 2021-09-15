@@ -28,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -53,7 +53,7 @@ func CreateAlertPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
@@ -84,7 +84,7 @@ func CreateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func DeleteAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -109,7 +109,7 @@ func DeleteAlertPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
@@ -140,7 +140,7 @@ func DeleteAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func UpdateAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -169,7 +169,7 @@ func UpdateAlertPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
@@ -200,7 +200,7 @@ func UpdateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func ShowAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
