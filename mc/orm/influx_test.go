@@ -72,6 +72,21 @@ func testPermShowClientMetrics(mcClient *mctestclient.Client, uri, token, region
 	return mcClient.ShowClientApiUsageMetrics(uri, token, dat)
 }
 
+func testPermShowCloudletUsage(mcClient *mctestclient.Client, uri, token, region, org, selector string, data *edgeproto.CloudletKey) (*ormapi.AllMetrics, int, error) {
+	in := &edgeproto.CloudletKey{}
+	if data != nil {
+		in = data
+	} else {
+		in.Name = "testcloudlet"
+		in.Organization = org
+	}
+	dat := &ormapi.RegionCloudletMetrics{}
+	dat.Region = region
+	dat.Selector = selector
+	dat.Cloudlet = *in
+	return mcClient.ShowCloudletUsage(uri, token, dat)
+}
+
 func testPassCheckPermissionsAndGetCloudletList(t *testing.T, ctx context.Context, username, region string, devOrgs []string,
 	resource string, cloudletKeys []edgeproto.CloudletKey, expectedCloudlets []string) {
 
@@ -246,6 +261,15 @@ func goodPermTestMetrics(t *testing.T, mcClient *mctestclient.Client, uri, devTo
 	list, status, err = testPermShowClusterMetrics(mcClient, uri, operToken, region, operOrg, "utilization", &cluster)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Invalid cluster")
+	require.Equal(t, http.StatusBadRequest, status)
+}
+
+func testInvalidOrgForCloudletUsage(t *testing.T, mcClient *mctestclient.Client, uri, adminToken, region, operOrg string) {
+	// bad cloudlet name check
+	invalidCloudlet := edgeproto.CloudletKey{Organization: "InvalidCloudletOrg"}
+	_, status, err := testPermShowCloudletUsage(mcClient, uri, adminToken, region, operOrg, "resourceusage", &invalidCloudlet)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Unable to find platform for the cloudlet")
 	require.Equal(t, http.StatusBadRequest, status)
 }
 
