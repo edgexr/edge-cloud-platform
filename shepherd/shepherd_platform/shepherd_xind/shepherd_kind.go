@@ -1,4 +1,4 @@
-package shepherd_edgebox
+package shepherd_xind
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/shepherd/shepherd_common"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
-	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/dind"
+	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform/common/xind"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	ssh "github.com/mobiledgex/golang-ssh"
 	"github.com/shirou/gopsutil/cpu"
@@ -18,13 +18,14 @@ import (
 )
 
 type Platform struct {
-	pf           dind.Platform
+	pf           xind.Xind
 	SharedClient ssh.Client
 }
 
 func (s *Platform) Init(ctx context.Context, pc *platform.PlatformConfig, caches *platform.Caches) error {
-	s.SharedClient, _ = s.pf.GetNodePlatformClient(ctx, nil)
-	return nil
+	var err error
+	s.SharedClient, err = s.pf.GetNodePlatformClient(ctx, nil)
+	return err
 }
 
 func (s *Platform) SetVMPool(ctx context.Context, vmPool *edgeproto.VMPool) {
@@ -42,7 +43,7 @@ func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *ed
 }
 
 func (s *Platform) GetVmAppRootLbClient(ctx context.Context, app *edgeproto.AppInstKey) (ssh.Client, error) {
-	return nil, fmt.Errorf("No dedicated lbs for edgebox")
+	return nil, fmt.Errorf("No dedicated lbs for xind")
 }
 
 func (s *Platform) GetMetricsCollectInterval() time.Duration {
@@ -85,8 +86,12 @@ func (s *Platform) GetPlatformStats(ctx context.Context) (shepherd_common.Cloudl
 }
 
 func (s *Platform) GetVmStats(ctx context.Context, key *edgeproto.AppInstKey) (shepherd_common.AppMetrics, error) {
-	return shepherd_common.AppMetrics{}, fmt.Errorf("VM on DIND is unsupported")
+	return shepherd_common.AppMetrics{}, fmt.Errorf("VM on XIND is unsupported")
 }
 
 func (s *Platform) VmAppChangedCallback(ctx context.Context) {
+}
+
+func (s *Platform) IsPlatformLocal(ctx context.Context) bool {
+	return true
 }

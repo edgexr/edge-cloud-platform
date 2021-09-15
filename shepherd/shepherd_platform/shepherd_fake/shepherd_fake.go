@@ -48,3 +48,7 @@ func (s *Platform) VmAppChangedCallback(ctx context.Context) {
 func (s *Platform) GetMetricsCollectInterval() time.Duration {
 	return 0
 }
+
+func (s *Platform) IsPlatformLocal(ctx context.Context) bool {
+	return true
+}
