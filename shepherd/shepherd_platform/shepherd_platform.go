@@ -30,4 +30,6 @@ type Platform interface {
 	GetMetricsCollectInterval() time.Duration
 	// Inform the platform that a VM App was added or deleted
 	VmAppChangedCallback(ctx context.Context)
+	// Check if the platform is running locally
+	IsPlatformLocal(ctx context.Context) bool
 }

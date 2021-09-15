@@ -29,6 +29,9 @@ type ClusterAutoScaler struct {
 }
 
 func (s *ClusterAutoScaler) updateClusterStats(ctx context.Context, key edgeproto.ClusterInstKey, stats *shepherd_common.ClusterMetrics) {
+	if stats == nil {
+		return
+	}
 	needsWork := false
 	s.mux.Lock()
 	if s.lastStabilizedTotalCpu != float32(stats.AutoScaleCpu) {
