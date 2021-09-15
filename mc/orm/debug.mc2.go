@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -26,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func EnableDebugLevels(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -109,7 +110,7 @@ func EnableDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func DisableDebugLevels(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -192,7 +193,7 @@ func DisableDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func ShowDebugLevels(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -272,7 +273,7 @@ func ShowDebugLevelsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.D
 }
 
 func RunDebug(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

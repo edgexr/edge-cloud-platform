@@ -29,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateClusterInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -114,7 +114,7 @@ func CreateClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func DeleteClusterInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -199,7 +199,7 @@ func DeleteClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func UpdateClusterInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -288,7 +288,7 @@ func UpdateClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func ShowClusterInst(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -385,7 +385,7 @@ func ShowClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.C
 }
 
 func DeleteIdleReservableClusterInsts(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -408,7 +408,7 @@ func DeleteIdleReservableClusterInsts(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteIdleReservableClusterInstsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {

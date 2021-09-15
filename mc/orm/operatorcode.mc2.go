@@ -11,6 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
@@ -27,7 +28,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateOperatorCode(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -51,7 +52,7 @@ func CreateOperatorCode(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
@@ -82,7 +83,7 @@ func CreateOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func DeleteOperatorCode(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -106,7 +107,7 @@ func DeleteOperatorCode(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeproto.OperatorCode) (*edgeproto.Result, error) {
@@ -137,7 +138,7 @@ func DeleteOperatorCodeObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func ShowOperatorCode(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

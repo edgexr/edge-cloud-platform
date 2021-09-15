@@ -29,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateGPUDriver(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -114,7 +114,7 @@ func CreateGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.G
 }
 
 func DeleteGPUDriver(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -199,7 +199,7 @@ func DeleteGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.G
 }
 
 func UpdateGPUDriver(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -288,7 +288,7 @@ func UpdateGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.G
 }
 
 func ShowGPUDriver(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -385,7 +385,7 @@ func ShowGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.GPU
 }
 
 func AddGPUDriverBuild(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -470,7 +470,7 @@ func AddGPUDriverBuildObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func RemoveGPUDriverBuild(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -555,7 +555,7 @@ func RemoveGPUDriverBuildObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func GetGPUDriverBuildURL(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -580,7 +580,7 @@ func GetGPUDriverBuildURL(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GetGPUDriverBuildURLObj(ctx context.Context, rc *RegionContext, obj *edgeproto.GPUDriverBuildMember) (*edgeproto.GPUDriverBuildURL, error) {
@@ -608,7 +608,7 @@ func GetGPUDriverBuildURLObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func CreateCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -693,7 +693,7 @@ func CreateCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cl
 }
 
 func DeleteCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -778,7 +778,7 @@ func DeleteCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cl
 }
 
 func UpdateCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -867,7 +867,7 @@ func UpdateCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Cl
 }
 
 func ShowCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -963,7 +963,7 @@ func ShowCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.Clou
 }
 
 func GetCloudletManifest(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -987,7 +987,7 @@ func GetCloudletManifest(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
@@ -1018,7 +1018,7 @@ func GetCloudletManifestObj(ctx context.Context, rc *RegionContext, obj *edgepro
 }
 
 func GetCloudletProps(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1042,7 +1042,7 @@ func GetCloudletProps(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GetCloudletPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
@@ -1070,7 +1070,7 @@ func GetCloudletPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.
 }
 
 func GetCloudletResourceQuotaProps(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1094,7 +1094,7 @@ func GetCloudletResourceQuotaProps(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GetCloudletResourceQuotaPropsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error) {
@@ -1122,7 +1122,7 @@ func GetCloudletResourceQuotaPropsObj(ctx context.Context, rc *RegionContext, ob
 }
 
 func GetCloudletResourceUsage(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1147,7 +1147,7 @@ func GetCloudletResourceUsage(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GetCloudletResourceUsageObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
@@ -1175,7 +1175,7 @@ func GetCloudletResourceUsageObj(ctx context.Context, rc *RegionContext, obj *ed
 }
 
 func AddCloudletResMapping(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1200,7 +1200,7 @@ func AddCloudletResMapping(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
@@ -1231,7 +1231,7 @@ func AddCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgep
 }
 
 func RemoveCloudletResMapping(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1256,7 +1256,7 @@ func RemoveCloudletResMapping(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
@@ -1287,7 +1287,7 @@ func RemoveCloudletResMappingObj(ctx context.Context, rc *RegionContext, obj *ed
 }
 
 func FindFlavorMatch(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1312,7 +1312,7 @@ func FindFlavorMatch(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func FindFlavorMatchObj(ctx context.Context, rc *RegionContext, obj *edgeproto.FlavorMatch) (*edgeproto.FlavorMatch, error) {
@@ -1340,7 +1340,7 @@ func FindFlavorMatchObj(ctx context.Context, rc *RegionContext, obj *edgeproto.F
 }
 
 func ShowFlavorsForCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1420,7 +1420,7 @@ func ShowFlavorsForCloudletObj(ctx context.Context, rc *RegionContext, obj *edge
 }
 
 func GetOrganizationsOnCloudlet(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1501,7 +1501,7 @@ func GetOrganizationsOnCloudletObj(ctx context.Context, rc *RegionContext, obj *
 }
 
 func RevokeAccessKey(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1525,7 +1525,7 @@ func RevokeAccessKey(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RevokeAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.Result, error) {
@@ -1556,7 +1556,7 @@ func RevokeAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.C
 }
 
 func GenerateAccessKey(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1580,7 +1580,7 @@ func GenerateAccessKey(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func GenerateAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) (*edgeproto.Result, error) {
@@ -1611,7 +1611,7 @@ func GenerateAccessKeyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func ShowCloudletInfo(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1699,7 +1699,7 @@ func ShowCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.
 }
 
 func InjectCloudletInfo(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1724,7 +1724,7 @@ func InjectCloudletInfo(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func InjectCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
@@ -1755,7 +1755,7 @@ func InjectCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func EvictCloudletInfo(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -1780,7 +1780,7 @@ func EvictCloudletInfo(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func EvictCloudletInfoObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletInfo) (*edgeproto.Result, error) {

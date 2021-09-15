@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -88,7 +89,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 	}
 	rc.claims = claims
 	regionRc.username = claims.Username
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "usage/cloudletpool") {
 		in := ormapi.RegionCloudletPoolUsage{}
@@ -154,7 +155,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 		usage := ormapi.AllMetrics{
 			Data: []ormapi.MetricData{*clusterUsage, *appUsage},
 		}
-		return setReply(c, &usage)
+		return ormutil.SetReply(c, &usage)
 	} else {
 		return echo.ErrNotFound
 	}

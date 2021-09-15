@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jinzhu/gorm"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
@@ -125,4 +126,11 @@ func findInsertFields(sql string, fieldNames map[string]struct{}) []int {
 		varIndices = append(varIndices, ii)
 	}
 	return varIndices
+}
+
+func LoggedDB(ctx context.Context, database *gorm.DB) *gorm.DB {
+	db := database.New() // clone
+	db.SetLogger(&Logger{Ctx: ctx})
+	db.LogMode(true)
+	return db
 }

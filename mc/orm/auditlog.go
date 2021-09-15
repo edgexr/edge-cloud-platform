@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
@@ -64,7 +65,7 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		span.SetTag("level", "audit")
 		defer span.Finish()
 		ctx := log.ContextWithSpan(context.Background(), span)
-		ec := NewEchoContext(c, ctx)
+		ec := ormutil.NewEchoContext(c, ctx)
 
 		// The error handler injects the error into the response.
 		// This audit log needs the error to log it, but does not
@@ -107,8 +108,8 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		response := ""
-		if ws := GetWs(ec); ws != nil {
-			wsRequest, wsResponse := GetWsLogData(ec)
+		if ws := ormutil.GetWs(ec); ws != nil {
+			wsRequest, wsResponse := ormutil.GetWsLogData(ec)
 			if len(wsRequest) > 0 {
 				reqBody = wsRequest
 			}
@@ -200,10 +201,10 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 		eventErr := nexterr
 		if nexterr != nil {
 			span.SetTag("error", nexterr)
-			he, ok := nexterr.(*HTTPError)
-			if ok && he.internal != nil {
-				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.internal)
-				eventErr = he.internal
+			he, ok := nexterr.(*ormutil.HTTPError)
+			if ok && he.Internal != nil {
+				log.SpanLog(ctx, log.DebugLevelInfo, "internal-err", "err", he.Internal)
+				eventErr = he.Internal
 			}
 		}
 		if len(resBody) > 0 {
@@ -288,7 +289,7 @@ func getErrorResult(err error) (int, *ormapi.Result) {
 	// convert err to result which can be inserted into http response
 	code := http.StatusBadRequest
 	msg := ""
-	if e, ok := err.(*HTTPError); ok {
+	if e, ok := err.(*ormutil.HTTPError); ok {
 		code = e.Code
 		msg = e.Message
 	} else if e, ok := err.(*echo.HTTPError); ok {
@@ -319,7 +320,7 @@ func errorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// write error to response/stream
 		var writeErr error
-		if ws := GetWs(c); ws != nil {
+		if ws := ormutil.GetWs(c); ws != nil {
 			// websocket errors must be handled in
 			// websocketUpgrade before the ws is closed.
 		} else if c.Get(StreamAPITag) != nil && c.Response().Committed {
@@ -335,7 +336,7 @@ func errorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 			writeErr = c.JSON(code, res)
 		}
 		if writeErr != nil {
-			ctx := GetContext(c)
+			ctx := ormutil.GetContext(c)
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to write error to response", "err", err, "writeError", writeErr)
 		}
 		return err
@@ -347,11 +348,11 @@ func ShowAuditSelf(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	params := make(map[string]string)
@@ -378,11 +379,11 @@ func ShowAuditOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	query := ormapi.AuditQuery{}
 	if err := c.Bind(&query); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	filter := &AuditOrgsFilter{}
@@ -646,7 +647,7 @@ func GetAuditOperations(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	path := "/api/services/" + log.SpanServiceName + "/operations"
 	emptyMap := make(map[string]string)
@@ -657,14 +658,14 @@ func GetAuditOperations(c echo.Context) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		str := fmt.Sprintf("Bad status from log server, %s", http.StatusText(resp.StatusCode))
-		return newHTTPError(http.StatusInternalServerError, str)
+		return ormutil.NewHTTPError(http.StatusInternalServerError, str)
 	}
 
 	respData := jaegerOperationsResponse{}
 	err = json.NewDecoder(resp.Body).Decode(&respData)
 	if err != nil {
 		str := fmt.Sprintf("Cannot parse log server response, %v", err)
-		return newHTTPError(http.StatusInternalServerError, str)
+		return ormutil.NewHTTPError(http.StatusInternalServerError, str)
 	}
 	// ignore any operations that are not user api calls, like
 	// "main" or "appstore sync".

@@ -27,7 +27,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateTrustPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -112,7 +112,7 @@ func CreateTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func DeleteTrustPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -197,7 +197,7 @@ func DeleteTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func UpdateTrustPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -286,7 +286,7 @@ func UpdateTrustPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func ShowTrustPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

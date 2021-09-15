@@ -12,6 +12,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
@@ -36,10 +37,10 @@ func CreateOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
@@ -48,7 +49,7 @@ func CreateOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return setReply(c, Msg("Organization created"))
+	return ormutil.SetReply(c, ormutil.Msg("Organization created"))
 }
 
 func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
@@ -98,13 +99,13 @@ func CreateOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"organizations_pkey") {
 			return fmt.Errorf("Organization with name %s (case-insensitive) already exists", org.Name)
 		}
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	// set user to admin role of organization
 	psub := rbac.GetCasbinGroup(org.Name, claims.Username)
 	err = enforcer.AddGroupingPolicy(ctx, psub, role)
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 
 	gitlabCreateGroup(ctx, org)
@@ -126,10 +127,10 @@ func DeleteOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	org := ormapi.Organization{}
 	if err := c.Bind(&org); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	span := log.SpanFromContext(ctx)
 	span.SetTag("org", org.Name)
@@ -138,7 +139,7 @@ func DeleteOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return setReply(c, Msg("Organization deleted"))
+	return ormutil.SetReply(c, ormutil.Msg("Organization deleted"))
 }
 
 func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organization) error {
@@ -192,13 +193,13 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		if strings.Contains(err.Error(), "violates foreign key constraint \"org_cloudlet_pools_org_fkey\"") {
 			return fmt.Errorf("Cannot delete organization because it is referenced by some cloudletpool invitation or response")
 		}
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 
 	// delete all casbin groups associated with org
 	groups, err := enforcer.GetGroupingPolicy()
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	for _, grp := range groups {
 		if len(grp) < 2 {
@@ -208,7 +209,7 @@ func DeleteOrgObj(ctx context.Context, claims *UserClaims, org *ormapi.Organizat
 		if len(strs) == 2 && strs[0] == org.Name {
 			err = enforcer.RemoveGroupingPolicy(ctx, grp[0], grp[1])
 			if err != nil {
-				return dbErr(err)
+				return ormutil.DbErr(err)
 			}
 		}
 	}
@@ -227,7 +228,7 @@ func RestrictedUpdateOrg(c echo.Context) error {
 }
 
 func updateOrg(c echo.Context, updateType UpdateType) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -239,7 +240,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	in := ormapi.Organization{}
 	err = BindJson(body, &in)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if in.Name == "" {
 		return fmt.Errorf("Organization name not specified")
@@ -255,7 +256,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 		return fmt.Errorf("Organization not found")
 	}
 	if res.Error != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(res.Error).Error())
 	}
 	oldType := org.Type
 	oldEdgeboxOnly := org.EdgeboxOnly
@@ -275,7 +276,7 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 	// apply specified fields
 	err = BindJson(body, &org)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if org.Type != oldType {
 		return fmt.Errorf("Cannot change Organization type")
@@ -292,14 +293,14 @@ func updateOrg(c echo.Context, updateType UpdateType) error {
 
 	err = db.Save(&org).Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(err).Error())
 	}
 	return nil
 }
 
 // Show Organizations that current user belongs to.
 func ShowOrg(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -312,7 +313,7 @@ func ShowOrg(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return setReply(c, orgs)
+	return ormutil.SetReply(c, orgs)
 }
 
 func ShowOrgObj(ctx context.Context, claims *UserClaims, filter map[string]interface{}) ([]ormapi.Organization, error) {
@@ -320,7 +321,7 @@ func ShowOrgObj(ctx context.Context, claims *UserClaims, filter map[string]inter
 	db := loggedDB(ctx)
 	err := db.Where(filter).Find(&orgs).Error
 	if err != nil {
-		return nil, dbErr(err)
+		return nil, ormutil.DbErr(err)
 	}
 	err = authorized(ctx, claims.Username, "", ResourceUsers, ActionView)
 	if err == nil {
@@ -331,7 +332,7 @@ func ShowOrgObj(ctx context.Context, claims *UserClaims, filter map[string]inter
 	authOrgs := make(map[string]struct{})
 	groupings, err := enforcer.GetGroupingPolicy()
 	if err != nil {
-		return nil, dbErr(err)
+		return nil, ormutil.DbErr(err)
 	}
 	for _, grp := range groupings {
 		if len(grp) < 2 {
@@ -415,7 +416,7 @@ func markOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error) {
 		return fmt.Errorf("org not found")
 	}
 	if res.Error != nil {
-		return newHTTPError(http.StatusInternalServerError, res.Error.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, res.Error.Error())
 	}
 	if mark {
 		if findOrg.DeleteInProgress {
@@ -427,7 +428,7 @@ func markOrgForDelete(db *gorm.DB, name string, mark bool) (reterr error) {
 	}
 	err := tx.Save(&findOrg).Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, err.Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return tx.Commit().Error
 }

@@ -16,6 +16,7 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -93,7 +94,7 @@ func updateReporterData(ctx context.Context, reporterName, reporterOrg string, n
 		return nil
 	}
 	if res.Error != nil {
-		return dbErr(res.Error)
+		return ormutil.DbErr(res.Error)
 	}
 	applyUpdate := false
 	if !newDate.IsZero() {
@@ -109,12 +110,12 @@ func updateReporterData(ctx context.Context, reporterName, reporterOrg string, n
 	if applyUpdate {
 		err := tx.Save(&updateReporter).Error
 		if err != nil {
-			return dbErr(err)
+			return ormutil.DbErr(err)
 		}
 	}
 	err := tx.Commit().Error
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	return nil
 }
@@ -303,14 +304,14 @@ func tzMatch(timezone string, reportTime time.Time) (bool, error) {
 
 // Create reporter to generate usage reports
 func CreateReporter(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	reporter := ormapi.Reporter{}
 	if err := c.Bind(&reporter); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	// sanity check
 	if reporter.Name == "" {
@@ -393,17 +394,17 @@ func CreateReporter(c echo.Context) error {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"reporters_pkey") {
 			return fmt.Errorf("Reporter for org %s with name %s already exists", reporter.Org, reporter.Name)
 		}
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	// trigger report generation if schedule date is today as it may have passed our internal report schedule
 	if ormapi.DateCmp(scheduleDate, time.Now()) == 0 {
 		triggerReporter()
 	}
-	return c.JSON(http.StatusOK, Msg("Reporter created"))
+	return c.JSON(http.StatusOK, ormutil.Msg("Reporter created"))
 }
 
 func UpdateReporter(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -415,7 +416,7 @@ func UpdateReporter(c echo.Context) error {
 	in := ormapi.Reporter{}
 	err = BindJson(body, &in)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if in.Name == "" {
 		return fmt.Errorf("Reporter name not specified")
@@ -438,7 +439,7 @@ func UpdateReporter(c echo.Context) error {
 		return fmt.Errorf("Reporter not found")
 	}
 	if res.Error != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(res.Error).Error())
 	}
 
 	// check if user is authorized to update reporter
@@ -450,7 +451,7 @@ func UpdateReporter(c echo.Context) error {
 	// apply specified fields
 	err = BindJson(body, &reporter)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	applyUpdate := false
 	if reporter.Email != oldReporter.Email {
@@ -526,11 +527,11 @@ func UpdateReporter(c echo.Context) error {
 
 	err = tx.Save(&reporter).Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(err).Error())
 	}
 	err = tx.Commit().Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(err).Error())
 	}
 	if schedDateUpdated {
 		// trigger report generation if schedule date is today as it may have passed our internal report schedule
@@ -538,18 +539,18 @@ func UpdateReporter(c echo.Context) error {
 			triggerReporter()
 		}
 	}
-	return c.JSON(http.StatusOK, Msg("reporter updated"))
+	return c.JSON(http.StatusOK, ormutil.Msg("reporter updated"))
 }
 
 func DeleteReporter(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	reporter := ormapi.Reporter{}
 	if err := c.Bind(&reporter); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	if reporter.Name == "" {
 		return fmt.Errorf("Reporter name not specified")
@@ -571,7 +572,7 @@ func DeleteReporter(c echo.Context) error {
 		return fmt.Errorf("Reporter not found")
 	}
 	if res.Error != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(res.Error).Error())
 	}
 	// check if user is authorized to delete reporter
 	if err := authorized(ctx, claims.Username, reporter.Org, ResourceCloudlets, ActionManage); err != nil {
@@ -583,13 +584,13 @@ func DeleteReporter(c echo.Context) error {
 	}
 	err = tx.Commit().Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(err).Error())
 	}
-	return c.JSON(http.StatusOK, Msg("reporter deleted"))
+	return c.JSON(http.StatusOK, ormutil.Msg("reporter deleted"))
 }
 
 func ShowReporter(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
@@ -599,12 +600,12 @@ func ShowReporter(c echo.Context) error {
 	filter := ormapi.Reporter{}
 	if c.Request().ContentLength > 0 {
 		if err := c.Bind(&filter); err != nil {
-			return bindErr(err)
+			return ormutil.BindErr(err)
 		}
 	}
 	authOrgs, err := enforcer.GetAuthorizedOrgs(ctx, claims.Username, ResourceCloudletAnalytics, ActionView)
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	_, admin := authOrgs[""]
 	_, orgFound := authOrgs[filter.Org]
@@ -616,7 +617,7 @@ func ShowReporter(c echo.Context) error {
 	reporters := []ormapi.Reporter{}
 	err = db.Where(&filter).Find(&reporters).Error
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	showOutput := []ormapi.Reporter{}
 	if admin {
@@ -642,14 +643,14 @@ func GenerateReport(c echo.Context) error {
 }
 
 func GenerateReportObj(c echo.Context, dataOnly bool) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	report := ormapi.GenerateReport{}
 	if err := c.Bind(&report); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	org := report.Org
 	if org == "" {
@@ -1622,14 +1623,14 @@ func getGCSStorageClient(ctx context.Context) (*gcs.GCSClient, error) {
 
 func ShowReport(c echo.Context) error {
 	// get list of generated reports from cloud
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	reportQuery := ormapi.DownloadReport{}
 	if err := c.Bind(&reportQuery); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	// sanity check
 	if reportQuery.Org == "" {
@@ -1670,14 +1671,14 @@ func ShowReport(c echo.Context) error {
 
 func DownloadReport(c echo.Context) error {
 	// download report from cloud with given filename
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	reportQuery := ormapi.DownloadReport{}
 	if err := c.Bind(&reportQuery); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	// sanity check
 	if reportQuery.Org == "" {

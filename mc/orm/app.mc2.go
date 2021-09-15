@@ -29,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateApp(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreateApp(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -85,7 +85,7 @@ func CreateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*
 }
 
 func DeleteApp(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -110,7 +110,7 @@ func DeleteApp(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -141,7 +141,7 @@ func DeleteAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*
 }
 
 func UpdateApp(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -170,7 +170,7 @@ func UpdateApp(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*edgeproto.Result, error) {
@@ -201,7 +201,7 @@ func UpdateAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) (*
 }
 
 func ShowApp(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -298,7 +298,7 @@ func ShowAppObj(ctx context.Context, rc *RegionContext, obj *edgeproto.App) ([]e
 }
 
 func AddAppAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -322,7 +322,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
@@ -353,7 +353,7 @@ func AddAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func RemoveAppAutoProvPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -377,7 +377,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
@@ -408,7 +408,7 @@ func RemoveAppAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edg
 }
 
 func AddAppAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -432,7 +432,7 @@ func AddAppAlertPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddAppAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAlertPolicy) (*edgeproto.Result, error) {
@@ -463,7 +463,7 @@ func AddAppAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto
 }
 
 func RemoveAppAlertPolicy(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -487,7 +487,7 @@ func RemoveAppAlertPolicy(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveAppAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppAlertPolicy) (*edgeproto.Result, error) {
@@ -518,7 +518,7 @@ func RemoveAppAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgepr
 }
 
 func ShowCloudletsForAppDeployment(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {

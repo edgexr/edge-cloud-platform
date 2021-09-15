@@ -9,13 +9,14 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 )
 
 // Create MC RateLimit MaxReqs settings
 func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
@@ -34,7 +35,7 @@ func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 	// Get McRateLimitMaxReqsSettings from request
 	in := ormapi.McRateLimitMaxReqsSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	// Create McRateLimitMaxReqsSettings entry
@@ -54,7 +55,7 @@ func CreateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Update MC RateLimit maxreqs settings
 func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -73,7 +74,7 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 	in := ormapi.McRateLimitMaxReqsSettings{}
 	err = BindJson(body, &in)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	// Update McRateLimitMaxReqsSettings entry
@@ -87,17 +88,17 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 		return fmt.Errorf("MaxReqsSettingsName not found")
 	}
 	if res.Error != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(res.Error).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(res.Error).Error())
 	}
 
 	err = BindJson(body, &maxreqs)
 	if err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	err = db.Save(&maxreqs).Error
 	if err != nil {
-		return newHTTPError(http.StatusInternalServerError, dbErr(err).Error())
+		return ormutil.NewHTTPError(http.StatusInternalServerError, ormutil.DbErr(err).Error())
 	}
 
 	// Update RateLimitMgr with new MaxReqsRateLimitSettings
@@ -107,7 +108,7 @@ func UpdateMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Delete MC RateLimit maxreqs settings
 func DeleteMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to delete ratelimitsettingsmc")
@@ -125,7 +126,7 @@ func DeleteMaxReqsRateLimitSettingsMc(c echo.Context) error {
 	// Get McRateLimitMaxReqsSettings from request
 	in := ormapi.McRateLimitMaxReqsSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	// Remove McRateLimitMaxReqsSettings entry
@@ -145,7 +146,7 @@ func DeleteMaxReqsRateLimitSettingsMc(c echo.Context) error {
 
 // Show MC RateLimit maxreqs settings
 func ShowMaxReqsRateLimitSettingsMc(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	// Check if rate limiting is disabled
 	if getDisableRateLimit(ctx) {
 		return fmt.Errorf("DisableRateLimit must be false to show ratelimitsettingsmc")
@@ -163,7 +164,7 @@ func ShowMaxReqsRateLimitSettingsMc(c echo.Context) error {
 	// Get McRateLimitMaxReqsSettings from request
 	in := ormapi.McRateLimitMaxReqsSettings{}
 	if err := c.Bind(&in); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 
 	// Search for all entries with specified primary keys (if fields are not specified, fields are left out of search)
@@ -173,7 +174,7 @@ func ShowMaxReqsRateLimitSettingsMc(c echo.Context) error {
 		return fmt.Errorf("Specified Key not found")
 	}
 	if r.Error != nil {
-		return dbErr(r.Error)
+		return ormutil.DbErr(r.Error)
 	}
 
 	mcmaxreqsrecords := make([]*ormapi.McRateLimitMaxReqsSettings, 0)
@@ -181,7 +182,7 @@ func ShowMaxReqsRateLimitSettingsMc(c echo.Context) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "Unable to find records for maxreqs", "error", err.Error())
 	}
 
-	return setReply(c, &mcmaxreqsrecords)
+	return ormutil.SetReply(c, &mcmaxreqsrecords)
 }
 
 func convertToMaxReqsRateLimitSettings(m *ormapi.McRateLimitMaxReqsSettings) *edgeproto.MaxReqsRateLimitSettings {

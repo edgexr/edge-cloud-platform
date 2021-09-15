@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud-infra/mc/rbac"
 	"github.com/mobiledgex/edge-cloud/log"
 )
@@ -177,7 +178,7 @@ func ShowRolePerms(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	// admin user can see all roles
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {
@@ -190,7 +191,7 @@ func ShowRolePerms(c echo.Context) error {
 
 	policies, err := enforcer.GetPolicy()
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	ret := []*ormapi.RolePerm{}
 	for ii, _ := range policies {
@@ -221,7 +222,7 @@ func ShowRoleAssignment(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	filter, err := bindMap(c)
 	if err != nil {
@@ -235,7 +236,7 @@ func ShowRoleAssignment(c echo.Context) error {
 
 	groupings, err := enforcer.GetGroupingPolicy()
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	ret := []*ormapi.Role{}
 	for ii, _ := range groupings {
@@ -324,7 +325,7 @@ func ShowRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	// admin user can see all roles
 	isAdmin, err := isUserAdmin(ctx, claims.Username)
 	if err != nil {
@@ -334,7 +335,7 @@ func ShowRole(c echo.Context) error {
 	rolemap := make(map[string]struct{})
 	policies, err := enforcer.GetPolicy()
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	for _, policy := range policies {
 		if len(policy) < 1 {
@@ -362,13 +363,13 @@ func AddUserRole(c echo.Context) error {
 	}
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
-	err = AddUserRoleObj(GetContext(c), claims, &role)
+	err = AddUserRoleObj(ormutil.GetContext(c), claims, &role)
 	if err != nil {
 		return err
 	}
-	return setReply(c, Msg("Role added to user"))
+	return ormutil.SetReply(c, ormutil.Msg("Role added to user"))
 }
 
 func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
@@ -408,7 +409,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 		return fmt.Errorf("Username not found")
 	}
 	if res.Error != nil {
-		return dbErr(res.Error)
+		return ormutil.DbErr(res.Error)
 	}
 	if adminRole {
 		if targetUser.PassCrackTimeSec == 0 {
@@ -422,7 +423,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	}
 	policies, err := enforcer.GetPolicy()
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	roleFound := false
 	for _, policy := range policies {
@@ -445,7 +446,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 			return fmt.Errorf("Organization not found")
 		}
 		if res.Error != nil {
-			return dbErr(res.Error)
+			return ormutil.DbErr(res.Error)
 		}
 		// Restricting role types to match org types isn't strictly
 		// necessary. For example, giving role AdminManager for
@@ -463,7 +464,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 
 		groupings, err := enforcer.GetGroupingPolicy()
 		if err != nil {
-			return dbErr(err)
+			return ormutil.DbErr(err)
 		}
 		for ii, _ := range groupings {
 			existingRole := parseRole(groupings[ii])
@@ -490,7 +491,7 @@ func AddUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) 
 	psub := rbac.GetCasbinGroup(role.Org, role.Username)
 	err = enforcer.AddGroupingPolicy(ctx, psub, role.Role)
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	// notify recipient that they were added. don't fail on error
 	senderr := sendAddedEmail(ctx, claims.Username, targetUser.Name, targetUser.Email, role.Org, role.Role)
@@ -508,17 +509,17 @@ func RemoveUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	role := ormapi.Role{}
 	if err := c.Bind(&role); err != nil {
-		return bindErr(err)
+		return ormutil.BindErr(err)
 	}
 	err = RemoveUserRoleObj(ctx, claims, &role)
 	if err != nil {
 		return err
 	}
-	return setReply(c, Msg("Role removed from user"))
+	return ormutil.SetReply(c, ormutil.Msg("Role removed from user"))
 }
 
 func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Role) error {
@@ -542,7 +543,7 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 	psub := rbac.GetCasbinGroup(role.Org, role.Username)
 	found, err := enforcer.HasGroupingPolicy(psub, role.Role)
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 	if !found {
 		return nil
@@ -558,7 +559,7 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 		managerCount := 0
 		groups, err := enforcer.GetGroupingPolicy()
 		if err != nil {
-			return dbErr(err)
+			return ormutil.DbErr(err)
 		}
 		for _, grp := range groups {
 			r := parseRole(grp)
@@ -573,7 +574,7 @@ func RemoveUserRoleObj(ctx context.Context, claims *UserClaims, role *ormapi.Rol
 
 	err = enforcer.RemoveGroupingPolicy(ctx, psub, role.Role)
 	if err != nil {
-		return dbErr(err)
+		return ormutil.DbErr(err)
 	}
 
 	org := ormapi.Organization{}
@@ -592,7 +593,7 @@ func ShowUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	filter, err := bindMap(c)
 	if err != nil {
@@ -602,7 +603,7 @@ func ShowUserRole(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return setReply(c, roles)
+	return ormutil.SetReply(c, roles)
 }
 
 // show roles for organizations the current user has permission to
@@ -613,7 +614,7 @@ func ShowUserRoleObj(ctx context.Context, username string, filter map[string]int
 
 	groupings, err := enforcer.GetGroupingPolicy()
 	if err != nil {
-		return nil, dbErr(err)
+		return nil, ormutil.DbErr(err)
 	}
 	authz, err := newShowAuthz(ctx, "", username, ResourceUsers, ActionView)
 	if err != nil {
@@ -645,7 +646,7 @@ func SyncAccessCheck(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 
 	if err := authorized(ctx, claims.Username, "", ResourceControllers, ActionManage); err != nil {
 		return err

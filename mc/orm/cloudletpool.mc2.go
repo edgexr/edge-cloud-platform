@@ -29,7 +29,7 @@ var _ = math.Inf
 // Auto-generated code: DO NOT EDIT
 
 func CreateCloudletPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreateCloudletPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -85,7 +85,7 @@ func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func DeleteCloudletPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -110,7 +110,7 @@ func DeleteCloudletPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -141,7 +141,7 @@ func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func UpdateCloudletPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -170,7 +170,7 @@ func UpdateCloudletPool(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
@@ -201,7 +201,7 @@ func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeprot
 }
 
 func ShowCloudletPool(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -289,7 +289,7 @@ func ShowCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.
 }
 
 func AddCloudletPoolMember(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -314,7 +314,7 @@ func AddCloudletPoolMember(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
@@ -345,7 +345,7 @@ func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgep
 }
 
 func RemoveCloudletPoolMember(c echo.Context) error {
-	ctx := GetContext(c)
+	ctx := ormutil.GetContext(c)
 	rc := &RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
@@ -370,7 +370,7 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 		}
 		return err
 	}
-	return setReply(c, resp)
+	return ormutil.SetReply(c, resp)
 }
 
 func RemoveCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
