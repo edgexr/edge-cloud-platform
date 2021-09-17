@@ -4,17 +4,16 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
-	"io"
 	math "math"
 )
 
@@ -27,263 +26,122 @@ var _ = math.Inf
 
 func ShowCloudletRefs(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletRefs{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletRefs.GetKey().GetTags())
 	span.SetTag("org", in.CloudletRefs.Key.Organization)
 
-	err = ShowCloudletRefsStream(ctx, rc, &in.CloudletRefs, func(res *edgeproto.CloudletRefs) error {
+	obj := &in.CloudletRefs
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceCloudlets, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.CloudletRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowCloudletRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowCloudletRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs, cb func(res *edgeproto.CloudletRefs) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudlets, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletRefsApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowCloudletRefs(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowCloudletRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletRefs) ([]edgeproto.CloudletRefs, error) {
-	arr := []edgeproto.CloudletRefs{}
-	err := ShowCloudletRefsStream(ctx, rc, obj, func(res *edgeproto.CloudletRefs) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func ShowClusterRefs(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterRefs{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterRefs.GetKey().GetTags())
 
-	err = ShowClusterRefsStream(ctx, rc, &in.ClusterRefs, func(res *edgeproto.ClusterRefs) error {
+	obj := &in.ClusterRefs
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceClusterInsts, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.ClusterRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowClusterRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowClusterRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs, cb func(res *edgeproto.ClusterRefs) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewClusterRefsApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowClusterRefs(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok("") {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowClusterRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterRefs) ([]edgeproto.ClusterRefs, error) {
-	arr := []edgeproto.ClusterRefs{}
-	err := ShowClusterRefsStream(ctx, rc, obj, func(res *edgeproto.ClusterRefs) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func ShowAppInstRefs(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAppInstRefs{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstRefs.GetKey().GetTags())
 	span.SetTag("org", in.AppInstRefs.Key.Organization)
 
-	err = ShowAppInstRefsStream(ctx, rc, &in.AppInstRefs, func(res *edgeproto.AppInstRefs) error {
+	obj := &in.AppInstRefs
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceAppInsts, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.AppInstRefs) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowAppInstRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowAppInstRefsStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs, cb func(res *edgeproto.AppInstRefs) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceAppInsts, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAppInstRefsApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowAppInstRefs(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowAppInstRefsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error) {
-	arr := []edgeproto.AppInstRefs{}
-	err := ShowAppInstRefsStream(ctx, rc, obj, func(res *edgeproto.AppInstRefs) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }

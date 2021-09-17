@@ -4,12 +4,12 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -17,7 +17,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"google.golang.org/grpc/status"
-	"io"
 	math "math"
 )
 
@@ -30,189 +29,107 @@ var _ = math.Inf
 
 func CreateClusterInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
-	err = CreateClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CreateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result) error) error {
+	obj := &in.ClusterInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForCreateClusterInst(); err != nil {
 		return err
 	}
-	if !rc.skipAuthz {
-		if err := authzCreateClusterInst(ctx, rc.region, rc.username, obj,
+	if !rc.SkipAuthz {
+		if err := authzCreateClusterInst(ctx, rc.Region, rc.Username, obj,
 			ResourceClusterInsts, ActionManage); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewClusterInstApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.CreateClusterInst(ctx, obj)
+	err = ctrlapi.CreateClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func CreateClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := CreateClusterInstStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func DeleteClusterInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
-	err = DeleteClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func DeleteClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result) error) error {
+	obj := &in.ClusterInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForDeleteClusterInst(); err != nil {
 		return err
 	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewClusterInstApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.DeleteClusterInst(ctx, obj)
+	err = ctrlapi.DeleteClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func DeleteClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := DeleteClusterInstStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func UpdateClusterInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
 	dat, err := ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
@@ -222,186 +139,102 @@ func UpdateClusterInst(c echo.Context) error {
 		return err
 	}
 
-	err = UpdateClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.Result) error) error {
+	obj := &in.ClusterInst
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
 	if err := obj.IsValidArgsForUpdateClusterInst(); err != nil {
 		return err
 	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
 			ResourceClusterInsts, ActionManage); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewClusterInstApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.UpdateClusterInst(ctx, obj)
+	err = ctrlapi.UpdateClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func UpdateClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := UpdateClusterInstStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func ShowClusterInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterInst{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
-	err = ShowClusterInstStream(ctx, rc, &in.ClusterInst, func(res *edgeproto.ClusterInst) error {
+	obj := &in.ClusterInst
+	var authz ctrlapi.ShowClusterInstAuthz
+	if !rc.SkipAuthz {
+		authz, err = newShowClusterInstAuthz(ctx, rc.Region, rc.Username, ResourceClusterInsts, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.ClusterInst) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowClusterInstStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-type ShowClusterInstAuthz interface {
-	Ok(obj *edgeproto.ClusterInst) (bool, bool)
-	Filter(obj *edgeproto.ClusterInst)
-}
-
-func ShowClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst, cb func(res *edgeproto.ClusterInst) error) error {
-	var authz ShowClusterInstAuthz
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowClusterInstAuthz(ctx, rc.region, rc.username, ResourceClusterInsts, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewClusterInstApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowClusterInst(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			authzOk, filterOutput := authz.Ok(res)
-			if !authzOk {
-				continue
-			}
-			if filterOutput {
-				authz.Filter(res)
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInst) ([]edgeproto.ClusterInst, error) {
-	arr := []edgeproto.ClusterInst{}
-	err := ShowClusterInstStream(ctx, rc, obj, func(res *edgeproto.ClusterInst) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func DeleteIdleReservableClusterInsts(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionIdleReservableClusterInsts{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
-	resp, err := DeleteIdleReservableClusterInstsObj(ctx, rc, &in.IdleReservableClusterInsts)
+
+	obj := &in.IdleReservableClusterInsts
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteIdleReservableClusterInsts(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, "",
+			ResourceClusterInsts, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.DeleteIdleReservableClusterInstsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -409,31 +242,4 @@ func DeleteIdleReservableClusterInsts(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func DeleteIdleReservableClusterInstsObj(ctx context.Context, rc *RegionContext, obj *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForDeleteIdleReservableClusterInsts(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, "",
-			ResourceClusterInsts, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewClusterInstApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.DeleteIdleReservableClusterInsts(ctx, obj)
 }

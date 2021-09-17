@@ -4,13 +4,13 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -18,7 +18,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"google.golang.org/grpc/status"
-	"io"
 	math "math"
 )
 
@@ -31,24 +30,37 @@ var _ = math.Inf
 
 func CreateVMPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
-	resp, err := CreateVMPoolObj(ctx, rc, &in.VMPool)
+
+	obj := &in.VMPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateVMPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.CreateVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -56,55 +68,41 @@ func CreateVMPool(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func CreateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForCreateVMPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.CreateVMPool(ctx, obj)
 }
 
 func DeleteVMPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
-	resp, err := DeleteVMPoolObj(ctx, rc, &in.VMPool)
+
+	obj := &in.VMPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteVMPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.DeleteVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -114,48 +112,21 @@ func DeleteVMPool(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func DeleteVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForDeleteVMPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.DeleteVMPool(ctx, obj)
-}
-
 func UpdateVMPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPool{}
 	dat, err := ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
@@ -164,7 +135,20 @@ func UpdateVMPool(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := UpdateVMPoolObj(ctx, rc, &in.VMPool)
+
+	obj := &in.VMPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateVMPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.UpdateVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -174,141 +158,80 @@ func UpdateVMPool(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func UpdateVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForUpdateVMPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.UpdateVMPool(ctx, obj)
-}
-
 func ShowVMPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
 	span.SetTag("org", in.VMPool.Key.Organization)
 
-	err = ShowVMPoolStream(ctx, rc, &in.VMPool, func(res *edgeproto.VMPool) error {
+	obj := &in.VMPool
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceCloudletAnalytics, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.VMPool) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowVMPoolStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowVMPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool, cb func(res *edgeproto.VMPool) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudletAnalytics, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowVMPool(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowVMPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPool) ([]edgeproto.VMPool, error) {
-	arr := []edgeproto.VMPool{}
-	err := ShowVMPoolStream(ctx, rc, obj, func(res *edgeproto.VMPool) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func AddVMPoolMember(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPoolMember{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.VMPoolMember.Key.Organization)
-	resp, err := AddVMPoolMemberObj(ctx, rc, &in.VMPoolMember)
+
+	obj := &in.VMPoolMember
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddVMPoolMember(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.AddVMPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -316,55 +239,41 @@ func AddVMPoolMember(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func AddVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForAddVMPoolMember(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.AddVMPoolMember(ctx, obj)
 }
 
 func RemoveVMPoolMember(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionVMPoolMember{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.VMPoolMember.Key.Organization)
-	resp, err := RemoveVMPoolMemberObj(ctx, rc, &in.VMPoolMember)
+
+	obj := &in.VMPoolMember
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveVMPoolMember(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudlets, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.RemoveVMPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -372,31 +281,4 @@ func RemoveVMPoolMember(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func RemoveVMPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.VMPoolMember) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForRemoveVMPoolMember(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudlets, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewVMPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.RemoveVMPoolMember(ctx, obj)
 }

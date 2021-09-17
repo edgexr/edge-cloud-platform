@@ -4,18 +4,17 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
-	"io"
 	math "math"
 )
 
@@ -28,324 +27,160 @@ var _ = math.Inf
 
 func StreamAppInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAppInstKey{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppInstKey.AppKey.Organization)
 
-	err = StreamAppInstStream(ctx, rc, &in.AppInstKey, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func StreamAppInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey, cb func(res *edgeproto.Result) error) error {
+	obj := &in.AppInstKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.AppKey.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.AppKey.Organization,
 			ResourceAppInsts, ActionView); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewStreamObjApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.StreamAppInst(ctx, obj)
+	err = ctrlapi.StreamAppInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func StreamAppInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AppInstKey) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := StreamAppInstStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func StreamClusterInst(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionClusterInstKey{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ClusterInstKey.Organization)
 
-	err = StreamClusterInstStream(ctx, rc, &in.ClusterInstKey, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func StreamClusterInstStream(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey, cb func(res *edgeproto.Result) error) error {
+	obj := &in.ClusterInstKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Organization,
 			ResourceClusterInsts, ActionView); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewStreamObjApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.StreamClusterInst(ctx, obj)
+	err = ctrlapi.StreamClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func StreamClusterInstObj(ctx context.Context, rc *RegionContext, obj *edgeproto.ClusterInstKey) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := StreamClusterInstStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func StreamCloudlet(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletKey{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.CloudletKey.Organization)
 
-	err = StreamCloudletStream(ctx, rc, &in.CloudletKey, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func StreamCloudletStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey, cb func(res *edgeproto.Result) error) error {
+	obj := &in.CloudletKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Organization,
 			ResourceCloudlets, ActionView); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewStreamObjApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.StreamCloudlet(ctx, obj)
+	err = ctrlapi.StreamCloudletStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func StreamCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := StreamCloudletStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
-}
-
 func StreamGPUDriver(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionGPUDriverKey{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.GPUDriverKey.Organization)
 
-	err = StreamGPUDriverStream(ctx, rc, &in.GPUDriverKey, func(res *edgeproto.Result) error {
-		payload := ormapi.StreamPayload{}
-		payload.Data = res
-		return WriteStream(c, &payload)
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func StreamGPUDriverStream(ctx context.Context, rc *RegionContext, obj *edgeproto.GPUDriverKey, cb func(res *edgeproto.Result) error) error {
+	obj := &in.GPUDriverKey
 	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Organization,
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Organization,
 			ResourceCloudletAnalytics, ActionView); err != nil {
 			return err
 		}
 	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
+
+	cb := func(res *edgeproto.Result) error {
+		payload := ormapi.StreamPayload{}
+		payload.Data = res
+		return WriteStream(c, &payload)
 	}
-	api := edgeproto.NewStreamObjApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.StreamGPUDriver(ctx, obj)
+	err = ctrlapi.StreamGPUDriverStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
-}
-
-func StreamGPUDriverObj(ctx context.Context, rc *RegionContext, obj *edgeproto.GPUDriverKey) ([]edgeproto.Result, error) {
-	arr := []edgeproto.Result{}
-	err := StreamGPUDriverStream(ctx, rc, obj, func(res *edgeproto.Result) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }

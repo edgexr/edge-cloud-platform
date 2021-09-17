@@ -4,19 +4,18 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"google.golang.org/grpc/status"
-	"io"
 	math "math"
 )
 
@@ -29,24 +28,37 @@ var _ = math.Inf
 
 func CreateAlertPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAlertPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AlertPolicy.Key.Organization)
-	resp, err := CreateAlertPolicyObj(ctx, rc, &in.AlertPolicy)
+
+	obj := &in.AlertPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateAlertPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceDeveloperPolicy, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.CreateAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -54,55 +66,41 @@ func CreateAlertPolicy(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func CreateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForCreateAlertPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage, withRequiresOrg(obj.Key.Organization)); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAlertPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.CreateAlertPolicy(ctx, obj)
 }
 
 func DeleteAlertPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAlertPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AlertPolicy.Key.Organization)
-	resp, err := DeleteAlertPolicyObj(ctx, rc, &in.AlertPolicy)
+
+	obj := &in.AlertPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteAlertPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.DeleteAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -112,48 +110,21 @@ func DeleteAlertPolicy(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func DeleteAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForDeleteAlertPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAlertPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.DeleteAlertPolicy(ctx, obj)
-}
-
 func UpdateAlertPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAlertPolicy{}
 	dat, err := ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
@@ -162,7 +133,20 @@ func UpdateAlertPolicy(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := UpdateAlertPolicyObj(ctx, rc, &in.AlertPolicy)
+
+	obj := &in.AlertPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateAlertPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.UpdateAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -172,117 +156,43 @@ func UpdateAlertPolicy(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func UpdateAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForUpdateAlertPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAlertPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.UpdateAlertPolicy(ctx, obj)
-}
-
 func ShowAlertPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAlertPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AlertPolicy.Key.Organization)
 
-	err = ShowAlertPolicyStream(ctx, rc, &in.AlertPolicy, func(res *edgeproto.AlertPolicy) error {
+	obj := &in.AlertPolicy
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceDeveloperPolicy, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.AlertPolicy) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowAlertPolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowAlertPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy, cb func(res *edgeproto.AlertPolicy) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAlertPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowAlertPolicy(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowAlertPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AlertPolicy) ([]edgeproto.AlertPolicy, error) {
-	arr := []edgeproto.AlertPolicy{}
-	err := ShowAlertPolicyStream(ctx, rc, obj, func(res *edgeproto.AlertPolicy) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }

@@ -4,12 +4,12 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -17,7 +17,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"google.golang.org/grpc/status"
-	"io"
 	math "math"
 )
 
@@ -30,24 +29,37 @@ var _ = math.Inf
 
 func CreateCloudletPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
-	resp, err := CreateCloudletPoolObj(ctx, rc, &in.CloudletPool)
+
+	obj := &in.CloudletPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateCloudletPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzCreateCloudletPool(ctx, rc.Region, rc.Username, obj,
+			ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.CreateCloudletPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -55,55 +67,41 @@ func CreateCloudletPool(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func CreateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForCreateCloudletPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzCreateCloudletPool(ctx, rc.region, rc.username, obj,
-			ResourceCloudletPools, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.CreateCloudletPool(ctx, obj)
 }
 
 func DeleteCloudletPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
-	resp, err := DeleteCloudletPoolObj(ctx, rc, &in.CloudletPool)
+
+	obj := &in.CloudletPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteCloudletPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzDeleteCloudletPool(ctx, rc.Region, rc.Username, obj,
+			ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.DeleteCloudletPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -113,48 +111,21 @@ func DeleteCloudletPool(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func DeleteCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForDeleteCloudletPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzDeleteCloudletPool(ctx, rc.region, rc.username, obj,
-			ResourceCloudletPools, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.DeleteCloudletPool(ctx, obj)
-}
-
 func UpdateCloudletPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPool{}
 	dat, err := ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
@@ -163,7 +134,20 @@ func UpdateCloudletPool(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := UpdateCloudletPoolObj(ctx, rc, &in.CloudletPool)
+
+	obj := &in.CloudletPool
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateCloudletPool(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzUpdateCloudletPool(ctx, rc.Region, rc.Username, obj,
+			ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.UpdateCloudletPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -173,141 +157,80 @@ func UpdateCloudletPool(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func UpdateCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForUpdateCloudletPool(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzUpdateCloudletPool(ctx, rc.region, rc.username, obj,
-			ResourceCloudletPools, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.UpdateCloudletPool(ctx, obj)
-}
-
 func ShowCloudletPool(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPool{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPool.Key.Organization)
 
-	err = ShowCloudletPoolStream(ctx, rc, &in.CloudletPool, func(res *edgeproto.CloudletPool) error {
+	obj := &in.CloudletPool
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceCloudletPools, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.CloudletPool) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowCloudletPoolStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowCloudletPoolStream(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool, cb func(res *edgeproto.CloudletPool) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceCloudletPools, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowCloudletPool(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowCloudletPoolObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPool) ([]edgeproto.CloudletPool, error) {
-	arr := []edgeproto.CloudletPool{}
-	err := ShowCloudletPoolStream(ctx, rc, obj, func(res *edgeproto.CloudletPool) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func AddCloudletPoolMember(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPoolMember{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPoolMember.Key.Organization)
-	resp, err := AddCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)
+
+	obj := &in.CloudletPoolMember
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddCloudletPoolMember(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzAddCloudletPoolMember(ctx, rc.Region, rc.Username, obj,
+			ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.AddCloudletPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -315,55 +238,41 @@ func AddCloudletPoolMember(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func AddCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForAddCloudletPoolMember(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzAddCloudletPoolMember(ctx, rc.region, rc.username, obj,
-			ResourceCloudletPools, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.AddCloudletPoolMember(ctx, obj)
 }
 
 func RemoveCloudletPoolMember(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionCloudletPoolMember{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())
 	span.SetTag("org", in.CloudletPoolMember.Key.Organization)
-	resp, err := RemoveCloudletPoolMemberObj(ctx, rc, &in.CloudletPoolMember)
+
+	obj := &in.CloudletPoolMember
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveCloudletPoolMember(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceCloudletPools, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.RemoveCloudletPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -371,31 +280,4 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func RemoveCloudletPoolMemberObj(ctx context.Context, rc *RegionContext, obj *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForRemoveCloudletPoolMember(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceCloudletPools, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewCloudletPoolApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.RemoveCloudletPoolMember(ctx, obj)
 }

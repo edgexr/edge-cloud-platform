@@ -3,6 +3,8 @@ package orm
 import (
 	"context"
 
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
 )
 
@@ -35,13 +37,13 @@ func (s *AuthzTrustPolicy) Filter(obj *edgeproto.TrustPolicy) {
 }
 
 func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string) error {
-	rc := RegionContext{
-		region:    region,
-		username:  username,
-		skipAuthz: true, // skip since we already have the cloudlet authz
+	rc := ormutil.RegionContext{
+		Region:    region,
+		Username:  username,
+		SkipAuthz: true, // skip since we already have the cloudlet authz
 	}
 	// allow policies associated with cloudlets that the user can see
-	err := ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) error {
+	err := ctrlapi.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cloudlet *edgeproto.Cloudlet) error {
 		if authzOk, _ := s.authzCloudlet.Ok(cloudlet); !authzOk || cloudlet.TrustPolicy == "" {
 			return nil
 		}
@@ -58,7 +60,7 @@ func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string
 	return nil
 }
 
-func newShowTrustPolicyAuthz(ctx context.Context, region, username, resource, action string) (ShowTrustPolicyAuthz, error) {
+func newShowTrustPolicyAuthz(ctx context.Context, region, username, resource, action string) (ctrlapi.ShowTrustPolicyAuthz, error) {
 	authzCloudlet := AuthzCloudlet{}
 	err := authzCloudlet.populate(ctx, region, username, "", resource, action)
 	if err != nil {
