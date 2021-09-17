@@ -269,7 +269,7 @@ func testInvalidOrgForCloudletUsage(t *testing.T, mcClient *mctestclient.Client,
 	invalidCloudlet := edgeproto.CloudletKey{Organization: "InvalidCloudletOrg"}
 	_, status, err := testPermShowCloudletUsage(mcClient, uri, adminToken, region, operOrg, "resourceusage", &invalidCloudlet)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Unable to find platform for the cloudlet")
+	require.Contains(t, err.Error(), "Cloudlet does not exist")
 	require.Equal(t, http.StatusBadRequest, status)
 }
 
