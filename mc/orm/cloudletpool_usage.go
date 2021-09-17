@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -81,14 +82,14 @@ func cloudletPoolCheckpointsQuery(obj *ormapi.RegionCloudletPoolUsage, cloudletL
 
 func GetCloudletPoolUsageCommon(c echo.Context) error {
 	rc := &InfluxDBContext{}
-	regionRc := &RegionContext{}
+	regionRc := &ormutil.RegionContext{}
 
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
 	rc.claims = claims
-	regionRc.username = claims.Username
+	regionRc.Username = claims.Username
 	ctx := ormutil.GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "usage/cloudletpool") {
@@ -102,7 +103,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 			return fmt.Errorf("CloudletPool details must be present")
 		}
 		rc.region = in.Region
-		regionRc.region = in.Region
+		regionRc.Region = in.Region
 
 		// Check the operator against who is logged in
 		if err := authorized(ctx, rc.claims.Username, in.CloudletPool.Organization, ResourceCloudletAnalytics, ActionView); err != nil {
@@ -111,22 +112,17 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 
 		cloudletpoolQuery := edgeproto.CloudletPool{Key: in.CloudletPool}
 		// Auth check is already performed above
-		regionRc.skipAuthz = true
-		cloudletPools, err := ShowCloudletPoolObj(ctx, regionRc, &cloudletpoolQuery)
-		// since we specify name, should only have at most 1 result
+		regionRc.SkipAuthz = true
+		cloudletList := []string{}
+		err = ctrlapi.ShowCloudletPoolStream(ctx, regionRc, &cloudletpoolQuery, connCache, nil, func(pool *edgeproto.CloudletPool) error {
+			for _, cloudlet := range pool.Cloudlets {
+				cloudletList = append(cloudletList, cloudlet)
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		if len(cloudletPools) != 1 {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Invalid response retrieving cloudletPool", "cloudletPools", cloudletPools)
-			return fmt.Errorf("Unable to retrieve CloudletPool info")
-		}
-
-		cloudletList := []string{}
-		for _, cloudlet := range cloudletPools[0].Cloudlets {
-			cloudletList = append(cloudletList, cloudlet)
-		}
-
 		// check clusters
 		eventCmd := cloudletPoolEventsQuery(&in, cloudletList, CLUSTER)
 		checkpointCmd := cloudletPoolCheckpointsQuery(&in, cloudletList, CLUSTER)

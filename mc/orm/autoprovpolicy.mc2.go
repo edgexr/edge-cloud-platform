@@ -4,13 +4,13 @@
 package orm
 
 import (
-	"context"
 	fmt "fmt"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -18,7 +18,6 @@ import (
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
 	"google.golang.org/grpc/status"
-	"io"
 	math "math"
 )
 
@@ -31,24 +30,37 @@ var _ = math.Inf
 
 func CreateAutoProvPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
-	resp, err := CreateAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
+
+	obj := &in.AutoProvPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForCreateAutoProvPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzCreateAutoProvPolicy(ctx, rc.Region, rc.Username, obj,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.CreateAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -56,55 +68,41 @@ func CreateAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func CreateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForCreateAutoProvPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzCreateAutoProvPolicy(ctx, rc.region, rc.username, obj,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.CreateAutoProvPolicy(ctx, obj)
 }
 
 func DeleteAutoProvPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
-	resp, err := DeleteAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
+
+	obj := &in.AutoProvPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForDeleteAutoProvPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.DeleteAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -114,48 +112,21 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func DeleteAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForDeleteAutoProvPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.DeleteAutoProvPolicy(ctx, obj)
-}
-
 func UpdateAutoProvPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicy{}
 	dat, err := ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
@@ -164,7 +135,20 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := UpdateAutoProvPolicyObj(ctx, rc, &in.AutoProvPolicy)
+
+	obj := &in.AutoProvPolicy
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForUpdateAutoProvPolicy(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzUpdateAutoProvPolicy(ctx, rc.Region, rc.Username, obj,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.UpdateAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -174,141 +158,80 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 	return ormutil.SetReply(c, resp)
 }
 
-func UpdateAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForUpdateAutoProvPolicy(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzUpdateAutoProvPolicy(ctx, rc.region, rc.username, obj,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.UpdateAutoProvPolicy(ctx, obj)
-}
-
 func ShowAutoProvPolicy(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicy{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicy.Key.Organization)
 
-	err = ShowAutoProvPolicyStream(ctx, rc, &in.AutoProvPolicy, func(res *edgeproto.AutoProvPolicy) error {
+	obj := &in.AutoProvPolicy
+	var authz *AuthzShow
+	if !rc.SkipAuthz {
+		authz, err = newShowAuthz(ctx, rc.Region, rc.Username, ResourceDeveloperPolicy, ActionView)
+		if err != nil {
+			return err
+		}
+	}
+
+	cb := func(res *edgeproto.AutoProvPolicy) error {
 		payload := ormapi.StreamPayload{}
 		payload.Data = res
 		return WriteStream(c, &payload)
-	})
+	}
+	err = ctrlapi.ShowAutoProvPolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func ShowAutoProvPolicyStream(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy, cb func(res *edgeproto.AutoProvPolicy) error) error {
-	var authz *AuthzShow
-	var err error
-	if !rc.skipAuthz {
-		authz, err = newShowAuthz(ctx, rc.region, rc.username, ResourceDeveloperPolicy, ActionView)
-		if err != nil {
-			return err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	stream, err := api.ShowAutoProvPolicy(ctx, obj)
-	if err != nil {
-		return err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if !rc.skipAuthz {
-			if !authz.Ok(res.Key.Organization) {
-				continue
-			}
-		}
-		err = cb(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ShowAutoProvPolicyObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicy) ([]edgeproto.AutoProvPolicy, error) {
-	arr := []edgeproto.AutoProvPolicy{}
-	err := ShowAutoProvPolicyStream(ctx, rc, obj, func(res *edgeproto.AutoProvPolicy) error {
-		arr = append(arr, *res)
-		return nil
-	})
-	return arr, err
 }
 
 func AddAutoProvPolicyCloudlet(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicyCloudlet.Key.Organization)
-	resp, err := AddAutoProvPolicyCloudletObj(ctx, rc, &in.AutoProvPolicyCloudlet)
+
+	obj := &in.AutoProvPolicyCloudlet
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForAddAutoProvPolicyCloudlet(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authzAddAutoProvPolicyCloudlet(ctx, rc.Region, rc.Username, obj,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.AddAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -316,55 +239,41 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func AddAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForAddAutoProvPolicyCloudlet(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authzAddAutoProvPolicyCloudlet(ctx, rc.region, rc.username, obj,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.AddAutoProvPolicyCloudlet(ctx, obj)
 }
 
 func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 	ctx := ormutil.GetContext(c)
-	rc := &RegionContext{}
+	rc := &ormutil.RegionContext{}
 	claims, err := getClaims(c)
 	if err != nil {
 		return err
 	}
-	rc.username = claims.Username
+	rc.Username = claims.Username
 
 	in := ormapi.RegionAutoProvPolicyCloudlet{}
 	_, err = ReadConn(c, &in)
 	if err != nil {
 		return err
 	}
-	rc.region = in.Region
+	rc.Region = in.Region
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())
 	span.SetTag("org", in.AutoProvPolicyCloudlet.Key.Organization)
-	resp, err := RemoveAutoProvPolicyCloudletObj(ctx, rc, &in.AutoProvPolicyCloudlet)
+
+	obj := &in.AutoProvPolicyCloudlet
+	log.SetContextTags(ctx, edgeproto.GetTags(obj))
+	if err := obj.IsValidArgsForRemoveAutoProvPolicyCloudlet(); err != nil {
+		return err
+	}
+	if !rc.SkipAuthz {
+		if err := authorized(ctx, rc.Username, obj.Key.Organization,
+			ResourceDeveloperPolicy, ActionManage); err != nil {
+			return err
+		}
+	}
+
+	resp, err := ctrlapi.RemoveAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -372,31 +281,4 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 		return err
 	}
 	return ormutil.SetReply(c, resp)
-}
-
-func RemoveAutoProvPolicyCloudletObj(ctx context.Context, rc *RegionContext, obj *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
-	log.SetContextTags(ctx, edgeproto.GetTags(obj))
-	if err := obj.IsValidArgsForRemoveAutoProvPolicyCloudlet(); err != nil {
-		return nil, err
-	}
-	if !rc.skipAuthz {
-		if err := authorized(ctx, rc.username, obj.Key.Organization,
-			ResourceDeveloperPolicy, ActionManage); err != nil {
-			return nil, err
-		}
-	}
-	if rc.conn == nil {
-		conn, err := connCache.GetRegionConn(ctx, rc.region)
-		if err != nil {
-			return nil, err
-		}
-		rc.conn = conn
-		defer func() {
-			rc.conn = nil
-		}()
-	}
-	api := edgeproto.NewAutoProvPolicyApiClient(rc.conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
-	return api.RemoveAutoProvPolicyCloudlet(ctx, obj)
 }

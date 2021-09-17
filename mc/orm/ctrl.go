@@ -16,13 +16,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type RegionContext struct {
-	region    string
-	username  string
-	conn      *grpc.ClientConn
-	skipAuthz bool
-}
-
 type ConnCache struct {
 	sync.Mutex
 	cache          map[string]*grpc.ClientConn
