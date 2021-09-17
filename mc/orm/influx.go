@@ -642,7 +642,7 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, key 
 		return nil, err
 	}
 	if len(platformTypes) == 0 {
-		return nil, fmt.Errorf("Unable to find platform for the cloudlet")
+		return nil, fmt.Errorf("Cloudlet does not exist")
 	}
 	return platformTypes, nil
 }
