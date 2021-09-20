@@ -196,6 +196,8 @@ var AppInstRefsRequiredArgs = []string{
 var AppInstRefsOptionalArgs = []string{
 	"insts:#.key",
 	"insts:#.value",
+	"deleterequestedinsts:#.key",
+	"deleterequestedinsts:#.value",
 }
 var AppInstRefsAliasArgs = []string{
 	"key.organization=appinstrefs.key.organization",
@@ -203,6 +205,8 @@ var AppInstRefsAliasArgs = []string{
 	"key.version=appinstrefs.key.version",
 	"insts:#.key=appinstrefs.insts:#.key",
 	"insts:#.value=appinstrefs.insts:#.value",
+	"deleterequestedinsts:#.key=appinstrefs.deleterequestedinsts:#.key",
+	"deleterequestedinsts:#.value=appinstrefs.deleterequestedinsts:#.value",
 }
 var AppInstRefsComments = map[string]string{
 	"key.organization": "App developer organization",
