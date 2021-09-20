@@ -192,10 +192,10 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		}
 		roleID := roles.MCRoleID
 		secretID := roles.MCSecretID
-		config.VaultAddr = process.VaultAddress
+		config.VaultAddr = vaultProc.ListenAddr
 		server.vault = &vaultProc
 		auth := vault.NewAppRoleAuth(roleID, secretID)
-		config.vaultConfig = vault.NewConfig(process.VaultAddress, auth)
+		config.vaultConfig = vault.NewConfig(vaultProc.ListenAddr, auth)
 	}
 	// vaultConfig should only be set by unit tests
 	if config.vaultConfig == nil {
