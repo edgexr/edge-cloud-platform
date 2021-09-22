@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -57,7 +57,7 @@ func CreateFlavor(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateFlavorObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateFlavorObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -98,7 +98,7 @@ func DeleteFlavor(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteFlavorObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteFlavorObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -143,7 +143,7 @@ func UpdateFlavor(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateFlavorObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateFlavorObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -179,7 +179,7 @@ func ShowFlavor(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowFlavorStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.ShowFlavorStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func AddFlavorRes(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddFlavorResObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddFlavorResObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -258,7 +258,7 @@ func RemoveFlavorRes(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveFlavorResObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveFlavorResObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

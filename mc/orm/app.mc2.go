@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -59,7 +59,7 @@ func CreateApp(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateAppObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateAppObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -101,7 +101,7 @@ func DeleteApp(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteAppObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteAppObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -147,7 +147,7 @@ func UpdateApp(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateAppObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateAppObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -178,7 +178,7 @@ func ShowApp(c echo.Context) error {
 	span.SetTag("org", in.App.Key.Organization)
 
 	obj := &in.App
-	var authz ctrlapi.ShowAppAuthz
+	var authz ctrlclient.ShowAppAuthz
 	if !rc.SkipAuthz {
 		authz, err = newShowAppAuthz(ctx, rc.Region, rc.Username, ResourceApps, ActionView)
 		if err != nil {
@@ -191,7 +191,7 @@ func ShowApp(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowAppStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowAppStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddAppAutoProvPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddAppAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -270,7 +270,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveAppAutoProvPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveAppAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -311,7 +311,7 @@ func AddAppAlertPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddAppAlertPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddAppAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -352,7 +352,7 @@ func RemoveAppAlertPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveAppAlertPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveAppAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -381,7 +381,7 @@ func ShowCloudletsForAppDeployment(c echo.Context) error {
 	span.SetTag("region", in.Region)
 
 	obj := &in.DeploymentCloudletRequest
-	var authz ctrlapi.ShowCloudletsForAppDeploymentAuthz
+	var authz ctrlclient.ShowCloudletsForAppDeploymentAuthz
 	if !rc.SkipAuthz {
 		authz, err = newShowCloudletsForAppDeploymentAuthz(ctx, rc.Region, rc.Username, ResourceCloudlets, ActionView)
 		if err != nil {
@@ -394,7 +394,7 @@ func ShowCloudletsForAppDeployment(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowCloudletsForAppDeploymentStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowCloudletsForAppDeploymentStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

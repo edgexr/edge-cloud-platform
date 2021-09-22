@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -59,7 +59,7 @@ func ShowRateLimitSettings(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func CreateFlowRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -142,7 +142,7 @@ func UpdateFlowRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -183,7 +183,7 @@ func DeleteFlowRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteFlowRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -226,7 +226,7 @@ func ShowFlowRateLimitSettings(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowFlowRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowFlowRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func CreateMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -309,7 +309,7 @@ func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -350,7 +350,7 @@ func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteMaxReqsRateLimitSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -393,7 +393,7 @@ func ShowMaxReqsRateLimitSettings(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowMaxReqsRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowMaxReqsRateLimitSettingsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

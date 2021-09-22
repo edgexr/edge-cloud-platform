@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/mobiledgex/edge-cloud-infra/billing"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -70,7 +70,7 @@ func CollectBillingUsage(collectInterval time.Duration) {
 
 func recordRegionUsage(ctx context.Context, region string, start, end time.Time) {
 	poolMap := make(map[string]string)
-	err := ctrlapi.ShowCloudletPoolStream(ctx, &ormutil.RegionContext{SkipAuthz: true, Region: region}, &edgeproto.CloudletPool{}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
+	err := ctrlclient.ShowCloudletPoolStream(ctx, &ormutil.RegionContext{SkipAuthz: true, Region: region}, &edgeproto.CloudletPool{}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
 		for _, cloudName := range pool.Cloudlets {
 			poolMap[cloudName] = pool.Key.Organization
 		}

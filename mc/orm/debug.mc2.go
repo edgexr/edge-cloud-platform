@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -60,7 +60,7 @@ func EnableDebugLevels(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.EnableDebugLevelsStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.EnableDebugLevelsStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func DisableDebugLevels(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.DisableDebugLevelsStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.DisableDebugLevelsStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func ShowDebugLevels(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowDebugLevelsStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.ShowDebugLevelsStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func RunDebug(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.RunDebugStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.RunDebugStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}

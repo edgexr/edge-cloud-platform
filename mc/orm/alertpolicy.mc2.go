@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func CreateAlertPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateAlertPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -100,7 +100,7 @@ func DeleteAlertPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteAlertPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -146,7 +146,7 @@ func UpdateAlertPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateAlertPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateAlertPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -190,7 +190,7 @@ func ShowAlertPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowAlertPolicyStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowAlertPolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

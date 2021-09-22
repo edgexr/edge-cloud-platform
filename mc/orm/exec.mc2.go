@@ -8,7 +8,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -56,7 +56,7 @@ func RunCommand(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RunCommandObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RunCommandObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -97,7 +97,7 @@ func RunConsole(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RunConsoleObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RunConsoleObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -135,7 +135,7 @@ func ShowLogs(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.ShowLogsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.ShowLogsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -175,7 +175,7 @@ func AccessCloudlet(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AccessCloudletObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AccessCloudletObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

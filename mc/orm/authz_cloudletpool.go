@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -107,7 +107,7 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 			Organization: pool.Key.Organization,
 		}
 		invalidOrgs := []string{}
-		err := ctrlapi.GetOrganizationsOnCloudletStream(ctx, &rc, &key, connCache, func(org *edgeproto.Organization) error {
+		err := ctrlclient.GetOrganizationsOnCloudletStream(ctx, &rc, &key, connCache, func(org *edgeproto.Organization) error {
 			if org.Name == cloudcommon.OrganizationMobiledgeX {
 				return nil
 			}

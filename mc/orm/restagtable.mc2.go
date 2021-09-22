@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func CreateResTagTable(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateResTagTableObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateResTagTableObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -100,7 +100,7 @@ func DeleteResTagTable(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteResTagTableObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteResTagTableObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -146,7 +146,7 @@ func UpdateResTagTable(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateResTagTableObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateResTagTableObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -190,7 +190,7 @@ func ShowResTagTable(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowResTagTableStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowResTagTableStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func AddResTag(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddResTagObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddResTagObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -271,7 +271,7 @@ func RemoveResTag(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveResTagObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveResTagObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -311,7 +311,7 @@ func GetResTagTable(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.GetResTagTableObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.GetResTagTableObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

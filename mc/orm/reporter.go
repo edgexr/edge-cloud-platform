@@ -15,7 +15,7 @@ import (
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -738,7 +738,7 @@ func GetCloudletSummaryData(ctx context.Context, username string, report *ormapi
 	}
 	cloudlets := [][]string{}
 	cloudletsPresent := make(map[string]struct{})
-	err := ctrlapi.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
+	err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
 		platformTypeStr := edgeproto.PlatformType_CamelName[int32(res.PlatformType)]
 		platformTypeStr = strings.TrimPrefix(platformTypeStr, "PlatformType")
 		stateStr := edgeproto.TrackedState_CamelName[int32(res.State)]
@@ -795,7 +795,7 @@ func GetCloudletPoolSummaryData(ctx context.Context, username string, report *or
 	}
 	poolKey := edgeproto.CloudletPoolKey{Organization: report.Org}
 	poolCloudlets := make(map[string][]string)
-	err = ctrlapi.ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{Key: poolKey}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
+	err = ctrlclient.ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{Key: poolKey}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
 		for _, name := range pool.Cloudlets {
 			if cloudlets, ok := poolCloudlets[pool.Key.Name]; ok {
 				cloudlets = append(cloudlets, name)
@@ -1103,7 +1103,7 @@ func GetCloudletAlerts(ctx context.Context, username string, report *ormapi.Gene
 			cloudcommon.AlertScopeTypeTag:        cloudcommon.AlertScopeCloudlet,
 		},
 	}
-	err := ctrlapi.ShowAlertStream(ctx, rc, obj, connCache, nil, func(alert *edgeproto.Alert) error {
+	err := ctrlclient.ShowAlertStream(ctx, rc, obj, connCache, nil, func(alert *edgeproto.Alert) error {
 		alertTime := cloudcommon.TimestampToTime(alert.ActiveAt).In(report.StartTime.Location())
 		if !inTimeSpan(report.StartTime, report.EndTime, alertTime) {
 			return nil
@@ -1147,7 +1147,7 @@ func GetCloudletAppUsageData(ctx context.Context, username string, report *ormap
 		Liveness: edgeproto.Liveness_LIVENESS_STATIC,
 	}
 	appsCount := make(map[string]PieChartDataMap)
-	err := ctrlapi.ShowAppInstStream(ctx, rc, obj, connCache, nil, func(appInst *edgeproto.AppInst) error {
+	err := ctrlclient.ShowAppInstStream(ctx, rc, obj, connCache, nil, func(appInst *edgeproto.AppInst) error {
 		cloudletName := appInst.Key.ClusterInstKey.CloudletKey.Name
 		appOrg := appInst.Key.AppKey.Organization
 		if _, ok := appsCount[cloudletName]; !ok {

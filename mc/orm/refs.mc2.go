@@ -8,7 +8,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func ShowCloudletRefs(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowCloudletRefsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowCloudletRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func ShowClusterRefs(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowClusterRefsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowClusterRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func ShowAppInstRefs(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowAppInstRefsStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowAppInstRefsStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

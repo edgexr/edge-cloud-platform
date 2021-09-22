@@ -10,7 +10,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func InjectDevice(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.InjectDeviceObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.InjectDeviceObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -101,7 +101,7 @@ func ShowDevice(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowDeviceStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowDeviceStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func EvictDevice(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.EvictDeviceObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.EvictDeviceObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -182,7 +182,7 @@ func ShowDeviceReport(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowDeviceReportStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowDeviceReportStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

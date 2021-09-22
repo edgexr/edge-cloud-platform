@@ -1,4 +1,4 @@
-package ctrlapi
+package ctrlclient
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type RegionConn interface {
+type ClientConnMgr interface {
 	GetRegionConn(ctx context.Context, region string) (*grpc.ClientConn, error)
 	GetNotifyRootConn(ctx context.Context) (*grpc.ClientConn, error)
 }

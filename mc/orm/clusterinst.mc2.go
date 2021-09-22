@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -64,7 +64,7 @@ func CreateClusterInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.CreateClusterInstStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.CreateClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func DeleteClusterInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.DeleteClusterInstStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.DeleteClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func UpdateClusterInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.UpdateClusterInstStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.UpdateClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func ShowClusterInst(c echo.Context) error {
 	span.SetTag("org", in.ClusterInst.Key.Organization)
 
 	obj := &in.ClusterInst
-	var authz ctrlapi.ShowClusterInstAuthz
+	var authz ctrlclient.ShowClusterInstAuthz
 	if !rc.SkipAuthz {
 		authz, err = newShowClusterInstAuthz(ctx, rc.Region, rc.Username, ResourceClusterInsts, ActionView)
 		if err != nil {
@@ -197,7 +197,7 @@ func ShowClusterInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowClusterInstStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowClusterInstStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func DeleteIdleReservableClusterInsts(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteIdleReservableClusterInstsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteIdleReservableClusterInstsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
