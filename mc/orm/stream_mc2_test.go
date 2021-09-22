@@ -46,6 +46,18 @@ func goodPermStreamAppInst(t *testing.T, mcClient *mctestclient.Client, uri, tok
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionStreamAppInst(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppInstKey)) {
+	out, status, err := testutil.TestPermStreamAppInst(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermStreamClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) {
@@ -65,6 +77,18 @@ func goodPermStreamClusterInst(t *testing.T, mcClient *mctestclient.Client, uri,
 	_, status, err := testutil.TestPermStreamClusterInst(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionStreamClusterInst(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) {
+	out, status, err := testutil.TestPermStreamClusterInst(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermStreamCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, to
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionStreamCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	out, status, err := testutil.TestPermStreamCloudlet(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
@@ -107,4 +143,112 @@ func goodPermStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, t
 	_, status, err := testutil.TestPermStreamGPUDriver(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionStreamGPUDriver(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	out, status, err := testutil.TestPermStreamGPUDriver(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestAppInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstKey)) {
+	badPermStreamAppInst(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAppInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AppInstKey)) {
+	goodPermStreamAppInst(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionStreamAppInst(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAppInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AppInstKey)) {
+	badPermTestAppInstKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestAppInstKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestAppInstKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAppInstKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestStreamObjApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.CloudletKey)) {
+	badPermStreamCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestStreamObjApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	goodPermStreamCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionStreamCloudlet(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestStreamObjApiCloudletKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.CloudletKey)) {
+	badPermTestStreamObjApiCloudletKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestStreamObjApiCloudletKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestStreamObjApiCloudletKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestStreamObjApiCloudletKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestClusterInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterInstKey)) {
+	badPermStreamClusterInst(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestClusterInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.ClusterInstKey)) {
+	goodPermStreamClusterInst(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionStreamClusterInst(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestClusterInstKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.ClusterInstKey)) {
+	badPermTestClusterInstKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestClusterInstKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestClusterInstKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestClusterInstKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	badPermStreamGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	goodPermStreamGPUDriver(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionStreamGPUDriver(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestGPUDriverKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.GPUDriverKey)) {
+	badPermTestGPUDriverKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestGPUDriverKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestGPUDriverKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestGPUDriverKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

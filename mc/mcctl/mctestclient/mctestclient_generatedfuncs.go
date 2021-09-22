@@ -1038,6 +1038,38 @@ func (s *Client) RemoveCloudletResMapping(uri string, token string, in *ormapi.R
 	return &out, rundata.RetStatus, rundata.RetError
 }
 
+func (s *Client) AddCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("AddCloudletAllianceOrg")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
+func (s *Client) RemoveCloudletAllianceOrg(uri string, token string, in *ormapi.RegionCloudletAllianceOrg) (*edgeproto.Result, int, error) {
+	rundata := RunData{}
+	rundata.Uri = uri
+	rundata.Token = token
+	rundata.In = in
+	var out edgeproto.Result
+	rundata.Out = &out
+
+	apiCmd := ormctl.MustGetCommand("RemoveCloudletAllianceOrg")
+	s.ClientRun.Run(apiCmd, &rundata)
+	if rundata.RetError != nil {
+		return nil, rundata.RetStatus, rundata.RetError
+	}
+	return &out, rundata.RetStatus, rundata.RetError
+}
+
 func (s *Client) FindFlavorMatch(uri string, token string, in *ormapi.RegionFlavorMatch) (*edgeproto.FlavorMatch, int, error) {
 	rundata := RunData{}
 	rundata.Uri = uri

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -24,7 +25,7 @@ type GenMC2 struct {
 	tmplMethodCtl      *template.Template
 	tmplMessageTest    *template.Template
 	regionStructs      map[string]struct{}
-	inputMessages      map[string]*generator.Descriptor
+	inputMessages      map[string]*gensupport.MessageInfo
 	firstFile          bool
 	genctrlclient      bool
 	genapi             bool
@@ -333,10 +334,10 @@ func (g *GenMC2) generateService(file *generator.FileDescriptor, service *descri
 	}
 }
 
-func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, method *descriptor.MethodDescriptorProto, methodPath []string, serviceProps *ServiceProps) {
+func (g *GenMC2) getMethodArgs(service string, method *descriptor.MethodDescriptorProto) *tmplArgs {
 	api := GetMc2Api(method)
 	if api == "" {
-		return
+		return nil
 	}
 	apiVals := strings.Split(api, ",")
 	if len(apiVals) != 3 {
@@ -347,7 +348,7 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 	g.support.FQTypeName(g.Generator, in)
 	inname := *in.DescriptorProto.Name
 	_, found := g.regionStructs[inname]
-	args := tmplArgs{
+	args := &tmplArgs{
 		Service:              service,
 		MethodName:           *method.Name,
 		InName:               inname,
@@ -411,26 +412,20 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 	if len(authops) > 0 {
 		args.AuthOps = ", " + strings.Join(authops, ", ")
 	}
-	if g.genctl {
-		if serviceProps.cliusebase == "" {
-			serviceProps.cliusebase = inname
-		}
-		// Remove the base name from the commands to avoid redundancy.
-		cliuse := GetCliCmd(method)
-		if cliuse == "" {
-			cliuse = strings.Replace(*method.Name, serviceProps.cliusebase, "", 1)
-		}
-		cliuse = strings.ToLower(cliuse)
-		if conflict, found := serviceProps.cliuses[cliuse]; found {
-			g.Fail("Cli cmd name conflict between", cliuse, "(", *method.Name, ") and", cliuse, "(", conflict, "), please use protogen.cli_cmd option to avoid conflict")
-		}
-		serviceProps.cliuses[cliuse] = *method.Name
-		args.CliUse = cliuse
-	}
 	if args.HasFields && strings.HasPrefix(*method.Name, "Update"+args.InName) {
 		args.SetFields = true
 	}
+	if !found {
+		g.regionStructs[args.InName] = struct{}{}
+	}
+	return args
+}
 
+func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, method *descriptor.MethodDescriptorProto, methodPath []string, serviceProps *ServiceProps) {
+	args := g.getMethodArgs(service, method)
+	if args == nil {
+		return
+	}
 	var tmpl *template.Template
 	if g.genapi {
 		tmpl = g.tmplApi
@@ -447,11 +442,27 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		g.importMctestclient = true
 	} else if g.genctl {
 		tmpl = g.tmplMethodCtl
+		if serviceProps.cliusebase == "" {
+			serviceProps.cliusebase = args.InName
+		}
+		// Remove the base name from the commands to avoid redundancy.
+		cliuse := GetCliCmd(method)
+		if cliuse == "" {
+			cliuse = strings.Replace(*method.Name, serviceProps.cliusebase, "", 1)
+		}
+		cliuse = strings.ToLower(cliuse)
+		if conflict, found := serviceProps.cliuses[cliuse]; found {
+			g.Fail("Cli cmd name conflict between", cliuse, "(", *method.Name, ") and", cliuse, "(", conflict, "), please use protogen.cli_cmd option to avoid conflict")
+		}
+		serviceProps.cliuses[cliuse] = *method.Name
+		args.CliUse = cliuse
+
 		short := g.support.GetComments(file.GetName(), strings.Join(methodPath, ","))
 		args.CliShort = strings.TrimSpace(strings.Map(gensupport.RemoveNewLines, short))
 		if args.CliShort == "" {
 			g.Fail("method", *method.Name, "in file", file.GetName(), "needs a comment")
 		}
+		in := gensupport.GetDesc(g.Generator, method.GetInputType())
 		args.NoConfig = gensupport.GetNoConfig(in.DescriptorProto, method)
 		g.importOrmapi = true
 		g.importStrings = true
@@ -478,9 +489,6 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 	err := tmpl.Execute(g, &args)
 	if err != nil {
 		g.Fail("Failed to execute template %s: ", tmpl.Name(), err.Error())
-	}
-	if !found {
-		g.regionStructs[inname] = struct{}{}
 	}
 }
 
@@ -828,6 +836,22 @@ func goodPerm{{.MethodName}}(t *testing.T, mcClient *mctestclient.Client, uri, t
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
+
+func badRegion{{.MethodName}}(t *testing.T, mcClient *mctestclient.Client, uri, token, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.InName}})) {
+	out, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+{{- if .Show}}
+	require.Equal(t, 0, len(out))
+{{- else}}
+	_ = out
+{{- end}}
+}
 `
 
 var tmplMethodCtl = `
@@ -879,22 +903,35 @@ func (g *GenMC2) generateTestGroupApi(service *descriptor.ServiceDescriptorProto
 		return
 	}
 	message := group.In.DescriptorProto
-	if !GetGenerateCudTest(message) || GetGenerateShowTest(message) {
+	msgInfo, found := g.inputMessages[*message.Name]
+	if !found {
 		return
 	}
 
 	args := msgArgs{
 		Message:        group.InType,
-		HasUpdate:      GetGenerateCudTestUpdate(message),
 		TargetCloudlet: GetMc2TargetCloudlet(message),
 	}
-	if GetGenerateAddrmTest(message) {
-		args.Create = "Add"
-		args.Delete = "Remove"
-	} else {
-		args.Create = "Create"
-		args.Delete = "Delete"
+	if len(msgInfo.Services) > 1 {
+		// avoid name conflicts if the same message type is used
+		// as inputs in different service apis.
+		args.Prefix = *service.Name
 	}
+	for _, info := range group.MethodInfos {
+		methodArgs := g.getMethodArgs(*service.Name, info.Method)
+		if methodArgs == nil {
+			continue
+		}
+		if methodArgs.Show {
+			args.MethodArgsShow = append(args.MethodArgsShow, *methodArgs)
+		} else {
+			args.MethodArgsNoShow = append(args.MethodArgsNoShow, *methodArgs)
+		}
+	}
+	// make sure create is first and delete is last to avoid
+	// extra objects being created by test perm funcs.
+	sort.Sort(sortByMethodName(args.MethodArgsNoShow))
+
 	if args.TargetCloudlet != "" {
 		args.TargetCloudletParam = ", targetCloudlet *edgeproto.CloudletKey"
 		args.TargetCloudletArg = ", targetCloudlet"
@@ -906,6 +943,20 @@ func (g *GenMC2) generateTestGroupApi(service *descriptor.ServiceDescriptorProto
 	g.importTesting = true
 	g.importRequire = true
 	g.importHttp = true
+}
+
+type sortByMethodName []tmplArgs
+
+func (s sortByMethodName) Len() int      { return len(s) }
+func (s sortByMethodName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortByMethodName) Less(i, j int) bool {
+	if strings.HasPrefix(s[i].MethodName, "Create") || strings.HasPrefix(s[j].MethodName, "Delete") {
+		return true
+	}
+	if strings.HasPrefix(s[j].MethodName, "Create") || strings.HasPrefix(s[i].MethodName, "Delete") {
+		return false
+	}
+	return false
 }
 
 func (g *GenMC2) generateRunApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
@@ -958,92 +1009,89 @@ func (g *GenMC2) generateRunGroupApi(file *descriptor.FileDescriptorProto, servi
 }
 
 type msgArgs struct {
+	Prefix              string
 	Message             string
-	HasUpdate           bool
-	Create              string
-	Delete              string
 	TargetCloudlet      string
 	TargetCloudletParam string
 	TargetCloudletArg   string
+	MethodArgsNoShow    []tmplArgs
+	MethodArgsShow      []tmplArgs
 }
 
 var tmplMessageTest = `
+{{- if .MethodArgsNoShow}}
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTest{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.Message}})) {
-	badPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
-{{- if .HasUpdate}}
-	badPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
+func badPermTest{{.Prefix}}{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, modFuncs ...func(*edgeproto.{{.Message}})) {
+{{- range .MethodArgsNoShow}}
+	badPerm{{.MethodName}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 {{- end}}
-	badPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 }
+{{- end}}
 
-func badPermTestShow{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+{{- if .MethodArgsShow}}
+func badPermTestShow{{.Prefix}}{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShow{{.Message}}(mcClient, uri, token, region, org)
+	var status int
+	var err error
+{{- range $i, $e := .MethodArgsShow}}
+	list{{$i}}, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
+	require.Equal(t, 0, len(list{{$i}}))
+{{- end}}
 }
+{{- end}}
 
+{{- if or .MethodArgsNoShow .MethodArgsShow}}
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTest{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
-	goodPerm{{.Create}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
-{{- if .HasUpdate}}
-	goodPermUpdate{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
+func goodPermTest{{.Prefix}}{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
+{{- range .MethodArgsNoShow}}
+	goodPerm{{.MethodName}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}}, modFuncs...)
 {{- end}}
-	goodPerm{{.Delete}}{{.Message}}(t, mcClient, uri, token, region, org{{.TargetCloudletArg}})
-
+{{- if .MethodArgsShow}}
+	goodPermTestShow{{.Prefix}}{{.Message}}(t, mcClient, uri, token, region, org, showcount)
+{{- end}}
 	// make sure region check works
-	_, status, err := testutil.TestPerm{{.Create}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-{{- if .HasUpdate}}
-	_, status, err = testutil.TestPermUpdate{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
+{{- range .MethodArgsNoShow}}
+	badRegion{{.MethodName}}(t, mcClient, uri, token, org{{.TargetCloudletArg}}, modFuncs...)
 {{- end}}
-	_, status, err = testutil.TestPerm{{.Delete}}{{.Message}}(mcClient, uri, token, "bad region", org{{.TargetCloudletArg}}, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShow{{.Message}}(t, mcClient, uri, token, region, org, showcount)
 }
+{{- end}}
 
-func goodPermTestShow{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShow{{.Message}}(mcClient, uri, token, region, org)
+{{- if .MethodArgsShow}}
+func goodPermTestShow{{.Prefix}}{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+{{- range $i, $e := .MethodArgsShow}}
+	list{{$i}}, status, err := testutil.TestPerm{{.MethodName}}(mcClient, uri, token, region, org)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
+	require.Equal(t, count, len(list{{$i}}))
 
-	// make sure region check works
-	list, status, err = testutil.TestPermShow{{.Message}}(mcClient, uri, token, "bad region", org)
-	require.NotNil(t, err)
-	if err.Error() == "Forbidden" {
-		require.Equal(t, http.StatusForbidden, status)
-	} else {
-		require.Contains(t, err.Error(), "\"bad region\" not found")
-		require.Equal(t, http.StatusBadRequest, status)
-	}
-	require.Equal(t, 0, len(list))
+	badRegion{{.MethodName}}(t, mcClient, uri, token, org{{.TargetCloudletArg}})
+{{- end}}
 }
+{{- end}}
 
+{{- if or .MethodArgsNoShow .MethodArgsShow}}
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTest{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
-	badPermTest{{.Message}}(t, mcClient, uri, token1, region, org2{{.TargetCloudletArg}}, modFuncs...)
-	badPermTestShow{{.Message}}(t, mcClient, uri, token1, region, org2)
-	badPermTest{{.Message}}(t, mcClient, uri, token2, region, org1{{.TargetCloudletArg}}, modFuncs...)
-	badPermTestShow{{.Message}}(t, mcClient, uri, token2, region, org1)
-
-	goodPermTest{{.Message}}(t, mcClient, uri, token1, region, org1{{.TargetCloudletArg}}, showcount, modFuncs...)
-	goodPermTest{{.Message}}(t, mcClient, uri, token2, region, org2{{.TargetCloudletArg}}, showcount, modFuncs...)
+func permTest{{.Prefix}}{{.Message}}(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string{{.TargetCloudletParam}}, showcount int, modFuncs ...func(*edgeproto.{{.Message}})) {
+{{- if .MethodArgsNoShow}}
+	badPermTest{{.Prefix}}{{.Message}}(t, mcClient, uri, token1, region, org2{{.TargetCloudletArg}}, modFuncs...)
+	badPermTest{{.Prefix}}{{.Message}}(t, mcClient, uri, token2, region, org1{{.TargetCloudletArg}}, modFuncs...)
+{{- end}}
+{{- if .MethodArgsShow}}
+	badPermTestShow{{.Prefix}}{{.Message}}(t, mcClient, uri, token1, region, org2)
+	badPermTestShow{{.Prefix}}{{.Message}}(t, mcClient, uri, token2, region, org1)
+{{- end}}
+	goodPermTest{{.Prefix}}{{.Message}}(t, mcClient, uri, token1, region, org1{{.TargetCloudletArg}}, showcount, modFuncs...)
+	goodPermTest{{.Prefix}}{{.Message}}(t, mcClient, uri, token2, region, org2{{.TargetCloudletArg}}, showcount, modFuncs...)
 }
+{{- end}}
 `
 
 func (g *GenMC2) generateCtlGroup(service *descriptor.ServiceDescriptorProto, methodGroups map[string]*gensupport.MethodGroup) {

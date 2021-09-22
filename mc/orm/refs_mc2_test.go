@@ -45,6 +45,55 @@ func goodPermShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.CloudletRefs)) {
+	out, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
+}
+
+func badPermTestShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.CloudletRefs)) {
+	goodPermTestShowCloudletRefs(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowCloudletRefs(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestCloudletRefs(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.CloudletRefs)) {
+	badPermTestShowCloudletRefs(t, mcClient, uri, token1, region, org2)
+	badPermTestShowCloudletRefs(t, mcClient, uri, token2, region, org1)
+	goodPermTestCloudletRefs(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestCloudletRefs(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
@@ -66,6 +115,55 @@ func goodPermShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, t
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ClusterRefs)) {
+	out, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
+}
+
+func badPermTestShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.ClusterRefs)) {
+	goodPermTestShowClusterRefs(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowClusterRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowClusterRefs(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestClusterRefs(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.ClusterRefs)) {
+	badPermTestShowClusterRefs(t, mcClient, uri, token1, region, org2)
+	badPermTestShowClusterRefs(t, mcClient, uri, token2, region, org1)
+	goodPermTestClusterRefs(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestClusterRefs(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
@@ -85,4 +183,53 @@ func goodPermShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, t
 	_, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppInstRefs)) {
+	out, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
+}
+
+func badPermTestShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AppInstRefs)) {
+	goodPermTestShowAppInstRefs(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAppInstRefs(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowAppInstRefs(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAppInstRefs(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AppInstRefs)) {
+	badPermTestShowAppInstRefs(t, mcClient, uri, token1, region, org2)
+	badPermTestShowAppInstRefs(t, mcClient, uri, token2, region, org1)
+	goodPermTestAppInstRefs(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAppInstRefs(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

@@ -46,6 +46,18 @@ func goodPermCreateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionCreateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	out, status, err := testutil.TestPermCreateAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDeleteAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
@@ -65,6 +77,18 @@ func goodPermDeleteAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, 
 	_, status, err := testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDeleteAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	out, status, err := testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermUpdateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	out, status, err := testutil.TestPermUpdateAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
@@ -109,54 +145,8 @@ func goodPermShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, ur
 	require.Equal(t, http.StatusOK, status)
 }
 
-// This tests the user cannot modify the object because the obj belongs to
-// an organization that the user does not have permissions for.
-func badPermTestAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
-	badPermCreateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermUpdateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
-}
-
-func badPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
-	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
-}
-
-// This tests the user can modify the object because the obj belongs to
-// an organization that the user has permissions for.
-func goodPermTestAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
-	goodPermCreateAutoScalePolicy(t, mcClient, uri, token, region, org)
-	goodPermUpdateAutoScalePolicy(t, mcClient, uri, token, region, org)
-	goodPermDeleteAutoScalePolicy(t, mcClient, uri, token, region, org)
-
-	// make sure region check works
-	_, status, err := testutil.TestPermCreateAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShowAutoScalePolicy(t, mcClient, uri, token, region, org, showcount)
-}
-
-func goodPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
-
-	// make sure region check works
-	list, status, err = testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, "bad region", org)
+func badRegionShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	out, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -164,7 +154,47 @@ func goodPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	require.Equal(t, 0, len(list))
+	require.Equal(t, 0, len(out))
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	badPermCreateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
+	goodPermCreateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermUpdateAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDeleteAutoScalePolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowAutoScalePolicy(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionCreateAutoScalePolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionUpdateAutoScalePolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDeleteAutoScalePolicy(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAutoScalePolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowAutoScalePolicy(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for
@@ -172,10 +202,9 @@ func goodPermTestShowAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client
 // They should not have permissions to modify each other's objects.
 func permTestAutoScalePolicy(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AutoScalePolicy)) {
 	badPermTestAutoScalePolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestShowAutoScalePolicy(t, mcClient, uri, token1, region, org2)
 	badPermTestAutoScalePolicy(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowAutoScalePolicy(t, mcClient, uri, token1, region, org2)
 	badPermTestShowAutoScalePolicy(t, mcClient, uri, token2, region, org1)
-
 	goodPermTestAutoScalePolicy(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestAutoScalePolicy(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

@@ -47,6 +47,18 @@ func goodPermCreateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionCreateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.App)) {
+	out, status, err := testutil.TestPermCreateApp(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
@@ -66,6 +78,18 @@ func goodPermDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 	_, status, err := testutil.TestPermDeleteApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDeleteApp(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.App)) {
+	out, status, err := testutil.TestPermDeleteApp(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -89,6 +113,18 @@ func goodPermUpdateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateApp(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.App)) {
+	out, status, err := testutil.TestPermUpdateApp(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
@@ -108,6 +144,18 @@ func goodPermShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, re
 	_, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.App)) {
+	out, status, err := testutil.TestPermShowApp(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
 }
 
 var _ = edgeproto.GetFields
@@ -131,6 +179,18 @@ func goodPermAddAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, u
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionAddAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+	out, status, err := testutil.TestPermAddAppAutoProvPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
@@ -150,6 +210,18 @@ func goodPermRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client
 	_, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionRemoveAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+	out, status, err := testutil.TestPermRemoveAppAutoProvPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -173,6 +245,18 @@ func goodPermAddAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionAddAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
+	out, status, err := testutil.TestPermAddAppAlertPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermRemoveAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
@@ -192,6 +276,18 @@ func goodPermRemoveAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, u
 	_, status, err := testutil.TestPermRemoveAppAlertPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionRemoveAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
+	out, status, err := testutil.TestPermRemoveAppAlertPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -215,54 +311,8 @@ func goodPermShowCloudletsForAppDeployment(t *testing.T, mcClient *mctestclient.
 	require.Equal(t, http.StatusOK, status)
 }
 
-// This tests the user cannot modify the object because the obj belongs to
-// an organization that the user does not have permissions for.
-func badPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
-	badPermCreateApp(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermUpdateApp(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteApp(t, mcClient, uri, token, region, org, modFuncs...)
-}
-
-func badPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
-	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
-}
-
-// This tests the user can modify the object because the obj belongs to
-// an organization that the user has permissions for.
-func goodPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.App)) {
-	goodPermCreateApp(t, mcClient, uri, token, region, org)
-	goodPermUpdateApp(t, mcClient, uri, token, region, org)
-	goodPermDeleteApp(t, mcClient, uri, token, region, org)
-
-	// make sure region check works
-	_, status, err := testutil.TestPermCreateApp(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateApp(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteApp(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShowApp(t, mcClient, uri, token, region, org, showcount)
-}
-
-func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
-
-	// make sure region check works
-	list, status, err = testutil.TestPermShowApp(mcClient, uri, token, "bad region", org)
+func badRegionShowCloudletsForAppDeployment(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) {
+	out, status, err := testutil.TestPermShowCloudletsForAppDeployment(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -270,7 +320,47 @@ func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	require.Equal(t, 0, len(list))
+	require.Equal(t, 0, len(out))
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.App)) {
+	badPermCreateApp(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateApp(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteApp(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.App)) {
+	goodPermCreateApp(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermUpdateApp(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDeleteApp(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowApp(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionCreateApp(t, mcClient, uri, token, org, modFuncs...)
+	badRegionUpdateApp(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDeleteApp(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowApp(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowApp(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for
@@ -278,10 +368,100 @@ func goodPermTestShowApp(t *testing.T, mcClient *mctestclient.Client, uri, token
 // They should not have permissions to modify each other's objects.
 func permTestApp(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.App)) {
 	badPermTestApp(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestShowApp(t, mcClient, uri, token1, region, org2)
 	badPermTestApp(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowApp(t, mcClient, uri, token1, region, org2)
 	badPermTestShowApp(t, mcClient, uri, token2, region, org1)
-
 	goodPermTestApp(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestApp(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
+	badPermAddAppAlertPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermRemoveAppAlertPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
+	goodPermAddAppAlertPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermRemoveAppAlertPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionAddAppAlertPolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionRemoveAppAlertPolicy(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAppAlertPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AppAlertPolicy)) {
+	badPermTestAppAlertPolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestAppAlertPolicy(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestAppAlertPolicy(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAppAlertPolicy(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+	badPermAddAppAutoProvPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermRemoveAppAutoProvPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+	goodPermAddAppAutoProvPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermRemoveAppAutoProvPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionAddAppAutoProvPolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionRemoveAppAutoProvPolicy(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAppAutoProvPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AppAutoProvPolicy)) {
+	badPermTestAppAutoProvPolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestAppAutoProvPolicy(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestAppAutoProvPolicy(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAppAutoProvPolicy(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+func badPermTestShowDeploymentCloudletRequest(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletsForAppDeployment(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestDeploymentCloudletRequest(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) {
+	goodPermTestShowDeploymentCloudletRequest(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowDeploymentCloudletRequest(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowCloudletsForAppDeployment(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowCloudletsForAppDeployment(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestDeploymentCloudletRequest(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.DeploymentCloudletRequest)) {
+	badPermTestShowDeploymentCloudletRequest(t, mcClient, uri, token1, region, org2)
+	badPermTestShowDeploymentCloudletRequest(t, mcClient, uri, token2, region, org1)
+	goodPermTestDeploymentCloudletRequest(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestDeploymentCloudletRequest(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

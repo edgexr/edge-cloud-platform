@@ -780,6 +780,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// GpuConfigPropertiesKey: 45.2.1
 	// GpuConfigPropertiesValue: 45.2.2
 	// EnableDefaultServerlessCluster: 46
+	// AllianceOrgs: 47
 	// ```
 	// Security:
 	//   Bearer:
@@ -855,7 +856,7 @@ func addControllerApis(method string, group *echo.Group) {
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/AddCloudletResMapping", AddCloudletResMapping)
 	// swagger:route POST /auth/ctrl/RemoveCloudletResMapping CloudletResMap RemoveCloudletResMapping
-	// Add Optional Resource tag table.
+	// Remove Optional Resource tag table.
 	// Security:
 	//   Bearer:
 	// responses:
@@ -864,6 +865,26 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/RemoveCloudletResMapping", RemoveCloudletResMapping)
+	// swagger:route POST /auth/ctrl/AddCloudletAllianceOrg CloudletAllianceOrg AddCloudletAllianceOrg
+	// Add alliance organization to the cloudlet.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/AddCloudletAllianceOrg", AddCloudletAllianceOrg)
+	// swagger:route POST /auth/ctrl/RemoveCloudletAllianceOrg CloudletAllianceOrg RemoveCloudletAllianceOrg
+	// Remove alliance organization from the cloudlet.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/RemoveCloudletAllianceOrg", RemoveCloudletAllianceOrg)
 	// swagger:route POST /auth/ctrl/FindFlavorMatch FlavorMatch FindFlavorMatch
 	// Discover if flavor produces a matching platform flavor.
 	// Security:
