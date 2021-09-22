@@ -46,6 +46,18 @@ func goodPermEnableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionEnableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	out, status, err := testutil.TestPermEnableDebugLevels(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDisableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
@@ -65,6 +77,18 @@ func goodPermDisableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri
 	_, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDisableDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	out, status, err := testutil.TestPermDisableDebugLevels(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermShowDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, t
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionShowDebugLevels(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	out, status, err := testutil.TestPermShowDebugLevels(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermRunDebug(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
@@ -107,4 +143,49 @@ func goodPermRunDebug(t *testing.T, mcClient *mctestclient.Client, uri, token, r
 	_, status, err := testutil.TestPermRunDebug(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionRunDebug(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	out, status, err := testutil.TestPermRunDebug(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestDebugRequest(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DebugRequest)) {
+	badPermEnableDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDisableDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermShowDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermRunDebug(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestDebugRequest(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	goodPermEnableDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDisableDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermShowDebugLevels(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermRunDebug(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionEnableDebugLevels(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDisableDebugLevels(t, mcClient, uri, token, org, modFuncs...)
+	badRegionShowDebugLevels(t, mcClient, uri, token, org, modFuncs...)
+	badRegionRunDebug(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestDebugRequest(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.DebugRequest)) {
+	badPermTestDebugRequest(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestDebugRequest(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestDebugRequest(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestDebugRequest(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

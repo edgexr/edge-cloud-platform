@@ -46,3 +46,52 @@ func goodPermShowAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
+
+func badRegionShowAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Alert)) {
+	out, status, err := testutil.TestPermShowAlert(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
+}
+
+func badPermTestShowAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Alert)) {
+	goodPermTestShowAlert(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowAlert(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowAlert(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowAlert(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAlert(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.Alert)) {
+	badPermTestShowAlert(t, mcClient, uri, token1, region, org2)
+	badPermTestShowAlert(t, mcClient, uri, token2, region, org1)
+	goodPermTestAlert(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAlert(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}

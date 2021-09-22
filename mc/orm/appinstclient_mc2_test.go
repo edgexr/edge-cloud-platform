@@ -46,3 +46,39 @@ func goodPermShowAppInstClient(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
+
+func badRegionShowAppInstClient(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) {
+	out, status, err := testutil.TestPermShowAppInstClient(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestAppInstClientKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.AppInstClientKey)) {
+	badPermShowAppInstClient(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestAppInstClientKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.AppInstClientKey)) {
+	goodPermShowAppInstClient(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionShowAppInstClient(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestAppInstClientKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.AppInstClientKey)) {
+	badPermTestAppInstClientKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestAppInstClientKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestAppInstClientKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestAppInstClientKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}

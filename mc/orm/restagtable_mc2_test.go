@@ -46,6 +46,18 @@ func goodPermCreateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionCreateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermCreateResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDeleteResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
@@ -65,6 +77,18 @@ func goodPermDeleteResTagTable(t *testing.T, mcClient *mctestclient.Client, uri,
 	_, status, err := testutil.TestPermDeleteResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDeleteResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermDeleteResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermUpdateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermUpdateResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
@@ -107,6 +143,18 @@ func goodPermShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, t
 	_, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
 }
 
 var _ = edgeproto.GetFields
@@ -130,6 +178,18 @@ func goodPermAddResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, 
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionAddResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermAddResTag(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermRemoveResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
@@ -149,6 +209,18 @@ func goodPermRemoveResTag(t *testing.T, mcClient *mctestclient.Client, uri, toke
 	_, status, err := testutil.TestPermRemoveResTag(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionRemoveResTag(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	out, status, err := testutil.TestPermRemoveResTag(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -172,48 +244,8 @@ func goodPermGetResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, to
 	require.Equal(t, http.StatusOK, status)
 }
 
-// This tests the user cannot modify the object because the obj belongs to
-// an organization that the user does not have permissions for.
-func badPermTestResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
-	badPermCreateResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
-}
-
-func badPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
-	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
-}
-
-// This tests the user can modify the object because the obj belongs to
-// an organization that the user has permissions for.
-func goodPermTestResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.ResTagTable)) {
-	goodPermCreateResTagTable(t, mcClient, uri, token, region, org)
-	goodPermDeleteResTagTable(t, mcClient, uri, token, region, org)
-
-	// make sure region check works
-	_, status, err := testutil.TestPermCreateResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShowResTagTable(t, mcClient, uri, token, region, org, showcount)
-}
-
-func goodPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
-
-	// make sure region check works
-	list, status, err = testutil.TestPermShowResTagTable(mcClient, uri, token, "bad region", org)
+func badRegionGetResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.ResTagTableKey)) {
+	out, status, err := testutil.TestPermGetResTagTable(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -221,7 +253,53 @@ func goodPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, ur
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	require.Equal(t, 0, len(list))
+	_ = out
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTable)) {
+	badPermCreateResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermAddResTag(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermRemoveResTag(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.ResTagTable)) {
+	goodPermCreateResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermUpdateResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermAddResTag(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermRemoveResTag(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDeleteResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowResTagTable(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionCreateResTagTable(t, mcClient, uri, token, org, modFuncs...)
+	badRegionUpdateResTagTable(t, mcClient, uri, token, org, modFuncs...)
+	badRegionAddResTag(t, mcClient, uri, token, org, modFuncs...)
+	badRegionRemoveResTag(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDeleteResTagTable(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowResTagTable(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowResTagTable(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for
@@ -229,10 +307,33 @@ func goodPermTestShowResTagTable(t *testing.T, mcClient *mctestclient.Client, ur
 // They should not have permissions to modify each other's objects.
 func permTestResTagTable(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.ResTagTable)) {
 	badPermTestResTagTable(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestShowResTagTable(t, mcClient, uri, token1, region, org2)
 	badPermTestResTagTable(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowResTagTable(t, mcClient, uri, token1, region, org2)
 	badPermTestShowResTagTable(t, mcClient, uri, token2, region, org1)
-
 	goodPermTestResTagTable(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestResTagTable(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestResTagTableKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.ResTagTableKey)) {
+	badPermGetResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestResTagTableKey(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.ResTagTableKey)) {
+	goodPermGetResTagTable(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionGetResTagTable(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestResTagTableKey(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.ResTagTableKey)) {
+	badPermTestResTagTableKey(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestResTagTableKey(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestResTagTableKey(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestResTagTableKey(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

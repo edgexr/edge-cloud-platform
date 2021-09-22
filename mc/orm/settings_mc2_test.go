@@ -46,6 +46,18 @@ func goodPermUpdateSettings(t *testing.T, mcClient *mctestclient.Client, uri, to
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Settings)) {
+	out, status, err := testutil.TestPermUpdateSettings(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermResetSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {
@@ -67,6 +79,18 @@ func goodPermResetSettings(t *testing.T, mcClient *mctestclient.Client, uri, tok
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionResetSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Settings)) {
+	out, status, err := testutil.TestPermResetSettings(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {
@@ -86,4 +110,46 @@ func goodPermShowSettings(t *testing.T, mcClient *mctestclient.Client, uri, toke
 	_, status, err := testutil.TestPermShowSettings(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Settings)) {
+	out, status, err := testutil.TestPermShowSettings(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Settings)) {
+	badPermUpdateSettings(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermResetSettings(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermShowSettings(t, mcClient, uri, token, region, org, modFuncs...)
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestSettings(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Settings)) {
+	goodPermUpdateSettings(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermResetSettings(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermShowSettings(t, mcClient, uri, token, region, org, modFuncs...)
+	// make sure region check works
+	badRegionUpdateSettings(t, mcClient, uri, token, org, modFuncs...)
+	badRegionResetSettings(t, mcClient, uri, token, org, modFuncs...)
+	badRegionShowSettings(t, mcClient, uri, token, org, modFuncs...)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestSettings(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.Settings)) {
+	badPermTestSettings(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestSettings(t, mcClient, uri, token2, region, org1, modFuncs...)
+	goodPermTestSettings(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestSettings(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

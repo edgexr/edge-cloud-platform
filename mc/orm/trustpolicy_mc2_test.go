@@ -46,6 +46,18 @@ func goodPermCreateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionCreateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	out, status, err := testutil.TestPermCreateTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
@@ -65,6 +77,18 @@ func goodPermDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri,
 	_, status, err := testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDeleteTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	out, status, err := testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermUpdateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri,
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	out, status, err := testutil.TestPermUpdateTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
@@ -109,54 +145,8 @@ func goodPermShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, t
 	require.Equal(t, http.StatusOK, status)
 }
 
-// This tests the user cannot modify the object because the obj belongs to
-// an organization that the user does not have permissions for.
-func badPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
-	badPermCreateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermUpdateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
-}
-
-func badPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
-	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
-}
-
-// This tests the user can modify the object because the obj belongs to
-// an organization that the user has permissions for.
-func goodPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
-	goodPermCreateTrustPolicy(t, mcClient, uri, token, region, org)
-	goodPermUpdateTrustPolicy(t, mcClient, uri, token, region, org)
-	goodPermDeleteTrustPolicy(t, mcClient, uri, token, region, org)
-
-	// make sure region check works
-	_, status, err := testutil.TestPermCreateTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShowTrustPolicy(t, mcClient, uri, token, region, org, showcount)
-}
-
-func goodPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
-
-	// make sure region check works
-	list, status, err = testutil.TestPermShowTrustPolicy(mcClient, uri, token, "bad region", org)
+func badRegionShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	out, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -164,7 +154,47 @@ func goodPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, ur
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	require.Equal(t, 0, len(list))
+	require.Equal(t, 0, len(out))
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	badPermCreateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
+	goodPermCreateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermUpdateTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDeleteTrustPolicy(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowTrustPolicy(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionCreateTrustPolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionUpdateTrustPolicy(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDeleteTrustPolicy(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowTrustPolicy(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowTrustPolicy(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for
@@ -172,10 +202,9 @@ func goodPermTestShowTrustPolicy(t *testing.T, mcClient *mctestclient.Client, ur
 // They should not have permissions to modify each other's objects.
 func permTestTrustPolicy(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.TrustPolicy)) {
 	badPermTestTrustPolicy(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestShowTrustPolicy(t, mcClient, uri, token1, region, org2)
 	badPermTestTrustPolicy(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowTrustPolicy(t, mcClient, uri, token1, region, org2)
 	badPermTestShowTrustPolicy(t, mcClient, uri, token2, region, org1)
-
 	goodPermTestTrustPolicy(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestTrustPolicy(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

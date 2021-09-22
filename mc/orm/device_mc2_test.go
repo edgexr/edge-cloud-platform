@@ -47,6 +47,18 @@ func goodPermInjectDevice(t *testing.T, mcClient *mctestclient.Client, uri, toke
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionInjectDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Device)) {
+	out, status, err := testutil.TestPermInjectDevice(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
@@ -66,6 +78,18 @@ func goodPermShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token,
 	_, status, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Device)) {
+	out, status, err := testutil.TestPermShowDevice(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
 }
 
 var _ = edgeproto.GetFields
@@ -89,6 +113,18 @@ func goodPermEvictDevice(t *testing.T, mcClient *mctestclient.Client, uri, token
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionEvictDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Device)) {
+	out, status, err := testutil.TestPermEvictDevice(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.DeviceReport)) {
@@ -108,4 +144,102 @@ func goodPermShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, 
 	_, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.DeviceReport)) {
+	out, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	require.Equal(t, 0, len(out))
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Device)) {
+	badPermInjectDevice(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermEvictDevice(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Device)) {
+	goodPermInjectDevice(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermEvictDevice(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowDevice(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionInjectDevice(t, mcClient, uri, token, org, modFuncs...)
+	badRegionEvictDevice(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowDevice(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowDevice(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowDevice(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestDevice(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.Device)) {
+	badPermTestDevice(t, mcClient, uri, token1, region, org2, modFuncs...)
+	badPermTestDevice(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowDevice(t, mcClient, uri, token1, region, org2)
+	badPermTestShowDevice(t, mcClient, uri, token2, region, org1)
+	goodPermTestDevice(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestDevice(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+}
+
+func badPermTestShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.DeviceReport)) {
+	goodPermTestShowDeviceReport(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+}
+func goodPermTestShowDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowDeviceReport(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowDeviceReport(t, mcClient, uri, token, org)
+}
+
+// Test permissions for user with token1 who should have permissions for
+// modifying obj1, and user with token2 who should have permissions for obj2.
+// They should not have permissions to modify each other's objects.
+func permTestDeviceReport(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.DeviceReport)) {
+	badPermTestShowDeviceReport(t, mcClient, uri, token1, region, org2)
+	badPermTestShowDeviceReport(t, mcClient, uri, token2, region, org1)
+	goodPermTestDeviceReport(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
+	goodPermTestDeviceReport(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

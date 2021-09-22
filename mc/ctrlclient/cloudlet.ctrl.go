@@ -424,6 +424,28 @@ func RemoveCloudletResMappingObj(ctx context.Context, rc *ormutil.RegionContext,
 	return api.RemoveCloudletResMapping(ctx, obj)
 }
 
+func AddCloudletAllianceOrgObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletAllianceOrg, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.AddCloudletAllianceOrg(ctx, obj)
+}
+
+func RemoveCloudletAllianceOrgObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.CloudletAllianceOrg, connObj ClientConnMgr) (*edgeproto.Result, error) {
+	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletApiClient(conn)
+	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+	return api.RemoveCloudletAllianceOrg(ctx, obj)
+}
+
 func FindFlavorMatchObj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.FlavorMatch, connObj ClientConnMgr) (*edgeproto.FlavorMatch, error) {
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
