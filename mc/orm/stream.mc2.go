@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func StreamAppInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.StreamAppInstStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.StreamAppInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func StreamClusterInst(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.StreamClusterInstStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.StreamClusterInstStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func StreamCloudlet(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.StreamCloudletStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.StreamCloudletStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func StreamGPUDriver(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.StreamGPUDriverStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.StreamGPUDriverStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}

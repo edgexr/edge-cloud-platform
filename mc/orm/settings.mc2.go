@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -60,7 +60,7 @@ func UpdateSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -100,7 +100,7 @@ func ResetSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.ResetSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.ResetSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -137,7 +137,7 @@ func ShowSettings(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.ShowSettingsObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.ShowSettingsObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

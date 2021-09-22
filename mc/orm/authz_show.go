@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/edgeproto"
@@ -59,7 +59,7 @@ func (s *AuthzShow) setCloudletKeysFromPool(ctx context.Context, region, usernam
 		return err
 	}
 	s.allowedCloudlets = make(map[edgeproto.CloudletKey]struct{})
-	err = ctrlapi.ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
+	err = ctrlclient.ShowCloudletPoolStream(ctx, &rc, &edgeproto.CloudletPool{}, connCache, nil, func(pool *edgeproto.CloudletPool) error {
 		if _, found := allowedOperOrgs[pool.Key.Organization]; !found {
 			// skip pools which operator is not allowed to access
 			return nil
@@ -117,7 +117,7 @@ type AuthzClusterInstShow struct {
 	*AuthzShow
 }
 
-func newShowClusterInstAuthz(ctx context.Context, region, username string, resource, action string) (ctrlapi.ShowClusterInstAuthz, error) {
+func newShowClusterInstAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowClusterInstAuthz, error) {
 	authz, err := newShowPoolAuthz(ctx, region, username, resource, action)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ type AuthzAppInstShow struct {
 	*AuthzShow
 }
 
-func newShowAppInstAuthz(ctx context.Context, region, username string, resource, action string) (ctrlapi.ShowAppInstAuthz, error) {
+func newShowAppInstAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowAppInstAuthz, error) {
 	authz, err := newShowPoolAuthz(ctx, region, username, resource, action)
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ type AuthzAppShow struct {
 	allowedOrgsByPool map[string]struct{}
 }
 
-func newShowAppAuthz(ctx context.Context, region, username string, resource, action string) (ctrlapi.ShowAppAuthz, error) {
+func newShowAppAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowAppAuthz, error) {
 	// this gets developer orgs that user can see
 	orgs, err := enforcer.GetAuthorizedOrgs(ctx, username, resource, action)
 	if err != nil {
@@ -237,7 +237,7 @@ type AuthzGPUDriverShow struct {
 	allowedGPUDrivers map[edgeproto.GPUDriverKey]struct{}
 }
 
-func newShowGPUDriverAuthz(ctx context.Context, region, username string, resource, action string) (ctrlapi.ShowGPUDriverAuthz, error) {
+func newShowGPUDriverAuthz(ctx context.Context, region, username string, resource, action string) (ctrlclient.ShowGPUDriverAuthz, error) {
 	authzCloudletObj := AuthzCloudlet{}
 	err := authzCloudletObj.populate(ctx, region, username, "", resource, action)
 	if err != nil {
@@ -249,7 +249,7 @@ func newShowGPUDriverAuthz(ctx context.Context, region, username string, resourc
 		Username:  username,
 		SkipAuthz: false,
 	}
-	err = ctrlapi.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cl *edgeproto.Cloudlet) error {
+	err = ctrlclient.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cl *edgeproto.Cloudlet) error {
 		// ignore non-GPU cloudlets
 		if _, ok := cl.ResTagMap["gpu"]; !ok {
 			return nil

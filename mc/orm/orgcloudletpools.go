@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon"
@@ -371,7 +371,7 @@ func ShowOrgCloudlet(c echo.Context) error {
 		SkipAuthz: true,
 	}
 	show := make([]*edgeproto.Cloudlet, 0)
-	err = ctrlapi.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cloudlet *edgeproto.Cloudlet) error {
+	err = ctrlclient.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cloudlet *edgeproto.Cloudlet) error {
 		authzOk, filterOutput := authzCloudlet.Ok(cloudlet)
 		if authzOk {
 			if filterOutput {
@@ -429,7 +429,7 @@ func ShowOrgCloudletInfo(c echo.Context) error {
 		SkipAuthz: true,
 	}
 	show := make([]*edgeproto.CloudletInfo, 0)
-	err = ctrlapi.ShowCloudletInfoStream(ctx, &rc, &edgeproto.CloudletInfo{}, connCache, nil, func(CloudletInfo *edgeproto.CloudletInfo) error {
+	err = ctrlclient.ShowCloudletInfoStream(ctx, &rc, &edgeproto.CloudletInfo{}, connCache, nil, func(CloudletInfo *edgeproto.CloudletInfo) error {
 		cloudlet := edgeproto.Cloudlet{
 			Key: CloudletInfo.Key,
 		}

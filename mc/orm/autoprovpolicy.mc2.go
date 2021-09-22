@@ -10,7 +10,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -60,7 +60,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateAutoProvPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -102,7 +102,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteAutoProvPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -148,7 +148,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateAutoProvPolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateAutoProvPolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -192,7 +192,7 @@ func ShowAutoProvPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowAutoProvPolicyStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowAutoProvPolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -273,7 +273,7 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveAutoProvPolicyCloudletObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

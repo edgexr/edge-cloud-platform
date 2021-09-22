@@ -12,7 +12,7 @@ import (
 	client "github.com/influxdata/influxdb/client/v2"
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	pf "github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -305,7 +305,7 @@ func getSettings(ctx context.Context, idc *InfluxDBContext) (*edgeproto.Settings
 		Region:    idc.region,
 		SkipAuthz: true, // this is internal call, so no auth needed
 	}
-	return ctrlapi.ShowSettingsObj(ctx, rc, in, connCache)
+	return ctrlclient.ShowSettingsObj(ctx, rc, in, connCache)
 }
 
 // Fill in MetricsCommonQueryArgs: Depending on if the user specified "Limit", "NumSamples", "StartTime", and "EndTime", adjust the query
@@ -633,7 +633,7 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, key 
 	obj := edgeproto.Cloudlet{
 		Key: *key,
 	}
-	err := ctrlapi.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
+	err := ctrlclient.ShowCloudletStream(ctx, rc, &obj, connCache, nil, func(res *edgeproto.Cloudlet) error {
 		pfType := pf.GetType(res.PlatformType.String())
 		platformTypes[pfType] = struct{}{}
 		return nil
@@ -1103,7 +1103,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	if operOrgPermOk && len(uniqueCloudlets) == 0 {
 		for cloudletOrg := range cloudletOrgs {
 			cloudletpoolQuery := edgeproto.CloudletPool{Key: edgeproto.CloudletPoolKey{Organization: cloudletOrg}}
-			err = ctrlapi.ShowCloudletPoolStream(ctx, regionRc, &cloudletpoolQuery, connCache, nil, func(pool *edgeproto.CloudletPool) error {
+			err = ctrlclient.ShowCloudletPoolStream(ctx, regionRc, &cloudletpoolQuery, connCache, nil, func(pool *edgeproto.CloudletPool) error {
 				for _, cloudlet := range pool.Cloudlets {
 					uniqueCloudlets[cloudlet] = struct{}{}
 				}

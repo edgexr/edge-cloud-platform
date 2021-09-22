@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -62,7 +62,7 @@ func CreateTrustPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.CreateTrustPolicyStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.CreateTrustPolicyStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func DeleteTrustPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.DeleteTrustPolicyStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.DeleteTrustPolicyStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func UpdateTrustPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.UpdateTrustPolicyStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.UpdateTrustPolicyStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func ShowTrustPolicy(c echo.Context) error {
 	span.SetTag("org", in.TrustPolicy.Key.Organization)
 
 	obj := &in.TrustPolicy
-	var authz ctrlapi.ShowTrustPolicyAuthz
+	var authz ctrlclient.ShowTrustPolicyAuthz
 	if !rc.SkipAuthz {
 		authz, err = newShowTrustPolicyAuthz(ctx, rc.Region, rc.Username, ResourceCloudlets, ActionView)
 		if err != nil {
@@ -195,7 +195,7 @@ func ShowTrustPolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowTrustPolicyStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowTrustPolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

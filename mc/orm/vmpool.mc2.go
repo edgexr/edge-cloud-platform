@@ -10,7 +10,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
@@ -60,7 +60,7 @@ func CreateVMPool(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateVMPoolObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -102,7 +102,7 @@ func DeleteVMPool(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteVMPoolObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -148,7 +148,7 @@ func UpdateVMPool(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateVMPoolObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateVMPoolObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -192,7 +192,7 @@ func ShowVMPool(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowVMPoolStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowVMPoolStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func AddVMPoolMember(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.AddVMPoolMemberObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.AddVMPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -273,7 +273,7 @@ func RemoveVMPoolMember(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.RemoveVMPoolMemberObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.RemoveVMPoolMemberObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())

@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -58,7 +58,7 @@ func CreateAutoScalePolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateAutoScalePolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateAutoScalePolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -100,7 +100,7 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteAutoScalePolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteAutoScalePolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -146,7 +146,7 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.UpdateAutoScalePolicyObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.UpdateAutoScalePolicyObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -190,7 +190,7 @@ func ShowAutoScalePolicy(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowAutoScalePolicyStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowAutoScalePolicyStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

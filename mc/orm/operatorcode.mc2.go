@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -57,7 +57,7 @@ func CreateOperatorCode(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.CreateOperatorCodeObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.CreateOperatorCodeObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -98,7 +98,7 @@ func DeleteOperatorCode(c echo.Context) error {
 		}
 	}
 
-	resp, err := ctrlapi.DeleteOperatorCodeObj(ctx, rc, obj, connCache)
+	resp, err := ctrlclient.DeleteOperatorCodeObj(ctx, rc, obj, connCache)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			err = fmt.Errorf("%s", st.Message())
@@ -141,7 +141,7 @@ func ShowOperatorCode(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowOperatorCodeStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowOperatorCodeStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}
