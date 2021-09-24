@@ -1284,6 +1284,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ReservationEndedAtSeconds: 31.1
 	// ReservationEndedAtNanos: 31.2
 	// MultiTenant: 32
+	// Networks: 33
 	// ```
 	// Security:
 	//   Bearer:
@@ -1455,6 +1456,59 @@ func addControllerApis(method string, group *echo.Group) {
 	//   403: forbidden
 	//   404: notFound
 	group.Match([]string{method}, "/ctrl/ShowTrustPolicy", ShowTrustPolicy)
+	// swagger:route POST /auth/ctrl/CreateNetwork Network CreateNetwork
+	// Create a Network.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/CreateNetwork", CreateNetwork)
+	// swagger:route POST /auth/ctrl/DeleteNetwork Network DeleteNetwork
+	// Delete a Network.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/DeleteNetwork", DeleteNetwork)
+	// swagger:route POST /auth/ctrl/UpdateNetwork Network UpdateNetwork
+	// Update a Network.
+	// The following values should be added to `Network.fields` field array to specify which fields will be updated.
+	// ```
+	// Key: 2
+	// KeyCloudletKey: 2.1
+	// KeyCloudletKeyOrganization: 2.1.1
+	// KeyCloudletKeyName: 2.1.2
+	// KeyName: 2.2
+	// Routes: 3
+	// RoutesDestinationCidr: 3.1
+	// RoutesNextHopIp: 3.2
+	// ConnectionType: 4
+	// ```
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/UpdateNetwork", UpdateNetwork)
+	// swagger:route POST /auth/ctrl/ShowNetwork Network ShowNetwork
+	// Show Networks.
+	//  Any fields specified will be used to filter results.
+	// Security:
+	//   Bearer:
+	// responses:
+	//   200: success
+	//   400: badRequest
+	//   403: forbidden
+	//   404: notFound
+	group.Match([]string{method}, "/ctrl/ShowNetwork", ShowNetwork)
 	// swagger:route POST /auth/ctrl/CreateAppInst AppInst CreateAppInst
 	// Create Application Instance.
 	//  Creates an instance of an App on a Cloudlet where it is defined by an App plus a ClusterInst key. Many of the fields here are inherited from the App definition.
