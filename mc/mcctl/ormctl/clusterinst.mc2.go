@@ -68,7 +68,7 @@ var UpdateClusterInstCmd = &ApiCommand{
 	AliasArgs:            strings.Join(ClusterInstAliasArgs, " "),
 	SpecialArgs:          &ClusterInstSpecialArgs,
 	Comments:             addRegionComment(ClusterInstComments),
-	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName",
+	NoConfig:             "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,Status,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks",
 	ReqData:              &ormapi.RegionClusterInst{},
 	ReplyData:            &edgeproto.Result{},
 	Path:                 "/auth/ctrl/UpdateClusterInst",
@@ -174,6 +174,7 @@ var ClusterInstOptionalArgs = []string{
 	"sharedvolumesize",
 	"skipcrmcleanuponfailure",
 	"multitenant",
+	"networks",
 }
 var ClusterInstAliasArgs = []string{
 	"fields=clusterinst.fields",
@@ -230,6 +231,7 @@ var ClusterInstAliasArgs = []string{
 	"reservationendedat.seconds=clusterinst.reservationendedat.seconds",
 	"reservationendedat.nanos=clusterinst.reservationendedat.nanos",
 	"multitenant=clusterinst.multitenant",
+	"networks=clusterinst.networks",
 }
 var ClusterInstComments = map[string]string{
 	"fields":                                 "Fields are used for the Update API to specify which fields to apply",
@@ -272,10 +274,12 @@ var ClusterInstComments = map[string]string{
 	"resources.vms:#.containers:#.clusterip": "IP within the CNI and is applicable to kubernetes only",
 	"resources.vms:#.containers:#.restarts":  "Restart count, applicable to kubernetes only",
 	"multitenant":                            "Multi-tenant kubernetes cluster",
+	"networks":                               "networks to connect to, specify networks:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"clusterinst.errors":      "StringArray",
 	"clusterinst.fields":      "StringArray",
+	"clusterinst.networks":    "StringArray",
 	"clusterinst.status.msgs": "StringArray",
 }
 var IdleReservableClusterInstsRequiredArgs = []string{}

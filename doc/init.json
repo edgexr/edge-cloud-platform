@@ -6,7 +6,7 @@
                 },
                 {
                         "name": "Operator API",
-                        "tags": ["Cloudlet", "OperatorCode", "Flavor", "CloudletProps", "CloudletResMap", "FlavorMatch", "CloudletPool", "CloudletPoolMember", "VMPool", "VMPoolMember", "OperatorMetrics", "Events", "OperatorUsage", "AlertReceiver"]
+                        "tags": ["Cloudlet", "OperatorCode", "Flavor", "CloudletProps", "CloudletResMap", "FlavorMatch", "CloudletPool", "CloudletPoolMember", "VMPool", "VMPoolMember", "OperatorMetrics", "Events", "OperatorUsage", "AlertReceiver", "Network"]
                 },
                 {
                         "name": "Developer API",
@@ -112,11 +112,11 @@
 		},
 		{
 			"name": "DeveloperMetrics",
-			"description": "Collection of statistcs related to Client/App/Cluster."
+			"description": "Collection of statistics related to Client/App/Cluster."
 		},
 		{
 			"name": "OperatorMetrics",
-			"description": "Collection of statistcs related to Cloudlet."
+			"description": "Collection of statistics related to Cloudlet."
 		},
 		{
 			"name": "Events",
@@ -133,6 +133,10 @@
 		{
 			"name": "AlertReceiver",
 			"description": "Manage receiver for alerts from edge services."
+		},
+		{
+			"name": "Network",
+			"description": "Manage additional networks which can be added to Cluster Instances."
 		}
 	]
 }
