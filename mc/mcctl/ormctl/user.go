@@ -126,8 +126,9 @@ func init() {
 
 	cmd := &ApiCommand{
 		Name:         "RestrictedUpdateUser",
+		Use:          "restrictedupdateuser",
 		Short:        "Admin-only update of various user fields, requires name or email",
-		OptionalArgs: "name email emailverified familyname givenname nickname locked",
+		OptionalArgs: "name email emailverified familyname givenname nickname locked enabletotp",
 		Comments:     ormapi.UserComments,
 		ReqData:      &ormapi.User{},
 		Path:         "/auth/restricted/user/update",
