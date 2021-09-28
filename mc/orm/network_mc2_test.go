@@ -46,6 +46,18 @@ func goodPermCreateNetwork(t *testing.T, mcClient *mctestclient.Client, uri, tok
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionCreateNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Network)) {
+	out, status, err := testutil.TestPermCreateNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermDeleteNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Network)) {
@@ -65,6 +77,18 @@ func goodPermDeleteNetwork(t *testing.T, mcClient *mctestclient.Client, uri, tok
 	_, status, err := testutil.TestPermDeleteNetwork(mcClient, uri, token, region, org, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
+}
+
+func badRegionDeleteNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Network)) {
+	out, status, err := testutil.TestPermDeleteNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
 }
 
 var _ = edgeproto.GetFields
@@ -88,6 +112,18 @@ func goodPermUpdateNetwork(t *testing.T, mcClient *mctestclient.Client, uri, tok
 	require.Equal(t, http.StatusOK, status)
 }
 
+func badRegionUpdateNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Network)) {
+	out, status, err := testutil.TestPermUpdateNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
+	require.NotNil(t, err)
+	if err.Error() == "Forbidden" {
+		require.Equal(t, http.StatusForbidden, status)
+	} else {
+		require.Contains(t, err.Error(), "\"bad region\" not found")
+		require.Equal(t, http.StatusBadRequest, status)
+	}
+	_ = out
+}
+
 var _ = edgeproto.GetFields
 
 func badPermShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Network)) {
@@ -109,54 +145,8 @@ func goodPermShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token
 	require.Equal(t, http.StatusOK, status)
 }
 
-// This tests the user cannot modify the object because the obj belongs to
-// an organization that the user does not have permissions for.
-func badPermTestNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Network)) {
-	badPermCreateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermUpdateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteNetwork(t, mcClient, uri, token, region, org, modFuncs...)
-}
-
-func badPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
-	// show is allowed but won't show anything
-	list, status, err := testutil.TestPermShowNetwork(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, 0, len(list))
-}
-
-// This tests the user can modify the object because the obj belongs to
-// an organization that the user has permissions for.
-func goodPermTestNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Network)) {
-	goodPermCreateNetwork(t, mcClient, uri, token, region, org)
-	goodPermUpdateNetwork(t, mcClient, uri, token, region, org)
-	goodPermDeleteNetwork(t, mcClient, uri, token, region, org)
-
-	// make sure region check works
-	_, status, err := testutil.TestPermCreateNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermUpdateNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-	_, status, err = testutil.TestPermDeleteNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
-	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"bad region\" not found")
-	require.Equal(t, http.StatusBadRequest, status)
-
-	goodPermTestShowNetwork(t, mcClient, uri, token, region, org, showcount)
-}
-
-func goodPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
-	list, status, err := testutil.TestPermShowNetwork(mcClient, uri, token, region, org)
-	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, count, len(list))
-
-	// make sure region check works
-	list, status, err = testutil.TestPermShowNetwork(mcClient, uri, token, "bad region", org)
+func badRegionShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Network)) {
+	out, status, err := testutil.TestPermShowNetwork(mcClient, uri, token, "bad region", org, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -164,7 +154,47 @@ func goodPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, t
 		require.Contains(t, err.Error(), "\"bad region\" not found")
 		require.Equal(t, http.StatusBadRequest, status)
 	}
-	require.Equal(t, 0, len(list))
+	require.Equal(t, 0, len(out))
+}
+
+// This tests the user cannot modify the object because the obj belongs to
+// an organization that the user does not have permissions for.
+func badPermTestNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Network)) {
+	badPermCreateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermUpdateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+	badPermDeleteNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+}
+func badPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
+	// show is allowed but won't show anything
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowNetwork(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, 0, len(list0))
+}
+
+// This tests the user can modify the object because the obj belongs to
+// an organization that the user has permissions for.
+func goodPermTestNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Network)) {
+	goodPermCreateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermUpdateNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermDeleteNetwork(t, mcClient, uri, token, region, org, modFuncs...)
+	goodPermTestShowNetwork(t, mcClient, uri, token, region, org, showcount)
+	// make sure region check works
+	badRegionCreateNetwork(t, mcClient, uri, token, org, modFuncs...)
+	badRegionUpdateNetwork(t, mcClient, uri, token, org, modFuncs...)
+	badRegionDeleteNetwork(t, mcClient, uri, token, org, modFuncs...)
+}
+func goodPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
+	var status int
+	var err error
+	list0, status, err := testutil.TestPermShowNetwork(mcClient, uri, token, region, org)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, count, len(list0))
+
+	badRegionShowNetwork(t, mcClient, uri, token, org)
 }
 
 // Test permissions for user with token1 who should have permissions for
@@ -172,10 +202,9 @@ func goodPermTestShowNetwork(t *testing.T, mcClient *mctestclient.Client, uri, t
 // They should not have permissions to modify each other's objects.
 func permTestNetwork(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.Network)) {
 	badPermTestNetwork(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestShowNetwork(t, mcClient, uri, token1, region, org2)
 	badPermTestNetwork(t, mcClient, uri, token2, region, org1, modFuncs...)
+	badPermTestShowNetwork(t, mcClient, uri, token1, region, org2)
 	badPermTestShowNetwork(t, mcClient, uri, token2, region, org1)
-
 	goodPermTestNetwork(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
 	goodPermTestNetwork(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
 }

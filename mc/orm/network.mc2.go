@@ -9,7 +9,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/labstack/echo"
-	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlapi"
+	"github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -62,7 +62,7 @@ func CreateNetwork(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.CreateNetworkStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.CreateNetworkStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func DeleteNetwork(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.DeleteNetworkStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.DeleteNetworkStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func UpdateNetwork(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.UpdateNetworkStream(ctx, rc, obj, connCache, cb)
+	err = ctrlclient.UpdateNetworkStream(ctx, rc, obj, connCache, cb)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func ShowNetwork(c echo.Context) error {
 		payload.Data = res
 		return WriteStream(c, &payload)
 	}
-	err = ctrlapi.ShowNetworkStream(ctx, rc, obj, connCache, authz, cb)
+	err = ctrlclient.ShowNetworkStream(ctx, rc, obj, connCache, authz, cb)
 	if err != nil {
 		return err
 	}

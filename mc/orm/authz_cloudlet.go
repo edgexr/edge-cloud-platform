@@ -74,10 +74,10 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 		return echo.ErrForbidden
 	}
 
-	for _, requiresOrg := range opts.requiresOrgs {
+	if opts.requiresOrg != "" {
 		// edgeboxOnly check is not required for Show command
 		noEdgeboxOnly := false
-		if err := checkRequiresOrg(ctx, requiresOrg, resource, s.admin, noEdgeboxOnly); err != nil {
+		if err := checkRequiresOrg(ctx, opts.requiresOrg, resource, s.admin, noEdgeboxOnly); err != nil {
 			return err
 		}
 	}
@@ -254,7 +254,7 @@ func (s *AuthzCloudletKey) populate(ctx context.Context, region, username, orgfi
 func authzCreateCloudlet(ctx context.Context, region, username string, obj *edgeproto.Cloudlet, resource, action string) error {
 	ops := []authOp{withRequiresOrg(obj.Key.Organization)}
 	for _, org := range obj.AllianceOrgs {
-		ops = append(ops, withRequiresOrg(org))
+		ops = append(ops, withReferenceOrg(org, OrgTypeOperator))
 	}
 	if obj.PlatformType != edgeproto.PlatformType_PLATFORM_TYPE_EDGEBOX {
 		ops = append(ops, withNoEdgeboxOnly())
@@ -265,13 +265,13 @@ func authzCreateCloudlet(ctx context.Context, region, username string, obj *edge
 func authzUpdateCloudlet(ctx context.Context, region, username string, obj *edgeproto.Cloudlet, resource, action string) error {
 	ops := []authOp{}
 	for _, org := range obj.AllianceOrgs {
-		ops = append(ops, withRequiresOrg(org))
+		ops = append(ops, withReferenceOrg(org, OrgTypeOperator))
 	}
 	return authorized(ctx, username, obj.Key.Organization, resource, action, ops...)
 }
 
 func authzAddCloudletAllianceOrg(ctx context.Context, region, username string, obj *edgeproto.CloudletAllianceOrg, resource, action string) error {
-	ops := []authOp{withRequiresOrg(obj.Organization)}
+	ops := []authOp{withReferenceOrg(obj.Organization, OrgTypeOperator)}
 	return authorized(ctx, username, obj.Key.Organization, resource, action, ops...)
 }
 
