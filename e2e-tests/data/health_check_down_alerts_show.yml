@@ -7,7 +7,6 @@
     cloudletorg: dmuus
     cluster: SmallCluster
     clusterorg: AcmeAppCo
-    job: MobiledgeX Monitoring
     region: local
     scope: Application
     status: "2"
