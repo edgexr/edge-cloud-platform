@@ -138,13 +138,6 @@ func (s *AlertMgrServer) Stop() {
 	s.waitGrp.Wait()
 }
 
-// Prune labels we don't want to show on the alerts sent to the external alert integrations
-func isLabelInternal(label string) bool {
-	if label == "instance" || label == "job" || label == cloudcommon.AlertTypeLabel {
-		return true
-	}
-	return false
-}
 func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models.PostableAlerts {
 	openAPIAlerts := models.PostableAlerts{}
 	for _, alert := range alerts {
@@ -158,7 +151,7 @@ func (s *AlertMgrServer) alertsToOpenAPIAlerts(alerts []*edgeproto.Alert) models
 		labels := make(map[string]string)
 		for k, v := range alert.Labels {
 			// drop labels we don't want to expose to the end-users
-			if isLabelInternal(k) {
+			if cloudcommon.IsLabelInternal(k) {
 				continue
 			}
 			// Convert appInst status to a human-understandable format

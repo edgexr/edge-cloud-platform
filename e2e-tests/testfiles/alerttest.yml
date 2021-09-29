@@ -177,7 +177,7 @@ tests:
   - name: check health check alerts
     actions: [mcapi-showalerts]
     apifile: '{{datadir2}}/show_local_region.yml'
-    curuserfile: '{{datadir2}}/mc_admin.yml'
+    curuserfile: '{{datadir2}}/mc_user2.yml'
     retrycount: 10
     retryintervalsec: 0.5
     compareyaml:
