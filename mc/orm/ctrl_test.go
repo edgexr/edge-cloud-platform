@@ -843,6 +843,12 @@ func testControllerClientRun(t *testing.T, ctx context.Context, clientRun mctest
 		require.NotNil(t, err)
 		require.Equal(t, "Cannot add cloudlet somecloudlet to CloudletPool because it has AppInsts/ClusterInsts from developer org1, which are not authorized to deploy to the CloudletPool. Please invite the developer first, or remove the developer from the Cloudlet.", err.Error())
 
+		member.Region = ""
+		_, status, err = mcClient.AddCloudletPoolMember(uri, tokenOper, &member)
+		require.NotNil(t, err)
+		require.Equal(t, "No region specified", err.Error())
+		member.Region = ctrl.Region
+
 		// add org1 to pool
 		op1 := ormapi.OrgCloudletPool{
 			Org:             org1,
