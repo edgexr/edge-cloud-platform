@@ -22,8 +22,8 @@ var defaultConfig = ormapi.Config{
 	UserApiKeyCreateLimit:        10,
 	BillingEnable:                false, // TODO: eventually set the default to true?
 	DisableRateLimit:             false,
-	MaxNumPerIpRateLimiters:      10000,
-	MaxNumPerUserRateLimiters:    10000,
+	RateLimitMaxTrackedIps:       10000,
+	RateLimitMaxTrackedUsers:     10000,
 }
 
 func InitConfig(ctx context.Context) error {
@@ -58,14 +58,14 @@ func InitConfig(ctx context.Context) error {
 		config.UserApiKeyCreateLimit = defaultConfig.UserApiKeyCreateLimit
 		save = true
 	}
-	// set maxnumperipratelimiters if not set
-	if config.MaxNumPerIpRateLimiters == 0 {
-		config.MaxNumPerIpRateLimiters = defaultConfig.MaxNumPerIpRateLimiters
+	// set ratelimitmaxtrackedips if not set
+	if config.RateLimitMaxTrackedIps == 0 {
+		config.RateLimitMaxTrackedIps = defaultConfig.RateLimitMaxTrackedIps
 		save = true
 	}
-	// set maxnumperuserratelimiters if not set
-	if config.MaxNumPerUserRateLimiters == 0 {
-		config.MaxNumPerUserRateLimiters = defaultConfig.MaxNumPerUserRateLimiters
+	// set ratelimitmaxtrackedusers if not set
+	if config.RateLimitMaxTrackedUsers == 0 {
+		config.RateLimitMaxTrackedUsers = defaultConfig.RateLimitMaxTrackedUsers
 		save = true
 	}
 	if save {
@@ -113,11 +113,11 @@ func UpdateConfig(c echo.Context) error {
 	if config.DisableRateLimit != oldConfig.DisableRateLimit {
 		rateLimitMgr.UpdateDisableRateLimit(config.DisableRateLimit)
 	}
-	if config.MaxNumPerIpRateLimiters != oldConfig.MaxNumPerIpRateLimiters {
-		rateLimitMgr.UpdateMaxNumPerIpRateLimiters(config.MaxNumPerIpRateLimiters)
+	if config.RateLimitMaxTrackedIps != oldConfig.RateLimitMaxTrackedIps {
+		rateLimitMgr.UpdateMaxTrackedIps(config.RateLimitMaxTrackedIps)
 	}
-	if config.MaxNumPerUserRateLimiters != oldConfig.MaxNumPerUserRateLimiters {
-		rateLimitMgr.UpdateMaxNumPerUserRateLimiters(config.MaxNumPerUserRateLimiters)
+	if config.RateLimitMaxTrackedUsers != oldConfig.RateLimitMaxTrackedUsers {
+		rateLimitMgr.UpdateMaxTrackedUsers(config.RateLimitMaxTrackedUsers)
 	}
 
 	db := loggedDB(ctx)
@@ -150,8 +150,8 @@ func ResetConfig(c echo.Context) error {
 
 	// Update RateLimitMgr settings
 	rateLimitMgr.UpdateDisableRateLimit(defaultConfig.DisableRateLimit)
-	rateLimitMgr.UpdateMaxNumPerIpRateLimiters(defaultConfig.MaxNumPerIpRateLimiters)
-	rateLimitMgr.UpdateMaxNumPerUserRateLimiters(defaultConfig.MaxNumPerUserRateLimiters)
+	rateLimitMgr.UpdateMaxTrackedIps(defaultConfig.RateLimitMaxTrackedIps)
+	rateLimitMgr.UpdateMaxTrackedUsers(defaultConfig.RateLimitMaxTrackedUsers)
 
 	return nil
 }

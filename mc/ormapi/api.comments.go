@@ -90,8 +90,8 @@ var ConfigComments = map[string]string{
 	"userapikeycreatelimit":        `Max number of API keys a user can create`,
 	"billingenable":                `Toggle for enabling billing (primarily for testing purposes)`,
 	"disableratelimit":             `Toggle to enable and disable MC API rate limiting`,
-	"maxnumperipratelimiters":      `Maximum number of PerIp rate limiters for an api`,
-	"maxnumperuserratelimiters":    `Maximum number of PerUser rate limiters for an api`,
+	"ratelimitmaxtrackedips":       `Maximum number of IPs tracked per API group for rate limiting at MC`,
+	"ratelimitmaxtrackedusers":     `Maximum number of users tracked per API group for rate limiting at MC`,
 }
 
 var McRateLimitFlowSettingsComments = map[string]string{

@@ -5,5 +5,5 @@ adminpasswordmincracktimesec: 6.3072e+07
 maxmetricsdatapoints: 10000
 userapikeycreatelimit: 10
 disableratelimit: true
-maxnumperipratelimiters: 10000
-maxnumperuserratelimiters: 10000
+ratelimitmaxtrackedips: 10000
+ratelimitmaxtrackedusers: 10000
