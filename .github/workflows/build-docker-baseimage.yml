@@ -1,0 +1,78 @@
+name: Edge-Cloud Docker Base Image
+
+on:
+  pull_request:
+    paths:
+      - 'docker/Dockerfile.edge-cloud-base-image'
+      - 'docker/edge-cloud-base-image.root/**'
+  push:
+    branches:
+      - master
+    paths:
+      - 'docker/Dockerfile.edge-cloud-base-image'
+      - 'docker/edge-cloud-base-image.root/**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: harbor.mobiledgex.net
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+
+  build-docker-baseimage:
+    name: Build the edge-cloud docker baseimage
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        name: Check out the repo
+        uses: actions/checkout@v2
+      -
+        name: Compute docker image meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/mobiledgex/edge-cloud-base-image
+      -
+        name: Set up builder username
+        run: git config --global user.name github
+      -
+        name: Set up docker buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Log in to registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      -
+        name: Build image
+        uses: docker/build-push-action@v2
+        id: build
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile.edge-cloud-base-image
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      -
+        name: Print the docker image tag
+        run: echo "::notice title=Edge-Cloud Base Image::${{ fromJSON(steps.meta.outputs.json).tags[0] }}"
+      -
+        name: Notify on Slack
+        if: always()
+        uses: edge/simple-slack-notify@v1.1.2
+        with:
+          channel: '#ci-cd'
+          status: ${{ job.status }}
+          success_text: |
+            ${env.GITHUB_WORKFLOW} (${env.GITHUB_RUN_NUMBER}) build completed successfully.
+            *Image*: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+            See <https://mobiledgex.atlassian.net/wiki/spaces/SWDEV/pages/2302640130/How+to+update+the+edge-cloud+docker+base+image|Confluence> for details on using this base image.
+          failure_text: '${env.GITHUB_WORKFLOW} (${env.GITHUB_RUN_NUMBER}) build failed'
+          cancelled_text: '${env.GITHUB_WORKFLOW} (${env.GITHUB_RUN_NUMBER}) build was cancelled'
+          fields: |
+            [{ "title": "Repository", "value": "${env.GITHUB_REPOSITORY}", "short": true },
+             { "title": "Branch", "value": "${env.GITHUB_REF}", "short": true },
+             { "title": "Run", "value": "${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}"}]
