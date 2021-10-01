@@ -211,10 +211,10 @@ type Config struct {
 	BillingEnable bool
 	// Toggle to enable and disable MC API rate limiting
 	DisableRateLimit bool
-	// Maximum number of PerIp rate limiters for an api
-	MaxNumPerIpRateLimiters int
-	// Maximum number of PerUser rate limiters for an api
-	MaxNumPerUserRateLimiters int
+	// Maximum number of IPs tracked per API group for rate limiting at MC
+	RateLimitMaxTrackedIps int
+	// Maximum number of users tracked per API group for rate limiting at MC
+	RateLimitMaxTrackedUsers int
 }
 
 type McRateLimitFlowSettings struct {

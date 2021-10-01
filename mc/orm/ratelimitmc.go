@@ -110,7 +110,7 @@ func InitRateLimitMc(ctx context.Context) error {
 	}
 
 	// Init RateLimitMgr and add Global RateLimitSettings and UserCreate RateLimitSettings
-	rateLimitMgr = ratelimit.NewRateLimitManager(getDisableRateLimit(ctx), getMaxNumPerIpRateLimiters(ctx), getMaxNumPerUserRateLimiters(ctx))
+	rateLimitMgr = ratelimit.NewRateLimitManager(getDisableRateLimit(ctx), getRateLimitMaxTrackedIps(ctx), getRateLimitMaxTrackedUsers(ctx))
 	rateLimitMgr.CreateApiEndpointLimiter(edgeproto.GlobalApiName, convertToRateLimitSettings(GlobalAllRequestsMcRateLimitSettings), convertToRateLimitSettings(GlobalPerIpMcRateLimitSettings), convertToRateLimitSettings(GlobalPerUserMcRateLimitSettings))
 	rateLimitMgr.CreateApiEndpointLimiter(userCreateApiName, convertToRateLimitSettings(UserCreateAllRequestsMcRateLimitSettings), convertToRateLimitSettings(UserCreatePerIpMcRateLimitSettings), nil)
 	return nil
@@ -209,24 +209,24 @@ func getDisableRateLimit(ctx context.Context) bool {
 	return config.DisableRateLimit
 }
 
-// Helper function that grabs the MaxNumPerIpRateLimiters int from the Config struct
-func getMaxNumPerIpRateLimiters(ctx context.Context) int {
+// Helper function that grabs the RateLimitMaxTrackedIps int from the Config struct
+func getRateLimitMaxTrackedIps(ctx context.Context) int {
 	config, err := getConfig(ctx)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "unable to check config for maxNumPerIpRateLimiters", "err", err)
-		return defaultConfig.MaxNumPerIpRateLimiters
+		log.SpanLog(ctx, log.DebugLevelApi, "unable to check config for RateLimitMaxTrackedIps", "err", err)
+		return defaultConfig.RateLimitMaxTrackedIps
 	}
-	return config.MaxNumPerIpRateLimiters
+	return config.RateLimitMaxTrackedIps
 }
 
-// Helper function that grabs the MaxNumPerUserRateLimiters int from the Config struct
-func getMaxNumPerUserRateLimiters(ctx context.Context) int {
+// Helper function that grabs the RateLimitMaxTrackedUsers int from the Config struct
+func getRateLimitMaxTrackedUsers(ctx context.Context) int {
 	config, err := getConfig(ctx)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "unable to check config for maxNumPerUserRateLimiters", "err", err)
-		return defaultConfig.MaxNumPerUserRateLimiters
+		log.SpanLog(ctx, log.DebugLevelApi, "unable to check config for RateLimitMaxTrackedUsers", "err", err)
+		return defaultConfig.RateLimitMaxTrackedUsers
 	}
-	return config.MaxNumPerUserRateLimiters
+	return config.RateLimitMaxTrackedUsers
 }
 
 // Show MC RateLimit settings

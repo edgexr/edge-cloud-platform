@@ -178,7 +178,7 @@ func addControllerApis(method string, group *echo.Group) {
 	// ClusterAutoScaleRetryDelay: 35
 	// AlertPolicyMinTriggerTime: 36
 	// DisableRateLimit: 37
-	// MaxNumPerIpRateLimiters: 39
+	// RateLimitMaxTrackedIps: 39
 	// ResourceSnapshotThreadInterval: 41
 	// ```
 	// Security:
