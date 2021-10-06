@@ -227,8 +227,8 @@ var FlowRateLimitSettingsComments = map[string]string{
 	"apiendpointtype":  "API Endpoint type, one of UnknownApiEndpointType, Dme",
 	"ratelimittarget":  "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
 	"flowalgorithm":    "Flow Rate Limit algorithm, one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm",
-	"reqspersecond":    "requests per second for flow rate limiting",
-	"burstsize":        "burst size for flow rate limiting (required for TokenBucketAlgorithm)",
+	"reqspersecond":    "Requests per second for flow rate limiting",
+	"burstsize":        "Burst size for flow rate limiting (required for TokenBucketAlgorithm)",
 }
 var FlowRateLimitSettingsSpecialArgs = map[string]string{
 	"flowratelimitsettings.fields": "StringArray",
@@ -291,8 +291,8 @@ var RateLimitSettingsComments = map[string]string{
 	"apiendpointtype":                          "API Endpoint type, one of UnknownApiEndpointType, Dme",
 	"ratelimittarget":                          "Target to rate limit, one of UnknownTarget, AllRequests, PerIp, PerUser",
 	"flowsettings:#.value.flowalgorithm":       "Flow Rate Limit algorithm, one of UnknownFlowAlgorithm, TokenBucketAlgorithm, LeakyBucketAlgorithm",
-	"flowsettings:#.value.reqspersecond":       "requests per second for flow rate limiting",
-	"flowsettings:#.value.burstsize":           "burst size for flow rate limiting (required for TokenBucketAlgorithm)",
+	"flowsettings:#.value.reqspersecond":       "Requests per second for flow rate limiting",
+	"flowsettings:#.value.burstsize":           "Burst size for flow rate limiting (required for TokenBucketAlgorithm)",
 	"maxreqssettings:#.value.maxreqsalgorithm": "MaxReqs Rate Limit Algorithm, one of UnknownMaxReqsAlgorithm, FixedWindowAlgorithm",
 	"maxreqssettings:#.value.maxrequests":      "Maximum number of requests for the given Interval",
 	"maxreqssettings:#.value.interval":         "Time interval",
