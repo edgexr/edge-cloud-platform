@@ -431,8 +431,19 @@ func RunAction(ctx context.Context, actionSpec, outputDir string, config *e2eapi
 			actionArgs = actionArgs[1:]
 		}
 		if actionSubtype == "crm" {
+			// extract the action param and action args
+			actionArgs = setupmex.GetActionArgs(actionParam)
+			actionParam = actionArgs[0]
+			actionArgs = actionArgs[1:]
+			ctrlName := ""
+
+			// We can specify controller to connect to
+			if len(actionArgs) > 0 {
+				ctrlName = setupmex.GetCtrlNameFromCrmStartArgs(actionArgs)
+			}
+
 			// read the apifile and start crm with the details
-			err := apis.StartCrmsLocal(ctx, actionParam, spec.ApiFile, spec.ApiFileVars, outputDir)
+			err := apis.StartCrmsLocal(ctx, actionParam, ctrlName, spec.ApiFile, spec.ApiFileVars, outputDir)
 			if err != nil {
 				errors = append(errors, err.Error())
 			}

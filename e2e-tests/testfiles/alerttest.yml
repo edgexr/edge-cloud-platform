@@ -345,9 +345,9 @@ tests:
       yaml2: '{{datadir2}}/emaildata_cloudlet_alert_firing.yml'
       filetype: emaildata
   
-  - name: start crm on dmuus-cloud-1 cloudlet
+  - name: start crm on dmuus-cloud-1 cloudlet(ctrl2)
     apifile: "{{datadir2}}/cloudlet_dmuus-cloud-1.yml"
-    actions: [start-crm=dmuus-cloud-1,sleep=1]
+    actions: [start-crm=dmuus-cloud-1 ctrl=ctrl2,sleep=1]
 
   - name: check cloudlet alert was cleared
     actions: [mcapi-showalerts]
