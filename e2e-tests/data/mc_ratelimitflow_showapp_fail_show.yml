@@ -1,2 +1,2 @@
 - desc: AppApi[0]
-  msg: '/api/v1/auth/ctrl/ShowApp is rejected, please retry later. Error is: Exceeded rate of 1.000000 requests per second..'
+  msg: '/api/v1/auth/ctrl/ShowApp is rejected, please retry later. Error is: Exceeded rate of 1.000000 requests per second.'
