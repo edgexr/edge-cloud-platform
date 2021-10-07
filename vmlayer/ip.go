@@ -169,38 +169,15 @@ func GetNetworkFileDetailsForIP(ctx context.Context, portName string, ifName str
 	return fileName, fileMatch, contents
 }
 
-func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, serverName string, cidr string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "AddRouteToServer", "serverName", serverName, "cidr", cidr)
-
-	ni, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
-	if err != nil {
-		return err
-	}
-	if ni.FloatingIPNet != "" {
-		// For now we do nothing when we have a floating IP because it means we are using the
-		// openstack router to get everywhere anyway.
-		log.SpanLog(ctx, log.DebugLevelInfra, "No route changes needed due to floating IP")
-		return nil
-	}
+func (vp *VMProperties) AddRouteToServer(ctx context.Context, client ssh.Client, serverName, cidr, nextHop, interfaceName string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "AddRouteToServer", "serverName", serverName, "cidr", cidr, "nextHop", nextHop, "interfaceName", interfaceName)
 
 	ip, netw, err := net.ParseCIDR(cidr)
 	if err != nil {
-		return fmt.Errorf("Invalid cidr for SetupVMRoute %s - %v", cidr, err)
+		return fmt.Errorf("Invalid cidr for AddRouteToServer %s - %v", cidr, err)
 	}
-	maskStr := net.IP(netw.Mask)
-	rtr := v.VMProperties.GetCloudletExternalRouter()
-	gatewayIP := ni.RouterGatewayIP
-
-	if gatewayIP == "" && rtr != NoConfigExternalRouter && rtr != NoExternalRouter {
-		rd, err := v.VMProvider.GetRouterDetail(ctx, v.VMProperties.GetCloudletExternalRouter())
-		if err != nil {
-			return err
-		}
-		gatewayIP = rd.ExternalIP
-	}
-
-	if gatewayIP != "" {
-		cmd := fmt.Sprintf("sudo ip route add %s via %s", netw.String(), gatewayIP)
+	if nextHop != "" {
+		cmd := fmt.Sprintf("sudo ip route add %s via %s", netw.String(), nextHop)
 		log.SpanLog(ctx, log.DebugLevelInfra, "Add route to network", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -211,27 +188,33 @@ func (v *VMPlatform) AddRouteToServer(ctx context.Context, client ssh.Client, se
 			}
 		}
 
-		netplanEnabled := ServerIsNetplanEnabled(ctx, client)
-		// make the route persist by adding the following line if not already present via grep.
-		routeAddText := fmt.Sprintf("up route add -net %s netmask %s gw %s", ip, maskStr, gatewayIP)
+		if !ServerIsNetplanEnabled(ctx, client) {
+			// we no longer expect non-netplan enabled servers with our baseimage. Persisting routes has never been implemented properly
+			// for non-netplan, so this should just fail
+			return fmt.Errorf("Netplan not enabled on server: %s", serverName)
+		}
+
 		maskLen, _ := netw.Mask.Size()
-		if netplanEnabled {
-			routeAddText = fmt.Sprintf(`
+		interfacesFile := GetCloudletNetworkIfaceFile()
+		routeAddText := fmt.Sprintf(`
+        %s:
             routes:
             - to: %s/%d
-              via: %s`, ip, maskLen, gatewayIP)
-		}
-		interfacesFile := GetCloudletNetworkIfaceFile(netplanEnabled)
-		cmd = fmt.Sprintf("grep -l '%s' %s", gatewayIP, interfacesFile)
+              via: %s`, interfaceName, ip, maskLen, nextHop)
+
+		cmd = fmt.Sprintf("grep -l '%s' %s", nextHop, interfacesFile)
 		out, err = client.Output(cmd)
 		if err != nil {
-			// grep failed so not there already
-			log.SpanLog(ctx, log.DebugLevelInfra, "adding route to interfaces file", "route", routeAddText, "file", interfacesFile)
-			cmd = fmt.Sprintf("echo '%s'|sudo tee -a %s", routeAddText, interfacesFile)
+			// grep failed so the route is not there already.
+			// Append the new route addition and also the version is at the top after the network tag
+			routeAddText = strings.ReplaceAll(routeAddText, "\n", "\\n")
+			cmd = fmt.Sprintf("sudo sed -e '$ a\\ %s' -e '/version: 2/d' -e 's/^network:/network:\\n    version: 2/' -i %s ", routeAddText, interfacesFile)
+			log.SpanLog(ctx, log.DebugLevelInfra, "Running sed to update interfaces file", "cmd", cmd)
 			out, err = client.Output(cmd)
 			if err != nil {
-				return fmt.Errorf("can't add route to interfaces file: %v", err)
+				return fmt.Errorf("Failed to update interfaces file: %s - %v", out, err)
 			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "Updated interfaces file", "out", out)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "route already present in interfaces file", "file", interfacesFile)
 		}

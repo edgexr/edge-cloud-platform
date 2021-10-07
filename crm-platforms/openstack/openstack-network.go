@@ -135,14 +135,17 @@ func (o *OpenstackPlatform) ValidateAdditionalNetworks(ctx context.Context, addi
 	log.SpanLog(ctx, log.DebugLevelInfra, "ValidateAdditionalNetworks")
 
 	for n, _ := range additionalNets {
+		subnetName := n
 		subnets, err := o.ListSubnets(ctx, n)
 		if err != nil {
-			return err
+			log.SpanLog(ctx, log.DebugLevelInfra, "list subnets for network failed, assume network is a subnet", "name", n)
+		} else {
+			if len(subnets) != 1 {
+				return fmt.Errorf("Unexpected number of subnets: %d in network %s", len(subnets), n)
+			}
+			subnetName = subnets[0].Name
 		}
-		if len(subnets) != 1 {
-			return fmt.Errorf("Unexpected number of subnets: %d in network %s", len(subnets), n)
-		}
-		subnet, err := o.GetSubnetDetail(ctx, subnets[0].Name)
+		subnet, err := o.GetSubnetDetail(ctx, subnetName)
 		if err != nil {
 			return err
 		}

@@ -65,6 +65,7 @@ func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac st
 }
 
 func (v *VMPlatform) GetInterfaceNameForMac(ctx context.Context, client ssh.Client, mac string) string {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetInterfaceNameForMac", "mac", mac)
 	cmd := fmt.Sprintf("ip -br link | awk '$3 ~ /^%s/ {print $1; exit 1}'", mac)
 	out, _ := client.Output(cmd)
 	return out
@@ -322,7 +323,7 @@ func (v *VMPlatform) GetDefaultRootLBFlavor(ctx context.Context) (*edgeproto.Fla
 
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
-func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, tags []string, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
+func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect string, tags []string, addNets map[string]NetworkType, addRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB", "rootLbName", rootLbName)
 
@@ -364,8 +365,12 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	clientName := v.GetChefClientName(rootLbName)
 	chefParams := v.GetServerChefParams(clientName, "", chefmgmt.ChefPolicyBase, chefAttributes)
 
+	// append the cloudlet-wide additional rootlb networks to the ones passed in
 	netTypes := []NetworkType{NetworkTypeExternalAdditionalRootLb}
-	addNets := v.VMProperties.GetNetworksByType(ctx, netTypes)
+	cloudletAddNets := v.VMProperties.GetNetworksByType(ctx, netTypes)
+	for c, n := range cloudletAddNets {
+		addNets[c] = n
+	}
 	return v.GetVMRequestSpec(ctx,
 		cloudcommon.VMTypeRootLB,
 		rootLbName,
@@ -375,7 +380,8 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		WithExternalVolume(spec.ExternalVolumeSize),
 		WithSubnetConnection(subnetConnect),
 		WithChefParams(chefParams),
-		WithAdditionalNetworks(addNets))
+		WithAdditionalNetworks(addNets),
+		WithRoutes(addRoutes))
 }
 
 // GetVMSpecForRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
@@ -411,7 +417,9 @@ func (v *VMPlatform) CreateRootLB(
 			return nil
 		}
 	}
-	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, "", tags, updateCallback)
+	nets := make(map[string]NetworkType)
+	routes := make(map[string][]edgeproto.Route)
+	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, "", tags, nets, routes, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -432,7 +440,6 @@ func (v *VMPlatform) SetupRootLB(
 	ctx context.Context, rootLBName, rootLBFQDN string,
 	cloudletKey *edgeproto.CloudletKey,
 	TrustPolicy *edgeproto.TrustPolicy,
-	fixForwardingRules bool,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupRootLB", "rootLBName", rootLBName, "fqdn", rootLBFQDN)
@@ -517,18 +524,6 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return fmt.Errorf("cannot get rootLB IP %sv", err)
 	}
-	if fixForwardingRules {
-		// fixForwardingRules is needed for short term only to tweak forwarding rules which were
-		// previously created
-		externalIf := v.GetInterfaceNameForMac(ctx, client, ip.MacAddress)
-		if externalIf == "" {
-			return fmt.Errorf("Unable to find external interface for rootlb")
-		}
-		err = infracommon.FixForwardingRules(ctx, client, externalIf)
-		if err != nil {
-			return err
-		}
-	}
 	// just for test as this is taking too long
 	if v.VMProperties.GetSkipInstallResourceTracker() {
 		log.SpanLog(ctx, log.DebugLevelInfra, "skipping install of resource tracker")
@@ -543,9 +538,31 @@ func (v *VMPlatform) SetupRootLB(
 	if err != nil {
 		return err
 	}
-	err = v.AddRouteToServer(ctx, client, rootLBName, route)
+	ni, err := ParseNetSpec(ctx, v.VMProperties.GetCloudletNetworkScheme())
 	if err != nil {
-		return fmt.Errorf("failed to AddRouteToServer %v", err)
+		return err
+	}
+	if ni.FloatingIPNet != "" {
+		// For now we do nothing when we have a floating IP because it means we are using the
+		// openstack router to get everywhere anyway.
+		log.SpanLog(ctx, log.DebugLevelInfra, "No route changes needed due to floating IP")
+		return nil
+	}
+	rtr := v.VMProperties.GetCloudletExternalRouter()
+	gatewayIP := ni.RouterGatewayIP
+	if gatewayIP == "" && rtr != NoConfigExternalRouter && rtr != NoExternalRouter {
+		rd, err := v.VMProvider.GetRouterDetail(ctx, v.VMProperties.GetCloudletExternalRouter())
+		if err != nil {
+			return err
+		}
+		gatewayIP = rd.ExternalIP
+	}
+	if gatewayIP != "" {
+		externalIf := v.GetInterfaceNameForMac(ctx, client, ip.MacAddress)
+		err = v.VMProperties.AddRouteToServer(ctx, client, rootLBName, route, gatewayIP, externalIf)
+		if err != nil {
+			return fmt.Errorf("failed to AddRouteToServer for rootlb: %s -  %v", rootLBName, err)
+		}
 	}
 	wlParams := infracommon.WhiteListParams{
 		ServerName:  rootLBName,

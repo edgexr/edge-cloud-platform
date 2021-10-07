@@ -27,6 +27,7 @@ func (o *OpenstackPlatform) GetFeatures() *platform.Features {
 		SupportsMultiTenantCluster: true,
 		SupportsSharedVolume:       true,
 		SupportsTrustPolicy:        true,
+		SupportsAdditionalNetworks: true,
 	}
 }
 

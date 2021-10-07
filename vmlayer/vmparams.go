@@ -55,6 +55,7 @@ type NetworkType string
 
 const NetworkTypeExternalPrimary NetworkType = "external-primary"
 const NetworkTypeExternalAdditionalRootLb NetworkType = "rootlb"
+const NetworkTypeExternalAdditionalClusterNode NetworkType = "cluster-node"
 const NetworkTypeExternalAdditionalPlatform NetworkType = "platform"
 const NetworkTypeInternalPrivate NetworkType = "internal-private"    // internal network for only one cluster
 const NetworkTypeInternalSharedLb NetworkType = "internal-shared-lb" // internal network connected to shared rootlb
@@ -134,6 +135,7 @@ type VMRequestSpec struct {
 	OptionalResource        string
 	AccessKey               string
 	AdditionalNetworks      map[string]NetworkType
+	Routes                  map[string][]edgeproto.Route
 	VmAppOsType             edgeproto.VmAppOsType
 }
 
@@ -222,6 +224,12 @@ func WithAccessKey(accessKey string) VMReqOp {
 func WithAdditionalNetworks(networks map[string]NetworkType) VMReqOp {
 	return func(s *VMRequestSpec) error {
 		s.AdditionalNetworks = networks
+		return nil
+	}
+}
+func WithRoutes(routes map[string][]edgeproto.Route) VMReqOp {
+	return func(s *VMRequestSpec) error {
+		s.Routes = routes
 		return nil
 	}
 }
@@ -338,16 +346,17 @@ type FixedIPOrchestrationParams struct {
 }
 
 type PortOrchestrationParams struct {
-	Name           string
-	Id             string
-	SubnetId       string
-	NetworkName    string
-	NetworkId      string
-	NetType        NetworkType
-	VnicType       string
-	SkipAttachVM   bool
-	FixedIPs       []FixedIPOrchestrationParams
-	SecurityGroups []ResourceReference
+	Name                        string
+	Id                          string
+	SubnetId                    string
+	NetworkName                 string
+	NetworkId                   string
+	NetType                     NetworkType
+	VnicType                    string
+	SkipAttachVM                bool
+	FixedIPs                    []FixedIPOrchestrationParams
+	SecurityGroups              []ResourceReference
+	IsAdditionalExternalNetwork bool
 }
 
 type FloatingIPOrchestrationParams struct {
@@ -481,6 +490,7 @@ type VMOrchestrationParams struct {
 	AttachExternalDisk      bool
 	CloudConfigParams       VMCloudConfigParams
 	VmAppOsType             edgeproto.VmAppOsType
+	Routes                  map[string][]edgeproto.Route // map of network name to routes
 }
 
 var (
@@ -908,15 +918,17 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 			if spec.NewSecgrpName == "" {
 				return nil, fmt.Errorf("external network specified with no security group: %s", vm.Name)
 			}
+			isAdditionalExternal := netType != NetworkTypeExternalPrimary
 			var externalport PortOrchestrationParams
 			if vmgp.Netspec.FloatingIPNet != "" {
 				externalport = PortOrchestrationParams{
-					Name:        portName,
-					Id:          v.VMProvider.NameSanitize(portName),
-					NetworkName: vmgp.Netspec.FloatingIPNet,
-					NetworkId:   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
-					VnicType:    vmgp.Netspec.VnicType,
-					NetType:     netType,
+					Name:                        portName,
+					Id:                          v.VMProvider.NameSanitize(portName),
+					NetworkName:                 vmgp.Netspec.FloatingIPNet,
+					NetworkId:                   v.VMProvider.NameSanitize(vmgp.Netspec.FloatingIPNet),
+					VnicType:                    vmgp.Netspec.VnicType,
+					NetType:                     netType,
+					IsAdditionalExternalNetwork: isAdditionalExternal,
 				}
 				fip := FloatingIPOrchestrationParams{
 					Name:         portName + "-fip",
@@ -932,12 +944,13 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 
 			} else {
 				externalport = PortOrchestrationParams{
-					Name:        portName,
-					Id:          v.VMProvider.IdSanitize(portName),
-					NetworkName: netName,
-					NetworkId:   v.VMProvider.IdSanitize(netName),
-					VnicType:    vmgp.Netspec.VnicType,
-					NetType:     netType,
+					Name:                        portName,
+					Id:                          v.VMProvider.IdSanitize(portName),
+					NetworkName:                 netName,
+					NetworkId:                   v.VMProvider.IdSanitize(netName),
+					VnicType:                    vmgp.Netspec.VnicType,
+					NetType:                     netType,
+					IsAdditionalExternalNetwork: isAdditionalExternal,
 				}
 			}
 			externalport.SecurityGroups = []ResourceReference{
@@ -983,6 +996,7 @@ func (v *VMPlatform) getVMGroupOrchestrationParamsFromGroupSpec(ctx context.Cont
 				Command:                 vm.Command,
 				ComputeAvailabilityZone: computeAZ,
 				CloudConfigParams:       vccp,
+				Routes:                  vm.Routes,
 			}
 			if vm.ExternalVolumeSize > 0 {
 				externalVolume := VolumeOrchestrationParams{

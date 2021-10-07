@@ -134,6 +134,7 @@ func (o *VcdPlatform) GetFeatures() *platform.Features {
 		SupportsSharedVolume:       true,
 		SupportsTrustPolicy:        true,
 		SupportsImageTypeOVF:       true,
+		SupportsAdditionalNetworks: true,
 	}
 }
 

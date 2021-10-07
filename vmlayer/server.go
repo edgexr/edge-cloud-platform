@@ -104,12 +104,8 @@ func GetIPFromServerDetails(ctx context.Context, networkName string, portName st
 	return nil, fmt.Errorf(ServerIPNotFound+" for server: %s on network: %s port: %s", sd.Name, networkName, portName)
 }
 
-func GetCloudletNetworkIfaceFile(netplanEnabled bool) string {
-	if netplanEnabled {
-		return "/etc/netplan/50-cloud-init.yaml"
-	} else {
-		return "/etc/network/interfaces.d/50-cloud-init.cfg"
-	}
+func GetCloudletNetworkIfaceFile() string {
+	return "/etc/netplan/50-cloud-init.yaml"
 }
 
 func (v *VMPlatform) GetConsoleUrl(ctx context.Context, app *edgeproto.App) (string, error) {
