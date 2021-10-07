@@ -844,6 +844,10 @@ func GetMetricsCommon(c echo.Context) error {
 		if err = validateSelectorString(in.Selector, CLOUDLETUSAGE); err != nil {
 			return err
 		}
+
+		if err = validateMetricsCommon(&in.MetricsCommon); err != nil {
+			return err
+		}
 		rc.region = in.Region
 		org = in.Cloudlet.Organization
 
