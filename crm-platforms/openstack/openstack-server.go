@@ -45,6 +45,7 @@ func (o *OpenstackPlatform) UpdateServerIPs(ctx context.Context, addresses strin
 	netTypes := []vmlayer.NetworkType{
 		vmlayer.NetworkTypeExternalAdditionalPlatform,
 		vmlayer.NetworkTypeExternalAdditionalRootLb,
+		vmlayer.NetworkTypeExternalAdditionalClusterNode,
 		vmlayer.NetworkTypeExternalPrimary,
 	}
 	externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)
@@ -392,6 +393,7 @@ func (o *OpenstackPlatform) GetServerGroupResources(ctx context.Context, name st
 		netTypes := []vmlayer.NetworkType{
 			vmlayer.NetworkTypeExternalAdditionalPlatform,
 			vmlayer.NetworkTypeExternalAdditionalRootLb,
+			vmlayer.NetworkTypeExternalAdditionalClusterNode,
 			vmlayer.NetworkTypeExternalPrimary,
 		}
 		externalNetMap := o.VMProperties.GetNetworksByType(ctx, netTypes)

@@ -35,17 +35,20 @@ var InternalVappSubnet = "10.101.1.1"
 
 // VCD currently supports all network typesf
 var supportedVcdNetTypes = map[vmlayer.NetworkType]bool{
-	vmlayer.NetworkTypeExternalPrimary:            true,
-	vmlayer.NetworkTypeExternalAdditionalRootLb:   true,
-	vmlayer.NetworkTypeExternalAdditionalPlatform: true,
-	vmlayer.NetworkTypeInternalPrivate:            true,
-	vmlayer.NetworkTypeInternalSharedLb:           true,
+	vmlayer.NetworkTypeExternalPrimary:               true,
+	vmlayer.NetworkTypeExternalAdditionalRootLb:      true,
+	vmlayer.NetworkTypeExternalAdditionalPlatform:    true,
+	vmlayer.NetworkTypeExternalAdditionalClusterNode: true,
+
+	vmlayer.NetworkTypeInternalPrivate:  true,
+	vmlayer.NetworkTypeInternalSharedLb: true,
 }
 
 type networkInfo struct {
 	Name        string
 	Gateway     string
 	NetworkType vmlayer.NetworkType
+	Routes      []edgeproto.Route
 }
 
 // Use MEX_NETWORK_SCHEME to derive sharedLB orgvdcnet cidr for this cloudlet
@@ -199,6 +202,8 @@ func (v *VcdPlatform) AddPortsToVapp(ctx context.Context, vapp *govcd.VApp, vmgp
 		case vmlayer.NetworkTypeExternalPrimary:
 			fallthrough
 		case vmlayer.NetworkTypeExternalAdditionalPlatform:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalClusterNode:
 			fallthrough
 		case vmlayer.NetworkTypeExternalAdditionalRootLb:
 			log.SpanLog(ctx, log.DebugLevelInfra, "AddPortsToVapp adding external vapp net", "PortNum", n, "vapp", vapp.VApp.Name, "NetworkName", port.NetworkName, "NetworkType", port.NetType)

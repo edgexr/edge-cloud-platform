@@ -94,7 +94,9 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetName = objName + "-subnet"
 	tags := v.GetChefClusterTags(appInst.ClusterInstKey(), cloudcommon.VMTypeRootLB)
-	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, updateCallback)
+	nets := make(map[string]NetworkType)
+	routes := make(map[string][]edgeproto.Route)
+	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetName, tags, nets, routes, updateCallback)
 	if err != nil {
 		return &orchVals, err
 	}
@@ -325,7 +327,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		}
 		updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
 		pp := edgeproto.TrustPolicy{}
-		err = v.SetupRootLB(ctx, orchVals.lbName, orchVals.lbName, &clusterInst.Key.CloudletKey, &pp, false, updateCallback)
+		err = v.SetupRootLB(ctx, orchVals.lbName, orchVals.lbName, &clusterInst.Key.CloudletKey, &pp, updateCallback)
 		if err != nil {
 			return err
 		}

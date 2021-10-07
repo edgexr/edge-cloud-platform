@@ -472,6 +472,22 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 
 		// if there are last octets specified and not full IPs, build the full address
 		for i, p := range VMGroupOrchestrationParams.Ports {
+			if p.IsAdditionalExternalNetwork {
+				// additional networks can be specified with the subnet name or the network name. If the subnet was specified, then
+				// the network name needs to be replaced and subnet needs to be added to fixed ips
+				sd, err := o.GetSubnetDetail(ctx, p.NetworkName)
+				if err == nil {
+					// subnet was provided
+					subnetName := p.NetworkName
+					VMGroupOrchestrationParams.Ports[i].NetworkName = sd.NetworkID
+					fip := vmlayer.FixedIPOrchestrationParams{
+						Subnet: vmlayer.NewResourceReference(subnetName, subnetName, true),
+					}
+					log.SpanLog(ctx, log.DebugLevelInfra, "replacing network for subnet", "port", p.Name, "network", sd.NetworkID, "fip", fip)
+					VMGroupOrchestrationParams.Ports[i].FixedIPs = append(VMGroupOrchestrationParams.Ports[i].FixedIPs, fip)
+				}
+				continue
+			}
 			for j, f := range p.FixedIPs {
 				log.SpanLog(ctx, log.DebugLevelInfra, "updating fixed ip", "fixedip", f)
 				if f.Address == vmlayer.NextAvailableResource && f.LastIPOctet != 0 {

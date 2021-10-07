@@ -296,21 +296,33 @@ func (v *VcdPlatform) updateNetworksForVM(ctx context.Context, vcdClient *govcd.
 
 	gwsToRemove := []string{}
 	// currrently only internal and additional networks on the LB need be removed, but this may
-	// be explanded in the future
-	if vmparams.Role == vmlayer.RoleAgent {
+	// be expanded in the future
+	switch vmparams.Role {
+	case vmlayer.RoleAgent:
 		for netname, netinfo := range netMap {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Checking role and nettype for gw removal", "netname", netname, "NetworkType", netinfo.NetworkType)
-			if netinfo.NetworkType == vmlayer.NetworkTypeInternalPrivate || netinfo.NetworkType == vmlayer.NetworkTypeInternalSharedLb || netinfo.NetworkType == vmlayer.NetworkTypeExternalAdditionalRootLb {
+			if netinfo.NetworkType == vmlayer.NetworkTypeInternalPrivate ||
+				netinfo.NetworkType == vmlayer.NetworkTypeInternalSharedLb ||
+				netinfo.NetworkType == vmlayer.NetworkTypeExternalAdditionalRootLb ||
+				netinfo.NetworkType == vmlayer.NetworkTypeExternalAdditionalClusterNode {
+				gwsToRemove = append(gwsToRemove, netinfo.Gateway)
+			}
+		}
+	case vmlayer.RoleK8sNode:
+		fallthrough
+	case vmlayer.RoleDockerNode:
+		for netname, netinfo := range netMap {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Checking role and nettype for gw removal", "netname", netname, "NetworkType", netinfo.NetworkType)
+			if netinfo.NetworkType == vmlayer.NetworkTypeExternalAdditionalClusterNode {
 				gwsToRemove = append(gwsToRemove, netinfo.Gateway)
 			}
 		}
 	}
-
 	for _, gw := range gwsToRemove {
 		// Multiple GWs cause unpredictable behavior depending on the order they are processed. Since the timing
 		// may sometimes be unpredictable, remove also from the netplan file
 		log.SpanLog(ctx, log.DebugLevelInfra, "removing extra default gw from VM", "vm", vm.VM.Name, "gw", gw)
-		vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, "route del default gw "+gw)
+		vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, "ip route del default via "+gw)
 		netplanFile := "/etc/netplan/99-netcfg-vmware.yaml"
 		removeGwFromNetplan := fmt.Sprintf("sed -i /gateway4:.%s/d %s", gw, netplanFile)
 		vmparams.CloudConfigParams.ExtraBootCommands = append(vmparams.CloudConfigParams.ExtraBootCommands, removeGwFromNetplan)
@@ -373,6 +385,8 @@ func (v *VcdPlatform) updateNetworksForVM(ctx context.Context, vcdClient *govcd.
 		case vmlayer.NetworkTypeExternalAdditionalPlatform:
 			fallthrough
 		case vmlayer.NetworkTypeExternalAdditionalRootLb:
+			fallthrough
+		case vmlayer.NetworkTypeExternalAdditionalClusterNode:
 			if netName == extNet {
 				ncs.PrimaryNetworkConnectionIndex = netConIdx
 			}
