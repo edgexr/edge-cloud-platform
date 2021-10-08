@@ -1,3 +1,9 @@
+# Set up apt cert validation
+file '/etc/apt/apt.conf.d/10cert-validation' do
+  content "Acquire::https::Verify-Peer \"#{node['aptCertValidation']}\";\n"
+  action :create
+end
+
 if node.normal['tags'].include?('vmtype/rootlb')
   # Check installed package `dpkg -s mobiledgex | grep Version | awk -F ": " '{print $2}'`
   curTag = shell_out("dpkg -s mobiledgex | grep Version | awk -F \": \" '{printf $2}'").stdout
@@ -26,7 +32,7 @@ if node.normal['tags'].include?('vmtype/rootlb')
       action :create
     end
     apt_repository 'bionic' do
-      uri 'https://apt.mobiledgex.net/cirrus/2021-08-31'
+      uri 'https://apt.mobiledgex.net/cirrus/2021-10-05'
       distribution 'bionic'
       components ['main']
     end
@@ -51,6 +57,9 @@ if node.normal['tags'].include?('vmtype/rootlb')
       returns 0
     end
     apt_update
+    apt_package 'ca-certificates' do
+      action :upgrade
+    end
 
     bash 'install-mobiledgex-deb-pkg-with-appropriate-kernel' do
       code <<-EOH
