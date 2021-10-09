@@ -3,6 +3,7 @@ package k8sbm
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/mobiledgex/edge-cloud-infra/infracommon"
 	"github.com/mobiledgex/edge-cloud/cloud-resource-manager/platform"
@@ -16,6 +17,8 @@ import (
 )
 
 var k8sControlHostNodeType = "k8sbmcontrolhost"
+
+var DockerUser string
 
 type K8sBareMetalPlatform struct {
 	commonPf           infracommon.CommonPlatform
@@ -42,6 +45,23 @@ func (k *K8sBareMetalPlatform) IsCloudletServicesLocal() bool {
 	return false
 }
 
+func UpdateDockerUser(ctx context.Context, client ssh.Client) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "update docker user")
+	cmd := "id -u"
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("Fail to get docker user id: %s - %v", out, err)
+	}
+	// we keep id as a string but make sure it parses as an int
+	_, err = strconv.ParseUint(out, 10, 64)
+	if err != nil {
+		return fmt.Errorf("Fail to parse docker user id: %s - %v", out, err)
+	}
+	DockerUser = out
+	log.SpanLog(ctx, log.DebugLevelInfra, "set docker user", "DockerUser", DockerUser)
+	return nil
+}
+
 func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init start")
 	k.caches = caches
@@ -65,6 +85,10 @@ func (k *K8sBareMetalPlatform) Init(ctx context.Context, platformConfig *platfor
 	}
 
 	client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: platformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
+	if err != nil {
+		return err
+	}
+	err = UpdateDockerUser(ctx, client)
 	if err != nil {
 		return err
 	}
