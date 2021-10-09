@@ -104,7 +104,7 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 		log.SpanLog(ctx, log.DebugLevelInfra, "CreateDockerRegistrySecret", "secretName", secretName, "namespace", namespace)
 		out, err = client.Output(cmd)
 		if err != nil {
-			if !strings.Contains(out, "AlreadyExists") {
+			if !strings.Contains(out, "already exists") {
 				return fmt.Errorf("can't add docker registry secret, %s, %v", out, err)
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "warning, docker registry secret already exists.")
@@ -132,7 +132,7 @@ func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst 
 
 	out, err := client.Output(cmd)
 	if err != nil {
-		if !strings.Contains(out, "AlreadyExists") {
+		if !strings.Contains(out, "already exists") {
 			return fmt.Errorf("can't add cluster ConfigMap cmd %s, %s, %v", cmd, out, err)
 		} else {
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, Cluster ConfigMap already exists.")
