@@ -554,11 +554,14 @@ func cmpFilterSpans(data []SpanSearch) {
 	}
 }
 
+// filter out number of requests and errors as it changes with every loop
 func cmpFilterApiMetricData(data []OptimizedMetricsCompare) {
 	for ii := 0; ii < len(data); ii++ {
-		for i, _ := range data[ii].Values {
-			for j, _ := range data[ii].Values[i] {
-				data[ii].Values[i][j] = 0
+		for i := range data[ii].Values {
+			if len(data[ii].Columns) < i+1 || data[ii].Columns[i] == "reqs" || data[ii].Columns[i] == "errs" {
+				for j := range data[ii].Values[i] {
+					data[ii].Values[i][j] = ""
+				}
 			}
 		}
 	}

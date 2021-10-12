@@ -57,20 +57,23 @@ var ClientApiUsageTags = []string{
 	"\"cloudletorg\"",
 	"\"cloudlet\"",
 	"\"dmeId\"",
-	"\"cellID\"",
 	"\"method\"",
-	"\"foundCloudlet\"",
-	"\"foundOperator\"",
 }
 
 var ApiFields = []string{
 	"\"reqs\"",
 	"\"errs\"",
+	"\"cellID\"",
+	"\"foundCloudlet\"",
+	"\"foundOperator\"",
 }
 
 var ClientApiAggregationFunctions = map[string]string{
-	"reqs": "sum(\"reqs\")",
-	"errs": "sum(\"errs\")",
+	"reqs":          "sum(\"reqs\")",
+	"errs":          "sum(\"errs\")",
+	"cellID":        "last(\"cellID\")",
+	"foundCloudlet": "last(\"foundCloudlet\")",
+	"foundOperator": "last(\"foundOperator\")",
 }
 
 var ClientAppUsageTags = []string{

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1450,7 +1451,7 @@ func parseOptimizedMetrics(allMetrics *ormapi.AllMetrics) *[]OptimizedMetricsCom
 	result := make([]OptimizedMetricsCompare, 0)
 	for _, data := range allMetrics.Data {
 		for _, series := range data.Series {
-			measurement := OptimizedMetricsCompare{Name: series.Name, Columns: make([]string, 0), Tags: make(map[string]string), Values: make([][]float64, 0)}
+			measurement := OptimizedMetricsCompare{Name: series.Name, Columns: make([]string, 0), Tags: make(map[string]string), Values: make([][]string, 0)}
 			// e2e tests only grabs the latest measurement so there should only be one
 			if len(series.Values) != 1 {
 				return nil
@@ -1471,15 +1472,17 @@ func parseOptimizedMetrics(allMetrics *ormapi.AllMetrics) *[]OptimizedMetricsCom
 				if series.Columns[i] == "time" || series.Columns[i] == "metadata" || series.Columns[i] == "other" {
 					continue
 				}
-				values := make([]float64, 0)
+				values := make([]string, 0)
 				// add column associated with value
 				measurement.Columns = append(measurement.Columns, series.Columns[i])
 				// add value as a float64
 				if floatVal, ok := val.(float64); ok {
-					values = append(values, floatVal)
+					values = append(values, strconv.FormatFloat(floatVal, 'f', -1, 64))
 				} else if intVal, ok := val.(int); ok {
 					// if its an int cast it to a float to make comparing easier
-					values = append(values, float64(intVal))
+					values = append(values, strconv.Itoa(intVal))
+				} else if strVal, ok := val.(string); ok {
+					values = append(values, strVal)
 				}
 				measurement.Values = append(measurement.Values, values)
 			}

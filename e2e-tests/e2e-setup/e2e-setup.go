@@ -93,7 +93,7 @@ type MetricsCompare struct {
 type OptimizedMetricsCompare struct {
 	Name    string
 	Tags    map[string]string
-	Values  [][]float64
+	Values  [][]string
 	Columns []string
 }
 
