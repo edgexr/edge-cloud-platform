@@ -11,7 +11,6 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
-	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
 	"github.com/mobiledgex/edge-cloud/log"
 	_ "github.com/mobiledgex/edge-cloud/protogen"
