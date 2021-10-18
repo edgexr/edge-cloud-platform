@@ -135,10 +135,10 @@ module "chef" {
 
   instance_name  = var.chef_instance_name
   environ_tag    = var.environ_tag
-  instance_size  = "n1-standard-2"
+  instance_size  = "n1-standard-4"
   zone           = var.chef_zone
   boot_image     = "ubuntu-1604-xenial-v20200407"
-  boot_disk_size = 100
+  boot_disk_size = 300
   tags           = ["mexplat-internal", "http-server", "https-server"]
   labels = {
     "owner" = "ops"
@@ -169,4 +169,24 @@ module "monitor_dns" {
   source   = "../modules/cloudflare_record"
   hostname = var.monitor_domain_name
   ip       = module.monitor.external_ip
+}
+
+module "openvas" {
+  source = "../modules/vm_gcp"
+
+  instance_name       = var.openvas_instance_name
+  environ_tag         = var.environ_tag
+  zone                = var.openvas_zone
+  boot_image          = "ubuntu-os-cloud/ubuntu-2004-focal-v20210720"
+  boot_disk_size      = 100
+  tags                = ["mexplat-internal", "http-server", "https-server"]
+  labels = {
+    "owner" = "venky"
+  }
+}
+
+module "openvas_dns" {
+  source   = "../modules/cloudflare_record"
+  hostname = var.openvas_domain_name
+  ip       = module.openvas.external_ip
 }
