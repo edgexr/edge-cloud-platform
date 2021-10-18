@@ -1138,7 +1138,9 @@ func testEdgeboxOnlyOrgs(t *testing.T, uri string, mcClient *mctestclient.Client
 }
 
 func getUnitTestClientRuns() []mctestclient.ClientRun {
-	restClient := &ormclient.Client{}
+	restClient := &ormclient.Client{
+		ForceDefaultTransport: true,
+	}
 	cliClient := cliwrapper.NewClient()
 	cliClient.DebugLog = true
 	cliClient.SilenceUsage = true

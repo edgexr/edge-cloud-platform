@@ -223,8 +223,11 @@ func TestCreateCloudlet(mcClient *mctestclient.Client, uri, token, region string
 	}
 	return mcClient.CreateCloudlet(uri, token, dat)
 }
-func TestPermCreateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermCreateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
+	if targetCloudlet != nil {
+		in.Key = *targetCloudlet
+	}
 	in.Key.Organization = org
 	return TestCreateCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
@@ -238,8 +241,11 @@ func TestDeleteCloudlet(mcClient *mctestclient.Client, uri, token, region string
 	}
 	return mcClient.DeleteCloudlet(uri, token, dat)
 }
-func TestPermDeleteCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermDeleteCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
+	if targetCloudlet != nil {
+		in.Key = *targetCloudlet
+	}
 	in.Key.Organization = org
 	return TestDeleteCloudlet(mcClient, uri, token, region, in, modFuncs...)
 }
@@ -253,8 +259,15 @@ func TestUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region string
 	}
 	return mcClient.UpdateCloudlet(uri, token, dat)
 }
-func TestPermUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
+func TestPermUpdateCloudlet(mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) ([]edgeproto.Result, int, error) {
 	in := &edgeproto.Cloudlet{}
+	if targetCloudlet != nil {
+		in.Key = *targetCloudlet
+		in.Fields = append(in.Fields,
+			edgeproto.CloudletFieldKeyName,
+			edgeproto.CloudletFieldKeyOrganization,
+		)
+	}
 	in.Key.Organization = org
 	in.Fields = append(in.Fields, edgeproto.CloudletFieldKeyOrganization)
 	return TestUpdateCloudlet(mcClient, uri, token, region, in, modFuncs...)

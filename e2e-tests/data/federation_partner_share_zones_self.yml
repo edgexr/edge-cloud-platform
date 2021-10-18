@@ -1,0 +1,34 @@
+federatedselfzones:
+# Share with dmuus/SA
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: dmuus
+  partnercountrycode: SA
+  zoneid: {{partnertag}}-cloud-1
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: dmuus
+  partnercountrycode: SA
+  zoneid: {{partnertag}}-cloud-2
+# Share with enterprise/SA
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: enterprise
+  partnercountrycode: SA
+  zoneid: {{partnertag}}-cloud-1
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: enterprise
+  partnercountrycode: SA
+  zoneid: {{partnertag}}-cloud-2
+# Share with enterprise/SB
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: enterprise
+  partnercountrycode: SB
+  zoneid: {{partnertag}}-cloud-1
+- selfoperatorid: {{partnertag}}
+  selfcountrycode: {{region}}
+  partneroperatorid: enterprise
+  partnercountrycode: SB
+  zoneid: {{partnertag}}-cloud-2

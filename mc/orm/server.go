@@ -20,6 +20,7 @@ import (
 	"github.com/mobiledgex/edge-cloud-infra/billing/chargify"
 	"github.com/mobiledgex/edge-cloud-infra/billing/fakebilling"
 	intprocess "github.com/mobiledgex/edge-cloud-infra/e2e-tests/int-process"
+	"github.com/mobiledgex/edge-cloud-infra/mc/federation"
 	"github.com/mobiledgex/edge-cloud-infra/mc/orm/alertmgr"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
@@ -41,27 +42,31 @@ import (
 
 // Server struct is just to track sql/db so we can stop them later.
 type Server struct {
-	config       *ServerConfig
-	sql          *intprocess.Sql
-	database     *gorm.DB
-	echo         *echo.Echo
-	vault        *process.Vault
-	stopInitData bool
-	initDataDone chan error
-	initJWKDone  chan struct{}
-	notifyServer *notify.ServerMgr
-	notifyClient *notify.Client
-	sqlListener  *pq.Listener
-	ldapServer   *ldap.Server
-	done         chan struct{}
+	config          *ServerConfig
+	sql             *intprocess.Sql
+	database        *gorm.DB
+	echo            *echo.Echo
+	vault           *process.Vault
+	stopInitData    bool
+	initDataDone    chan error
+	initJWKDone     chan struct{}
+	notifyServer    *notify.ServerMgr
+	notifyClient    *notify.Client
+	sqlListener     *pq.Listener
+	ldapServer      *ldap.Server
+	done            chan struct{}
+	alertMgrStarted bool
+	federationEcho  *echo.Echo
 }
 
 type ServerConfig struct {
 	ServAddr                string
 	SqlAddr                 string
 	VaultAddr               string
+	FederationAddr          string
 	RunLocal                bool
 	InitLocal               bool
+	SqlDataDir              string
 	IgnoreEnv               bool
 	ApiTlsCertFile          string
 	ApiTlsKeyFile           string
@@ -237,11 +242,14 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	}
 
 	if config.RunLocal {
+		if config.SqlDataDir == "" {
+			config.SqlDataDir = "./.postgres"
+		}
 		sql := intprocess.Sql{
 			Common: process.Common{
 				Name: "sql1",
 			},
-			DataDir:  "./.postgres",
+			DataDir:  config.SqlDataDir,
 			HttpAddr: config.SqlAddr,
 			Username: dbuser,
 			Dbname:   dbname,
@@ -805,6 +813,26 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	auth.POST("/report/show", ShowReport)
 	auth.POST("/report/download", DownloadReport)
 
+	// Plan and manage federation
+	auth.POST("/federator/self/create", CreateSelfFederator)
+	auth.POST("/federator/self/update", UpdateSelfFederator)
+	auth.POST("/federator/self/delete", DeleteSelfFederator)
+	auth.POST("/federator/self/show", ShowSelfFederator)
+	auth.POST("/federator/self/zone/create", CreateSelfFederatorZone)
+	auth.POST("/federator/self/zone/delete", DeleteSelfFederatorZone)
+	auth.POST("/federator/self/zone/show", ShowSelfFederatorZone)
+	auth.POST("/federator/self/zone/share", ShareSelfFederatorZone)
+	auth.POST("/federator/self/zone/unshare", UnshareSelfFederatorZone)
+	auth.POST("/federator/partner/zone/register", RegisterPartnerFederatorZone)
+	auth.POST("/federator/partner/zone/deregister", DeregisterPartnerFederatorZone)
+	auth.POST("/federation/create", CreateFederation)
+	auth.POST("/federation/delete", DeleteFederation)
+	auth.POST("/federation/register", RegisterFederation)
+	auth.POST("/federation/deregister", DeregisterFederation)
+	auth.POST("/federation/show", ShowFederation)
+	auth.POST("/federation/self/zone/show", ShowFederatedSelfZone)
+	auth.POST("/federation/partner/zone/show", ShowFederatedPartnerZone)
+
 	// Generate new short-lived token to authenticate websocket connections
 	// Note: Web-client should not store auth token as part of local storage,
 	//       instead browser should store it as secure cookies.
@@ -892,6 +920,30 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 		}
 	}()
 
+	if config.FederationAddr != "" {
+		// Global Operator Platform Federation
+		federationEcho := echo.New()
+		federationEcho.HideBanner = true
+		federationEcho.Binder = &CustomBinder{}
+		federationEcho.Use(logger)
+		server.federationEcho = federationEcho
+
+		partnerApi := federation.PartnerApi{
+			Database:  database,
+			ConnCache: connCache,
+		}
+		partnerApi.InitAPIs(federationEcho)
+
+		go func() {
+			// TODO mTLS
+			err := federationEcho.Start(config.FederationAddr)
+			if err != nil && err != http.ErrServerClosed {
+				server.Stop()
+				log.FatalLog("Failed to serve federation", "err", err)
+			}
+		}()
+	}
+
 	gitlabSync = GitlabNewSync()
 	artifactorySync = ArtifactoryNewSync()
 
@@ -904,6 +956,7 @@ func RunServer(config *ServerConfig) (retserver *Server, reterr error) {
 	artifactorySync.Start(server.done)
 	if AlertManagerServer != nil {
 		AlertManagerServer.Start()
+		server.alertMgrStarted = true
 	}
 	sqlListener, err := initSqlListener(ctx, server.done)
 	if err != nil {
@@ -951,6 +1004,9 @@ func (s *Server) Stop() {
 	if s.echo != nil {
 		s.echo.Close()
 	}
+	if s.federationEcho != nil {
+		s.federationEcho.Close()
+	}
 	if connCache != nil {
 		connCache.Finish()
 	}
@@ -973,7 +1029,9 @@ func (s *Server) Stop() {
 		s.notifyClient.Stop()
 	}
 	if AlertManagerServer != nil {
-		AlertManagerServer.Stop()
+		if s.alertMgrStarted {
+			AlertManagerServer.Stop()
+		}
 		AlertManagerServer = nil
 	}
 	nodeMgr.Finish()

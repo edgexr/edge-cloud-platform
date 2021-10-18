@@ -369,6 +369,7 @@ func ShowOrgCloudlet(c echo.Context) error {
 		Region:    oc.Region,
 		Username:  claims.Username,
 		SkipAuthz: true,
+		Database:  database,
 	}
 	show := make([]*edgeproto.Cloudlet, 0)
 	err = ctrlclient.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cloudlet *edgeproto.Cloudlet) error {

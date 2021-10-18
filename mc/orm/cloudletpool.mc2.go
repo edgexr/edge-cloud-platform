@@ -42,6 +42,7 @@ func CreateCloudletPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
@@ -84,6 +85,7 @@ func DeleteCloudletPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
@@ -126,6 +128,7 @@ func UpdateCloudletPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
@@ -172,6 +175,7 @@ func ShowCloudletPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPool.GetKey().GetTags())
@@ -213,6 +217,7 @@ func AddCloudletPoolMember(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())
@@ -255,6 +260,7 @@ func RemoveCloudletPoolMember(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletPoolMember.GetKey().GetTags())

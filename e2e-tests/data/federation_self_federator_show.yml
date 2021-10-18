@@ -1,0 +1,25 @@
+federators:
+- operatorid: dmuus
+  countrycode: SA
+  federationaddr: "127.0.0.1:9801"
+  mcc: 456 
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: enterprise
+  countrycode: SA
+  federationaddr: "127.0.0.1:9801"
+  mcc: 456 
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: enterprise
+  countrycode: SB
+  federationaddr: "127.0.0.1:9801"
+  mcc: 789 
+  mnc:
+  - 777
+  - 888
+  - 999

@@ -43,6 +43,7 @@ func CreateAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
@@ -85,6 +86,7 @@ func DeleteAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
@@ -127,6 +129,7 @@ func UpdateAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
@@ -173,6 +176,7 @@ func ShowAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicy.GetKey().GetTags())
@@ -214,6 +218,7 @@ func AddAutoProvPolicyCloudlet(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())
@@ -256,6 +261,7 @@ func RemoveAutoProvPolicyCloudlet(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoProvPolicyCloudlet.GetKey().GetTags())

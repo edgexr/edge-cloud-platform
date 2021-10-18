@@ -41,6 +41,7 @@ func CreateAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
@@ -83,6 +84,7 @@ func DeleteAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
@@ -125,6 +127,7 @@ func UpdateAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())
@@ -171,6 +174,7 @@ func ShowAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AlertPolicy.GetKey().GetTags())

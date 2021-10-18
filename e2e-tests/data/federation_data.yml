@@ -1,0 +1,24 @@
+regiondata:
+- region: {{region}}
+  appdata:
+    cloudlets:
+    - key:
+        organization: {{partnertag}}
+        name: {{partnertag}}-cloud-1
+      location:
+        latitude: 31
+        longitude: -91
+      ipsupport: Dynamic
+      numdynamicips: 254
+      platformtype: Fake
+      notifysrvaddr: 127.0.0.1:0
+    - key:
+        organization: {{partnertag}}
+        name: {{partnertag}}-cloud-2
+      location:
+        latitude: 81
+        longitude: -11
+      ipsupport: Dynamic
+      numdynamicips: 254
+      platformtype: Fake
+      notifysrvaddr: 127.0.0.1:0

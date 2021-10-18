@@ -1,0 +1,709 @@
+description: Federation tests
+
+tests:
+###############################################################
+# Setup self operator platform
+###############################################################
+- name: verify no users to start
+  actions: [mcapi-showusers]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcusers
+
+- name: verify no provisioned data to start
+  actions: [mcapi-show]
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- includefile: mc_setup_users.yml
+
+- name: admin creates controllers, flavors; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_admin_data.yml'
+    filetype: mcdata
+
+- name: user1 creates operators
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/mc_user1_org_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: admin marks operator orgs an non-edgebox only
+  actions: [mcapi-restrictedupdateorg]
+  apifile: '{{datadir2}}/mc_user1_org_update.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: user1 creates cloudlets; verify it is there
+  actions: [mcapi-create, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_user1_data_show.yml'
+    filetype: mcdata
+
+###############################################################
+# Setup partner operator platform
+###############################################################
+- name: setup federation partner1
+  actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/federation_init_data.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+    ctrlapiaddr: "127.0.0.1:55081"
+    ctrlnotifyaddr: "127.0.0.1:37081"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_init_data.yml'
+    yaml2vars:
+      partnertag: "partner1"
+      region: "PA"
+      ctrlapiaddr: "127.0.0.1:55081"
+      ctrlnotifyaddr: "127.0.0.1:37081"
+    filetype: mcdata
+
+- name: admin marks operator orgs an non-edgebox only
+  actions: [mcapi-restrictedupdateorg=mc-partner1]
+  apifile: '{{datadir2}}/federation_org_update.yml'
+  apifilevars:
+    partnertag: "partner1"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: setup federation partner1 regional data
+  actions: [mcapi-create=mc-partner1, mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/federation_data.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_data_show.yml'
+    yaml2vars:
+      partnertag: "partner1"
+      region: "PA"
+      ctrlapiaddr: "127.0.0.1:55081"
+      ctrlnotifyaddr: "127.0.0.1:37081"
+    filetype: mcdata
+
+- name: setup federation partner2
+  actions: [mcapi-create=mc-partner2, mcapi-show=mc-partner2]
+  apifile: '{{datadir2}}/federation_init_data.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+    ctrlapiaddr: "127.0.0.1:55091"
+    ctrlnotifyaddr: "127.0.0.1:37091"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_init_data.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+      ctrlapiaddr: "127.0.0.1:55091"
+      ctrlnotifyaddr: "127.0.0.1:37091"
+    filetype: mcdata
+
+- name: admin marks operator orgs an non-edgebox only
+  actions: [mcapi-restrictedupdateorg=mc-partner2]
+  apifile: '{{datadir2}}/federation_org_update.yml'
+  apifilevars:
+    partnertag: "partner2"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: setup federation partner2 regional data
+  actions: [mcapi-create=mc-partner2, mcapi-show=mc-partner2]
+  apifile: '{{datadir2}}/federation_data.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_data_show.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+      ctrlapiaddr: "127.0.0.1:55091"
+      ctrlnotifyaddr: "127.0.0.1:37091"
+    filetype: mcdata
+
+###############################################################
+# Setup federators
+###############################################################
+- name: setup self federator
+  actions: [mcapi-create,mcapi-showselffederators]
+  apifile: '{{datadir2}}/federation_self_federator.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_federator_show.yml'
+    filetype: mcdata
+
+- name: setup partner1 federator
+  actions: [mcapi-create=mc-partner1,mcapi-showselffederators=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_federator.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_federator_show.yml'
+    yaml2vars:
+      fedaddr: "127.0.0.1:9808"
+      partnertag: "partner1"
+      region: "PA"
+    filetype: mcdata
+
+- name: setup partner2 federator
+  actions: [mcapi-create=mc-partner2,mcapi-showselffederators=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_federator.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_federator_show.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+      fedaddr: "127.0.0.1:9809"
+    filetype: mcdata
+
+###############################################################
+# Setup self federator zones
+###############################################################
+- name: setup self federator zones
+  actions: [mcapi-create,mcapi-showselffederatorzones]
+  apifile: '{{datadir2}}/federation_self_zones.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_zones.yml'
+    filetype: mcdata
+
+- name: setup partner1 federator zones
+  actions: [mcapi-create=mc-partner1,mcapi-showselffederatorzones=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_zones.yml'
+    yaml2vars:
+      partnertag: "partner1"
+      region: "PA"
+    filetype: mcdata
+
+- name: setup partner2 federator zones
+  actions: [mcapi-create=mc-partner2,mcapi-showselffederatorzones=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_zones.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+    filetype: mcdata
+
+###############################################################
+# Federation Planning
+###############################################################
+- name: self federators creates partner1 federator
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/federation_self_create_partner.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+    fedaddr: "127.0.0.1:9808"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federators creates partner2 federator
+  actions: [mcapi-create,mcapi-showfederations]
+  apifile: '{{datadir2}}/federation_self_create_partner.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+    fedaddr: "127.0.0.1:9809"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_partner_show.yml'
+    filetype: mcdata
+
+- name: self federator marks zones to be shared with partner1
+  actions: [mcapi-share]
+  apifile: '{{datadir2}}/federation_self_share_zones_partner.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator marks zones to be shared with partner2
+  actions: [mcapi-share,mcapi-showfederatedselfzones]
+  apifile: '{{datadir2}}/federation_self_share_zones_partner.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_share_zones_show.yml'
+    filetype: mcdata
+
+- name: partner1 creates self federator
+  actions: [mcapi-create=mc-partner1,mcapi-showfederations=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_create_self.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_self_show.yml'
+    yaml2vars:
+      partnertag: "partner1"
+      region: "PA"
+    filetype: mcdata
+
+- name: partner2 creates self federator
+  actions: [mcapi-create=mc-partner2,mcapi-showfederations=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_create_self.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_self_show.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+    filetype: mcdata
+
+- name: partner1 marks zones to be shared with self federator
+  actions: [mcapi-share=mc-partner1,mcapi-showfederatedselfzones=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_share_zones_self.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_share_zones_self.yml'
+    yaml2vars:
+      partnertag: "partner1"
+      region: "PA"
+    filetype: mcdata
+
+###############################################################
+# Federation Setup
+###############################################################
+- name: no partner zones exists as federation is not yet created
+  actions: [mcapi-showfederatedpartnerzones]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: self federator registers federation with partner1
+  actions: [mcapi-registerfederation]
+  apifile: '{{datadir2}}/federation_self_partner_federation.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator registers federation with partner2
+  actions: [mcapi-registerfederation,mcapi-showfederations]
+  apifile: '{{datadir2}}/federation_self_partner_federation.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_partner_federation_show.yml'
+    filetype: mcdata
+
+- name: only partner1 zones added as part of federation
+  actions: [mcapi-showfederatedpartnerzones]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_shared_partner1_zones.yml'
+    filetype: mcdata
+
+- name: partner2 marks zones to be shared with self federator
+  actions: [mcapi-share=mc-partner2,mcapi-showfederatedselfzones=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_share_zones_self.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_partner_share_zones_self.yml'
+    yaml2vars:
+      partnertag: "partner2"
+      region: "PS"
+    filetype: mcdata
+
+- name: partner2 zones are now added
+  actions: [mcapi-showfederatedpartnerzones]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_shared_partner_zones.yml'
+    filetype: mcdata
+
+###############################################################
+# Register Partner zones
+###############################################################
+- name: self federator registers partner1 zones
+  actions: [mcapi-register]
+  apifile: '{{datadir2}}/federation_self_register_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator registers partner2 zones
+  actions: [mcapi-register,mcapi-showfederatedpartnerzones]
+  apifile: '{{datadir2}}/federation_self_register_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_register_zones_show.yml'
+    filetype: mcdata
+
+###############################################################
+# Deregister Partner zones
+###############################################################
+- name: self federator deregisters partner1 zones
+  actions: [mcapi-deregister]
+  apifile: '{{datadir2}}/federation_self_register_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator deregisters partner2 zones
+  actions: [mcapi-deregister,mcapi-showfederatedpartnerzones]
+  apifile: '{{datadir2}}/federation_self_register_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_deregister_zones_show.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete federation with partner federator
+###############################################################
+- name: partner2 unshares it zones with self federator
+  actions: [mcapi-unshare=mc-partner2,mcapi-showfederatedselfzones=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_share_zones_self.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: only partner1 zones exists now
+  actions: [mcapi-showfederatedpartnerzones]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_shared_partner1_zones.yml'
+    filetype: mcdata
+
+- name: self federator deregisters federation with partner1
+  actions: [mcapi-deregisterfederation]
+  apifile: '{{datadir2}}/federation_self_partner_federation.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator deregisters federation with partner2
+  actions: [mcapi-deregisterfederation,mcapi-showfederations]
+  apifile: '{{datadir2}}/federation_self_partner_federation.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/federation_self_partner_show.yml'
+    filetype: mcdata
+
+- name: no partner zones exists as federation is deleted
+  actions: [mcapi-showfederatedpartnerzones]
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Unshare zones with partner federator
+###############################################################
+- name: partner1 unshares it zones with self federator
+  actions: [mcapi-unshare=mc-partner1,mcapi-showfederatedselfzones=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_share_zones_self.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete partner federator
+###############################################################
+- name: partner1 deletes self federator
+  actions: [mcapi-delete=mc-partner1,mcapi-showfederations=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_create_self.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: partner2 deletes self federator
+  actions: [mcapi-delete=mc-partner2,mcapi-showfederations=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_create_self.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: self federator unshares zones with partner1
+  actions: [mcapi-unshare]
+  apifile: '{{datadir2}}/federation_self_share_zones_partner.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federator unshares zones with partner2
+  actions: [mcapi-unshare,mcapi-showfederatedselfzones]
+  apifile: '{{datadir2}}/federation_self_share_zones_partner.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: self federators deletes partner1 federator
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/federation_self_create_partner.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+    fedaddr: "127.0.0.1:9808"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: self federators deletes partner2 federator
+  actions: [mcapi-delete,mcapi-showfederations]
+  apifile: '{{datadir2}}/federation_self_create_partner.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+    fedaddr: "127.0.0.1:9809"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete federator zones
+###############################################################
+- name: delete partner1 federator zones
+  actions: [mcapi-delete=mc-partner1,mcapi-showselffederatorzones=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: delete partner2 federator zones
+  actions: [mcapi-delete=mc-partner2,mcapi-showselffederatorzones=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_zones.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: delete self federator zones
+  actions: [mcapi-delete,mcapi-showselffederatorzones]
+  apifile: '{{datadir2}}/federation_self_zones.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete federators
+###############################################################
+- name: delete partner1 federator
+  actions: [mcapi-delete=mc-partner1,mcapi-showselffederators=mc-partner1]
+  apifile: '{{datadir2}}/federation_partner_federator.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: delete partner2 federator
+  actions: [mcapi-delete=mc-partner2,mcapi-showselffederators=mc-partner2]
+  apifile: '{{datadir2}}/federation_partner_federator.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: delete self federator
+  actions: [mcapi-delete,mcapi-showselffederators]
+  apifile: '{{datadir2}}/federation_self_federator.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete partner data
+###############################################################
+- name: delete partner1 cloudlets
+  actions: [mcapi-delete=mc-partner1]
+  apifile: '{{datadir2}}/federation_data.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: delete partner1 init data
+  actions: [mcapi-delete=mc-partner1, mcapi-show=mc-partner1]
+  apifile: '{{datadir2}}/federation_init_data.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+    ctrlapiaddr: "127.0.0.1:55081"
+    ctrlnotifyaddr: "127.0.0.1:37081"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+- name: delete partner2 cloudlets
+  actions: [mcapi-delete=mc-partner2]
+  apifile: '{{datadir2}}/federation_data.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+
+- name: delete partner2 init data
+  actions: [mcapi-delete=mc-partner2, mcapi-show=mc-partner2]
+  apifile: '{{datadir2}}/federation_init_data.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+    ctrlapiaddr: "127.0.0.1:55081"
+    ctrlnotifyaddr: "127.0.0.1:37081"
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete self data
+###############################################################
+- name: user1 deletes cloudlets
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_cloudlet_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: user1 deletes operator; verify it is empty
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_user1_org_data.yml'
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mc_flavors.yml'
+    filetype: mcdata
+
+- name: admin delete controllers, flavors, verify it is empty
+  actions: [mcapi-delete, mcapi-show]
+  apifile: '{{datadir2}}/mc_admin_data.yml'
+  curuserfile: '{{datadir2}}/mc_admin.yml'
+  compareyaml:
+    yaml1: '{{outputdir}}/show-commands.yml'
+    yaml2: '{{datadir2}}/mcappdata_empty.yml'
+    filetype: mcdata
+
+###############################################################
+# Delete mc users
+###############################################################
+- includefile: mc_cleanup_users.yml

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/websocket"
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"google.golang.org/grpc"
 )
@@ -13,6 +14,8 @@ type RegionContext struct {
 	Username  string
 	Conn      *grpc.ClientConn
 	SkipAuthz bool
+	// Need database for federation handling
+	Database *gorm.DB
 }
 
 type EchoContext struct {

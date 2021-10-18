@@ -62,6 +62,9 @@ func GetRootCommand() *RootCommand {
 		rc.getCmdGroup(ormctl.GPUDriverGroup),
 		rc.getCmdGroup(ormctl.NetworkGroup),
 		rc.getReportCmdGroup(),
+		rc.getCmdGroup(ormctl.FederatorGroup),
+		rc.getCmdGroup(ormctl.FederatorZoneGroup),
+		rc.getCmdGroup(ormctl.FederationGroup),
 	}
 	developerCommands := []*cobra.Command{
 		rc.getDevCloudletShowCommand(),

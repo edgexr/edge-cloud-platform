@@ -41,6 +41,7 @@ func CreateResTagTable(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -83,6 +84,7 @@ func DeleteResTagTable(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -125,6 +127,7 @@ func UpdateResTagTable(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -171,6 +174,7 @@ func ShowResTagTable(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -212,6 +216,7 @@ func AddResTag(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -254,6 +259,7 @@ func RemoveResTag(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ResTagTable.GetKey().GetTags())
@@ -296,6 +302,7 @@ func GetResTagTable(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 

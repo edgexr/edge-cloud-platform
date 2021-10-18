@@ -248,6 +248,7 @@ func newShowGPUDriverAuthz(ctx context.Context, region, username string, resourc
 		Region:    region,
 		Username:  username,
 		SkipAuthz: false,
+		Database:  database,
 	}
 	err = ctrlclient.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cl *edgeproto.Cloudlet) error {
 		// ignore non-GPU cloudlets

@@ -630,6 +630,7 @@ func getCloudletPlatformTypes(ctx context.Context, username, region string, key 
 	rc := &ormutil.RegionContext{}
 	rc.Username = username
 	rc.Region = region
+	rc.Database = database
 	obj := edgeproto.Cloudlet{
 		Key: *key,
 	}

@@ -57,7 +57,7 @@ mc/orm/vault.log
 mc/orm/roles.yaml
 *rbac.conf
 mc/rbac.conf
-*.postgres
+*.postgres*
 ansible.auto.tfvars
 .terraform.init.done
 vault/letsencrypt-plugin/letsencrypt/version.go

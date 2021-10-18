@@ -42,6 +42,7 @@ func CreateAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
@@ -58,6 +59,8 @@ func CreateAppInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -86,6 +89,7 @@ func DeleteAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
@@ -102,6 +106,8 @@ func DeleteAppInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -130,6 +136,7 @@ func RefreshAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
@@ -146,6 +153,8 @@ func RefreshAppInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -174,6 +183,7 @@ func UpdateAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
@@ -194,6 +204,8 @@ func UpdateAppInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -222,6 +234,7 @@ func ShowAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInst.GetKey().GetTags())
@@ -263,6 +276,7 @@ func RequestAppInstLatency(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstLatency.GetKey().GetTags())

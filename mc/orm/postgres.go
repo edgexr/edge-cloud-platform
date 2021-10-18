@@ -68,9 +68,25 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 		}
 
 		// create or update tables
-		err := db.AutoMigrate(&ormapi.User{}, &ormapi.Organization{},
-			&ormapi.Controller{}, &ormapi.Config{}, &ormapi.OrgCloudletPool{}, &ormapi.AccountInfo{}, &ormapi.BillingOrganization{}, &ormapi.UserApiKey{}, &ormapi.Reporter{},
-			&ormapi.McRateLimitFlowSettings{}, &ormapi.McRateLimitMaxReqsSettings{}).Error
+		err := db.AutoMigrate(
+			&ormapi.User{},
+			&ormapi.Organization{},
+			&ormapi.Controller{},
+			&ormapi.Config{},
+			&ormapi.OrgCloudletPool{},
+			&ormapi.AccountInfo{},
+			&ormapi.BillingOrganization{},
+			&ormapi.UserApiKey{},
+			&ormapi.Reporter{},
+			&ormapi.McRateLimitFlowSettings{},
+			&ormapi.McRateLimitMaxReqsSettings{},
+			// Federation GORM Objects
+			&ormapi.Federator{},
+			&ormapi.Federation{},
+			&ormapi.FederatorZone{},
+			&ormapi.FederatedPartnerZone{},
+			&ormapi.FederatedSelfZone{},
+		).Error
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "automigrate", "err", err)
 			if unitTest {
@@ -125,6 +141,15 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 			}
 			continue
 		}
+		err = InitFederationAPIConstraints(loggedDB(ctx))
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "init federation API constraints", "err", err)
+			if unitTest {
+				initDone <- err
+				return
+			}
+			continue
+		}
 		log.SpanLog(ctx, log.DebugLevelApi, "init data done")
 
 		if err := fixPostgresNullValues(ctx); err != nil {
@@ -150,9 +175,6 @@ func InitData(ctx context.Context, superuser, superpass string, pingInterval tim
 	initDone <- nil
 }
 
-// Unfortunately the logger interface used by gorm does not
-// allow any context to be passed in, so each function that
-// calls into the DB must first convert it to a loggedDB.
 func loggedDB(ctx context.Context) *gorm.DB {
 	return gormlog.LoggedDB(ctx, database)
 }

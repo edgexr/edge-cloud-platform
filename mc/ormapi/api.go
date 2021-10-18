@@ -438,14 +438,19 @@ type RegionObjWithFields interface {
 // all data is for full create/delete
 
 type AllData struct {
-	Controllers                   []Controller          `json:"controllers,omitempty"`
-	BillingOrgs                   []BillingOrganization `json:"billingorgs,omitempty"`
-	AlertReceivers                []AlertReceiver       `json:"alertreceivers,omitempty"`
-	Orgs                          []Organization        `json:"orgs,omitempty"`
-	Roles                         []Role                `json:"roles,omitempty"`
-	CloudletPoolAccessInvitations []OrgCloudletPool     `json:"cloudletpoolaccessinvitations,omitempty"`
-	CloudletPoolAccessResponses   []OrgCloudletPool     `json:"cloudletpoolaccessresponses,omitempty"`
-	RegionData                    []RegionData          `json:"regiondata,omitempty"`
+	Controllers                   []Controller           `json:"controllers,omitempty"`
+	BillingOrgs                   []BillingOrganization  `json:"billingorgs,omitempty"`
+	AlertReceivers                []AlertReceiver        `json:"alertreceivers,omitempty"`
+	Orgs                          []Organization         `json:"orgs,omitempty"`
+	Roles                         []Role                 `json:"roles,omitempty"`
+	CloudletPoolAccessInvitations []OrgCloudletPool      `json:"cloudletpoolaccessinvitations,omitempty"`
+	CloudletPoolAccessResponses   []OrgCloudletPool      `json:"cloudletpoolaccessresponses,omitempty"`
+	RegionData                    []RegionData           `json:"regiondata,omitempty"`
+	Federators                    []Federator            `json:"federators,omitempty"`
+	FederatorZones                []FederatorZone        `json:"federatorzones,omitempty"`
+	Federations                   []Federation           `json:"federations,omitempty"`
+	FederatedSelfZones            []FederatedSelfZone    `json:"federatedselfzones,omitempty"`
+	FederatedPartnerZones         []FederatedPartnerZone `json:"federatedpartnerzones,omitempty"`
 }
 
 type RegionData struct {

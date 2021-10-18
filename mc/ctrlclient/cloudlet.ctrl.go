@@ -9,6 +9,7 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	fedclient "github.com/mobiledgex/edge-cloud-infra/mc/federation/client"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	_ "github.com/mobiledgex/edge-cloud/d-match-engine/dme-proto"
 	edgeproto "github.com/mobiledgex/edge-cloud/edgeproto"
@@ -227,6 +228,28 @@ func GetGPUDriverBuildURLObj(ctx context.Context, rc *ormutil.RegionContext, obj
 }
 
 func CreateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, connObj ClientConnMgr, cb func(res *edgeproto.Result) error) error {
+	federationId, err := fedclient.GetFederationIDFromCloudlet(obj.Key.Name)
+	if err != nil {
+		return err
+	}
+	if federationId > 0 {
+		fedClientObj, found, err := fedclient.GetFederationClient(ctx, rc.Database, federationId)
+		if err != nil {
+			return err
+		}
+		if found {
+			var clientIntf interface{}
+			clientIntf = fedClientObj
+			clientApi, ok := clientIntf.(interface {
+				CreateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result) error) error
+			})
+			if !ok {
+				// method doesn't exist
+				return fmt.Errorf("CreateCloudlet is not implemented for federation partner")
+			}
+			return clientApi.CreateCloudletStream(ctx, rc, obj, cb)
+		}
+	}
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return err
@@ -256,6 +279,28 @@ func CreateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *e
 }
 
 func DeleteCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, connObj ClientConnMgr, cb func(res *edgeproto.Result) error) error {
+	federationId, err := fedclient.GetFederationIDFromCloudlet(obj.Key.Name)
+	if err != nil {
+		return err
+	}
+	if federationId > 0 {
+		fedClientObj, found, err := fedclient.GetFederationClient(ctx, rc.Database, federationId)
+		if err != nil {
+			return err
+		}
+		if found {
+			var clientIntf interface{}
+			clientIntf = fedClientObj
+			clientApi, ok := clientIntf.(interface {
+				DeleteCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result) error) error
+			})
+			if !ok {
+				// method doesn't exist
+				return fmt.Errorf("DeleteCloudlet is not implemented for federation partner")
+			}
+			return clientApi.DeleteCloudletStream(ctx, rc, obj, cb)
+		}
+	}
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return err
@@ -285,6 +330,28 @@ func DeleteCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *e
 }
 
 func UpdateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, connObj ClientConnMgr, cb func(res *edgeproto.Result) error) error {
+	federationId, err := fedclient.GetFederationIDFromCloudlet(obj.Key.Name)
+	if err != nil {
+		return err
+	}
+	if federationId > 0 {
+		fedClientObj, found, err := fedclient.GetFederationClient(ctx, rc.Database, federationId)
+		if err != nil {
+			return err
+		}
+		if found {
+			var clientIntf interface{}
+			clientIntf = fedClientObj
+			clientApi, ok := clientIntf.(interface {
+				UpdateCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Result) error) error
+			})
+			if !ok {
+				// method doesn't exist
+				return fmt.Errorf("UpdateCloudlet is not implemented for federation partner")
+			}
+			return clientApi.UpdateCloudletStream(ctx, rc, obj, cb)
+		}
+	}
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return err
@@ -319,6 +386,26 @@ type ShowCloudletAuthz interface {
 }
 
 func ShowCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, connObj ClientConnMgr, authz ShowCloudletAuthz, cb func(res *edgeproto.Cloudlet) error) error {
+	fedClients, err := fedclient.GetFederationClients(ctx, rc.Database, rc.Region, &obj.Key)
+	if err != nil {
+		return err
+	}
+	var clientIntf interface{}
+	for _, fedClientObj := range fedClients {
+		clientIntf = &fedClientObj
+		clientApi, ok := clientIntf.(interface {
+			ShowCloudletStream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.Cloudlet, cb func(res *edgeproto.Cloudlet) error) error
+		})
+		if !ok {
+			// method doesn't exist, ignore
+			continue
+		}
+
+		err = clientApi.ShowCloudletStream(ctx, rc, obj, cb)
+		if err != nil {
+			return err
+		}
+	}
 	conn, err := connObj.GetRegionConn(ctx, rc.Region)
 	if err != nil {
 		return err

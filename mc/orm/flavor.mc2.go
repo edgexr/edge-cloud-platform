@@ -41,6 +41,7 @@ func CreateFlavor(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
@@ -82,6 +83,7 @@ func DeleteFlavor(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
@@ -123,6 +125,7 @@ func UpdateFlavor(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
@@ -168,6 +171,7 @@ func ShowFlavor(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
@@ -201,6 +205,7 @@ func AddFlavorRes(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())
@@ -242,6 +247,7 @@ func RemoveFlavorRes(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.Flavor.GetKey().GetTags())

@@ -27,9 +27,17 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 		args = append(args, "--addr")
 		args = append(args, p.Addr)
 	}
+	if p.FederationAddr != "" {
+		args = append(args, "--federationAddr")
+		args = append(args, p.FederationAddr)
+	}
 	if p.SqlAddr != "" {
 		args = append(args, "--sqlAddr")
 		args = append(args, p.SqlAddr)
+	}
+	if p.NotifyAddrs != "" {
+		args = append(args, "--notifyAddrs")
+		args = append(args, p.NotifyAddrs)
 	}
 	if p.TLS.ClientCert != "" {
 		args = append(args, "--clientCert")
@@ -75,6 +83,9 @@ func (p *MC) StartLocal(logfile string, opts ...process.StartOp) error {
 	}
 	if p.StaticDir != "" {
 		args = append(args, "--staticDir", p.StaticDir)
+	}
+	if p.TestMode {
+		args = append(args, "--testMode")
 	}
 	args = append(args, "--hostname", p.Name)
 	options := process.StartOptions{}

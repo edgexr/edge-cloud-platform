@@ -1,0 +1,46 @@
+federatorzones:
+# dmuus/SA zones
+- operatorid: dmuus
+  countrycode: SA
+  zoneid: dmuus-cloud-1
+  geolocation: "31,-91"
+  region: local
+  cloudlets:
+  - dmuus-cloud-1
+- operatorid: dmuus
+  countrycode: SA
+  zoneid: dmuus-cloud-2
+  geolocation: "35,-95"
+  region: local
+  cloudlets:
+  - dmuus-cloud-2
+- operatorid: dmuus
+  countrycode: SA
+  zoneid: dmuus-cloud-3
+  geolocation: "32,-92"
+  region: locala
+  cloudlets:
+  - dmuus-cloud-3
+- operatorid: dmuus
+  countrycode: SA
+  zoneid: dmuus-cloud-4
+  geolocation: "36,-96"
+  region: locala
+  cloudlets:
+  - dmuus-cloud-4
+# enterprise/SA zones
+- operatorid: enterprise
+  countrycode: SA
+  zoneid: enterprise-1
+  geolocation: "31,-91"
+  region: local
+  cloudlets:
+  - enterprise-1
+# enterprise/SB zones
+- operatorid: enterprise
+  countrycode: SB
+  zoneid: enterprise-2
+  geolocation: "31,-91"
+  region: locala
+  cloudlets:
+  - enterprise-2

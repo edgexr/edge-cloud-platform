@@ -42,6 +42,7 @@ func CreateVMPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
@@ -84,6 +85,7 @@ func DeleteVMPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
@@ -126,6 +128,7 @@ func UpdateVMPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
@@ -172,6 +175,7 @@ func ShowVMPool(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPool.GetKey().GetTags())
@@ -213,6 +217,7 @@ func AddVMPoolMember(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())
@@ -255,6 +260,7 @@ func RemoveVMPoolMember(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.VMPoolMember.GetKey().GetTags())

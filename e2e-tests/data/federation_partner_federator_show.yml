@@ -1,0 +1,9 @@
+federators:
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  federationaddr: {{fedaddr}}
+  mcc: 123
+  mnc:
+  - 111
+  - 222
+  - 333
