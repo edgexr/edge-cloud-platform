@@ -122,3 +122,15 @@ variable "monitor_instance_name" {
 variable "monitor_zone" {
   default = "us-central1-a"
 }
+
+variable "openvas_domain_name" {
+  default = "openvas.mobiledgex.net"
+}
+
+variable "openvas_instance_name" {
+  default = "openvas"
+}
+
+variable "openvas_zone" {
+  default = "us-central1-a"
+}
