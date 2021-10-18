@@ -425,9 +425,15 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 	}
 	orgvdcnet, err := vdc.GetOrgVdcNetworkByName(cidrNet /*subnetName*/, false)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "AttachPortToServer orgvdc subnet not found", "subnetName", subnetName)
+		log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer orgvdc subnet not found", "subnetName", subnetName)
 		return err
 	}
+	isoNet, err := v.updateIsoNamesMap(ctx, IsoMapActionRead, subnetName, "")
+	if err != nil || isoNet == "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Failed to find mapped iso network", "subnetName", subnetName, "err", err)
+		return fmt.Errorf("failed to find iso network for subnet: %s - %v", subnetName, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "Detaching network from vm", "isoNet", isoNet, "subnetName", subnetName)
 
 	// Operate on all VMs in this vapp
 	vms := vapp.VApp.Children.VM
@@ -446,14 +452,15 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName, subn
 		}
 
 		for n, nc := range ncs.NetworkConnection {
-			if nc.Network == portName {
+			log.SpanLog(ctx, log.DebugLevelInfra, "found network connection", "vm", vmName, "Network", nc.Network)
+			if nc.Network == isoNet {
 				log.SpanLog(ctx, log.DebugLevelInfra, "Remove network from ncs", "nc.Network", nc.Network, "portName", portName)
 				ncs.NetworkConnection[n] = ncs.NetworkConnection[len(ncs.NetworkConnection)-1]
 				ncs.NetworkConnection[len(ncs.NetworkConnection)-1] = &types.NetworkConnection{}
 				ncs.NetworkConnection = ncs.NetworkConnection[:len(ncs.NetworkConnection)-1]
 				err := vm.UpdateNetworkConnectionSection(ncs)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer UpdateNetowrkConnectionSection failed", "serverName", serverName, "port", portName, "subnet", subnetName, "err", err)
+					log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer UpdateNetworkConnectionSection failed", "serverName", serverName, "port", portName, "subnet", subnetName, "err", err)
 					return err
 				}
 				log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer success", "serverName", serverName, "port", portName, "subnet", subnetName)
