@@ -40,6 +40,7 @@ func CreateTrustPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
@@ -84,6 +85,7 @@ func DeleteTrustPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
@@ -128,6 +130,7 @@ func UpdateTrustPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())
@@ -176,6 +179,7 @@ func ShowTrustPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.TrustPolicy.GetKey().GetTags())

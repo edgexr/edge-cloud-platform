@@ -1,0 +1,43 @@
+federatedpartnerzones:
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91

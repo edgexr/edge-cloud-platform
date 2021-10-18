@@ -41,6 +41,7 @@ func ShowRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.RateLimitSettings.GetKey().GetTags())
@@ -81,6 +82,7 @@ func CreateFlowRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.FlowRateLimitSettings.GetKey().GetTags())
@@ -122,6 +124,7 @@ func UpdateFlowRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.FlowRateLimitSettings.GetKey().GetTags())
@@ -167,6 +170,7 @@ func DeleteFlowRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.FlowRateLimitSettings.GetKey().GetTags())
@@ -208,6 +212,7 @@ func ShowFlowRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.FlowRateLimitSettings.GetKey().GetTags())
@@ -248,6 +253,7 @@ func CreateMaxReqsRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.MaxReqsRateLimitSettings.GetKey().GetTags())
@@ -289,6 +295,7 @@ func UpdateMaxReqsRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.MaxReqsRateLimitSettings.GetKey().GetTags())
@@ -334,6 +341,7 @@ func DeleteMaxReqsRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.MaxReqsRateLimitSettings.GetKey().GetTags())
@@ -375,6 +383,7 @@ func ShowMaxReqsRateLimitSettings(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.MaxReqsRateLimitSettings.GetKey().GetTags())

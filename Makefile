@@ -60,9 +60,9 @@ install-edge-cloud:
 install-internal:
 	go install ./...
 
-$(APICOMMENTS): ./mc/ormapi/apidoc/apidoc.go ./mc/ormapi/api.go
+$(APICOMMENTS): ./mc/ormapi/apidoc/apidoc.go ./mc/ormapi/api.go ./mc/ormapi/federation_api.go
 	go install ./mc/ormapi/apidoc
-	apidoc --apiFile ./mc/ormapi/api.go
+	apidoc --apiFile ./mc/ormapi/api.go --apiFile ./mc/ormapi/federation_api.go --outFile ./mc/ormapi/api.comments.go
 
 doc:
 	go install ./protoc-gen-mc2

@@ -13,44 +13,69 @@ import (
 	"strings"
 )
 
-var apiFile = flag.String("apiFile", "", "package dir of api files to parse")
+type arrayFlags []string
+
+func (f *arrayFlags) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *arrayFlags) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
 
 func main() {
+	var apiFiles arrayFlags
+	var outFile string
+	flag.Var(&apiFiles, "apiFile", "package dir of api files to parse")
+	flag.StringVar(&outFile, "outFile", "api.comments.go", "package dir of api files to parse")
 	flag.Parse()
-	if *apiFile == "" {
-		log.Fatal("Must specify apiFile")
+
+	if len(apiFiles) == 0 {
+		log.Fatal("Must specify apiFiles")
 	}
 
-	// parse the go source code file
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, *apiFile, nil, parser.ParseComments)
-	if err != nil {
-		log.Fatalf("Failed to parse %s: %v", *apiFile, err)
+	if outFile == "" {
+		log.Fatal("Must specify outFile")
 	}
-	// Debug: print the ast
-	//ast.Print(fset, f)
-
-	// walk the AST and collect structs and field comments
-	allStructs := AllStructs{}
-	allStructs.apiStructs = make([]*ApiStruct, 0)
-	allStructs.lookup = make(map[string]*ApiStruct)
-	ast.Walk(&allStructs, f)
 
 	// generate comments
 	buf := &bytes.Buffer{}
-	fmt.Fprintf(buf, "package %s", allStructs.pkgName)
-	fmt.Fprintf(buf, "\n// This is an auto-generated file. DO NOT EDIT directly.\n")
-	for _, apiSt := range allStructs.apiStructs {
-		comments := []Field{}
-		apiSt.genComments(&allStructs, []string{}, &comments)
-		if len(comments) == 0 {
-			continue
+	firstFile := true
+	for _, apiFile := range apiFiles {
+		// parse the go source code file
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, apiFile, nil, parser.ParseComments)
+		if err != nil {
+			log.Fatalf("Failed to parse %s: %v", apiFile, err)
 		}
-		fmt.Fprintf(buf, "\nvar %sComments = map[string]string{\n", apiSt.name)
-		for _, c := range comments {
-			fmt.Fprintf(buf, "\"%s\": `%s`,\n", strings.ToLower(c.name), c.comment)
+		// Debug: print the ast
+		//ast.Print(fset, f)
+
+		// walk the AST and collect structs and field comments
+		allStructs := AllStructs{}
+		allStructs.apiStructs = make([]*ApiStruct, 0)
+		allStructs.lookup = make(map[string]*ApiStruct)
+		ast.Walk(&allStructs, f)
+
+		if firstFile {
+			fmt.Fprintf(buf, "package %s", allStructs.pkgName)
+			fmt.Fprintf(buf, "\n// This is an auto-generated file. DO NOT EDIT directly.\n")
+			firstFile = false
 		}
-		fmt.Fprintf(buf, "}\n")
+
+		for _, apiSt := range allStructs.apiStructs {
+			comments := []Field{}
+			apiSt.genComments(&allStructs, []string{}, &comments)
+			if len(comments) == 0 {
+				continue
+			}
+			fmt.Fprintf(buf, "\nvar %sComments = map[string]string{\n", apiSt.name)
+			for _, c := range comments {
+				fmt.Fprintf(buf, "\"%s\": `%s`,\n", strings.ToLower(c.name), c.comment)
+			}
+			fmt.Fprintf(buf, "}\n")
+		}
 	}
 	// format the generated code
 	out, err := format.Source(buf.Bytes())
@@ -58,8 +83,6 @@ func main() {
 		log.Fatalf("Failed to format generated code: %v\n%s", err, buf.String())
 	}
 	// write output file
-	outFile := strings.TrimSuffix(*apiFile, ".go")
-	outFile += ".comments.go"
 	err = ioutil.WriteFile(outFile, out, 0644)
 	if err != nil {
 		log.Fatalf("Failed to write output file %s: %v", outFile, err)

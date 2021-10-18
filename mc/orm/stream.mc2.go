@@ -40,6 +40,7 @@ func StreamAppInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppInstKey.AppKey.Organization)
@@ -80,6 +81,7 @@ func StreamClusterInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ClusterInstKey.Organization)
@@ -120,6 +122,7 @@ func StreamCloudlet(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.CloudletKey.Organization)
@@ -160,6 +163,7 @@ func StreamGPUDriver(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.GPUDriverKey.Organization)

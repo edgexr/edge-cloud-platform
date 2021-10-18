@@ -40,6 +40,7 @@ func RunCommand(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
@@ -81,6 +82,7 @@ func RunConsole(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
@@ -122,6 +124,7 @@ func ShowLogs(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.ExecRequest.AppInstKey.AppKey.Organization)
@@ -160,6 +163,7 @@ func AccessCloudlet(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 

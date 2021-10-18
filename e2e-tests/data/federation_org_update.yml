@@ -1,0 +1,3 @@
+orgs:
+- name: {{partnertag}}
+  edgeboxonly: false

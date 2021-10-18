@@ -1,0 +1,79 @@
+federations:
+- id: 1
+  selfoperatorid: dmuus
+  selfcountrycode: SA
+  federator:
+    operatorid: partner1
+    countrycode: PA
+    federationaddr: 127.0.0.1:9808
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true
+- id: 2
+  selfoperatorid: enterprise
+  selfcountrycode: SA
+  federator:
+    operatorid: partner1
+    countrycode: PA
+    federationaddr: 127.0.0.1:9808
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true
+- id: 3
+  selfoperatorid: enterprise
+  selfcountrycode: SB
+  federator:
+    operatorid: partner1
+    countrycode: PA
+    federationaddr: 127.0.0.1:9808
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true
+- id: 4
+  selfoperatorid: dmuus
+  selfcountrycode: SA
+  federator:
+    operatorid: partner2
+    countrycode: PS
+    federationaddr: 127.0.0.1:9809
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true
+- id: 5
+  selfoperatorid: enterprise
+  selfcountrycode: SA
+  federator:
+    operatorid: partner2
+    countrycode: PS
+    federationaddr: 127.0.0.1:9809
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true
+- id: 6
+  selfoperatorid: enterprise
+  selfcountrycode: SB
+  federator:
+    operatorid: partner2
+    countrycode: PS
+    federationaddr: 127.0.0.1:9809
+    mcc: "123"
+    mnc:
+    - "111"
+    - "222"
+    - "333"
+  partnerrolesharezoneswithself: true

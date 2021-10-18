@@ -341,27 +341,27 @@ func permTestGPUDriverBuildMember(t *testing.T, mcClient *mctestclient.Client, u
 
 var _ = edgeproto.GetFields
 
-func badPermCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badPermCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, st, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, st, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func goodPermCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
-func badRegionCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	out, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, "bad region", org, modFuncs...)
+func badRegionCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	out, status, err := testutil.TestPermCreateCloudlet(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -374,27 +374,27 @@ func badRegionCreateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, t
 
 var _ = edgeproto.GetFields
 
-func badPermDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badPermDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, st, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, st, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func goodPermDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
-func badRegionDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	out, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, "bad region", org, modFuncs...)
+func badRegionDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	out, status, err := testutil.TestPermDeleteCloudlet(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -407,27 +407,27 @@ func badRegionDeleteCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, t
 
 var _ = edgeproto.GetFields
 
-func badPermUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badPermUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Forbidden")
 	require.Equal(t, http.StatusForbidden, status)
 }
 
-func badUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, st, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func badUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, status int, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, st, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	require.Equal(t, status, st)
 }
 
-func goodPermUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	_, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, modFuncs...)
+func goodPermUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	_, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	require.Nil(t, err)
 	require.Equal(t, http.StatusOK, status)
 }
 
-func badRegionUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	out, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, "bad region", org, modFuncs...)
+func badRegionUpdateCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	out, status, err := testutil.TestPermUpdateCloudlet(mcClient, uri, token, "bad region", org, targetCloudlet, modFuncs...)
 	require.NotNil(t, err)
 	if err.Error() == "Forbidden" {
 		require.Equal(t, http.StatusForbidden, status)
@@ -902,10 +902,10 @@ func badRegionGenerateAccessKey(t *testing.T, mcClient *mctestclient.Client, uri
 
 // This tests the user cannot modify the object because the obj belongs to
 // an organization that the user does not have permissions for.
-func badPermTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, modFuncs ...func(*edgeproto.Cloudlet)) {
-	badPermCreateCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermUpdateCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
-	badPermDeleteCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
+func badPermTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, modFuncs ...func(*edgeproto.Cloudlet)) {
+	badPermCreateCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	badPermUpdateCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	badPermDeleteCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 }
 func badPermTestShowCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string) {
 	// show is allowed but won't show anything
@@ -919,15 +919,15 @@ func badPermTestShowCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, t
 
 // This tests the user can modify the object because the obj belongs to
 // an organization that the user has permissions for.
-func goodPermTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, showcount int, modFuncs ...func(*edgeproto.Cloudlet)) {
-	goodPermCreateCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
-	goodPermUpdateCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
-	goodPermDeleteCloudlet(t, mcClient, uri, token, region, org, modFuncs...)
+func goodPermTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.Cloudlet)) {
+	goodPermCreateCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	goodPermUpdateCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
+	goodPermDeleteCloudlet(t, mcClient, uri, token, region, org, targetCloudlet, modFuncs...)
 	goodPermTestShowCloudlet(t, mcClient, uri, token, region, org, showcount)
 	// make sure region check works
-	badRegionCreateCloudlet(t, mcClient, uri, token, org, modFuncs...)
-	badRegionUpdateCloudlet(t, mcClient, uri, token, org, modFuncs...)
-	badRegionDeleteCloudlet(t, mcClient, uri, token, org, modFuncs...)
+	badRegionCreateCloudlet(t, mcClient, uri, token, org, targetCloudlet, modFuncs...)
+	badRegionUpdateCloudlet(t, mcClient, uri, token, org, targetCloudlet, modFuncs...)
+	badRegionDeleteCloudlet(t, mcClient, uri, token, org, targetCloudlet, modFuncs...)
 }
 func goodPermTestShowCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token, region, org string, count int) {
 	var status int
@@ -943,13 +943,13 @@ func goodPermTestShowCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, 
 // Test permissions for user with token1 who should have permissions for
 // modifying obj1, and user with token2 who should have permissions for obj2.
 // They should not have permissions to modify each other's objects.
-func permTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, showcount int, modFuncs ...func(*edgeproto.Cloudlet)) {
-	badPermTestCloudlet(t, mcClient, uri, token1, region, org2, modFuncs...)
-	badPermTestCloudlet(t, mcClient, uri, token2, region, org1, modFuncs...)
+func permTestCloudlet(t *testing.T, mcClient *mctestclient.Client, uri, token1, token2, region, org1, org2 string, targetCloudlet *edgeproto.CloudletKey, showcount int, modFuncs ...func(*edgeproto.Cloudlet)) {
+	badPermTestCloudlet(t, mcClient, uri, token1, region, org2, targetCloudlet, modFuncs...)
+	badPermTestCloudlet(t, mcClient, uri, token2, region, org1, targetCloudlet, modFuncs...)
 	badPermTestShowCloudlet(t, mcClient, uri, token1, region, org2)
 	badPermTestShowCloudlet(t, mcClient, uri, token2, region, org1)
-	goodPermTestCloudlet(t, mcClient, uri, token1, region, org1, showcount, modFuncs...)
-	goodPermTestCloudlet(t, mcClient, uri, token2, region, org2, showcount, modFuncs...)
+	goodPermTestCloudlet(t, mcClient, uri, token1, region, org1, targetCloudlet, showcount, modFuncs...)
+	goodPermTestCloudlet(t, mcClient, uri, token2, region, org2, targetCloudlet, showcount, modFuncs...)
 }
 
 // This tests the user cannot modify the object because the obj belongs to

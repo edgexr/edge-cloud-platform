@@ -1,0 +1,73 @@
+controllers:
+- region: {{region}}
+  address: {{ctrlapiaddr}}
+  notifyaddr: {{ctrlnotifyaddr}}
+
+orgs:
+- name: {{partnertag}}
+  type: operator
+  address: mobiledgex
+  phone: 123-123-1234
+  publicimages: true
+  edgeboxonly: true
+
+regiondata:
+- region: {{region}}
+  appdata:
+    settings:
+      shepherdmetricscollectioninterval: 1s
+      shepherdalertevaluationinterval: 1s
+      shepherdmetricsscrapeinterval: 1s
+      shepherdhealthcheckretries: 3
+      shepherdhealthcheckinterval: 5s
+      autodeployintervalsec: 300
+      autodeployoffsetsec: 0.3
+      autodeploymaxintervals: 10
+      createappinsttimeout: 3s
+      updateappinsttimeout: 2s
+      deleteappinsttimeout: 2s
+      createclusterinsttimeout: 3s
+      updateclusterinsttimeout: 2s
+      deleteclusterinsttimeout: 2s
+      createcloudlettimeout: 10s
+      updatecloudlettimeout: 2s
+      updatetrustpolicytimeout: 5s
+      masternodeflavor: x1.small
+      maxtrackeddmeclients: 100
+      chefclientinterval: 10m
+      cloudletmaintenancetimeout: 2s
+      updatevmpooltimeout: 20m0s
+      dmeapimetricscollectioninterval: 1s
+      influxdbmetricsretention: 672h0m0s
+      cleanupreservableautoclusteridletime: 30m
+      influxdbcloudletusagemetricsretention: 8760h0m0s
+      appinstclientcleanupinterval: 24h
+      locationtilesidelengthkm: 2
+      edgeeventsmetricscollectioninterval: 1s
+      influxdbedgeeventsmetricsretention: 672h0m0s
+      influxdbdownsampledmetricsretention: 672h0m0s
+      edgeeventsmetricscontinuousqueriescollectionintervals:
+      - interval: 2s
+      clusterautoscaleaveragingdurationsec: 1
+      clusterautoscaleretrydelay: 1s
+      alertpolicymintriggertime: 1s
+      disableratelimit: true
+      maxnumperipratelimiters: 10000
+      resourcesnapshotthreadinterval: 10m
+      ratelimitmaxtrackedips: 10000
+    flavors:
+    - key:
+        name: x1.tiny
+      ram: 1024
+      vcpus: 1
+      disk: 1
+    - key:
+        name: x1.small
+      ram: 2048
+      vcpus: 2
+      disk: 2
+    - key:
+        name: x1.medium
+      ram: 4096
+      vcpus: 4
+      disk: 4

@@ -92,6 +92,14 @@ func (s *Client) Run(apiCmd *ormctl.ApiCommand, runData *mctestclient.RunData) {
 }
 
 func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Response, error) {
+	return s.HttpJsonSendReq("POST", uri, token, reqData)
+}
+
+func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
+	return s.HttpJsonSend("POST", uri, token, reqData, replyData)
+}
+
+func (s *Client) HttpJsonSendReq(method, uri, token string, reqData interface{}) (*http.Response, error) {
 	var body io.Reader
 	var datastr string
 	if reqData != nil {
@@ -108,7 +116,7 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 			}
 			out, err := json.Marshal(reqData)
 			if err != nil {
-				return nil, fmt.Errorf("post %s marshal req failed, %s", uri, err.Error())
+				return nil, fmt.Errorf("%s %s marshal req failed, %s", method, uri, err.Error())
 			}
 			body = bytes.NewBuffer(out)
 			datastr = string(out)
@@ -120,9 +128,9 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 		body = nil
 	}
 
-	req, err := http.NewRequest("POST", uri, body)
+	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
-		return nil, fmt.Errorf("post %s http req failed, %s", uri, err.Error())
+		return nil, fmt.Errorf("%s %s http req failed, %s", method, uri, err.Error())
 	}
 	req.Close = true
 	req.Header.Set("Content-Type", "application/json")
@@ -142,7 +150,7 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 		tr = http.DefaultTransport
 	}
 	if s.Debug {
-		curlcmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json"`, uri)
+		curlcmd := fmt.Sprintf(`curl -X %s "%s" -H "Content-Type: application/json"`, method, uri)
 		if token != "" {
 			curlcmd += ` -H "Authorization: Bearer ${TOKEN}"`
 		}
@@ -159,16 +167,16 @@ func (s *Client) PostJsonSend(uri, token string, reqData interface{}) (*http.Res
 	return client.Do(req)
 }
 
-func (s *Client) PostJson(uri, token string, reqData interface{}, replyData interface{}) (int, error) {
-	resp, err := s.PostJsonSend(uri, token, reqData)
+func (s *Client) HttpJsonSend(method, uri, token string, reqData interface{}, replyData interface{}) (int, error) {
+	resp, err := s.HttpJsonSendReq(method, uri, token, reqData)
 	if err != nil {
-		return 0, fmt.Errorf("post %s client do failed, %s", uri, err.Error())
+		return 0, fmt.Errorf("%s %s client do failed, %s", method, uri, err.Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK && replyData != nil {
 		err = json.NewDecoder(resp.Body).Decode(replyData)
 		if err != nil && err != io.EOF {
-			return resp.StatusCode, fmt.Errorf("post %s decode resp failed, %v", uri, err)
+			return resp.StatusCode, fmt.Errorf("%s %s decode resp failed, %v", method, uri, err)
 		}
 	}
 	if resp.StatusCode != http.StatusOK {

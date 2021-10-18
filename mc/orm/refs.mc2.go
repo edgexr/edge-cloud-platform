@@ -39,6 +39,7 @@ func ShowCloudletRefs(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.CloudletRefs.GetKey().GetTags())
@@ -80,6 +81,7 @@ func ShowClusterRefs(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterRefs.GetKey().GetTags())
@@ -120,6 +122,7 @@ func ShowAppInstRefs(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AppInstRefs.GetKey().GetTags())

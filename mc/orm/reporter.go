@@ -730,6 +730,7 @@ func GetCloudletSummaryData(ctx context.Context, username string, report *ormapi
 	rc := &ormutil.RegionContext{
 		Region:   report.Region,
 		Username: username,
+		Database: database,
 	}
 	obj := edgeproto.Cloudlet{
 		Key: edgeproto.CloudletKey{

@@ -42,6 +42,7 @@ func CreateApp(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
@@ -84,6 +85,7 @@ func DeleteApp(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
@@ -126,6 +128,7 @@ func UpdateApp(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
@@ -172,6 +175,7 @@ func ShowApp(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.App.GetKey().GetTags())
@@ -213,6 +217,7 @@ func AddAppAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAutoProvPolicy.AppKey.Organization)
@@ -254,6 +259,7 @@ func RemoveAppAutoProvPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAutoProvPolicy.AppKey.Organization)
@@ -295,6 +301,7 @@ func AddAppAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAlertPolicy.AppKey.Organization)
@@ -336,6 +343,7 @@ func RemoveAppAlertPolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	span.SetTag("org", in.AppAlertPolicy.AppKey.Organization)
@@ -377,6 +385,7 @@ func ShowCloudletsForAppDeployment(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 

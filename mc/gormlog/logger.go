@@ -128,6 +128,9 @@ func findInsertFields(sql string, fieldNames map[string]struct{}) []int {
 	return varIndices
 }
 
+// Unfortunately the logger interface used by gorm does not
+// allow any context to be passed in, so each function that
+// calls into the DB must first convert it to a loggedDB.
 func LoggedDB(ctx context.Context, database *gorm.DB) *gorm.DB {
 	db := database.New() // clone
 	db.SetLogger(&Logger{Ctx: ctx})

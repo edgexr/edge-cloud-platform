@@ -29,7 +29,7 @@ toksims:
 vaults:
 - name: vault
   hostname: "127.0.0.1"
-  regions: local,locala
+  regions: local,locala,PA,PS
 
 influxs:
 - name: influx1
@@ -85,6 +85,20 @@ etcds:
   peeraddrs: "http://127.0.0.1:30023"
   clientaddrs: "http://127.0.0.1:30033"
   initialcluster: "etcda1=http://127.0.0.1:30021,etcda2=http://127.0.0.1:30022,etcda3=http://127.0.0.1:30023"
+  hostname: "127.0.0.1"
+
+- name: etcd-partner1
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd-partner1
+  peeraddrs: "http://127.0.0.1:30081"
+  clientaddrs: "http://127.0.0.1:30008"
+  initialcluster: "etcd-partner1=http://127.0.0.1:30081"
+  hostname: "127.0.0.1"
+
+- name: etcd-partner2
+  datadir: /var/tmp/edge-cloud-local-etcd/etcd-partner2
+  peeraddrs: "http://127.0.0.1:30091"
+  clientaddrs: "http://127.0.0.1:30009"
+  initialcluster: "etcd-partner2=http://127.0.0.1:30091"
   hostname: "127.0.0.1"
 
 controllers:
@@ -168,6 +182,42 @@ controllers:
   deploymenttag: dev
   influxaddr: "http://127.0.0.1:8087"
   accessapiaddr: "127.0.0.1:41012"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrl-partner1
+  etcdaddrs: "http://127.0.0.1:30008"
+  apiaddr: "127.0.0.1:55081"
+  httpaddr: "0.0.0.0:36081"
+  notifyaddr: "127.0.0.1:37081"
+  vaultaddr: "http://127.0.0.1:8200"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  region: "PA"
+  usevaultpki: true
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41081"
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+
+- name: ctrl-partner2
+  etcdaddrs: "http://127.0.0.1:30009"
+  apiaddr: "127.0.0.1:55091"
+  httpaddr: "0.0.0.0:36091"
+  notifyaddr: "127.0.0.1:37091"
+  vaultaddr: "http://127.0.0.1:8200"
+  hostname: "127.0.0.1"
+  versiontag: "2019-10-24"
+  testmode: true
+  region: "PS"
+  usevaultpki: true
+  appdnsroot: mobiledgex.net
+  deploymenttag: dev
+  accessapiaddr: "127.0.0.1:41091"
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
@@ -301,9 +351,11 @@ mcs:
   addr: "127.0.0.1:9900"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
+  notifyaddrs: "127.0.0.1:53001"
   usevaultpki: true
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9389"
+  federationaddr: "127.0.0.1:9801"
   notifysrvaddr: "127.0.0.1:52001"
   consoleproxyaddr: "127.0.0.1:6080"
   alertresolvetimeout: "{{alertmgrresolvetimeout}}"
@@ -314,15 +366,18 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
+    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 - name: mc2
   addr: "127.0.0.1:9901"
   sqladdr: "127.0.0.1:5432"
   vaultaddr: "http://127.0.0.1:8200"
+  notifyaddrs: "127.0.0.1:53001"
   usevaultpki: true
   hostname: "127.0.0.1"
   ldapaddr: "127.0.0.1:9390"
+  federationaddr: "127.0.0.1:9802"
   notifysrvaddr: "127.0.0.1:52002"
   consoleproxyaddr: "127.0.0.1:6081"
   alertmgrapiaddr: "https://127.0.0.1:9094"
@@ -333,12 +388,61 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
+    E2ETEST_FEDERATION: true
+  staticdir: "{{staticdir}}"
+
+- name: mc-partner1
+  addr: "127.0.0.1:9908"
+  sqladdr: "127.0.0.1:5438"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9889"
+  federationaddr: "127.0.0.1:9808"
+  notifysrvaddr: "127.0.0.1:52081"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_FEDERATION: true
+  staticdir: "{{staticdir}}"
+
+- name: mc-partner2
+  addr: "127.0.0.1:9909"
+  sqladdr: "127.0.0.1:5439"
+  vaultaddr: "http://127.0.0.1:8200"
+  usevaultpki: true
+  hostname: "127.0.0.1"
+  ldapaddr: "127.0.0.1:9989"
+  federationaddr: "127.0.0.1:9809"
+  notifysrvaddr: "127.0.0.1:52091"
+  apitlscert: "{{tlsoutdir}}/mex-server.crt"
+  apitlskey: "{{tlsoutdir}}/mex-server.key"
+  deploymenttag: dev
+  envvars:
+    ES_SERVER_URLS: https://localhost:9201
+    E2ETEST_TLS: true
+    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 sqls:
 - name: sql1
   datadir: /var/tmp/edge-cloud-local-sql/sql1
   httpaddr: "127.0.0.1:5432"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+- name: sql-partner1
+  datadir: /var/tmp/edge-cloud-local-sql/sql-partner1
+  httpaddr: "127.0.0.1:5438"
+  username: mcuser
+  dbname: mcdb
+  hostname: "127.0.0.1"
+- name: sql-partner2
+  datadir: /var/tmp/edge-cloud-local-sql/sql-partner2
+  httpaddr: "127.0.0.1:5439"
   username: mcuser
   dbname: mcdb
   hostname: "127.0.0.1"

@@ -42,6 +42,7 @@ func CreateClusterInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
@@ -58,6 +59,8 @@ func CreateClusterInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -86,6 +89,7 @@ func DeleteClusterInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
@@ -102,6 +106,8 @@ func DeleteClusterInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -130,6 +136,7 @@ func UpdateClusterInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
@@ -150,6 +157,8 @@ func UpdateClusterInst(c echo.Context) error {
 			return err
 		}
 	}
+	// Need access to database for federation handling
+	rc.Database = database
 
 	cb := func(res *edgeproto.Result) error {
 		payload := ormapi.StreamPayload{}
@@ -178,6 +187,7 @@ func ShowClusterInst(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.ClusterInst.GetKey().GetTags())
@@ -219,6 +229,7 @@ func DeleteIdleReservableClusterInsts(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 

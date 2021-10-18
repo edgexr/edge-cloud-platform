@@ -41,6 +41,7 @@ func (s *AuthzTrustPolicy) populate(ctx context.Context, region, username string
 		Region:    region,
 		Username:  username,
 		SkipAuthz: true, // skip since we already have the cloudlet authz
+		Database:  database,
 	}
 	// allow policies associated with cloudlets that the user can see
 	err := ctrlclient.ShowCloudletStream(ctx, &rc, &edgeproto.Cloudlet{}, connCache, nil, func(cloudlet *edgeproto.Cloudlet) error {

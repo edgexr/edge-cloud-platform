@@ -396,6 +396,51 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 		return rc
 	}
 
+	if api == "showselffederators" {
+		var filter ormapi.Federator
+		selfFederators, status, err := mcClient.ShowSelfFederator(uri, token, &filter)
+		checkMcErr("ShowSelfFederator", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{Federators: selfFederators}, true)
+		*retry = true
+		return rc
+	}
+
+	if api == "showselffederatorzones" {
+		var filter ormapi.FederatorZone
+		selfFederatorZones, status, err := mcClient.ShowSelfFederatorZone(uri, token, &filter)
+		checkMcErr("ShowSelfFederatorZone", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatorZones: selfFederatorZones}, true)
+		*retry = true
+		return rc
+	}
+
+	if api == "showfederations" {
+		var filter ormapi.Federation
+		federations, status, err := mcClient.ShowFederation(uri, token, &filter)
+		checkMcErr("ShowFederation", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{Federations: federations}, true)
+		*retry = true
+		return rc
+	}
+
+	if api == "showfederatedselfzones" {
+		var filter ormapi.FederatedSelfZone
+		federatedSelfZones, status, err := mcClient.ShowFederatedSelfZone(uri, token, &filter)
+		checkMcErr("ShowFederatedSelfZone", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatedSelfZones: federatedSelfZones}, true)
+		*retry = true
+		return rc
+	}
+
+	if api == "showfederatedpartnerzones" {
+		var filter ormapi.FederatedPartnerZone
+		federatedPartnerZones, status, err := mcClient.ShowFederatedPartnerZone(uri, token, &filter)
+		checkMcErr("ShowFederatedPartnerZone", status, err, &rc)
+		util.PrintToYamlFile("show-commands.yml", outputDir, &ormapi.AllData{FederatedPartnerZones: federatedPartnerZones}, true)
+		*retry = true
+		return rc
+	}
+
 	if apiFile == "" {
 		log.Println("Error: Cannot run MC data APIs without API file")
 		return false
@@ -405,6 +450,33 @@ func runMcDataAPI(api, uri, apiFile, curUserFile, outputDir string, mods []strin
 
 	var errs []Err
 	switch api {
+	case "registerfederation":
+		output := &AllDataOut{}
+		for ii, fd := range data.Federations {
+			_, st, err := mcClient.RegisterFederation(uri, token, &fd)
+			outMcErr(output, fmt.Sprintf("RegisterFederation[%d]", ii), st, err)
+		}
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
+	case "deregisterfederation":
+		output := &AllDataOut{}
+		for ii, fd := range data.Federations {
+			_, st, err := mcClient.DeregisterFederation(uri, token, &fd)
+			outMcErr(output, fmt.Sprintf("DeregisterFederation[%d]", ii), st, err)
+		}
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
+	case "share":
+		fallthrough
+	case "unshare":
+		fallthrough
+	case "register":
+		fallthrough
+	case "deregister":
+		output := &AllDataOut{}
+		manageFederatorZoneData(api, uri, token, tag, data, dataMap, output, &rc)
+		util.PrintToYamlFile("api-output.yml", outputDir, output, true)
+		errs = output.Errors
 	case "create":
 		output := &AllDataOut{}
 		createMcData(uri, token, tag, data, dataMap, output, &rc)
@@ -814,6 +886,18 @@ func createMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 		st, err := mcClient.CreateAlertReceiver(uri, token, &ar)
 		outMcErr(output, fmt.Sprintf("CreateAlertReceiver[%d]", ii), st, err)
 	}
+	for ii, fd := range data.Federators {
+		_, st, err := mcClient.CreateSelfFederator(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateSelfFederator[%d]", ii), st, err)
+	}
+	for ii, fd := range data.FederatorZones {
+		_, st, err := mcClient.CreateSelfFederatorZone(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateSelfFederatorZone[%d]", ii), st, err)
+	}
+	for ii, fd := range data.Federations {
+		_, st, err := mcClient.CreateFederation(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("CreateFederation[%d]", ii), st, err)
+	}
 }
 
 func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
@@ -870,6 +954,43 @@ func deleteMcData(uri, token, tag string, data *ormapi.AllData, dataMap map[stri
 	for ii, ctrl := range data.Controllers {
 		st, err := mcClient.DeleteController(uri, token, &ctrl)
 		outMcErr(output, fmt.Sprintf("DeleteController[%d]", ii), st, err)
+	}
+	for ii, fd := range data.Federations {
+		_, st, err := mcClient.DeleteFederation(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteFederation[%d]", ii), st, err)
+	}
+	for ii, fd := range data.FederatorZones {
+		_, st, err := mcClient.DeleteSelfFederatorZone(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteSelfFederatorZone[%d]", ii), st, err)
+	}
+	for ii, fd := range data.Federators {
+		_, st, err := mcClient.DeleteSelfFederator(uri, token, &fd)
+		outMcErr(output, fmt.Sprintf("DeleteSelfFederator[%d]", ii), st, err)
+	}
+}
+
+func manageFederatorZoneData(mode, uri, token, tag string, data *ormapi.AllData, dataMap map[string]interface{}, output *AllDataOut, rc *bool) {
+	switch mode {
+	case "share":
+		for ii, zone := range data.FederatedSelfZones {
+			_, st, err := mcClient.ShareSelfFederatorZone(uri, token, &zone)
+			outMcErr(output, fmt.Sprintf("ShareSelfFederatorZone[%d]", ii), st, err)
+		}
+	case "unshare":
+		for ii, zone := range data.FederatedSelfZones {
+			_, st, err := mcClient.UnshareSelfFederatorZone(uri, token, &zone)
+			outMcErr(output, fmt.Sprintf("UnshareSelfFederatorZone[%d]", ii), st, err)
+		}
+	case "register":
+		for ii, zone := range data.FederatedPartnerZones {
+			_, st, err := mcClient.RegisterPartnerFederatorZone(uri, token, &zone)
+			outMcErr(output, fmt.Sprintf("RegisterPartnerFederatorZone[%d]", ii), st, err)
+		}
+	case "deregister":
+		for ii, zone := range data.FederatedPartnerZones {
+			_, st, err := mcClient.DeRegisterPartnerFederatorZone(uri, token, &zone)
+			outMcErr(output, fmt.Sprintf("DeregisterPartnerFederatorZone[%d]", ii), st, err)
+		}
 	}
 }
 

@@ -41,6 +41,7 @@ func CreateAutoScalePolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
@@ -83,6 +84,7 @@ func DeleteAutoScalePolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
@@ -125,6 +127,7 @@ func UpdateAutoScalePolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())
@@ -171,6 +174,7 @@ func ShowAutoScalePolicy(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 	log.SetTags(span, in.AutoScalePolicy.GetKey().GetTags())

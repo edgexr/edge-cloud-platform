@@ -1,0 +1,15 @@
+federatorzones:
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  zoneid: {{partnertag}}-cloud-1
+  geolocation: "31,-91"
+  region: {{region}}
+  cloudlets:
+  - {{partnertag}}-cloud-1
+- operatorid: {{partnertag}}
+  countrycode: {{region}}
+  zoneid: {{partnertag}}-cloud-2
+  geolocation: "31,-91"
+  region: {{region}}
+  cloudlets:
+  - {{partnertag}}-cloud-2

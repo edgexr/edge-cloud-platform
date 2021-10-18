@@ -16,39 +16,40 @@ import (
 
 type GenMC2 struct {
 	*generator.Generator
-	support            gensupport.PluginSupport
-	tmpl               *template.Template
-	tmplCtrlClient     *template.Template
-	tmplApi            *template.Template
-	tmplMethodTest     *template.Template
-	tmplMethodTestutil *template.Template
-	tmplMethodCtl      *template.Template
-	tmplMessageTest    *template.Template
-	regionStructs      map[string]struct{}
-	inputMessages      map[string]*gensupport.MessageInfo
-	firstFile          bool
-	genctrlclient      bool
-	genapi             bool
-	gentest            bool
-	gentestutil        bool
-	genctl             bool
-	importEcho         bool
-	importHttp         bool
-	importContext      bool
-	importIO           bool
-	importOS           bool
-	importJson         bool
-	importTesting      bool
-	importRequire      bool
-	importMctestclient bool
-	importOrmapi       bool
-	importOrmtestutil  bool
-	importGrpcStatus   bool
-	importStrings      bool
-	importLog          bool
-	importCli          bool
-	importOrmutil      bool
-	importCtrlClient   bool
+	support                gensupport.PluginSupport
+	tmpl                   *template.Template
+	tmplCtrlClient         *template.Template
+	tmplApi                *template.Template
+	tmplMethodTest         *template.Template
+	tmplMethodTestutil     *template.Template
+	tmplMethodCtl          *template.Template
+	tmplMessageTest        *template.Template
+	regionStructs          map[string]struct{}
+	inputMessages          map[string]*gensupport.MessageInfo
+	firstFile              bool
+	genctrlclient          bool
+	genapi                 bool
+	gentest                bool
+	gentestutil            bool
+	genctl                 bool
+	importEcho             bool
+	importHttp             bool
+	importContext          bool
+	importIO               bool
+	importOS               bool
+	importJson             bool
+	importTesting          bool
+	importRequire          bool
+	importMctestclient     bool
+	importOrmapi           bool
+	importOrmtestutil      bool
+	importGrpcStatus       bool
+	importStrings          bool
+	importLog              bool
+	importCli              bool
+	importOrmutil          bool
+	importCtrlClient       bool
+	importFederationClient bool
 }
 
 func (g *GenMC2) Name() string {
@@ -121,6 +122,9 @@ func (g *GenMC2) GenerateImports(file *generator.FileDescriptor) {
 	if g.importCtrlClient {
 		g.PrintImport("", "github.com/mobiledgex/edge-cloud-infra/mc/ctrlclient")
 	}
+	if g.importFederationClient {
+		g.PrintImport("fedclient", "github.com/mobiledgex/edge-cloud-infra/mc/federation/client")
+	}
 }
 
 type ServiceProps struct {
@@ -153,6 +157,7 @@ func (g *GenMC2) Generate(file *generator.FileDescriptor) {
 	g.importCli = false
 	g.importOrmutil = false
 	g.importCtrlClient = false
+	g.importFederationClient = false
 
 	g.support.InitFile()
 	if !g.support.GenFile(*file.FileDescriptorProto.Name) {
@@ -467,12 +472,17 @@ func (g *GenMC2) generateMethod(file *generator.FileDescriptor, service string, 
 		g.importOrmapi = true
 		g.importStrings = true
 	} else if g.genctrlclient {
+		in := gensupport.GetDesc(g.Generator, method.GetInputType())
+		args.TargetCloudlet = GetMc2TargetCloudlet(in.DescriptorProto)
 		tmpl = g.tmplCtrlClient
 		g.importContext = true
 		g.importLog = true
 		g.importOrmutil = true
 		if args.Outstream {
 			g.importIO = true
+		}
+		if args.TargetCloudlet != "" {
+			g.importFederationClient = true
 		}
 	} else {
 		tmpl = g.tmpl
@@ -589,6 +599,7 @@ func {{.MethodName}}(c echo.Context) error {
 		return err
 	}
 	rc.Region = in.Region
+	rc.Database = database
 	span := log.SpanFromContext(ctx)
 	span.SetTag("region", in.Region)
 {{- if .HasKey}}
@@ -647,6 +658,10 @@ func {{.MethodName}}(c echo.Context) error {
 	}
 {{- end}}
 {{- end}}
+{{- if .TargetCloudlet}}
+       // Need access to database for federation handling
+       rc.Database = database
+{{- end}}
 {{if .Outstream}}
 	cb := func(res *edgeproto.{{.OutName}}) error {
                 payload := ormapi.StreamPayload{}
@@ -687,8 +702,8 @@ func {{.MethodName}}(c echo.Context) error {
 var tmplCtrlClient = `
 {{- if and (not .SkipEnforce) (and .Show .CustomAuthz)}}
 type {{.MethodName}}Authz interface {
-	Ok(obj *edgeproto.{{.OutName}}) (bool, bool)
-	Filter(obj *edgeproto.{{.OutName}})
+        Ok(obj *edgeproto.{{.OutName}}) (bool, bool)
+        Filter(obj *edgeproto.{{.OutName}})
 }
 {{- end}}
 
@@ -709,64 +724,107 @@ func {{.MethodName}}Obj(ctx context.Context, rc *ormutil.RegionContext, obj *edg
 func {{.MethodName}}Obj(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.{{.InName}}, connObj ClientConnMgr) (*edgeproto.{{.OutName}}, error) {
 {{- end}}
 {{- end}}
-{{- if .NotifyRoot}}
-	conn, err := connObj.GetNotifyRootConn(ctx)
+{{- if and .TargetCloudlet .Outstream}}
+{{- if .Show }}
+        fedClients, err := fedclient.GetFederationClients(ctx, rc.Database, rc.Region, &obj.{{.TargetCloudlet}})
+        if err != nil {
+                return err
+        }
+        var clientIntf interface{}
+        for _, fedClientObj := range fedClients {
+                clientIntf = &fedClientObj
+                clientApi, ok := clientIntf.(interface{ {{.MethodName}}Stream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}}) error) error })
+                if !ok {
+                        // method doesn't exist, ignore
+                        continue
+                }
+
+                err = clientApi.{{.MethodName}}Stream(ctx, rc, obj, cb)
+                if err != nil {
+                        return err
+                }
+       }
 {{- else}}
-	conn, err := connObj.GetRegionConn(ctx, rc.Region)
+        federationId, err := fedclient.GetFederationIDFromCloudlet(obj.{{.TargetCloudlet}}.Name)
+        if err != nil {
+                return err
+        }
+        if federationId > 0 {
+                fedClientObj, found, err := fedclient.GetFederationClient(ctx, rc.Database, federationId)
+                if err != nil {
+                        return err
+                }
+                if found {
+                        var clientIntf interface{}
+                        clientIntf = fedClientObj
+                        clientApi, ok := clientIntf.(interface{ {{.MethodName}}Stream(ctx context.Context, rc *ormutil.RegionContext, obj *edgeproto.{{.InName}}, cb func(res *edgeproto.{{.OutName}}) error) error })
+                        if !ok {
+                                // method doesn't exist
+                                return fmt.Errorf("{{.MethodName}} is not implemented for federation partner")
+                        }
+                        return clientApi.{{.MethodName}}Stream(ctx, rc, obj, cb)
+                }
+        }
 {{- end}}
-	if err != nil {
-		return {{.ReturnErrArg}}err
-	}
-	api := edgeproto.New{{.Service}}Client(conn)
-	log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
-	defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
+{{- end}}
+{{- if .NotifyRoot}}
+        conn, err := connObj.GetNotifyRootConn(ctx)
+{{- else}}
+        conn, err := connObj.GetRegionConn(ctx, rc.Region)
+{{- end}}
+        if err != nil {
+                return {{.ReturnErrArg}}err
+        }
+        api := edgeproto.New{{.Service}}Client(conn)
+        log.SpanLog(ctx, log.DebugLevelApi, "start controller api")
+        defer log.SpanLog(ctx, log.DebugLevelApi, "finish controller api")
 {{- if .Outstream}}
-	stream, err := api.{{.MethodName}}(ctx, obj)
-	if err != nil {
-		return {{.ReturnErrArg}}err
-	}
-	for {
-		res, err := stream.Recv()
-		if err == io.EOF {
-			err = nil
-			break
-		}
-		if err != nil {
-			return {{.ReturnErrArg}}err
-		}
+        stream, err := api.{{.MethodName}}(ctx, obj)
+        if err != nil {
+                return {{.ReturnErrArg}}err
+        }
+        for {
+                res, err := stream.Recv()
+                if err == io.EOF {
+                        err = nil
+                        break
+                }
+                if err != nil {
+                        return {{.ReturnErrArg}}err
+                }
 {{- if and .Show (not .SkipEnforce)}}
-		if !rc.SkipAuthz {
-			if authz != nil {
+                if !rc.SkipAuthz {
+                        if authz != nil {
 {{- if .CustomAuthz}}
 {{- if .Show }}
-				authzOk, filterOutput := authz.Ok(res)
-				if !authzOk {
+                                authzOk, filterOutput := authz.Ok(res)
+                                if !authzOk {
 {{- else }}
-				if !authz.Ok(res) {
+                                if !authz.Ok(res) {
 {{- end}}
-					continue
-				}
+                                        continue
+                                }
 {{- if .Show }}
-				if filterOutput {
-					authz.Filter(res)
-				}
+                                if filterOutput {
+                                        authz.Filter(res)
+                                }
 {{- end}}
 {{- else}}
-				if !authz.Ok({{.ShowOrg}}) {
-					continue
-				}
+                                if !authz.Ok({{.ShowOrg}}) {
+                                        continue
+                                }
 {{- end}}
-			}
-		}
+                        }
+                }
 {{- end}}
-		err = cb(res)
-		if err != nil {
-			return {{.ReturnErrArg}}err
-		}
-	}
-	return {{.ReturnErrArg}}nil
+                err = cb(res)
+                if err != nil {
+                        return {{.ReturnErrArg}}err
+                }
+        }
+        return {{.ReturnErrArg}}nil
 {{- else}}
-	return api.{{.MethodName}}(ctx, obj)
+        return api.{{.MethodName}}(ctx, obj)
 {{- end}}
 }
 

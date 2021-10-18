@@ -1,0 +1,97 @@
+federatedpartnerzones:
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner1
+    countrycode: PA
+    zoneid: partner1-cloud-2
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: dmuus
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-2
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SA
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-2
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-1
+    geolocation: 31,-91
+  registered: true
+- selfoperatorid: enterprise
+  selfcountrycode: SB
+  federatorzone:
+    operatorid: partner2
+    countrycode: PS
+    zoneid: partner2-cloud-2
+    geolocation: 31,-91
+  registered: true
