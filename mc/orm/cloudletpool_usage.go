@@ -90,6 +90,7 @@ func GetCloudletPoolUsageCommon(c echo.Context) error {
 	}
 	rc.claims = claims
 	regionRc.Username = claims.Username
+	regionRc.Database = database
 	ctx := ormutil.GetContext(c)
 
 	if strings.HasSuffix(c.Path(), "usage/cloudletpool") {

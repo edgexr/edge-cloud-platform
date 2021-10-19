@@ -52,6 +52,7 @@ func (s *AuthzShow) setCloudletKeysFromPool(ctx context.Context, region, usernam
 		Region:    region,
 		Username:  username,
 		SkipAuthz: true,
+		Database:  database,
 	}
 	operRes, operAction := getOperatorPermToViewDeveloperStuff()
 	allowedOperOrgs, err := enforcer.GetAuthorizedOrgs(ctx, username, operRes, operAction)

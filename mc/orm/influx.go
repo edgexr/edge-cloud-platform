@@ -304,6 +304,7 @@ func getSettings(ctx context.Context, idc *InfluxDBContext) (*edgeproto.Settings
 	rc := &ormutil.RegionContext{
 		Region:    idc.region,
 		SkipAuthz: true, // this is internal call, so no auth needed
+		Database:  database,
 	}
 	return ctrlclient.ShowSettingsObj(ctx, rc, in, connCache)
 }
@@ -1024,6 +1025,7 @@ func checkPermissionsAndGetCloudletList(ctx context.Context, username, region st
 	regionRc := &ormutil.RegionContext{}
 	regionRc.Username = username
 	regionRc.Region = region
+	regionRc.Database = database
 	uniqueCloudlets := make(map[string]struct{})
 	devOrgPermOk := false
 	operOrgPermOk := false

@@ -91,6 +91,7 @@ func authzCloudletPoolMembers(ctx context.Context, region, username string, pool
 	rc := ormutil.RegionContext{}
 	rc.Username = username
 	rc.Region = region
+	rc.Database = database
 	rc.SkipAuthz = true
 	for _, cloudletName := range pool.Cloudlets {
 		if !util.ValidName(cloudletName) {

@@ -37,6 +37,9 @@ func (f *FederationClient) loggedDB(ctx context.Context) *gorm.DB {
 }
 
 func GetFederationClient(ctx context.Context, database *gorm.DB, federationId int) (*FederationClient, bool, error) {
+	if database == nil {
+		return nil, false, fmt.Errorf("missing database")
+	}
 	// This client will abstract actions on partner federator's edge infra
 	partnerFed := ormapi.Federation{
 		Id: federationId,
@@ -62,6 +65,9 @@ func GetFederationClient(ctx context.Context, database *gorm.DB, federationId in
 func GetFederationClients(ctx context.Context, database *gorm.DB, region string, cloudletKey *edgeproto.CloudletKey) ([]FederationClient, error) {
 	if region == "" {
 		return nil, fmt.Errorf("no region specified")
+	}
+	if database == nil {
+		return nil, fmt.Errorf("missing database")
 	}
 	if cloudletKey.Name != "" {
 		federationId, err := GetFederationIDFromCloudlet(cloudletKey.Name)

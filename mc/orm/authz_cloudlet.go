@@ -126,6 +126,7 @@ func (s *AuthzCloudlet) populate(ctx context.Context, region, username, orgfilte
 		Region:    region,
 		Username:  username,
 		SkipAuthz: true,
+		Database:  database,
 	}
 	// build map of cloudlets associated with all cloudlet pools
 	s.cloudletPoolSide = make(map[edgeproto.CloudletKey]int)

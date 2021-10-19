@@ -795,6 +795,7 @@ func GetCloudletPoolSummaryData(ctx context.Context, username string, report *or
 	rc := ormutil.RegionContext{
 		Region:   report.Region,
 		Username: username,
+		Database: database,
 	}
 	poolKey := edgeproto.CloudletPoolKey{Organization: report.Org}
 	poolCloudlets := make(map[string][]string)
@@ -1099,6 +1100,7 @@ func GetCloudletAlerts(ctx context.Context, username string, report *ormapi.Gene
 	rc := &ormutil.RegionContext{
 		Region:   report.Region,
 		Username: username,
+		Database: database,
 	}
 	obj := &edgeproto.Alert{
 		Labels: map[string]string{
@@ -1137,6 +1139,7 @@ func GetCloudletAppUsageData(ctx context.Context, username string, report *ormap
 	rc := &ormutil.RegionContext{
 		Region:   report.Region,
 		Username: username,
+		Database: database,
 	}
 	obj := &edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
