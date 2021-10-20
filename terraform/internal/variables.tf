@@ -134,3 +134,15 @@ variable "openvas_instance_name" {
 variable "openvas_zone" {
   default = "us-central1-a"
 }
+
+variable "teleport_domain_name" {
+  default = "teleport.mobiledgex.net"
+}
+
+variable "teleport_instance_name" {
+  default = "teleport"
+}
+
+variable "teleport_zone" {
+  default = "us-central1-a"
+}

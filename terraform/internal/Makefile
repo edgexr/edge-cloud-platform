@@ -16,7 +16,7 @@ plan: init
 	$(TFWRAP) plan
 
 deploy: init
-	terraform apply
+	$(TFWRAP) apply
 
 clean:
 	$(RM) $(INIT_DONE_FLAG)

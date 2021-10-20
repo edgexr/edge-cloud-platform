@@ -190,3 +190,41 @@ module "openvas_dns" {
   hostname = var.openvas_domain_name
   ip       = module.openvas.external_ip
 }
+
+resource "google_compute_firewall" "teleport" {
+  name = "teleport"
+  description = "Teleport bastion"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports = ["3023", "3024", "3025", "3026"]
+  }
+
+  target_tags = ["teleport"]
+}
+
+module "teleport" {
+  source = "../modules/vm_gcp"
+
+  instance_name       = var.teleport_instance_name
+  environ_tag         = var.environ_tag
+  zone                = var.teleport_zone
+  boot_image          = "ubuntu-os-cloud/ubuntu-2004-lts"
+  boot_disk_size      = 100
+  tags                = [
+    "mexplat-internal",
+    "http-server",
+    "https-server",
+    "teleport",
+  ]
+  labels = {
+    "owner" = "ops"
+  }
+}
+
+module "teleport_dns" {
+  source   = "../modules/cloudflare_record"
+  hostname = var.teleport_domain_name
+  ip       = module.teleport.external_ip
+}
