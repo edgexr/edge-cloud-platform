@@ -366,7 +366,6 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
-    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 - name: mc2
@@ -388,7 +387,6 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
-    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 - name: mc-partner1
@@ -406,7 +404,6 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
-    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 - name: mc-partner2
@@ -424,7 +421,6 @@ mcs:
   envvars:
     ES_SERVER_URLS: https://localhost:9201
     E2ETEST_TLS: true
-    E2ETEST_FEDERATION: true
   staticdir: "{{staticdir}}"
 
 sqls:

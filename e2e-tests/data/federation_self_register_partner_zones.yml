@@ -1,40 +1,34 @@
 federatedpartnerzones:
 # dmuus/SA registers partner zones
 - selfoperatorid: dmuus
-  selfcountrycode: SA
+  selffederationid: dmuus-SA-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-dmuus-SA
     zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: dmuus
-  selfcountrycode: SA
+  selffederationid: dmuus-SA-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-dmuus-SA
     zoneid: {{partnertag}}-cloud-2
 # enterprise/SA registers partner zones
 - selfoperatorid: enterprise
-  selfcountrycode: SA
+  selffederationid: enterprise-SA-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SA
     zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: enterprise
-  selfcountrycode: SA
+  selffederationid: enterprise-SA-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SA
     zoneid: {{partnertag}}-cloud-2
 # enterprise/SB registers partner zones
 - selfoperatorid: enterprise
-  selfcountrycode: SB
+  selffederationid: enterprise-SB-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SB
     zoneid: {{partnertag}}-cloud-1
 - selfoperatorid: enterprise
-  selfcountrycode: SB
+  selffederationid: enterprise-SB-{{partnertag}}-{{region}}
   federatorzone:
-    operatorid: {{partnertag}}
-    countrycode: {{region}}
+    federationid: {{partnertag}}-{{region}}-enterprise-SB
     zoneid: {{partnertag}}-cloud-2

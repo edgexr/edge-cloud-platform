@@ -14,7 +14,6 @@ import (
 	jaeger_json "github.com/jaegertracing/jaeger/model/json"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/mobiledgex/edge-cloud-infra/mc/federation"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormapi"
 	"github.com/mobiledgex/edge-cloud-infra/mc/ormutil"
 	"github.com/mobiledgex/edge-cloud/cloudcommon/node"
@@ -197,20 +196,6 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 			if err != nil {
 				reqBody = []byte{}
 			}
-		} else if strings.Contains(req.RequestURI, "/auth/federation/create") {
-			opFed := ormapi.Federation{}
-			err := json.Unmarshal(reqBody, &opFed)
-			if err == nil {
-				opFed.FederationKey = ""
-				reqBody, err = json.Marshal(opFed)
-			}
-			if err != nil {
-				reqBody = []byte{}
-			}
-		} else if strings.Contains(req.RequestURI, federation.OperatorPartnerAPI) ||
-			strings.Contains(req.RequestURI, federation.OperatorZoneAPI) ||
-			strings.Contains(req.RequestURI, federation.OperatorNotifyZoneAPI) {
-			reqBody = federation.LogFilter(req, reqBody)
 		}
 		span.SetTag("request", string(reqBody))
 		eventErr := nexterr
@@ -247,20 +232,6 @@ func logger(next echo.HandlerFunc) echo.HandlerFunc {
 				err := json.Unmarshal(resBody, &resp)
 				if err == nil {
 					resp.ApiKey = ""
-					updatedResp, err := json.Marshal(&resp)
-					if err == nil {
-						response = string(updatedResp)
-					} else {
-						response = string(resBody)
-					}
-				} else {
-					response = string(resBody)
-				}
-			} else if strings.Contains(string(resBody), "FederationKey") {
-				resp := ormapi.Federator{}
-				err := json.Unmarshal(resBody, &resp)
-				if err == nil {
-					resp.FederationKey = ""
 					updatedResp, err := json.Marshal(&resp)
 					if err == nil {
 						response = string(updatedResp)

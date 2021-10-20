@@ -1,24 +1,54 @@
 federators:
 - operatorid: dmuus
   countrycode: SA
+  federationid: dmuus-SA-partner1-PA
   federationaddr: "127.0.0.1:9801"
-  mcc: 456 
+  mcc: 456
   mnc:
   - 444
   - 555
   - 666
 - operatorid: enterprise
   countrycode: SA
+  federationid: enterprise-SA-partner1-PA
   federationaddr: "127.0.0.1:9801"
-  mcc: 456 
+  mcc: 456
   mnc:
   - 444
   - 555
   - 666
 - operatorid: enterprise
   countrycode: SB
+  federationid: enterprise-SB-partner1-PA
   federationaddr: "127.0.0.1:9801"
-  mcc: 789 
+  mcc: 789
+  mnc:
+  - 777
+  - 888
+  - 999
+- operatorid: dmuus
+  countrycode: SA
+  federationid: dmuus-SA-partner2-PS
+  federationaddr: "127.0.0.1:9801"
+  mcc: 456
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: enterprise
+  countrycode: SA
+  federationid: enterprise-SA-partner2-PS
+  federationaddr: "127.0.0.1:9801"
+  mcc: 456
+  mnc:
+  - 444
+  - 555
+  - 666
+- operatorid: enterprise
+  countrycode: SB
+  federationid: enterprise-SB-partner2-PS
+  federationaddr: "127.0.0.1:9801"
+  mcc: 789
   mnc:
   - 777
   - 888

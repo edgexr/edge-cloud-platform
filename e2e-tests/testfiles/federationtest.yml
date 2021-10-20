@@ -142,9 +142,20 @@ tests:
 ###############################################################
 # Setup federators
 ###############################################################
-- name: setup self federator
+- name: setup self federator for federation with partner1
+  actions: [mcapi-create]
+  apifile: '{{datadir2}}/federation_self_federator.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: setup self federator for federation with partner2
   actions: [mcapi-create,mcapi-showselffederators]
   apifile: '{{datadir2}}/federation_self_federator.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
@@ -270,7 +281,7 @@ tests:
     yaml2: '{{datadir2}}/federation_self_share_zones_show.yml'
     filetype: mcdata
 
-- name: partner1 creates self federator
+- name: partner1 creates self federation
   actions: [mcapi-create=mc-partner1,mcapi-showfederations=mc-partner1]
   apifile: '{{datadir2}}/federation_partner_create_self.yml'
   apifilevars:
@@ -285,7 +296,7 @@ tests:
       region: "PA"
     filetype: mcdata
 
-- name: partner2 creates self federator
+- name: partner2 creates self federation
   actions: [mcapi-create=mc-partner2,mcapi-showfederations=mc-partner2]
   apifile: '{{datadir2}}/federation_partner_create_self.yml'
   apifilevars:
@@ -621,9 +632,20 @@ tests:
     yaml2: '{{datadir2}}/mcappdata_empty.yml'
     filetype: mcdata
 
-- name: delete self federator
+- name: delete self federator created for federation with partner2
+  actions: [mcapi-delete]
+  apifile: '{{datadir2}}/federation_self_federator.yml'
+  apifilevars:
+    partnertag: "partner2"
+    region: "PS"
+  curuserfile: '{{datadir2}}/mc_user1.yml'
+
+- name: delete self federator created for federation with partner1
   actions: [mcapi-delete,mcapi-showselffederators]
   apifile: '{{datadir2}}/federation_self_federator.yml'
+  apifilevars:
+    partnertag: "partner1"
+    region: "PA"
   curuserfile: '{{datadir2}}/mc_user1.yml'
   compareyaml:
     yaml1: '{{outputdir}}/show-commands.yml'
